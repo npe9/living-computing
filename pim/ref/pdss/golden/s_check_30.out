@@ -1,0 +1,35 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/check" : Compiling ... go/0,go/1,cl1/1,cl2/1,cl3/1,cl4/1,cl5/1,cl1/2,io_test/1,io/3,io_t/3,io_f/3,buffer/0,END.
+
+[cl1/1,cl2/1,cl4/1,cl1/2,go/1,io_test/1,buffer/0,cl3/1,go/0]
+successdone
+Loading ... done
+Module name : module
+Saving ... done
+
+yes.
+| ?-
+*** Deadlock occurred. [collect(HOOKoo)]
+*** A variable which has a goal waiting for instantiation was abandoned.
+*** Collect_value occurred in module:cl1/1
+[0002]module:cl2(A~).
+
+Deadlock detected ('waiting' was collected).
+Goals : module:cl2/1
+Collected in : module:cl1/1
+Continue or Abort (c/a) ?- Task task_1/{22} was aborted !!
+
+no.
+| ?-
+exit 0
+asm d12523f9019f2c93564c872edfb4edb917825e7e779a658c67df69d6b36b0bbf
+sav cc1ed215b0ea816065ac7d142e7887ba3a6d790f17ac9913ac64890b0ac86e16

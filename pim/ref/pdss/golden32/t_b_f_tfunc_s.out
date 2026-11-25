@@ -1,0 +1,37 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_f_tfunc_s" : Compiling ... go/0,sin/0,sin00/0,sin00/1,sin01/0,sin01/1,sin02/0,sin02/1,sin03/0,sin03/1,sin04/0,cos/0,cos00/0,cos00/1,cos01/0,cos01/1,cos02/0,cos02/1,cos03/0,cos03/1,cos04/0,tan/0,tan00/0,tan00/1,tan01/0,tan01/1,tan02/0,tan02/1,tan03/0,asn/0,asn00/0,asn00/1,asn01/0,asn01/1,asn02/0,asn02/1,asn03/0,acs/0,acs00/0,acs00/1,acs01/0,acs01/1,acs02/0,acs02/1,acs03/0,atn/0,atn00/0,atn00/1,atn01/0,atn01/1,atn02/0,atn02/1,atn03/0,snh/0,snh00/0,snh00/1,snh01/0,snh01/1,snh02/0,snh02/1,snh03/0,csh/0,csh00/0,csh00/1,csh01/0,csh01/1,csh02/0,csh02/1,csh03/0,tnh/0,tnh00/0,tnh00/1,tnh01/0,tnh01/1,tnh02/0,tnh02/1,tnh03/0,atn2/0,atn200/0,atn200/1,atn201/0,atn201/1,atn202/0,atn202/1,atn203/0,done/0,unify/4,unify/2,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_f_tfunc_s
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Float_Tri_Function (Suspend) %%%
+% B_Float_Sin %%%%%%%%%%% abcd
+% B_Float_Cos %%%%%%%%%%% abcd
+% B_Float_Tan %%%%%%%%%%% abc
+% B_Float_Asin %%%%%%%%%% abc
+% B_Float_Acos %%%%%%%%%% abc
+% B_Float_Atan %%%%%%%%%% abc
+% B_Float_Sinh %%%%%%%%%% abc
+% B_Float_Cosh %%%%%%%%%% abc
+% B_Float_Tanh %%%%%%%%%% abc
+% B_Float_Atan2 %%%%%%%%% abc
+Total of 122 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 4270a546c5cf5121c285ee5b325c5f9fd518651e7ef215b5b8c967888e24e375
+sav f07ad62a7ef31bf59596f517236ee4714b76fabc86c337e72d6288c6bedc7fe9

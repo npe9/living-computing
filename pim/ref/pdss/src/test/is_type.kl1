@@ -1,0 +1,209 @@
+/* このテストプログラムはProlog版コンパイラで */
+/* クローズインデキシングを掛けた場合のみ有効 */
+%%% KL1-B Test for Is_Type %%%
+% Is_Atom %%%%%%%%%%%%%%% abcdef
+% Is_Integer %%%%%%%%%%%% abcdefg
+% Is_Vector %%%%%%%%%%%%% abcdefg
+% Is_String %%%%%%%%%%%%% abcdefg
+% Is_Float %%%%%%%%%%%%%% abcdefg
+
+:- module is_type.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Is_Type %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Is_Atom %%%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom).
+atm00(X):- list(X), put_console(c#"*") | atm01.
+atm00(X):- atom(X), put_console(c#"a") | atm01.
+alternatively.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01(1234).
+atm01(X):- list(X), put_console(c#"*") | atm02.
+atm01(X):- atom(X), put_console(c#"*") | atm02.
+alternatively.
+atm01(_):- put_console(c#"b") | atm02.
+
+atm02:- true | atm02({0,1}).
+atm02(X):- list(X), put_console(c#"*") | atm03.
+atm02(X):- atom(X), put_console(c#"*") | atm03.
+alternatively.
+atm02(_):- put_console(c#"c") | atm03.
+
+atm03:- true | atm03(ascii#"String").
+atm03(X):- list(X), put_console(c#"*") | atm04.
+atm03(X):- atom(X), put_console(c#"*") | atm04.
+alternatively.
+atm03(_):- put_console(c#"d") | atm04.
+
+atm04:- true | atm04(12.34).
+atm04(X):- list(X), put_console(c#"*") | atm05.
+atm04(X):- atom(X), put_console(c#"*") | atm05.
+alternatively.
+atm04(_):- put_console(c#"e") | atm05.
+
+atm05:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Is_Integer %%%%%%%%%%%% ") | int00.
+
+int00:- true | int00([list]).
+int00(X):- atom(X), put_console(c#"*") | int01.
+int00(X):- integer(X), put_console(c#"*") | int01.
+alternatively.
+int00(_):- put_console(c#"a") | int01.
+
+int01:- true | int01(atom).
+int01(X):- list(X), put_console(c#"*") | int02.
+int01(X):- integer(X), put_console(c#"*") | int02.
+alternatively.
+int01(_):- put_console(c#"b") | int02.
+
+int02:- true | int02(1234).
+int02(X):- atom(X), put_console(c#"*") | int03.
+int02(X):- integer(X), put_console(c#"c") | int03.
+alternatively.
+int02(_):- put_console(c#"*") | int03.
+
+int03:- true | int03({0,1}).
+int03(X):- atom(X), put_console(c#"*") | int04.
+int03(X):- integer(X), put_console(c#"*") | int04.
+alternatively.
+int03(_):- put_console(c#"d") | int04.
+
+int04:- true | int04(ascii#"String").
+int04(X):- atom(X), put_console(c#"*") | int05.
+int04(X):- integer(X), put_console(c#"*") | int05.
+alternatively.
+int04(_):- put_console(c#"e") | int05.
+
+int05:- true | int05(12.34).
+int05(X):- atom(X), put_console(c#"*") | int06.
+int05(X):- integer(X), put_console(c#"*") | int06.
+alternatively.
+int05(_):- put_console(c#"f") | int06.
+
+int06:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% Is_Vector %%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00([list]).
+vec00(X):- integer(X), put_console(c#"*") | vec01.
+vec00(X):- vector(X), put_console(c#"*") | vec01.
+alternatively.
+vec00(_):- put_console(c#"a") | vec01.
+
+vec01:- true | vec01(atom).
+vec01(X):- integer(X), put_console(c#"*") | vec02.
+vec01(X):- vector(X), put_console(c#"*") | vec02.
+alternatively.
+vec01(_):- put_console(c#"b") | vec02.
+
+vec02:- true | vec02(1234).
+vec02(X):- list(X), put_console(c#"*") | vec03.
+vec02(X):- vector(X), put_console(c#"*") | vec03.
+alternatively.
+vec02(_):- put_console(c#"c") | vec03.
+
+vec03:- true | vec03({0,1}).
+vec03(X):- integer(X), put_console(c#"*") | vec04.
+vec03(X):- vector(X), put_console(c#"d") | vec04.
+alternatively.
+vec03(_):- put_console(c#"*") | vec04.
+
+vec04:- true | vec04(ascii#"String").
+vec04(X):- integer(X), put_console(c#"*") | vec05.
+vec04(X):- vector(X), put_console(c#"*") | vec05.
+alternatively.
+vec04(_):- put_console(c#"e") | vec05.
+
+vec05:- true | vec05(12.34).
+vec05(X):- integer(X), put_console(c#"*") | vec06.
+vec05(X):- vector(X), put_console(c#"*") | vec06.
+alternatively.
+vec05(_):- put_console(c#"f") | vec06.
+
+vec06:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% Is_String %%%%%%%%%%%%% ") | str00.
+
+str00:- true | str00([list]).
+str00(X):- vector(X), put_console(c#"*") | str01.
+str00(X):- string(X), put_console(c#"*") | str01.
+alternatively.
+str00(_):- put_console(c#"a") | str01.
+
+str01:- true | str01(atom).
+str01(X):- vector(X), put_console(c#"*") | str02.
+str01(X):- string(X), put_console(c#"*") | str02.
+alternatively.
+str01(_):- put_console(c#"b") | str02.
+
+str02:- true | str02(1234).
+str02(X):- vector(X), put_console(c#"*") | str03.
+str02(X):- string(X), put_console(c#"*") | str03.
+alternatively.
+str02(_):- put_console(c#"c") | str03.
+
+str03:- true | str03({0,1}).
+str03(X):- list(X), put_console(c#"*") | str04.
+str03(X):- string(X), put_console(c#"*") | str04.
+alternatively.
+str03(_):- put_console(c#"d") | str04.
+
+str04:- true | str04(ascii#"String").
+str04(X):- vector(X), put_console(c#"*") | str05.
+str04(X):- string(X), put_console(c#"e") | str05.
+alternatively.
+str04(_):- put_console(c#"*") | str05.
+
+str05:- true | str05(12.34).
+str05(X):- vector(X), put_console(c#"*") | str06.
+str05(X):- string(X), put_console(c#"*") | str06.
+alternatively.
+str05(_):- put_console(c#"f") | str06.
+
+str06:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Is_Float %%%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00([list]).
+flt00(X):- string(X), put_console(c#"*") | flt01.
+flt00(X):- float(X), put_console(c#"*") | flt01.
+alternatively.
+flt00(_):- put_console(c#"a") | flt01.
+
+flt01:- true | flt01(atom).
+flt01(X):- string(X), put_console(c#"*") | flt02.
+flt01(X):- float(X), put_console(c#"*") | flt02.
+alternatively.
+flt01(_):- put_console(c#"b") | flt02.
+
+flt02:- true | flt02(1234).
+flt02(X):- string(X), put_console(c#"*") | flt03.
+flt02(X):- float(X), put_console(c#"*") | flt03.
+alternatively.
+flt02(_):- put_console(c#"c") | flt03.
+
+flt03:- true | flt03({0,1}).
+flt03(X):- string(X), put_console(c#"*") | flt04.
+flt03(X):- float(X), put_console(c#"*") | flt04.
+alternatively.
+flt03(_):- put_console(c#"d") | flt04.
+
+flt04:- true | flt04(ascii#"String").
+flt04(X):- list(X), put_console(c#"*") | flt05.
+flt04(X):- float(X), put_console(c#"*") | flt05.
+alternatively.
+flt04(_):- put_console(c#"e") | flt05.
+
+flt05:- true | flt05(12.34).
+flt05(X):- string(X), put_console(c#"*") | flt06.
+flt05(X):- float(X), put_console(c#"f") | flt06.
+alternatively.
+flt05(_):- put_console(c#"*") | flt06.
+
+flt06:- put_console(key#lf) | done.
+
+done:- true | true.

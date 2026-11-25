@@ -1,0 +1,66 @@
+:- module module.
+:- public cl1/1, cl2/1, cl4/1, cl1/2, go/1, io_test/1, buffer/0, cl3/1, go/0.
+
+go    :- true | merge(In, Out), cl2(In).
+go(0) :- true | add(X,_,Y), divide(Y,_,Z), modulo(Z,_,_).
+go(10):- true | cl2(X).
+go(11):- true | cl2(X), cl3(X).
+go(12):- true | merge(In, Out), cl2(In).
+go(13):- true | cl2(In), merge(In, Out), cl3(a).
+go(15):- true | merge(In, OUt), cl3(In).
+go(20):- true | cl2(X), cl1(X,Y).
+go(21):- true | merge(In,Out), cl1(In,_), cl4(Out).
+go(22):- true | cl2(X), cl3(Y), cl1(X,Y).
+go(23):- true | merge(In,Out), cl2(X), cl1(X,In),cl4(Out).
+go(24):- true |
+	merge(In1,Out1), merge(In2,Out2),
+	cl1(In1,In2),cl4(Out1),cl5(Out2).
+go(30):- true | cl2(X), cl1(X).
+go(31):- true | merge(In,Out), cl1(In), cl4(Out).
+
+
+cl1(_) :- true | true.
+cl2(a) :- true | true.
+cl3(b) :- true | true.
+cl4([_|Cdr]):- true | cl4(Cdr).
+cl5([_|Cdr]):- true | cl5(Cdr).
+
+cl1(X, Y):- true | X = Y.
+
+io_test(Type):- true |
+	file:create(File, string#"io_test", r),
+	window:create([show|Win], string#"IO-TEST"),
+	io(Type, File, Win).
+
+io(Type, F, W) :- Type = 'gett'  |
+		F=[gett(T,S)|F1], 
+		W=[putt(T),tab(3),putt('Status'),tab(1),putt(S),nl|W1],
+		io_t(T, F1, W1).
+io(Type, F, W) :- Type = 'getft' |
+		F=[getft(T,NV,S)|F1],
+		W=[putt(T),tab(3),putt('NV'),tab(1),putt(NV),tab(3),
+			putt('Status'),tab(1),putt(S),nl|W1],
+		io_f(T, F1, W1).
+
+io_t(Term, File, Win):- Term \= end_of_file |
+		File=[gett(T, S)|F], 
+		Win=[putt(T),tab(3),putt('Status'),tab(1),putt(S),nl|W],
+		io_t(T, F, W).
+io_t(Term, File, Win):- Term  = end_of_file |
+		File=[], Win=[getl(_)].
+
+io_f(Term, File, Win):- Term \= end_of_file |
+		File=[getft(T,NV,S)|F], 
+		Win=[putt(T),tab(3),putt('NV'),tab(1),putt(NV),tab(3),
+			putt('Status'),tab(1),putt(S),nl|W],
+		io_f(T, F, W).
+io_f(Term, File, Win):- Term =  end_of_file |
+		File=[], Win=[getl(_),beep].
+
+buffer:- true |
+	window:create([show|Win],string#"putb-test"),
+	Win=[putt('puttb/1'),tab(1),putb(string#"string-putb/1"),nl,
+		putt('putb/2:Count=4'),tab(1),
+		putb(string#"string-putb/2",4),nl,
+		putt('putb/2:Count=50'),tab(1),
+		putb(string#"string-putb/2",50),getl(_),beep].

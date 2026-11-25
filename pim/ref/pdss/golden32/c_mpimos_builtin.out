@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/builtin.kl1" : Compiling ... is_command/2,do_command/2,help/2,END.
+
+[is_command/2,do_command/2,help/2]
+successdone
+
+exit 0
+asm 155fe0ee53b8320c0e5c45942b036f62a1469a3d6c0ba81f5d9b840368ac4774
+sav none

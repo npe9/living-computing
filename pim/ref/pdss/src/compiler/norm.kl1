@@ -1,0 +1,1212 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%
+%   KL1/KL1 COMPILER
+%
+%    NORMALIZE PHASE
+%
+%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_normalize.
+:- public normalize/11, variable_generator/3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Stream returns only I/O commands.
+:- local_implicit io_stream:oldnew.
+
+normalize(Order, (Head:-'|'(Guard,Body)), V0, V, HH, Ginstr, Binstr0,
+			Attr0, Attr) --> true |
+ {{kl1cmp_reader:functor(Head, F, N), kl1cmp_reader:gen_functor(H, F, N)}},
+   normalize_args(VS0, Big_guard, [], Ttbl0, [],
+		N, 0, Head, H, HH, Guard),
+   normalize_guard(VS1, Ginstr, Trans1, Attr0, Attr, Big_guard),
+ {{convert_body_args(Blist, [], Trans0, [], Ttbl0, Ttbl1, Body),
+   unique(Trans1, [], Trans0)}},
+   normalize_body(VS2, Binstr0, [], Order, [], Blist),
+ {{variable_generator(V0, V, P)@priority('$', 512),
+   merge({VS0, VS1, VS2}, P)}}.
+
+:- local_implicit code:oldnew.
+unique([One|Rest]) --> true |
+   {{unique(Res, [], One, Rest)}},
+     &code<<=[One],
+     unique(Res).
+unique([]) --> true | true.
+
+unique(One, [One|Cdr]) --> true |
+    unique(One, Cdr).
+otherwise.
+unique(One, [Other|Rest]) --> true |
+    &code<<=[Other],
+    unique(One, Rest).
+unique(_, []) --> true | true.
+
+:- local_implicit io_stream:oldnew, var_no:stream, instr:oldnew,
+	ttbl:oldnew.
+normalize_args(0, _, _, H, HH, Guard) --> true |
+ {{convert_term_to_list(&instr, Guard),
+   H=HH}}.
+normalize_args(K, A, H0, H, HH, Guard) --> K>0 |
+ {{set_vector_element(H0, A1, Arg0, [], H01),
+   set_vector_element(H, A1, _, Arg1, H1),
+   &var_no<<=[new_variable(Arg1)],
+   K1 := K-1, A1 := A+1}},
+   &instr<<=[Arg0=Arg1],
+ {{add_trans_instr(&var_no, &ttbl, Arg0, Arg1)}},
+   normalize_args(K1, A1, H01, H1, HH, Guard).		%%880427-KH
+
+:- local_implicit instr:oldnew.
+convert_term_to_list((X,Y)) --> true |
+   convert_term_to_list(X),
+   convert_term_to_list(Y).
+otherwise.
+convert_term_to_list(X) --> true |
+   &instr<<=[X].
+
+:- local_implicit var_no:stream, ttbl:oldnew.
+add_trans_instr('$VAR'(N,A), Arg1) --> integer(N), string(A,_,8) |
+   &var_no<<= [new_variable(Arg2)],
+   &ttbl<<=[{'$VAR'(N,A),Arg2}].
+otherwise.
+add_trans_instr(_, _) --> true | true.
+
+:- local_implicit goal:oldnew, trans:oldnew, ttbl:oldnew.
+convert_body_args((X,Y)) --> true |
+    convert_body_args(X),
+    convert_body_args(Y).
+otherwise.
+convert_body_args(X) --> true |
+    convert_body_args_one_goal(X, NewX),
+    &goal<<=[NewX].
+
+convert_body_args_one_goal(X, NewX) --> vector(X, N) |
+    convert_body_one_goal(N, X, NewX).
+otherwise.
+convert_body_args_one_goal(X, NewX) --> true |
+    convert_body_one_arg(X, NewX).
+
+convert_body_one_goal(0, X, NewX) --> true |
+    X = NewX.
+otherwise.
+convert_body_one_goal(N, X, NewX) --> N1 := N-1 |
+  {{set_vector_element(X, N1, A, NA, X1)}},
+    convert_body_one_arg(A, NA),
+    convert_body_one_goal(N1, X1, NewX).
+
+:- local_implicit goal:oldnew, trans:oldnew.
+convert_body_one_arg([{'$VAR'(N,A),Last}|Cdr], Ttbl,
+		'$VAR'(N, A), New) --> true |
+  {{New=Last,
+    Ttbl=[{'$VAR'(N,A),Last}|Cdr]}},
+    &goal<<=[Last==var('$VAR'(N,A))], % for body reference only
+    &trans<<=[Last=var('$VAR'(N,A))].
+otherwise.
+convert_body_one_arg([X|Cdr], Trans, Old, New) --> Old='$VAR'(N,S),
+	integer(N), string(S,_,8) |
+    Trans=[X|Cdr0],
+    convert_body_one_arg(Cdr, Cdr0, Old, New).
+convert_body_one_arg(Ttbl0, Ttbl, Old, New) --> atom(Old) |
+    Ttbl0=Ttbl, New=Old.
+convert_body_one_arg(Ttbl0, Ttbl, Old, New) --> integer(Old) |
+    Ttbl0=Ttbl, New=Old.
+convert_body_one_arg(Ttbl0, Ttbl, Old, New) --> floating_point(Old) |
+    Ttbl0=Ttbl, New=Old.
+convert_body_one_arg(Ttbl0, Ttbl, Old, New) --> string(Old) |
+    Ttbl0=Ttbl, New=Old.
+convert_body_one_arg(Ttbl0, Ttbl, [X|Y], New) --> true |
+    convert_body_one_arg(Ttbl0, Ttbl1, X, NewX),
+    convert_body_one_arg(Ttbl1, Ttbl, Y, NewY),
+  {{New=[NewX|NewY]}}.
+convert_body_one_arg([], Ttbl, Old, New) --> true |
+  {{Old=New, Ttbl=[]}}.
+convert_body_one_arg(Ttbl0, Ttbl, Old, New) --> vector(Old, N) |
+    convert_body_one_goal(Ttbl0, Ttbl, N, Old, New).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize guard  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit io_stream:oldnew,
+                  var_no:stream,
+                  instr:oldnew,
+	          attr:oldnew.
+
+normalize_guard([Goal|Cdr]) --> true |
+   normalize_one_guard(Goal),
+   normalize_guard(Cdr).
+normalize_guard([]) --> true | true.
+
+normalize_one_guard(true) --> true | true.
+normalize_one_guard(X=Y) --> true | normalize_guard_unify(X, Y).
+normalize_one_guard(X:=Y) --> true | normalize_guard_becomes(X, Y).
+normalize_one_guard(X$:=Y) --> true | normalize_guard_float_becomes(X, Y).
+%normalize_one_guard(X\=Y) --> true | normalize_guard_not_unify(X, Y).
+otherwise.
+normalize_one_guard(vector_element('$VAR'(N,S),P,E)) -->
+		integer(N), string(S, _, 8) |
+ {{append_attr(&attr, E, element('$VAR'(N,S),P1)),
+   kl1cmp_blttbl:builtin(vector_element('$VAR'(N,S),P,E), NewGoal, In, Out,
+		Pre, _, Type)}},
+   NewGoal={_,_,P1,_},
+   dispatch_on_builtin_type(Type, NewGoal, In, Out, Pre).
+otherwise.
+normalize_one_guard(vector_element(V,P,E)) --> vector(V, _) |
+   &io_stream <<= [error_message(
+	string#"Can't create structure in the guard part.",
+	[vector_element(V,P,E)])].
+otherwise.
+normalize_one_guard(vector_element(V,_,_)) --> true |
+   &io_stream <<= [error_message(
+	string#"The first variable of vector_element must be a Variable or a Vector ",
+	[V])].
+otherwise.
+normalize_one_guard(Goal) --> true |
+ {{kl1cmp_blttbl:builtin(Goal, New_goal, In, Out, Pre, _, Type)}},
+   dispatch_on_builtin_type(Type, New_goal, In, Out, Pre).
+
+dispatch_on_builtin_type(builtin, New_goal, In, Out, Pre) --> true |
+      normalize_guard_builtin(New_goal, In, Out, Pre).
+dispatch_on_builtin_type(relop, New_goal, In, _, _) --> true |
+   {{ In=[X1,Y1,X2,Y2] }},
+      expand_expression(X1, Y1, E0, E1),
+      expand_expression(X2, Y2, E1, [New_goal]),
+      normalize_guard(E0).
+dispatch_on_builtin_type(float_relop, New_goal, In, _, _) --> true |
+   {{ In=[X1,Y1,X2,Y2] }},
+      expand_float_expression(X1, Y1, E0, E1),
+      expand_float_expression(X2, Y2, E1, [New_goal]),
+      normalize_guard(E0).
+dispatch_on_builtin_type(type_or_wait, New_goal, In, Out, Pre) --> true |
+      normalize_guard_type_or_wait(New_goal, In, Out ).
+dispatch_on_builtin_type(none, Goal, _, _, _) --> true |
+      &io_stream <<= [error_message(string#"Goal not allowed in guard :", [Goal])].
+
+% added 870818 D.Sekita
+normalize_guard_type_or_wait( New_goal, In, Out ) --> true |
+   normalize_builtin_args(In),
+   &instr<<=[New_goal],
+   normalize_builtin_args(Out).
+
+%:- mode normalize_guard_unify(+, +, -, ?).
+normalize_guard_unify(X, Y) --> X='$VAR'(N, S), integer(N), string(S,_,8) |
+   normalize_guard_unify_variable(Y, X).
+normalize_guard_unify(X, Y) --> Y='$VAR'(N, S), integer(N), string(S,_,8) |
+   normalize_guard_unify_variable(X, Y).
+otherwise.
+normalize_guard_unify(X, Y) --> vector(X, NX), vector(Y, NY) |
+   normalize_guard_unify_vect_vect(NX, NY, X, Y).
+normalize_guard_unify([H1|T1], [H2|T2]) --> true |
+   normalize_guard_unify_list_list([H1|T1], [H2|T2]).
+otherwise.
+normalize_guard_unify(X, X) --> true | true.
+otherwise.
+normalize_guard_unify(X, Y) --> true |
+   &io_stream <<= [error_message(string#"Guard goal not yet implemented.", [X=Y])].
+
+%:- mode normalize_guard_unify_variable(+, +, -, ?).
+normalize_guard_unify_variable(X, Y) -->
+		X='$VAR'(N,S), integer(N), string(S,_,8) |
+   &instr<<=[Y=var(X)].
+normalize_guard_unify_variable('$SCNST'(X), Y) --> string(X) |
+   &var_no <<= [new_variable(Y0)],
+   &instr<<=[Y0=struct(X), Y=var(Y0)].
+otherwise.
+normalize_guard_unify_variable(X, Y) --> atom(X) |
+   &instr <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X, Y) --> integer(X) |
+   &instr <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X, Y) --> floating_point(X) |
+   &instr <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X, Y) --> string(X) |
+   &instr <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X, Y) --> vector(X, N) |
+   &instr <<= [Y=vector(N)],
+ {{ normalize_structure_args(&io_stream, &var_no, &instr,
+				G0, G, &attr, N, 0, X, Y),
+   'C'(&instr, G0, G)}}.
+normalize_guard_unify_variable(X, Y) --> X = [_|_] |
+   &instr <<= [Y=list],
+ {{ normalize_list_args(&io_stream, &var_no, &instr, G0, G, &attr, X, Y),
+   'C'(&instr, G0, G)}}.
+
+normalize_guard_unify_vect_vect(N, N, X, Y) --> true |
+   compare_vect_elements(0, N, X, Y).
+otherwise.
+normalize_guard_unify_vect_vect(_, _, X, Y) --> true |
+   &io_stream<<=[warning_message(string#"This guard unification fails.", [X=Y])].
+
+normalize_guard_unify_list_list([H1|T1], [H2|T2]) --> true |
+    normalize_guard_unify(H1, H2),
+    normalize_guard_unify(T1, T2).
+
+compare_vect_elements(N, N, _, _) --> true | true.
+compare_vect_elements(A, N, X, Y) --> vector_element(X, A, E),
+	vector_element(Y, A, E) |
+  {{A1 := A+1}},
+    compare_vect_elements(A1, N, X, Y).
+otherwise.
+compare_vect_elements(A, N, X, Y) --> true |
+   &io_stream<<=[warning_message(string#"This guard unification fails or suspends.",
+		 [X=Y])],
+ {{A1 := A+1,
+   set_vector_element(X, A, EX, _, X1),
+   set_vector_element(Y, A, EY, _, Y1)}},
+   normalize_guard_unify(X, Y),
+   compare_vect_elements(A1, N, X1, Y1).
+
+% This is a little hairy.  G0-G is a dlist of instructions to be placed
+% after the rest of the code for the toplevel of the structure.
+% G0-G is created by normalize_structure_args/7 and normalize_one_arg/5
+% and placed in the code by normalize_guard_unify_variable/4.
+
+:- local_implicit io_stream:oldnew,
+	          var_no:stream,
+                  instr:oldnew,
+		  struct:oldnew,
+	          attr:oldnew.
+
+
+normalize_structure_args(0, _, _, _) --> true | true.
+normalize_structure_args(A, K, X, Y) --> A>0 |
+ {{append_attr(&attr, E0, element(Y, K)),
+   K1 := K+1, A1 := A-1,
+   set_vector_element(X, K, E, [], X1)}},
+   normalize_one_arg(E, E0),
+   normalize_structure_args(A1, K1, X1, Y).
+% new 870115 D.Sekita
+normalize_list_args([H|T], Y) --> true |
+   normalize_one_arg(H, H0),
+   normalize_one_arg(T, T0),
+ {{append_attr(&attr, H0, element(Y, 0)),
+   append_attr(&attr, T0, element(Y, 1))}}.
+
+append_attr(OldAtr, NewAtr, '$VAR'(N, S), Ele) :- integer(N), string(S,_,8) |
+   set_vector_element(OldAtr, N, OldEle, NewEle, NewAtr),
+   ap(OldEle, [Ele], NewEle).
+otherwise.
+append_attr(OldAtr, NewAtr, _, _) :- true | OldAtr=NewAtr.
+
+ap( [A|X], Y, Z ) :- true | Z=[A|Z1], ap(X, Y, Z1).
+ap( [], Y, Z ) :- true | Y=Z.
+
+%:- mode normalize_one_arg(+, -, ?, -, ?).
+normalize_one_arg(X, Y) --> X='$VAR'(N, S), integer(N), string(S,_,8) |
+   &var_no<<=[new_variable(Y)],
+   &instr <<= [unify(var(Y)), Y=var(X)].
+normalize_one_arg('$SCNST'(X), Y) --> string(X, _, _) |
+   &var_no<<=[new_variable(Y), new_variable(Z)],
+   &instr <<= [Y=struct(X), unify(var(Z)), Z=var(Y)].
+otherwise.
+normalize_one_arg(X, Y) --> atom(X) |
+    &var_no<<=[new_variable(Y)],
+    &instr<<=[unify(var(Y)), Y=atomic(X)].
+normalize_one_arg(X, Y) --> integer(X) |
+    &var_no<<=[new_variable(Y)],
+    &instr<<=[unify(var(Y)), Y=atomic(X)].
+normalize_one_arg(X, Y) --> floating_point(X) |
+    &var_no<<=[new_variable(Y)],
+    &instr<<=[unify(var(Y)), Y=atomic(X)].
+normalize_one_arg(X, Y) --> true | % X is a vector
+   &var_no <<= [new_variable(Y)],
+   &instr <<= [unify(var(Y))],
+  {{ normalize_guard_unify_variable(&io_stream,
+	&var_no, &struct, &attr, X, Y) }}.
+
+:- local_implicit io_stream:oldnew,
+		  var_no:stream,
+                  instr:oldnew,
+	          attr:oldnew.
+
+% Handle ':=' in guard.
+%:- mode normalize_guard_becomes(+, +, -, ?).
+normalize_guard_becomes(X, Y) --> X='$VAR'(N,S), integer(N), string(S,_,8) |
+   expand_expression(Y, Z, E, [X=Z]),
+   normalize_guard(E).
+normalize_guard_becomes(X, Y) --> integer(X) |
+   expand_expression(Y, Z, E, [X=Z]),
+   normalize_guard(E).
+otherwise.
+normalize_guard_becomes(X, Y) --> true |
+   &io_stream<<=[error_message(string#"Left hand side in := is illegal :",
+	X:=Y)].
+% Expands the expression after ':=' to a sequence of built-ins.
+
+%:- mode expand_expression(+, -, -, ?, -, ?).
+expand_expression(X, Y, G0, G) -->
+    X='$VAR'(N, S), integer(N), string(S,_,8) | {{X=Y, G0=G}}.
+expand_expression(X, Y, G0, G) --> atom(X) | {{X=Y, G0=G}}.
+expand_expression(X, Y, G0, G) --> integer(X) | {{X=Y, G0=G}}.
+expand_expression(int(X), Y, G0, G) --> true |
+  {{kl1cmp_blttbl:expression(&io_stream, int(X), Goal, In, Y)}},
+    ( Goal=true -> true ;			% Invalid expression.
+      otherwise;
+      true -> &var_no<<=[new_variable(Y)]),
+   expand_float_expr(In, G0, G1),
+   G1=[Goal|G].
+otherwise.
+expand_expression(X, Y, G0, G) --> true |
+  {{kl1cmp_blttbl:expression(&io_stream, X, Goal, In, Y)}},
+    ( Goal=true -> true ;			% Invalid expression.
+      otherwise;
+      true -> &var_no<<=[new_variable(Y)]),
+   expand_expr(In, G0, G1),
+   G1=[Goal|G].
+
+%:- mode expand_expr(+, -, ?, -, ?).
+expand_expr([], G0, G) --> true | {{ G0=G }}.
+expand_expr([X,Y|L], G0, G) --> true |
+   expand_expression(X, Y, G0, G1), expand_expr(L, G1, G).
+
+% Handle '$:=' in guard.
+%:- mode normalize_guard_float_becomes(+, +, -, ?).
+normalize_guard_float_becomes(X, Y) --> X='$VAR'(N,S), integer(N), string(S,_,8) |
+   expand_float_expression(Y, Z, E, [X=Z]),
+   normalize_guard(E).
+normalize_guard_float_becomes(X, Y) --> integer(X) |
+   expand_float_expression(Y, Z, E, [X=Z]),
+   normalize_guard(E).
+otherwise.
+normalize_guard_float_becomes(X, Y) --> true |
+   &io_stream<<=[error_message(string#"Left hand side in $:= is illegal :",
+	X$:=Y)].
+% Expands the expression after '$:=' to a sequence of built-ins.
+
+%:- mode expand_expression(+, -, -, ?, -, ?).
+expand_float_expression(X, Y, G0, G) -->
+    X='$VAR'(N, S), integer(N), string(S,_,8) | {{X=Y, G0=G}}.
+expand_float_expression(X, Y, G0, G) --> floating_point(X) | {{X=Y, G0=G}}.
+expand_float_expression(float(X), Y, G0, G) --> true |
+  {{kl1cmp_blttbl:float_expression(&io_stream, float(X), Goal, In, Y)}},
+    ( Goal=true -> true ;			% Invalid expression.
+      otherwise;
+      true -> &var_no<<=[new_variable(Y)]),
+   expand_expr(In, G0, G1),
+   G1=[Goal|G].
+otherwise.
+expand_float_expression(X, Y, G0, G) --> true |
+  {{kl1cmp_blttbl:float_expression(&io_stream, X, Goal, In, Y)}},
+    ( Goal=true -> true ;			% Invalid expression.
+      otherwise;
+      true -> &var_no<<=[new_variable(Y)]),
+   expand_float_expr(In, G0, G1),
+   G1=[Goal|G].
+
+%:- mode expand_expr(+, -, ?, -, ?).
+expand_float_expr([], G0, G) --> true | {{ G0=G }}.
+expand_float_expr([X,Y|L], G0, G) --> true |
+   expand_float_expression(X, Y, G0, G1), expand_float_expr(L, G1, G).
+
+% Handle builtins in guards.
+
+%:- mode normalize_guard_builtin(+, +, +, +, -, ?).
+normalize_guard_builtin(Y0, In, Out, Attr) --> true |
+   normalize_builtin_args(In),
+{{ concatenate_type_check(&io_stream, &instr, Attr) }},
+   &instr<<=[builtin(Y0)],
+   normalize_builtin_args(Out).
+
+% Concatenate two streams.
+%:- local_implicit instr:oldnew.
+:- local_implicit io_stream:oldnew, instr:oldnew.
+%:- mode concatenate(+, -, ?).
+concatenate_type_check([integer(A)|X]) --> integer(A) |
+   &instr<<=[integer(A)],
+   concatenate_type_check(X).
+concatenate_type_check([integer('$VAR'(N,S))|X]) -->
+		integer(N), string(S, _, 8) |
+   &instr<<=[integer('$VAR'(N,S))],
+   concatenate_type_check(X).
+concatenate_type_check([float(A)|X]) --> floating_point(A) |
+   &instr<<=[float(A)],
+   concatenate_type_check(X).
+concatenate_type_check([float('$VAR'(N,S))|X]) -->
+		integer(N), string(S, _, 8) |
+   &instr<<=[float('$VAR'(N,S))],
+   concatenate_type_check(X).
+%concatenate_type_check([vector(A)|X]) --> vector(A) |
+%   &instr<<=[vector(A)],
+%   concatenate_type_check(X).
+concatenate_type_check([vector('$VAR'(N,S))|X]) -->
+		integer(N), string(S, _, 8) |
+   &instr<<=[vector('$VAR'(N,S))],
+   concatenate_type_check(X).
+concatenate_type_check([string('$SCNST'(A))|X]) --> true |
+   &instr<<=[string('$SCNST'(A))],
+   concatenate_type_check(X).
+concatenate_type_check([string('$VAR'(N,S))|X]) -->
+		integer(N), string(S, _, 8) |
+   &instr<<=[string('$VAR'(N,S))],
+   concatenate_type_check(X).
+concatenate_type_check([wait('$VAR'(N,S))|X]) --> true |
+   &instr<<=[wait('$VAR'(N,S))],
+   concatenate_type_check(X).
+otherwise.
+concatenate_type_check([integer(A)|X]) --> true |
+   &io_stream <<= [error_message(string#"Invalid type arg of mathematical builtin. Ignored", [A])],
+   concatenate_type_check(X).
+concatenate_type_check([float(A)|X]) --> true |
+   &io_stream <<= [error_message(string#"Invalid type arg of mathematical builtin. Ignored", [A])],
+   concatenate_type_check(X).
+concatenate_type_check([vector(A)|X]) --> true |
+   &io_stream <<= [error_message(string#"Invalid type arg of vector builtin. Ignored", [A])],
+   concatenate_type_check(X).
+concatenate_type_check([string(A)|X]) --> true |
+   &io_stream <<= [error_message(string#"Invalid type arg of string builtin. Ignored", [A])],
+   concatenate_type_check(X).
+concatenate_type_check([wait(_)|X]) --> true | % Really?
+   concatenate_type_check(X).
+concatenate_type_check([]) --> true | true.
+
+concatenate([A|X]) --> true |
+   &instr <<=[A],
+   concatenate(X).
+concatenate([]) --> true | true.
+
+:- local_implicit io_stream:oldnew,
+                  var_no:stream,
+                  instr:oldnew,
+	          attr:oldnew.
+
+%:- mode normalize_builtin_args(+, -, ?).
+normalize_builtin_args([]) --> true | true.
+normalize_builtin_args([X,Y|L]) --> true |
+    &var_no<<=[new_variable(Y)],
+    normalize_guard_unify(X, Y),
+    normalize_builtin_args(L).
+
+% These predicates waere added by D.Sekita 870914 for not_unify
+%:- mode normalize_guard_not_unify(+, +, -, ?).
+normalize_guard_not_unify(X0, Y) -->
+	X0='$VAR'(N, S), integer(N), string(S, _, 8) |
+   normalize_guard_not_unify_variable(Y, X0).
+normalize_guard_not_unify(X, Y0) -->
+	Y0='$VAR'(N, S), integer(N), string(S, _, 8) |
+   normalize_guard_not_unify_variable(X, Y0).
+otherwise.
+normalize_guard_not_unify(X0, Y0) --> true |
+   normalize_not_unify_atomic_atomic(X0, X0).
+
+normalize_guard_not_unify_variable(Y0, X0) -->
+		Y0='$VAR'(N, S), integer(N), string(S,_,8)  |
+%   &io_stream<<=[warning_message(
+%		string#"Both arguments of diff are variables",
+%			[Y0\=X0])],
+   &var_no<<=[new_variable(Y), new_variable(X)],
+   &instr<<=[wait(X0), X=var(X0),
+		wait(Y0), Y=var(Y0), builtin(diff(X,Y))].
+normalize_guard_not_unify_variable('$SCNST'(Str), X0) --> string(Str) |
+   &var_no<<=[new_variable(Y), new_variable(X)],
+   &instr<<=[wait(X0), X=var(X0),
+		wait(Str), Y=struct(Str), builtin(diff(X,Y))].
+%   &io_stream<<=[warning_message(
+%	string#"String is not allowed as the arguments of diff", [])].
+otherwise.
+normalize_guard_not_unify_variable(Y0, X0) --> atom( Y0 ) |
+   &var_no<<=[new_variable(Y), new_variable(X)],
+   &instr<<=[wait(X0), X=var(X0),
+	wait(Y0), Y=atomic(Y0), builtin(diff(X,Y))].
+normalize_guard_not_unify_variable(Y0, X0) --> integer( Y0 ) |
+   &var_no<<=[new_variable(Y), new_variable(X)],
+   &instr<<=[wait(X0), X=var(X0),
+	wait(Y0), Y=atomic(Y0), builtin(diff(X,Y))].
+normalize_guard_not_unify_variable(Y0, X0) --> floating_point( Y0 ) |
+   &var_no<<=[new_variable(Y), new_variable(X)],
+   &instr<<=[wait(X0), X=var(X0),
+	wait(Y0), Y=atomic(Y0), builtin(diff(X,Y))].
+normalize_guard_not_unify_variable(Y0, X0) --> string(Y0) |
+   &var_no<<=[new_variable(Y), new_variable(X)],
+   &instr<<=[wait(X0), X=var(X0),
+	wait(Y0), Y=atomic(Y0), builtin(diff(X,Y))].
+otherwise.
+normalize_guard_not_unify_variable(Y0, X0) --> true | %list or vector
+   &io_stream<<=[error_message(
+	string#"The arguments of this diff is not valid:", [X0\=Y0])].
+%   normalize_not_unify_structure_arg(Y0, X0),
+%   &instr<<=[builtin(diff(X,Y))].
+
+normalize_not_unify_atomic_atomic(X, X) --> true |
+  &io_stream<<=[warning_message(
+	string#"This not unifined never success. replased with fail:", [X\=X])],
+   &instr<<=[builtin(fail)].
+otherwise.
+normalize_not_unify_atomic_atomic(X, Y) --> atom(X) |
+   normalize_not_unify_success(X, Y).
+normalize_not_unify_atomic_atomic(X, Y) --> atom(Y) |
+   normalize_not_unify_success(Y, X).
+otherwise.
+normalize_not_unify_atomic_atomic(X, Y) --> integer(X) |
+   normalize_not_unify_success(X, Y).
+normalize_not_unify_atomic_atomic(X, Y) --> integer(Y) |
+   normalize_not_unify_success(Y, X).
+otherwise.
+normalize_not_unify_atomic_atomic(X, Y) --> floating_point(X) |
+   normalize_not_unify_success(X, Y).
+normalize_not_unify_atomic_atomic(X, Y) --> floating_point(Y) |
+   normalize_not_unify_success(Y, X).
+otherwise.
+normalize_not_unify_atomic_atomic(X, Y) --> true |
+   &io_stream<<=[error_message(
+	string#"The arguments of this diff is not valid:", [X\=Y])],
+   &instr<<=[builtin(fail)].
+
+normalize_not_unify_success(X, Y) --> true |
+   &io_stream<<=[warning_message(
+	string#"This diff never fail. Ignored:", [X\=Y])].
+
+normalize_unify_structure_arg(X0, Y0) -->
+		X0='$VAR'(N,S), integer(N), string(S,_,8) |
+   &instr<<=[X0=var(Y0)].
+normalize_unify_structure_arg('$SCNCT'(Label), Y) --> string(Label, _, _) |
+   &var_no<<=[new_variable(X)],
+   &instr<<=[X=struct(Label), Y=var(X)].
+otherwise.
+normalize_unify_structure_arg(Y0, Y) --> atom(Y0) |
+   &instr<<=[Y=atomic(Y0)].
+normalize_unify_structure_arg(Y0, Y) --> integer(Y0) |
+   &instr<<=[Y=atomic(Y0)].
+normalize_unify_structure_arg(Y0, Y) --> floating_point(Y0) |
+   &instr<<=[Y=atomic(Y0)].
+normalize_unify_structure_arg(Y0, Y) --> vector(Y0, N) |
+ {{normalize_body_vector(&io_stream, &var_no, &instr, Y0, Y, N )}}.
+normalize_unify_structure_arg(Y0, Y) --> Y0=[_|_] |
+ {{normalize_body_list(&io_stream, &var_no, &instr, Y0, Y)}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize active builtins  %%%%%%%%%%%%%%%%%%%%%%%%
+
+% Normalize all calls to builtin predicates and return a list of all
+% user goals.
+
+:- local_implicit io_stream:oldnew,
+		  var_no:stream,
+                  instr:oldnew.
+
+normalize_body(0, Trans, Body) --> true |	% Builtin --> user
+ {{concatenate(&io_stream, &instr, Trans),
+   classify_body(&io_stream, &var_no, PragCode0, PragCode,
+			Blt, [], [], Usr, Body)}},
+   normalize_body_builtin(Blt),
+ {{'C'(&instr, PragCode0, PragCode)}},
+   normalize_user_body(Usr).
+normalize_body(1, Trans, Body) --> true |
+   normalize_body_one_by_one(Trans, Body).
+
+:- local_implicit io:oldnew, var_no:stream, prag:oldnew, blt:oldnew.
+classify_body(Usr0, Usr, [X|T]) --> true |
+   classify_one_goal(Usr0, Usr1, X),
+   classify_body(Usr1, Usr, T).
+classify_body(Usr0, Usr, []) --> true |{{ Usr0 = Usr}}.
+
+:- local_implicit io:oldnew, var_no:stream, prag:oldnew,
+		blt:oldnew, usr:oldnew.
+classify_one_goal(true) --> true | &blt<<=[true].
+classify_one_goal(X=Y) --> true | &blt<<=[X=Y].
+classify_one_goal(X==Y) --> true | &blt<<=[X==Y].
+classify_one_goal(X:=Y) --> true | &blt<<=[X:=Y].
+classify_one_goal(X$:=Y) --> true | &blt<<=[X$:=Y].
+classify_one_goal((Goal@Pragma)) --> true |
+ {{normalize_pragma(&io, &var_no, &blt, Pragma, NewPragma, U0, []),
+   normalize_body_builtin_for_pragma(&io, &var_no, &prag, U0),
+   stack(&usr, (Goal@NewPragma))}}.
+classify_one_goal((Mod:Goal@Pragma)) --> true |
+ {{normalize_pragma(&io, &var_no, &blt, Pragma, NewPragma, U0, []),
+   normalize_body_builtin_for_pragma(&io, &var_no, &prag, U0),
+   stack(&usr, (Mod:Goal@NewPragma))}}.
+otherwise.
+classify_one_goal(X) --> true |
+ {{kl1cmp_blttbl:active_builtin(X, _, _, _, Type),
+   classify_one_goal_on_type(&blt, &usr, Type, X)}}.
+
+stack(L0, L, E) :- true |
+    L=[E|L0].
+
+:- local_implicit blt:oldnew.
+classify_one_goal_on_type(Usr0, Usr, builtin, X) --> true |
+   &blt<<=[X],
+ {{Usr0=Usr}}.
+classify_one_goal_on_type(Usr0, Usr, none, X) --> true |
+ {{Usr=[X|Usr0]}}.
+
+:- local_implicit io_stream:oldnew, var_no:stream, instr:oldnew.
+normalize_body_builtin([One|Rest]) --> true |
+   normalize_one_body_builtin(One),
+   normalize_body_builtin(Rest).
+normalize_body_builtin([]) --> true | true.
+
+normalize_one_body_builtin(true) --> true | true.
+normalize_one_body_builtin(X=Y) --> true |
+   normalize_body_unify(X, Y).
+normalize_one_body_builtin(X==Y) --> true |
+   &instr<<=[X==Y].
+normalize_one_body_builtin(X:=Y) --> true |
+   normalize_body_becomes(X, Y).
+normalize_one_body_builtin(X$:=Y) --> true |
+   normalize_body_float_becomes(X, Y).
+otherwise.
+normalize_one_body_builtin(X) --> true |
+ {{ kl1cmp_blttbl:active_builtin(X, Y, In, Out, _) }},
+    normalize_body_args(In),
+    &instr<<=[blt(Y)],
+    normalize_body_args(Out).
+
+normalize_body_builtin_for_pragma([H|T]) --> true |
+    normalize_one_body_builtin(H),
+    normalize_body_builtin_for_pragma(T).
+normalize_body_builtin_for_pragma([]) --> true | true.
+
+normalize_body_becomes(X, Y) --> X='$VAR'(N, S), integer(N), string(S,_,8) |
+ {{expand_body_expression(&io_stream, &var_no, &instr, Y, X, E, [])}},
+   normalize_body_builtin(E).
+normalize_body_becomes(X, Y) --> integer(X) |
+ {{expand_body_expression(&io_stream, &var_no, &instr, Y, X, E, [])}},
+   normalize_body_builtin(E).
+otherwise.
+normalize_body_becomes(X, Y) --> true |
+   &io_stream<<=[error_message(string#"Left hand side in := is illegal :",
+	[X:=Y])].
+
+normalize_body_flot_becomes(X, Y) --> X='$VAR'(N, S), integer(N), string(S,_,8) |
+ {{expand_body_float_expression(&io_stream, &var_no, &instr, Y, X, E, [])}},
+   normalize_body_builtin(E).
+normalize_body_flot_becomes(X, Y) --> integer(X) |
+ {{expand_body_float_expression(&io_stream, &var_no, &instr, Y, X, E, [])}},
+   normalize_body_builtin(E).
+otherwise.
+normalize_body_float_becomes(X, Y) --> true |
+   &io_stream<<=[error_message(string#"Left hand side in $:= is illegal :",
+	[X$:=Y])].
+
+% Expands the expression after ':=' to a sequence of built-ins.
+
+:- local_implicit io_stream:oldnew, var_no:stream,
+	instr:oldnew.
+
+expand_body_expression(Y, X, G0, G) -->
+	Y='$VAR'(N,S), integer(N), string(S,_,8) |
+	{{ G0=[X=Y|G] }}.
+expand_body_expression(Y, X, G0, G) --> integer(Y) | {{ G0=[X=Y|G] }}.
+expand_body_expression(int(Y), X, G0, G) --> true |
+   &var_no<<=[new_variable(Out)],
+ {{kl1cmp_blttbl:expression(&io_stream, Y, Goal, In, Out)}},
+   expand_body_float_expr(In, G0, [Goal, X=Out|G]).
+otherwise.
+expand_body_expression(Y, X, G0, G) --> true |
+   &var_no<<=[new_variable(Out)],
+ {{kl1cmp_blttbl:expression(&io_stream, Y, Goal, In, Out)}},
+   expand_body_expr(In, G0, [Goal, X=Out|G]).
+
+expand_body_expr([], G0, G) --> true | {{ G0=G }}.
+expand_body_expr([X,Y|L], G0, G) --> true |
+   &var_no<<=[new_variable(Y)],
+   expand_body_expression(X, Y, G0, G1),
+   expand_body_expr(L, G1, G).
+
+% Expands the expression after '$:=' to a sequence of built-ins.
+
+:- local_implicit io_stream:oldnew, var_no:stream,
+	instr:oldnew.
+
+expand_body_float_expression(Y, X, G0, G) -->
+	Y='$VAR'(N,S), integer(N), string(S,_,8) |
+	{{ G0=[X=Y|G] }}.
+expand_body_float_expression(Y, X, G0, G) --> floating_point(Y) | {{ G0=[X=Y|G] }}.
+expand_body_float_expression(float(Y), X, G0, G) --> true |
+   &var_no<<=[new_variable(Out)],
+ {{kl1cmp_blttbl:float_expression(&io_stream, float(Y), Goal, In, Out)}},
+   expand_body_expr(In, G0, [Goal, X=Out|G]).
+otherwise.
+expand_body_float_expression(Y, X, G0, G) --> true |
+   &var_no<<=[new_variable(Out)],
+ {{kl1cmp_blttbl:float_expression(&io_stream, Y, Goal, In, Out)}},
+   expand_body_float_expr(In, G0, [Goal, X=Out|G]).
+
+expand_body_float_expr([], G0, G) --> true | {{ G0=G }}.
+expand_body_float_expr([X,Y|L], G0, G) --> true |
+   &var_no<<=[new_variable(Y)],
+   expand_body_float_expression(X, Y, G0, G1),
+   expand_body_float_expr(L, G1, G).
+
+:- local_implicit io:oldnew, var_no:stream, blt:oldnew.
+%:- mode normalize_pragma(+, -, -, ?, -, ?).
+normalize_pragma(Pragma, New_Pragma, U0, U) --> true |
+   take_apart_priority_and_alloc(Pragma, Priority, Alloc),
+   classify_pragma(Priority, Alloc, New_Pragma, U0, U).
+
+take_apart_priority_and_alloc(priority(T, V), Priority, Alloc) --> true |
+   {{Priority=priority(T, V), Alloc=[]}}.
+take_apart_priority_and_alloc(processor(V), Priority, Alloc) --> true |
+   {{Priority=[], Alloc=processor(V)}}.
+take_apart_priority_and_alloc(node(V), Priority, Alloc) --> true |
+   {{Priority=[], Alloc=node(V)}}.
+%take_apart_priority_and_alloc(priority(T, V)@processor(P),
+%			Priority, Alloc) --> true |
+%   {{Priority=priority(T, V), Alloc=processor(P)}}.
+%take_apart_priority_and_alloc(processor(P)@priority(T, V),
+%			Priority, Alloc) --> true |
+%   {{Priority=priority(T, V), Alloc=processor(P)}}.
+otherwise.
+take_apart_priority_and_alloc(X, Priority, Alloc) --> true |
+   {{Priority=[], Alloc=[]}},
+     &io<<=[error_message(string#"Error in pragma speciffication:", X)].
+
+classify_pragma([], processor(Proc), New_pragma, U0, U) --> true |
+    &var_no<<=[new_variable(Res)],
+  {{New_pragma=processor(Res), U0=[Res=Proc|U]}}.
+classify_pragma([], node(Proc), New_pragma, U0, U) --> true |
+    &var_no<<=[new_variable(Res)],
+  {{New_pragma=node(Res), U0=[Res=Proc|U]}}.
+classify_pragma(priority('*', In), [], New_pragma, U0, U) --> true |
+    &var_no<<=[new_variable(Res)],
+  {{New_pragma=priority(Res), U0=['RATE'(In, Res)|U]}}.
+classify_pragma(priority('$', In), [], New_pragma, U0, U) --> true |
+    &var_no<<=[new_variable(Res)],
+  {{New_pragma=priority(Res), U0=['RLTV'(In, Res)|U]}}.
+%classify_pragma(priority('*', In), processor(Proc0),
+%				New_pragma, U0, U) --> true|
+%    &var_no<<=[new_variable(Res), new_variable(Proc)],
+%  {{New_pragma=both(Res, Proc), U0=[Proc=Proc0, 'RATE'(In, Res)|U]}}.
+%classify_pragma(priority('$', In), processor(Proc0),
+%				New_pragma, U0, U) --> true|
+%    &var_no<<=[new_variable(Res), new_variable(Proc)],
+%  {{New_pragma=both(Res, Proc), U0=[Proc=Proc0, 'RLTV'(In, Res)|U]}}.
+otherwise.
+classify_pragma(X, Y, New_pragma, U0, U) --> true |
+  {{New_pragma=[], U0 = U}},
+   &io<<=[error_message(string#"Error occured in priority specification:",X)].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize body user goals  %%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit io_stream:oldnew, var_no:stream,
+		instr:oldnew.
+
+normalize_user_body([]) --> true | &instr<<=[proceed].
+normalize_user_body([X]) --> true |
+   normalize_last_body_goal(X).
+otherwise.
+normalize_user_body([X|BG]) --> true |
+   normalize_body_goal(X),
+   normalize_user_body(BG).
+
+normalize_last_body_goal((Goal@Pragma)) --> true |
+ {{pack_body_goal(Goal, Goal0),
+   kl1cmp_reader:functor(Goal, F, A) }},
+   normalize_with_pragma((Goal0@Pragma), F, A),
+   &instr<<=[proceed].
+normalize_last_body_goal((Module:Goal@Pragma)) --> true |
+ {{pack_body_goal(Goal, Goal0),
+   kl1cmp_reader:functor(Goal, F, A) }},
+   normalize_execute_external_call((Goal0@Pragma),Module, F, A).
+normalize_last_body_goal(Module:Goal) --> true |
+ {{pack_body_goal(Goal, Goal0),
+   kl1cmp_reader:functor(Goal, F, A) }},
+   normalize_execute_external_call(Goal0, Module, F, A).
+otherwise.
+normalize_last_body_goal(Goal0) --> true |
+ {{pack_body_goal(Goal0, Goal1),
+   kl1cmp_reader:functor(Goal0, F, A)}},
+ {{kl1cmp_reader:gen_functor(Goal, F, A)}},
+				 % for PDSS
+   extract_args(A, 1, Goal1, Goal, Goal2, Args),		%%880427-KH
+   normalize_body_goal_args(Args),
+   &instr<<=[execute(Goal2)].
+
+:- local_implicit io_stream:oldnew, var_no:stream, instr:oldnew.
+normalize_execute_external_call((Goal0@Pragma), Module, F, A) --> true |
+   normalize_external_call((Goal0@Pragma), Module, F, A),
+   &instr<<=[proceed].
+otherwise.
+normalize_execute_external_call(Goal0, Module, F, A) --> true |
+ {{kl1cmp_reader:gen_functor(Goal, F, A)}},
+   extract_args(A, 1, Goal0, Goal, Goal2, Args),		%%880427-KH
+   normalize_body_goal_args(Args),
+   &instr<<=[execute_ext(Goal2, Module)].
+
+normalize_with_pragma(Goal0@Pragma, F, A) --> true |
+   normalize_with_priority_or_alloc(Pragma, F/A, Enqueue_inst),
+ {{kl1cmp_reader:functor(Goal0, _, PA) }},
+   extract_and_normalize_fork_args( PA, Goal0 ),
+   &instr<<=[Enqueue_inst].
+
+normalize_with_priority_or_alloc(priority(Pri), Pred, Enqueue_inst) --> true |
+  {{Enqueue_inst=enqueue_with_priority(Pred, Pri)}},
+    &instr<<=[create_with_priority(Pred, Pri)].
+normalize_with_priority_or_alloc(processor(Proc), Pred,
+					Enqueue_inst) --> true |
+  {{Enqueue_inst=enqueue_to_processor(Pred, Proc)}},
+    &instr<<=[create_to_processor(Pred, Proc)].
+normalize_with_priority_or_alloc(node(Proc), Pred,
+					Enqueue_inst) --> true |
+  {{Enqueue_inst=enqueue_to_node(Pred, Proc)}},
+    &instr<<=[create_to_node(Pred, Proc)].
+%normalize_with_priority_or_alloc( both(Pri, Proc), Pred,
+%					Enqueue_inst) --> true |
+%  {{Enqueue_inst=enqueue_a_p(Pred, Pri, Proc)}},
+%    &instr<<=[create_goal_with_a_p(Pred, Pri, Proc)].
+
+normalize_body_goal(Goal@Pragma) --> true |	% 86.10.25 PIM % 871014 debug
+ {{pack_body_goal(Goal, Goal0),
+   kl1cmp_reader:functor(Goal, F, A) }},
+   normalize_with_pragma(Goal0@Pragma, F, A).
+normalize_body_goal(Module:Goal) --> true |	% 86.12.25 MPSI
+ {{pack_body_goal(Goal, Goal0),
+   kl1cmp_reader:functor(Goal, F, A) }},
+   normalize_external_call(Goal0, Module, F, A).
+otherwise.
+normalize_body_goal(Goal) --> true |
+ {{pack_body_goal(Goal, Goal0),
+   kl1cmp_reader:functor(Goal, F, A) }},
+   &instr<<=[create_goal(F/A)],
+ {{kl1cmp_reader:functor(Goal0, _, PA) }},
+   extract_and_normalize_fork_args(PA, Goal0),
+   &instr<<=[enqueue_goal(F/A)].
+
+normalize_external_call((Goal@Pragma0), Module, F, A) --> true |
+ {{set_vector_element(Pragma0, 1, Pvar, [], _) }},
+   &instr<<=[create_ext_with_priority(F/A, Pvar, Module)],
+ {{kl1cmp_reader:functor(Goal, _, PA) }},
+   extract_and_normalize_fork_args(PA, Goal),
+   &instr<<=[enqueue_ext_with_priority(F/A, Pvar, Module)].
+otherwise.
+normalize_external_call(Goal, Module, F, A) --> true |
+   &instr<<=[create_ext(F/A, Module)],
+ {{kl1cmp_reader:functor(Goal, _, PA) }},
+   extract_and_normalize_fork_args(PA, Goal),
+   &instr<<=[enqueue_ext(F/A, Module)].			% 86.12.25 MPSI end
+
+
+% Given two structures f(X1,X2,...,Xn), f(Y1,Y2,...,Yn),
+% return a list [X1,Y1,X2,Y2,...,Xn,Yn].
+
+extract_args(0, _, _, Y, YY, L0) --> true | {{Y=YY,L0=[]}}.	%%880427-KH
+extract_args(N, K, X, Y, YY, L0) --> N>0 |			%%880427-KH
+ {{ set_vector_element(X, K, AX, [], X1),
+    set_vector_element(Y, K, _, AY, Y1),
+    L0=[AX,AY|L1]}},
+    &var_no<<=[new_variable(AY)],
+ {{N1 := N-1, K1 := K+1}},					%%880427-KH
+   extract_args(N1, K1, X1, Y1, YY, L1).
+extract_args(_, _, [AX|X1], _, YY, L0) --> true |
+ {{ YY=[AY|Y1], L0=[AX,AY,X1,Y1]}},
+    &var_no<<=[new_variable(AY), new_variable(Y1)].
+
+%:- mode normalize_body_args(+, -, ?).
+normalize_body_args([]) --> true | true.
+normalize_body_args([X1,Y1|L]) --> true |
+   &var_no<<=[new_variable(Y1)],
+   normalize_body_unify_variable(X1, Y1), normalize_body_args(L).
+
+
+%:- mode normalize_body_goal_args(+, -, ?).
+normalize_body_goal_args([]) --> true | true.
+normalize_body_goal_args([X1,Y1|L]) --> true |
+   normalize_body_goal_unify_variable(X1, Y1),
+   normalize_body_goal_args(L).
+
+%:- local_implicit var_no:stream, ginstr:oldnew, targs:oldnew.
+%convert_last_goal_args(Goal, Goal1) --> vector(Goal, N) |
+%   convert_last_goal_args(N, Goal, Goal1).
+%otherwise.
+%convert_last_goal_args(Goal, Goal1) --> true |
+%  {{Goal1=Goal}}.
+%
+%convert_last_goal_args(1, Goal0, Goal) --> true | Goal0=Goal.
+%otherwise.
+%convert_last_goal_args(N, Goal0, Goal) --> N1 := N-1 |
+% {{set_vector_element(Goal0, N1, Arg, NewArg, Goal1)}},
+%   convert_last_goal_one_arg(Arg, NewArg),
+%   convert_last_goal_args(N1, Goal1, Goal).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 880609 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+:- local_implicit io_stream:oldnew,
+		var_no:stream,
+		instr:oldnew.
+
+extract_and_normalize_fork_args(N, X) --> true |
+  {{concatenate(&io_stream, &instr, Struct)}},
+    extract_and_normalize_fork_args(Struct, [], N, 1, X).
+
+:- local_implicit io_stream:oldnew,
+		var_no:stream,
+		instr:oldnew,
+		struct:oldnew.
+%:- mode extract_and_normalize_fork_args(+, +, +, -, ?, -, ?).
+extract_and_normalize_fork_args(0, _, _) --> true | true.
+extract_and_normalize_fork_args(N, K, X0) -->
+   N>0 | {{ set_vector_element(X0,K,Y,[],X)}},			%%880427-KH
+   normalize_argument_put(Y, Z),
+   &instr <<= [K:=Z],
+ {{ N1 := N-1, K1 := K+1 }},
+   extract_and_normalize_fork_args(N1, K1, X).
+extract_and_normalize_fork_args(_, _, [H|T]) --> true |
+   normalize_argument_put(H, Z1),
+   normalize_argument_put(T, Z2),
+   &instr <<= [H:=Z1,T:=Z2].
+
+%:- mode normalize_argument_put(+, -, -, ?).
+normalize_argument_put(Y, Z) --> atom(Y) | {{ Z=atomic(Y) }}.
+normalize_argument_put(Y, Z) --> integer(Y) | {{ Z=atomic(Y) }}.
+normalize_argument_put(Y, Z) --> floating_point(Y) | {{ Z=atomic(Y) }}.
+normalize_argument_put(Y, Z) -->
+	Y='$VAR'(N, S), integer(N), string(S,_,8) |
+   {{ Z=var(Y) }}.
+normalize_argument_put('$SCNST'(Label), Z) --> string(Label, _, _) |
+  {{ Z=var(Y0) }},
+   &var_no<<=[new_variable(Y0)],
+   &instr<<=[Y0=struct(Label)].
+otherwise.
+normalize_argument_put(Y, Z) --> vector(Y, N) |
+ {{Z=var(V)}},
+   &var_no<<=[new_variable(V)],
+ {{normalize_body_vector(&io_stream, &var_no, &struct, Y, V, N)}}.
+normalize_argument_put(Y, Z) --> Y=[_|_] |
+ {{Z=var(V)}},
+   &var_no<<=[new_variable(V)],
+ {{normalize_body_list(&io_stream, &var_no, &struct, Y, V)}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize active unification  %%%%%%%%%%%%%%%%%%%%%%
+:- local_implicit io_stream:oldnew,
+		var_no:stream,
+		instr:oldnew.
+
+%:- mode normalize_body_unify(+, +, -, ?).
+normalize_body_unify(X, Y) -->
+	X='$VAR'(N,S), integer(N), string(S,_,8) |
+   normalize_body_unify_variable(Y, X).
+normalize_body_unify(X, Y) -->
+	Y='$VAR'(N,S), integer(N), string(S,_,8) |
+   normalize_body_unify_variable(X, Y).
+otherwise.
+normalize_body_unify(X, Y) --> true |
+   &io_stream <<= [error_message(string#"Body goal not yet implemented :", [X=Y])].
+
+%:- mode normalize_body_unify_variable(+, +, -, ?).
+normalize_body_unify_variable(Y, X) --> atom(Y) |
+   &instr<<=[X=atomic(Y)].
+normalize_body_unify_variable(Y, X) --> integer(Y) |
+   &instr<<=[X=atomic(Y)].
+normalize_body_unify_variable(Y, X) --> floating_point(Y) |
+   &instr<<=[X=atomic(Y)].
+normalize_body_unify_variable(Y, X) -->
+	Y='$VAR'(N,S), integer(N), string(S,_,8) |
+   &instr<<=[X=var(Y)].
+normalize_body_unify_variable('$SCNST'(Label), X) -->string(Label, _, _) |
+   &var_no<<=[new_variable(Y0)],
+   &instr<<=[Y0=struct(Label), X=var(Y0)].
+otherwise.
+normalize_body_unify_variable(Y0, X) --> vector(Y0, N) |
+   &var_no<<=[new_variable(Y)],
+   normalize_body_vector(Y0, Y, N),
+   &instr<<=[X<=vector(Y)].
+normalize_body_unify_variable(Y0, X) --> Y0=[_|_] |
+   &var_no<<=[new_variable(Y)],
+    normalize_body_list(Y0, Y),
+   &instr<<=[X<=list(Y)].
+
+%:- mode normalize_body_vector(+, +, +, -, ?).
+normalize_body_vector(Y, X, N) --> true |
+ {{'C'(&instr, B0, B)}},
+   &instr<<=[X=vector(N)],
+    normalize_body_structure_args(B0, B, N, 0, Y).
+
+% new 871026 D.Sekita
+normalize_body_list(Y, X) --> true |
+{{'C'(B0, B, &instr)}},
+   &instr<<=[X=list],
+   normalize_body_list_args(B0, B, Y).
+
+
+% moved from 'reader.kl1' 870921 by D.Sekita
+%:- mode 'C'(?, ?, -, ?).
+'C'(X0, X, S0, S) :- true | X0=S0, X=S.
+
+:- local_implicit io_stream:oldnew, var_no:stream,
+	instr:oldnew,
+	struc:oldnew.
+
+%:- mode normalize_body_structure_args(+, +, +, -, ?, -, ?).
+normalize_body_structure_args(0, _, _) --> true | true.
+normalize_body_structure_args(N, K, Y0) --> N>0 |
+ {{ N1 := N-1, K1 := K+1,
+   set_vector_element(Y0, K, E, [], Y1)}},
+   normalize_body_one_arg(E),
+   normalize_body_structure_args(N1, K1, Y1).
+
+% 871026 D.Sekita
+normalize_body_list_args([H|T]) --> true |
+ {{'C'(&struc, S0, S),
+   normalize_body_one_arg(&io_stream, &var_no, &instr, S1, S, H),
+   normalize_body_one_arg(&io_stream, &var_no, &instr, S0, S1,T)}}.
+
+%:- mode normalize_body_one_arg(+, -, ?, -, ?).
+normalize_body_one_arg(X) --> X='$VAR'(N,S), integer(N), string(S,_,8) |
+   &instr <<=  [draw(var(X))].
+normalize_body_one_arg('$SCNST'(Label)) --> string(Label) |
+   &var_no<<=[new_variable(Y0)],
+   &instr <<= [Y0=struct(Label), draw(var(Y0))].
+otherwise.
+normalize_body_one_arg(X) --> atom(X) |
+   &instr<<=[draw(atomic(X))].
+normalize_body_one_arg(X) --> integer(X) |
+   &instr<<=[draw(atomic(X))].
+normalize_body_one_arg(X) --> floating_point(X) |
+   &instr<<=[draw(atomic(X))].
+normalize_body_one_arg(X) --> vector(X, N) |
+   &var_no<<=[new_variable(Y)],
+   &instr <<= [draw(var(Y))],
+ {{normalize_body_vector(&io_stream, &var_no, &struc, X, Y, N)}}.
+normalize_body_one_arg(X) --> X=[_|_] |
+   &var_no<<=[new_variable(Y)],
+   &instr <<= [draw(var(Y))],
+ {{normalize_body_list(&io_stream, &var_no, &struc, X, Y)}}.
+
+:- local_implicit io_stream:oldnew, var_no:stream,
+		instr:oldnew.
+
+%:- mode normalize_body_goal_unify(+, +, -, ?).
+normalize_body_goal_unify(X, Y) -->
+	X='$VAR'(N,S), integer(N), string(S,_,8) |
+   normalize_body_goal_unify_variable(Y, X).
+normalize_body_goal_unify(X, Y) -->
+	Y='$VAR'(N,S), integer(N), string(S,_,8) |
+   normalize_body_goal_unify_variable(X, Y).
+otherwise.
+normalize_body_goal_unify(X, Y) --> true |
+   &io_stream <<= [error_message(string#"Body goal not yet implemented.", [X=Y])].
+
+%:- mode normalize_body_goal_unify_variable(+, +, -, ?).
+normalize_body_goal_unify_variable(Y, X) --> atom(Y) |
+   &instr <<= [X=atomic(Y)].
+normalize_body_goal_unify_variable(Y, X) --> integer(Y) |
+   &instr <<= [X=atomic(Y)].
+normalize_body_goal_unify_variable(Y, X) --> floating_point(Y) |
+   &instr <<= [X=atomic(Y)].
+normalize_body_goal_unify_variable(Y, X) -->
+	Y='$VAR'(N,S), integer(N), string(S,_,8) |
+   &instr<<=[X=var(Y)].
+normalize_body_goal_unify_variable('$SCNST'(Label), X) -->
+				string(Label) |
+   &var_no<<=[new_variable(Y0)],
+   &instr<<=[Y0=struct(Label), X=var(Y0)].
+otherwise.
+normalize_body_goal_unify_variable(Y, X) --> vector(Y, N) |
+   normalize_body_vector(Y, X, N).
+normalize_body_goal_unify_variable(Y, X) --> Y = [_|_] |
+   normalize_body_list(Y, X).
+
+%   Deleted builtin table by D.Sekita 870921
+%   see file 'builtin.kl1'.
+
+%%%%%% Pack body goals %%%%%%
+
+max_goal_slots(X) :- true | X=32.
+
+pack_body_goal(Goal0, Goal) :- true |
+    max_goal_slots(Max),
+    kl1cmp_reader:functor(Goal0, F, A),
+    pack_body_goal(A, Max, Goal0, Goal).
+
+pack_body_goal(A, Max, Goal0, Goal) :- A < Max | Goal0=Goal.
+otherwise.
+pack_body_goal(A, Max, Goal0, Goal) :- true |
+    Gsize := Max+1, Arg := Max-1, Vsize := A-Arg,
+    new_vector(Vect0, Vsize),
+    new_vector(Goal1, Gsize),
+    copy_args_of_goal(0, Max, Goal0, OldGoal, Goal1, Goal2),
+    copy_args_to_vect(0, Max, Vsize, OldGoal, Vect0, Vect),
+    set_vector_element(Goal2, Max, _, Vect, Goal).
+
+copy_args_of_goal(_, 0, Old0, Old, New0, New) :- true |
+    Old0=Old, New0=New.
+otherwise.
+copy_args_of_goal(A, N, Old0, Old, New0, New) :- true |
+    set_vector_element(Old0, A, E, [], Old1),
+    set_vector_element(New0, A, _, E, New1),
+    A1 := A+1, N1 := N-1,
+    copy_args_of_goal(A1, N1, Old1, Old, New1, New).
+
+copy_args_to_vect(A, _, A, _, V0, V) :- true | V0=V.
+otherwise.
+copy_args_to_vect(VN, A, N, Old, V0, V) :- true |
+    A1 := A+1, VN1 := VN+1,
+    set_vector_element(Old, A, E, [], Old1),
+    set_vector_element(V0, VN, _, E, V1),
+    copy_args_to_vect(VN1, A1, N, Old, V1, V).
+
+%%%%%% Normalizaiton for A"um Program %%%%%%
+
+:- local_implicit io_stream:oldnew,
+		  var_no:stream,
+		  instr:oldnew.
+normalize_body_one_by_one([], [X|Y])--> true |
+ {{normalize_both_body(&io_stream, &var_no, &instr, X)}},
+   normalize_body_one_by_one([], Y).
+otherwise.
+normalize_body_one_by_one([], X) --> true |
+   normalize_last_both_body(X).
+otherwise.
+normalize_body_one_by_one(Trans, X) --> true |
+ {{concatenate(&io_stream, &instr, Trans)}},
+   normalize_body_one_by_one([], X).
+
+:- local_implicit io_stream:oldnew, var_no:stream, instr:oldnew.
+normalize_both_body(true) --> true | true.
+normalize_both_body(X=Y) --> true |
+   normalize_body_unify(X, Y).
+normalize_both_body(X:=Y) --> true |
+   normalize_body_becomes(X, Y).
+otherwise.
+normalize_both_body(X) --> true |
+ {{kl1cmp_blttbl:active_builtin(X, Y, In, Out, Type)}},
+   normalize_on_type(Type, X, Y, In, Out).
+
+normalize_on_type(builtin, _, Y, In, Out) --> true |
+   normalize_body_args(In),
+   &instr<<=[blt(Y)],
+   normalize_body_args(Out).
+normalize_on_type(none, X, _, _, _) --> true |
+   normalize_body_goal(X).
+
+:- local_implicit io_stream:oldnew, var_no:stream, instr:oldnew.
+normalize_last_both_body(true) --> true | &instr<<=[proceed].
+normalize_last_both_body(X=Y) --> true |
+ {{normalize_body_unify(&io_stream, &var_no, &instr, X, Y)}},
+   &instr<<=[proceed].
+normalize_last_both_body(X:=Y) --> true |
+ {{normalize_body_becomes(&io_stream, &var_no, &instr, X, Y)}},
+   &instr<<=[proceed].
+otherwise.
+normalize_last_both_body(X) --> true |
+  {{kl1cmp_blttbl:active_builtin(X, Y, In, Out, Type)}},
+    normalize_last_on_type(Type, X, Y, In, Out).
+
+normalize_last_on_type(builtin, _, Y, In, Out) --> true |
+ {{normalize_body_args(&io_stream, &var_no, &instr, In)}},
+   &instr<<=[blt(Y)],
+ {{normalize_body_args(&io_stream, &var_no, &instr, Out)}},
+   &instr<<=[proceed].
+normalize_last_on_type(none, X, _, _, _)--> true |
+   normalize_last_body_goal(X).
+
+:- local_implicit var_no:oldnew.
+%:- mode variable_generator(+, +, -).
+variable_generator([new_variable(N)|P]) --> true |
+ {{N = '$VAR'(&var_no(old), C),
+   convert_integer_to_string(&var_no(old), Nstr)}},
+   &var_no <= &var_no+1,
+ {{append_string(string#"GenVar", Nstr, C)}},
+   variable_generator(P).
+variable_generator([]) --> true | true.
+
+convert_integer_to_string(N, Nstr) :- N < 10 |
+   substring(string#"0123456789", N, 1, Nstr, _).
+otherwise.
+convert_integer_to_string(N, Nstr) :- true |
+   Mod := N mod 10,
+   NextN := N / 10,
+   convert_integer_to_string(NextN, Nstr1),
+   substring(string#"0123456789", Mod, 1, ModStr, _),
+   append_string(Nstr1, ModStr, Nstr).

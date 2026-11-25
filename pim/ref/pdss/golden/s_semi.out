@@ -1,0 +1,26 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/semi" : Compiling ... semi/0,go/1,go1/2,count/2,count/3,g/5,f/3,gen_g/5,ends/6,gen_gen/3,gen_gen1/3,connect/2,mult/3,m/3,generators/1,END.
+
+[semi/0,go/1]
+successdone
+Loading ... done
+Module name : semi
+Saving ... done
+
+yes.
+| ?- Total of 292313 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm ff1b7b7005cb03d399b563efe0ba4fdbcbcf8c72c9ed2755b8d8c48d3f8932b6
+sav fd252c61537a7730cebe09c57ea6902f867bb8e6bb051f487c9dbe57e2ff2bd2

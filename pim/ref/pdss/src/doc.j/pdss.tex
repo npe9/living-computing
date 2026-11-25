@@ -1,0 +1,6218 @@
+\documentstyle[twoside,makeidx]{pdss}
+\makeindex
+\begin{document}
+\advance\oddsidemargin   7mm
+\advance\evensidemargin -7mm
+\baselineskip 16pt
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  表紙
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\thispagestyle{empty}
+\pagestyle{empty}
+\begin{center}
+\rule{0mm}{0mm}
+\vspace*{60mm}\\
+{\titlefont P D S S マニュアル}
+\vspace*{10mm}\\
+{\jLARGE (Version 2.52.00)}
+\vspace*{90mm}\\
+{\jLarge 1989年9月19日}
+\vspace*{10mm}\\
+{\jLarge 新世代コンピュータ技術開発機構}
+\vspace*{5mm}\\
+{\jLarge 第四研究室}
+\vspace*{10mm}\\
+{\jlarge\sf
+Copyright $\copyright$ 1989 Institute for New Generation Computer Technology}
+\end{center}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  目次
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\NewpageDouble
+\tableofcontents
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  改定履歴
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\NewpageDouble
+\thispagestyle{pdss}
+\pagestyle{pdss}
+\pagenumbering{roman}
+\BeginHistory
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\History{2.51.07}{2.52.00}{1989/9/19}
+\begin{enumerate}
+\parindent\jspaceskip
+
+\item 組込述語 unbound/2 を2引数に変更した。\\
+unbound(+X,-Rpenum,-Raddress,-NewX) $\rightarrow$ unbound(+X,-Result)
+
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\History{2.51.04}{2.51.07}{1989/7/25}
+\begin{enumerate}
+\parindent\jspaceskip
+
+\item デッドロック報告の仕様変更
+
+荘園のレポートストリームに出力されるデッドロックメッセージの仕様を変更した。
+従来は全デッドロックゴールを報告していたが、新仕様ではデッドロックの因果関係
+を解析し、ルートとなっているゴールだけを報告することにした。
+
+\item 組込述語 unbound/4 の仕様変更
+
+組込述語 unbound/4 の第 3 引数に出力されるアドレスを絶対アドレスから、
+ヒープ領域の先頭からの相対アドレスに変更した。
+
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\History{2.51}{2.51.04}{1989/6/6}
+\begin{enumerate}
+\parindent\jspaceskip
+
+\item Micro PIMOS ウィンドウ / ファイルの入出力コマンド
+
+以下の入出力コマンドが追加/変更された。
+\begin{itemize}
+\item add_op/3 で、
+定義済みのタイプと共存できない場合(fx $\leftrightarrow$ fy, 
+xf $\leftrightarrow$ yf, xfy $\leftrightarrow$ xfx $\leftrightarrow$ yfx)、
+古い定義を削除するようにした。
+\item remove_op(Op) が追加された。
+\end{itemize}
+
+\item Micro PIMOS コマンド・インタプリタ
+
+\begin{itemize}
+\item add_op/3 で、
+定義済みのタイプと共存できない場合(fx $\leftrightarrow$ fy, 
+xf $\leftrightarrow$ yf, xfy $\leftrightarrow$ xfx $\leftrightarrow$ yfx)、
+古い定義を削除するようにした。
+\item remove_op(Op) が追加された。
+\item varchk コマンドでファイル名をウィンドウの先頭に表示するようにした。
+\item シェルの環境変数 plength の初期値を 20 に変更した。
+\end{itemize}
+
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\History{2.50}{2.51}{1989/5/19}
+\begin{enumerate}
+\parindent\jspaceskip
+
+\item 例外メッセージの仕様を変更した。
+
+Multi-PSI/V2に合わせて、例外メッセージを以下のように変更した。
+レポートストリームに流される例外メッセージは\\
+deadlock以外の全て:
+\begin{verbatim}
+        exception(ExcpCode, Info, ^NewCode, ^NewArgv)
+\end{verbatim}
+deadlock:
+\begin{verbatim}
+        deadlock(ExcpCode, Info)
+\end{verbatim}
+の形式である。
+\begin{itemize}
+\item ExcpCodeは例外の種類を表わす正の整数。
+\item Infoは例外情報で、例外の種類により異なる。
+\item NewCode,NewArgvには例外を起こしたゴールの代わりに
+実行して欲しいゴールのコードと引数をユニファイする。
+\end{itemize}
+
+\item 組込述語
+\begin{itemize}
+\item merge/2が変更された。マージャは荘園に属するようになり、
+デッドロックが検出されるようになった。
+\item predicate_to_code(Mod, Pred, Arity, ^Code)が追加された。
+\item code_to_predicate(Code, ^Mod, ^Pred, ^Arity, ^Info)が追加された。
+\end{itemize}
+
+\item Micro PIMOS のウィンドウ/ファイルの入出力コマンド
+
+以下の入出力用コマンドが追加/変更された。
+\begin{itemize}
+\item gett(^Term, ^Status)
+\item getft(^Term, ^NumberOfVariables, ^Status)
+\item skip(Char)
+\item putb(Buffer, Count)
+\item replace_op_pool(^OldOpPool, NewOpPool)
+\item change_op_pool(NewOpPool)
+\item print_length/1, print_depth/1 の長さ、深さの初期値をファイルに対しては
+ 100 、ウィンドウに対しては 10 に変更した(変更前は共に10)。
+\item operator/2 の定義の仕様を2要素ベクタ\{Precedence, Type\}のリスト
+に変更した。
+\end{itemize}
+
+\item Micro PIMOS のコマンド・インタプリタ
+\begin{itemize}
+\item シェルのコマンドライン(ターム)中のマクロを展開するようにした。
+\item replace_op_pool(^OldOpPool, NewOpPool), change_op_pool(NewOpPool)が
+シェルコマンドに追加された。
+\end{itemize}
+
+\end{enumerate}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\History{1.60}{2.50}{1989/4/7}
+\begin{enumerate}
+\parindent\jspaceskip
+
+\item コンパイラ関係
+
+KL1/Prologコンパイラが新しい仕様のクローズ・インデキシング命令を生成する
+ようになった。この仕様のインデキシングを行うと実行速度の向上が期待される。
+そのため、KL1/Prologコンパイラを用いる場合には、インデキシング・モードが
+デフォールトでONとなるように変更された。
+また、マクロ展開を抑止するオプションが廃止された。
+
+なお、KL1/KL1コンパイラでは、まだクローズ・インデキシング命令を生成しない。
+
+\item 浮動小数点数
+
+浮動小数点数をサポートするようになった。
+PDSSでは浮動小数点数として、32bitの単精度を採用した。
+これは、$-3.402823 \times 10\SS{38}$ 〜 $3.402823 \times 10\SS{38}$ の値を
+10進数約7桁の精度で表現する。
+浮動小数点数はアトミック・データとして扱われ、
+ガード(比較, 演算)/ボディ(演算)の組込述語が追加された。
+ただし、追加された組込述語の多くは Multi-PSI V2 では使用できないので
+注意が必要。
+
+なお、浮動小数点数と整数は別のデータ・タイプとして扱われ、
+自動的な型変換は行われない。型変換には組込述語を利用する。
+
+また、整数の場合と同様な数式のマクロが用意されるので、
+ユーザーがプログラムを書く場合は、それを利用することにより、
+簡潔に記述する事ができるようになっている。
+型変換のマクロも用意されている。
+
+\item 組込述語
+
+以下の組込述語の仕様が変更された。
+\begin{itemize}
+\item hash/3 の仕様をMulti-PSIに合わせた。\\
+hash(+X,+Width,-HashValue) $\rightarrow$ hash(+X,-HashValue,-NewX)
+\item apply/3 をMulti-PSIに合わせ、2引数に変更した。\\
+apply(+Mod,+Pred,+ArgV) $\rightarrow$ apply(\{+Mod,+Pred,+ArgN\},+ArgV)
+\item unbound/2 をMulti-PSIに合わせ、4引数に変更した。\\
+unbound(+X,-Result) $\rightarrow$ unbound(+X,-Rpenum,-Raddress,-NewX)
+\item make_atom/2 の名前、引数の順番を変更した。\\
+make_atom(+Str,-Atom) $\rightarrow$ intern_atom(-Atom,+Str)
+\item new_atom(-Atom) を追加した。
+\item atomic(X) が廃止された。
+\item merge_in(+In1,+In2,-Out) をマクロに変更した。\\
+展開は、merge_in(In1,In2,Out) $\rightarrow$ Out=\{In1,In2\} のように行われる。
+\item 整数の演算でオーバーフローを検出するようにした。
+\item その他一般ユーザー用でない組込述語で引数の変更等が行われた。
+\end{itemize}
+
+\item パーザーの仕様を変更した。
+
+\begin{itemize}
+\item 数値(整数、浮動小数点数)のフォーマットのチェックを厳密にした。
+また、入力時にオーバーフローのチェックも行うようにした。
+\item 数値に付ける符号(\verb|+|/\verb|-|)の扱いを変更した。\\
+``\verb|-1|'' は符号を含めて1つのアトミックデータとして扱い、
+``\verb|- 1|'' は \verb|{-,1}| というベクタとして読むようにした。
+ただし、\verb|X := Y-1| のように ``\verb|-1|'' を1つのアトミックデータとして
+扱うとシンタックスエラーになってしまう場合には、符号を分離してパーズする
+ようにした。
+\item \verb|$| を特別なエスケープ文字として扱うようにした。具体的には \verb|$|
+に続く英数字列は特別なデータを表すようにした。\\
+例えば、荘園データ等を印字した場合に、``\verb|$Shoen001|'' という形にし、
+これを読もうとした場合に、「これは再読み込みができないデータである」と
+正しくエラーにできるようにした。
+また、PDSSではサポートしていないが、浮動小数点数のinfinity等を表現するの
+にも使う事ができる。
+\end{itemize}
+
+\item Micro PIMOS のコマンド・インタプリタ
+
+\begin{itemize}
+\item xref コマンド\\
+オプションが追加/変更された。
+\end{itemize}
+
+\item スケジューラ
+
+スケジューラの機能が拡張され、ゴールをエンキューする時、乱数により、
+一部をレディー・キューの最後に入れる事ができるようになった。
+これは、マルチPEで実行した場合の実行順序の非決定性をシミュレートし、
+KL1プログラムのテストを行う場合に使われる。
+
+また、スケジューラの制御が立ち上げ時のオプションだけでなく、
+トレーサーからも制御できるようになった。
+
+\item エミュレータ関係
+
+エミュレータの多くの部分が変更されたが、ユーザーの使用方法は変更されていない。
+変更点は主に、MRB-GCをサポートするようになった事と、D-Codeの部分である。
+
+\end{enumerate}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\History{1.50}{1.60}{1988/10/25}
+\begin{enumerate}
+
+\item コンパイラ関係
+\begin{enumerate}
+
+\item KL1/KL1コンパイラが新しいバージョンになった。
+主な変更点としては以下の項目があり、クローズインデキシングの命令が生成でき
+ない点を除きKL1/Prologコンパイラと同等になった。
+尚、コンパイルのためのコマンドは変更されていない。
+\begin{itemize}
+\item KL1/Prologコンパイラと同等のマクロ機能のサポート。
+\item コンパイル速度の向上。
+\item Structured Constant 系命令のサポート。
+\item コンパイラのモジュール名を変更。全て ``kl1cmp_'' で始まる名前になった。
+\end{itemize}
+
+\item KL1/Prologコンパイラは、ストリング型データに関してだけ Structured
+Constant 系命令をサポートするように変更。リスト,ベクタは Structured Constant
+系命令を使わずに、従来どおり命令により動的にデータを生成する。
+
+\item コンパイラが Structured Constant 系命令をサポートしたのに伴い Emacs
+ライブラリの kl1-mode における部分コンパイルの機能を使うとオブジェクトの
+サイズが大きくなり、``Assembler: Relative address field overflow.'' のエラー
+が発生する可能性が大きくなった。
+これは部分コンパイルのときに使用するツールにおいて、部分コンパイルした
+オブジェクトと元のオブジェクトをマージする時に、Structured Constant の部分を
+単純にアペンドしている為で、
+もしこのエラーが発生した場合にはファイル全体を再コンパイルする必要がある。
+
+\item 定数表記のためのマクロが追加された。
+\begin{itemize}
+\item \verb|string#"文字列"|\\
+デフォルト・タイプのストリングになる。
+PDSS では 8bit ASCII ストリング。 (Multi-PSI V2 では16bit JIS漢字。)
+\item \verb|#"文字"|\\
+デフォルト・タイプの文字コード(整数)になる。
+PDSS では 8bit ASCII コード。 (Multi-PSI V2 では16bit JIS漢字。)
+\item \verb|c#"文字"|\\
+ASCII コードになる。 (Multi-PSI V2 でも同じ。)
+\item \verb|key#lf|\\
+改行を表すコード(整数10)になる。 (Multi-PSI V2 でも同じ。)
+\item \verb|key#cr|\\
+復改を表すコード(整数13)になる。 (Multi-PSI V2 でも同じ。)
+\end{itemize}
+\end{enumerate}
+
+\item Micro PIMOS 関係
+\begin{enumerate}
+
+\item compileコマンドの追加。今までの compコマンド+loadコマンド+saveコマンド
+に相当する。
+
+\item varchkコマンドの拡張。ゴールの表示形式が変更できるようになった。
+\end{enumerate}
+
+\item エミュレータ関係
+\begin{enumerate}
+
+\item Structured Constant 系の命令の追加。
+Structured Constant は変数を含まないストリング, リスト, ベクタをコード領域に
+置き、データを動的に生成しないで使えるようにするもので、処理速度が向上する。
+ただし、データが共有されることになるので MRB は必ず ON となる。
+KL1/KL1コンパイラでは全てのストリングとボディ部のリスト,ベクタで使用され、
+KL1/Prologコンパイラではストリングだけで使用される。
+尚、これによりコードの形式が変更されたので、新しいコンパイラでコンパイルした
+コードを古いエミュレータで使うことはできない。
+上位コンパチなので古いコードはそのまま使うことができる。
+
+\item スケジューラが拡張され、Breadth First に実行すること可能になった。
+これは立ち上げ時のオプション( -b )で指定する。
+ただし、コンパイラは Depth First 用のコードを出すので、ボディ部で複数のゴール
+を呼び出した場合の実行順序は、先頭のゴールが最初で(TRO: Executeされる)、
+残りは最後から(ソースコードと逆順)になる。
+また、Executeで実行できる深さを制限することができ、立ち上げ時オプションの引数
+で指定する。(例: -b100, デフォルトは100)
+この機能はプログラムのバグ(実行順序に依存している)を検出するのに使える。
+
+\item トレーサーが拡張され、次のスパイポイントまでのスキップ/トレースを行う
+時に次の4種類から選べるようになった。(以前は3種類)\\
+PDSSではスパイの指定にコード(述語名/アリティ)指定とゴール指定の2種類あるので、
+この組み合わせにより、
+\begin{itemize}
+\item コードがスパイされているものである。
+\item ゴールがスパイされているものである。
+\item コードがスパイされているものであるか、
+または、ゴールがスパイされているものである。
+\item コードがスパイされているものであり、
+且つ、ゴールもスパイされているものである。
+\end{itemize}
+
+\item GC後にヒープエリアの回収量をチェックし、回収量が少ない場合に特別な処理を
+行うようにした。
+\begin{itemize}
+\item あまり回収できなかった時(約5\%以下)\\
+ゴールスタックの一番高いプライオリティの中のゴールの順序を入れかえる。
+これにより、データを消費するゴールが動きアクティブなデータが減る可能性がある。
+\item ほとんど回収できなかった時(GC直後なのにGC要求が出てしまっている)\\
+ユーザタスクを強制的にアボートする。
+\end{itemize}
+
+\item ウィンドウの入力待ちで、 ctrl-C ctrl-Z や ctrl-C ctrl-T の割り込みを
+かけると、read_token/4 等の組込述語がデッドロックになっていたのを修正。
+
+\item タイマ割り込みを禁止するオプションを追加。dbx でエミュレータ自身を
+デバッグする時に便利。
+
+\item 立ち上げ時オプションの指定方法を変更。 $-$ と $+$ による区別を止め、
+どちらでもデフォルトと違う状態にすることを意味することにした。
+(+t, -t は今までどうり区別される。)
+
+\item 以下の点が変更され移植性が向上した。
+\begin{itemize}
+\item \verb|alloca()| の使用を止めた。
+\item \verb|sigmask()| のマクロが \verb|<signal.h>| に定義されていない時には
+PDSS側で定義するようにした。
+\item 大きな構造体変数の宣言で初期値を指定するのを止めた。
+\end{itemize}
+\end{enumerate}
+
+\item その他
+\begin{enumerate}
+
+\item PIMOS用に開発されたユーティリティが使えるようになった。
+現在以下のものがサポートされている。
+\vspace{2ex}\\
+\begin{tabular}{|l|l|}\hline
+比較           & どんなKL1データでも一意に比較できる機能 \\ \hline
+ハッシング     & 標準のハッシュ関数                      \\ \hline
+キーなしのPool & Bag, Stack, Queue, Sorted Bag           \\ \hline
+キー付きのPool & Keyed Bag, Keyed Set, Keyed Sorted Bag, Keyed Sorted Set
+\\ \hline
+\end{tabular}
+\end{enumerate}
+\end{enumerate}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSSとは
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\NewpageDouble
+\pagenumbering{arabic}
+\Section{PDSSとは}
+\label{sec-PDSS}
+PDSSとは ``PIMOS Development Support System'' の略であり、
+その名のとおりPIMOSの開発用に作成されたKL1システムである。
+PDSSはその目的から、なるべく Multi-PSI V2 System 上で実現されるKL1と
+互換性を保つよう留意されているが、
+実現方法の相違や速度等の点で一部互換性を損なっている。
+主な相違点と思われるものを以下に示す。
+\begin{itemize}
+\item アトムの管理などソフトで実現されると思われるものを処理系レベルで行って
+いる。これによって、一部のアトム操作の機能が組込述語として提供されている。
+\item コードの管理も同様に処理系レベルで行っている。
+\item PDSSの資源管理機能で対象としている資源とは、リダクション数だけである。
+\item I/O等いわゆるデバイス・ストリームがその形態上異なる。
+\item シングル・プロセッサ・システムなので処理の分散の為のプロセッサ指定機能
+が無い(指定しても無視される)。
+%\item プライオリティの計算方法が多少異なる。
+\end{itemize}
+
+PDSSのもう一つの目的は、並列プログラムの開発用ツールの提供である。
+このためPDSSは極力マシーンに依存しないコーディング・スタイルで記述されて
+おり、種々のUNIXの稼動するマシーンに移植する予定である。
+またプログラム開発ツールとして使い勝手の良いシステムを目指している。
+これについてはPIMOSの開発とともに機能の向上が望めるものと期待している。
+
+PDSSは主に二つの部分から成るシステムである。
+一つはKL1の基本機能を実行する言語処理系であり、他方は Micro PIMOS
+と呼ばれるKL1自身で書かれたユーザー・インタフェース部である。
+Micro PIMOS については \ref{sec-micro-PIMOS} 章で詳しく述べるが、一言で言えば、
+I/O 機能やコード管理機能をユーザーに提供する Single User, Single Task の
+簡易OSである。図 \ref{fig-PDSS} にPDSSの全体構成のイメージを示す。
+\index{PDSSのぜんたいこうせい@PDSSの全体構成}
+
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{0.7mm}
+\begin{picture}(120,95)(0,0)
+\thicklines
+\put(0,0){\framebox(120,95){}}
+\put(0,80){\line(1,0){120}}
+\put(0,40){\line(1,0){120}}
+\put(0,15){\line(1,0){120}}
+\put(60,33){\line(1,0){60}}
+\put(60,33){\line(0,-1){28}}
+\put(60,5){\line(1,0){60}}
+\put(0,80){\makebox(120,15){\jlarge\BF ユーザー・プログラム}}
+\put(0,40){\makebox(120,40){\shortstack{{\jlarge\BF Micro PIMOS (KL1)}\\
+  I/O機能\\ コード管理機能\\ 例外処理機能\\ コマンド・インタプリタ}}}
+\put(0,15){\makebox(60,25){\jlarge\BF\shortstack{KL1B処理系\\ (C言語, KL1)}}}
+\put(60,15){\makebox(60,18){\BF\shortstack{GNU Emacs\\ インターフェース}}}
+\put(60,5){\makebox(60,10){\BF GNU Emacs}}
+\put(0,0){\makebox(60,15){\BF UNIX}}
+\end{picture}
+\caption{PDSS の全体構成}
+\label{fig-PDSS}
+\end{center}
+\end{figure}
+
+図 \ref{fig-PDSS} で、GNU Emacs インターフェース部分はGNU-Emacsと呼ばれる
+フルスクリーン・エディタを利用してユーザーにマルチウィンドウの環境を提供して
+いる部分である。この為のライブラリはEmacs-LISPで記述されている。
+
+PDSSではI/O機能やコードの操作機能は所謂デバイス・ストリームと呼ぶ特別な
+組込ストリームを基に構築されている。このデバイス・ストリームの機能仕様は
+\ref{sec-IO-device}, \ref{sec-code-device} に示したとおりである。
+しかし、ユーザーはこのデバイス・ストリームを直接獲得し使用する訳ではなく、
+\ref{sec-micro-PIMOS} 章で述べるように、Micro PIMOS が用意している
+各種のライブラリを用いてこのデバイス・ストリームの機能を使用することになる。
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSSの使用方法
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Section{PDSSの使用方法}
+\index{PDSSのしようほうほう@PDSSの使用方法}
+PDSSの基本的な操作法について解説する。PDSSの起動から、
+\index{PDSSのきどう@PDSSの起動} プログラムのコンパイル、\index{コンパイル}
+実行、デバッグ、終了までの手順を簡単に示す。ここでは、操作の流れを示すことを目
+的としているため、システムへのコマンド等に関する解説は最小限に留めている。それ
+らについては、後続の章で再度詳しく述べることにする。
+
+PDSSは、単体で使用可能であるが、GNU-Emacsの下での使用も可能である。むしろ、プロ
+グラムの開発効率、実行環境を考慮するとGNU-Emacs下で使用する方が望ましい。
+
+以下では、PDSS単体、GNU-Emacs下、各々の使用形態での操作手順について解説する。
+\vspace{1ex}
+
+\subsection{ PDSS単体での操作}
+\index{PDSSのきどう@PDSSの起動!PDSSたんたいでのじっこう@PDSS単体での実行}
+\label{sec-beginner-alone}
+KL1 プログラムの開発における一般的なサイクルは以下のようになる。
+\begin{enumerate}
+\item エディタを用いたソースプログラムの作成
+\item コンパイル
+\item ロード
+\item 実行
+\item デバッグ
+\end{enumerate}
+
+PDSS 単体での操作では、コンパイル以降を PDSS 上で行なうことになる。
+次のコマンドを実行することによって PDSS が起動する。
+\vspace{1ex}
+
+\hspace{20mm}{\dg\bf pdss }{\it return}\vspace{1ex}\par
+
+\subsubsection{ コマンド}
+PDSSが起動すると、プロンプト ''\verb:|?-:'' が表示される。これに対する入力は、
+起動時に生成されたコマンド・インタプリタによって解釈、実行される。
+本章で用いるコマンドを以下に示す。その他のコマンドの詳細については、
+\ref{sec-commands}「コマンド」を参照。
+
+\begin{itemize}
+\item comp(FileName,OutFileName)\\ \index{comp}
+FileName で指定される属性 ''\verb|.kl1|'' の KL1 ソース・ファイルを
+コンパイルし、
+OutFileName で指定される属性 ''\verb|.asm|'' のファイルに出力する。
+
+\item load(FileName)\\ \index{load}
+FileName で指定される属性 ''\verb|.sav|'' のセーブ・ファイル
+（これがない場合には属性 ''\verb|.asm|'' のアセンブラ・ファイル）を
+コード領域にロードする。
+
+\item save(ModuleName,FileName)\\ \index{save}
+ModuleName で示されるモジュールの実行コードを、FileName で示される属性
+''\verb|.sav|'' のファイルにセーブする。
+
+\item listing\\ \index{listing}
+すでにロードされているモジュールの情報を表示する。
+
+\item public(ModuleName)\\ \index{public}
+ModuleName で示されるモジュールが他のモジュールに公開している述語
+（public 宣言されている述語）の一覧を表示する。
+
+\item halt\\ \index{halt}
+PDSSを終了する。
+\end{itemize}
+
+また、下記の記法を用いることにより、
+1つのコマンドラインに複数のコマンドを与えることができる。
+
+\begin{itemize}
+\item カンマ \verb:(','):\\ \index{\verb|,|}
+前後のコマンドを並列に実行する。
+\item セミコロン \verb:(';'):\\ \index{\verb|;|}
+前のコマンド群を実行してから、後のコマンド群を実行する。
+\item 縦線 \verb:('|'):\\ \index{\verb!|!}
+前におかれたコマンドを実行後、後ろにかかれた変数の値を表示する。
+変数の代わりに all と書くと全ての変数が表示される。
+\end{itemize}
+
+\subsubsection{操作例}
+ここでは、フィボナッチ数列のプログラムを例にとり、
+PDSSの起動からプログラムのコンパイル、実行までの操作例を示す。
+
+まず、次のようなプログラムをエディタで作成し、
+ファイル名\verb|sample.kl1|としてセーブする。
+\begin{verbatim}
+
+        :-module sample.
+        :-public fib/2.
+
+        fib(N,R):-true|fib1(N,1,1,T),R = [1|T].
+
+        fib1(N,F1,F2,R):-F2 > N|R = [].
+        fib1(N,F1,F2,R):-F2 =< N|F := F1 + F2,fib1(N,F2,F,T),R = [F2|T].
+
+\end{verbatim}
+以下は、上記のプログラムを用いた操作例である。
+《 》内は、ユーザの入力に関する説明である。
+\begin{verbatim}
+
+        % pdss　《PDSSの起動》
+        ***** PDSS-KL1 V2.51.00 (Thu May 25 17:38:28 GMT+9:00 1989) *****
+        ....................................................
+
+        *******************************************
+        **** Micro PIMOS (version 2.5) ************
+        *******************************************
+        World is /pdss/pdss2.5/doc
+        Total heap size is 200000 words
+        Total code size is 100632 bytes
+        *******************************************
+
+        | ?- comp("sample","sample"). 《コンパイル。ファイルsample.asmが生成される。》
+        "sample" : Compiling ... fib/2,fib1/4,END.
+        done
+
+        [fib/2]
+        success
+        yes.
+        | ?- load("sample").　《ファイルsample.asmをコード領域にロードする。》
+        "sample" : Loading ... done
+        Module name : sample
+
+        yes.
+        | ?- listing.　《ロードされているモジュールの表示》
+        _________________________________
+         Module_Name  Trace  Saved  SpyPN
+        ---------------------------------
+         sample              ?      0
+        ---------------------------------
+
+        yes.
+        | ?- public(sample).　《モジュールsample内でpublic宣言されている述語の一覧表示》
+        fib/2, END.
+
+        yes.
+        | ?- sample:fib(10,L)|L.　《プログラムの実行》
+        L = [1,1,2,3,5,8]
+
+        yes.
+        | ?- save(sample,"sample").　《モジュールsampleの実行コードをsample.savにセーブ》
+        "sample" : Saving ... done
+
+        yes.
+        | ?- halt.　《PDSSの終了》
+
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ GNU-Emacs下での操作}
+\index{PDSSのきどう@PDSSの起動!GNU-Emacsかでのじっこう@GNU-Emacs下での実行}
+\label{sec-beginner-Emacs}
+
+ここでは、おもに Emacs 特有の操作について説明する。
+その他の PDSS 操作については前節を参照されたい。
+なお、Emacs での PDSS 用コマンドの詳細は \ref{sec-emacs} を参照。\\
+\vspace{1ex}
+\noindent\underline{\dg\bf PDSS の起動}\vspace{1ex}\par
+まず、Emacs を起動する。
+PDSS は Emacs から次のコマンドを入力することにより起動される。
+\vspace{1ex}
+
+\hspace{20mm}{\dg\bf Meta-X pdss }{\it return}\vspace{1ex}
+
+するとウィンドウが以下の2つに分割される。
+
+\begin{itemize}
+\item PDSS-SHELL\\
+PDSS のトップレベルのウィンドウである。プログラムのロードや、
+実行を行なうためのコマンドを入力する。前節のPDSS単体での操作例は、
+このウィンドウ上で同じように実行できる。
+
+\item PDSS-CONSOLE\\
+プログラム実行中のエラーを表示したり、トレース実行をしたりする
+ウィンドウである。
+\end{itemize}
+
+\noindent\underline{\dg\bf プログラムの作成とコンパイル}\vspace{1ex}\par
+
+エディット用のバッファを生成して、そこでプログラムを作成する。このとき、
+ファイル名には拡張子 ``.kl1'' を付けること。このプログラムを
+コンパイルするには、そのウィンドウ上で次のコマンドを入力する。
+\index{コンパイル}
+\vspace{1ex}
+
+\hspace*{20mm}{\dg\bf Ctrl-C Ctrl-C}\vspace{1ex}\par
+
+すると PDSS-COMPILER ウィンドウが現われて、コンパイルが実行される。
+エラーが検出された場合には、このウィンドウにメッセージが表示される。
+その場合は、プログラムを修正した後、再度コンパイルする。
+正常にコンパイルされた時には、次のようなメッセージが表示される。
+\vspace{1ex}
+
+\hspace*{20mm}{\dg\bf PDSS KL1 Compiler: Success}\vspace{1ex}\par
+
+\noindent\underline{\dg\bf プログラムのロードと実行}\vspace{1ex}\par
+
+すべて PDSS-SHELL ウィンドウで行なう。前節と同様に load(FileName) により
+プログラムをロードし、実行する。実行中に発生したエラーは PDSS-CONSOLE に
+表示される。
+
+\noindent\underline{\dg\bf PDSSの終了}\vspace{1ex}\par
+
+PDSS-SHELL から halt. コマンドを入力することにより終了する。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{プログラムのデバッグ}
+\label{sec-beginner-debug}
+PDSSでは、トレーサによる実行過程のトレース、及びデッドロック情報等を用いてデバ
+ッグを行う。\index{トレース}
+ここでは、主としてトレース機能を用いたデバッグの過程を示す。
+
+\subsubsection{トレーサ}
+PDSS が提供するトレース機能は、実行されるゴールに注目したトレースである。
+トレーサはゴールが次のような状態になった時、そのゴールに関する情報を表示する。
+この表示が行なわれるタイミングをトレースポイントという。
+\index{トレース・ポイント}
+
+\begin{itemize}
+\item ゴール呼び出し
+\item 変数の具体化を待つための中断
+\item 中断からの復帰
+\item ゴールの失敗
+\item スワップ・アウト\\
+(割り込み、又はより高いプライオリティがスケジュールされたことによる実行の中断)
+\end{itemize}
+
+KL1のトレースの方法としては「コードに注目したトレース」と実行中の「ゴールに
+注目したトレース」の2通りが考えられる。
+
+コードに注目したトレースとは、
+トレースしたいコードが呼び出された時にトレースを行うものであり、
+モジュールごとにトレース・モードを指定できる。
+以下ではこれをコード・トレースと呼ぶ。\index{コード・トレース}
+また、更に細かく、特定の述語にだけ注目してトレースを行うこともでき、
+これをコードのスパイと呼ぶ。\index{スパイ!コードのスパイ}
+
+ゴールに注目したトレースとは、
+生成された各ゴールごとにその子孫のゴール(すなわちそのゴールの実行によって
+生成されるゴール)をトレースするか、あるいはトレースしないかを指定するもの
+である。以下ではこれをゴール・トレースと呼ぶ。\index{ゴール・トレース}
+また、特に指定したゴールの子孫だけをトレースするという指定もでき、
+これをゴールのスパイと呼ぶ。\index{スパイ!ゴールのスパイ}
+
+例を考えてみよう。以下のプログラムで \verb|p(X)| がゴール・トレースの状態に
+あり \verb|p(Y)| がその状態になかったとすると、\verb|p(X)| から呼び出される
+\verb|q(A,B)| と \verb|r(B)| はゴール・トレースの状態になるが \verb|p(Y)|
+から呼び出される \verb|q(A,B)| と \verb|r(B)| はゴール・トレースの状態に
+ならない。
+\begin{verbatim}
+
+                Goal  :  p(X), p(Y).
+                Clause:  p(A) :- true | q(A,B), r(B).
+
+\end{verbatim}
+
+\Caution Emacs 上で操作している場合、
+トレース実行中の表示および操作は PDSS-CONSOLE 上で行なわれる。\\
+
+\subsubsection{コマンド} \index{トレース!コマンド}
+ここでは以下のコマンドが使用されている。\\
+
+\begin{itemize}
+\item trace(ModuleName)\\ \index{trace}
+ModuleName で示されるモジュールのコードのトレースモードを ON にする。
+この時デバッグ・モードが自動的に ON になる。
+
+\item notrace(ModuleName)\\ \index{notrace}
+ModuleName で示されるモジュールのコードのトレースモードを OFF にする。
+
+\item spy(ModuleName,PredicateName,Arity)\\ \index{spy}
+ModuleName で示されるモジュール中の PredicateName/Arity なる述語の
+スパイを行なう。この時トレース・モード、デバッグ・モードは自動的に ON になる。
+
+\item spying(ModuleName)\\ \index{spying}
+ModuleName で示されるモジュール中のスパイされている述語の一覧を表示する。
+
+\item nodebug\\ \index{nodebug}
+デバッグ・モードをOFFにする。
+\end{itemize}
+
+\subsubsection{トレーサコマンド}
+トレーサコマンドの一部を以下に示す。詳しくは、
+\ref{sec-tracer-commands}「コマンド」を参照のこと。
+\begin{itemize}
+\item s[COUNT]\\
+次のトレース・ポイントで止まる。COUNT が指定された場合には
+そのステップ数だけトレースを行なったあとで止まる。
+
+\item sp[COUNT]\\
+次のスパイされている述語コードが実行されるまでトレースを行ない、止まる。
+COUNT が指定された場合にはその回数実行されるまでトレースを行ない、止まる。
+\end{itemize}
+
+\subsubsection{操作例}
+この例では、前述のプログラムをコンパイル、ロードした状態からのコードのトレース例を示す。
+また、トレーサの出力の詳しい見方は、\ref{sec-howto-read}「見方」を参照。
+
+\begin{verbatim}
+
+        | ?- load("sample").　《sample.savをコード領域にロード》
+        "sample" : Loading ... done
+        Module name : sample
+
+        yes.
+        | ?- trace(sample).　《モジュールsampleのコードのトレースモードをONに》
+        Setting ... done
+
+        yes.
+        [debug]?- sample:fib(10,L)|L.　《トレースの実行》
+        >>>>> Priority: 3991 <<<<<
+        Call  : [0004]sample:fib(10,A).  [step]% 
+        Call  : [0004]sample:fib1(10,1,1,A).  [step]% 
+        Call  : [0004]sample:fib1(10,1,2,A).  [step]% 
+        Call  : [0004]sample:fib1(10,2,3,A).  [step]% 
+        Call  : [0004]sample:fib1(10,3,5,A).  [step]% 
+        Call  : [0004]sample:fib1(10,5,8,A).  [step]% 
+        Call  : [0004]sample:fib1(10,8,13,A).  [step]% 
+        L = [1,1,2,3,5,8]
+
+        yes.
+        [debug]?- sample:fib(10,L)|L.　《トレースの実行》
+        >>>>> Priority: 3991 <<<<<
+        Call  : [0004]sample:fib(10,A).  [step]% s 3　《3ステップのトレース》
+        Call  : [0004]sample:fib1(10,1,1,A).  [step]% 
+        Call  : [0004]sample:fib1(10,1,2,A).  [step]% 
+        Call  : [0004]sample:fib1(10,2,3,A).  [step]% 
+        Call  : [0004]sample:fib1(10,3,5,A).  [step]% 
+        Call  : [0004]sample:fib1(10,5,8,A).  [step]% 
+        Call  : [0004]sample:fib1(10,8,13,A).  [step]% 
+        L = [1,1,2,3,5,8]
+
+        yes.
+        [debug]?- spy(sample,fib1,4).　《述語fig1/4に対するスパイの設定》
+        Setting ... done
+
+        yes.
+        [debug]?- sample:fib(10,L)|L.　《スパイの実行》
+        >>>>> Priority: 3991 <<<<<
+        Call  : [0015]sample:fib(10,A).  [step]% sp 《次のスパイされている述語コードまでトレース》
+        Call* : [0015]sample:fib1(10,1,1,A).  [sp]% 
+        Call* : [0015]sample:fib1(10,1,2,A).  [sp]% 
+        Call* : [0015]sample:fib1(10,2,3,A).  [sp]% 
+        Call* : [0015]sample:fib1(10,3,5,A).  [sp]% 
+        Call* : [0015]sample:fib1(10,5,8,A).  [sp]% 
+        Call* : [0015]sample:fib1(10,8,13,A).  [sp]% 
+        L = [1,1,2,3,5,8]
+
+        yes.
+        [debug]?- spying(sample).　《モジュールsample内でスパイされている述語一覧》
+        fib1/4, END.
+
+        yes.
+        [debug]?- notrace(sample).　《トレースモードOFF》
+        Resetting ... done
+
+        yes.
+        [debug]?- sample:fib(10,L)|L.　《トレースなしでの実行》
+        L = [1,1,2,3,5,8]
+
+        yes.
+        [debug]?- nodebug.　《デバッグモードOFF》
+
+        yes.
+        | ?- halt.
+
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  KL1の言語仕様
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Section{KL1の言語仕様}
+\label{sec-KL1}
+本章ではPDSSで実行可能なKL1の言語仕様について述べる。
+尚、本章で述べるKL1の言語仕様はあくまでもPDSS上におけるものであり、
+他のシステム, 例えば Multi-PSI V2 上のものとは多少異なる場合がある。
+
+\SubSection{概要}
+\label{sec-KL1-abstract}
+KL1はGHC (Guarded Horn Clauses)を基に設計された言語であり、
+OS記述用の機能やモジュール化機能など幾つかの言語機能の拡張と、
+実現のしやすさという観点からの制限を加えた言語である。
+KL1の主な特徴を以下に示す。
+
+\UnderlineIndex{ガードの逐次性}
+ヘッド・ユニフィケション及びガード部に書かれたゴールの実行は基本的にテキストに
+書かれた順序に従って左から右に逐次実行される。すなわち、次のようなプログラムは
+変数 \verb|X| が具体化されない限り中断状態のままである。
+\begin{verbatim}
+                Goal:     ?- p(X,b).
+                Clause:   p(a,c) :- true | true.
+\end{verbatim}
+また、構造体の内部のチェックも左から右に逐次実行される。
+すなわち、次のプログラムは中断する。
+\begin{verbatim}
+                Goal:     ?- p({X,b},{a,c}).
+                Clause:   p(X,X) :- true | true.
+\end{verbatim}
+
+\UnderlineIndex{ガード部の制限}
+ガード部に記述できる述語を一部の組込述語に限定している。
+ガード部で記述可能な組込述語については \ref{sec-builtin} 章で述べる。
+
+\UnderlineIndex{変数の同一性}
+ガード部における変数の同一性のチェックは行っていない。すなわち、
+次の様なプログラムは変数 \verb|X| と \verb|Y| が具体化されないかぎり、
+ゴールの実行順に因らず中断状態のままである。
+\begin{verbatim}
+                Goal:     ?- X=Y, p(X,Y).
+                Clause:   p(A,A) :- true | true.
+\end{verbatim}
+
+\UnderlineIndex{モジュール化機能}
+幾つかのクローズの集りをモジュールとして宣言することにより、
+モジュール単位のコンパイル,デバッグが可能。
+現在は1つのファイルが1つのモジュールを定義するようになっている。
+
+\UnderlineIndex{荘園}
+荘園と呼ぶ機能単位を導入し、
+この荘園ごとに実行優先順位の制御や実行量の制御が行える。
+OSはこの荘園機能を中心に構築される。
+
+\UnderlineIndex{例外処理機能}
+言語が規定する種々の例外に対する処理を荘園機能と高階呼出し機能を用いて
+KL1自身で記述することができる。
+
+\UnderlineIndex{失敗の扱い}
+KL1では失敗は全て例外として扱われ、
+例外処理機能を用いて実行を続行することも可能である。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{荘園}
+\label{sec-Shoen}
+\index{しょうえん@荘園}
+荘園とは言語が規定している資源管理,プライオリティ管理及び例外処理の最小単位
+である。荘園にはコントロール・ストリーム\index{コントロール・ストリーム}と
+レポート・ストリーム\index{レポート・ストリーム}と呼ぶ2本の
+ストリームが接続されている。
+コントロール・ストリームは荘園を制御するためのストリームであり、
+後述する種々のコマンドを流すことができる。
+レポート・ストリームは例外情報など荘園内からの情報/要請が流れ出てくる
+ストリームである。荘園のユーザはこのレポート・ストリームの各種情報を解釈する
+プログラムを記述することによって例外事項等を適当に操作できる。
+\index{れいがい@例外}
+
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{0.9mm}
+\begin{picture}(120,75)(0,0)
+\thinlines
+\put(0,0){\framebox(120,70){}}
+\put(0,73.5){\makebox(0,0)[l]{\jlarge\BF 親荘園}}
+\put(10,10){\framebox(70,40){}}
+\put(10,53.5){\makebox(0,0)[l]{\jlarge\BF 荘園}}
+\put(15,15){\framebox(25,15){}}
+\put(15,33.5){\makebox(0,0)[l]{\jlarge\BF 子荘園}}
+\thicklines
+\put(90,28){\vector(-1,0){10}}
+\put(80,22){\vector(1,0){10}}
+\put(100,25){\oval(20,15)}
+\put(100,25){\makebox(0,0){\BF\shortstack{管理\\ゴール}}}
+\put(45,25){\vector(-1,0){5}}
+\put(40,20){\vector(1,0){5}}
+\put(55,23){\oval(20,15)}
+\put(55,23){\makebox(0,0){\BF\shortstack{管理\\ゴール}}}
+\put(92,30){\makebox(0,0)[rb]{\BF\shortstack{コントロール\\ストリーム}}}
+\put(92,20){\makebox(0,0)[rt]{\BF\shortstack{レポート\\ストリーム}}}
+\put(75,65){\makebox(0,0){\BF ゴール}}
+\multiput(65,60)(10,0){5}{\circle{3}}
+\put(40,45){\makebox(0,0){\BF ゴール}}
+\multiput(33,40)(10,0){3}{\circle{3}}
+\multiput(20,22)(10,0){2}{\circle{3}}
+\end{picture}
+\caption{荘園のイメージ}
+\label{fig-Shoen}
+\end{center}
+\end{figure}
+
+\UnderlineIndex{資源管理機能}
+\index{しげんかんりきのう@資源管理機能}
+PDSSで管理している「資源」\index{しげん@資源}とは
+ゴールのリダクションの数である。
+これは実行時間やメモリ消費量の非常におおまかな近似と考えれば良い。
+全てのゴールは必ず何れかの荘園に属しており、
+各ゴールのリダクションはそのゴールが属している荘園の下で管理される。
+荘園にはその荘園内で実行できるリダクションの上限値
+\index{しげん@資源!じょうげんち@上限値}を与えることができる。
+また、上限値とは別に(上限値の範囲内で)荘園に対する割り当て量がシステムによって
+決められており、荘園の生成時(正確には荘園をstartさせた時)には
+この割り当て量が上限値を超えない範囲で自動的に与えられる。
+また、実行中に不足した場合には、その荘園の親荘園が持つ割り当て量(の残り)から
+システムで規定している分割量だけ分割し与えられる
+(この場合ももちろん荘園の上限値を超えない範囲で行われる)。
+もしどうしても上限値を超えてしまうような場合は「資源の不足例外」として
+\index{しげん@資源!ふそくれいがい@不足例外}
+その荘園のレポート・ストリームに例外情報が流される。
+上限値を増やす為には後で述べるようにコントロール・ストリームに
+add_resource(R) \index{add_resource} なるコマンドを流せばよい。
+
+\UnderlineIndex{プライオリティ管理機能}
+\index{プライオリティかんりきのう@プライオリティ管理機能}
+荘園のもう一つの機能としてゴールのプライオリティ管理がある。
+各荘園レコードにはその荘園内で実行可能なゴールのプライオリティの上限と下限が
+セットされており、これを超えるプライオリティでゴールを実行することはできない。
+ゴールに対するプライオリティの指定方法等については
+\ref{sec-priority} 章で述べる。
+
+\SubSubSection{荘園の生成} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{しょうえん@荘園!せいせい@生成}
+荘園の生成にはシステムで用意している `Sho-en' モジュール 
+\index{Sho-enモジュール}を使う。
+荘園モジュールには荘園生成の述語execute/7 \index{execute} が定義されている
+(旧仕様のexecute/8も残されている)。
+\begin{verbatim}
+            execute(コード, 引数, 荘園内最低プライオリティ,
+                    荘園内最高プライオリティ, タグ, コントロール, レポート)
+\end{verbatim}
+\begin{verbatim}
+            execute(モジュール名, 述語名, 引数, 荘園内最低プライオリティ,
+                    荘園内最高プライオリティ, タグ, コントロール, レポート)
+\end{verbatim}
+ここで、
+「コード」とは、3要素のベクタ \{モジュール名アトム,述語名アトム,引数の数\}
+である。\index{コード} (以降、「コード」は全てこの形式で表現される。
+Multi-PSI V2 では「コード」はコード型データを使用する。)
+「引数」とはゴールの引数を要素とするベクタである。
+
+「荘園内最低プライオリティ」
+\index{しょうえんないさいていプライオリティ@荘園内最低プライオリティ}
+は荘園内で実行されるゴールが使用できる
+プライオリティの下限値を計算するための値で、下限をどのくらい上げるかを
+指定する0以上4096以下の整数であり、0だと親荘園の下限と同じ値に、
+4096だとexecuteを呼び出すゴールと同じ値になる。
+「荘園内最高プライオリティ」
+\index{しょうえんないさいこうプライオリティ@荘園内最高プライオリティ}
+は荘園内で実行されるゴールが使用できる
+プライオリティの上限値を計算するための値で、上限をどのくらい下げるかを
+指定する0以上4096以下の整数であり、0だとexecuteを呼び出すゴールと同じ値に、
+4096だと親荘園の下限と同じ値になる。
+以上を纏めると 図 \ref{fig-Shoen-priority} のようになる。
+\index{しょうえんのプライオリティ@荘園のプライオリティ}
+
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(130,96)(-20,-36)
+\put(-20,-36){\framebox(130,96){}}
+\thicklines
+\put(75,58){\makebox(0,0){高い}}
+\put(75,5){\vector(0,1){50}}
+\put(75,5){\vector(0,-1){0}}
+\put(74.6,7){\line(0,1){46}}
+\put(75.4,7){\line(0,1){46}}
+\put(75,2){\makebox(0,0){低い}}
+\put(60,50){\makebox(0,0)[r]{荘園の最高プライオリティ($Smax$)}}
+\put(63,50){\vector(1,0){10}}
+\put(60,40){\makebox(0,0)[r]{荘園を生成するゴールのプライオリティ($Cp$)}}
+\put(63,40){\vector(1,0){10}}
+\put(60,30){\makebox(0,0)[r]{\BF 新荘園の最高プライオリティ($NSmax$)}}
+\put(63,30){\vector(1,0){10}}
+\put(60,20){\makebox(0,0)[r]{\BF 新荘園の最低プライオリティ($NSmin$)}}
+\put(63,20){\vector(1,0){10}}
+\put(60,10){\makebox(0,0)[r]{荘園の最低プライオリティ($Smin$)}}
+\put(63,10){\vector(1,0){10}}
+\put(77,40){\line(1,0){16}}
+\put(77,30){\line(1,0){6}}
+\put(77,20){\line(1,0){6}}
+\put(77,10){\line(1,0){16}}
+\put(80,30){\vector(0,1){10}}
+\put(80,30){\vector(0,-1){0}}
+\put(81,35){\makebox(0,0)[l]{$Max$}}
+\put(80,10){\vector(0,1){10}}
+\put(80,10){\vector(0,-1){0}}
+\put(81,15){\makebox(0,0)[l]{$Min$}}
+\put(90,10){\vector(0,1){30}}
+\put(90,10){\vector(0,-1){0}}
+\put(91,25){\makebox(0,0)[l]{4096}}
+\put( 0, -4){\makebox(0,0)[l]{
+  $ NSmax = Cp - { (Cp - Smin) } \times {{Max} \over {4096}} $}}
+\put( 0,-12){\makebox(0,0)[l]{
+  $ NSmin = Smin + { (Cp - Smin) } \times {{Min} \over {4096}} $}}
+\put(10,-19){\makebox(0,0)[l]{
+  $ 0 \leq Max \leq 4096 \qquad Max=\makebox{「荘園内最高プライオリティ」} $}}
+\put(10,-25){\makebox(0,0)[l]{
+  $ 0 \leq Min \leq 4096 \qquad Min=\makebox{「荘園内最低プライオリティ」} $}}
+\put(10,-31){\makebox(0,0)[l]{
+  $ 0 \leq Min + Max \leq 4096 $}}
+\end{picture}
+\caption{荘園のプライオリティの計算}
+\label{fig-Shoen-priority}
+\end{center}
+\end{figure}
+
+「タグ」\index{しょうえん@荘園!タグ} は
+荘園内のどのような例外を受信するかを示すビット・マスクを与える。
+各ビットの意味は \ref{sec-Shoen-tag} を参照のこと。
+「コントロール」にはコントロール・ストリームが、
+「レポート」にはレポート・ストリームがユニファイされる。
+なお、生成された荘園の初期状態は中断状態にあり、許容リダクション数は
+セットされていない。
+\begin{verbatim}
+  【例】 'Sho-en':execute({primes,do,3},{1,300,PN},0,2,16#"FFFFFFFF",CTR,REP)
+\end{verbatim}
+
+\SubSubSection{コントロール・ストリーム} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{コントロール・ストリーム}
+コントロール・ストリームに流すことができるコマンドには以下のものがある。
+コントロール・ストリームを閉じると、荘園は放棄される。
+ストリームを閉じなければ荘園そのものの実行は終了にならないので注意。
+\begin{itemize}
+
+\ControlMessage{start}
+荘園内のゴールの実行を再開可能にする。
+
+\ControlMessage{stop}
+荘園内のゴールの実行を一時中断する。startコマンドによって再開可能状態にする
+ことができる。
+
+\ControlMessage{abort}
+荘園内の実行を放棄する。このコマンドを流した後はstartコマンドを使っても
+実行は再開出来ない。
+
+\ControlMessage{add_resource(Reduction)}
+\index{add_resource}
+荘園の現在の許容リダクションの上限値にReductionで示される値を追加する。
+
+\ControlMessage{allow_resource_report}
+「資源の不足例外」に対しての回答で、以後の不足例外の報告を許す。
+「資源の不足例外」を一回報告するとallow_resource_reportコマンドで許可される
+まで「資源の不足例外」の報告は止められる。
+
+\ControlMessage{statistics}
+荘園の統計情報を問い合わせる。情報はレポート・ストリームに流される。
+
+\end{itemize}
+\SubSubSection{レポート・ストリーム} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{レポート・ストリーム}
+レポート・ストリームから流れ出る情報には以下のものがある。
+
+\UnderlineIndex{コントロール・ストリームへのメッセージに対する回答}
+これはコントロール・ストリームへ流されたメッセージに対する回答で、
+一対一に対応している。
+\begin{itemize}
+
+\ReportedMessage{started}
+startメッセージを受信した。
+
+\ReportedMessage{stopped}
+stopメッセージを受信した。
+
+\ReportedMessage{aborted}
+abortedメッセージを受信した。
+
+\ReportedMessage{resource_added}
+add_resourceメッセージを受信した。
+
+\ReportedMessage{resource_report_allowed}
+allow_resource_reportメッセージを受信した。
+これ以降、「資源の不足例外」が発生すれば、それが報告される。
+
+\ReportedMessage{statistics_started}
+statisticsメッセージを受信した。
+統計情報は収集が完了した時点で別のメッセージにより報告される。
+
+\end{itemize}
+
+\UnderlineIndex{状態情報}
+\index{レポート・ストリーム!じょうたいじょうほう@状態情報}
+これは荘園の状態が変わったことを報告する為のものである。
+\begin{itemize}
+
+\ReportedMessage{terminated}
+荘園の実行が終了した。終了の理由は、先にabortedが送られていれば実行放棄、
+送られてなければ全てのゴールの成功を意味する。
+
+\ReportedMessage{resource_low}
+最大許容リダクション数を超えそうになった。もしくは割り付け量が足りなかった。
+荘園はこの例外が発生すると中断状態になる。
+この報告をした後はコントロール・ストリームにallow_resource_reportを流すまで、
+次のresource_lowは報告されない。
+
+\end{itemize}
+
+\UnderlineIndex{統計情報}
+\index{レポート・ストリーム!とうけいじょうほう@統計情報}
+これは統計情報の収集が完了した時に、その結果を報告する為のものである。
+\begin{itemize}
+
+\ReportedMessage{statistics(Info)}
+荘園内の統計情報を Info にユニファイする。
+Info は1要素のベクタで、要素にリダクション数が格納されている。
+リダクション数には子孫の荘園内のリダクション数も含まれている。
+
+\end{itemize}
+
+\UnderlineIndex{例外情報}
+\index{レポート・ストリーム!れいがいじょうほう@例外情報}
+\index{れいがいじょうほう@例外情報}
+これは荘園の中で例外事象が発生したことを報告するものである。
+例外情報は、デッドロックを除いて例外に対する処理を指定することができる。
+処理系では例外を発見すると、それが発生した荘園内に例外処理用のゴール
+apply(NewCode, NewArgv) を生成し、 NewCode, NewArgv に代わりに実行すべき
+ゴールがユニファイされるのを待つようにする。 \index{apply}
+なお、NewCode に指定する述語はPublic宣言されたものでなければならない。
+また、NewCode = \verb|[]| になった場合は代わりのゴールは実行されない。
+\begin{itemize}
+
+\ReportedMessage{exception(ExcpCode, Info, NewCode, NewArgv)}
+荘園内で例外が発生した。ExcpCodeは例外の種類を表わす正の整数、
+Infoは例外情報で、例外の種類により異なる。例外コードについては
+\ref{sec-exception}を参照。
+NewCode, NewArgvには例外を起こしたゴールの代わりに
+実行して欲しいゴールのコードと引数をユニファイする。
+ExcpCode, Infoについて以下に記す。
+なお、以下でCallerは組込述語を呼んだ述語のコード、
+OpCodeは組込述語のオペコード、Argvは引数ベクタ、
+Codeは\{モジュール名,述語名,引数の数\}を表わす。
+
+\begin{table}[h]
+\begin{tabular} {rl@{\ ::\ }ll}
+ExcpCode & 意味 & Info & 説明 \\
+0 & Illegal Input Type & \{0, Caller, OpCode, Pos, Argv\}
+& Posは不正引数位置(1 $\sim$ 7)\\
+1 & Range Overflow & \{0, Caller, OpCode, Argv\} & \\
+3 & Integer Overflow & \{0, Caller, OpCode, Argv\} & \\
+5 & Floating Point Error & \{0, Caller, OpCode, Argv\} & \\
+8 & Illegal Merger Input & \{0, Caller, OpCode, MI, FMI\}
+& MIはマージャへの不正入力データ \\
+ & & & FMIはマージャへの入力ストリーム \\
+9 & Reduction Failure & \{0, Code, Argv\} & \\
+10 & Unification Failure & \{0, X, Y\}
+& X,Yはボディユニフィケーションに \\
+ & & & 失敗した項 \\
+12 & Raised & \{0, RType, RInfo\}
+& RType,RInfoは組込述語\\
+ & & & raise/3によって渡されたターム \\
+16 & Incorrect Priority & \{0, Caller, OpCode, Argv\} & \\
+17 & Module Not Found & \{0, Code, Argv\} & \\
+18 & Predicate Not Found & \{0, Code, Argv\} & \\
+\end{tabular}
+\end{table}
+
+\ReportedMessage{deadlock(ExcpCode, Info)}
+荘園内でデッドロック状態が発見された。 \index{デッドロック}
+ExcpCodeは例外がデッドロックであることをを表わす正の整数、
+Infoは例外情報で、
+この場合\{0, DGoal, DType, GoalsList\}の形式となる。
+DGoalはデッドロックが発生するきっかけとなった述語のコード又は
+\verb|[]|(一括型GCで発見された時)、
+DTypeはデッドロックの種類を表わす整数(\ref{sec-deadlock}章参照)、
+GoalsListはデッドロックしているゴールのルートとなっているコードからなるリスト。
+
+\begin{table}[h]
+\begin{tabular} {rl@{\ ::\ }ll}
+ExcpCode & 意味 & Info & 説明 \\
+11 & Deadlock & \{0, DGoal, DType, GoalsList\} & 上記参照 \\
+\end{tabular}
+\end{table}
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{プライオリティ}
+\label{sec-priority}
+\index{プライオリティ}
+KL1にはゴールの実行優先順位 
+\index{じっこうゆうせんじゅんい@実行優先順位}
+(以下、プライオリティと言う)をゴールごとに指定する
+機能がある。プライオリティには論理プライオリティ
+\index{プライオリティ!ろんりプライオリティ@論理プライオリティ}
+と物理プライオリティ
+\index{プライオリティ!ぶつりプライオリティ@物理プライオリティ}があり、
+ゴールはそれぞれ自身の論理プライオリティを持つ。
+処理系内にはあらかじめ指定されたレベルの物理プライオリティがあり、
+スケジューラはゴールをゴール・スタックに繋げる際論理プライオリティを
+物理プライオリティに変換する(物理プライオリティは論理プライオリティよりも
+精度が悪いので、ユーザはプライオリティを変えたからといって必ず実際の
+スケジュールがそのとおりになることを期待してはいけない)。
+荘園が持つプライオリティの上限/下限も論理プライオリティである。
+
+ユーザはゴールのプライオリティを指定する場合その親ゴールの論理プライオリティ
+やそのゴールが所属する荘園の上限/下限との相対値で指定する。
+前者を「所属荘園内自己相対指定」、
+\index{プライオリティ!しょぞくしょうえんないじこそうたいしてい@所属荘園内自己相対指定}
+後者を「所属荘園内割合指定」
+\index{プライオリティ!しょぞくしょうえんないわりあいしてい@所属荘園内割合指定}
+と呼ぶ。
+
+\UnderlineIndex{所属荘園内割合指定}
+\index{プライオリティ!しょぞくしょうえんないわりあいしてい@所属荘園内割合指定}
+この指定方法は指定されたゴールが所属している荘園の論理プライオリティの
+上限/下限に対する相対値で指定する方法であり、次のような形式で書く。
+\begin{center}
+{\BF Goal @ priority(\verb|*|, 割合)}
+\end{center} \index{\verb|@|}
+このときゴール {\BF Goal} の論理プライオリティは、図 \ref{fig-priority1}
+のように決められる。
+
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(140,60)(-30,0)
+\put(-30,0){\framebox(140,60){}}
+\thicklines
+\put(75,58){\makebox(0,0){高い}}
+\put(75,5){\vector(0,1){50}}
+\put(75,5){\vector(0,-1){0}}
+\put(74.6,7){\line(0,1){46}}
+\put(75.4,7){\line(0,1){46}}
+\put(75,2){\makebox(0,0){低い}}
+\put(60,50){\makebox(0,0)[r]{荘園の最高プライオリティ($Smax$)}}
+\put(63,50){\vector(1,0){10}}
+\put(60,40){\makebox(0,0)[r]{呼び出すゴールのプライオリティ($CP$)}}
+\put(63,40){\vector(1,0){10}}
+\put(60,30){\makebox(0,0)[r]{\BF 新ゴールのプライオリティ($NP$)}}
+\put(63,30){\vector(1,0){10}}
+\put(60,10){\makebox(0,0)[r]{荘園の最低プライオリティ($Smin$)}}
+\put(63,10){\vector(1,0){10}}
+\put(77,50){\line(1,0){16}}
+\put(77,30){\line(1,0){6}}
+\put(77,10){\line(1,0){16}}
+\put(80,10){\vector(0,1){20}}
+\put(80,10){\vector(0,-1){0}}
+\put(81,20){\makebox(0,0)[l]{\BF 割合}}
+\put(90,10){\vector(0,1){40}}
+\put(90,10){\vector(0,-1){0}}
+\put(91,30){\makebox(0,0)[l]{4096}}
+\put(65,23){\makebox(0,0)[r]{
+  $ Smin + {(Smax - Smin)} \times {{\hbox{\jfootnotesize\BF 割合}}
+    \over {4096}} \qquad (0 \leq \hbox{\BF 割合} \leq 4096) $}}
+\end{picture}
+\caption{所属荘園内割合指定によるプライオリティの計算}
+\label{fig-priority1}
+\end{center}
+\end{figure}
+
+\UnderlineIndex{所属荘園内自己相対指定}
+\index{プライオリティ!しょぞくしょうえんないじこそうたいしてい@所属荘園内自己相対指定}
+この指定方法は呼び出すゴールの論理プライオリティとの相対値で指定する方法
+である。この場合も荘園の論理プライオリティの上限/下限を越えることはできない。
+次のような形式で書く。
+\begin{center}
+{\BF Goal @ priority(\verb|$|, 割合)}
+\end{center}
+このときゴール {\BF Goal} の論理プライオリティは、{\BF 割合} の正負により、
+正ならば、図 \ref{fig-priority2} のように、負ならば、図 \ref{fig-priority3}
+のように決められる。
+
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(140,60)(-30,0)
+\put(-30,0){\framebox(140,60){}}
+\thicklines
+\put(75,58){\makebox(0,0){高い}}
+\put(75,5){\vector(0,1){50}}
+\put(75,5){\vector(0,-1){0}}
+\put(74.6,7){\line(0,1){46}}
+\put(75.4,7){\line(0,1){46}}
+\put(75,2){\makebox(0,0){低い}}
+\put(60,50){\makebox(0,0)[r]{荘園の最高プライオリティ($Smax$)}}
+\put(63,50){\vector(1,0){10}}
+\put(60,30){\makebox(0,0)[r]{\BF 新ゴールのプライオリティ($NP$)}}
+\put(63,30){\vector(1,0){10}}
+\put(60,20){\makebox(0,0)[r]{呼び出すゴールのプライオリティ($CP$)}}
+\put(63,20){\vector(1,0){10}}
+\put(60,10){\makebox(0,0)[r]{荘園の最低プライオリティ($Smin$)}}
+\put(63,10){\vector(1,0){10}}
+\put(77,50){\line(1,0){16}}
+\put(77,30){\line(1,0){6}}
+\put(77,20){\line(1,0){16}}
+\put(80,20){\vector(0,1){10}}
+\put(80,20){\vector(0,-1){0}}
+\put(81,25){\makebox(0,0)[l]{\BF 割合}}
+\put(90,20){\vector(0,1){30}}
+\put(90,20){\vector(0,-1){0}}
+\put(91,35){\makebox(0,0)[l]{4096}}
+\put(65,37){\makebox(0,0)[r]{
+  $ CP + {(Smax - CP)} \times {{\hbox{\jfootnotesize\BF 割合}}
+    \over {4096}} \qquad (0 \leq \hbox{\BF 割合} \leq 4096) $}}
+\end{picture}
+\caption{所属荘園内自己相対指定によるプライオリティの計算(正)}
+\label{fig-priority2}
+\end{center}
+\end{figure}
+
+\begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(140,60)(-30,0)
+\put(-30,0){\framebox(140,60){}}
+\thicklines
+\put(75,58){\makebox(0,0){高い}}
+\put(75,5){\vector(0,1){50}}
+\put(75,5){\vector(0,-1){0}}
+\put(74.6,7){\line(0,1){46}}
+\put(75.4,7){\line(0,1){46}}
+\put(75,2){\makebox(0,0){低い}}
+\put(60,50){\makebox(0,0)[r]{荘園の最高プライオリティ($Smax$)}}
+\put(63,50){\vector(1,0){10}}
+\put(60,40){\makebox(0,0)[r]{呼び出すゴールのプライオリティ($CP$)}}
+\put(63,40){\vector(1,0){10}}
+\put(60,30){\makebox(0,0)[r]{\BF 新ゴールのプライオリティ($NP$)}}
+\put(63,30){\vector(1,0){10}}
+\put(60,10){\makebox(0,0)[r]{荘園の最低プライオリティ($Smin$)}}
+\put(63,10){\vector(1,0){10}}
+\put(77,40){\line(1,0){16}}
+\put(77,30){\line(1,0){6}}
+\put(77,10){\line(1,0){16}}
+\put(80,30){\vector(0,1){10}}
+\put(80,30){\vector(0,-1){0}}
+\put(81,35){\makebox(0,0)[l]{$|\hbox{\BF 割合}|$}}
+\put(90,10){\vector(0,1){30}}
+\put(90,10){\vector(0,-1){0}}
+\put(91,25){\makebox(0,0)[l]{4096}}
+\put(65,23){\makebox(0,0)[r]{
+  $ CP - {(CP - Smin)} \times {{|\hbox{\jfootnotesize\BF 割合}|}
+    \over {4096}} \qquad (-4096 \leq \hbox{\BF 割合} < 0) $}}
+\end{picture}
+\caption{所属荘園内自己相対指定によるプライオリティの計算(負)}
+\label{fig-priority3}
+\end{center}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{シンタックス}
+\label{sec-syntax}
+基本的な節のシンタックスは別の稿に譲ることにして、
+ここでは主にGHCとの相違点を中心に述べる。GHCとの主な相違点は、
+\begin{itemize}
+\item モジュールの定義
+\item 節の順序付け
+\item プライオリティ指定
+\item マクロ記法
+\end{itemize}
+が挙げられる。このうちプライオリティ指定とマクロ記法は別の章で述べてある。
+
+\SubSubSection{モジュールの定義} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{モジュールのていぎ@モジュールの定義}
+モジュールの定義はそのモジュールの名前を宣言する
+\begin{verbatim}
+                :- module モジュール名.
+\end{verbatim} \index{module}
+で始まらなければならない。
+またそのモジュール内の述語で他のモジュールに公開する述語は
+\begin{verbatim}
+                :- public 述語名/引数, 述語名/引数, ... .
+\end{verbatim}
+と宣言する必要がある。\index{public}
+組込述語 apply で実行する述語や、荘園の生成の際に指定する述語は全て
+public宣言をする必要があるので注意。\index{publicせんげん@public宣言}
+また、public宣言はファイルの先頭部(述語定義を記述する前)に、1個にまとめて
+行う必要がある。これはPrologの場合と違うので注意が必要である。
+
+述語の定義は分割してはならない。すなわち、2つ以上の述語定義が交互に現われる
+ような場合、同じ述語名で同じ引数であっても別の述語定義として扱われてしまう。
+これはアセンブル時に ``Assembler: Doubly defined label.'' のエラーになる。
+
+モジュール間の呼出し形式
+\index{モジュールかんのよびだしけいしき@モジュール間の呼出し形式}
+はゴールの前にモジュール名を付けて次のように明示的に
+記述する。
+\begin{verbatim}
+                モジュール名 : ゴール
+\end{verbatim}
+逆に、 ``\verb|モジュール名 : |'' の付かないゴールは全て、モジュール内
+呼び出しになる。そして、述語名の空間はモジュールごとに区別されることになる。
+これにより、モジュールが違えば、同じ名前を別の述語定義に使うことができる。
+
+
+\SubSubSection{節の順序付け} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+KL1ではコンパイラによるインデキシング等の為、節の実行順序は必ずしもテキスト
+上の順序と一致しない場合がある。このため、節の間で実行の優先順位を付けたい
+場合の記述や逐次実行を記述するための記法が用意されている。
+
+\UnderlineIndex{節の優先実行}
+\index{せつのゆうせんじっこう@節の優先実行}
+述語の定義中(節と節の間)に alternatively. \index{alternatively}と書く。
+これにより alternatively. の前後の節(群)の順序関係は保証される。
+\begin{verbatim}
+                foo([X|XX],Z) :- true | p(X,XX,Z).
+                        ...
+                alternatively.
+                foo(X,[Z|ZZ]) :- true | q(X,Z,ZZ).
+                        ...
+\end{verbatim}
+
+\UnderlineIndex{逐次実行}
+\index{せつのちくじじっこう@節の逐次実行}
+述語の定義中(節と節の間)に otherwise.\index{otherwise} と書く。
+これにより otherwise. 以前に書かれた節の全てが失敗して初めて
+ otherwise. 以降の節(群)が実行される。
+\begin{verbatim}
+                foo([X|XX]) :- X=a | pa(X,XX).
+                foo([X|XX]) :- X=b | pb(X,XX).
+                        ...
+                otherwise.
+                foo(X) :- true | q(X).
+                        ...
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{データ型}
+\index{データがた@データ型}
+\label{sec-data-type}
+PDSS でサポートしているデータ型には以下のものがある。
+なお、ここで述べるデータ型は一般ユーザーが KL1 のプログラムで扱える/扱って
+意味があるものだけである。
+\begin{itemize}
+
+\item 変数 $\cdots$ \verb|A, A12, B, _abc, _|\\
+\index{へんすう@変数}
+Prologと同様に、英大文字またはアンダースコアで始まる英数字列で表現する。
+同一の節の中では、同一の名前のものが同一の変数となる。
+ただし、アンダースコア1文字のものは、全て別々の変数として扱われる。
+
+\item アトム $\cdots$ \verb|abc, 'ABC', :=, 'can''t'|\\
+\index{アトム}
+Prolog と同様に、英小文字で始まる英数字列、記号文字だけから成る文字列、
+引用符 \verb|'| で括られた文字列で表現する。
+なお、引用符 \verb|'| 自身をアトムの名前の一部として使う場合には、引用符
+\verb|'| で括ったなかに、引用符 \verb|'| を2個書く事で表現する。
+また、`\verb|$|' はシステムにより特別な用途に使われるので、一般ユーザーは
+アトム名(の一部)として使用しないほうが良い。
+
+\item 整数 $\cdots$ \verb|123, 16'ACE, 8'37, +3, -5|\\
+\index{せいすう@整数}
+通常は10進数で表現し、$-2147483648$ 以上、$2147483647$ 以下の値を持つ。
+このとき、符号の $+$/$-$ は整数の一部として扱われる。
+(符号の後に空白があると整数の一部とは成らない。)
+また、2進数から36進数で記述する事もできる。これは引用符 \verb|'| を使って
+\verb|基数'N進数| の形式で記述するもので、この場合には符号を付ける事はでき
+ない。この形式は PDSS のリーダーが解釈しているので、Prologで書かれたコンパイラ
+では Syntax Error となる場合がある。
+ソースプログラム上ではマクロ表記 \verb|基数#"N進数"| で記述したほうが良い。
+
+\item 浮動小数点数 $\cdots$ \verb|1.23, 1.0e10, 3.0E-30, -2.0|\\
+\index{ふどうしょうすうてんすう@浮動小数点数}
+浮動小数点数は、\\
+\hspace*{4em} [ 符号 ] 数字$\SS{+}$ 小数点 数字$\SS{+}$
+              [ eまたはE [ 指数部符号 ] 数字$\SS{+}$ ]\\
+という形式で表現される。
+ここで、[ ] 内はオプションを、数字$\SS{+}$ は1文字以上の数字を意味する。
+途中に空白を含んではならない。整数と同様に符号は浮動小数点数に含まれる。
+PDSSでは単精度(32bits)を採用しており、これは、$-3.402823 \times 10\SS{38}$ 〜
+$3.402823 \times 10\SS{38}$ の値を10進数約7桁の精度で表現する。
+Multi-PSI V2 と違い、Infinityを使う事はできない。\\
+浮動小数点数どうしのユニフィケーションは内部表現のビットパターンの比較で
+行われる、従って、表示した時に同じに見えても、ユニフィケーションが失敗する
+場合がある。一般に、浮動小数点数どうしのユニフィケーションは行うべきでない。
+
+\item リスト $\cdots$ \verb![1,2,3], [X|Y]!\\
+\index{リスト}
+リストは、\verb|[ ]| により記述される。CarとCdrを記述する場合は `\verb!|!' を
+用い、\verb![car|cdr]! と記述する。
+
+\item ベクタ $\cdots$ \verb|{1,2,{3,4}}, f(X), {}|\\
+\index{ベクタ}
+これは、要素ゼロのものを含む一次元配列の構造体で、\verb|{ }| による記述と
+ファンクタによる記述ができる。そして、例えば \verb|f(a)| と \verb|{f,a}| は
+同じ構造を意味する。
+
+\item ストリング $\cdots$ \verb|"abc", "", """"|\\
+\index{ストリング}
+引用符 \verb|"| で括られた文字列で表現する。
+なお、引用符 \verb|"| 自身をストリングの一部として使う場合には、引用符
+\verb|"| で括ったなかに、引用符 \verb|"| を2個書く事で表現する。
+ストリングの要素サイズには1から32ビットまでのものが許されている。
+PDSSでは引用符 \verb|"..."| で示されたストリングは要素サイズが8ビットの
+ストリングを意味する。尚、Prologで書かれたコンパイラではストリングとリストを
+正確に区別することができない(Prologではストリングは文字コードのリストになる。)
+ので、マクロ表記 \verb|string#"..."| で記述したほうが良い。
+また、8ビット以外のストリングは内部表現としてだけ使う事ができ、
+プログラム上に定数として記述する事はできない。\\
+ストリングどうしのユニフィケーションは要素サイズ, 長さが同じで、双方の全ての
+要素が同じ文字コードである場合に成功する。
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{組込述語}
+\label{sec-builtin}
+\index{くみこみじゅつご@組込述語}
+ここでは PDSS で使用可能な組込述語について述べる。
+各組込述語は次の形式で示されている。
+\vspace{2ex}
+
+\hspace*{10em}
+\begin{tabular}{ccc}
+\underline{\rule[-0.4ex]{0ex}{2.2ex}\BF vector(X, ^Size)} & {\BF ::} &
+\underline{\rule[-0.4ex]{0ex}{2.2ex}\BF G}\\
+$\uparrow$   & & $\uparrow$\\
+呼び出し形式 & & \makebox[1ex][l]{記述可能な場所}\\
+\end{tabular}
+\vspace{2ex}
+
+組込述語はその性質により記述できる場所が制限されているものがある。
+記述可能な場所が {\bf G} であればガード部でのみ記述できる述語を意味し、
+{\bf B} であればボディ部でのみ記述可能であることを意味する。また、
+{\bf GB} はガード部でもボディ部でも記述可能であることを意味する。
+{\bf ^} の付いている引数はユニファイされる引数(以下では出力引数と呼ぶことも
+ある)であることを意味し、その組込述語の記述されている場所により、
+ガード部の場合は Passive Unification、ボディ部であれば Active Unification
+が行われる。なお、「失敗/例外」とあるものはガード部であれば失敗、
+ボディ部であれば例外として扱われることを意味する。
+
+また算術演算については計算式を記述するマクロが用意されているので、
+組込述語を直接書かなくても良いようになっている。
+マクロについては \ref{sec-macro} 章を参照のこと。
+
+\SubSubSection{タイプのチェック} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!タイプのチェック}
+\begin{itemize}
+
+\Builtin{wait}{(X)}{G}
+X が未定義ならば中断。それ以外は成功。
+
+\Builtin{atom}{(X)}{G}
+X が未定義ならば中断。アトムならば成功。それ以外は失敗。
+
+\Builtin{integer}{(X)}{G}
+X が未定義ならば中断。整数ならば成功。それ以外は失敗。
+
+\Builtin{floating_point}{(X)}{G}
+X が未定義ならば中断。浮動小数点数ならば成功。それ以外は失敗。
+
+\Builtin{list}{(X)}{G}
+X が未定義ならば中断。リストであれば成功。それ以外は失敗。
+
+\Builtin{vector}{(X)}{G}
+X が未定義ならば中断。ベクタであれば成功。それ以外は失敗。
+
+\Builtin{string}{(X)}{G}
+X が未定義ならば中断。ストリングであれば成功。それ以外は失敗。
+
+\Builtin{unbound}{(X, ^Result)}{B}
+X が現時点(すなわち unbound/2 が実行された時点)で未定義変数ならば、
+Resultに\{PE, Addr, X\}なるベクタをユニファイし成功する。ここで、
+PE は変数のあるPEの番号(整数、PDSSでは常に0)、Addr は変数のアドレス(整数)
+である。すでに具体化されていれば、 Result に \{X\} をユニファイし成功。\\
+\Caution この組込述語により得られる PE, Addr の値はGC等により変化する。
+
+\end{itemize}
+\SubSubSection{diff} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{itemize}
+
+\Builtin{diff}{(X, Y)}{G}
+X と Y がユニファイアブルでないことが確定すれば成功。
+まったく同じ値/構造であることが確定すれば失敗。それ以外は中断。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X \= Y  <=>  diff(X,Y).
+\end{verbatim}
+\Caution 比較は左から深さ優先に行われる。この途中で未定義変数が見つかった
+場合にはその先を調べずに、すぐサスペンドする。
+また、X, Y が構造体同士の場合、比較は一定の深さで打ち切られ、その深さまでで
+ユニファイアブルならば失敗として扱われる。
+
+\index{\verb|\=|}
+
+\end{itemize}
+\SubSubSection{整数の比較} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!せいすうのひかく@整数の比較}
+\begin{itemize}
+
+\Builtin{equal}{(Integer1, Integer2)}{G}
+Integer1 または Integer2 が未定義ならば中断。双方が整数でありかつ
+Integer1 と Integer2 の値が等しいとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X =:= Y  <=>  equal(X,Y).
+\end{verbatim}
+
+\index{\verb|=:=|}
+
+\Builtin{not_equal}{(Integer1, Integer2)}{G}
+Integer1 または Integer2 が未定義ならば中断。双方が整数でありかつ
+Integer1 と Integer2 の値が等しくないとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X =\= Y  <=>  not_equal(X,Y).
+\end{verbatim}
+
+\index{\verb|=\=|}
+
+\Builtin{less_than}{(Integer1, Integer2)}{G}
+Integer1 または Integer2 が未定義ならば中断。双方が整数でありかつ
+Integer1 の値が Integer2 の値より小さいとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X < Y  <=>  less_than(X,Y).
+        X > Y  <=>  less_than(Y,X).
+\end{verbatim}
+
+\index{\verb|<|} \index{\verb|>|}
+
+\Builtin{not_less_than}{(Integer1, Integer2)}{G}
+Integer1 または Integer2 が未定義ならば中断。双方が整数でありかつ
+Integer1 の値が Integer2 の値より小さくないとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X >= Y  <=>  not_less_than(X,Y).
+        X =< Y  <=>  not_less_than(Y,X).
+\end{verbatim}
+
+\index{\verb|>=|} \index{\verb|<=|}
+
+\end{itemize}
+\SubSubSection{整数の演算} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!せいすうのえんざん@整数の演算}
+\begin{itemize}
+
+\Builtin{add}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 に Integer2 を加えた値を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X + Y  <=>  add(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|+|}
+
+\Builtin{subtract}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 から Integer2 を引いた値を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X - Y  <=>  subtract(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|-|}
+
+\Builtin{multiply}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 に Integer2 を掛けた値を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X * Y  <=>  multiply(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|*|}
+
+\Builtin{divide}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer2 が 0 ならば失敗/例外。
+Integer1 を Integer2 で割った商を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X / Y  <=>  divide(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|/|}
+
+\Builtin{modulo}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer2 が 0 ならば失敗/例外。
+Integer1 を Integer2 で割った余りを NewInteger にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X mod Y  <=>  modulo(X,Y,Z).
+\end{verbatim}
+
+\index{mod}
+
+\Builtin{minus}{(Integer, ^NewInteger)}{GB}
+Integer が未定義ならば中断。整数でなければ失敗/例外。
+Integer を符号反転した値を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y := -X  <=>  minus(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{\verb|-|}
+
+\Builtin{increment}{(Integer, ^NewInteger)}{GB}
+Integer が未定義ならば中断。整数でなければ失敗/例外。
+Integer に1加えた値を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y := X+1  <=>  increment(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{\verb|+|}
+
+\Builtin{decrement}{(Integer, ^NewInteger)}{GB}
+Integer が未定義ならば中断。整数でなければ失敗/例外。
+Integer から1引いた値を NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y := X-1  <=>  decrement(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{\verb|-|}
+
+\Builtin{abs}{(Integer, ^NewInteger)}{GB}
+Integer が未定義ならば中断。整数でなければ失敗/例外。
+Integer の絶対値を求め NewInteger にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y := abs(X)  <=>  abs(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\Builtin{min}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 と Integer2 の小さい方の値を NewInteger にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := min(X, Y)  <=>  min(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\Builtin{max}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 と Integer2 の大きい方の値を NewInteger にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := max(X, Y)  <=>  max(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\Builtin{and}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 と Integer2 の各ビットの論理積をとり結果を NewInteger にユニファイ
+する。以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X /\ Y  <=>  and(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|/\|}
+
+\Builtin{or}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 と Integer2 の各ビットの論理和をとり結果を NewInteger にユニファイ
+する。以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X \/ Y  <=>  or(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|\/|}
+
+\Builtin{exclusive_or}{(Integer1, Integer2, ^NewInteger)}{GB}
+Integer1 または Integer2 が未定義ならば中断。整数でなければ失敗/例外。
+Integer1 と Integer2 の各ビットの排他的論理和をとり結果を NewInteger に
+ユニファイする。以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X xor Y  <=>  exclusive_or(X,Y,Z).
+\end{verbatim}
+
+\index{xor}
+
+\Builtin{complement}{(Integer, ^NewInteger)}{GB}
+Integer が未定義ならば中断。整数でなければ失敗/例外。
+Integer の各ビットを反転した値を NewInteger にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y := \(X)  <=>  complement(X,Y).
+\end{verbatim}
+
+\index{\verb|\|}
+
+\Builtin{shift_left}{(Integer, ShiftWidth, ^NewInteger)}{GB}
+Integer が未定義変数ならば中断。整数でなければ失敗/例外。
+ShiftWidth が未定義変数ならば中断。0以上31以下の整数でなければ失敗/例外。
+Integer を ShiftWidth ビットだけ左に論理シフトし結果を NewInteger と
+ユニファイする。以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X << Y  <=>  shift_left(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|<<|}
+
+\Builtin{shift_right}{(Integer, SiihftWidth, ^NewInteger)}{GB}
+Integer が未定義変数ならば中断。整数でなければ失敗/例外。
+ShiftWidth が未定義変数ならば中断。0以上31以下の整数でなければ失敗/例外。
+Integer を ShiftWidth ビットだけ右に論理シフトし結果を NewInteger と
+ユニファイする。以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z := X >> Y  <=>  shift_right(X,Y,Z).
+\end{verbatim}
+
+\index{\verb|>>|}
+
+\end{itemize}
+\SubSubSection{浮動小数点数の比較} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!ふどうしょうすうてんすうのひかく@浮動小数点数の比較}
+\begin{itemize}
+
+\Builtin{floating_point_equal}{(Float1, Float2)}{G}
+Float1 または Float2 が未定義ならば中断。双方が浮動小数点数でありかつ
+Float1 と Float2 の値が等しいとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X $=:= Y  <=>  floating_point_equal(X,Y).
+\end{verbatim}
+
+\index{\verb|$=:=|}
+
+\Builtin{floating_point_not_equal}{(Float1, Float2)}{G}
+Float1 または Float2 が未定義ならば中断。双方が浮動小数点数でありかつ
+Float1 と Float2 の値が等しくないとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X $=\= Y  <=>  floating_point_not_equal(X,Y).
+\end{verbatim}
+
+\index{\verb|$=\=|}
+
+\Builtin{floating_point_less_than}{(Float1, Float2)}{G}
+Float1 または Float2 が未定義ならば中断。双方が浮動小数点数でありかつ
+Float1 の値が Float2 の値より小さいとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X $< Y  <=>  floating_point_less_than(X,Y).
+        X $> Y  <=>  floating_point_less_than(Y,X).
+\end{verbatim}
+
+\index{\verb|$<|} \index{\verb|$>|}
+
+\Builtin{floating_point_not_less_than}{(Float1, Float2)}{G}
+Float1 または Float2 が未定義ならば中断。双方が浮動小数点数でありかつ
+Float1 の値が Float2 の値より小さくないとき成功。それ以外では失敗。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        X $>= Y  <=>  floating_point_not_less_than(X,Y).
+        X $=< Y  <=>  floating_point_not_less_than(Y,X).
+\end{verbatim}
+
+\index{\verb|$>=|} \index{\verb|$=<|}
+
+\end{itemize}
+\SubSubSection{浮動小数点数の演算} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!ふどうしょうすうてんすうのえんざん@浮動小数点数の演算}
+\begin{itemize}
+
+\Builtin{floating_point_add}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float1 に Float2 を加えた値を NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= X + Y  <=>  floating_point_add(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではオーバーフローは失敗/例外にはならず、
+NewFloat にinfinityを出力する。
+
+\index{\verb|+|}
+
+\Builtin{floating_point_subtract}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float1 から Float2 を引いた値を NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= X - Y  <=>  floating_point_subtract(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではオーバーフローは失敗/例外にはならず、
+NewFloat にinfinityを出力する。
+
+\index{\verb|-|}
+
+\Builtin{floating_point_multiply}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float1 に Float2 を掛けた値を NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= X * Y  <=>  floating_point_multiply(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではオーバーフローは失敗/例外にはならず、
+NewFloat にinfinityを出力する。
+
+\index{\verb|*|}
+
+\Builtin{floating_point_divide}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float2 が 0.0 ならば失敗/例外。
+Float1 を Float2 で割った商を NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= X / Y  <=>  floating_point_divide(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではオーバーフローは失敗/例外にはならず、
+NewFloat にinfinityを出力する。
+
+\index{\verb|/|}
+
+\Builtin{floating_point_minus}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float を符号反転した値を NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= -X  <=>  floating_point_minus(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{\verb|-|}
+
+\Builtin{floating_point_abs}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の絶対値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= abs(X)  <=>  floating_point_abs(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{abs}
+
+\Builtin{floating_point_min}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float1 と Float2 の小さい方の値を NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= min(X, Y)  <=>  floating_point_min(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{min}
+
+\Builtin{floating_point_max}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float1 と Float2 の大きい方の値を NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= max(X, Y)  <=>  floating_point_max(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{max}
+
+\Builtin{floating_point_floor}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float より大きくない、最大の整数値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= floor(X)  <=>  floating_point_floor(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{floor}
+
+\Builtin{floating_point_sqrt}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float が負ならば失敗/例外。
+Float の平方根を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= sqrt(X)  <=>  floating_point_sqrt(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{sqrt}
+
+\Builtin{floating_point_ln}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float が 0.0 以下ならば失敗/例外。
+Float の自然対数を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= ln(X)  <=>  floating_point_ln(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{ln}
+
+\Builtin{floating_point_log}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float が 0.0 以下ならば失敗/例外。
+Float の常用対数を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= log(X)  <=>  floating_point_log(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{log}
+
+\Builtin{floating_point_exp}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+ $e$ の Float 乗を求め NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= exp(X)  <=>  floating_point_exp(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{exp}
+
+\Builtin{floating_point_pow}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float1 が負で Float2 が整数値でない場合は失敗/例外。
+Float1 の Float2 乗を求め NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= X ** Y  <=>  floating_point_pow(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{\verb|**|}
+
+\Builtin{floating_point_sin}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の正弦の値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= sin(X)  <=>  floating_point_sin(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{sin}
+
+\Builtin{floating_point_cos}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の余弦の値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= cos(X)  <=>  floating_point_cos(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{cos}
+
+\Builtin{floating_point_tan}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の正接の値を求め NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= tan(X)  <=>  floating_point_tan(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{tan}
+
+\Builtin{floating_point_asin}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float が -1.0 以上、1.0 以下でなければ失敗/例外。
+Float の逆正弦の値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= asin(X)  <=>  floating_point_asin(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{asin}
+
+\Builtin{floating_point_acos}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float が -1.0 以上、1.0 以下でなければ失敗/例外。
+Float の逆余弦の値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= acos(X)  <=>  floating_point_acos(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{acos}
+
+\Builtin{floating_point_atan}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の逆正接の値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= atan(X)  <=>  floating_point_atan(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{atan}
+
+\Builtin{floating_point_atan}{(Float1, Float2, ^NewFloat)}{GB}
+Float1 または Float2 が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float2 が 0.0 ならば失敗/例外。
+Float1/Float2 の逆正接の値を求め NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Z $:= atan(X/Y)  <=>  floating_point_atan(X,Y,Z).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{atan}
+
+\Builtin{floating_point_sinh}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の双曲線正弦の値を求め NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= sinh(X)  <=>  floating_point_sinh(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{sinh}
+
+\Builtin{floating_point_cosh}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の双曲線余弦の値を求め NewFloat にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= cosh(X)  <=>  floating_point_cosh(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{cosh}
+
+\Builtin{floating_point_tanh}{(Float, ^NewFloat)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float の双曲線正接の値を求め NewFloat にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= tanh(X)  <=>  floating_point_tanh(X,Y).
+\end{verbatim}
+\Caution Multi-PSI V2 ではサポートされていない。
+
+\index{tanh}
+
+\end{itemize}
+\SubSubSection{整数-浮動小数点数の変換} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!せいすう-ふどうしょうすうてんすうのへんかん@整数-浮動小数点数の変換}
+\begin{itemize}
+
+\Builtin{floating_point_to_integer}{(Float, ^Integer)}{GB}
+Float が未定義ならば中断。浮動小数点数でなければ失敗/例外。
+Float を整数に変換(小数点以下切り捨て)し Integer にユニファイする。
+このとき、オーバーフローになると失敗/例外。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y := int(X)  <=>  floating_point_to_integer(X,Y).
+\end{verbatim}
+
+\index{int}
+
+\Builtin{integer_to_floating_point}{(Integer, ^Float)}{GB}
+Integer が未定義ならば中断。整数でなければ失敗/例外。
+Integer を浮動小数点数に変換し Float にユニファイする。
+以下のマクロ表記を用いることができる。
+\begin{verbatim}
+        Y $:= float(X)  <=>  integer_to_floating_point(X,Y).
+\end{verbatim}
+
+\index{float}
+
+\end{itemize}
+\SubSubSection{ベクタ関係} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!ベクタかんけい@ベクタ関係}
+\begin{itemize}
+
+\Builtin{vector}{(X, ^Size)}{G}
+X が未定義ならば中断。ベクタであればそのサイズを Size とユニファイする。
+それ以外は失敗。
+
+\Builtin{vector}{(X, ^Size, ^NewVector)}{B}
+X が未定義ならば中断。ベクタであればそのサイズを Size とユニファイし X を
+NewVector にユニファイする。それ以外は例外。
+
+\Builtin{new_vector}{(^Vector, Size)}{B}
+Size が未定義ならば中断。Size が非負整数でなければ例外。
+Size の値により生成されるベクタの大きさがヒープ領域の大きさより
+大きくなる場合も例外。
+これ以外の場合には要素数 Size であるようなベクタを新たに生成し Vector と
+ユニファイする。生成したベクタの要素はすべて整数 0 で初期化される。
+
+\Builtin{vector_element}{(Vector, Position, ^Element)}{G}
+Vector が未定義ならば中断。ベクタ以外の値であれば失敗。
+Position が未定義ならば中断。非負整数でないか Vector の要素数以上の場合は失敗。
+これ以外の場合には Vector の Position 番目の要素を Element とユニファイする。
+
+\Builtin{vector_element}{(Vector, Position, ^Element, ^NewVector)}{B}
+Vector が未定義ならば中断。ベクタ以外の値であれば例外。
+Position が未定義ならば中断。非負整数でないか Vector の要素数以上の場合は例外。
+これ以外の場合には Vector の Position 番目の要素を Element とユニファイする
+とともに Vector を NewVector にユニファイする。
+
+\Builtin{set_vector_element}{(Vector, Position, ^OldElem, NewElem, ^NewVect)}{B}
+Vector が未定義ならば中断。ベクタ以外の値であれば例外。
+Position が未定義ならば中断。非負整数でないか Vector の要素数以上の場合は例外。
+これ以外の場合には Vector の Position 番目の要素を OldElem とユニファイし、
+Vector の Position 番目を NewElem と置き換えた新しいベクタを生成し NewVect
+とユニファイする。
+
+\end{itemize}
+\SubSubSection{ストリング関係} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!ストリングかんけい@ストリング関係}
+\begin{itemize}
+
+\Builtin{string}{(X, ^Size, ^ElementSize)}{G}
+X が未定義ならば中断。ストリングであればその要素数を Size とユニファイし要素
+サイズ(要素のビット長)を ElementSize とユニファイする。それ以外は失敗。
+
+\Builtin{string}{(X, ^Size, ^ElementSize, ^NewString)}{B}
+X が未定義ならば中断。ストリングであればその要素数を Size とユニファイし要素
+サイズ(要素のビット長)を ElementSize とユニファイするとともに X を NewString に
+ユニファイする。それ以外は例外。
+
+\Builtin{new_string}{(^String, Size, ElementSize)}{B}
+Size が未定義なら中断。非負整数でなければ例外。
+ElementSize が未定義なら中断。1以上32以下の整数でなければ例外。
+Size 及び ElementSize の値により生成されるストリングがヒープ領域の大きさ
+より大きくなる場合も例外。
+それ以外の場合には 要素数 Size, 要素サイズ(要素のビット長)が ElementSize の
+ストリングを新たに生成し String とユニファイする。生成したストリングの要素は
+全て整数 0 で初期化される。
+
+\Builtin{string_element}{(String, Position, ^Element)}{G}
+String が未定義なら中断。ストリング以外なら失敗。
+Position が未定義なら中断。非負整数以外または String の要素数以上なら失敗。
+それ以外の場合には String の Position 番目の要素を整数として Element と
+ユニファイする。
+
+\Builtin{string_element}{(String, Position, ^Element, ^NewString)}{B}
+String が未定義なら中断。ストリング以外なら例外。
+Position が未定義なら中断。非負整数以外または String の要素数以上なら例外。
+それ以外の場合には String の Position 番目の要素を整数として Element と
+ユニファイするとともに String を NewString とユニファイする。
+
+\Builtin{set_string_element}{(String, Position, NewElement, ^NewString)}{B}
+String が未定義なら中断。ストリング以外なら例外。
+Position が未定義なら中断。非負整数以外または String の要素数以上なら例外。
+NewElement が未定義なら中断。整数以外ならば例外。
+String の要素サイズ(要素のビット長)を越えてしまう場合には例外。
+それ以外の場合には String の Position 番目の要素を NewElement に置き換えた
+新たなストリングを生成し NewString とユニファイする。
+
+\Builtin{substring}{(String, Position, Length, ^SubString, ^NewString)}{B}
+String が未定義なら中断。ストリング以外なら例外。
+Position が未定義なら中断。非負整数以外または String の要素数以上なら例外。
+Length が未定義なら中断。正整数以外または Position+Length が要素数を越えて
+いれば例外。
+それ以外の場合には String の Position 番目から長さ Length 分をコピーし新たな
+ストリングを生成し SubString とユニファイする。また、String と NewString を
+ユニファイする。
+
+\Builtin{set_substring}{(String, Position, SubString, ^NewString)}{B}
+String が未定義なら中断。ストリング以外なら例外。
+Position が未定義なら中断。非負整数以外または String の要素数以上なら例外。
+SubString が未定義なら中断。String と同じタイプ(要素サイズ)のストリング以外なら
+例外。また、Position+(SubStringの長さ) が String の要素数を越えていれば例外。
+それ以外の場合には String の Position 番目からを SubString で示された
+ストリングで置き換えたストリングを生成し NewString とユファイする。
+
+\Builtin{append_string}{(String1, String2, ^NewString)}{B}
+String1 及び String2 が未定義なら中断。同じタイプ(要素サイズ)のストリング以外
+なら例外。それ以外の場合には String1 の内容の後に String2 の内容を繋げた新たな
+ストリングを生成し NewString とユニファイする。
+
+\end{itemize}
+\SubSubSection{アトム関係} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!アトムかんけい@アトム関係}
+\begin{itemize}
+
+\Builtin{intern_atom}{(^Atom, String)}{B}
+String が未定義ならば中断。8ビットストリング以外であれば例外。それ以外の
+場合には String を印字表現とするアトムを生成し Atom とユニファイする。\\
+\Caution Multi-PSI V2 では組込述語でなくOSの機能として提供される。
+
+\Builtin{new_atom}{(^Atom)}{B}
+新しいアトムを生成しAtomとユニファイする。このアトムは印字名を持たない。
+
+\Builtin{atom_name}{(Atom, ^String)}{B}
+Atom が未定義ならば中断。アトム以外なら例外。
+それ以外の場合には Atom の印字表現を構成する文字コードからなるストリングを
+String とユニファイする。PDSSでは8ビットストリング。\\
+\Caution Multi-PSI V2 では組込述語でなくOSの機能として提供される。
+
+\Builtin{atom_number}{(Atom, ^Number)}{B}
+Atom が未定義ならば中断。アトム以外なら例外。
+それ以外の場合には Atom のアトム番号を Number とユニファイする。
+アトム番号はアトムが作られた順に付けられる番号。
+
+\end{itemize}
+\SubSubSection{コード関係}%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!コード関係}
+\begin{itemize}
+\Builtin{predicate_to_code}{(Mod, Pred, Arity, ^Code)}{B}
+Modが未定義であれば中断。アトム以外であれば例外。Predが未定義であれば中断。
+アトム以外であれば例外。Arityが未定義であれば中断。非負整数でなければ例外。
+それ以外の場合には、モジュール名Mod,述語名Pred,引数個数Arityであるコードを
+Codeとユニファイする。モジュールが存在しない場合、及び対応する述語が存在
+しない(定義されていないかパブリック宣言されていない)場合は、アトムの\verb|[]|
+をCodeにユニファイする。
+
+\Builtin{code_to_predicate}{(Code, ^Mod, ^Pred, ^Arity, ^Info)}{B}
+Code が未定義であれば中断。3要素ベクタ以外なら例外。
+Code の第1要素は ModuleName で、未定義であれば中断。アトム以外なら例外。
+指定された名前のモジュールがなければ例外。
+Code の第2要素は PredicateName で、未定義であれば中断。アトム以外なら例外。
+指定された名前の述語がなければ例外。
+Code の第3要素は PredArity で、未定義であれば中断。非負整数以外なら例外。
+それ以外であればModuleName, PredicateName, PredArityを、
+それぞれMod, Pred, Arityとユニファイする。Infoには述語定義の情報として、
+スパイされていない(0)か、スパイされている(1)かを示す整数をユニファイする。
+
+\end{itemize}
+\SubSubSection{ストリーム・サポート} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!ストリーム・サポート}
+\begin{itemize}
+
+\Builtin{merge}{(In, ^Out)}{B}
+マージャーを生成し、そのマージャーに対する入力ストリームを In に、
+出力ストリームを Out にユニファイする。
+マージャーの論理的な定義は以下に示すような2から無限の引数まで持つような述語
+として定義することが出来よう。
+\begin{verbatim}
+        merge([], O) :- true | O=[].
+        merge([A|I], O) :- true | O=[A|NO], merge(I, NO).
+        merge({}, O) :- true | O=[].
+        merge({I}, O) :- true | merge(I, O).
+        merge({I1,I2}, O) :- true | merge(I1, I2, O).
+        merge({I1,I2,I3}, O) :- true | merge(I1, I2, I3, O).
+                        ...
+        merge([], I2, O) :- true | merge(I2, O).
+        merge(I1, [], O) :- true | merge(I1, O).
+        merge([A|I1], I2, O) :- true | O=[A|NO], merge(I1, I2, NO).
+        merge(I1, [A|I2], O) :- true | O=[A|NO], merge(I1, I2, NO).
+        merge({}, I2, O) :- true | merge(I2, O).
+        merge(I1, {}, O) :- true | merge(I1, O).
+        merge({I3,I4}, I2, O) :- true | merge(I3, I4, I2, O).
+        merge({I3,I4,I5}, I2, O) :- true | merge(I3, I4, I5, I2, O).
+                        ...
+\end{verbatim}
+
+\end{itemize}
+\SubSubSection{高階機能} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!こうかいきのう@高階機能}
+\begin{itemize}
+
+\Builtin{apply}{(Code, Args)}{B}
+Code が未定義であれば中断。3要素ベクタ以外なら例外。
+Code の第1要素は ModuleName で、未定義であれば中断。アトム以外なら例外。
+指定された名前のモジュールがなければ例外。
+Code の第2要素は PredicateName で、未定義であれば中断。アトム以外なら例外。
+指定された名前の述語がなければ例外。
+Code の第3要素は Arity で、未定義であれば中断。非負整数以外なら例外。
+Args が未定義なら中断。Arity で指定された要素数のベクタ以外であれば例外。
+それ以外の場合にはモジュール名が ModuleName, 述語名が PredicateName である
+述語を引数環境 Args で呼び出す。
+
+\end{itemize}
+\SubSubSection{特殊入出力} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{くみこみじゅつご@組込述語!とくしゅにゅうしゅつりょく@特殊入出力}
+\begin{itemize}
+
+\Builtin{read_console}{(^Integer)}{G}
+コンソール・ウィンドウから整数を読み込む。\\
+\Caution 入力待ちの時は処理系全体が停止する。
+
+\Builtin{display_console}{(X)}{G}
+コンソール・ウィンドウに X の現在の値を(たとえ未定義でも)書き出す。
+
+\Builtin{put_console}{(X)}{G}
+X が整数の場合にはそれを ASCII コードと見なしてコンソール・ウィンドウに1文字
+書き出す。改行はしない。
+X が8ビット・ストリングの場合にはそれを ASCII ストリングと見なしてコンソール・
+ウィンドウにそのストリングの内容を書き出す。改行はしない。
+X がそれ以外の型か未定義の場合には無視される。
+
+\end{itemize}
+\SubSubSection{その他} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{itemize}
+
+\Builtin{raise}{(Tag, Type, Info)}{B}
+Tag が未定義変数であれば中断。正整数以外であれば例外。
+Type が基底項(未定義変数を含まないデータ)でなければ中断。
+それ以外の場合には、この組込述語が実行された荘園から外側の荘園に向かって順に
+それらの荘園が保持するタグと Tag の論理積を取り、その結果が最初にゼロ以外に
+なった荘園のレポート・ストリームに以下のメッセージをユニファイする。
+(\ref{sec-Shoen} 章 例外情報の項を参照)
+\begin{verbatim}
+        exception(12, {0, Type, Info}, NewCode, NewArgv)
+\end{verbatim}
+
+\Builtin{consume_resource}{(Red)}{B}
+Red が未定義変数であれば中断。正整数以外であれば例外。
+この組込述語が実行された荘園の許容リダクション数を Red で指定された値だけ
+強制的に減らす。これにより割り付けられたリダクション数が不足する場合には、
+通常のリダクションの消費と同様に resource_low となる。
+
+\Builtin{hash}{(X, ^Value, ^NewX)}{B}
+X が未定義変数であれば中断。
+それ以外の場合には X をもとに整数を生成し Value とユニファイする。
+また、X を NewX にユニファイする。
+
+\Builtin{current_processor}{(^ProcessorNumber, ^X, ^Y)}{B}
+この組込述語を実行したゴールを実行しているPEの番号を ProcessorNumber に、
+PEの構成(縦横のPE台数)を X, Y にユニファイする。
+PDSS では常に ProcessorNumber=0, X=1, Y=1 をユニファイする。
+
+\Builtin{current_priority}{(^CurrentPriority, ^ShoenMin, ^ShoenMax)}{B}
+この組込述語を実行したゴールのプライオリティを CurrentPriority に、
+所属荘園の最低/最高プライオリティを ShoenMin/ShoenMax にユニファイする。
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{マクロ記法}
+\label{sec-macro}
+\index{マクロきほう@マクロ記法}
+KL1ではプログラムの記述性を向上する為に各種のマクロ展開機能
+\index{マクロてんかいきのう@マクロ展開機能}を用意している。
+\begin{itemize}
+\item 定数記述のマクロ
+\item ユニフィケーションのマクロ
+\item 数値比較のマクロ
+\item 数値演算のマクロ
+\item 暗黙の引数マクロ
+\item 条件分岐のマクロ
+\item マクロ・ライブラリ
+\end{itemize}
+なお、現在はユーザーがマクロを定義することはできない。
+
+\SubSubSection{定数記述の為のマクロ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{ていすうきじゅつのためのマクロ@定数記述の為のマクロ}
+これらのマクロは定数を生成する為に用いられる。
+\index{ストリング} \index{\verb|#|}
+\begin{itemize}
+
+\Macro{\dg\verb|底#"文字列"|}\\
+文字列を底で指定した基数に基づく整数値に変換したものに展開する。底としては
+2から36までが許される。文字列中の文字は、基数に応じて順に ``0'', ``1'',
+ $\cdots$ , ``9'', ``a''/``A'', ``b''/``B'', $\cdots$ , ``z''/``Z'' を
+使用する。大文字と小文字の区別はしない。
+
+\Macro{\dg\verb|string#"文字列"|}\\
+デフォルト・タイプのストリングになる。
+PDSSではASCIIコードからなる8ビットストリングになる。
+(Multi-PSI V2 ではJIS漢字コードからなる16ビットストリング。)
+
+\Macro{\dg\verb|ascii#"文字列"|}\\
+ASCIIコードからなる8ビットストリングになる。
+
+\Macro{\dg\verb|#"文字"|}\\
+デフォルト・タイプの文字コードになる。PDSSでは文字を表すASCIIコードになる。
+(Multi-PSI V2 ではJIS漢字コード。)
+
+\Macro{\dg\verb|c#"文字"|}\\
+文字を表す ASCIIコードになる。
+
+\Macro{\dg\verb|ascii#文字|}\\
+文字を表す ASCIIコードになる。ここで文字はアトムとする。(例: \verb|ascii#'['|)
+
+\Macro{\dg\verb|key#lf|}\\
+改行を表す ASCIIコード(10)になる。
+
+\Macro{\dg\verb|key#cr|}\\
+復改を表す ASCIIコード(13)になる。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[t]
+\begin{center}
+\begin{tabular}{|c|c|l|}
+\multicolumn{3}{l}{\BF 整数用}\\ \hline
+優先度   & 比較演算子 & \multicolumn{1}{c|}{展開後のパターン} \\ \hline\hline
+         & \verb|X =:= Y| & equal(X,Y)         \\
+ 700     & \verb|X =\= Y| & not_equal(X,Y)     \\
+(xfx)    & \verb|X < Y|   & less_than(X,Y)     \\
+         & \verb|X > Y|   & less_than(Y,X)     \\
+         & \verb|X =< Y|  & not_less_than(Y,X) \\
+         & \verb|X >= Y|  & not_less_than(X,Y) \\ \hline
+\end{tabular}
+\index{equal}  \index{not_equal}  \index{less_than}  \index{not_less_than}
+\index{\verb|=:=|} \index{\verb|=\=|} \index{\verb|<|} \index{\verb|>|}
+\index{\verb|=<|} \index{\verb|>=|}
+\hspace{1em}
+\begin{tabular}{|c|c|l|}
+\multicolumn{3}{l}{\BF 浮動小数点数用}\\ \hline
+優先度   & 比較演算子 & \multicolumn{1}{c|}{展開後のパターン} \\ \hline\hline
+         & \verb|X $=:= Y| & floating_point_equal(X,Y)         \\
+ 700     & \verb|X $=\= Y| & floating_point_not_equal(X,Y)     \\
+(xfx)    & \verb|X $< Y|   & floating_point_less_than(X,Y)     \\
+         & \verb|X $> Y|   & floating_point_less_than(Y,X)     \\
+         & \verb|X $=< Y|  & floating_point_not_less_than(Y,X) \\
+         & \verb|X $>= Y|  & floating_point_not_less_than(X,Y) \\ \hline
+\end{tabular}
+\index{floating_point_equal}      \index{floating_point_not_equal}
+\index{floating_point_less_than}  \index{floating_point_not_less_than}
+\index{\verb|$=:=|} \index{\verb|$=\=|} \index{\verb|$<|} \index{\verb|$>|}
+\index{\verb|$=<|} \index{\verb|$>=|}
+\caption{数値比較のマクロ}
+\label{tab-macro-compare}
+\end{center}
+\end{table}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{itemize}
+\SubSubSection{ユニフィケーションのマクロ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{ユニフィケーションのマクロ}
+\begin{itemize}
+
+\Macro{\dg\verb|左辺 = 右辺|}\\ \index{\verb|=|}
+左辺と右辺のユニフィケーションに展開される。ガード部, ボディ部とも使用可能。
+
+\Macro{\dg\verb|左辺 \= 右辺|}\\ \index{\verb|\=|}
+diff(左辺, 右辺) に展開される。ガード部のみ使用可能。
+
+\Macro{\dg\verb|左辺 := 右辺|}\\ \index{\verb|:=|}
+左辺と右辺のユニフィケーションに展開される。ただし、右辺に対して整数演算の
+マクロ展開が行われるので、左辺にユニファイされるのは演算結果となる。
+ガード部, ボディ部とも使用可能。
+Prolog の is に相当する。
+
+\Macro{\dg\verb|左辺 $:= 右辺|}\\ \index{\verb|$:=|}
+左辺と右辺のユニフィケーションに展開される。ただし、右辺に対して浮動小数点
+演算のマクロ展開が行われるので、左辺にユニファイされるのは演算結果となる。
+ガード部, ボディ部とも使用可能。
+Prolog の is に相当する。
+\end{itemize}
+
+\SubSubSection{数値比較の為のマクロ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{すうちひかくのためのマクロ@数値比較の為のマクロ}
+数値比較の為のマクロは \verb|>, <, =:=| 等の演算子を使ったもので、
+ガードの組込述語の代わりに記述することができる。
+組込述語と違い、マクロの両辺に対して整数演算、浮動小数点演算のマクロ展開が
+行われるので、比較されるのはそれぞれの演算結果となる。
+
+比較演算子としては表 \ref{tab-macro-compare} に示すものが用意されている。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\M#1{\multicolumn{2}{|c|}{#1}}
+\begin{table}[t]
+\begin{center}\
+\begin{tabular}{|c|c|c|c|l|l|}\hline
+優先度 & 型 & 演 算 子 & 展開後の
+& \multicolumn{2}{c|}{生 成 さ れ る 組 込 述 語}\\ \cline{5-6}
+       &    &          &パターン
+&\multicolumn{1}{c|}{整 数 式 内 で は}
+&\multicolumn{1}{c|}{浮動小数点式内では} \\ \hline\hline
+    & yfx & X \verb|+| 1      & Z & increment(X,Z)                  &\\
+500 & yfx & X \verb|+| Y      & Z & add(X,Y,Z)
+                                    & floating_point_add(X,Y,Z)      \\
+    & yfx & X \verb|-| 1      & Z & decrement(X,Z)                  &\\
+    & yfx & X \verb|-| Y      & Z & subtract(X,Y,Z)
+                                    & floating_point_subtract(X,Y,Z) \\
+    &  fx & \verb|-| X        & Z & minus(X,Z)
+                                    & floating_point_minus(X,Z)      \\
+    & yfx & X \verb|\/| Y     & Z & or(X,Y,Z)                       &\\
+    & yfx & X \verb|/\| Y     & Z & and(X,Y,Z)                      &\\
+    & yfx & X xor Y           & Z & exclusive_or(X,Y,Z)             &\\ \hline
+    & yfx & X \verb|*| Y      & Z & multiply(X,Y,Z)
+                                    & floating_point_multiply(X,Y,Z) \\
+400 & yfx & X \verb|/| Y      & Z & divide(X,Y,Z)
+                                    & floating_point_divide(X,Y,Z)   \\
+    & yfx & X \verb|<<| Y     & Z & shift_left(X,Y,Z)               &\\
+    & yfx & X \verb|>>| Y     & Z & shift_right(X,Y,Z)              &\\ \hline
+300 & xfx & X mod Y           & Z & modulo(X,Y,Z)                   &\\
+    & xfy & X \verb|**| Y     & Z & & floating_point_pow(X,Y,Z)      \\ \hline
+\M{}      & abs(X)            & Z & abs(X,Z)
+                                    & floating_point_abs(X,Z)        \\
+\M{項の形で} & min(X,Y)       & Z & min(X,Y,Z)
+                                    & floating_point_min(X,Y,Z)      \\
+\M{}      & max(X,Y)          & Z & max(X,Y,Z)
+                                    & floating_point_max(X,Y,Z)      \\
+\M{}      & \verb|\|(X)       & Z & complement(X,Z)                 &\\
+\M{}      & floor(X)          & Z & & floating_point_floor(X,Z)      \\
+\M{}      & sqrt(X)           & Z & & floating_point_sqrt(X,Z)       \\
+\M{}      & ln(X)             & Z & & floating_point_ln(X,Z)         \\
+\M{}      & log(X)            & Z & & floating_point_log(X,Z)        \\
+\M{}      & exp(X)            & Z & & floating_point_exp(X,Z)        \\
+\M{}      & sin(X)            & Z & & floating_point_sin(X,Z)        \\
+\M{}      & cos(X)            & Z & & floating_point_cos(X,Z)        \\
+\M{}      & tan(X)            & Z & & floating_point_tan(X,Z)        \\
+\M{}      & asin(X)           & Z & & floating_point_asin(X,Z)       \\
+\M{}      & acos(X)           & Z & & floating_point_acos(X,Z)       \\
+\M{}      & atan(X)           & Z & & floating_point_atan(X,Z)       \\
+\M{}      & atan(X\verb|/|Y)  & Z & & floating_point_atan(X,Y,Z)     \\
+\M{}      & sinh(X)           & Z & & floating_point_sinh(X,Z)       \\
+\M{}      & cosh(X)           & Z & & floating_point_cosh(X,Z)       \\
+\M{}      & tanh(X)           & Z & & floating_point_tanh(X,Z)       \\
+\M{}      & int(F)            & I & floating_point_to_integer(F,I)  &\\
+\M{}      & float(I)          & F & & integer_to_floating_point(I,F) \\ \hline
+\end{tabular}
+%%%% index %%%%%
+\index{increment}
+\index{add}				\index{floating_point_add}
+\index{decrement}
+\index{subtract}			\index{floating_point_subtract}
+\index{minus}				\index{floating_point_minus}
+\index{or}
+\index{and}
+\index{exclusive_or}
+\index{multiply}			\index{floating_point_multiply}
+\index{divide}				\index{floating_point_divide}
+\index{shift_left}
+\index{shift_right}
+\index{modulo}
+					\index{floating_point_pow}
+\index{abs}				\index{floating_point_abs}
+\index{min}				\index{floating_point_min}
+\index{max}				\index{floating_point_max}
+\index{complement}
+					\index{floating_point_floor}
+					\index{floating_point_sqrt}
+					\index{floating_point_ln}
+					\index{floating_point_log}
+					\index{floating_point_exp}
+					\index{floating_point_sin}
+					\index{floating_point_cos}
+					\index{floating_point_tan}
+					\index{floating_point_asin}
+					\index{floating_point_acos}
+					\index{floating_point_atan}
+					\index{floating_point_sinh}
+					\index{floating_point_cosh}
+					\index{floating_point_tanh}
+\index{floating_point_to_integer}	\index{integer_to_floating_point}
+\index{\verb|+|} \index{\verb|-|} \index{\verb|\/|} \index{\verb|/\|}
+\index{xor} \index{\verb|*|} \index{\verb|/|} \index{\verb|<<|}
+\index{\verb|>>|} \index{mod} \index{\verb|**|} \index{\verb|\|}
+\index{floor} \index{sqrt} \index{ln} \index{log} \index{exp} \index{sin}
+\index{cos} \index{tan} \index{asin} \index{acos} \index{atan} \index{sinh}
+\index{cosh} \index{tanh} \index{int} \index{float}
+\caption{数値演算の為のマクロ}
+\label{tab-macro-calculate}
+\end{center}
+\end{table}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\SubSubSection{数値演算の為のマクロ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{すうちえんざんのためのマクロ@数値演算の為のマクロ}
+数値演算の為のマクロは \verb|+, -, *, /| 等の演算子を使ったもので、
+整数演算と浮動小数点演算がある。データタイプの自動変換は行われないので
+明示的に行わなければならない。このマクロ展開は以下の部分で行われる。
+\begin{itemize}
+\item \verb|:=|, \verb|$:=| マクロの右辺 (Prologにおける is に相当)\\
+演算結果が左辺にユニファイされる。
+\index{\verb|:=|} \index{\verb|$:=|}
+\verb|:=| が整数用、\verb|$:=| が浮動小数点数用。
+\item 算術比較のマクロの両辺\\
+それぞれの演算結果が比較される。
+\verb|$| なしが整数用、\verb|$| 付きが浮動小数点数用。
+\item 暗黙の引数マクロの \verb|<=|, \verb|$<=| の右辺\\
+演算結果が左辺で指定される引数にセットされる。
+\index{\verb|<=|} \index{\verb|$<=|}
+\verb|<=| が整数用、\verb|$<=| が浮動小数点数用。
+\item \verb|~(式)|, \verb|$~(式)| により明示的に展開を指示した場合\\
+演算結果が \verb|~(式)|, \verb|$~(式)| に置き換えられる。
+\index{\verb|~|} \index{\verb|$~|}
+\verb|~(式)| が整数用、\verb|$~(式)| が浮動小数点数用。\\
+例: \verb|p(~(X+Y+1))| が \verb|add(X,Y,A),add(A,1,B),p(B)| に展開される。
+\end{itemize}
+なお、整数演算マクロ展開時に計算可能な場合には、その時点で計算が行われる。
+
+演算子としては表 \ref{tab-macro-calculate} に示す
+ものが用意されている。なお、優先度の数値が小さいほど強く結合するので、
+他の順で演算を行いたい場合には括弧 \verb|( )| で囲むことにより指示する。\\
+\Caution
+Multi-PSI V2 では浮動小数点数の演算に関しては加減乗除だけしか提供されていない。
+
+本来、数値演算のマクロ展開が行われる所であるにもかかわらず、マクロ展開を抑制
+したい場合がある。
+\index{まくろてんかいのよくせい@マクロ展開の抑制}
+この場合には逆クォートを用いることによって展開を抑制する
+ことができる。
+\begin{itemize}
+\item \verb|``(項)|\\
+項中のマクロ展開は全て抑制され、項そのものを意味する。
+\index{\verb|``|}
+\item \verb|`(項)|\\
+項が構造体であった場合、トップレベルの展開のみが抑制され、より深いレベルは
+マクロ展開の対象となる。
+\index{\verb|`|}
+\end{itemize}
+
+\SubSubSection{暗黙の引数マクロ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ}
+多くの述語が共通して持っているような引数(例えばエラーレポート用のストリーム
+等)を述語定義の際に毎回明に記述するのは非常に面倒である。このような場合に便利
+なマクロ機能がここで説明する「暗黙の引数マクロ」である。
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!グローバルなせんげん@グローバルな宣言}
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!ローカルなせんげん@ローカルな宣言}
+この暗黙の引数マクロはモジュール全体に有効な(グローバルな)宣言と、一部分
+だけに有効な(ローカルな)宣言がある。それぞれ以下のような形式で宣言を行う。
+
+\begin{verbatim}
+
+        :- implicit 引数名 : タイプ { , 引数名 : タイプ , ・・・ }.
+
+        :- local_implicit 引数名 : タイプ { , 引数名 : タイプ , ・・・ }.
+
+\end{verbatim}
+\index{implicit}
+\index{local_implicit}
+ここで「引数名」は暗黙の引数を参照する際に用いる名前であり、アトム名で
+指定する。また、「タイプ」はその引数の種類を指定するもので、ここで宣言された
+種別に従って述語定義中の展開形式が決められる。現在提供されているタイプには
+shared, stream, oldnew, string の4種類がある。
+
+なお、グローバルな暗黙の引数の宣言はモジュール定義の頭部(public宣言の直後)に
+一回だけ書くことができる。これは途中で変更することはできない。
+
+ローカルな暗黙の引数の宣言は何回行ってもよい。この場合には、以前のものは無効に
+なり新たな宣言が有効になる。また、引数を指定しないで、
+\begin{verbatim}
+        :- local_implicit.
+\end{verbatim}
+とだけ書いた場合には、それ以降ローカルな暗黙の引数が無いことを意味する。
+なお、implicit宣言とlocal_implicit宣言で同じ名前の引数を宣言することは
+できない。
+
+暗黙の引数マクロの展開
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!マクロのてんかい@マクロの展開}
+を行うか、行わないかの指定は、述語定義単位で行う
+ことができる。ある述語が暗黙の引数を持つ場合(展開が必要)には、
+その節定義のネックを \verb|:-| の代わりに \verb|-->| \index{\verb|-->|}
+を用いて定義すれば良い。
+\verb|-->| で定義された節の述語には、宣言されている引数が、宣言された順で、
+明に記述されている引数の前に付加される。すなわち、引数の順番は
+\begin{enumerate}
+\item グローバルな暗黙の引数
+\item ローカルな暗黙の引数
+\item 明示された引数
+\end{enumerate}
+の順に並べられる。
+\begin{verbatim}
+  【例】
+          :- module test.
+          :- public XXX.
+          :- implicit a:oldnew, b:shared.
+
+          p(X) --> true | q(X), r.
+             %% この時点では暗黙の引数は a, b のみ。
+              ・・・
+
+          :- local_implicit d:oldnew.
+             %% これ以降は暗黙の引数として a, b, d が有ることになる。
+              ・・・
+
+          :- local_implicit d:shared, e:stream.
+             %% これ以降は暗黙の引数として a, b, d, e が有ることになる。
+             %% 引数名 d のタイプは shared に変わる点に注意。
+              ・・・
+
+          :- local_implicit.
+             %% これ以降は暗黙の引数として a, b のみ。
+              ・・・
+
+\end{verbatim}
+
+暗黙の引数を名前で参照する場合には、
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!ひきすうのさんしょう@引数の参照}
+引数名の直前に前置演算子 \verb|&| を付ければ良い。\index{\verb|&|}
+また中置演算子 \verb|<=|, \verb|$<=| 及び \verb|<<=| を使った
+記法は引数の値を更新(あるいはユニファイ)するためものである。
+\index{\verb|<=|} \index{\verb|$<=|} \index{\verb|<<=|}
+ベクタやストリングの要素に対する更新(あるいは参照)のためには
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!ひきすうのこうしん@引数の更新}
+\begin{verbatim}
+                &引数名(ポジション)
+\end{verbatim}
+なる記法が用意されている。ここでポジションは対象としているベクタやストリング
+の要素番号を意味する。
+
+以下、個々のタイプごとにその意味及び使用例を示そう。
+
+\UnderlineIndex{shared型 引数}
+\index{sharedがたひきすう@shared型引数}
+この型の引数は、ボディ部の述語間で同じ名前の引数を持つ場合、それらの
+引数は同一の値を共有する。引数名で参照している引数の値を変更したい
+場合は \verb|<=|, \verb|$<=| を使って \index{\verb|<=|} \index{\verb|$<=|}
+\begin{verbatim}
+                &引数名  <= 新しい値
+                &引数名 $<= 新しい値
+\end{verbatim}
+とすればよい。こうすると、これ以降(すなわち、節定義中で右あるいは下)で参照
+する値はここで更新された値になる。
+なお、\verb|<=| の右辺は整数演算のマクロ展開が、\verb|$<=| の右辺は浮動小数点
+演算のマクロ展開が行われる。
+\begin{verbatim}
+【例】 宣言:  :- implicit counter:shared.
+
+  a) 展開前:  p --> true | q, r.
+     展開後:  p(Cnt) :- true | q(Cnt), r(Cnt).
+
+  b) 展開前:  p --> true | &counter <= &counter + 2, q.
+     展開後:  p(Cnt) :- true | add(Cnt,2,Cnt1), q(Cnt1).
+
+  c) 展開前:  p --> true | 
+                  &counter <= &counter+2, &counter <= &counter*2, q.
+     展開後:  p(Cnt) :- true |
+                  add(Cnt,2,Cnt1), multiply(Cnt1,2,Cnt2), q(Cnt2).
+
+  d) 展開前:  p --> true | &counter <= &counter(2), q.
+     展開後:  p(Cnt) :- true |
+                  set_vector_element(Cnt,2,Elem,Elem,_), q(Elem).
+\end{verbatim}
+
+\UnderlineIndex{stream型 引数}
+\index{streamがたひきすう@stream型引数}
+この型の引数は、ボディ部の述語間で同じ名前の引数を持つ場合、それらの
+引数はマージされ、ヘッド部の対応する引数に接続される。ストリームに要素を
+流す場合には次の様に、流したい要素をリストで繋げ \verb|<<=| の右辺に書く。
+\index{\verb|<<=|}
+\begin{verbatim}
+                &引数名 <<= [要素1, 要素2, … ]
+
+【例】 宣言:  :- implicit window:stream.
+
+  a) 展開前:  p --> true | q, r.
+     展開後:  p(Win) :- true | Win={In1,In2}, q(In1), r(In2).
+
+  b) 展開前:  p --> true | &window <<= [putb("gazonk")], r.
+     展開後:  p(Win) :- true | Win=[putb("gazonk")|Win1], r(Win1).
+\end{verbatim}
+
+\UnderlineIndex{oldnew型 引数}
+\index{oldnewがたひきすう@oldnew型引数}
+この型は2個の引数が組になったものであり、PrologにおけるDCGと非常に似ている
+が、2個の引数が difference list に限定されていない点が異なっている。
+KL1では、更新可能なテーブルとしてベクタを使ったような場合、効率の面から
+ベクタに対する参照数が常に1になるようにプログラムすることが多く、
+このような目的の為にもこの型の引数は非常に有用である。
+difference list として用いた場合には stream 型と同様以下のような、
+リストに要素を加える記法が用意されている。\index{\verb|<<=|}
+\begin{verbatim}
+                &引数名 <<= [要素1, 要素2, … ]
+\end{verbatim}
+引数の値が数値等である場合には、shared型と同様 \verb|<=|, \verb|$<=| を使って
+\index{\verb|<=|} \index{\verb|$<=|}
+\begin{verbatim}
+                &引数名  <= 新しい値
+                &引数名 $<= 新しい値
+\end{verbatim}
+とすることもできる。また、引数の値がベクタである場合の記法としては
+なお、\verb|<=| の右辺は整数演算のマクロ展開が、\verb|$<=| の右辺は浮動小数点
+演算のマクロ展開が行われる。
+\begin{verbatim}
+        【要素の更新(1)】
+                &引数名(ポジション)  <= 新しい要素
+                &引数名(ポジション) $<= 新しい要素
+
+        【要素の参照】
+                &引数名(ポジション)    %% <= の左辺以外
+
+        【要素の更新(2)】
+                &引数名(ポジション) <<= [要素1, 要素2, … ]
+\end{verbatim}
+がある。更新(1) 及び更新(2) はボディ部のみで利用可能であり、組込述語
+set_vector_element/5 が使われる。また参照はその記述の出現場所により、
+ガード部では vector_element/3 が使われ、ボディ部では set_vector_element/5
+が使われる。同一の名前を持つ引数間の接続関係はDCGと同様、左から右,上から下
+に順番に接続される。更新(1) と (2) の違いは (1) ではベクタのポジション番目を
+\verb|<=|,\verb|$<=| の右辺で置き換えるのに対し、(2) ではベクタのポジション
+番目が difference list の末尾と考え \verb|<<=| の右辺のリストの要素を
+difference list の要素として挿入し、新たな末尾をベクタのポジション番目に
+セットする、という点である。
+
+この他、oldnew型には現在のold値を参照する為の次のような記法もある(カウンタ
+をカウントアップしつつ適当な時点で時々その値を参照するといった場合に便利)。
+\begin{verbatim}
+                &引数名(old)
+
+【例】 宣言:  :- implicit mutter:oldnew.
+
+  a) 展開前:  p --> true | q, r.
+     展開後:  p(Old,New) :- true | q(Old,Mid), r(Mid,New).
+
+  b) 展開前:  p --> true | &mutter <<= [naha], r.
+     展開後:  p(Old,New) :- true | Old=[naha|Mid], r(Mid,New).
+
+  c) 展開前:  p --> true | &mutter(3) <= naha, r.
+     展開後:  p(Old,New) :- true |
+                  set_vector_element(Old,3,_,naha,Mid), r(Mid,New).
+
+  d) 展開前:  p --> true | &mutter(1) <= &mutter(3), r.
+     展開後:  p(Old,New) :- true |
+                  set_vector_element(Old,3,Elem,Elem,Mid1),
+                  set_vector_element(Mid1,1,_,Elem,Mid2), r(Mid2,New).
+
+  e) 展開前:  p --> true | &mutter(2) <<= [naha,uhi,ehe], r.
+     展開後:  p(Old,New) :- true |
+                  set_vector_element(Old,2,[naha,uhi,ehe|Cdr],Cdr,Mid),
+                  r(Mid,New).
+
+  f) 展開前:  p --> true | &mutter <= &mutter+2, r.
+     展開後:  p(Old,New) :- true | add(Old,2,Mid), r(Mid,New).
+
+  g) 展開前:  p(X) --> true | 
+                  X = [&mutter(old)|XX], &mutter <= &mutter+2, p(XX).
+     展開後:  p(Old,New,X) :- true |
+                  X=[Old|XX], add(Old,2,Mid), p(Mid,New,XX).
+\end{verbatim}
+
+\UnderlineIndex{string型 引数}
+\index{stringがたひきすう@string型引数}
+この型は基本的に oldnew 型と同じであるが、使用する組込述語が
+string_element/3 及び set_string_element/4 である点が異なる。
+
+\UnderlineIndex{終了処理の自動生成}
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!しゅりょうしょり@終了処理}
+暗黙の引数を持つ節がボディ部にユーザ定義ゴールの呼び出しを含まない場合には、
+宣言されている引数の型に応じてそれぞれ次のユニフィケーションが行われる。
+\vspace{1ex}\\
+\hspace*{5em}\begin{tabular}{l@{ :: }l}
+shared 型 & なにもしない。\\
+stream 型 & アトム \verb|[]| とユニファイ。\\
+oldnew 型 & Old と New をユニファイ。\\
+string 型 & Old と New をユニファイ。\\
+\end{tabular}
+
+\UnderlineIndex{暗黙の引数の展開制御}
+\index{あんもくのひきすうマクロ@暗黙の引数マクロ!てんかいせいぎょ@展開制御}
+暗黙の引数を持つと宣言した節のボディ部から暗黙の引数を持たない述語を
+呼び出すためには、それらのゴールを \verb|{{| と \verb|}}| で囲えば良い。
+これにより、自動的な引数展開が抑制される。
+\begin{verbatim}
+
+        :- module test.
+        :- public go/0.
+        :- implicit    input   : stream,
+                       output  : oldnew,
+                       counter : shared.
+
+        go :- true |
+            merge(FILEout, FILEin),
+            file:create(FILEin, "del.del", r),
+            file:create(Answer, "/tmp/miyadel", w),
+            loop(FILEout, Answer,[], 100 ,_).
+
+        loop(_) --> &counter =< 0 | true.
+        otherwise.
+        loop(A) --> true |
+            &counter <= &counter - 1,
+            &input <<= [getc(X)],
+          {{ check(X, &output, &counter) }},
+            loop(A).
+
+        check(ascii#a, Oh,Ot, Counter) :- true | Oh=[putt(Counter),nl|Ot].
+        otherwise.
+        check(_, Oh,Ot, _) :- true | Oh=Ot.
+
+\end{verbatim}
+上の例では、input, output, counter なる3個の暗黙引数がグローバルに宣言され、
+それぞれの型は stream, oldnew, shared である。上記のような宣言を行うと、
+ネックが \verb|-->| で書かれた節には全て3個の暗黙引数が有るものとして
+マクロ展開時に変換される。例えば上記の述語定義 loop は以下のように展開される。
+\begin{verbatim}
+
+        loop(In, Oh,Ot, Cnt, A) :- Cnt =< 0 | In=[], Oh=Ot.
+        otherwise.
+        loop(In, Oh,Ot, Cnt, A) :- true |
+            Cnt1 := Cnt-1, In=[getc(X)|In1],
+            check(X, Oh,Om, Cnt1),
+            loop(In1, Om,Ot, Cnt1, A).
+
+\end{verbatim}
+\verb|{{| と \verb|}}| で囲まれた述語 check/4 は暗黙の引数を持たずそのまま
+4引数の述語として展開されている点に注意。このような述語に暗黙の引数の値を
+渡したい場合は上記のように、明に \verb|&引数名| を使って書かなければ
+ならない。
+\vspace{2ex}
+
+\noindent\Caution
+暗黙の引数には、その引数のタイプに関係なくどのような値を持たせてもよい。
+マクロの展開系はその記述に合わせて単純に展開するだけであり、明らかに誤った
+記述(例えば同一の引数に対してリストをユニファイしかつ要素の更新を行った)
+に対してもほとんどの場合、プログラマに対して注意すら促さない。
+
+\SubSubSection{条件分岐のマクロ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{じょうけんぶんきのマクロ@条件分岐のマクロ}
+これは DEC-10 Prolog のようにひとつの節の定義の中で複数の条件分岐の記述を許す
+記法である。例を示そう。
+\begin{verbatim}
+                foo(X,Y) :- true |
+                    ( X=:=0 -> p(Y,Z);
+                      X > 0 -> q(Y,Z);
+                      otherwise;
+                      true  -> r(Y,Z) ),
+                    s(X,Z).
+\end{verbatim}
+上記プログラムで \verb|->| の左辺に記述されたゴール(群)が条件式であり、
+\index{\verb|->|}
+右辺に記述されたゴールがその条件を満たした場合に実行してほしいゴール(群)
+である。コンパイラのプリプロセッサは上記のようなプログラムを読み込むと次の
+ような複数の節に展開する。
+\begin{verbatim}
+                foo(X,Y) :- true |
+                    '$foo/2/0'(X,Y,Z),
+                    s(X,Z).
+
+                '$foo/2/0'(X,Y,Z) :- X=:=0 | p(Y,Z).
+                '$foo/2/0'(X,Y,Z) :- X > 0 | q(Y,Z).
+                otherwise.
+                '$foo/2/0'(X,Y,Z) :- true  | r(Y,Z).
+\end{verbatim}
+述語 \verb|'$foo/2/0'| はプリプロセッサによって新たに生成された述語である。
+生成する述語の名前は必ず \verb|$| で始まる
+(従って、ユーザーは \verb|$| で始まる述語を使用しない方が良い)。
+なお、渡される引数は (条件分岐式内で現われた変数) と (条件分岐式外で現われた
+変数) の和となる。\\
+\Caution 展開系を見てわかるように条件式中には節のガード部で許されている組込述語
+しか書けない。\\
+\Caution 現在のProlog版コンパイラでは条件分岐式はネストしてはならないし、
+同じ節の中に2つ以上の条件分岐式を書くこともできない。KL1版は可能。
+
+\SubSubSection{マクロ・ライブラリ} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{マクロ・ライブラリ}
+これはシステムのライブラリに登録されているマクロで、
+モジュール定義の先頭で使うことを宣言した場合にだけ使える。
+宣言は次のように行う。\index{with_macro}
+\begin{verbatim}
+        :- with_macro マクロ定義名.
+\end{verbatim}
+ここで、マクロ定義名はアトムである。
+
+マクロ定義のファイルはシステムで決められたディレクトリに置かれる。
+この定義ファイルでは
+\begin{verbatim}
+        fileio#normal      => 0.
+        fileio#end_of_file => 1.
+        fileio#read_error  => 2.
+        fileio#write_error => 3.
+\end{verbatim}
+のようにマクロの宣言を行なう。\index{\verb|#|} \index{\verb|=>|}
+なお、現在の版では必ず \verb|xxx#yyy| のように \verb|#| を使ったもので、
+\verb|xxx| はアトムでなければならない。
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Micro PIMOS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Section{Micro PIMOS}
+\label{sec-micro-PIMOS}
+Micro PIMOS とはPDSS上でのKL1ユーザに種々のサービスを提供する非常に簡単なOS
+の名前であり、基本的に Single User, Single Task を前提として設計されている。
+Micro PIMOS が提供するサービスには以下のものがある。
+\begin{itemize}
+\item コマンド・インタプリタ
+\item 入出力機能(ウィンドウ,ファイル等)
+\item コード管理
+\item 例外情報の表示
+\end{itemize}
+
+Micro PIMOS ではコマンド・インタプリタに対して与えられたコマンドは全てタスク
+と呼ぶ単位で実行される。タスクは \ref{sec-Shoen} 章で説明した荘園の機能を
+用いて実現されている。\\
+\Caution 例外発生時のタグは現在以下のビットが言語と Micro PIMOS で既に使用
+されている。この為ユーザはユーザが作った荘園の中で Micro PIMOS の機能を利用
+したい場合その荘園のタグに 15:31 ビットを使用してはならない。
+あるいは、その荘園を監視しているユーザのゴールがユーザの責任で、もう一度
+Micro PIMOS に対して要求を出さなくてはならない。
+\index{れいがいタグ@例外タグ}
+
+\begin{figure}[h]
+\begin{center}
+\setlength{\unitlength}{0.9mm}
+\begin{picture}(135,15)(0,0)
+\thicklines
+\put(0,0){\framebox(135,10){}}
+\put(45,0){\line(0,1){10}}
+\put(75,0){\line(0,1){10}}
+\put(0,13){\makebox(0,0)[l]{31}}
+\put(45,13){\makebox(0,0)[l]{19}}
+\put(75,13){\makebox(0,0)[l]{15}}
+\put(135,13){\makebox(0,0)[r]{0}}
+\put(22.5,12.5){\makebox(0,0){(12ビット)}}
+\put(60,12.5){\makebox(0,0){(4ビット)}}
+\put(105,12.5){\makebox(0,0){(16ビット)}}
+\put(22.5,5){\makebox(0,0){言語(KL1)}}
+\put(60,5){\makebox(0,0){Micro PIMOS}}
+\put(105,5){\makebox(0,0){ユーザーが自由に使用して良い}}
+\end{picture}
+\caption{荘園の例外タグ}
+\label{fig-MPIMOS-tag}
+\end{center}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{コマンド・インタプリタ}
+\label{sec-MPIMOS-shell}
+\index{コマンド・インタプリタ}
+Micro PIMOS のユーザは Micro PIMOS の起動時に生成されるコマンド・インタプリ
+タを介してPDSSを使用することになる。
+コマンド・インタプリタが起動すると、プロンプトを出力してコマンドの入力待ちに
+なる。プロンプトは通常は \verb!| ?-! でデバッグ・モードの時は \verb|[debug]?-|
+である。
+
+なお、コマンド・インタプリタの起動時に \verb|"~/.pdssrc"| なるファイルが
+あれば、それをコマンド・ファイルとして自動的に実行するので、適当な作業環境を
+設定することができる。
+コマンド・ファイルについては take/1 コマンドを参照のこと。
+
+\SubSubSection{コマンド入力形式} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{コマンド・インタプリタ!にゅうりょくけいしき@入力形式}
+コマンドラインまたはコマンドファイルには複数のコマンドを書くことができる。
+コマンドは区切りの文字により、以下の様に実行される。
+\begin{itemize}
+\item カンマ(`` \verb|,| '')\\ \index{\verb|,|}
+前後の各コマンド群を、並列に実行する。
+\item セミコロン(`` \verb|;| '')\\ \index{\verb|;|}
+前のコマンド群の実行終了後、後ろのコマンド群を実行する(逐次実行)。
+\item 縦線(`` \verb!|! '')\\ \index{\verb!|!}
+前のコマンド群の実行終了後、後ろに書かれた変数(複数の時はカンマで区切る)の
+具体化された値を表示する。後ろに all と書くと全ての変数の値を表示する。
+\end{itemize}
+また、コマンド群を \verb|( )| で囲んで、ネストした記述をすることができる。
+
+\begin{verbatim}
+   【例】  | ?- comp("bench");(stat(bench:primes(1,300,P))|P),save(bench).
+             %  "bench.kl1" をコンパイルした後、ゴール bench:primes とコードの
+             %  セーブを並列に実行する。ゴールの実行に関しては統計情報の表示を
+             %  指定。また実行後に変数 P の値を表示。
+\end{verbatim}
+
+またコマンドライン(ターム)中の定数記述のマクロは展開される。
+マクロについては \ref{sec-macro}章を参照。
+\begin{verbatim}
+   【例】  | ?- X=16#"FF",Y=16#Z,Z="FF"|all.
+           X=255
+           Y=16#"FF"
+           Z="FF"
+\end{verbatim}
+
+\SubSubSection{コマンド} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{コマンド・インタプリタ!コマンド}
+\label{sec-commands}
+現在コマンド・インタプリタが提供しているコマンドには以下のものがある。ここで、
+ファイル名に属性とある場合、指定したファイル名に属性が指定されていなければ、
+そのファイル名に属性を付けたファイルに対してコマンドを実行することを示す。
+なお、ファイル名はストリング・アトムのどちらで指定しても良い。
+
+\UnderlineIndex{組込述語}
+\index{くみこみじゅつご@組込述語}
+コマンド・インタプリタではボディ部に記述できる組込述語もコマンドとして実行
+可能である。また、 \verb|:=| と算術演算マクロを使った記述も使用可能である。
+\UnderlineIndex{基本コマンド}
+\index{コマンド・インタプリタ!コマンド!きほんコマンド@基本コマンド}
+\begin{itemize}
+
+%\MpShellCommand{ModuleName:Goal}{}
+\item[] \hskip -2em {\BF{ModuleName:Goal}} \\
+ModuleName で示されるモジュールで Goal を実行する。最大リダクション数の上限値
+には環境変数で決められた値がセットされ、リダクション数がこれを越える場合には
+実行を継続するか中止するかをユーザに聞く。
+
+\MpShellCommand{help}{}
+ヘルプコマンドの一覧を表示する。
+
+\MpShellCommand{help}{(Type)}
+Type(整数またはアトム)で指定されたタイプのコマンドの一覧を表示する。
+タイプには次のものが指定できる。\\
+\hspace*{4em} 1: builtin, 2: basic, 3: code, 4: dir, 5: debug, 6: env, all
+
+\MpShellCommand{gc}{}
+ヒープ領域のGCを起動する。
+
+\MpShellCommand{gc}{(all)}
+ヒープ領域とコード領域のGCを起動する。  
+
+\MpShellCommand{take}{(FileName)}
+FileName で示されるコマンドファイルを実行する。コマンドファイルにはコマンド・
+インタプリタが実行できるコマンドならば何を書いても良い。
+コメントには KL1 のプログラムと同様 \verb|%| と \verb|/* */| が使える。
+
+\MpShellCommand{cputime}{}
+PDSSを立ち上げてから現在までに消費したCPUタイムを表示する。
+CPUタイムの単位はミリ秒。
+
+\MpShellCommand{cputime}{(^Time)}
+PDSSを立ち上げてから現在までに消費したCPUタイムをTimeとユニファイする。
+Timeは整数で単位はミリ秒。
+
+\MpShellCommand{apply}{(CommandName, ArgsList)}
+CommandName で示される同じコマンドを ArgsList で指定された引数の各要素に対して
+実行する。CommandName には ModuleName:PredicateName も使用できる。
+
+\MpShellCommand{stat}{}
+現在のメモリーの状態を表示する。
+
+\MpShellCommand{stat}{(Commands)}
+任意のコマンド群 Commands を実行したときの実行時間(CPUタイム)とリダクション数
+を表示する。
+
+\MpShellCommand{window}{(IOStream)}
+新しいウィンドウをオープンする。IOStream に流せるコマンドは、入出力機能の項を
+参照のこと。ウィンドウ名は自動的に付けられる。
+
+\MpShellCommand{add_op}{(Precedence, Type, Operator)}
+コマンド・インタプリタのウィンドウにオペレータを追加する。\\
+\Caution 定義済みのタイプと共存できない場合(fx $\leftrightarrow$ fy, 
+xf $\leftrightarrow$ yf, xfy $\leftrightarrow$ xfx $\leftrightarrow$ yfx)、
+古い定義を削除する。
+
+\MpShellCommand{remove_op}{(Operator)}
+コマンド・インタプリタのウィンドウから
+オペレータ Operator の定義を全て削除する。
+
+\MpShellCommand{remove_op}{(Precedence, Type, Operator)}
+コマンド・インタプリタのウィンドウからオペレータを削除する。
+
+\MpShellCommand{operator}{(Operator)}
+コマンド・インタプリタのウィンドウのオペレータ Operator の定義を表示する。
+
+\MpShellCommand{operator}{(OperatorName, ^Definition)}
+コマンド・インタプリタのウィンドウのオペレータ Operator の定義(形式は
+\{Precedence, Type\})を Definition にユニファイする。
+
+\MpShellCommand{replace_op_pool}{(^OldOpPool, NewOpPool)}
+旧オペレータプールをOldOpPoolとユニファイし、オペレータプールをNewOpPoolに
+変更する。オペレータプールの形式は 
+[\{OpName, [\{Precedence, Type\}, ...]\}, ...]である。
+
+\MpShellCommand{change_op_pool}{(NewOpPool)}
+オペレータプールをNewOpPoolに変更する。
+
+\MpShellCommand{halt}{}
+PDSSを終了する。この時開いていたウィンドウは全て自動的に閉じられる。
+
+\end{itemize}
+
+\UnderlineIndex{コードコマンド}
+\index{コマンド・インタプリタ!コマンド!コードコマンド}
+\begin{itemize}
+
+\MpShellCommand{comp}{(FileName)}
+\index{コンパイル}
+FileName で指定される属性 \verb|".kl1"| のKL1ソース・ファイルをコンパイルし、
+コード領域にロードする。新たにロードしたモジュールのトレース・モードはOFF。
+
+\MpShellCommand{comp}{(FileName, OutFileName)}
+FileName で指定される属性 \verb|".kl1"| のKL1ソース・ファイルをコンパイルし、
+OutFileName で指定される属性 \verb|".asm"| のファイルに出力する。
+
+\MpShellCommand{compile}{(FileName)}
+FileName で指定される属性 \verb|".kl1"| のKL1ソース・ファイルをコンパイルし、
+属性 \verb|".asm"| のファイルに出力する。その後、コード領域へのロード、属性
+\verb|".sav"| のファイルへのセーブを行なう。
+FileName にはファイル名のリストも指定できる。
+
+\MpShellCommand{load}{(FileName)}
+FileName で指定される属性 \verb|".sav"| のセーブ・ファイル(これが無い場合には
+属性 \verb|".asm"| のアセンブラ・ファイル)をコード領域にロードする。
+新たにロードしたモジュールのトレース・モードはOFF。
+
+\MpShellCommand{dload}{(FileName)}
+FileName で指定される属性 \verb|".sav"| のセーブ・ファイル(これが無い場合には
+属性 \verb|".asm"| のアセンブラ・ファイル)をコード領域にロードする。
+新たにロードしたモジュールのトレース・モードはON。
+この時デバッグ・モードは自動的に ON になる。
+
+\MpShellCommand{save}{(ModuleName)}
+ModuleName で示されるモジュールの実行コードを、環境変数で指定された
+ディレクトリ(デフォルトは \verb|"~/.PDSSsave"|, ch_savedirコマンドで変更可)
+にモジュール名をファイル名としてセーブする。
+
+\MpShellCommand{save}{(ModuleName, FileName)}
+ModuleName で示されるモジュールの実行コードを FileName で示される属性
+\verb|".sav"| のファイルにセーブする。
+
+\MpShellCommand{save_all}{}
+既にロードされているモジュールの内、save(ModuleName) コマンドでセーブして
+いないモジュール全てを環境変数で指定されたディレクトリにセーブする。
+
+\MpShellCommand{ch_savedir}{(Directory)}
+オートロードや save_all の対象となるディレクトリを Directory で指定される
+ディレクトリに変更する。この時、Directory が存在するかチェックされる。
+
+\MpShellCommand{listing}{}
+既にロードされているモジュールの情報を表示する。
+
+\MpShellCommand{listing}{(^Modules)}
+既にロードされているモジュール名のアトムを要素とするリストを生成し、
+ Modules とユニファイする。
+
+\MpShellCommand{public}{(ModuleName)}
+ModuleName で示されるモジュールの他のモジュールに公開している述語
+(public宣言されている述語)の一覧を表示する。
+
+\MpShellCommand{public}{(ModuleName, ^Public)}
+ModuleName で示されるモジュールの他のモジュールに公開している述語
+(public宣言されている述語)の情報を要素とするリストを生成し、Public と
+ユニファイする。各要素は \{述語名アトム, アリティ\} という2要素ベクタ。
+
+\end{itemize}
+
+\UnderlineIndex{ディレクトリコマンド}
+\index{コマンド・インタプリタ!コマンド!ディレクトリコマンド}
+\begin{itemize}
+
+\MpShellCommand{cd}{(Directory)}
+カレント・ディレクトリを Directory で指定するディレクトリに変更する。
+
+\MpShellCommand{pwd}{}
+カレント・ディレクトリのパス名を表示する。
+
+\MpShellCommand{pwd}{(^World)}
+カレント・ディレクトリのパス名を、World とユニファイする。
+
+\MpShellCommand{ls}{(WildCard)}
+WildCard で示されるファイルのパス名を表示する。
+
+\MpShellCommand{ls}{(WildCard, ^Files)}
+WildCard で示されるファイルのパス名をリストにし、Files とユニファイする。
+
+\MpShellCommand{rm}{(WildCard)}
+WildCard で示されるファイルをディレクトリから削除する。
+
+\end{itemize}
+
+\UnderlineIndex{デバッグコマンド}
+\index{コマンド・インタプリタ!コマンド!デバッグコマンド}
+\begin{itemize}
+
+\MpShellCommand{trace}{(ModuleName)}
+ModuleName で示されるモジュールのコードのトレース・モードをONにする。
+このときデバッグ・モードが自動的に ON になる。
+
+\MpShellCommand{notrace}{(ModuleName)}
+ModuleName で示されるモジュールのコードのトレース・モードをOFFにする。
+
+\MpShellCommand{spy}{(ModuleName, PredicateName, Arity)}
+ModuleName で示されるモジュール中の PredicateName/Arity なる述語のスパイを
+行う。この時トレース・モード、デバッグ・モードは自動的に ON になる。
+
+\MpShellCommand{nospy}{(ModuleName, PredicateName, Arity)}
+ModuleName で示されるモジュール中の PredicateName/Arity なる述語のスパイを
+止める。
+
+\MpShellCommand{spying}{(ModuleName)}
+ModuleName で示されるモジュール中のスパイされている述語の一覧を表示する。
+
+\MpShellCommand{spying}{(ModuleName,^Spying)}
+ModuleName で示されるモジュール中のスパイされている述語のリストを生成し、
+Spying にユニファイする。要素は \{述語名アトム, アリティ\} という2要素ベクタ。
+
+\MpShellCommand{debug}{}
+デバッグ・モードをONにする。
+
+\MpShellCommand{nodebug}{}
+デバッグ・モードをOFFにする。
+
+\MpShellCommand{backtrace}{}
+バックトレース情報(デッドロック情報)の表示モードをONにする。
+
+\MpShellCommand{nobacktrace}{}
+バックトレース情報(デッドロック情報)の表示モードをOFFにする。
+
+\MpShellCommand{varchk}{(FileName, Mode, Form)}
+FileName で指定される属性 \verb|".kl1"| のKL1ソース・ファイルに対して Mode
+で指定したモードで変数チェック\index{へんすうチェック@変数チェック}
+を行ない、Form で指定された形式でウィンドウに
+表示する。FileName にはファイル名のリストも指定できる。
+Mode, Form には以下のものが指定できる。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{ll@{ …… }l}
+Mode:: & o または one   & クローズ中に一つだけしか出てこない変数を表示する。\\
+       & m または mrb   & MRBが黒くなる変数を表示する。\\
+       & a または all   & one と mrb の両モードの変数を表示する。\\
+Form:: & s または short & 該当するクローズをー行に出力する。\\
+       & l または long  & 該当するクローズを改行/インデントして出力する。\\
+\end{tabular}
+\vspace{1ex}
+
+\MpShellCommand{varchk}{(FileName, Mode)}
+モード Mode で変数チェックを行ない、long形式で表示する。
+
+\MpShellCommand{varchk}{(FileName)}
+モード one で変数チェックを行ない、long形式で表示する。
+
+\MpShellCommand{xref}{(FileName, Mode)}
+FileName で指定される属性 \verb|".kl1"| のKL1ソース・ファイルに対して Mode
+で指定したモードでクロスリファレンス・チェック
+\index{クロスリファレンス・チェック}を行ない、ウィンドウに表示する。
+FileName にはファイル名のリストも指定できる。この場合、モジュール間呼び出しも
+チェックされる。Mode には以下のものが指定できる。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{lcl}
+c または check   & …… & 述語呼び出しのチェックのみを行なう。\\
+l または list    & …… & 参照リスト(述語の定義/参照の表)を出力する。\\
+s または system  & …… & PDSSのモジュールを参照している述語を出力する。\\
+b または builtin & …… & ボディの組込述語を使っている述語を出力する。\\
+g または guard   & …… & ガードの組込述語を使っている述語を出力する。\\
+a または all     & …… & 上記の全てを出力する。\\
+リスト           & …… & 各要素に指定されたもののみの参照リストを出力する。\\
+                 &      & 指定できるのは、\\
+                 &      & ・Module                 (そのモジュール全体)\\
+                 &      & ・Predicate/Arity        (ボディの組込述語)\\
+                 &      & ・Module:Predicate/Arity (定義された述語)\\
+                 &      & ・guard(Predicate/Arity) (ガードの組込述語)\\
+short            & …… & 述語の情報をウィンドウに出力しないで check を実行。\\
+short(Mode)      & …… & 述語の情報をウィンドウに出力しないで Mode を実行。\\
+update       &……& 複数ファイルを指定した場合に、同一のモジュール名があった\\
+             &    & 場合に警告を出さずに後ろ側を有効として check を実行。\\
+update(Mode) &……& 複数ファイルを指定した場合に、同一のモジュール名があった\\
+             &    & 場合に警告を出さずに後ろ側を有効として Mode を実行。\\
+\end{tabular}
+\vspace{1ex}
+
+\MpShellCommand{xref}{(FileName)}
+モード check でクロスリファレンス・チェックを行なう。
+
+\MpShellCommand{xref}{(FileName, Mode, OutFile)}
+クロスリファレンス・チェックを行い、リストを OutFile に出力する。
+Mode には check および c 以外が指定できる。
+
+\MpShellCommand{profile}{(ModuleName, Mode)}
+ModuleName で指定されるモジュール内で定義されている述語が呼び出された回数と
+サスペンドした回数をウィンドウに表示する。ModuleName にはモジュール名のリスト
+も指定できる。Mode には以下のものが指定できる。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+c または call  & 呼び出された回数が多い順にソートして表示する。\\
+s または susp  & サスペンドした回数が多い順にソートして表示する。\\
+n または no    & コード領域に定義されている順に表示する。\\
+\end{tabular}
+\vspace{1ex}
+
+\MpShellCommand{profile}{(ModuleName)}
+モード call で profile コマンドを実行する。
+
+\MpShellCommand{reset_profile}{(ModuleName)}
+ModuleName で指定されるモジュール内に定義されている述語が呼び出された回数と
+サスペンドした回数をリセットする。
+ModuleName にはモジュール名のリストも指定できる。
+
+\end{itemize}
+
+\UnderlineIndex{環境コマンド}
+\index{コマンド・インタプリタ!コマンド!かんきょうコマンド@環境コマンド}
+これらのコマンドはコマンド・インタプリタが持っている環境変数
+\index{かんきょうへんすう@環境変数}の値を変更する
+為のものである。コマンド・インタプリタの環境変数には表 \ref{tab-shell-var}
+に示すものがある。
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|l|l|}\hline
+\multicolumn{1}{|c|}{名前(アトム)} & \multicolumn{1}{c|}{意 味}\\ \hline\hline
+world
+& カレント・ディレクトリのパス名のストリング。\\
+\hline
+trace
+& トレーサのトレース・モードで値は on または off。 (初期値は off)\\
+\hline
+backtrace
+& バックトレース情報の表示モードで値は on または off。 (初期値は on)\\
+\hline
+modules
+& コマンドをサーチするモジュール名(アトム)を要素とするリスト。\\
+\hline
+reduction
+& タスク生成時に与えるリダクション数制限で単位は10000リダクション。\\
+& (0 $<$ 数値 $<$ 100000, 初期値は 10000)\\
+\hline
+ucounter
+& 作業用のウィンドウやファイルの名前生成用カウンタ。\\
+\hline
+savedir
+& save/1 や save_all の対象となるディレクトリのパス名のストリング。\\
+& (初期値は \verb|"~/.PDSSsave"|)\\
+\hline
+loaddir
+& オートロードの時にファイルをサーチするディレクトリのパス名のリスト。\\
+& (初期値は \verb|["~/.PDSSsave", ライブラリ・ディレクトリのパス名, ...]|\\
+& \ 注: ライブラリ・ディレクトリのパス名は複数でマシンごとに違っている。)\\
+\hline
+auto_load
+& オートロードを行うかどうかのフラグで値は yes または no。 (初期値は yes)\\
+\hline
+plength
+& コマンド・インタプリタのウィンドウに表示される構造体の最大長さ。
+(初期値は20)\\
+\hline
+pdepth
+& コマンド・インタプリタのウィンドウに表示される構造体の最大深さ。
+(初期値は5)\\
+\hline
+pvar
+& コマンド・インタプリタのウィンドウでの変数の表示モードで値は nu または na。\\
+& (nu では _0,_1,_2, ... 表示, na では A,B,C, ... 表示, 初期値は nu)\\
+\hline
+\end{tabular}
+\caption{コマンド・インタプリタの環境変数}
+\label{tab-shell-var}
+\end{center}
+\end{table}
+
+\begin{itemize}
+
+\MpShellCommand{setenv}{(Name, Value)}
+Name で示される環境変数を Value で指定する値に設定する。
+Name はアトムに、Value は基底項になってから環境変数に登録される。
+
+\MpShellCommand{getenv}{(Name, ^Value)}
+Name で示される環境変数の値を Value とユニファイする。
+
+\MpShellCommand{printenv}{(Name)}
+Name で示される環境変数の値を表示する。
+
+\MpShellCommand{printenv}{}
+コマンド・インタプリタの持つ環境変数のすべての値を表示する。
+
+\MpShellCommand{resetenv}{}
+コマンド・インタプリタの持つ環境変数のすべての値を初期化(立ち上げた時と同じ
+値に)する。
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{入出力機能}
+\label{sec-MPIMOS-IO}
+\index{にゅうしゅつりょくきのう@入出力機能}
+Micro PIMOS の入出力サービスにはウィンドウとファイルの2種類がある。
+\index{ウィンドウ} \index{ファイル}
+ユーザーは入出力サービスを利用したい場合、 Micro PIMOS が提供する述語を呼び
+出すことにより I/O に対するコマンド・ストリームと呼ぶストリームを得ることが
+\index{にゅうしゅつりょくきのう@入出力機能!コマンド・ストリーム}
+できる。コマンド・ストリームには以下で示す種々の I/O コマンドを流すことができ、
+それによってユーザーは入出力処理を行うことができる。
+コマンド・ストリームを \verb|[]| で閉じると、I/O は自動的にクローズされる。
+また、コマンド・ストリームにはマージャーが挿入されている。
+
+\SubSubSection{コマンド・ストリームの獲得} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{にゅうしゅつりょくきのう@入出力機能!コマンド・ストリームのかくとく@コマンド・ストリームの獲得}
+\UnderlineIndex{ウィンドウ}
+\index{にゅうしゅつりょくきのう@入出力機能!ウィンドウ}
+\index{ウィンドウ}
+\begin{itemize}
+
+\MpIOCreate{window:create(Stream, WindowName, ^Status)}
+ウィンドウ名 WindowName (8ビットストリング)のウィンドウを生成し、
+そのウィンドウに繋がるコマンド・ストリームを Stream とユニファイする。
+Status には以下のものがユニファイされる。 \index{window}
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success                     & 成功\\
+error(cannot_create_window) & 失敗: ウィンドウがオープンできない\\
+error(bad_window_name_type) & 失敗: WindowName が8ビットストリングでない\\
+\end{tabular}
+\vspace{1ex}\\
+\Caution 生成直後のウィンドウは隠れた状態にある。showコマンドで表示される。
+
+\MpIOCreate{window:create(Stream, WindowName)}
+ウィンドウ名 WindowName (8ビットストリング)のウィンドウを生成し、
+そのウィンドウに繋がるコマンド・ストリームを Stream とユニファイする。
+生成が失敗するとタスク全体が強制終了される。\\
+\Caution 生成直後のウィンドウは隠れた状態にある。showコマンドで表示される。
+
+\end{itemize}
+
+\UnderlineIndex{ファイル}
+\index{にゅうしゅつりょくきのう@入出力機能!ファイル}
+\index{ファイル}
+\begin{itemize}
+
+\MpIOCreate{file:create(Stream, FileName, Mode, ^Status)}
+ファイル名 FileName (8ビットストリング)のファイルを、モード Mode (アトム,
+r:リード , w:ライト, a:アペンド) でオープンし、そのファイルに繋がるコマンド・
+ストリームを Stream とユニファイする。
+Status には以下のものがユニファイされる。 \index{file}
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success                   & 成功\\
+error(cannot_open_file)   & 失敗: ファイルがオープンできない\\
+error(bad_file_name_type) & 失敗: FileName が8ビットストリングでない\\
+error(bad_open_mode_type) & 失敗: Mode がアトムでない\\
+error(bad_open_mode)      & 失敗: Mode が r,w,a 以外のアトムである\\
+\end{tabular}
+\vspace{1ex}
+
+\MpIOCreate{file:create(Stream, FileName, Mode)}
+ファイル名 FileName (8ビットストリング)のファイルを、モード Mode (アトム,
+r:リード , w:ライト, a:アペンド) でオープンし、そのファイルに繋がるコマンド・
+ファイルのオープンが失敗するとタスク全体が強制終了される。
+
+\end{itemize}
+\SubSubSection{コマンド} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{にゅうしゅつりょくきのう@入出力機能!コマンド}
+コマンド・ストリームに流せるコマンドを以下に示す。
+これらは特に指定の無い限りウィンドウ/ファイルに共通に使うことができる。
+
+\UnderlineIndex{入力用コマンド}
+\index{にゅうしゅつりょくきのう@入出力機能!にゅうりょくようコマンド@入力用コマンド}
+I/O からの入力を要求する。
+\begin{itemize}
+
+\MpIOCommand{getc}{(^Char)}
+I/O から1文字を読み込み、そのコード(ASCIIコード, 0 $\leq$ コード $\leq$ 255)
+を Char とユニファイする。
+エンド・オブ・ファイルならばアトム end_of_file をユニファイする。
+
+\MpIOCommand{getl}{(^String)}
+I/Oから1行を読み込み、それを8ビットストリングに変換し String とユニファイする。
+エンド・オブ・ファイルならばアトム end_of_file をユニファイする。
+
+\MpIOCommand{getb}{(^Buffer, Size)}
+I/O から Size(Size  $>$ 0)で示される数だけ文字を読み込み、それを8ビット
+ストリングに変換し Buffer とユニファイする。
+ウィンドウからの入力で途中で改行になった場合や、
+入力途中でエンド・オブ・ファイルになった場合は、そこまでの文字を入力とする。
+エンド・オブ・ファイル状態ならばアトム end_of_file をユニファイする。
+
+\MpIOCommand{gett}{(^Term)}
+I/O からターム1個を構成する文字列(ピリオド+改行 または ピリオド+スペース まで)
+を読み込み、その文字列の構文解析を行ないタームに変換し、結果を Term と
+ユニファイする。
+構文解析でエラーがある場合、ウィンドウではそのウィンドウにエラーを通知し、
+再び入力待ちになる。ファイルではコマンド・インタプリタのウィンドウにエラーを
+通知し、その次のタームを読み込む。
+エンド・オブ・ファイルならばアトム end_of_file をユニファイする。
+
+\MpIOCommand{gett}{(^Term, ^Status)}
+gett/1コマンドとほぼ同じだが、Status に以下のものがユニファイされる。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success                   & ターム読み込み成功\\
+syntax_error(Position)    & 文法エラー\\
+ambiguous(Position)       & 曖昧な表現\\
+end_of_file               & エンド・オブ・ファイル\\
+eof_in_quote              & クォート中にエンド・オブ・ファイル\\
+\end{tabular}
+
+Status が syntax_error, ambiguous, eof_in_qoute の場合は、
+Term にはトークン・リスト (\ref{sec-IO-device} gettkn/4 を参照) 
+をユニファイする。
+
+\MpIOCommand{getft}{(^Term, ^NumberOfVariables)}
+gett/1 コマンドとほぼ同じであるが、ターム中の変数は \$VAR(N,VN) で表す。
+N は変数番号(0 $\leq$ N $<$ NumberOfVariables), VN は変数名(8ビット
+ストリング)である。
+また、変数の種類数を NumberOfVariables にユニファイする(種類数 $\geq$ 0)。
+エンド・オブ・ファイルならば Term にアトム end_of_file を NumberOfVariables
+には 0 をそれぞれユニファイする。
+
+\MpIOCommand{getft}{(^Term, ^NumberOfVariables, ^Status)}
+getft/2 とほぼ同じだが、Statusについては gett/2 を参照。
+
+\MpIOCommand{skip}{(Char)}
+文字コード Char が出現するか、エンド・オブ・ファイルとなるまで読み飛ばす。
+
+\end{itemize}
+\Caution 読み込みが終了した(エンド・オブ・ファイルになった)あとの入力要求には
+アトム end_of_file を返し続ける。  
+
+\UnderlineIndex{出力用コマンド}
+\index{にゅうしゅつりょくきのう@入出力機能!しゅつりょくようコマンド@出力用コマンド}
+I/O へ出力を要求する。
+\begin{itemize}
+
+\MpIOCommand{putc}{(Char)}
+I/O へ文字コード Char (ASCIIコード, 0 $\leq$ Char $\leq$ 255)で示される文字を
+書き出す。
+
+\MpIOCommand{putl}{(String)}
+I/O へ String (8ビットストリング)で示される文字列を書き出し、改行を行う。
+
+\MpIOCommand{putb}{(Buffer)}
+I/O へ Buffer (8ビットストリング)で示される文字列を書き出す。改行は行わない。
+
+\MpIOCommand{putb}{(Buffer, Count)}
+I/O へ Buffer の先頭から Count 文字を出力する。Buffer の長さが Count より
+小さければ putb/1 と同じ。
+
+\MpIOCommand{putt}{(Term, Length, Depth)}
+I/O へ Term で示されるタームを書き出す。この時、
+構造体の長さが Length (Length $>$ 0), 深さが Depth (Depth $>$ 0) を越える部分
+は ... と省略して出力される。Prolog の write に相当。\\
+\Caution アトムにクオート付けを行わないので、このコマンドで書き出したものが
+必ずしも gett,getft で読めるとは限らないので注意。
+
+\MpIOCommand{putt}{(Term)}
+putt/3 コマンドとほぼ同じ。構造体の長さ, 深さの制限はデフォルト値を使用する。
+
+\MpIOCommand{puttq}{(Term, Length, Depth)}
+putt/3 とほぼ同じだが、必要に応じてアトムにクオート付けを行う。
+Prolog の writeq に相当。
+
+\MpIOCommand{puttq}{(Term)}
+putt/1 とほぼ同じだが、必要に応じてアトムにクオート付けを行う。
+
+\MpIOCommand{nl}{}
+改行を行う。
+
+\MpIOCommand{tab}{(N)}
+空白を N (0 $\leq$ N $<$ 1000)で示される数だけ出力する。
+
+\end{itemize}
+\Caution Micro PIMOS では I/O デバイスとの通信回数を減らすため、
+出力データのブロッキングを行ない出力用のバッファに溜めているので、コマンドを
+送っただけでは出力されない。バッファが I/O へ送られるのは、以下の場合である。
+\begin{itemize}
+\item バッファが一杯になった時
+\item flush コマンドを受け付けた時
+\item I/O を閉じた時
+\item 入力要求コマンド, show/hide コマンドを受け付けた時(ウィンドウのみ)
+\end{itemize}
+
+\UnderlineIndex{出力形式の制御}
+\index{にゅうしゅつりょくきのう@入出力機能!しゅつりょくけいしきのせいぎょ@出力形式の制御}
+putt/1, puttq/1 コマンド実行時における構造体の出力制限のデフォルト値等を
+変更する。
+\begin{itemize}
+
+\MpIOCommand{print_length}{(Length)}
+構造体の長さの制限のデフォルトを Length (Length $>$ 0)で示される値に設定する。
+初期値はウィンドウに対しては 10、ファイルに対しては 100 である。
+
+\MpIOCommand{print_depth}{(Depth)}
+構造体の深さの制限のデフォルトを Depth (Depth $>$ 0)で示される値に設定する。
+初期値はウィンドウに対しては 10、ファイルに対しては 100 である。
+
+\MpIOCommand{print_var_mode}{(VariableMode)}
+変数を表わすターム \$VAR(N,VN), \$VAR(N) の出力形式を変更する。
+VariableMode はアトムで `na' または `nu' のいずれかを与える。
+初期値は `na' である。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{lcl@{ $\rightarrow$ }l}
+na -- Name Mode   & :: & \$VAR(N,VN) & VN (変数名ストリング)で出力\\
+                  &    & \$VAR(N)    & A,B,C ... で出力\\
+nu -- Number Mode & :: & \$VAR(N,VN) & _N (変数番号)で出力\\
+                  &    & \$VAR(N)    & _N (変数番号)で出力\\
+\end{tabular}
+\vspace{1ex}
+\end{itemize}
+
+\UnderlineIndex{出力用バッファコマンド}
+\index{にゅうしゅつりょくきのう@入出力機能!出力用バッファコマンド@出力用バッファコマンド}
+出力用のバッファの制御に関するコマンドである。
+\begin{itemize}
+
+\MpIOCommand{flush}{(^Status)}
+バッファに溜ったデータを出力する。
+出力が完了すると Status にアトム `done' がユニファイされる。
+
+\MpIOCommand{buffer_length}{(BufferLength)}
+バッファのサイズを BufferLength (BufferLength $>$ 0) に変更する。
+バッファサイズの初期値はウィンドウが 512 バイト, ファイルが 2048 バイト。
+
+\end{itemize}
+
+\UnderlineIndex{演算子}
+\index{にゅうしゅつりょくきのう@入出力機能!えんざんし@演算子}
+構文解析に用いる演算子に関するコマンドである。
+\begin{itemize}
+
+\MpIOCommand{add_op}{(Precedence, Type, OperatorName)}
+順位 Precedence (1 $\leq$ Precedence $\leq$ 1200),
+型 Type (アトム: fx, fy, xf, yf, xfy, xfx, yfx のいずれか),
+名前 OperatorName (アトム)の演算子を追加する。\\
+\Caution 定義済みのタイプと共存できない場合(fx $\leftrightarrow$ fy, 
+xf $\leftrightarrow$ yf, xfy $\leftrightarrow$ xfx $\leftrightarrow$ yfx)、
+古い定義を削除する。
+
+\MpIOCommand{remove_op}{(OperatorName)}
+名前 OperatorName の定義を全て削除する。
+
+\MpIOCommand{remove_op}{(Precedence, Type, OperatorName)}
+順位 Precedence (1 $\leq$ Precedence $\leq$ 1200),
+型 Type (アトム: fx, fy, xf, yf, xfy, xfx, yfx のいずれか),
+名前 OperatorName (アトム)の演算子を削除する。
+
+\MpIOCommand{operator}{(OperatorName, ^Definition)}
+名前が OperatorName (アトム)の演算子の定義を要素とするリストを生成し
+ Definition とユニファイする。
+要素は \{順位,型\} の形式である。
+
+\MpIOCommand{replace_op_pool}{(^OldOpPool, NewOpPool)}
+旧オペレータプールをOldOpPoolとユニファイし、オペレータプールをNewOpPoolに
+変更する。オペレータプールの形式は 
+[\{OpName, [\{Precedence, Type\}, ...]\}, ...]である。
+
+\MpIOCommand{change_op_pool}{(NewOpPool)}
+オペレータプールをNewOpPoolに変更する。
+
+\end{itemize}
+
+\UnderlineIndex{一括処理}
+\index{にゅうしゅつりょくきのう@入出力機能!いっかつしょり@一括処理}
+\begin{itemize}
+
+\MpIOCommand{do}{(CommandList)}
+コマンドのリスト CommandList を一括して I/O に送る。
+コマンド・ストリームのマージを行っても CommandList 内のコマンドの連続性は
+保証される。
+
+\end{itemize}
+
+\UnderlineIndex{制御コマンド}
+\index{にゅうしゅつりょくきのう@入出力機能!せいぎょコマンド@制御コマンド}
+\begin{itemize}
+
+\MpIOCommand{close}{(^Status)}
+I/O をクローズする。close コマンドを送った後はコマンド・ストリームにコマンド
+を流すことはできない。(\verb|[]| で閉じることができるのみ)
+Status にはアトム `success' がユニファイされる。
+
+\end{itemize}
+
+\UnderlineIndex{ウィンドウコマンド}
+\index{にゅうしゅつりょくきのう@入出力機能!ウィンドウコマンド}
+ウィンドウにのみ有効なコマンドである。
+\begin{itemize}
+
+\MpIOCommand{show}{}
+隠れているウィンドウを表示する。
+
+\MpIOCommand{hide}{}
+表示されているウィンドウを隠す。
+
+\MpIOCommand{clear}{}
+ウィンドウをクリアする。
+
+\MpIOCommand{beep}{}
+ベルを鳴らす。
+
+\MpIOCommand{prompt}{(^Old, New)}
+gett, getft コマンド実行時に出力される現在のプロンプトを Old (8ビット
+ストリング)にユニファイし、プロンプトを New (8ビットストリング)に変更する。
+プロンプトの初期値は \verb|"?- "|。
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{ディレクトリの管理}
+\label{sec-MPIMOS-directory}
+\index{ディレクトリのかんり@ディレクトリの管理}
+Micro PIMOS のディレクトリ・サービスを利用したい場合、入出力サービスと同様に、
+Micro PIMOS が提供する述語を呼び出すことによりディレクトリ・コマンド・
+ストリームと呼ぶストリームを得ることができる。
+\index{ディレクトリのかんり@ディレクトリの管理!ディレクトリ・コマンド・ストリーム}
+ユーザーはこのストリームにコマンドを流すことによりディレクトリに関する処理を
+行うことができる。
+コマンド・ストリームが不要になった時は \verb|[]| で閉じればよい。
+
+\SubSubSection{コマンド・ストリームの獲得} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{ディレクトリのかんり@ディレクトリの管理!コマンド・ストリームのかくとく@コマンド・ストリームの獲得}
+\begin{itemize}
+
+\MpDirCreate{directory:create(Stream, DirectoryName, ^Status)}
+ディレクトリ名 DirectoryName (8ビットストリング)のディレクトリをアクセスし、
+ディレクトリに繋がるコマンド・ストリームを Stream とユニファイする。
+Status には以下のものがユニファイされる。 \index{directory}
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success                        & 成功\\
+error(cannot_access)           & 失敗: ディレクトリにアクセスできない\\
+error(bad_directory_name_type) & 失敗: DirectoryNameが8ビットストリングでない\\
+\end{tabular}
+\end{itemize}
+
+\SubSubSection{コマンド} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{ディレクトリのかんり@ディレクトリの管理!コマンド}
+ディレクトリのコマンド・ストリームに流せるコマンドを以下に示す。
+\begin{itemize}
+\MpDirCommand{pathname}{(^PathName)}
+ディレクトリのフルパス名(8ビットストリング)を PathName にユニファイする。
+        
+\MpDirCommand{listing}{(WildCard, ^FileNames, ^Status)}
+WildCard (8ビットストリング)で表現されるファイル群のパス名のリストを生成し、
+FileNames にユニファイする。Status には以下のものがユニファイされる。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success               & 成功\\
+error(cannot_listing) & 失敗: リスティングできなかった\\
+\end{tabular}
+\vspace{1ex}
+
+\MpDirCommand{delete}{(WildCard, ^Status)}
+WildCard (8ビットストリング)で表現されるファイル群をディレクトリから削除する。
+Status には以下のものがユニファイされる。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success              & 成功\\
+error(cannot_delete) & 失敗: 削除できなかった\\
+\end{tabular}
+\vspace{1ex}
+
+\MpDirCommand{open}{(Stream, FileName, Mode, ^Status)}
+ファイル名 FileName (8ビットストリング)のファイルを、モード Mode (アトム,
+r:リード , w:ライト, a:アペンド) でオープンし、そのファイルに繋がるコマンド・
+ストリームを Stream とユニファイする。
+Status には以下のものがユニファイされる。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ …… }l}
+success                   & 成功\\
+error(cannot_open_file)   & 失敗: ファイルがオープンできない\\
+error(bad_file_name_type) & 失敗: FileName が8ビットストリングでない\\
+error(bad_open_mode_type) & 失敗: Mode がアトムでない\\
+error(bad_open_mode)      & 失敗: Mode が r,w,a 以外のアトムである\\
+\end{tabular}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{入出力用のデバイス・ストリーム}
+\label{sec-MPIMOS-device}
+\index{デバイス・ストリーム}
+Micro PIMOS 内から入出力デバイス\index{にゅしゅつりょくデバイス@入出力デバイス}
+の機能を直接利用できるように、以下の
+ライブラリを用意している。これらの機能は KL1 で Micro PIMOS 以外の OS
+(例えば PIMOS)などを記述する為の機能であり、通常のユーザは以下で説明する
+デバイス・ストリームを使用する必要は無い。
+これにより得られるデバイス・ストリームは Micro PIMOS により監視されているので、
+間違ったコマンド等を送ってもユーザー・タスクの失敗になるだけで、処理系自身が
+おかしくなることはない。
+
+\SubSubSection{デバイス・ストリームの確保} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{デバイス・ストリーム!デバイス・ストリームのかくほ@デバイス・ストリームの確保}
+Micro PIMOS 内からデバイス・ストリームは次の述語により取り出すことができる。
+	それぞれのモジュール名は mpimos_io_device でもよい。
+\begin{itemize}
+
+\MpDevCreate{mpimos_window_device:windows(Stream)} 
+\index{mpimos_window_device}
+ウィンドウ・デバイスの機能を持つストリームを Stream とユニファイする。
+
+\MpDevCreate{mpimos_file_device:files(Stream)}
+\index{mpimos_file_device}
+ファイル・デバイスの機能を持つストリームを Stream とユニファイする。
+
+\MpDevCreate{mpimos_timer_device:timer(Stream)}
+\index{mpimos_timer_device}
+タイマ・デバイスの機能を持つストリームを Stream とユニファイする。
+
+\end{itemize}
+
+\SubSubSection{コマンド} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{デバイス・ストリーム!コマンド}
+それぞれのデバイス・ストリームに送ることができるコマンド、及びオープンされた
+ウィンドウ、ファイル、ディレクトリの各ストリームに送ることができるコマンドは、
+\ref{sec-IO-device} に説明のある入出力用のデバイス・ストリームのものと同じで
+あるので、そちらを参照のこと。
+ただし、ファイル/ウィンドウの入出力コマンドとしては以下のものしか使用できない。
+\begin{itemize}
+\item ウィンドウ
+\begin{itemize}
+\item[入力] getl(^Line, ^Status, Cdr) のみ使用可能。\\
+            getc/3, getb/4, gettkn/4 は使用できない。
+\item[出力] putb(Buffer, ^Status, Cdr) のみ使用可能。\\
+            putc/3, putl/3, putt/5 は使用できない。
+\end{itemize}
+\item ファイル
+\begin{itemize}
+\item[入力] getb(Size, ^Buffer, ^Status, Cdr) のみ使用可能。\\
+            getc/3, getl/3, gettkn/4 は使用できない。
+\item[出力] putb(Buffer, ^Status, Cdr) のみ使用可能。\\
+            putc/3, putl/3, putt/5 は使用できない。
+\end{itemize}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{コードの管理}
+\label{sec-MPIMOS-code}
+\index{こーどかんりきのう@コード管理機能}
+Micro PIMOS におけるコード管理機能の主なものには次のものがある。
+\begin{itemize}
+
+\item ロードされたモジュールの名前とそのモジュール中の各種情報(例えば、他の
+モジュールに公開している述語名の一覧, スパイされている述語名の一覧等)を管理し
+要求に応じて表示する機能。
+
+\item コマンド・インタプリタから save(ModuleName) や save_all コマンドを使って
+セーブしたモジュールのオート・ロード機能。
+\end{itemize}
+
+オートロードの対象となるディレクトリは、コマンド・インタプリタの環境変数
+loaddir の値で決められる。オート・ロード機能
+\index{オート・ロードきのう@オート・ロード機能}を使うためにはユーザーは自身の
+ホーム・ディレクトリの直下に \verb|"~/.PDSSsave"| なるディレクトリを作ることが
+望ましい。これは環境変数 loaddir の第一要素および savedir のデフォルト値が
+\verb|"~/.PDSSsave"| である為で、これらの環境変数の値は変更可能である。
+オート・ロード機能を抑制したい時は環境変数 auto_load の値を `no' にすることで
+可能である。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{例外情報の表示}
+\label{sec-MPIMOS-exception}
+\index{れいがいじょうほう@例外情報}
+PDSS における KL1 で規定している例外には \ref{sec-exception} に示したもの
+がある。Micro PIMOS ではユーザ・タスク内で発生した例外の情報はコマンド・
+インタプリタが持つウィンドウに表示される。また、例外を起こしたタスクは
+自動的に強制終了され、そのタスクが使用していた資源(ウィンドウやファイル)は
+解放される。 \index{れいがい@例外}
+
+Micro PIMOS により報告される例外には、言語で規定している例外以外に Micro PIMOS
+によって規定されている例外もある。ウィンドウに対するコマンドが誤りだったり、
+存在しないファイルをオープンしようとした場合などである。これらの例外発生時にも
+言語定義例外と同様、例外の情報がコマンド・インタプリタが持つウィンドウに表示
+され、例外を起こしたタスクは自動的に強制終了され、そのタスクが使用していた
+資源は解放される。
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  起動とオプション・パラメタ
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Section{起動とオプション・パラメタ}
+\index{PDSSのきどう@PDSSの起動}
+PDSS を実行する場合、通常は GNU-Emacs の下で実行する。実行環境を考えると、
+これが最も良い方法であり、PDSS の全ての機能が使える。
+PDSS 単体で動かすこともできるが、この場合には機能が制限される。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{GNU-Emacs下での実行}
+\index{PDSSのきどう@PDSSの起動!GNU-Emacsかでのじっこう@GNU-Emacs下での実行}
+PDSS を GNU-Emacs の下で実行する為には、GNU-Emacs に対して以下のような
+コマンドを与えれば自動的にライブラリがロードされ PDSS が起動される。
+\vspace{2ex}\\
+\hspace*{10em}\underline{{\bf meta-X pdss} {\it return}}
+\vspace{2ex}
+
+立ち上げ時のオプションを指定したい時には meta-X に先だって ctrl-U を入力する。
+オプション・パラメタの内容については後で述べる。
+\vspace{2ex}\\
+\hspace*{10em}\underline{{\bf ctrl-U meta-X pdss} {\it return}}\\
+\hspace*{10em} PDSS Option?: \underline{{\dg\bf [ パラメタ ]} {\it return}}
+\vspace{2ex}
+
+PDSS が起動されると、まずコンソール・ウィンドウと呼ばれるウィンドウが作られる。
+このウィンドウは実行のトレースを行ったり read_console や display_console の
+入出力先として使用されるウィンドウである。PDSS はコンソール・ウィンドウを
+生成した後ランタイム・サポート・ルーチンや Micro PIMOS の各種モジュールを
+ロードし、 Micro PIMOS の起動を行う。Micro PIMOS が起動されるとコマンド・
+インタプリタの入出力用ウィンドウが自動的に生成されユーザからのコマンド入力
+待ちとなる。
+
+GNU-Emacs の下で起動された場合、PDSS からの入力要求は非同期入力となるので、
+入力要求のために処理系全体が停止することはなくなる
+(トレーサー等のコンソールに対する入力要求では全体が停止する)。
+また、ウィンドウへのコントロール・キー入力により PDSS を制御することができる。
+これは GNU-Emacs のライブラリで定義されているもので、
+次のようなコマンドが提供される。
+これ以外にも定義されているものがあるので詳しくは \ref{sec-emacs} を参照のこと。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{lcl}
+ctrl-C ctrl-C & :: & トレース・フラグをオンにする。\\
+ctrl-C ctrl-Z & :: & 割込みコード1を入力。\\
+              &    & Micro PIMOS ではタスクの強制終了を意味する。\\
+ctrl-C ctrl-T & :: & 割込みコード2を入力。\\
+            & & Micro PIMOS ではタスクのその時点までのリダクション数を表示。\\
+ctrl-C !      & :: & GC を起動する。\\
+ctrl-C @      & :: & PDSS の実行を強制終了させる。\\
+ctrl-C ctrl-B & :: & PDSS に関する Window Buffer Menu の生成。\\
+ctrl-C ESC    & :: & PDSS システムを再起動する。\\
+ctrl-C k      & :: & 現在カーソルが表示されている Window の中身を削除する。\\
+ctrl-C ctrl-K & :: & PDSS で生成した Window の中身を削除する。\\
+ctrl-C ctrl-Y & :: & 最後に入力した文字列を再表示する。\\
+ctrl-C ctrl-F & :: & 組込述語のマニュアルを表示する。\\
+ctrl-C f   & :: & コマンド・インタプリタへのコマンドのマニュアルを表示する。\\
+\end{tabular}
+\vspace{1ex}
+
+\Caution ctrl-X k で PDSS に関するウィンドウを削除した場合、
+その後の実行結果は保証されていない。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{PDSS単体での実行}
+\index{PDSSのきどう@PDSSの起動!PDSSたんたいでのじっこう@PDSS単体での実行}
+PDSS を GNU-Emacs を使わずに実行する為には以下のコマンドを実行すれば良い。
+\vspace{2ex}\\
+\hspace*{10em}\underline{{\dg\bf pdss [ パラメタ ]} {\it return}}
+\vspace{2ex}
+
+GNU-Emacs を使わない場合には各ウィンドウへの出力は全て混ざって出力される。
+また、どこか1つのウィンドウで入力待ちとなると処理系全体が停止する。
+ウィンドウへのコントロール・キーによる制御も使えないので、
+代わりにキーボード割り込みがサポートされる。
+これはキーボードから ctrl-C を入力することにより行われ、
+プロンプトに従って制御用コマンドを入力することができる。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{オプション・パラメタ}
+\index{PDSSのきどう@PDSSの起動!オプション・パラメタ}
+\index{PDSSのきどう@PDSSの起動!オプション・パラメタのしていほうほう@オプション・パラメタの指定方法}
+起動時に指定できるオプション・パラメタと指定方法について述べる。
+パラメタの種類には以下のものがあり、これらを指定することにより標準と違った
+環境で実行することができる。
+\vspace{1ex}
+
+\hspace*{15mm}\begin{tabular}{l@{ :: }p{120mm}}
+\verb|-hNNN| &
+Heap Area の大きさを \verb|NNN| word とする。
+(デフォルトは 200000 word, 1 word = 8 byte)\\
+\verb|-cNNN| &
+Code Area の大きさを \verb|NNN| byte とする。
+(デフォルトは 500000 byte)\\
+{\BF ファイル名} &
+標準のスタートアップ・ファイルの代わりに指定したファイルをスタートアップ・
+ファイルとして立ち上げる。\\
+\verb|+t/-t| &
+スタートアップ・ファイルを使った起動をする/しない。(デフォルトは \verb|+t|)\\
+\verb|-v| &
+トレーサー等における変数の表示方法を指定する。通常は \verb|A,B,C,| ...
+という名前で表示するが、\verb|-v| を指定すると Heap Bottom からの相対アドレス
+\verb|_XXX| で表示する。このアドレスは GC によって変わるので注意が必要。\\
+\verb|-dNNN| &
+ゴールのスケジューリングを Depth First に変更する。\verb|NNN| は
+(execute命令による)TROによる実行の深さ制限を指定する。\\
+\verb|-bNNN| &
+ゴールのスケジューリングを Breadth First に変更する。\verb|NNN| は
+(execute命令による)TROによる実行の深さ制限を指定する。\\
+\verb|-rRR,SS,NNN| &
+ゴールのスケジューリングを Depth First を基本とし、乱数により一部ゴールを
+スケジューリング・キューの最後に回すことにより、マルチプロセッサの場合の
+非決定的な実行順序をシミュレートするモードに変更する。\verb|RR| はゴールを
+スケジューリング・キューの最後に回す割合でパーセントで指定する。
+\verb|SS| は擬似乱数を生成する場合の種を指定する。
+\verb|NNN| は(execute命令による)TROによる実行の深さ制限を指定する。\\
+\verb|-a| &
+タイマー割り込みを禁止する。dbxで処理系自身をデバッグする時に使う。\\
+\end{tabular}
+\vspace{1ex}
+
+これらのオプション・パラメタを指定する方法は2通り用意されている。
+\begin{itemize}
+\item 起動時に PDSS Option ?: への入力, pdss コマンドの引数により指定する。
+\begin{verbatim}
+      例-1)
+             PDSS Option ?: -h300000 -c50000 -v    (GNU-Emacs の下で実行)
+      例-2)
+             [UNIX]% pdss -h300000 -c50000 -v      (PDSS 単体で実行)
+\end{verbatim}
+\item 環境変数(PDSSOPT)により指定する。
+\begin{verbatim}
+      例)
+             [UNIX]% setenv PDSSOPT "-h300000 -c50000 -v"
+             [UNIX]% pdss
+\end{verbatim}
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  トレーサ
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Section{トレーサ}
+\label{sec-tracer}
+PDSS で実現しているトレーサについて説明する。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{考え方}
+\index{トレース}
+PDSSのトレースは基本的にゴール単位のトレースであり、
+ゴールが次のような状態になった時にトレースが行われる。
+このタイミングをトレース・ポイントと呼ぶ。\index{トレース・ポイント}
+\begin{itemize}
+\item ゴール呼び出し
+\item 具体化を待つ為の中断
+\item 中断からの復帰
+\item ゴールの失敗
+\item スワップ・アウト
+      (割込み、もしくはより高いプライオリティがスケジュールされたことによる)
+\end{itemize}
+
+KL1のトレースの方法としては「コードに注目したトレース」と実行中の「ゴールに
+注目したトレース」の2通りが考えられる。
+
+コードに注目したトレースとは、
+トレースしたいコードが呼び出された時にトレースを行うものであり、
+モジュールごとにトレース・モードを指定できる。
+以下ではこれをコード・トレースと呼ぶ。\index{コード・トレース}
+また、更に細かく、特定の述語にだけ注目してトレースを行うこともでき、
+これをコードのスパイと呼ぶ。\index{スパイ!コードのスパイ} \index{スパイ}
+
+ゴールに注目したトレースとは、
+生成された各ゴールごとにその子孫のゴール(すなわちそのゴールの実行によって
+生成されるゴール)をトレースするか、あるいはトレースしないかを指定するもの
+である。以下ではこれをゴール・トレースと呼ぶ。\index{ゴール・トレース}
+また、特に指定したゴールの子孫だけをトレースするという指定もでき、
+これをゴールのスパイと呼ぶ。\index{スパイ!ゴールのスパイ} \index{スパイ}
+
+例を考えてみよう。以下のプログラムで {\BF foo} がゴール・トレースの状態にあり、
+{\BF bar} がその状態になかったとすると、
+{\BF foo} から呼び出される {\BF p} も、更にそこから呼ばれる {\BF q}, {\BF r}
+もゴール・トレースの状態になるが、
+同じコード {\BF p}, {\BF q}, {\BF r} でも、{\BF bar} から呼び出された
+ゴールはゴール・トレースの状態にならない。
+\begin{center}\BF
+foo :- p. \hspace{1em} bar :- p. \hspace{1em} p :- q, r.
+\end{center}
+
+PDSSではコード・トレースのON/OFFを実行前/実行中にモジュール名で指定することが
+でき、ゴール・トレースのON/OFFは最初は必ずONで、実行中にトレーサーで見ている
+ゴールをOFFにすることができるようになっている。そして、
+このコード・トレースとゴール・トレースの両方がONになっているゴールだけを
+トレースするようにしている。
+
+スパイについては、コード・スパイのON/OFFを実行前/実行中にモジュール名と述語名
+で指定することができ、ゴール・スパイは実行中にトレーサーで見ているゴールに
+だけ設定することができる。そして、
+次のような4通りの組み合わせを指定できるようになっている。
+\index{スパイ} \index{スパイ!コードのスパイ} \index{スパイ!ゴールのスパイ}
+\begin{itemize}
+\item コードがスパイされているものである。
+\item ゴールがスパイされているものである。
+\item コードがスパイされているものであるか、
+または、ゴールがスパイされているものである。
+\item コードがスパイされているものであり、
+且つ、ゴールもスパイされているものである。
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{見方}
+\label{sec-howto-read}
+トレーサの表示は次のような4つの情報を持っている。
+\vspace{2ex}\\
+\hspace*{15mm}
+\shortstack[l]{\underline{\rule[-0.4ex]{0ex}{2.2ex}\tt [0012]}\\ 1}
+\shortstack[l]{\underline{\rule[-0.4ex]{0ex}{2.2ex}\tt CALL}\\ 2}
+\shortstack[l]{\underline{\rule[-0.4ex]{0ex}{2.2ex}\tt *\$}\\ 3}
+\shortstack[l]{\underline{\rule[-0.4ex]{0ex}{2.2ex}\tt module:goal(a1,a2)}\\ 4}
+\vspace{2ex}
+\begin{enumerate}
+
+\item このゴールが所属している荘園ID
+
+\item トレース・ポイントの種類:: 
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{l@{ :: }p{120mm}}
+\verb|CALL| & ゴール・キューから取り出されたことによるゴール呼び出し\\
+\verb|Call| & TROによるゴール呼出し\\
+\verb|SUSP| & 引数の具体化を待つ為の中断\\
+\verb|Susp| & プライオリティの具体化を待つ為の中断\\
+\verb|RESU| & 中断からの復帰\\
+\verb|FAIL| & ゴールの失敗\\
+\verb|SWAP| & スワップ・アウト\\
+\end{tabular} \index{トレース・ポイントの種類}
+\vspace{1ex}
+
+\item スパイ・フラグ::
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{l@{ :: }p{120mm}}
+\verb|*| & このゴールが実行しているコードがスパイされている。\\
+\verb|$| & このゴールがスパイされている。\\
+\end{tabular} \index{スパイ・フラグ}
+\vspace{1ex}
+
+\item ゴール\\
+引数のタームのうち、複数箇所から参照されている可能性のあるもの(所謂MRB-ONの
+状態)にはそのターム表示の直後に \verb|x| が表示される。\\
+また、変数はその性質により以下のように表示される。
+\begin{itemize}
+\item 普通の未定義変数:\\
+  先頭にアルファベットの大文字か `\verb|_|' が付いた数字... \verb|X1, _2361|
+\item ゴールによって具体化が待たれている変数:\\
+  普通の未定義変数の表記の直後に `\verb|~|' が付いたもの... \verb|X1~, _2361~|
+\item マージの入力である変数:\\
+  普通の未定義変数の表記の直後に `\verb|^|' が付いたもの... \verb|X1^, _2361^|
+\end{itemize}
+\end{enumerate}
+
+なお、これらの表示の他、トレースしているプライオリティが変化するごとに、
+プライオリティが表示される。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\SubSection{コマンド}
+\index{トレース!コマンド}
+\label{sec-tracer-commands}
+トレーサに対するコマンドを次のシンタックスで示す。
+\vspace{2ex}\\
+\hspace*{5em}コマンド名 :: 入力形式  引数  [オプション]
+\vspace{2ex}
+\begin{itemize}
+
+\TrCommand{Help}{?}
+コマンドのヘルプ。
+
+\TrCommand{No Trace}{X}
+以下トレースしない。
+
+\TrCommand{No Goal Trace}{x}
+そのゴールの子孫のゴール・トレースをOFFにする。これにより、
+そのゴールから呼び出されるゴール群のトレースは行われない。
+
+\TrCommand{Set Goal Spy}{g}
+指定した時点で表示しているゴールのスパイを行う。
+
+\TrCommand{Reset Goal Spy}{G}
+指定した時点で表示しているゴールのスパイを止める。
+
+\TrCommand{Set Module Debug Mode}{d MODULE [ MODULE ... ]}
+指定したモジュールのデバッグ・フラグをセットする。
+これにより、このモジュールを実行した場合にコード・トレースが行われる。
+
+\TrCommand{Reset Module Debug Mode}{D MODULE [ MODULE ... ]}
+指定したモジュールのデバッグ・フラグをリセットする。
+これにより、このモジュールを実行してもコード・トレースは行われない。
+
+\TrCommand{Set Procedure Spy}{p MODULE:PROCEDURE [ MODULE:PROCEDURE ... ]}
+指定した述語コードのスパイを行う。
+
+\TrCommand{Reset Procedure Spy}{P MODULE:PROCEDURE [ MODULE:PROCEDURE ... ]}
+指定した述語コードのスパイを止める。
+
+\TrCommand{Step}{s [COUNT]}
+次のトレース・ポイントで止まる。COUNT が指定された場合にはそのステップ数だけ
+トレースを行なった後で止まる。
+
+\TrCommand{Step to Next Spied Procedure}{sp [COUNT]}
+次のスパイされている述語コードが実行されるまでトレースを行い止まる。
+COUNT が指定された場合にはその回数だけ実行されるまでトレースを行なった後で
+止まる。
+
+\TrCommand{Step to Next Spied Goal}{sg [COUNT]}
+次のスパイされているゴールが実行されるまでトレースを行い止まる。
+COUNT が指定された場合にはその回数だけ実行されるまでトレースを行なった後で
+止まる。
+
+\TrCommand{Step to Next Spied Procedure or Spied Goal}{ss [COUNT]}
+次のスパイされている述語コードが実行されるか、次のスパイされているゴールが
+実行されるまでトレースを行い止まる。COUNT が指定された場合にはその回数だけ
+実行されるまでトレースを行なった後で止まる。
+
+\TrCommand{Step to Next Spied Procedure and Spied Goal}{SS [COUNT]}
+次の述語コードとゴールが共にスパイされているものが
+実行されるまでトレースを行い止まる。
+COUNT が指定された場合にはその回数だけ実行されるまで
+トレースを行なった後で止まる。
+
+\TrCommand{Skip to Next Spied Procedure}{np [COUNT]}
+次のスパイされている述語コードが実行されるまでトレースしない。
+COUNT が指定された場合にはその回数だけ実行された後で止まる。
+
+\TrCommand{Skip to Next Spied Goal}{ng [COUNT]}
+次のスパイされているゴールが実行されるまでトレースしない。
+COUNT が指定された場合にはその回数だけ実行された後で止まる。
+
+\TrCommand{Skip to Next Spied Procedure or Spied Goal}{ns [COUNT]}
+次のスパイされている述語コードが実行されるか、次のスパイされているゴールが
+実行されるまでトレースしない。COUNT が指定された場合にはその回数だけ実行され
+た後で止まる。
+
+\TrCommand{Skip to Next Spied Procedure and Spied Goal}{NS [COUNT]}
+次の述語コードとゴールが共にスパイされているものが
+実行されるまでトレースしない。
+COUNT が指定された場合にはその回数だけ実行された後で止まる。
+
+\TrCommand{Enqueue This Goal to Head of Ready Goal Queue}{\verb|<|}
+指定した時点で表示しているゴールを強制的に、スケジューリング・キューの先頭に
+エンキューする。\verb|RESU| と \verb|SWAP| のトレース・ポイントで指定できる。
+
+\TrCommand{Enqueue This Goal to Tail of Ready Goal Queue}{\verb|>|}
+指定した時点で表示しているゴールを強制的に、スケジューリング・キューの最後に
+エンキューする。\verb|CALL|, \verb|Call|, \verb|RESU| と \verb|SWAP| の
+トレース・ポイントで指定できる。
+
+\TrCommand{Depth First Schedule}{\verb|<<| [DEPTH]}
+ゴールのスケジューリングを Depth First に変更する。
+DEPTH は(execute命令による)TROによる実行の深さ制限を指定する。
+デフォルトは $2\SS{31}$。
+
+\TrCommand{Breadth First Schedule}{\verb|>>| [DEPTH]}
+ゴールのスケジューリングを Breadth First に変更する。
+DEPTH は(execute命令による)TROによる実行の深さ制限を指定する。
+デフォルトは 100。
+
+\TrCommand{Random Schedule}{\verb|><| [RATE [SEED [DEPTH]]]}
+ゴールのスケジューリングを Depth First を基本とし、乱数により一部ゴールを
+スケジューリング・キューの最後に回すことにより、マルチプロセッサの場合の
+非決定的な実行順序をシミュレートするモードに変更する。RATE はゴールを
+スケジューリング・キューの最後に回す割合でパーセントで指定する。
+SEED は擬似乱数を生成する場合の種を指定する。
+DEPTH は(execute命令による)TROによる実行の深さ制限を指定する。
+
+\TrCommand{Re-Write Goal}{w LENGTH [DEPTH]}
+Print-Length, Print-Depth を一時的に変えてゴールを再表示する。
+
+\TrCommand{Where call from}{where}
+トレース中のゴールの呼びだし元ゴールのモジュール名及び述語名を表示。
+ランタイムサポートルーチン及び組込述語(所謂 Dコード)の場合のみ有効。
+
+\TrCommand{Monitor Variable}{m VARIABLE_NAME [NAME] [LIMIT]}
+\index{へんすうのモニタ@変数のモニタ}
+変数が具体化された時にその値をモニタする。具体化された値がリスト(ストリーム)
+の場合は先頭の要素が決まる毎にその値を表示する。NAME を指定すると、モニター
+する変数に適当な名前を付けることができ、値の表示はその名前で表示する。
+LIMIT を指定すると、具体化された値を表示するときに LIMIT 回まで止まらずに
+表示する。LIMIT を指定しないと、具体化される度にその値を表示し、コマンドの
+入力待ちとなる。\\
+値を表示する時、具体化された値がリストの場合とその他の場合では区別される。
+リストの場合には値としてHEAD部だけが表示される。
+\begin{verbatim}
+          mon#変数名 => 値 %%    …… リストの場合
+          mon#変数名 == 値 %%    …… リスト以外の場合
+\end{verbatim}
+この際に入力できるコマンドには以下のものがある。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{l@{ :: }l}
+{\bf ?}                     & ヘルプ\\
+{\bf x}                     & この変数/リストのモニタリングを中止\\
+{\bf s  [COUNT]}            & COUNT回コマンド待ちにならないで進む\\
+{\bf w  LENGTH [DEPTH]}     & 表示した値の再表示\\
+{\bf m  VAR [NAME] [LIMIT]} & 新たにモニタをセットする\\
+\end{tabular}
+\vspace{1ex}
+
+\TrCommand{Inspect Ready Queue}{ir [PRIORITY]}
+レディ・キュー内のゴールを表示する。PRIORITY が指定された場合にはその物理
+プライオリティ・キュー内のゴールだけを表示する。
+
+\TrCommand{Inspect Variable}{iv VARIABLE_NAME}
+指定した変数の状態を表示する。もし HOOK や MHOOK の時(すなわちその変数の
+具体化を待っているゴールが既に存在している場合)にはその変数を待っている
+ゴールを表示する。MGHOK の時(すなわちマージャーへの入力となっている変数の場合)
+にはそのマージャーの出力側の変数が表示される。
+
+\TrCommand{Inspect Shoen tree}{is}
+指定した時点での荘園のツリー構造を表示する。横方向は親子関係、縦方向は
+兄弟関係。各荘園は5文字で表わされ、1文字目は荘園の状態、2〜5文字は荘園のID。
+荘園の状態を以下に示す。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{c@{ :: }l}
+R & レディ状態\\
+S & 停止状態\\
+A & アボート状態\\
+\end{tabular}
+\vspace{1ex}
+
+\TrCommand{Trace Shoen tree}{ts}
+荘園のツリー構造のトレース・フラグを ON/OFF に切り替える。フラグが ON の場合、
+荘園の生成, アボート, ターミネートがあった時点で、その前後のツリーを表示する。
+ツリーの表示形式は上記と同じ。
+
+\TrCommand{Set Tracer Variable}{set NAME [VALUE]}
+NAME で指定されたトレーサーの変数に値をセットする。値が指定されなかった場合
+にはその変数の値を表示する。変数及びそのデフォルト値を以下に示す。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{c@{ :: }p{120mm}}
+{\bf pv} & Print Variable Mode。n か a で指定する。n は Name-Mode
+(\verb|A,B,C,| ...)、a は Address Mode (\verb|_NNN|) を意味する。\\
+{\bf pl} & Print Length。整数で指定する。\\
+{\bf pd} & Print Depth。整数で指定する。\\
+{\bf g}  & Gate Switch (トレース・ポイントの各状態でトレースを行うかどうかを
+決めるスイッチ)。n,t,s から成る5文字で指定する。各文字は順に
+ \verb|CALL|/\verb|Call|, \verb|SUSP|/\verb|Susp|, \verb|RESU|, \verb|SWAP|,
+ \verb|FAIL| の各 Gate Switch に対応する。``n'' は No-Trace,
+  ``t'' は Trace (Not Stop), ``s'' は Trace (Stop) を意味する。\\
+{\bf c}  & Gate Switch -- \verb|CALL|。n, t, s の何れかを指定する。\\
+{\bf s}  & Gate Switch -- \verb|SUSP|。n, t, s の何れかを指定する。\\
+{\bf r}  & Gate Switch -- \verb|RESU|。n, t, s の何れかを指定する。\\
+{\bf w}  & Gate Switch -- \verb|SWAP|。n, t, s の何れかを指定する。\\
+{\bf f}  & Gate Switch -- \verb|FAIL|。n, t, s の何れかを指定する。\\
+\end{tabular}
+\vspace{1ex}
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  デッドロック検出
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Section{デッドロック検出}
+\index{デッドロック}
+\label{sec-deadlock}
+PDSS におけるデッドロックの検出機能には2つのものがある。
+一方は、一括GCの際に発見されるデッドロックであり、他方は、実行時に発見される
+デッドロックである。
+一括GCの場合には、プログラムの実行がデッドロックに陥っていれば必ずそれが
+発見されるが、実行時の検出機能では、ある条件のものしか発見されない。
+
+以下ではPDSSで発見されるデッドロックの種類とその場合のトレーサの出力例を示す。
+
+\UnderlineIndex{一括GCでデッドロックが発見された: Type=0}
+例 -- 次のゴールを実行した場合。
+\begin{verbatim}
+            Goal :: ?- add(X,_,Y), divide(Y,_,Z), modulo(Z,_,_).
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+            Used :       2594     20     75    10      30112        0
+            Deadlock::[0001]$$$SYSTEM:modulo(A~,B,C)
+            Deadlock::[0001]$$$SYSTEM:divide(D~,E,A~)
+            Deadlock::[0001]$$$SYSTEM:add(F~,G,D~)
+            *** Previous goal is deadlock root!
+            Shoen is terminated by deadlock!
+            After:       1083     14     57     3      15344        0
+            GCed :       1511      6     18     7      14768        0
+                         word    rec    rec   rec       byte     byte
+            GC Time: 40 msec
+\end{verbatim}
+コンソールウィンドウに表示される ``Previous goal is deadlock root!'' は、
+直前に表示されているゴールがデッドロックしているゴール群のデータ待ちに関する
+依存関係を木として解析した場合に、その依存関係木の根になっていることを意味
+する。依存関係木が複数有る場合も存在し、必ずしも根は一つではない。
+また、ループ構造になっていれば根は存在しない。
+
+\UnderlineIndex{
+自分だけしか参照していない変数(所謂ボイド変数)の具体化を待とうとした: Type=10}
+例 -- 以下のプログラムで \verb|p(X)| が実行された場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go   :- p(X).
+            Clause-2 :: p(a) :- true | true.
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [suspend(UNDEFoo)]
+            *** Waiting for instantiation of a void variable.
+            [0001]module:p(A).
+\end{verbatim}
+
+\UnderlineIndex{
+他のゴールによって具体化されることのない変数の具体化を待とうとした: Type=11}
+例 -- 以下のプログラムで \verb|p(X)| の実行終了後 \verb|q(X)| が実行された
+場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go   :- true | p(X), q(X).
+            Clause-2 :: p(a) :- true | true.
+            Clause-3 :: q(a) :- true | true.
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [suspend(HOOKoo)]
+            *** Waiting for instantiation of a variable which never be instantiated.
+            [0001]module:q(A~).
+            [0001]module:p(A~).
+\end{verbatim}
+
+\UnderlineIndex{
+自分だけしか参照していないマージャーの入力変数の具体化を待とうとした: Type=12}
+例 -- 以下のプログラムで \verb|merge(In,Out)| の実行終了後 \verb|p(X)| が
+実行された場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1  :: go   :- true | merge(In, Out), p(In), ….
+            Clause-2  :: p(a) :- true | true.
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [suspend(MGHOKo)]
+            *** Waiting for instantiation of a merger input variable.
+            [0001]module:p(A^).
+            [0001]merge(A^,B) in module:go/0
+\end{verbatim}
+
+\UnderlineIndex{
+具体化を待っているゴールを有するような変数をボイド変数とユニファイしてしまった:
+Type=20}
+例 -- 以下のプログラムで \verb|p(X)| の実行終了後 \verb|q(X,Y)| が実行された
+場合。\verb|Y| が最初からボイド変数でなく、実行の結果としてボイド変数になった
+場合でも同じである。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go :- p(X), q(X,Y).
+            Clause-2 :: p(a) :- true | true.
+            Clause-3 :: q(A,B) :- true | A=B.
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [unify(HOOKoo,VOID)]
+            *** A variable which has a goal waiting for instantiation is unified with
+            *** a void variable.
+            *** Unification occurred in module:q/2
+            [0001]module:p(A~).
+\end{verbatim}
+
+\UnderlineIndex{
+マージャーの入力変数をボイド変数とユニファイしてしまった: Type=21}
+\vspace{1ex}\par
+例 -- 以下のプログラムで \verb|merge(In,Out)| の実行終了後 \verb|p(In,_)|
+が実行された場合。
+\begin{verbatim}
+            Goal :: ?- moduel:go.
+            Clause-1  :: go :- true | merge(In, Out), p(In,_), q(Out).
+            Clause-2  :: p(A,B) :- true | A=B.
+            Clause-3  :: q([_|Cdr]) :- true | q(Cdr).
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock will occur. [unify(MGHOKo,VOID)]
+            *** A merger input variable is unified with a void variable.
+            *** Unification occurred in module:p/2
+            [0001]merge(A^,B) in module:go/0
+\end{verbatim}
+
+\UnderlineIndex{
+具体化を待っているゴールを有するような変数同士をユニファイしてしまった:
+Type=22}
+\vspace{1ex}\par
+例 -- 以下のプログラムで \verb|p(X)| 及び \verb|q(X)| が実行終了後
+\verb|r(X,Y)| が実行された場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go :- true | p(X), q(Y), r(X,Y).
+            Clause-2 :: p(a) :- true | true.
+            Clause-3 :: q(a) :- true | true.
+            Clause-4 :: r(A,B) :- true | A=B.
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [unify(HOOKoo,HOOKoo)]
+            *** Unifying two variables which have goals waiting for instantiation.
+            *** Unification occurred in module:r/2
+            [0001]module:p(A~).
+            [0001]module:q(B~).
+\end{verbatim}
+
+\UnderlineIndex{
+具体化を待っているゴールを有するような変数とマージャーの入力変数をユニファイ
+してしまった: Type=23}\vspace{1ex}\par
+例 -- 以下のプログラムで \verb|merge(In,Out)| 及び \verb|p(X)| が実行終了
+後 \verb|q(X,In)| が実行された場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go   :- true | merge(In, Out), p(X), q(X, In), r(Out).
+            Clause-2 :: p(a) :- true | true.
+            Clause-3 :: q(A,B) :- true | A=B.
+            Clause-4 :: r([_|Cdr]) :- true | r(Cdr).
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [unify(HOOKoo,MGHOKo)]
+            *** Unifying variable which has a goal waiting for instantiation is unified
+            *** and a merger input variable.
+            *** Unification occurred in module:q/2
+            [0001]module:p(A~).
+            [0001]merge(B^,C) in module:go/0
+\end{verbatim}
+
+\UnderlineIndex{
+マージャーの入力変数同士をユニファイしてしまった: Type=24}
+\vspace{1ex}\par
+例 -- 以下のプログラムで \verb|merge(In1,Out1)| 及び \verb|merge(In2,Out2)|
+が実行終了後 \verb|In1=In2| が実行された場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go :- true | merge(In1, Out1), merge(In2, Out2),
+                                     p(In1,In2), q(Out1), r(Out2).
+            Clause-2 :: p(A,B) :- true | A=B.
+            Clause-3 :: q([_|Cdr]) :- true | q(Cdr).
+            Clause-4 :: r([_|Cdr]) :- true | r(Cdr).
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock will occur. [unify(MGHOKo,MGHOKo)]
+            *** Unifying two merger input variables.
+            *** Unification occurred in module:p/2
+            [0001]merge(A^,B) in module:go/0
+            [0001]merge(C^,D) in module:go/0
+\end{verbatim}
+
+\UnderlineIndex{
+具体化を待っているゴールを有するような変数を具体化しないまま他のどのゴール
+からも参照しなくなった: Type=30}\vspace{1ex}\par
+例 -- 以下のプログラムで \verb|p(X)| が実行終了後 \verb|q(X)| が実行された
+場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go   :- true | p(X), q(X).
+            Clause-2 :: p(a) :- true | true.
+            Clause-3 :: q(_) :- true | true.
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock occurred. [collect(HOOKoo)]
+            *** A variable which has a goal waiting for instantiation was abandoned.
+            *** Collect_value occurred in module:q/1
+            [0001]module:p(A~).
+\end{verbatim}
+
+\UnderlineIndex{
+マージャーの入力変数を具体化しないままどのゴールからも参照しなくなった:
+Type=31}
+\vspace{1ex}\par
+例 -- 以下のプログラムで \verb|merge(In,Out)| が実行終了後 \verb|p(In)| が
+実行された場合。
+\begin{verbatim}
+            Goal :: ?- module:go.
+            Clause-1 :: go   :- true | merge(In, Out), p(In), q(Out).
+            Clause-2 :: p(_) :- true | true.
+            Clause-3 :: q([_|Cdr]) :- true | q(Cdr).
+\end{verbatim}
+コンソールウィンドウに表示される情報は次のとおり。
+\begin{verbatim}
+            *** Deadlock will occur. [collect(MGHOKo)]
+            *** A merger input variable was abandoned.
+            *** Collect_value occurred in module:p/1
+            [0001]merge(A^,B) in module:go/0
+\end{verbatim}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  付録
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\BeginAppendix
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{入出力用のデバイス}
+\AppendixLabel{sec-IO-device}
+\index{にゅしゅつりょくデバイス@入出力デバイス}
+PDSS では入出力用のデバイスとしてウィンドウ, ファイルとタイマを提供している。
+ユーザーはこのデバイスに繋がるストリームに規定のコマンドを流すことにより
+デバイスを利用することができる。これらのデバイスはモジュール
+pdss_window_device, pdss_file_device, pdss_timer_device で定義されている。
+\index{ウィンドウ} \index{ファイル}
+
+なお、この入出力用デバイスの仕様は ``FEP・本体間 I/Oインタフェース仕様書
+ (V0.9)'' に準拠している。しかし、全ての機能を実現することは出来ないので、
+幾つかのメッセージはダミーであったり、受付けないものもある。
+
+また、ここで使用している \verb|fep#xxxx| というマクロ表現は、ライブラリ・
+マクロであり、これを使いたいモジュールでは \index{with_macro}
+\begin{verbatim}
+            :- with_macro pdss.
+\end{verbatim}
+という宣言を行う必要がある。
+
+\UnderlineIndex{デバイス・ストリームの確保}
+\index{にゅしゅつりょくデバイス@入出力デバイス!デバイス・ストリーム}
+\index{にゅしゅつりょくデバイス@入出力デバイス!デバイス・ストリームのかくほ@デバイス・ストリームの確保}
+デバイス・ストリームは次の述語により取り出すことができる。
+これらの述語はエミュレータが起動した後で1回だけ呼び出すことができ、
+2回目以降の呼出しは失敗する。
+\begin{itemize}
+
+\DevCreate{pdss_window_device:windows(Stream)}
+ウィンドウ・デバイスに繋がるストリームを Stream とユニファイする。
+
+\DevCreate{pdss_file_device:files(Stream)}
+ファイル・デバイスに繋がるストリームを Stream とユニファイする。
+
+\DevCreate{pdss_timer_device:timer(Stream)}
+タイマ・デバイスに繋がるストリームを Stream とユニファイする。
+
+\end{itemize}
+
+\UnderlineIndex{デバイス・コマンド}
+\index{にゅしゅつりょくデバイス@入出力デバイス!デバイス・コマンド}
+\begin{enumerate}
+\item ウィンドウ・デバイス\\
+ウィンドウ・デバイスは GNU-Emacs 上でマルチ・ウィンドウの機能を提供する
+デバイスである。このデバイスには次のコマンドを送ることができる。
+\index{にゅしゅつりょくデバイス@入出力デバイス!ウィンドウ・デバイス}
+\begin{itemize}
+
+\DevCommand{create(BufferName, WindowStream, ^Status, Cdr)}
+バッファ名が BufferName (8ビットストリング)であるウィンドウをオープンし、
+そのウィンドウに繋がるストリームを WindowStream にユニファイする。
+オープンが成功した場合には Status に \verb|fep#normal| がユニファイされる。
+PDSS では同時にオープンできるウィンドウの数は16個までであるので、それを
+超えた場合にはオープンは失敗し、Status に \verb|fep#abnormal| がユニファイ
+される。\\
+オープンしたウィンドウ・ストリームには後述する入出力コマンドや制御用コマンド
+を送ることができる (実際には、アボート・ラインとアテンション・ラインを
+張るための reset/4 コマンドを送った後でなければならない)。
+また、ストリームを閉じるとウィンドウは自動的にクローズされる。
+
+\DevCommand{create(WindowStream, ^Status, Cdr)}
+バッファ名のない create/3 は使用できない。
+
+\DevCommand{get_max_size(X, Y, PathName, ^Characters, ^Lines, ^Status, Cdr)}
+常に Characters=80, Lines=40, Status=\verb|fep#normal| を返す。
+
+\end{itemize}
+\item ファイル・デバイス\\
+ファイル・デバイスは UNIX のファイル機能を提供するデバイスである。
+このデバイスには次のコマンドを送ることができる。
+\index{にゅしゅつりょくデバイス@入出力デバイス!ファイル・デバイス}
+\begin{itemize}
+
+\DevCommand{open(PathName, Mode, FileStream, ^Status, Cdr)}
+パス名が PathName (8ビットストリング)であるファイルをモード Mode (アトム:
+\verb|fep#read| = リード・モード, \verb|fep#write| = ライト・モード,
+\verb|fep#append| = アペンド・モード)でオープンし、そのファイルに繋がる
+ストリームを FileStream にユニファイする。
+オープンが成功した場合には Status に \verb|fep#normal| がユニファイされる。
+なんらかの原因でファイルがオープンできない場合には \verb|fep#abnormal| が
+ユニファイされる。
+オープンしたファイル・ストリームには後述する入出力コマンドや制御用コマンドを
+送ることができる。(ファイルの場合も reset/4 を送っておく必要がある。)
+また、ストリームを閉じるとファイルは自動的にクローズされる。
+
+\DevCommand{directory(PathName, DirectoryStream, ^Status, Cdr)}
+パス名が PathName (8ビットストリング)であるディレクトリをオープンし、
+そのディレクトリに繋がるストリームを DirectoryStream にユニファイする。
+オープンが成功した場合には Status に \verb|fep#normal| がユニファイされる。
+なんらかの原因でオープンできない場合には \verb|fep#abnormal| がユニファイ
+される。オープンしたディレクトリ・ストリームには後述するコマンドを送ることが
+できる(ディレクトリの場合も reset/4 を送っておく必要がある)。
+また、ストリームを閉じるとディレクトリは自動的にクローズされる。
+
+\end{itemize}
+\item タイマ・デバイス\\
+タイマ・デバイスはタイマ機能を提供するデバイスである。
+このデバイスには次のコマンドを送ることができる。
+時間の単位はミリ秒であるが、実際にカウントされるのは秒単位である
+(切り上げされる)。
+\index{にゅしゅつりょくデバイス@入出力デバイス!タイマ・デバイス}
+\begin{itemize}
+
+\DevCommand{get_count(^Count, ^Status, Cdr)}
+午前 0 時 0 分 0 秒から現在までのミリ秒数を Count にユニファイする。
+Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{on_at(Count, ^Now, ^Status, Cdr)}
+Count で指定された時刻になると、Now に \verb|fep#wake_up| をユニファイする。
+Status にはコマンドを受け取った時点で \verb|fep#normal| をユニファイする。
+
+\DevCommand{on_after(Count, ^Now, ^Status, Cdr)}
+Count で指定された時間が経過すると、Now に \verb|fep#wake_up| にユニファイ
+する。Status にはコマンドを受け取った時点で \verb|fep#normal| をユニファイ
+する。
+
+\end{itemize}
+\end{enumerate}
+
+\UnderlineIndex{ウィンドウ, ファイル, ディレクトリのコマンド}
+\index{ウィンドウ|(} \index{ファイル|(}
+\begin{enumerate}
+\item ウィンドウ,ファイル共通の制御用コマンド\\
+これはウィンドウとファイルに共通するコマンドである。
+\begin{itemize}
+
+\DevCommand{reset(AbortLine, ^AttentionLine, ^Status, Cdr)}
+アボート・ラインとアテンション・ラインを張る。このコマンドは I/O ストリーム
+が生成された直後に出されなければならない。 AbortLine には I/O 要求をアボート
+したい時に、本体側から \verb|fep#abort| をユニファイする。これが一旦
+ユニファイされると、再度の reset/4 コマンドでアボート・ラインとアテンション・
+ラインを張りなおすか、ストリームを \verb|[]| で閉じるかのどちらかでなければ
+ならない。AttentionLine にはデバイス側から割込みコード(整数)がユニファイ
+される。この場合には I/O をアボートするか、next_attention/3 コマンドにより
+アテンション・ラインを張りなおさなければならない。
+
+\DevCommand{next_attention(^Attention, ^Status, Cdr)}
+アテンション・ラインのみを張りなおす。アテンション入力はあったがアボート
+はしたくない時に使われる。
+
+\end{itemize}
+\item 共通の入力コマンド\\
+これはウィンドウおよびリード・モードでオープンしたファイルに対して送ることが
+できるコマンドである。
+\begin{itemize}
+
+\DevCommand{getc(^Char, ^Status, Cdr)}
+1文字を読み込みその文字コードを Char にユニファイする。読み込みが成功した場合
+には Status には \verb|fep#normal| がユニファイされる。 もしエンド・オブ・
+ファイルだった場合には \verb|fep#end_of_file| がユニファイされる。\\
+\Caution Multi-PSI V2 FEP ではサポートされない。
+
+\DevCommand{getl(^Line, ^Status, Cdr)}
+1行を読み込みそれを8ビットストリングにして Line にユニファイする。
+この時改行コードは取り除かれる。読み込みが成功した場合には Status には
+\verb|fep#normal| がユニファイされる。もしエンド・オブ・ファイルだった場合
+には \verb|fep#end_of_file| がユニファイされる。\\
+\Caution Multi-PSI V2 FEP のファイルではサポートされない。
+
+\DevCommand{getb(Size, ^Buffer, ^Status, Cdr)}
+Size (整数)で指定されたバイト数だけ読み込み8ビットストリングにして Buffer に
+ユニファイする。ウィンドウからの入力で途中で改行になった場合には改行までを
+入力とする。読み込みが成功した場合には Status には \verb|fep#normal| が
+ユニファイされる。もしエンド・オブ・ファイルだった場合には
+\verb|fep#end_of_file| がユニファイされる。\\
+\Caution Multi-PSI V2 FEP のウィンドウではサポートされない。
+
+\DevCommand{gettkn(^TokenList, ^Status, ^NumberOfVariables, Cdr)}
+ターム1個を構成しうる文字列を読み込み、その文字列のトークン解析を行い、
+生成したトークンのリストを TokenList にユニファイする。また、トークン・リスト
+の中の変数の種類数を NumberOfVariables にユニファイする。
+トークンの形式\index{トークンのけいしき@トークンの形式}
+を以下に示す。
+\vspace{1ex}\\
+\hspace*{15mm}\begin{tabular}{l@{ :: }l}
+変数         & \verb|$|VAR(N,String)\\
+アトム       & atom(Atom)\\
+整数         & integer(Integer)\\
+浮動小数点数 & float(Float)\\
+ストリング   & string(String)\\
+ファンクタ   & open(Atom)\\
+符号         & sign(Atom)\\
+特殊文字     & 特殊文字を印字名とするアトム\\
+異常データ   & illegal(String)\\
+終端         & end\\
+\end{tabular}
+\vspace{1ex}\\
+読み込みが成功した場合には Status には \verb|fep#normal| がユニファイされる。
+もしエンド・オブ・ファイルだった場合には \verb|fep#end_of_file| がユニファイ
+される。またトークン解析でエラーがある場合には \verb|fep#abnormal| が
+ユニファイされる。\\
+\Caution Multi-PSI V2 FEP ではサポートされない。
+
+\end{itemize}
+\item 共通の出力コマンド\\
+これはウィンドウおよびライト・モードまたはアペンド・モードでオープンした
+ファイルに対して送ることができるコマンドである。
+\begin{itemize}
+
+\DevCommand{putc(Char, ^Status, Cdr)}
+Char (整数)で示される(ASCII)コードの1文字を書き出す。
+Status には \verb|fep#normal| がユニファイされる。\\
+\Caution Multi-PSI V2 FEP ではサポートされない。
+
+\DevCommand{putl(Line, ^Status, Cdr)}
+Line (8ビットストリング)で示されるストリングを書出し、改行する。Status には
+\verb|fep#normal| がユニファイされる。\\
+\Caution Multi-PSI V2 FEP ではサポートされない。
+
+\DevCommand{putb(Buffer, ^Status, Cdr)}
+Buffer (8ビットストリング)で示されるストリングを書き出す。Status には
+\verb|fep#normal| がユニファイされる。
+
+\DevCommand{putt(Term, Length, Depth, ^Status, Cdr)}
+Term で示されるタームを構造体の長さが Length 以内、深さが Depth 以内の範囲で
+書き出す。Length および Depth を超えた部分は \verb|...| が出力される。Status
+には \verb|fep#normal| がユニファイされる。このコマンドはデバッグ用出力関数を
+流用しているので、Term に含まれる変数は \verb|A,B,C| のように出力される。また、
+MRBやHOOKの記号が付加される。\\
+\Caution Multi-PSI V2 FEP ではサポートされない。
+
+\end{itemize}
+\item ウィンドウ用制御コマンド\\
+これはウィンドウに対してだけ送ることができるコマンドである。
+\begin{itemize}
+
+\DevCommand{close(^Status)}
+ウィンドウを閉じる。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{flush(^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。出力した
+データは flush/2 を実行しなくても自動的に flush される。
+
+\DevCommand{beep(^Status, Cdr)}
+ベルを鳴らす。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{clear(^Status, Cdr)}
+ウィンドウに表示されている内容を消す。Status には \verb|fep#normal| が
+ユニファイされる。
+
+\DevCommand{show(^Status, Cdr)}
+ウィンドウを見える状態にする。Status には \verb|fep#normal| がユニファイ
+される。作られたばかりのウィンドウは見えない状態になっているのでこのコマンド
+により見えるようにする必要がある。
+
+\DevCommand{hide(^Status, Cdr)}
+ウィンドウを見えない状態にする。Status には \verb|fep#normal| がユニファイ
+される。
+
+\DevCommand{activate(^Status, Cdr)}
+show/2 と同じ。
+
+\DevCommand{deactivate(^Status, Cdr)}
+hide/2 と同じ。
+
+\DevCommand{set_inside_size(Characters, Lines, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{set_size(fep\#manipulator, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{set_position(X, Y, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{set_position(fep\#manipulator, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{set_title(String, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{reshape(X, Y, Characters, Lines, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{reshape(fep\#manipulator, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{set_font(PathName, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{select_buffer(BufferName, ^Status, Cdr)}
+使用できない。
+
+\DevCommand{get_inside_size(^Characters, ^Lines, ^Status, Cdr)}
+常に Characters=80, Lines=20, Status=\verb|fep#normal| を返す。
+
+\DevCommand{get_position(^X, ^Y, ^Status, Cdr)}
+常に X=0, Y=0, Status=\verb|fep#normal| を返す。
+
+\DevCommand{get_title(^Title, ^Status, Cdr)}
+ウィンドウを生成した時に指定したバッファ名を返す。
+
+\DevCommand{get_font(PathName, ^Status, Cdr)}
+使用できない。
+
+\end{itemize}
+\item ファイル用制御コマンド\\
+これはファイルに対してだけ送ることができるコマンドである。
+\begin{itemize}
+
+\DevCommand{close(^Status)}
+ファイルをクローズする。Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{end_of_file(^Status, Cdr)}
+ファイルがエンド・オブ・ファイルの状態の時は Status に \verb|fep#yes| を
+ユニファイする。そうでない時には \verb|fep#no| をユニファイする。
+
+\DevCommand{pathname(^PathName, ^Status, Cdr)}
+ファイルのパス名を PathName に返す。Status には \verb|fep#normal| が
+ユニファイされる。
+
+\end{itemize}
+\index{ウィンドウ|)} \index{ファイル|)}
+\item ディレクトリ用制御コマンド\\
+これはディレクトリに対してだけ送ることができるコマンドである。
+\begin{itemize}
+
+\DevCommand{pathname(^PathName, ^Status, Cdr)}
+ディレクトリのパス名を PathName に返す。Status には \verb|fep#normal| が
+ユニファイされる。
+
+\DevCommand{listing(WildCard, FileNameStream, ^Status, Cdr)}
+WildCard (8ビットストリング)で指定されるファイルのパス名のリストを取り出す
+ストリームを FileNameStream に返す。 Status には \verb|fep#normal| が
+ユニファイされる。FileNameStream には next_file_name(^FileName, ^Status, Cdr)
+というコマンドを流すことができ、FileName に1つのファイル名 (8ビットストリング)
+が返され、Status に \verb|fep#normal| がユニファイされる。 もうファイルが
+無い場合には Status に \verb|fep#end_of_file| がユニファイされる。
+
+\DevCommand{delete(WildCard, ^Status, Cdr)}
+WildCard (8ビットストリング)で指定されるファイルを全て削除する。PDSS では
+一旦消したファイルを回復することはできない。Status には \verb|fep#normal|
+がユニファイされる。
+
+\DevCommand{undelete(WildCard, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{purge(WildCard, ^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{deleted(WildCard, ^FileNameStream, ^Status, Cdr)}
+WildCard (8ビットストリング)で指定されるファイルのうち、削除中のファイルの
+パス名のリストを取り出すストリームを FileNameStream に返す。ただし、この
+リストは必ず空である。Status には \verb|fep#normal| がユニファイされる。
+
+\DevCommand{expunge(^Status, Cdr)}
+なにもしない。 Status には \verb|fep#normal| がユニファイされる。
+
+\end{itemize}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{コード・デバイス}
+\AppendixLabel{sec-code-device}
+\index{コード・デバイス}
+これはコードを管理しているデバイスであり、このデバイス・ストリームに規定の
+コマンドを流すことによりコードに関する操作を行うことができる。
+(現時点ではコード・デバイス・ストリームはMicro PIMOS でのみ使用しており
+ユーザに提供していない。)\index{コード・デバイス!コード・デバイス・ストリーム}
+\begin{itemize}
+
+\DevCommand{assemble_module(^ModuleName, FileName, ^Status)}
+FileName (8ビットストリング)で指定されたファイルをアセンブルし、コード領域
+に置く。ModuleName にはアセンブルされたモジュール名のアトムをユニファイする。
+Status には `success', `cannot_open_file', `memory_limit', `module_protected', 
+`load_error' のいずれかがユニファイされる。
+
+\DevCommand{load_module(^ModuleName, FileName, ^Status)}
+FileName (8ビットストリング)で指定されたファイルをコード領域にロードする。
+ファイルの形式はセーブ形式かアセンブラ形式。ModuleName にはロードされた
+モジュール名のアトムをユニファイする。Status には `success',
+`cannot_open_file', `memory_limit', `module_protected', `load_error' の
+いずれかがユニファイされる。
+
+\DevCommand{save_module(ModuleName, FileName, ^Status)}
+FileName  (8ビットストリング)で指定されたファイルに ModuleName (アトム)で
+指定されたモジュールをセーブする。Status には `success', `cannot_open_file',
+`module_not_found' のいずれかがユニファイされる。
+
+\DevCommand{remove_module(ModuleName, ^Status)}
+ModuleName (アトム)で示されたモジュールを削除する。Status には `success',
+`module_not_found' , `module_protected' のいずれかがユニファイされる。
+
+\DevCommand{debug(Flag, ^Status)}
+デバッグ・モードのON/OFFを行う。Flag はアトムで `on' または `off' を与える。
+Status には `success' または `undefined_mode' がユニファイされる。
+
+\DevCommand{backtrace(Flag, ^Status)}
+バックトレース(一括型GCで検出されたデッドロック・ゴールの表示)のON/OFFを行う。
+Flag はアトムで `on' または `off' を与える。
+Status には `success' または `undefined_mode' がユニファイされる。
+
+\DevCommand{trace_module(ModuleName, Mode, ^Status)}
+ModuleName (アトム)で示されたモジュールのトレース・モードを Mode に変更する。
+Mode はアトムで `on' または `off' を与える。Status には `success',
+`module_not_found', `undefined_mode', `native_code_module' の
+いずれかがユニファイされる。
+
+\DevCommand{get_module_status(ModuleName, ^Mode, ^Status)}
+ModuleName (アトム)で示されたモジュールのトレース・モードを調べる。Mode には
+トレース・モードの ON/OFF により `on' または `off' がユニファイされる。Status
+には `success', `module_not_found', `native_code_module' の
+いずれかがユニファイされる。
+
+\DevCommand{spy_predicate(ModuleName, PredicateName, Arity, Mode, ^Status)}
+ModuleName  (アトム)で示されたモジュール内の PredicateName/Arity で示された
+述語のトレース・モードを Mode に変更する。Mode はアトムで `on' または `off'
+を与える。Status には `success', `module_not_found', `predicate_not_found',
+`undefined_mode', `native_code_module' のいずれかがユニファイされる。
+
+\DevCommand{get_spied_predicates(ModuleName, ^Predicates, ^Status)}
+ModuleName (アトム)で示されたモジュールでスパイされている述語の情報をリストの
+形にして Predicates にユニファイする。各要素は2要素ベクタで
+\{述語名アトム, アリティ\} の形式。Status には `success', `module_not_found'
+のいずれかがユニファイされる。
+
+\DevCommand{get_public_predicates(ModuleName, ^Public, ^Status)}
+ModuleName (アトム)で示されたモジュールで public宣言されている述語の情報を
+リストの形にして Public にユニファイする。各要素は2要素ベクタで
+\{述語名アトム, アリティ\} の形式。Status には `success', `module_not_found'
+のいずれかがユニファイされる。
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{PIMOS共通ユーティリティ}
+\AppendixLabel{sec-PIMOS-utl}
+\index{PIMOSきょうつうユーティリティ@PIMOS共通ユーティリティ}
+ここで説明するユーティリティ・プログラムはPIMOSの為に開発されたものであるが、
+PDSS上でも使用することができる。これらのユーティリティは提供されるモジュール
+を呼び出すことにより、Micro PIMOS のオート・ロード機能により自動的にロード
+され、使用することができる。
+
+PIMOSでは、PIMOS, 応用プログラムの別を問わず広く利用できる共通ユーティリティ
+として次のような変換, 格納機能を提供する。ユーザーはこれらのユーティリティを
+利用したい場合、PIMOSが提供するモジュールの各述語を呼び出すことにより、
+変換結果, またはオブジェクトにつながるストリームを得ることができる。
+ユーザーはこのストリームにメッセージを送ることにより各オブジェクトを操作する。
+なお、このストリームにはマージャーが挿入されている。
+\begin{itemize}
+\item 比較: どんなKL1データでも一意に比較できる機能
+\item ハッシング: 標準のハッシュ関数
+\item キーなしのPプール: Bag, Stack, Queue, Sorted Bag
+\item キー付きのプール: Keyed Bag, Keyed Set, Keyed Sorted Bag,
+      Keyed Sorted Set
+\end{itemize}
+\vspace{3ex}
+
+\UnderlineIndex{1. 比較} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+一般にどんな KL1 データでも一意に比較できる機構を提供する。
+\begin{itemize}
+\index{PIMOSきょうつうユーティリティ@PIMOS共通ユーティリティ!ひかく@比較}
+\PimosUtlCommand{comparator:sort(X, Y, ^S, ^L, ^Swapped)}
+X と Y の大小関係が決まるまで待ち、小さい方を S に、大きい方を L に返す。
+両者が等しい場合には X を S に、Y を L に返す(このような性質をstableである
+という)。  また、X が Y より大きかった場合は Swapped に yes を、さもなければ
+no を返す。
+\vspace{1ex}
+
+{\dg\bf 大小関係の定義 :}\\
+両者のタイプが異なる場合、大小関係はタイプ間の大小関係として整数, アトム,
+文字列, リスト, ベクタの順に定義される。
+両者が同じタイプなら大小関係は以下のように定義する。
+\vspace{1ex}
+
+\hspace*{10mm}\begin{tabular}{l@{ …… }p{120mm}}
+・整数   & 通常の符号つき整数の大小関係。\\
+・アトム & アトム番号の大小関係。\\
+・文字列 & 通常の辞書順の大小関係。ただし、文字列のタイプが異なる場合には
+タイプの大きさの大小関係。\\
+・リスト & Carの大小関係。Carが等しければCdrの大小関係。\\
+・ベクタ & 要素数の大小関係。要素数が等しければ第1要素、それも等しければ
+第2要素 $\cdots$ 等々の大小関係。\\
+\end{tabular}
+\end{itemize}
+
+\UnderlineIndex{2. ハッシング} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{PIMOSきょうつうユーティリティ@PIMOS共通ユーティリティ!ハッシング}
+標準のハッシュ関数を提供する。
+\begin{itemize}
+
+\PimosUtlCommand{hasher:hash(X, ^H, ^Y)}
+X をタイプによって以下のようなハッシュ関数でハッシュして、その値を H に返す。
+また、Y に X をそのまま返す。H には必ず非負の整数が値として返される。
+\vspace{1ex}
+
+{\dg\bf ハッシュ関数の定義 :}\\
+\hspace*{10mm}\begin{tabular}{l@{ …… }p{120mm}}
+・整数   & 絶対値。\\
+・アトム & アトム番号。\\
+・文字列 & Cb $\times$ 最初の要素 + Cm $\times$ 中央要素 + Ce $\times$
+最後の要素 + 要素数。ただし、係数 Cb, Cm, Ce はKL0の組込述語と同様。\\
+・リスト & Carのハッシュ値 + 5 $\times$ Cdrのハッシュ値。\\
+・ベクタ & 最初, 中央, 最後の各要素に関する
+((2の要素番号乗 + 1) $\times$ 要素のハッシュ値) の和 + 要素数。\\
+\end{tabular}
+\end{itemize}
+
+\UnderlineIndex{3. キーなしのプール} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{PIMOSきょうつうユーティリティ@PIMOS共通ユーティリティ!キーなしのプール}
+一般にどんな KL1 データでも格納しておける仕組みを提供する。
+
+\UnderlineIndex{Bag}
+基本的なプール。入れる, 出すという基本機能しかない。
+要素を参照するには取り出すしかなく、中に残したまま参照する方法はない。
+\begin{itemize}
+
+\PimosUtlCommand{pool:bag(Stream)}
+Bag のオブジェクトを生成し、そこへのストリーム Stream を得る。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :}
+\begin{itemize}
+
+\PimosUtlCommand{empty(^YorN)}
+空ならば yes 、そうでなければ no を返す。
+
+\PimosUtlCommand{put(X)}
+要素の追加。
+
+\PimosUtlCommand{get(^X)}
+要素の取り出し。Bag 内のどの要素が取れてくるかはわからない。取り出すと、その
+要素は Bag からなくなる。要素がないのに取り出そうとするとフェイルする。
+
+\PimosUtlCommand{get_all(^O)}
+中身を全部取り出す。取り出される形式は要素のリストである。
+空の場合には \verb|[]| を返す。
+
+\PimosUtlCommand{get_and_put(^X, Y)}
+要素を取りだし、同じ位置に新しい要素を格納する。要素がないとフェイルする。
+
+\end{itemize}
+
+\UnderlineIndex{Stack}
+基本的には Bag と同じだが、取り出し順が LIFO になっている。
+\begin{itemize}
+
+\PimosUtlCommand{pool:stack(Stream)}
+Stack のオブジェクトを生成し、そこへのストリーム Stream を得る。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :} Bagと同様。
+
+\UnderlineIndex{Queue}
+基本的には Bag と同じだが、取り出し順が FIFO になっている。
+\begin{itemize}
+
+\PimosUtlCommand{pool:queue(Stream)}
+Queue のオブジェクトを生成し、そこへのストリーム Stream を得る。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :} Bagと同様。
+
+\UnderlineIndex{Sorted Bag}
+基本的には Bag と同じだが、取り出し順が ``小さい順'' になっている。
+比較ルーチンが stable なら、(弱い意味で)小さい順に入れればその順を保存して
+取り出される。
+\begin{itemize}
+
+\PimosUtlCommand{pool:sorted_bag(Stream)}
+標準の比較ルーチン(comparator:sort/5)付きで Sorted Bag のオブジェクトを生成
+し、そこへのストリーム Stream を取り出す。
+
+\PimosUtlCommand{pool:sorted_bag(Comparator, Stream)}
+第1引数に比較ルーチンを \{モジュール名アトム, 述語名アトム, アリティ\} の
+形式で指定することにより、その比較ルーチン付きで Sorted Bag を生成し、
+そこへのストリーム Stream を取り出す。
+ここで、指定された述語は comparator:sort/5 と同じ引数個数, 内容で, public
+宣言されている必要がある。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :}\par
+Bagと同様。ただしgetはその時点での最小のものを返し、get_allは小さい順に返す。
+
+\UnderlineIndex{4. キー付きのプール} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\index{PIMOSきょうつうユーティリティ@PIMOS共通ユーティリティ!キーつきのプール@キー付きのプール}
+任意のKL1データをキー付きで格納しておける仕組みを提供する。
+
+\UnderlineIndex{Keyed Bag}
+基本的なキー付きプール。ハッシュテーブルにより実現している。
+\begin{itemize}
+
+\PimosUtlCommand{pool:keyed_bag(Stream)}
+標準のハッシュ関数(hasher:hash/3)付きで Keyed Bag のオブジェクトを生成し、
+そこへのストリーム Stream を取り出す。
+ハッシュテーブルのサイズの初期値は 1 である。
+
+\PimosUtlCommand{pool:keyed_bag(Stream, Size)}
+第2引数にハッシュテーブルのサイズの初期値を指定することにより、
+標準のハッシュ関数(hasher:hash/3), 指定されたテーブルサイズで Keyed Bag の
+オブジェクトを生成し、そこへのストリーム Stream を取り出す。
+
+\PimosUtlCommand{pool:keyed_bag(Hasher, Stream, Size)}
+第1引数にハッシュ関数を \{モジュール名アトム, 述語名アトム, アリティ\} の
+形式で指定し、第2引数にハッシュテーブルのサイズの初期値を指定することにより、
+指定されたハッシュ関数, テーブルサイズで Keyed Bag を生成し、
+そこへのストリーム Stream を取り出す。
+ここで、指定された述語は hasher:hash/3 と同じ引数個数, 内容で、public宣言
+されている必要がある。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :}
+\begin{itemize}
+
+\PimosUtlCommand{empty(^YorN)}
+空ならば yes 、そうでなければ no を返す。
+
+\PimosUtlCommand{empty(Key, ^YorN)}
+キーが Key と等しい要素があれば no、そうでなければ yes を返す。
+
+\PimosUtlCommand{put(Key, X)}
+キーが Key, 値が X の要素の追加。
+
+\PimosUtlCommand{get(Key, ^X)}
+キーが Key の要素の取り出し。同じキーのものが複数ある場合にはどれが取れてくる
+かは決めない。取り出すとプールからなくなる。要素がないのに取り出そうとすると
+フェイルする。
+
+\PimosUtlCommand{get_all(^O)}
+中身を全部取り出す。取り出されるものの形式は \{Key, Data\} のリストである。
+空の場合には \verb|[]| を返す。
+
+\PimosUtlCommand{get_all(Key, ^O)}
+キーが Key の要素を全部取り出す。取り出されるものの形式は Data のリストである。
+対応するものがなければ \verb|[]| を返す。
+
+\PimosUtlCommand{get_and_put(Key, ^X, Y)}
+キーが Key の要素を取りだし、同じ位置に新しい要素を格納する。
+要素がないとフェイルする。
+\end{itemize}
+
+\UnderlineIndex{Keyed Set}
+重複を許さないキー付きのプール。
+\begin{itemize}
+
+\PimosUtlCommand{pool:keyed_set(Stream)}
+標準のハッシュ関数(hasher:hash/3)付きで Keyed Set のオブジェクトを生成し、
+そこへのストリーム Stream を取り出す。
+ハッシュテーブルのサイズの初期値は 1 である。
+
+\PimosUtlCommand{pool:keyed_set(Stream, Size)}
+第2引数にハッシュテーブルのサイズの初期値を指定することにより、
+標準のハッシュ関数(hasher:hash/3), 指定されたテーブルサイズで Keyed Set の
+オブジェクトを生成し、そこへのストリーム Stream を取り出す。
+
+\PimosUtlCommand{pool:keyed_set(Hasher, Stream, Size)}
+第1引数にハッシュ関数を \{モジュール名アトム, 述語名アトム, アリティ\} の
+形式で指定し、第2引数にハッシュテーブルのサイズの初期値を指定することにより、
+指定されたハッシュ関数, テーブルサイズで Keyed Set を生成し、
+そこへのストリーム Stream を取り出す。
+ここで、指定された述語は hasher:hash/3 と同じ引数個数, 内容で、public宣言
+されている必要がある。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :}
+\begin{itemize}
+
+\PimosUtlCommand{empty(^YorN)}
+空ならば yes、そうでなければ no を返す。
+
+\PimosUtlCommand{empty(Key, ^YorN)}
+キーが Key と等しい要素があれば no、そうでなければ yes を返す。
+
+\PimosUtlCommand{put(Key, X, ^OldX)}
+キーが Key, 値が X の要素の追加。キーが Key のものが既にあれば更新され, OldX に
+前の値が \{値\} の形で返される。キーが Key のものがなければ OldX には \{\} が
+返される。
+
+\PimosUtlCommand{get(Key, ^X)}
+キーが Key の要素の取り出し。取り出すとプールからなくなる。要素がないのに取り
+出そうとするとフェイルする。
+
+\PimosUtlCommand{get_all(^O)}
+中身を全部取り出す。取り出されるものの形式は \{Key, Data\} のリストである。
+空の場合は \verb|[]| を返す。
+
+\PimosUtlCommand{get_all(Key, ^O)}
+キーが Key の要素を全部取り出す。対応するものがなければ \verb|[]| 、
+あれば1要素のリストが返る。
+
+\PimosUtlCommand{get_and_put(Key, ^X, Y)}
+キーが Key の要素を取りだし、同じ位置に新しい要素を格納する。
+要素がないとフェイルする。
+
+\end{itemize}
+
+\UnderlineIndex{Keyed Sorted Bag}
+Sorted bag と同様だが、ソートをキーだけに対して行う点が異なる。
+\begin{itemize}
+
+\PimosUtlCommand{pool:keyed_sorted_bag(Stream)}
+標準の比較ルーチン(comparator:sort/5)付きで Keyed Sorted Bag のオブジェクトを
+生成し、そこへのストリーム Stream をユニファイする。
+
+\PimosUtlCommand{pool:keyed_sorted_bag(Comparator, Stream)}
+第1引数に比較ルーチンを \{モジュール名アトム, 述語名アトム, アリティ\} の
+形式で指定することにより、その比較ルーチン付きで Keyed Sorted Bag を生成する。
+ここで、指定された述語は comparator:sort/5 と同じ引数個数, 内容で、public
+宣言されている必要がある。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :}\par
+Keyed Bagと同様だが、取り出し時にキーの小さい順に取り出すことを決めている点が
+異なる。比較がstableで同じキーのものが複数ある場合は入れた順に取り出す。
+
+\UnderlineIndex{Keyed Sorted Set}
+Keyed Sorted Bag と同様だが、キーの重複を許さない点が異なる。
+\begin{itemize}
+
+\PimosUtlCommand{pool:keyed_sorted_set(Stream)}
+標準の比較ルーチン(comparator:sort/5)付きで Keyed Sorted Set のオブジェクトを
+生成し、そこへのストリーム Stream を取り出す。
+
+\PimosUtlCommand{pool:keyed_sorted_set(Comparator, Stream)}
+第1引数に比較ルーチンを \{モジュール名アトム, 述語名アトム, アリティ\} の
+形式で指定することにより、その比較ルーチン付きで Keyed Sorted Set を生成する。
+ここで、指定された述語は comparator:sort/5 と同じ引数個数, 内容で、public
+宣言されている必要がある。
+
+\end{itemize}
+
+{\BF メッセージプロトコル :}\par
+Keyed Setと同様。ただし、get_all/1 はキーの小さい順に返す。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{PDSSで使用しているモジュール名}
+\AppendixLabel{sec-system-module}
+以下のモジュール名はPDSS側で使われているので、同じ名前をユーザーが使うことは
+できません。 ( \verb|*| 印の付いているものは可能。)
+\begin{center}
+\begin{minipage}[t]{70mm}
+\begin{verbatim}
+
+  'Sho-en'
+* directory
+* file
+* window
+* mpimos_io_device
+  mpimos_monogyny_list_index
+  mpimos_booter
+  mpimos_builtin_predicate
+  mpimos_cmd_basic
+  mpimos_cmd_code
+  mpimos_cmd_debug
+  mpimos_cmd_directory
+  mpimos_cmd_environment
+  mpimos_cmd_utl
+  mpimos_code_manager
+  mpimos_command_interpreter
+  mpimos_directory
+  mpimos_directory_device_driver
+  mpimos_file
+  mpimos_file_device_driver
+  mpimos_file_manager
+  mpimos_window_device
+  mpimos_file_device
+  mpimos_timer_device
+  mpimos_macro_expander
+  mpimos_module_pool
+  mpimos_opcode_table
+  mpimos_operator_manipulator
+  mpimos_parser
+  mpimos_task_monitor
+  mpimos_unparser
+  mpimos_utility
+* mpimos_varchk
+  mpimos_window
+  mpimos_window_device_driver
+  mpimos_window_manager
+* mpimos_xref
+* mpimos_xref_table
+* mpimos_pretty_printer
+
+\end{verbatim}
+\end{minipage}
+\begin{minipage}[t]{70mm}
+\begin{verbatim}
+
+  pdss_code_device
+  pdss_window_device
+  pdss_file_device
+  pdss_timer_device
+  kl1cmp_blttbl
+  kl1cmp_command
+  kl1cmp_compile
+  kl1cmp_mrb
+  kl1cmp_normalize
+  kl1cmp_output
+  kl1cmp_reader
+  kl1cmp_register
+  kl1cmp_macro
+  kl1cmp_macro_arg
+  kl1cmp_mtbl
+  kl1cmp_struct
+
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{定義済みオペレータ一覧}
+\AppendixLabel{sec-operator}
+Micro PIMOS のウィンドウ/ファイルでは予め次のオペレータが定義されている。
+\begin{center}
+\begin{minipage}[t]{70mm}
+\begin{verbatim}
+
+ 1200   xfx   :-
+ 1200    fx   :-
+ 1200   xfx   -->
+ 1150    fx   module
+ 1150    fx   public
+ 1150    fx   implicit
+ 1150    fx   local_implicit
+ 1150    fx   with_macro
+ 1100   xfy   ;
+ 1100   xfy   |
+ 1090   xfx   =>
+ 1050   xfy   ->
+ 1000   xfy   ,
+  800   xfx   :
+  700   xfx   =
+  700   xfx   \=
+  700   xfx   ==
+  700   xfx   =:=
+  700   xfx   $=:=
+  700   xfx   =\=
+  700   xfx   $=\=
+  700   xfx   <
+  700   xfx   $<
+  700   xfx   >
+  700   xfx   $>
+  700   xfx   =<
+  700   xfx   $=<
+  700   xfx   >=
+  700   xfx   $>=
+  700   xfx   :=
+  700   xfx   $:=
+  700   xfx   <=
+  700   xfx   $<=
+  700   xfx   <<=
+  700   xfy   @
+  500   yfx   +
+  500    fx   +
+  500   yfx   -
+  500    fx   -
+  500   yfx   /\
+  500   yfx   \/
+  500   yfx   xor
+
+\end{verbatim}
+\end{minipage}
+\begin{minipage}[t]{70mm}
+\begin{verbatim}
+
+  400   yfx   *
+  400   yfx   /
+  400   yfx   <<
+  400   yfx   >>
+  300   xfy   **
+  300   xfx   mod
+  200    fx   &
+  150   xf    ++
+  150   xf    --
+  100   xfx   #
+  100    fx   #
+
+\end{verbatim}
+\end{minipage}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{組込述語一覧}
+\AppendixLabel{sec-builtin-table}
+\begin{enumerate}
+
+\item タイプのチェック
+\begin{verbatim}
+wait(X) :: G
+atom(X) :: G
+integer(X) :: G
+floating_point(X) :: G
+list(X) :: G
+vector(X) :: G
+string(X) :: G
+unbound(X, ^PE, ^Addr, ^NewX) :: B
+
+\end{verbatim}
+\item diff
+\begin{verbatim}
+diff(X, Y) :: G
+
+次のオペレータで記述してもよい:  \=
+
+\end{verbatim}
+\item 整数の比較
+\begin{verbatim}
+equal(Integer1, Integer2) :: G
+not_equal(Integer1, Integer2) :: G
+less_than(Integer1, Integer2) :: G
+not_less_than(Integer1, Integer2) :: G
+
+次のオペレータで記述してもよい:  =:=, =\=, <, =<, >, >=
+
+\end{verbatim}
+\item 整数の演算
+\begin{verbatim}
+add(Integer1, Integer2, ^NewInteger) :: GB
+subtract(Integer1, Integer2, ^NewInteger) :: GB
+multiply(Integer1, Integer2, ^NewInteger) :: GB
+divide(Integer1, Integer2, ^NewInteger) :: GB
+modulo(Integer1, Integer2, ^NewInteger) :: GB
+minus(Integer, ^NewInteger) :: GB
+increment(Integer, ^NewInteger) :: GB
+decrement(Integer, ^NewInteger) :: GB
+abs(Integer, ^NewInteger) :: GB
+min(Integer1, Integer2, ^NewInteger) :: GB
+max(Integer1, Integer2, ^NewInteger) :: GB
+and(Integer1, Integer2, ^NewInteger) :: GB
+or(Integer1, Integer2, ^NewInteger) :: GB
+exclusive_or(Integer1, Integer2, ^NewInteger) :: GB
+complement(Integer, ^NewInteger) :: GB
+shift_left(Integer, ShiftWidth, ^NewInteger) :: GB
+shift_right(Integer, ShiftWidth, ^NewInteger) :: GB
+
+:=, <= と次のオペレータを用いて記述してもよい:
+    +, -, *, /, mod, /\, \/, xor, <<, >>
+
+\end{verbatim}
+\item 浮動小数点数の比較
+\begin{verbatim}
+floating_point_equal(Float1, Float2) :: G
+floating_point_not_equal(Float1, Float2) :: G
+floating_point_less_than(Float1, Float2) :: G
+floating_point_not_less_than(Float1, Float2) :: G
+
+次のオペレータで記述してもよい:  $=:=, $=\=, $<, $=<, $>, $>=
+
+\end{verbatim}
+\item 浮動小数点数の演算
+\begin{verbatim}
+floating_point_add(Float1, Float2, ^NewFloat) :: GB
+floating_point_subtract(Float1, Float2, ^NewFloat) :: GB
+floating_point_multiply(Float1, Float2, ^NewFloat) :: GB
+floating_point_divide(Float1, Float2, ^NewFloat) :: GB
+floating_point_minus(Float, ^NewFloat) :: GB
+floating_point_abs(Float, ^NewFloat) :: GB
+floating_point_min(Float1, Float2, ^NewFloat) :: GB
+floating_point_max(Float1, Float2, ^NewFloat) :: GB
+floating_point_floor(Float, ^NewFloat) :: GB
+floating_point_sqrt(Float, ^NewFloat) :: GB
+floating_point_ln(Float, ^NewFloat) :: GB
+floating_point_log(Float, ^NewFloat) :: GB
+floating_point_exp(Float, ^NewFloat) :: GB
+floating_point_pow(Float1, Float2, ^NewFloat) :: GB
+floating_point_sin(Float, ^NewFloat) :: GB
+floating_point_cos(Float, ^NewFloat) :: GB
+floating_point_tan(Float, ^NewFloat) :: GB
+floating_point_asin(Float, ^NewFloat) :: GB
+floating_point_acos(Float, ^NewFloat) :: GB
+floating_point_atan(Float, ^NewFloat) :: GB
+floating_point_atan(Float1, Float2, ^NewFloat) :: GB
+floating_point_sinh(Float, ^NewFloat) :: GB
+floating_point_cosh(Float, ^NewFloat) :: GB
+floating_point_tanh(Float, ^NewFloat) :: GB
+
+$:=, $<= と次のオペレータを用いて記述してもよい。
+    +, -, *, /, **
+
+\end{verbatim}
+\item 整数-浮動小数点数の変換
+\begin{verbatim}
+floating_point_to_integer(Float, ^Integer) :: GB
+integer_to_floating_point(Integer, ^Float) :: GB
+
+\end{verbatim}
+\item ベクタ関係
+\begin{verbatim}
+vector(X, ^Size) :: G
+vector(X, ^Size, ^NewVector) :: B
+new_vector(^Vector, Size) :: B
+vector_element(Vector, Position, ^Element) :: G
+vector_element(Vector, Position, ^Element, ^NewVector) :: B
+set_vector_element(Vector, Position, ^OldElem, NewElem, ^NewVect) :: B
+
+\end{verbatim}
+\item ストリング関係
+\begin{verbatim}
+string(X, ^Size, ^ElementSize) :: G
+string(X, ^Size, ^ElementSize, ^NewString) :: B
+new_string(^String, Size, ElementSize) :: B
+string_element(String, Position, ^Element) :: G
+string_element(String, Position, ^Element, ^NewString) :: B
+set_string_element(String, Position, NewElement, ^NewString) :: B
+substring(String, Position, Length, ^SubString, ^NewString) :: B
+set_substring(String, Position, SubString, ^NewString) :: B
+append_string(String1, String2, ^NewString) :: B
+
+\end{verbatim}
+\item アトム関係
+\begin{verbatim}
+intern_atom(^Atom, String) :: B
+new_atom(^Atom) :: B
+atom_name(Atom, ^String) :: B
+atom_number(Atom, ^Number) :: B
+
+\end{verbatim}
+\item コード関係
+\begin{verbatim}
+predicate_to_code(Mod, Pred, Arity, ^Code) :: B
+code_to_predicate(Code, ^Mod, ^Pred, ^Arity, ^Info) :: B
+
+\end{verbatim}
+\item ストリーム・サポート
+\begin{verbatim}
+merge(In, ^Out) :: B
+
+\end{verbatim}
+\item 高階機能
+\begin{verbatim}
+apply(Code, Args) :: B
+
+\end{verbatim}
+\item 特殊入出力
+\begin{verbatim}
+read_console(^Integer) :: G
+display_console(X) :: G
+put_console(X) :: G
+
+\end{verbatim}
+\item その他
+\begin{verbatim}
+raise(Tag, Type, Info) :: B
+consume_resource(Red) :: B
+hash(X, ^Value, ^NewX) :: B
+current_processor(^ProcessorNumber, ^X, ^Y) :: B
+current_priority(^CurrentPriority, ^ShoenMin, ^ShoenMax) :: B
+
+\end{verbatim}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{例外コード}
+\AppendixLabel{sec-exception}
+\index{れいがいコード@例外コード}
+\vspace{3ex}
+\begin{itemize}
+
+\item Illegal Input Type :: 0\\
+組込述語の入力引数に規定されている型以外のものが現われた。
+
+\item Range Overflow :: 1\\
+組込述語(数値演算以外)の入力引数に規定されている範囲以外のものが現われた。
+
+\item Integer Overflow :: 3\\
+整数演算を行った結果、オーバーフローが発生した。
+0 による整数除算もここに含まれる。
+
+\item Floating Point Error :: 5\\
+浮動小数点演算の入力引数に規定されている範囲以外のものが現われた。
+また、演算を行った結果、オーバーフローが発生した。
+
+\item Illegal Merger Input :: 8\\
+マージャーの入力に対して \verb|[]|, リスト, ベクタ以外のデータをユニファイ
+しようとした。
+
+\item Reduction Failure :: 9\\
+ゴールの実行に際してどの候補節も選ばれなかった。
+
+\item Unification Failure :: 10\\
+ボディ部のユニフィケーションが失敗した。
+
+\item Raised :: 12\\
+組込述語 raise/3 が実行された。
+
+\item Incorrect Priority :: 16\\
+指定されたプライオリティが規定されている範囲にない。
+
+\item Module Not Found :: 17\\
+ロードされていないモジュールを参照しようとした。
+
+\item Predicate Not Found :: 18\\
+指定されたモジュール内に指定された述語が定義されていない。
+
+\item Deadlock :: 11\\
+荘園内でデッドロック状態が発見された。
+\end{itemize}
+\vspace{5ex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{PDSSで使用している荘園のタグ}
+\AppendixLabel{sec-Shoen-tag}
+\index{れいがいタグ@例外タグ}
+\index{しょうえん@荘園!タグ}
+荘園のタグは現在以下のビットが言語と Micro PIMOS で既に使用されている。
+\begin{figure}[h]
+\begin{center}
+\setlength{\unitlength}{0.9mm}
+\begin{picture}(135,15)(0,0)
+\thicklines
+\put(0,0){\framebox(135,10){}}
+\put(45,0){\line(0,1){10}}
+\put(75,0){\line(0,1){10}}
+\put(0,13){\makebox(0,0)[l]{31}}
+\put(45,13){\makebox(0,0)[l]{19}}
+\put(75,13){\makebox(0,0)[l]{15}}
+\put(135,13){\makebox(0,0)[r]{0}}
+\put(22.5,12.5){\makebox(0,0){(12ビット)}}
+\put(60,12.5){\makebox(0,0){(4ビット)}}
+\put(105,12.5){\makebox(0,0){(16ビット)}}
+\put(22.5,5){\makebox(0,0){言語(KL1)}}
+\put(60,5){\makebox(0,0){Micro PIMOS}}
+\put(105,5){\makebox(0,0){ユーザーが自由に使用して良い}}
+\end{picture}\\
+\caption{荘園の例外タグ}
+\end{center}
+\end{figure}
+\vspace{3ex}
+\begin{itemize}
+\item ビット16 --- 親荘園へのI/Oストリームの要求。
+\item ビット17 --- 親荘園へのエラー情報の伝達。
+\item ビット18 --- Micro PIMOS のShellウィンドウへのメッセージ出力。
+\item ビット19 --- 未使用。
+\item ビット20 --- Deadlock。
+\item ビット21 --- Illegal Input Type。
+\item ビット22 --- Range Overflow。
+\item ビット23 --- Integer Overflow。
+\item ビット24 --- Floating Point Error。
+\item ビット25 --- 未使用。
+\item ビット26 --- Illegal Merger Input。
+\item ビット27 --- Reduction Failure。
+\item ビット28 --- Unification Failure。
+\item ビット29 --- Incrrect Priority。
+\item ビット30 --- Module Not Found。
+\item ビット31 --- Predicate Not Found。
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{GNU-Emacsライブラリ}
+\AppendixLabel{sec-emacs}
+PDSSで提供しているGNU-Emacsライブラリには、KL1のプログラムを編集する場合の
+``kl1-mode'' と \index{kl1-mode} PDSSの実行時に使われる ``PDSS-mode'' がある。
+\index{PDSS-mode}
+以下ではそれぞれのモードで定義されているコマンドの一覧を示す。
+\index{コンパイル}
+\begin{enumerate}
+\item kl1-mode
+\begin{enumerate}
+\begin{itemize}
+
+\EmacsCommand{ctrl-C ctrl-C}\\
+コマンドを実行したバッファ内の全てのテキストをKL1のプログラムとして
+コンパイルする。
+
+\EmacsCommand{ctrl-C ctrl-R}\\
+\verb|PDSS=COMPILER| なるバッファに指定された領域内のテキストをコピーする。
+
+\EmacsCommand{ctrl-C ctrl-D}\\
+\verb|PDSS=COMPILER| なるバッファの内容をKL1のプログラムとしてコンパイルする。
+この後、本コマンドを実行したバッファのファイル名から同一のファイル名を持つ
+アセンブラ・ソースファイル(\verb|*.asm|)を探し、更新された部分のみを変更し、
+\verb|*.sav| ファイルを生成する。\\
+これは {\bf ctrl-C ctrl-R} コマンドと組み合わせて、プログラムの変更した部分
+のみを再コンパイルする場合に使用する。このためには \verb|*.asm| ファイルは
+削除しない方が良い。
+
+\EmacsCommand{meta-X pdss-kl1cmp-switch-indexing-mode}
+\EmacsCommand{meta-X pdss-kl1cmp-switch-mrbgc-mode}
+\EmacsCommand{meta-X pdss-kl1cmp-switch-system-mode}\\
+Prolog版コンパイラのオプションを変更する。引数なしで ON/OFF のトグル、
+引数 1/0 で ON/OFF となる。オプションの意味、初期値についてはコンパイル用
+コマンドプロシジャ(pdsscmp)の使用法の項を参照のこと。
+それぞれ i, m, s オプションに相当する。\\
+KL1版コンパイラを使用している場合には、この指定は不可能。\\
+\Caution \verb|PDSS=COMPILE| なるバッファに各種の情報やプロンプトが表示される
+が、ユーザは基本的には何もこのバッファに入力する必要が無い。(出力専用)
+
+\EmacsCommand{ctrl-C ctrl-F}\\
+組込述語のマニュアルを表示する。
+
+\end{itemize}
+\end{enumerate}
+\item PDSS-mode
+\begin{enumerate}
+\item ウィンドウ/バッファ操作
+\begin{itemize}
+
+\EmacsCommand{meta-.}\\
+直前の文字列(単語)を略語として、バッファ中で \verb|?- | から始まり略語に
+マッチする文字列を候補として表示する。主にコマンド・インタプリタのコマンドの
+再実行に使う。
+
+\EmacsCommand{ctrl-C ctrl-Y}\\
+直前に入力した文字列を再表示する。
+
+\EmacsCommand{ctrl-C k}\\
+そのバッファ内のテキストを全て削除する。
+
+\EmacsCommand{ctrl-C ctrl-K}\\
+PDSSモードである全てのバッファのテキストを削除する。
+
+\EmacsCommand{ctrl-C ctrl-B}\\
+PDSSモードのバッファのバッファ・メニューを表示する。
+
+\EmacsCommand{ctrl-C m}\\
+このコマンドを実行した行の先頭から ``モジュール名:述語名'' のパターンを探し
+コマンドを入力した位置に挿入する。トレーサで変数のモニタをセットする場合に
+変数の名前を付ける為に用いると便利。
+
+\EmacsCommand{ctrl-C ctrl-F}\\
+組込述語のマニュアルを表示する。
+
+\EmacsCommand{ctrl-C f}\\
+コマンド・インタプリタへのコマンドのマニュアルを表示する。
+
+\EmacsCommand{ctrl-X k}\\
+通常は Kill-Buffer であるが、PDSSのプロセスが実行中の場合は Kill-Buffer を
+行う前に警告を出す。
+
+\end{itemize}
+\item KL1プログラム制御
+\begin{itemize}
+
+\EmacsCommand{ctrl-C ctrl-Z}\\
+このバッファに対応するKL1のウィンドウ・プロセスのアッテンション・ストリームに
+1を流す。Micro PIMOS ではタスクの停止要求として扱う。
+
+\EmacsCommand{ctrl-C ctrl-T}\\
+このバッファに対応するKL1のウィンドウ・プロセスのアッテンション・ストリームに
+2を流す。Micro PIMOS ではタスクの統計情報の表示要求として扱う。
+
+\end{itemize}
+\item エミュレータ制御
+\begin{itemize}
+
+\EmacsCommand{ctrl-C !}\\
+ガベージコレクションの要求。
+
+\EmacsCommand{ctrl-C @}\\
+PDSS全体の停止。Micro PIMOS のウィンドウとして使っていたバッファはそのまま
+残される。
+
+\EmacsCommand{ctrl-C ESC}\\
+PDSSを再起動する。
+
+\end{itemize}
+\end{enumerate}
+\item モードに関係無く定義されるコマンド
+\begin{enumerate}
+\begin{itemize}
+
+\EmacsCommand{ctrl-C ctrl-P}\\
+そのウィンドウにPDSSモードのバッファを表示する。PDSSのバッファ群は
+サーキュラリストで管理されており、続けてこのコマンドを入力すると、次々に
+他のまだ表示されていないバッファを表示する。
+
+\EmacsCommand{ctrl-C p}\\
+{\bf ctrl-C ctrl-P} とほぼ同様の機能であるが、他のウィンドウにバッファを
+表示する点が異なる。
+
+\end{itemize}
+\end{enumerate}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{コンパイル用コマンドプロシジャの使用法}
+\AppendixLabel{sec-pdsscmp}
+\index{コンパイル}
+\index{pdsscmp}
+\index{コンパイルようコマンドプロシジャ@コンパイル用コマンドプロシジャ}
+これは KL1 のコンパイルを行う為のコマンドプロシジャであり、UNIX の
+コマンドとして使うことができる。make コマンドのなかでコンパイルする為に有用
+である。これには KL1/KL1コンパイラを使う版と KL1/Prologコンパイラを使う版の
+2種類あるが、基本的な使い方は同じである。(使えるオプションが一部違う。)
+\vspace{3ex}
+
+\UnderlineIndex{コマンド:}
+\hspace*{8em}{\dg\bf pdsscmp  [ オプション ]  ファイル名 ...}
+\vspace{3ex}
+
+\UnderlineIndex{オプション:}
+\begin{center}
+\begin{tabular}{l@{ :: }p{120mm}}
+\verb|+i / -i| &
+クローズ・インデキシングのコードを出す/出さない。デフォルトでは出す。
+(Prolog版のみ有効, KL1版ではインデキシングのコードを出せない。)\\
+\verb|+m / -m| &
+MRB-GC の為のコードを生成する/しない。デフォルトでは生成する。
+生成した場合実行速度が若干低下する。
+(Prolog版のみ有効, KL1版では常に生成する。)\\
+\verb|+a / -a| &
+アセンブルを行う/行わない。デフォルトは行う。アセンブルを行う場合は出力として
+アセンブラ・ファイル(xxx.asm)とセーブ形式ファイル(xxx.sav)が出力され、
+行わない場合はアセンブラ・ファイルだけ出力される。\\
+\verb|+s / -s| &
+Micro PIMOS 用のコンパイル/ユーザー用のコンパイル。デフォルトはユーザー用。
+Micro PIMOS 用のコンパイルではシステムモード専用の組込述語が使えるように
+なる。このマニュアルに書かれている組込述語は全てユーザー用でコンパイル可能。
+(Prolog版のみ, KL1版では常に全組込述語をコンパイル可能。)\\
+\verb|-o=PATH| &
+出力ディレクトリを \verb|PATH| に変更する。デフォルトはカレント・ワーキング・
+ディレクトリ。
+\end{tabular}
+\end{center}
+\vspace{3ex}
+
+\UnderlineIndex{ファイル名:}
+\begin{center}
+\begin{tabular}{l@{ :: }p{120mm}}
+xxx.asm &
+アセンブラ・ファイル(xxx.asm)をアセンブルしセーブ・ファイル(xxx.sav)を作る。\\
+xxx.kl1 &
+ソース・ファイル(xxx.kl1)をコンパイルしアセンブラ・ファイル(xxx.asm)を作る。
+さらにそれをアセンブルしセーブ・ファイル(xxx.sav)を作る。\\
+xxx &
+xxx.kl1 と書いたのと同じ。\\
+\end{tabular}
+\end{center}
+\vspace{3ex}
+
+\UnderlineIndex{使用例:}
+\begin{itemize}
+
+\item 2つのソース・ファイル append.kl1 と queen.kl1 のコンパイルとアセンブル
+を行い append.asm, appens.sav および queen.asm, queen.sav をカレント・
+ワーキング・ディレクトリに作る。
+\begin{verbatim}
+        pdsscmp  append.kl1 queen.kl1    または
+        pdsscmp  append queen
+\end{verbatim}
+
+\item append.kl1 のコンパイルとアセンブル, queen.asm のアセンブルを行う。
+\begin{verbatim}
+        pdsscmp  append.kl1 queen.asm
+\end{verbatim}
+
+\item ディレクトリ source の下の .kl1 ファイル総てについてコンパイルと
+アセンブルを行う。この時 xxx.asm と xxx.sav のファイルは -o で指定した
+ディレクトリ object の下に作られる。
+\begin{verbatim}
+        pdsscmp  -o=object source/*.kl1
+\end{verbatim}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{サンプル・プログラム}
+\AppendixLabel{sec-sample}
+\begin{verbatim}
+
+:- module sample.
+:- public primes/1, primes/2.
+
+primes(N) :- true | primes(N, PL),
+    window:create([show|Window], "sample"), outconv(PL, Window).
+primes(N, PL) :- true | gen(2, N, NL), sift(NL, PL).
+
+gen(Max, S):- true | gen(1, Max, S).
+gen(N, Max, S) :- N =<  Max, M := N+1 | S=[N|S1], gen(M, Max, S1).
+gen(N, Max, S) :- N > Max | S=[].
+
+sift([P|L], S) :- true | S=[P|S1], filter(P, L, K), sift(K, S1).
+sift([],    S) :- true | S=[].
+
+filter(P, [Q|L], K) :- Q mod P=:=0 |           filter(P, L, K).
+filter(P, [Q|L], K) :- Q mod P=\=0 | K=[Q|K1], filter(P, L, K1).
+filter(P, [],    K) :- true        | K=[].
+
+outconv([P|PL], W) :- true | W=[putt(P),nl|W1], outconv(PL, W1).
+outconv([], W) :- true | W=[putb("END"),getc(_)].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 実行結果
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+| ?- sample:primes(10,PL).
+
+yes.
+| ?- sample:primes(10,PL)|PL.
+PL = [2,3,5,7]
+
+yes.
+| ?- sample:primes(10).
+2
+3
+5
+7
+END
+
+yes.
+| ?- halt.
+
+\end{verbatim}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\Appendix{バグを発見したら}
+\begin{enumerate}
+\item システムのバグを発見した人はすみやかにPDSS開発グループに御知らせ下さい。
+連絡先は
+\vspace{1ex}\\
+\hspace*{8em}{\bf pdss@icot21.icot.junet}
+\vspace{1ex}\\
+です。また、デバッグを効率的に行う為に以下の点を明確にお願いします。
+\begin{enumerate}
+\item PDSS(エミュレータ, Micro PIMOS)のバージョン番号
+\item コンパイラのバージョン番号
+\item バグの発見されたプログラム
+\item プログラムの起動方法と症状
+\item 実行時のログと異常と思われる個所
+\end{enumerate}
+
+\item あなたのプログラムのバグであれば、次のことに気を付けて下さい。
+\begin{enumerate}
+
+\item varchk は通したか。
+
+\item deadlock した場合、ロックした中に次のような形式のゴールが有ればファイル
+やウィンドウへのコマンド・ストリームが閉じられていないか、出力データに未定義
+変数が含まれている状態です。あなたのプログラムをチェックして下さい。
+\begin{verbatim}
+        mpimos_file:xxxxxx( ... )     あるいは
+        mpimos_window:xxxxx( ... )
+        merge( ... ) in mpimos_file:xxxxx/x
+        merge( ... ) in mpimos_window:xxxxx/x
+\end{verbatim}
+\end{enumerate}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\printindex
+
+\EndDocument
+\end{document}

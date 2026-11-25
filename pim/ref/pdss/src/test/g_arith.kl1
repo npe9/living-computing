@@ -1,0 +1,512 @@
+%%% KL1-B Test for G_Arithmetic %%%
+% G_Add %%%%%%%%%%%%%%%%% abcdefghijk
+% G_Subtract %%%%%%%%%%%% abcdefghijk
+% G_Multiply %%%%%%%%%%%% abcdefghijk
+% G_Divide %%%%%%%%%%%%%% abcdefghij
+% G_Modulo %%%%%%%%%%%%%% abcdefghi
+% G_Minus %%%%%%%%%%%%%%% abcd
+% G_Increment %%%%%%%%%%% abcd
+% G_Decrement %%%%%%%%%%% abcd
+
+:- module g_arith.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Arithmetic %%%"), put_console(key#lf) | add.
+
+add:- put_console(ascii#"% G_Add %%%%%%%%%%%%%%%%% ") | add00.
+
+add00:- true | add00(1234,1234).
+add00(X,Y):- Z:=X+Y | add00(Z).
+otherwise.
+add00(_,_):- put_console(c#"*") | add01.
+add00(2468):- put_console(c#"a") | add01.
+otherwise.
+add00(_):- put_console(c#"*") | add01.
+
+add01:- true | add01(1234,0).
+add01(X,Y):- Z:=X+Y | add01(Z).
+otherwise.
+add01(_,_):- put_console(c#"*") | add02.
+add01(1234):- put_console(c#"b") | add02.
+otherwise.
+add01(_):- put_console(c#"*") | add02.
+
+add02:- true | add02(1234,-1234).
+add02(X,Y):- Z:=X+Y | add02(Z).
+otherwise.
+add02(_,_):- put_console(c#"*") | add03.
+add02(0):- put_console(c#"c") | add03.
+otherwise.
+add02(_):- put_console(c#"*") | add03.
+
+add03:- true | add03(0,1234).
+add03(X,Y):- Z:=X+Y | add03(Z).
+otherwise.
+add03(_,_):- put_console(c#"*") | add04.
+add03(1234):- put_console(c#"d") | add04.
+otherwise.
+add03(_):- put_console(c#"*") | add04.
+
+add04:- true | add04(0,0).
+add04(X,Y):- Z:=X+Y | add04(Z).
+otherwise.
+add04(_,_):- put_console(c#"*") | add05.
+add04(0):- put_console(c#"e") | add05.
+otherwise.
+add04(_):- put_console(c#"*") | add05.
+
+add05:- true | add05(0,-1234).
+add05(X,Y):- Z:=X+Y | add05(Z).
+otherwise.
+add05(_,_):- put_console(c#"*") | add06.
+add05(-1234):- put_console(c#"f") | add06.
+otherwise.
+add05(_):- put_console(c#"*") | add06.
+
+add06:- true | add06(-1234,1234).
+add06(X,Y):- Z:=X+Y | add06(Z).
+otherwise.
+add06(_,_):- put_console(c#"*") | add07.
+add06(0):- put_console(c#"g") | add07.
+otherwise.
+add06(_):- put_console(c#"*") | add07.
+
+add07:- true | add07(-1234,0).
+add07(X,Y):- Z:=X+Y | add07(Z).
+otherwise.
+add07(_,_):- put_console(c#"*") | add08.
+add07(-1234):- put_console(c#"h") | add08.
+otherwise.
+add07(_):- put_console(c#"*") | add08.
+
+add08:- true | add08(-1234,-1234).
+add08(X,Y):- Z:=X+Y | add08(Z).
+otherwise.
+add08(_,_):- put_console(c#"*") | add09.
+add08(-2468):- put_console(c#"i") | add09.
+otherwise.
+add08(_):- put_console(c#"*") | add09.
+
+add09:- true | add09(16#"7FFFFFFF",1).
+add09(X,Y):- Z:=X+Y, put_console(c#"*") | add10.
+otherwise.
+add09(_,_):- put_console(c#"j") | add10.
+
+add10:- true | add10(16#"80000000",-1).
+add10(X,Y):- Z:=X+Y, put_console(c#"*") | add11.
+otherwise.
+add10(_,_):- put_console(c#"k") | add11.
+
+add11:- put_console(key#lf) | sub.
+
+sub:- put_console(ascii#"% G_Subtract %%%%%%%%%%%% ") | sub00.
+
+sub00:- true | sub00(1234,1234).
+sub00(X,Y):- Z:=X-Y | sub00(Z).
+otherwise.
+sub00(_,_):- put_console(c#"*") | sub01.
+sub00(0):- put_console(c#"a") | sub01.
+otherwise.
+sub00(_):- put_console(c#"*") | sub01.
+
+sub01:- true | sub01(1234,0).
+sub01(X,Y):- Z:=X-Y | sub01(Z).
+otherwise.
+sub01(_,_):- put_console(c#"*") | sub02.
+sub01(1234):- put_console(c#"b") | sub02.
+otherwise.
+sub01(_):- put_console(c#"*") | sub02.
+
+sub02:- true | sub02(1234,-1234).
+sub02(X,Y):- Z:=X-Y | sub02(Z).
+otherwise.
+sub02(_,_):- put_console(c#"*") | sub03.
+sub02(2468):- put_console(c#"c") | sub03.
+otherwise.
+sub02(_):- put_console(c#"*") | sub03.
+
+sub03:- true | sub03(0,1234).
+sub03(X,Y):- Z:=X-Y | sub03(Z).
+otherwise.
+sub03(_,_):- put_console(c#"*") | sub04.
+sub03(-1234):- put_console(c#"d") | sub04.
+otherwise.
+sub03(_):- put_console(c#"*") | sub04.
+
+sub04:- true | sub04(0,0).
+sub04(X,Y):- Z:=X-Y | sub04(Z).
+otherwise.
+sub04(_,_):- put_console(c#"*") | sub05.
+sub04(0):- put_console(c#"e") | sub05.
+otherwise.
+sub04(_):- put_console(c#"*") | sub05.
+
+sub05:- true | sub05(0,-1234).
+sub05(X,Y):- Z:=X-Y | sub05(Z).
+otherwise.
+sub05(_,_):- put_console(c#"*") | sub06.
+sub05(1234):- put_console(c#"f") | sub06.
+otherwise.
+sub05(_):- put_console(c#"*") | sub06.
+
+sub06:- true | sub06(-1234,1234).
+sub06(X,Y):- Z:=X-Y | sub06(Z).
+otherwise.
+sub06(_,_):- put_console(c#"*") | sub07.
+sub06(-2468):- put_console(c#"g") | sub07.
+otherwise.
+sub06(_):- put_console(c#"*") | sub07.
+
+sub07:- true | sub07(-1234,0).
+sub07(X,Y):- Z:=X-Y | sub07(Z).
+otherwise.
+sub07(_,_):- put_console(c#"*") | sub08.
+sub07(-1234):- put_console(c#"h") | sub08.
+otherwise.
+sub07(_):- put_console(c#"*") | sub08.
+
+sub08:- true | sub08(-1234,-1234).
+sub08(X,Y):- Z:=X-Y | sub08(Z).
+otherwise.
+sub08(_,_):- put_console(c#"*") | sub09.
+sub08(0):- put_console(c#"i") | sub09.
+otherwise.
+sub08(_):- put_console(c#"*") | sub09.
+
+sub09:- true | sub09(16#"7FFFFFFF",-1).
+sub09(X,Y):- Z:=X-Y, put_console(c#"*") | sub10.
+otherwise.
+sub09(_,_):- put_console(c#"j") | sub10.
+
+sub10:- true | sub10(16#"80000000",1).
+sub10(X,Y):- Z:=X-Y, put_console(c#"*") | sub11.
+otherwise.
+sub10(_,_):- put_console(c#"k") | sub11.
+
+sub11:- put_console(key#lf) | mul.
+
+mul:- put_console(ascii#"% G_Multiply %%%%%%%%%%%% ") | mul00.
+
+mul00:- true | mul00(1234,1234).
+mul00(X,Y):- Z:=X*Y | mul00(Z).
+otherwise.
+mul00(_,_):- put_console(c#"*") | mul01.
+mul00(1522756):- put_console(c#"a") | mul01.
+otherwise.
+mul00(_):- put_console(c#"*") | mul01.
+
+mul01:- true | mul01(1234,0).
+mul01(X,Y):- Z:=X*Y | mul01(Z).
+otherwise.
+mul01(_,_):- put_console(c#"*") | mul02.
+mul01(0):- put_console(c#"b") | mul02.
+otherwise.
+mul01(_):- put_console(c#"*") | mul02.
+
+mul02:- true | mul02(1234,-1234).
+mul02(X,Y):- Z:=X*Y | mul02(Z).
+otherwise.
+mul02(_,_):- put_console(c#"*") | mul03.
+mul02(-1522756):- put_console(c#"c") | mul03.
+otherwise.
+mul02(_):- put_console(c#"*") | mul03.
+
+mul03:- true | mul03(0,1234).
+mul03(X,Y):- Z:=X*Y | mul03(Z).
+otherwise.
+mul03(_,_):- put_console(c#"*") | mul04.
+mul03(0):- put_console(c#"d") | mul04.
+otherwise.
+mul03(_):- put_console(c#"*") | mul04.
+
+mul04:- true | mul04(0,0).
+mul04(X,Y):- Z:=X*Y | mul04(Z).
+otherwise.
+mul04(_,_):- put_console(c#"*") | mul05.
+mul04(0):- put_console(c#"e") | mul05.
+otherwise.
+mul04(_):- put_console(c#"*") | mul05.
+
+mul05:- true | mul05(0,-1234).
+mul05(X,Y):- Z:=X*Y | mul05(Z).
+otherwise.
+mul05(_,_):- put_console(c#"*") | mul06.
+mul05(0):- put_console(c#"f") | mul06.
+otherwise.
+mul05(_):- put_console(c#"*") | mul06.
+
+mul06:- true | mul06(-1234,1234).
+mul06(X,Y):- Z:=X*Y | mul06(Z).
+otherwise.
+mul06(_,_):- put_console(c#"*") | mul07.
+mul06(-1522756):- put_console(c#"g") | mul07.
+otherwise.
+mul06(_):- put_console(c#"*") | mul07.
+
+mul07:- true | mul07(-1234,0).
+mul07(X,Y):- Z:=X*Y | mul07(Z).
+otherwise.
+mul07(_,_):- put_console(c#"*") | mul08.
+mul07(0):- put_console(c#"h") | mul08.
+otherwise.
+mul07(_):- put_console(c#"*") | mul08.
+
+mul08:- true | mul08(-1234,-1234).
+mul08(X,Y):- Z:=X*Y | mul08(Z).
+otherwise.
+mul08(_,_):- put_console(c#"*") | mul09.
+mul08(1522756):- put_console(c#"i") | mul09.
+otherwise.
+mul08(_):- put_console(c#"*") | mul09.
+
+mul09:- true | mul09(16#"7FFFFFFF",1234).
+mul09(X,Y):- Z:=X*Y, put_console(c#"*") | mul10.
+otherwise.
+mul09(_,_):- put_console(c#"j") | mul10.
+
+mul10:- true | mul10(16#"80000000",1234).
+mul10(X,Y):- Z:=X*Y, put_console(c#"*") | mul11.
+otherwise.
+mul10(_,_):- put_console(c#"k") | mul11.
+
+mul11:- put_console(key#lf) | div.
+
+div:- put_console(ascii#"% G_Divide %%%%%%%%%%%%%% ") | div00.
+
+div00:- true | div00(1234,1234).
+div00(X,Y):- Z:=X/Y | div00(Z).
+otherwise.
+div00(_,_):- put_console(c#"*") | div01.
+div00(1):- put_console(c#"a") | div01.
+otherwise.
+div00(_):- put_console(c#"*") | div01.
+
+div01:- true | div01(1234,0).
+div01(X,Y):- Z:=X/Y, put_console(c#"*") | div02.
+otherwise.
+div01(_,_):- put_console(c#"b") | div02.
+
+div02:- true | div02(1234,-1234).
+div02(X,Y):- Z:=X/Y | div02(Z).
+otherwise.
+div02(_,_):- put_console(c#"*") | div03.
+div02(-1):- put_console(c#"c") | div03.
+otherwise.
+div02(_):- put_console(c#"*") | div03.
+
+div03:- true | div03(0,1234).
+div03(X,Y):- Z:=X/Y | div03(Z).
+otherwise.
+div03(_,_):- put_console(c#"*") | div04.
+div03(0):- put_console(c#"d") | div04.
+otherwise.
+div03(_):- put_console(c#"*") | div04.
+
+div04:- true | div04(0,0).
+div04(X,Y):- Z:=X/Y, put_console(c#"*") | div05.
+otherwise.
+div04(_,_):- put_console(c#"e") | div05.
+
+div05:- true | div05(0,-1234).
+div05(X,Y):- Z:=X/Y | div05(Z).
+otherwise.
+div05(_,_):- put_console(c#"*") | div06.
+div05(0):- put_console(c#"f") | div06.
+otherwise.
+div05(_):- put_console(c#"*") | div06.
+
+div06:- true | div06(-1234,1234).
+div06(X,Y):- Z:=X/Y | div06(Z).
+otherwise.
+div06(_,_):- put_console(c#"*") | div07.
+div06(-1):- put_console(c#"g") | div07.
+otherwise.
+div06(_):- put_console(c#"*") | div07.
+
+div07:- true | div07(-1234,0).
+div07(X,Y):- Z:=X/Y, put_console(c#"*") | div08.
+otherwise.
+div07(_,_):- put_console(c#"h") | div08.
+
+div08:- true | div08(-1234,-1234).
+div08(X,Y):- Z:=X/Y | div08(Z).
+otherwise.
+div08(_,_):- put_console(c#"*") | div09.
+div08(1):- put_console(c#"i") | div09.
+otherwise.
+div08(_):- put_console(c#"*") | div09.
+
+div09:- true | div09(16#"80000000",-1).
+div09(X,Y):- Z:=X/Y, put_console(c#"*") | div10.
+otherwise.
+div09(_,_):- put_console(c#"j") | div10.
+
+div10:- put_console(key#lf) | mod.
+
+mod:- put_console(ascii#"% G_Modulo %%%%%%%%%%%%%% ") | mod00.
+
+mod00:- true | mod00(1234,1234).
+mod00(X,Y):- Z:=X mod Y | mod00(Z).
+otherwise.
+mod00(_,_):- put_console(c#"*") | mod01.
+mod00(0):- put_console(c#"a") | mod01.
+otherwise.
+mod00(_):- put_console(c#"*") | mod01.
+
+mod01:- true | mod01(1234,0).
+mod01(X,Y):- Z:=X mod Y, put_console(c#"*") | mod02.
+otherwise.
+mod01(_,_):- put_console(c#"b") | mod02.
+
+mod02:- true | mod02(1234,-1234).
+mod02(X,Y):- Z:=X mod Y | mod02(Z).
+otherwise.
+mod02(_,_):- put_console(c#"*") | mod03.
+mod02(0):- put_console(c#"c") | mod03.
+otherwise.
+mod02(_):- put_console(c#"*") | mod03.
+
+mod03:- true | mod03(0,1234).
+mod03(X,Y):- Z:=X mod Y | mod03(Z).
+otherwise.
+mod03(_,_):- put_console(c#"*") | mod04.
+mod03(0):- put_console(c#"d") | mod04.
+otherwise.
+mod03(_):- put_console(c#"*") | mod04.
+
+mod04:- true | mod04(0,0).
+mod04(X,Y):- Z:=X mod Y, put_console(c#"*") | mod05.
+otherwise.
+mod04(_,_):- put_console(c#"e") | mod05.
+
+mod05:- true | mod05(0,-1234).
+mod05(X,Y):- Z:=X mod Y | mod05(Z).
+otherwise.
+mod05(_,_):- put_console(c#"*") | mod06.
+mod05(0):- put_console(c#"f") | mod06.
+otherwise.
+mod05(_):- put_console(c#"*") | mod06.
+
+mod06:- true | mod06(-1234,1234).
+mod06(X,Y):- Z:=X mod Y | mod06(Z).
+otherwise.
+mod06(_,_):- put_console(c#"*") | mod07.
+mod06(0):- put_console(c#"g") | mod07.
+otherwise.
+mod06(_):- put_console(c#"*") | mod07.
+
+mod07:- true | mod07(-1234,0).
+mod07(X,Y):- Z:=X mod Y, put_console(c#"*") | mod08.
+otherwise.
+mod07(_,_):- put_console(c#"h") | mod08.
+
+mod08:- true | mod08(-1234,-1234).
+mod08(X,Y):- Z:=X mod Y | mod08(Z).
+otherwise.
+mod08(_,_):- put_console(c#"*") | mod09.
+mod08(0):- put_console(c#"i") | mod09.
+otherwise.
+mod08(_):- put_console(c#"*") | mod09.
+
+mod09:- put_console(key#lf) | min.
+
+min:- put_console(ascii#"% G_Minus %%%%%%%%%%%%%%% ") | min00.
+
+min00:- true | min00(1234).
+min00(X):- Z:= -X | min00ans(Z).
+otherwise.
+min00(_):- put_console(c#"*") | min01.
+min00ans(-1234):- put_console(c#"a") | min01.
+otherwise.
+min00ans(_):- put_console(c#"*") | min01.
+
+min01:- true | min01(0).
+min01(X):- Z:= -X | min01ans(Z).
+otherwise.
+min01(_):- put_console(c#"*") | min02.
+min01ans(0):- put_console(c#"b") | min02.
+otherwise.
+min01ans(_):- put_console(c#"*") | min02.
+
+min02:- true | min02(-1234).
+min02(X):- Z:= -X | min02ans(Z).
+otherwise.
+min02(_):- put_console(c#"*") | min03.
+min02ans(1234):- put_console(c#"c") | min03.
+otherwise.
+min02ans(_):- put_console(c#"*") | min03.
+
+min03:- true | min03(16#"80000000").
+min03(X):- Z:= -X, put_console(c#"*") | min04.
+otherwise.
+min03(_):- put_console(c#"d") | min04.
+
+min04:- put_console(key#lf) | inc.
+
+inc:- put_console(ascii#"% G_Increment %%%%%%%%%%% ") | inc00.
+
+inc00:- true | inc00(1234).
+inc00(X):- Z:=X+1 | inc00ans(Z).
+otherwise.
+inc00(_):- put_console(c#"*") | inc01.
+inc00ans(1235):- put_console(c#"a") | inc01.
+otherwise.
+inc00ans(_):- put_console(c#"*") | inc01.
+
+inc01:- true | inc01(0).
+inc01(X):- Z:=X+1 | inc01ans(Z).
+otherwise.
+inc01(_):- put_console(c#"*") | inc02.
+inc01ans(1):- put_console(c#"b") | inc02.
+otherwise.
+inc01ans(_):- put_console(c#"*") | inc02.
+
+inc02:- true | inc02(-1234).
+inc02(X):- Z:=X+1 | inc02ans(Z).
+otherwise.
+inc02(_):- put_console(c#"*") | inc03.
+inc02ans(-1233):- put_console(c#"c") | inc03.
+otherwise.
+inc02ans(_):- put_console(c#"*") | inc03.
+
+inc03:- true | inc03(16#"7FFFFFFF").
+inc03(X):- Z:=X+1, put_console(c#"*") | inc04.
+otherwise.
+inc03(_):- put_console(c#"d") | inc04.
+
+inc04:- put_console(key#lf) | dec.
+
+dec:- put_console(ascii#"% G_Decrement %%%%%%%%%%% ") | dec00.
+
+dec00:- true | dec00(1234).
+dec00(X):- Z:=X-1 | dec00ans(Z).
+otherwise.
+dec00(_):- put_console(c#"*") | dec01.
+dec00ans(1233):- put_console(c#"a") | dec01.
+otherwise.
+dec00ans(_):- put_console(c#"*") | dec01.
+
+dec01:- true | dec01(0).
+dec01(X):- Z:=X-1 | dec01ans(Z).
+otherwise.
+dec01(_):- put_console(c#"*") | dec02.
+dec01ans(-1):- put_console(c#"b") | dec02.
+otherwise.
+dec01ans(_):- put_console(c#"*") | dec02.
+
+dec02:- true | dec02(-1234).
+dec02(X):- Z:=X-1 | dec02ans(Z).
+otherwise.
+dec02(_):- put_console(c#"*") | dec03.
+dec02ans(-1235):- put_console(c#"c") | dec03.
+otherwise.
+dec02ans(_):- put_console(c#"*") | dec03.
+
+dec03:- true | dec03(16#"80000000").
+dec03(X):- Z:=X-1, put_console(c#"*") | dec04.
+otherwise.
+dec03(_):- put_console(c#"d") | dec04.
+
+dec04:- put_console(key#lf) | done.
+
+done:- true | true.

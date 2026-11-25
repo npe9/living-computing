@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/cmd_dir.kl1" : Compiling ... is_command/2,do_command/2,command_to_directory/5,check_world/6,check_world_0/4,change_directory/3,change_directory0/3,file_list/4,file_list0/2,wait_st/5,wait_remove/3,pwd/3,pwd/4,split_wildcard/3,split_wildcard/5,wait/1,wait_fail/1,fail_action/1,help/2,END.
+
+[is_command/2,do_command/2,help/2]
+successdone
+
+exit 0
+asm afefe7d44453fa392e6bbd058bc2955796d3ee511939aee47e359ee81ab47909
+sav none

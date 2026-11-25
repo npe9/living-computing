@@ -1,0 +1,225 @@
+/*-----------------------------------------------------------------------------
+Program: Puzzle (all solutions, AND-parallel)
+Author:  E. Tick
+Date:    September 1 1988
+Modified: Y. Kimura
+Date:  	 October 21 1988
+
+Notes:
+0. To run:
+   ?- puzzle.
+
+1. To run:
+    ?- go(N).
+where output N = 65 (number of solutions).
+
+2. This is 5x4x3 puzzle with chip in corner.  The program collects all 
+solutions in the form of a list of lists.  A solution list contains SEVEN
+cons-cells corresponding to the pieces:  
+   [[b|26],[q|20],[j|16],[j|11],[l|5],[f|4],[a|1]] 
+The car represents the shape and orientation.  The cdr represents the 
+location it was placed inside the solid.
+-----------------------------------------------------------------------------*/
+:- module puzzle.
+:- public puzzle/0, go/1.
+
+puzzle :- true | go(N).
+
+go(N) :- true | 
+    initial(Slist,Plist), 
+    select(Plist, Slist, [], A,[], []), 
+    count(A, N).
+
+select([], _, [_|_], I,O,  _) :- true | I=O.
+select([], _, [],    I,O, PL) :- true | I=[PL|O].
+% in this case, choose last instance of this shape...
+select([orient(1,L)|Ys], Empty, NonC, I,O, PL):- true | 
+    append(Ys, NonC, Unused),
+    check(L, Unused, Empty,               I,I1, PL),
+    select(Ys, Empty, [orient(1,L)|NonC], I1,O, PL).
+otherwise.   % more than one instance of this shape exists...
+select([orient(M,L)|Ys], Empty, NonC, I,O, PL):- M1 := M-1 |
+    append([orient(M1,L)|Ys], NonC, Unused),
+    check(L, Unused, Empty,               I,I1, PL),
+    select(Ys, Empty, [orient(M,L)|NonC], I1,O, PL).
+
+% The check routine is split into three parts for readability.
+% Note however that this split does NOT slow it down: I ran a
+% fused version with approximately the same execution speed (2% faster).
+% This fact seems to imply that the speed-bump in this program is remove/5.
+
+% spawn checker process for each orientation in Piece
+check([D|Ds], Unused, Empty, I,O, PL) :- true |
+    Empty = [E|RestEmpty],
+    translate(D, E, Piece, Status),
+    check1(Status, Ds, Piece, Unused, Empty, I,O, PL, [D|E], RestEmpty).
+check([], _, _, I,O, _):- true | I=O.
+
+% translated piece falls outside of solid boundary...
+check1(no, Os, _, Unused, Empty, I,O, PL, _, _) :- true |
+    check(  Os,    Unused, Empty, I,O, PL).
+% translated piece falls completely inside of solid...
+check1(yes, Os, Piece, Unused, Empty, I,O, PL, Move, RestEmpty) :- true |
+    remove(yes, Piece, RestEmpty, NewEmpty, Status),
+    check2(Status, Os, Unused, Empty, NewEmpty, I,O, PL, Move).
+
+% translated piece falls inside a previously chosen piece...
+check2(no, Os, Unused, Empty, _, I,O, PL, _) :- true |
+    check(  Os, Unused, Empty,    I,O, PL).
+% translated piece falls outside all previously chosen pieces...
+check2(yes, Os, Unused, Empty, NewEmpty, I0,I2, PL, [D|o(X,Y,Z)]) :- 
+    M := X+(Y*5)+(Z*20) |        % calculate index of piece for answer...
+    select(      Unused, NewEmpty, [],    I0,I1, [[D|M]|PL]),
+    check(   Os, Unused, Empty,           I1,I2, PL).
+
+% remove(yes, Vector, Empty, NewEmpty, Status)
+% remove all elements in Vector from Empty
+% return Status of removal: 
+%        "yes" if Vector was a subset of Empty
+%        "no" if Vector contained elements not in Empty
+remove( no,  _, _,  _, Status) :- true | Status = no.
+remove(yes, [], Empty, T1, Status) :- true | Status = yes, T1 = Empty.
+remove(yes, [H|T], Empty, T1, Status) :- true |
+    remove2(Empty, H, T1, T2, NextEmpty, SubStatus),
+    remove(SubStatus, T, NextEmpty, T2, Status).
+
+remove2([], _, _, _, _, Status) :- true | Status = no.
+remove2([E|Es], H, T1, T2, Empty, Status) :- E=H |
+    Status = yes,
+    Empty = Es,
+    T1 = T2.
+otherwise.
+remove2([E|Es], H, T1, T3, Empty, Status) :- true |
+    T1 = [E|T2],
+    remove2(Es, H, T2, T3, Empty, Status).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% 3x2x1 (6 orientations)
+translate(a, o(X,Y,Z), List, Status) :- X<3, Y<3,
+    X1 := X+1, X2 := X+2, Y1 := Y+1 | Status = yes,
+    List = [          o(X1,Y, Z),o(X2,Y, Z),
+            o(X,Y1,Z),o(X1,Y1,Z),o(X2,Y1,Z)].
+translate(b, o(X,Y,Z), List, Status) :- X<3, Z<2,
+    X1 := X+1, X2 := X+2, Z1 := Z+1 | Status = yes,
+    List = [          o(X1,Y,Z), o(X2,Y,Z),
+            o(X,Y,Z1),o(X1,Y,Z1),o(X2,Y,Z1)].
+translate(c, o(X,Y,Z), List, Status) :- Y<2, Z<2,
+    Y1 := Y+1, Y2 := Y+2, Z1 := Z+1 | Status = yes,
+    List = [          o(X,Y1,Z), o(X,Y2,Z),
+            o(X,Y,Z1),o(X,Y1,Z1),o(X,Y2,Z1)].
+translate(d, o(X,Y,Z), List, Status) :- X<4, Y<2, 
+    Y1 := Y+1, Y2 := Y+2, X1 := X+1 | Status = yes,
+    List = [          o(X1, Y,Z),
+            o(X,Y1,Z),o(X1,Y1,Z),
+            o(X,Y2,Z),o(X1,Y2,Z)].          
+translate(e, o(X,Y,Z), List, Status) :- X<4, Z<1, 
+    Z1 := Z+1, Z2 := Z+2, X1 := X+1 | Status = yes,
+    List = [          o(X1,Y,Z),
+            o(X,Y,Z1),o(X1,Y,Z1),
+            o(X,Y,Z2),o(X1,Y,Z2)].          
+translate(f, o(X,Y,Z), List, Status) :- Y<3, Z<1, 
+    Z1 := Z+1, Z2 := Z+2, Y1 := Y+1 | Status = yes,
+    List = [          o(X,Y1,Z),
+            o(X,Y,Z1),o(X,Y1,Z1),
+            o(X,Y,Z2),o(X,Y1,Z2)].          
+
+% 4x3x1 (4 orientations)
+translate(g, o(X,Y,Z), List, Status) :- X<2, Y<2,
+    X1 := X+1, X2 := X+2, X3 := X+3, Y1 := Y+1, Y2 := Y+2 | Status = yes,
+    List = [          o(X1,Y, Z),o(X2,Y, Z),o(X3,Y, Z),
+            o(X,Y1,Z),o(X1,Y1,Z),o(X2,Y1,Z),o(X3,Y1,Z),
+            o(X,Y2,Z),o(X1,Y2,Z),o(X2,Y2,Z),o(X3,Y2,Z)].
+translate(h, o(X,Y,Z), List, Status) :- Y<1, Z<1,
+    Y1 := Y+1, Y2 := Y+2, Y3 := Y+3, Z1 := Z+1, Z2 := Z+2 | Status = yes,
+    List = [          o(X,Y1,Z), o(X,Y2,Z), o(X,Y3,Z),
+            o(X,Y,Z1),o(X,Y1,Z1),o(X,Y2,Z1),o(X,Y3,Z1),
+            o(X,Y,Z2),o(X,Y1,Z2),o(X,Y2,Z2),o(X,Y3,Z2)].
+translate(i, o(X,Y,Z), List, Status) :- X<3, Y<1, 
+    Y1 := Y+1, Y2 := Y+2, Y3 := Y+3, X1 := X+1, X2 := X+2 | Status = yes,
+    List = [          o(X1,Y, Z),o(X2,Y, Z),
+            o(X,Y1,Z),o(X1,Y1,Z),o(X2,Y1,Z),
+            o(X,Y2,Z),o(X1,Y2,Z),o(X2,Y2,Z),
+            o(X,Y3,Z),o(X1,Y3,Z),o(X2,Y3,Z)].
+translate(j, o(X,Y,Z), List, Status) :- X<2, Z<1,
+    X1 := X+1, X2 := X+2, X3 := X+3, Z1 := Z+1, Z2 := Z+2 | Status = yes,
+    List = [          o(X1,Y,Z), o(X2,Y,Z), o(X3,Y,Z),
+            o(X,Y,Z1),o(X1,Y,Z1),o(X2,Y,Z1),o(X3,Y,Z1),
+            o(X,Y,Z2),o(X1,Y,Z2),o(X2,Y,Z2),o(X3,Y,Z2)].
+
+% 3x3x1 (3 orientations)
+translate(k, o(X,Y,Z), List, Status) :- X<3, Y<2,
+    X1 := X+1, X2 := X+2, Y1 := Y+1, Y2 := Y+2 | Status = yes,
+    List = [          o(X1,Y, Z),o(X2,Y, Z),
+            o(X,Y1,Z),o(X1,Y1,Z),o(X2,Y1,Z),
+            o(X,Y2,Z),o(X1,Y2,Z),o(X2,Y2,Z)].
+translate(l, o(X,Y,Z), List, Status) :- Y<2, Z<1,
+    Y1 := Y+1, Y2 := Y+2, Z1 := Z+1, Z2 := Z+2 | Status = yes,
+    List = [          o(X,Y1,Z), o(X,Y2,Z),
+            o(X,Y,Z1),o(X,Y1,Z1),o(X,Y2,Z1),
+            o(X,Y,Z2),o(X,Y1,Z2),o(X,Y2,Z2)].
+translate(m, o(X,Y,Z), List, Status) :- X<3, Z<1,
+    X1 := X+1, X2 := X+2, Z1 := Z+1, Z2 := Z+2 | Status = yes,
+    List = [          o(X1,Y,Z), o(X2,Y,Z),
+            o(X,Y,Z1),o(X1,Y,Z1),o(X2,Y,Z1),
+            o(X,Y,Z2),o(X1,Y,Z2),o(X2,Y,Z2)].
+
+% 4x2x1 (4 orientations)
+translate(n, o(X,Y,Z), List, Status) :- X<2, Y<3,
+    X1 := X+1, X2 := X+2, X3 := X+3, Y1 := Y+1 | Status = yes,
+    List = [          o(X1,Y, Z),o(X2,Y, Z),o(X3,Y, Z),
+            o(X,Y1,Z),o(X1,Y1,Z),o(X2,Y1,Z),o(X3,Y1,Z)].
+translate(o, o(X,Y,Z), List, Status) :- Y<1, Z<2,
+    Y1 := Y+1, Y2 := Y+2, Y3 := Y+3, Z1 := Z+1 | Status = yes,
+    List = [          o(X,Y1,Z), o(X,Y2,Z), o(X,Y3,Z),
+            o(X,Y,Z1),o(X,Y1,Z1),o(X,Y2,Z1),o(X,Y3,Z1)].
+translate(p, o(X,Y,Z), List, Status) :- Y<1, X<4,
+    Y1 := Y+1, Y2 := Y+2, Y3 := Y+3, X1 := X+1 | Status = yes,
+    List = [          o(X1,Y, Z),
+            o(X,Y1,Z),o(X1,Y1,Z),
+            o(X,Y2,Z),o(X1,Y2,Z),
+            o(X,Y3,Z),o(X1,Y3,Z)].
+translate(q, o(X,Y,Z), List, Status) :- X<2, Z<2,
+    X1 := X+1, X2 := X+2, X3 := X+3, Z1 := Z+1 | Status = yes,
+    List = [          o(X1,Y,Z), o(X2,Y,Z), o(X3,Y,Z),
+            o(X,Y,Z1),o(X1,Y,Z1),o(X2,Y,Z1),o(X3,Y,Z1)].
+otherwise.
+translate(_, _, _, Status) :- true | Status = no.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% utilities...
+
+append([A|X],Y,Z):- true | Z=[A|Z1], append(X,Y,Z1).        
+append([],   Y,Z):- true | Z=Y.            
+                            
+count(L,N) :- true | count(L,0,N).
+count([],M,N) :- true | M = N.
+count([X|Xs],M,N) :- M1 := M+1 | count(Xs,M1,N).
+
+initial(Slist,Plist) :- true | squares(Slist), piece_list(Plist).
+
+% NOTE: 4x3x1 and 4x2x1 have four orientations because z-dim. of puzzle
+% is only three, so that these shapes cannot stand up in the z-direction.
+piece_list(List) :- true |                % shape  #  orientation
+    List = [orient( 3,[a,b,c,d,e,f]),     % 3x2x1 (3)x(6)
+            orient( 2,[g,h,i,j]),         % 4x3x1 (2)x(4)
+            orient( 1,[k,l,m]),           % 3x3x1 (1)x(3)
+            orient( 1,[n,o,p,q])].        % 4x2x1 (1)x(4)
+
+squares(List) :- true |
+    List = 
+    [         o(1,0,0),o(2,0,0),o(3,0,0),o(4,0,0),
+     o(0,1,0),o(1,1,0),o(2,1,0),o(3,1,0),o(4,1,0),
+     o(0,2,0),o(1,2,0),o(2,2,0),o(3,2,0),o(4,2,0),
+     o(0,3,0),o(1,3,0),o(2,3,0),o(3,3,0),o(4,3,0),
+
+     o(0,0,1),o(1,0,1),o(2,0,1),o(3,0,1),o(4,0,1),
+     o(0,1,1),o(1,1,1),o(2,1,1),o(3,1,1),o(4,1,1),
+     o(0,2,1),o(1,2,1),o(2,2,1),o(3,2,1),o(4,2,1),
+     o(0,3,1),o(1,3,1),o(2,3,1),o(3,3,1),o(4,3,1),
+
+     o(0,0,2),o(1,0,2),o(2,0,2),o(3,0,2),o(4,0,2),
+     o(0,1,2),o(1,1,2),o(2,1,2),o(3,1,2),o(4,1,2),
+     o(0,2,2),o(1,2,2),o(2,2,2),o(3,2,2),o(4,2,2),
+     o(0,3,2),o(1,3,2),o(2,3,2),o(3,3,2),o(4,3,2)].

@@ -1,0 +1,268 @@
+%%% KL1-B Test for B_Vector (Exception) %%%
+% B_Vector %%%%%%%%%%%%%% abcdef
+% B_New_Vector %%%%%%%%%% abcdefgh
+% B_Vector_Element %%%%%% abcdefghijklmno
+% B_Set_Vector_Element %% abcdefghijklmno
+
+:- module b_vector_e.
+:- public go/0
+,do_vector/1,do_new_vector/1,do_vector_element/2,do_set_vector_element/3.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Vector (Exception) %%%"), put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% B_Vector %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | execute_in_shoen(do_vector,{{0,1}},R), vec00(R).
+vec00(success):- put_console(c#"a") | vec01.
+otherwise.
+vec00(_):- put_console(c#"*") | vec01.
+
+vec01:- true | execute_in_shoen(do_vector,{1234},R), vec01(R).
+vec01(illegal_input):- put_console(c#"b") | vec02.
+otherwise.
+vec01(_):- put_console(c#"*") | vec02.
+
+vec02:- true | execute_in_shoen(do_vector,{12.34},R), vec02(R).
+vec02(illegal_input):- put_console(c#"c") | vec03.
+otherwise.
+vec02(_):- put_console(c#"*") | vec03.
+
+vec03:- true | execute_in_shoen(do_vector,{atom},R), vec03(R).
+vec03(illegal_input):- put_console(c#"d") | vec04.
+otherwise.
+vec03(_):- put_console(c#"*") | vec04.
+
+vec04:- true | execute_in_shoen(do_vector,{[list]},R), vec04(R).
+vec04(illegal_input):- put_console(c#"e") | vec05.
+otherwise.
+vec04(_):- put_console(c#"*") | vec05.
+
+vec05:- true | execute_in_shoen(do_vector,{ascii#"String"},R), vec05(R).
+vec05(illegal_input):- put_console(c#"f") | vec06.
+otherwise.
+vec05(_):- put_console(c#"*") | vec06.
+
+vec06:- put_console(key#lf) | nvc.
+
+nvc:- put_console(ascii#"% B_New_Vector %%%%%%%%%% ") | nvc00.
+
+nvc00:- true | execute_in_shoen(do_new_vector,{0},R), nvc00(R).
+nvc00(success):- put_console(c#"a") | nvc01.
+otherwise.
+nvc00(_):- put_console(c#"*") | nvc01.
+
+nvc01:- true | execute_in_shoen(do_new_vector,{2},R), nvc01(R).
+nvc01(success):- put_console(c#"b") | nvc02.
+otherwise.
+nvc01(_):- put_console(c#"*") | nvc02.
+
+nvc02:- true | execute_in_shoen(do_new_vector,{-1},R), nvc02(R).
+nvc02(range_overflow):- put_console(c#"c") | nvc03.
+otherwise.
+nvc02(_):- put_console(c#"*") | nvc03.
+
+nvc03:- true | execute_in_shoen(do_new_vector,{12.34},R), nvc03(R).
+nvc03(illegal_input):- put_console(c#"d") | nvc04.
+otherwise.
+nvc03(_):- put_console(c#"*") | nvc04.
+
+nvc04:- true | execute_in_shoen(do_new_vector,{atom},R), nvc04(R).
+nvc04(illegal_input):- put_console(c#"e") | nvc05.
+otherwise.
+nvc04(_):- put_console(c#"*") | nvc05.
+
+nvc05:- true | execute_in_shoen(do_new_vector,{[list]},R), nvc05(R).
+nvc05(illegal_input):- put_console(c#"f") | nvc06.
+otherwise.
+nvc05(_):- put_console(c#"*") | nvc06.
+
+nvc06:- true | execute_in_shoen(do_new_vector,{{0,1}},R), nvc06(R).
+nvc06(illegal_input):- put_console(c#"g") | nvc07.
+otherwise.
+nvc06(_):- put_console(c#"*") | nvc07.
+
+nvc07:- true | execute_in_shoen(do_new_vector,{ascii#"String"},R), nvc07(R).
+nvc07(illegal_input):- put_console(c#"h") | nvc08.
+otherwise.
+nvc07(_):- put_console(c#"*") | nvc08.
+
+nvc08:- put_console(key#lf) | vce.
+
+vce:- put_console(ascii#"% B_Vector_Element %%%%%% ") | vce00.
+
+vce00:- true | execute_in_shoen(do_vector_element,{{0,1,2},0},R), vce00(R).
+vce00(success):- put_console(c#"a") | vce01.
+otherwise.
+vce00(_):- put_console(c#"*") | vce01.
+
+vce01:- true | execute_in_shoen(do_vector_element,{{0,1,2},2},R), vce01(R).
+vce01(success):- put_console(c#"b") | vce02.
+otherwise.
+vce01(_):- put_console(c#"*") | vce02.
+
+vce02:- true | execute_in_shoen(do_vector_element,{{0,1,2},-1},R), vce02(R).
+vce02(range_overflow):- put_console(c#"c") | vce03.
+otherwise.
+vce02(_):- put_console(c#"*") | vce03.
+
+vce03:- true | execute_in_shoen(do_vector_element,{{0,1,2},3},R), vce03(R).
+vce03(range_overflow):- put_console(c#"d") | vce04.
+otherwise.
+vce03(_):- put_console(c#"*") | vce04.
+
+vce04:- true | execute_in_shoen(do_vector_element,{{},0},R), vce04(R).
+vce04(range_overflow):- put_console(c#"e") | vce05.
+otherwise.
+vce04(_):- put_console(c#"*") | vce05.
+
+vce05:- true | execute_in_shoen(do_vector_element,{1234,0},R), vce05(R).
+vce05(illegal_input):- put_console(c#"f") | vce06.
+otherwise.
+vce05(_):- put_console(c#"*") | vce06.
+
+vce06:- true | execute_in_shoen(do_vector_element,{12.34,0},R), vce06(R).
+vce06(illegal_input):- put_console(c#"g") | vce07.
+otherwise.
+vce06(_):- put_console(c#"*") | vce07.
+
+vce07:- true | execute_in_shoen(do_vector_element,{atom,0},R), vce07(R).
+vce07(illegal_input):- put_console(c#"h") | vce08.
+otherwise.
+vce07(_):- put_console(c#"*") | vce08.
+
+vce08:- true | execute_in_shoen(do_vector_element,{[list],0},R), vce08(R).
+vce08(illegal_input):- put_console(c#"i") | vce09.
+otherwise.
+vce08(_):- put_console(c#"*") | vce09.
+
+vce09:- true | execute_in_shoen(do_vector_element,{ascii#"String",0},R), vce09(R).
+vce09(illegal_input):- put_console(c#"j") | vce10.
+otherwise.
+vce09(_):- put_console(c#"*") | vce10.
+
+vce10:- true | execute_in_shoen(do_vector_element,{{0,1,2},12.34},R), vce10(R).
+vce10(illegal_input):- put_console(c#"k") | vce11.
+otherwise.
+vce10(_):- put_console(c#"*") | vce11.
+
+vce11:- true | execute_in_shoen(do_vector_element,{{0,1,2},12.34},R), vce11(R).
+vce11(illegal_input):- put_console(c#"l") | vce12.
+otherwise.
+vce11(_):- put_console(c#"*") | vce12.
+
+vce12:- true | execute_in_shoen(do_vector_element,{{0,1,2},atom},R), vce12(R).
+vce12(illegal_input):- put_console(c#"m") | vce13.
+otherwise.
+vce12(_):- put_console(c#"*") | vce13.
+
+vce13:- true | execute_in_shoen(do_vector_element,{{0,1,2},[list]},R), vce13(R).
+vce13(illegal_input):- put_console(c#"n") | vce14.
+otherwise.
+vce13(_):- put_console(c#"*") | vce14.
+
+vce14:- true | execute_in_shoen(do_vector_element,{{0,1,2},ascii#"String"},R), vce14(R).
+vce14(illegal_input):- put_console(c#"o") | vce15.
+otherwise.
+vce14(_):- put_console(c#"*") | vce15.
+
+vce15:- put_console(key#lf) | sve.
+
+sve:- put_console(ascii#"% B_Set_Vector_Element %% ") | sve00.
+
+sve00:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},0,3},R), sve00(R).
+sve00(success):- put_console(c#"a") | sve01.
+otherwise.
+sve00(_):- put_console(c#"*") | sve01.
+
+sve01:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},2,3},R), sve01(R).
+sve01(success):- put_console(c#"b") | sve02.
+otherwise.
+sve01(_):- put_console(c#"*") | sve02.
+
+sve02:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},-1,3},R), sve02(R).
+sve02(range_overflow):- put_console(c#"c") | sve03.
+otherwise.
+sve02(_):- put_console(c#"*") | sve03.
+
+sve03:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},3,3},R), sve03(R).
+sve03(range_overflow):- put_console(c#"d") | sve04.
+otherwise.
+sve03(_):- put_console(c#"*") | sve04.
+
+sve04:- true | execute_in_shoen(do_set_vector_element,{{},0,3},R), sve04(R).
+sve04(range_overflow):- put_console(c#"e") | sve05.
+otherwise.
+sve04(_):- put_console(c#"*") | sve05.
+
+sve05:- true | execute_in_shoen(do_set_vector_element,{1234,0,3},R), sve05(R).
+sve05(illegal_input):- put_console(c#"f") | sve06.
+otherwise.
+sve05(_):- put_console(c#"*") | sve06.
+
+sve06:- true | execute_in_shoen(do_set_vector_element,{12.34,0,3},R), sve06(R).
+sve06(illegal_input):- put_console(c#"g") | sve07.
+otherwise.
+sve06(_):- put_console(c#"*") | sve07.
+
+sve07:- true | execute_in_shoen(do_set_vector_element,{atom,0,3},R), sve07(R).
+sve07(illegal_input):- put_console(c#"h") | sve08.
+otherwise.
+sve07(_):- put_console(c#"*") | sve08.
+
+sve08:- true | execute_in_shoen(do_set_vector_element,{[list],0,3},R), sve08(R).
+sve08(illegal_input):- put_console(c#"i") | sve09.
+otherwise.
+sve08(_):- put_console(c#"*") | sve09.
+
+sve09:- true | execute_in_shoen(do_set_vector_element,{ascii#"String",0,3},R), sve09(R).
+sve09(illegal_input):- put_console(c#"j") | sve10.
+otherwise.
+sve09(_):- put_console(c#"*") | sve10.
+
+sve10:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},12.34,3},R), sve10(R).
+sve10(illegal_input):- put_console(c#"k") | sve11.
+otherwise.
+sve10(_):- put_console(c#"*") | sve11.
+
+sve11:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},12.34,3},R), sve11(R).
+sve11(illegal_input):- put_console(c#"l") | sve12.
+otherwise.
+sve11(_):- put_console(c#"*") | sve12.
+
+sve12:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},atom,3},R), sve12(R).
+sve12(illegal_input):- put_console(c#"m") | sve13.
+otherwise.
+sve12(_):- put_console(c#"*") | sve13.
+
+sve13:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},[list],3},R), sve13(R).
+sve13(illegal_input):- put_console(c#"n") | sve14.
+otherwise.
+sve13(_):- put_console(c#"*") | sve14.
+
+sve14:- true | execute_in_shoen(do_set_vector_element,{{0,1,2},ascii#"String",3},R), sve14(R).
+sve14(illegal_input):- put_console(c#"o") | sve15.
+otherwise.
+sve14(_):- put_console(c#"*") | sve15.
+
+sve15:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_vector_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(1,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=range_overflow, C=[abort].
+
+do_vector(X):- true | vector(X,A,B).
+do_new_vector(X):- true | new_vector(A,X).
+do_vector_element(X,Y):- true | vector_element(X,Y,A,B).
+do_set_vector_element(X,Y,Z):- true | set_vector_element(X,Y,A,Z,B).

@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/macarg.kl1" : Compiling ... init_macro_table/1,read_macro_file/5,macro_table_size/1,check_file_status/7,make_macro_table/6,check_declaration_and_add_macro/7,macro_table_manager/3,inkey_to_hash/6,inkey_to_hash_2/6,collision_check/5,check_old_definitions/5,ref_hash_element/5,ref_hash_list/5,copy_macro_args/5,extract_original_args/6,copy_to_new_arg/7,search_new_arg/4,search_new_undef_arg/4,macro_arg/6,macro_arg/7,macro_arg_result/6,C/4,convert_string_to_integer/4,shift_convert/6,check_first/7,shift_conv/7,check_shift_conv/8,convert_string_to_integer/6,check_convert/7,convert_one_element_to_integer/2,END.
+
+[init_macro_table/1,read_macro_file/5,macro_arg/6]
+successdone
+
+exit 0
+asm 9f3fb7a54be7752fd0ab450d203fc15b3c7b09faa9855c5b5e46cdebbd7d31fd
+sav none

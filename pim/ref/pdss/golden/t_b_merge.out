@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_merge" : Compiling ... go/0,mrg/0,mrg00/0,mrg00/1,mrg00ans/1,mrg01/0,mrg01/1,mrg01ans/1,mrg02/0,mrg02/1,mrg02ans/1,mrg03/0,mrg03/1,mrg03ans/1,mrg04/0,done/0,get/2,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_merge
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Merge %%%
+% B_Merge %%%%%%%%%%%%%%% abcd
+Total of 23 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 1740465a5e0d43b68653f251e4b91fa683af7d9c4ca4b617cf9dd25bba4a6b7c
+sav 7f2457c20ed3b9fdff3138e28834681affe4463b99d1640b725af4accbf7ef83

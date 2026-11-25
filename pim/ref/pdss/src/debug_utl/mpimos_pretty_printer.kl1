@@ -1,0 +1,175 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_pretty_printer.
+:- public pprinter/2.
+
+pprinter(In,Out) :-
+    true |
+	command(In,Out).
+
+command([putt(Term)|In],Out) :-
+    true |
+	transform(Out,NOut,putt,Term),
+	command(In,NOut).
+command([puttq(Term)|In],Out) :-
+    true |
+	transform(Out,NOut,puttq,Term),
+	command(In,NOut).
+command([putt(Term,Len,Dep)|In],Out) :-
+    true |
+	transform(Out,NOut,putt(Len,Dep),Term),
+	command(In,NOut).
+command([puttq(Term,Len,Dep)|In],Out) :-
+    true |
+	transform(Out,NOut,puttq(Len,Dep),Term),
+	command(In,NOut).
+command([],Out) :-
+    true |
+	Out = [].
+otherwise.
+command([Cmd|In],Out) :-
+    true |
+	Out = [Cmd|NOut],
+	command(In,NOut).
+
+:- local_implicit out : oldnew,
+		  stt : shared.
+
+transform((H:-'|'(G,B))) -->
+    true |
+	put_term(H),
+	{{ put_neck(&out,(':-')) }},
+	put_guard(G),
+	{{ put_bar(&out,('|')) }},
+	put_body(nl,0,B).
+transform((H-->'|'(G,B))) -->
+    true |
+	put_term(H),
+	{{ put_neck(&out,('-->')) }},
+	put_guard(G),
+	{{ put_bar(&out,('|')) }},
+	put_body(nl,0,B).
+transform((:-{Op,D})) -->
+    true |
+	{{ put_declaration(&out,(':-')),
+	   put_declaration(&out,(Op)) }},
+	put_guard(D).
+otherwise.
+transform((H:-B)) -->
+    true |
+	put_term(H),
+	{{ put_non_guard_neck(&out,(':-')) }},
+	put_body(nl,0,B).
+transform((H-->B)) -->
+    true |
+	put_term(H),
+	{{ put_non_guard_neck(&out,('-->')) }},
+	put_body(nl,0,B).
+transform((:-Op)) -->
+    true |
+	{{ put_declaration(&out,(':-')),
+	   put_declaration(&out,(Op)) }}.
+otherwise.
+transform(Term) -->
+    true |
+	put_term(Term).
+
+put_guard((A,B)) -->
+    true |
+	put_guard(A),
+	{{ put_guard_separator(&out,(',')) }},
+	put_guard(B).
+otherwise.
+put_guard(G) -->
+    true |
+	put_term(G).
+
+:- local_implicit out      : oldnew,
+		  stt      : shared,
+		  separate : shared,
+		  indent   : shared.
+
+put_body((A,B)) -->
+    true |
+	put_body(A),
+	{{ put_body_separator(&out,&separate,&indent,(',')) }},
+	put_body(B).
+put_body((A;B)) -->
+    true |
+	&out <<= [putb(string#"(")],
+	&indent <= &indent + 1,
+	put_body_case((A;B)),
+	&out <<= [putb(string#")")].
+put_body((A->B)) -->
+    true |
+	&out <<= [putb(string#"(")],
+	&indent <= &indent + 1,
+	put_body_case((A->B)),
+	&out <<= [putb(string#")")].
+put_body({B}) -->
+    vector(B,L), L>0 |
+	&out <<= [putb(string#"{{ ")],
+	&indent <= &indent + 3,
+	put_body_vector(0,L,B),
+	&out <<= [putb(string#" }}")].
+otherwise.
+put_body(B) -->
+    true |
+	{{ put_term(&out,&stt,B) }}.
+
+put_body_vector(P,M,B) -->
+    P < M |
+	set_vector_element(B,P,Term,_,NB),
+	put_body(Term),
+	P1 := P + 1,
+	put_body_vector1(P1,M,NB).
+
+put_body_vector1(P,M,B) -->
+    P < M |
+	set_vector_element(B,P,Term,_,NB),
+	{{ put_body_separator(&out,&separate,&indent,(',')) }},
+	put_body(Term),
+	P1 := P + 1,
+	put_body_vector1(P1,M,NB).
+put_body_vector1(M,M,_) -->
+    true |
+	true.
+
+put_body_case((A;B)) -->
+    true |
+	put_body_case(A),
+	{{ put_body_separator(&out,nl,&indent,(';')) }},
+	put_body_case(B).
+put_body_case((A->B)) -->
+    true |
+	{{ put_guard(&out,&stt,A),
+	   put_body_bar(&out,('->')) }},
+	&separate <= flat,
+	put_body(B).
+otherwise.
+put_body_case(B) -->
+    true |
+	{{ put_term(&out,&stt,B) }}.
+
+:- local_implicit out : oldnew.
+
+put_neck(Op) --> true | &out <<= [putc(#" "),putt(Op),nl,tab(4)].
+put_non_guard_neck(Op) --> true | &out <<= [putc(#" "),putt(Op),nl,putc(9)].
+put_bar(Op) --> true | &out <<= [putc(#" "),putt(Op),nl,putc(9)].
+put_declaration(Op) --> true | &out <<= [putt(Op),putc(#" ")].
+put_guard_separator(Op) --> true | &out <<= [putt(Op),putc(#" ")].
+put_body_bar(Op) --> true | &out <<= [putc(#" "),putt(Op),putc(#" ")].
+
+put_body_separator(nl,0,Op) --> true | &out <<= [putt(Op),nl,putc(9)].
+put_body_separator(nl,I,Op) --> I > 0 | &out <<= [putt(Op),nl,putc(9),tab(I)].
+put_body_separator(flat,_,Op) --> true | &out <<= [putt(Op),putc(#" ")].
+
+put_term(putt,      Term) --> true | &out <<= [putt(Term)].
+put_term(puttq,     Term) --> true | &out <<= [puttq(Term)].
+put_term(putt(L,D), Term) --> true | &out <<= [putt(Term,L,D)].
+put_term(puttq(L,D),Term) --> true | &out <<= [puttq(Term,L,D)].

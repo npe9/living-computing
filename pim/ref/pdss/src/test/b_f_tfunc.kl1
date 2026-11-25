@@ -1,0 +1,250 @@
+%%% KL1-B Test for B_Float_Tri_Function %%%
+% B_Float_Sin %%%%%%%%%%% abcd
+% B_Float_Cos %%%%%%%%%%% abcd
+% B_Float_Tan %%%%%%%%%%% abc
+% B_Float_Asin %%%%%%%%%% abc
+% B_Float_Acos %%%%%%%%%% abc
+% B_Float_Atan %%%%%%%%%% abc
+% B_Float_Sinh %%%%%%%%%% abc
+% B_Float_Cosh %%%%%%%%%% abc
+% B_Float_Tanh %%%%%%%%%% abc
+% B_Float_Atan2 %%%%%%%%% abc
+
+:- module b_f_tfunc.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Float_Tri_Function %%%"), put_console(key#lf) | sin.
+
+sin:- put_console(ascii#"% B_Float_Sin %%%%%%%%%%% ") | sin00.
+
+sin00:- true | sin00(3.141592654).
+sin00(X):- true | Z$:=sin(X), sin00ans(Z).
+sin00ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"a") | sin01.
+otherwise.
+sin00ans(_):- put_console(c#"*") | sin01.
+
+sin01:- true | sin01($~(3.141592654/float(2))).
+sin01(X):- true | Z$:=sin(X), sin01ans(Z).
+sin01ans(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"b") | sin02.
+otherwise.
+sin01ans(_):- put_console(c#"*") | sin02.
+
+sin02:- true | sin02($~(3.141592654/float(6))).
+sin02(X):- true | Z$:=sin(X), sin02ans(Z).
+sin02ans(Z):- 0.5-1.0e-5$<Z, Z$< 0.5+1.0e-5, put_console(c#"c") | sin03.
+otherwise.
+sin02ans(_):- put_console(c#"*") | sin03.
+
+sin03:- true | sin03(0.0).
+sin03(X):- true | Z$:=sin(X), sin03ans(Z).
+sin03ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"d") | sin04.
+otherwise.
+sin03ans(_):- put_console(c#"*") | sin04.
+
+sin04:- put_console(key#lf) | cos.
+
+cos:- put_console(ascii#"% B_Float_Cos %%%%%%%%%%% ") | cos00.
+
+cos00:- true | cos00(3.141592654).
+cos00(X):- true | Z$:=cos(X), cos00ans(Z).
+cos00ans(Z):- -1.0-1.0e-5$<Z, Z$< -1.0+1.0e-5, put_console(c#"a") | cos01.
+otherwise.
+cos00ans(_):- put_console(c#"*") | cos01.
+
+cos01:- true | cos01($~(3.141592654/float(2))).
+cos01(X):- true | Z$:=cos(X), cos01ans(Z).
+cos01ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | cos02.
+otherwise.
+cos01ans(_):- put_console(c#"*") | cos02.
+
+cos02:- true | cos02($~(3.141592654/float(3))).
+cos02(X):- true | Z$:=cos(X), cos02ans(Z).
+cos02ans(Z):- 0.5-1.0e-5$<Z, Z$< 0.5+1.0e-5, put_console(c#"c") | cos03.
+otherwise.
+cos02ans(_):- put_console(c#"*") | cos03.
+
+cos03:- true | cos03(0.0).
+cos03(X):- true | Z$:=cos(X), cos03ans(Z).
+cos03ans(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"d") | cos04.
+otherwise.
+cos03ans(_):- put_console(c#"*") | cos04.
+
+cos04:- put_console(key#lf) | tan.
+
+tan:- put_console(ascii#"% B_Float_Tan %%%%%%%%%%% ") | tan00.
+
+tan00:- true | tan00(3.141592654).
+tan00(X):- true | Z$:=tan(X), tan00ans(Z).
+tan00ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"a") | tan01.
+otherwise.
+tan00ans(_):- put_console(c#"*") | tan01.
+
+tan01:- true | tan01($~(3.141592654/float(4))).
+tan01(X):- true | Z$:=tan(X), tan01ans(Z).
+tan01ans(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"b") | tan02.
+otherwise.
+tan01ans(_):- put_console(c#"*") | tan02.
+
+tan02:- true | tan02(0.0).
+tan02(X):- true | Z$:=tan(X), tan02ans(Z).
+tan02ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"c") | tan03.
+otherwise.
+tan02ans(_):- put_console(c#"*") | tan03.
+
+tan03:- put_console(key#lf) | asn.
+
+asn:- put_console(ascii#"% B_Float_Asin %%%%%%%%%% ") | asn00.
+
+asn00:- true | asn00(1.0).
+asn00(X):- true | Z$:=asin(X), asn00ans(Z).
+asn00ans(Z):- 1.5708-1.0e-4$<Z, Z$< 1.5708+1.0e-4, put_console(c#"a") | asn01.
+otherwise.
+asn00ans(_):- put_console(c#"*") | asn01.
+
+asn01:- true | asn01(0.5).
+asn01(X):- true | Z$:=asin(X), asn01ans(Z).
+asn01ans(Z):- 0.523599-1.0e-6$<Z, Z$< 0.523599+1.0e-6, put_console(c#"b") | asn02.
+otherwise.
+asn01ans(_):- put_console(c#"*") | asn02.
+
+asn02:- true | asn02(0.0).
+asn02(X):- true | Z$:=asin(X), asn02ans(Z).
+asn02ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"c") | asn03.
+otherwise.
+asn02ans(_):- put_console(c#"*") | asn03.
+
+asn03:- put_console(key#lf) | acs.
+
+acs:- put_console(ascii#"% B_Float_Acos %%%%%%%%%% ") | acs00.
+
+acs00:- true | acs00(1.0).
+acs00(X):- true | Z$:=acos(X), acs00ans(Z).
+acs00ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"a") | acs01.
+otherwise.
+acs00ans(_):- put_console(c#"*") | acs01.
+
+acs01:- true | acs01(0.5).
+acs01(X):- true | Z$:=acos(X), acs01ans(Z).
+acs01ans(Z):- 1.0472-1.0e-4$<Z, Z$< 1.0472+1.0e-4, put_console(c#"b") | acs02.
+otherwise.
+acs01ans(_):- put_console(c#"*") | acs02.
+
+acs02:- true | acs02(0.0).
+acs02(X):- true | Z$:=acos(X), acs02ans(Z).
+acs02ans(Z):- 1.5708-1.0e-4$<Z, Z$< 1.5708+1.0e-4, put_console(c#"c") | acs03.
+otherwise.
+acs02ans(_):- put_console(c#"*") | acs03.
+
+acs03:- put_console(key#lf) | atn.
+
+atn:- put_console(ascii#"% B_Float_Atan %%%%%%%%%% ") | atn00.
+
+atn00:- true | atn00(1.0).
+atn00(X):- true | Z$:=atan(X), atn00ans(Z).
+atn00ans(Z):- 0.785398-1.0e-6$<Z, Z$< 0.785398+1.0e-6, put_console(c#"a") | atn01.
+otherwise.
+atn00ans(_):- put_console(c#"*") | atn01.
+
+atn01:- true | atn01(0.5).
+atn01(X):- true | Z$:=atan(X), atn01ans(Z).
+atn01ans(Z):- 0.463648-1.0e-5$<Z, Z$< 0.463648+1.0e-5, put_console(c#"b") | atn02.
+otherwise.
+atn01ans(_):- put_console(c#"*") | atn02.
+
+atn02:- true | atn02(0.0).
+atn02(X):- true | Z$:=atan(X), atn02ans(Z).
+atn02ans(Z):- 0.0-1.0e-6$<Z, Z$< 0.0+1.0e-6, put_console(c#"c") | atn03.
+otherwise.
+atn02ans(_):- put_console(c#"*") | atn03.
+
+atn03:- put_console(key#lf) | snh.
+
+snh:- put_console(ascii#"% B_Float_Sinh %%%%%%%%%% ") | snh00.
+
+snh00:- true | snh00(1.0).
+snh00(X):- true | Z$:=sinh(X), snh00ans(Z).
+snh00ans(Z):- 1.1752-1.0e-4$<Z, Z$< 1.1752+1.0e-4, put_console(c#"a") | snh01.
+otherwise.
+snh00ans(_):- put_console(c#"*") | snh01.
+
+snh01:- true | snh01(0.5).
+snh01(X):- true | Z$:=sinh(X), snh01ans(Z).
+snh01ans(Z):- 0.521095-1.0e-6$<Z, Z$< 0.521095+1.0e-6, put_console(c#"b") | snh02.
+otherwise.
+snh01ans(_):- put_console(c#"*") | snh02.
+
+snh02:- true | snh02(0.0).
+snh02(X):- true | Z$:=sinh(X), snh02ans(Z).
+snh02ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"c") | snh03.
+otherwise.
+snh02ans(_):- put_console(c#"*") | snh03.
+
+snh03:- put_console(key#lf) | csh.
+
+csh:- put_console(ascii#"% B_Float_Cosh %%%%%%%%%% ") | csh00.
+
+csh00:- true | csh00(1.0).
+csh00(X):- true | Z$:=cosh(X), csh00ans(Z).
+csh00ans(Z):- 1.54308-1.0e-5$<Z, Z$< 1.54308+1.0e-5, put_console(c#"a") | csh01.
+otherwise.
+csh00ans(_):- put_console(c#"*") | csh01.
+
+csh01:- true | csh01(0.5).
+csh01(X):- true | Z$:=cosh(X), csh01ans(Z).
+csh01ans(Z):- 1.12763-1.0e-5$<Z, Z$< 1.12763+1.0e-5, put_console(c#"b") | csh02.
+otherwise.
+csh01ans(_):- put_console(c#"*") | csh02.
+
+csh02:- true | csh02(0.0).
+csh02(X):- true | Z$:=cosh(X), csh02ans(Z).
+csh02ans(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"c") | csh03.
+otherwise.
+csh02ans(_):- put_console(c#"*") | csh03.
+
+csh03:- put_console(key#lf) | tnh.
+
+tnh:- put_console(ascii#"% B_Float_Tanh %%%%%%%%%% ") | tnh00.
+
+tnh00:- true | tnh00(1.0).
+tnh00(X):- true | Z$:=tanh(X), tnh00ans(Z).
+tnh00ans(Z):- 0.761594-1.0e-6$<Z, Z$< 0.761594+1.0e-6, put_console(c#"a") | tnh01.
+otherwise.
+tnh00ans(_):- put_console(c#"*") | tnh01.
+
+tnh01:- true | tnh01(0.5).
+tnh01(X):- true | Z$:=tanh(X), tnh01ans(Z).
+tnh01ans(Z):- 0.462117-1.0e-6$<Z, Z$< 0.462117+1.0e-6, put_console(c#"b") | tnh02.
+otherwise.
+tnh01ans(_):- put_console(c#"*") | tnh02.
+
+tnh02:- true | tnh02(0.0).
+tnh02(X):- true | Z$:=tanh(X), tnh02ans(Z).
+tnh02ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"c") | tnh03.
+otherwise.
+tnh02ans(_):- put_console(c#"*") | tnh03.
+
+tnh03:- put_console(key#lf) | atn2.
+
+atn2:- put_console(ascii#"% B_Float_Atan2 %%%%%%%%% ") | atn200.
+
+atn200:- true | atn200(1.0,1.0).
+atn200(X,Y):- true | Z$:=atan(X/Y), atn200(Z).
+atn200(Z):- 0.785398-1.0e-6$<Z, Z$< 0.785398+1.0e-6, put_console(c#"a") | atn201.
+otherwise.
+atn200(_):- put_console(c#"*") | atn201.
+
+atn201:- true | atn201(0.5,1.0).
+atn201(X,Y):- true | Z$:=atan(X/Y), atn201(Z).
+atn201(Z):- 0.463648-1.0e-6$<Z, Z$< 0.463648+1.0e-6, put_console(c#"b") | atn202.
+otherwise.
+atn201(_):- put_console(c#"*") | atn202.
+
+atn202:- true | atn202(0.0,1.0).
+atn202(X,Y):- true | Z$:=atan(X/Y), atn202(Z).
+atn202(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"c") | atn203.
+otherwise.
+atn202(_):- put_console(c#"*") | atn203.
+
+atn203:- put_console(key#lf) | done.
+
+done:- true | true.

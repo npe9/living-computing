@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/code_man.kl1" : Compiling ... create/3,do0/2,do/4,do_wait_load/9,valve/3,get_command_stream/1,os_get_command_stream/3,monitor/2,protect/2,protect_vector/4,request/3,END.
+
+[create/3,request/3,get_command_stream/1,os_get_command_stream/3]
+successdone
+
+exit 0
+asm adada9e721dbbd4e3b16876cbc0721ad9693caf2b6be083fe013dafa0afdb7a5
+sav none

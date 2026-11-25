@@ -1,0 +1,298 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pdss_window_device.
+:- public windows/1.
+:- with_macro pdss.
+
+%%%% Window Manager Commands.
+windows(X):-
+    device_dup_check(0) |
+	windows2(X).
+
+windows2(create(BufferName,Window,Status,Cdr)):-
+    string(BufferName,_,8) |
+	create_window(BufferName,S,Interrupt,ID),
+	window_wait_created(Window,ID,Interrupt,BufferName,Status,S),
+	windows2(Cdr).
+windows2(create(Window,Status,Cdr)):-
+    true |
+	unsupported(create(Window,Status,Cdr)),
+	windows2(Cdr).
+windows2(get_max_size(X,Y,Path,W,H,Status,Cdr)):-
+    integer(X), integer(Y), string(Path,_,8) |
+	W=80, H=40,
+	Status=fep#normal,
+	windows2(Cdr).
+windows2([]):- true | true.
+
+
+%%%% Window (wait status of create window command).
+window_wait_created(Command,ID,Int,Nam,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	window_wait_reset(Command,ID,Int,Nam).
+window_wait_created(Command,ID,Int,Nam,Status,iodev#io_table_full):-
+    true |
+	Status=fep#abnormal.
+
+%%%% Window (wait reset command)
+window_wait_reset(reset(Abort,Attention,Status,Cdr),ID,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,Abort,Attention,ID,Int,Nam).
+window_wait_reset(close(Status),ID,Int,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	remove_window(ID,_).
+window_wait_reset([],ID,Int,Nam):-
+    integer(ID) |
+	remove_window(ID,_).
+
+%%%% Window (normal status).
+window(Command,fep#abort,Atn,ID,Int,Nam):-
+    true |
+	window_wait_reset(Command,ID,Int,Nam).
+window(Command,Abt,Atn,ID,[Code|Int],Nam):-
+    wait(Code) |
+	Atn=Code,
+	window(Command,Abt,_,ID,Int,Nam).
+alternatively.
+window(next_attention(Attention,Status,Cdr),Abt,_,ID,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,Abt,Attention,ID,Int,Nam).
+%% Get Commands.
+window(getc(Char,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	read_char(ID,C,S,_),
+	window_wait_char(Cdr,Abt,Atn,ID,Int,Nam,Char,Status,C,S).
+window(getl(Line,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	read_line(ID,L,S,_),
+	window_wait_line(Cdr,Abt,Atn,ID,Int,Nam,Line,Status,L,S).
+window(getb(Size,Buffer,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	read_buffer(ID,Size,B,S,_),
+	window_wait_buffer(Cdr,Abt,Atn,ID,Int,Nam,Buffer,Status,B,S).
+window(gettkn(Token,NVar,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	read_token(ID,T,N,S,_),
+	window_wait_token(Cdr,Abt,Atn,ID,Int,Nam,Token,NVar,Status,T,N,S).
+%% Put Commands.
+window(putc(Char,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	write_char(ID,Char,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(putl(Line,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID), string(Line,_,8) |
+	write_line(ID,Line,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(putb(Buffer,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID), string(Buffer,_,8) |
+	write_buffer(ID,Buffer,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(putt(Term,Length,Depth,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	write_term(ID,Term,Length,Depth,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+%% Control Commands.
+window(flush(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(beep(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	write_char(ID,7,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(activate(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	show_window(ID,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(deactivate(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	hide_window(ID,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(show(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	show_window(ID,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(hide(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	hide_window(ID,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+window(clear(Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	write_char(ID,12,S,NID),
+	window_wait_status(Cdr,Abt,Atn,NID,Int,Nam,Status,S).
+%% Dummy.
+window(set_inside_size(W,H,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(W), integer(H) |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(set_size(fep#manipulator,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(set_position(X,Y,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(X), integer(Y) |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(set_position(fep#manipulator,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(reshape(X,Y,W,H,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    integer(X), integer(Y), integer(W), integer(H) |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(reshape(fep#manipulator,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(set_title(Title,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    string(Title,_,8) |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(set_font(Path,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    string(Path,_,8) |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(select_buffer(BufferName,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    string(BufferName,_,8) |
+	unsupported(select_buffer(BufferName,Status,Cdr)),
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(get_inside_size(W,H,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	W=80, H=20,
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(get_position(X,Y,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	X=0, Y=0,
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(get_title(Title,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	Title=Nam,
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(get_font(Path,Status,Cdr),Abt,Atn,ID,Int,Nam):-
+    true |
+	unsupported(get_font(Path,Status,Cdr)),
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window(close(Status),Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	remove_window(ID,_).
+window([],Abt,Atn,ID,Int,Nam):-
+    integer(ID) |
+	remove_window(ID,_).
+
+%%%% Window (wait status of write_xxx command).
+window_wait_status(Cdr,Abt,Atn,ID,Int,Nam,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+window_wait_status(Cdr,Abt,Atn,ID,Int,Nam,Status,S):-
+    S\=iodev#success |
+	Status=fep#abnormal,
+	window(Cdr,Abt,Atn,ID,Int,Nam).
+
+%%%% Window (wait status of read_char command).
+window_wait_char(Command,fep#abort,Atn,ID,Int,Nam,Char,Status,C,S):-
+    true |
+	abort_read_command(ID,_,NID),
+	Status=fep#abort,
+	window_wait_reset(Command,NID,Int,Nam).
+window_wait_char(Command,Abt,Atn,ID,[Code|Int],Nam,Char,Status,C,S):-
+    wait(Code) |
+	Atn=Code,
+	window_wait_char(Command,Abt,_,ID,Int,Nam,Char,Status,C,S).
+alternatively.
+window_wait_char(Command,Abt,Atn,ID,Int,Nam,Char,Status,C,iodev#success):-
+    true |
+	Char=C,
+	Status=fep#normal,
+	window(Command,Abt,Atn,ID,Int,Nam).
+window_wait_char(Command,Abt,Atn,ID,Int,Nam,Char,Status,C,iodev#end_of_file):-
+    true |
+	Status=fep#end_of_file,
+	window(Command,Abt,Atn,ID,Int,Nam).
+
+%%%% Window (wait status of read_line command).
+window_wait_line(Command,fep#abort,Atn,ID,Int,Nam,Line,Status,L,S):-
+    true |
+	abort_read_command(ID,_,NID),
+	Status=fep#abort,
+	window_wait_reset(Command,NID,Int,Nam).
+window_wait_line(Command,Abt,Atn,ID,[Code|Int],Nam,Line,Status,L,S):-
+    wait(Code) |
+	Atn=Code,
+	window_wait_line(Command,Abt,_,ID,Int,Nam,Line,Status,L,S).
+alternatively.
+window_wait_line(Command,Abt,Atn,ID,Int,Nam,Line,Status,L,iodev#success):-
+    true |
+	Line=L,
+	Status=fep#normal,
+	window(Command,Abt,Atn,ID,Int,Nam).
+window_wait_line(Command,Abt,Atn,ID,Int,Nam,Line,Status,L,iodev#end_of_file):-
+    true |
+	Status=fep#end_of_file,
+	window(Command,Abt,Atn,ID,Int,Nam).
+
+%%%% Window (wait status of read_buffer command).
+window_wait_buffer(Command,fep#abort,Atn,ID,Int,Nam,Buffer,Status,B,S):-
+    true |
+	abort_read_command(ID,_,NID),
+	Status=fep#abort,
+	window_wait_reset(Command,NID,Int,Nam).
+window_wait_buffer(Command,Abt,Atn,ID,[Code|Int],Nam,Buffer,Status,B,S):-
+    wait(Code) |
+	Atn=Code,
+	window_wait_buffer(Command,Abt,_,ID,Int,Nam,Buffer,Status,B,S).
+alternatively.
+window_wait_buffer(Command,Abt,Atn,ID,Int,Nam,Buffer,Status,B,iodev#success):-
+    true |
+	Buffer=B,
+	Status=fep#normal,
+	window(Command,Abt,Atn,ID,Int,Nam).
+window_wait_buffer(Command,Abt,Atn,ID,Int,Nam,Buffer,Status,B,iodev#end_of_file):-
+    true |
+	Status=fep#abnormal,
+	window(Command,Abt,Atn,ID,Int,Nam).
+
+%%%% Window (wait status of read_token command).
+window_wait_token(Command,fep#abort,Atn,ID,Int,Nam,Token,NVar,Status,T,N,S):-
+    true |
+	abort_read_command(ID,_,NID),
+	Status=fep#abort,
+	window_wait_reset(Command,NID,Int,Nam).
+window_wait_token(Command,Abt,Atn,ID,[Code|Int],Nam,Token,NVar,Status,T,N,S):-
+    wait(Code) |
+	Atn=Code,
+	window_wait_token(Command,Abt,_,ID,Int,Nam,Token,NVar,Status,T,N,S).
+alternatively.
+window_wait_token(Command,Abt,Atn,ID,Int,Nam,Token,NVar,Status,T,N,iodev#success):-
+    true |
+	Token=T, NVar=N,
+	Status=fep#normal,
+	window(Command,Abt,Atn,ID,Int,Nam).
+window_wait_token(Command,Abt,Atn,ID,Int,Nam,Token,NVar,Status,T,N,iodev#end_of_file):-
+    true |
+	Status=fep#end_of_file,
+	window(Command,Abt,Atn,ID,Int,Nam).
+window_wait_token(Command,Abt,Atn,ID,Int,Nam,Token,NVar,Status,T,N,iodev#eof_in_quote):-
+    true |
+	Status=fep#end_of_file,
+	window(Command,Abt,Atn,ID,Int,Nam).
+
+
+%%%% Error:: Unsuppoted Command.
+unsupported(X):-
+    true |
+	raise(1,'ERROR',unsupported_command(X)).

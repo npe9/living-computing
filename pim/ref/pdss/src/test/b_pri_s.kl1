@@ -1,0 +1,58 @@
+%%% KL1-B Test for B_Priority (Suspend) %%%
+% B_Rate %%%%%%%%%%%%%%%% ab
+% B_Rltv %%%%%%%%%%%%%%%% abcd
+
+:- module b_pri_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Priority (Suspend) %%%"), put_console(key#lf) | rat.
+
+rat:- put_console(ascii#"% B_Rate %%%%%%%%%%%%%%%% ") | rat00.
+
+rat00:- true | merge(X,Z), rat00get(X), rat00(Z).
+rat00get(I):- true | I={A,B}, get(A,[a])@priority(*,X), get(B,[b])@priority(*,Y), unify(X,Y,1000,2000)@priority(*,0).
+rat00([a,b]):- put_console(c#"a") | rat01.
+otherwise.
+rat00(_):- put_console(c#"*") | rat01.
+
+rat01:- true | merge(X,Z), rat01get(X), rat01(Z).
+rat01get(I):- true | I={A,B}, get(A,[a])@priority(*,X), get(B,[b])@priority(*,Y), unify(X,Y,2000,1000)@priority(*,0).
+rat01([a,b]):- put_console(c#"b") | rat02.
+otherwise.
+rat01(_):- put_console(c#"*") | rat02.
+
+rat02:- put_console(key#lf) | rtv.
+
+rtv:- put_console(ascii#"% B_Rltv %%%%%%%%%%%%%%%% ") | rtv00.
+
+rtv00:- true | merge(X,Z), rtv00get(X)@priority(*,2048), rtv00(Z).
+rtv00get(I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y), unify(X,Y,1000,2000)@priority(*,0).
+rtv00([a,b]):- put_console(c#"a") | rtv01.
+otherwise.
+rtv00(_):- put_console(c#"*") | rtv01.
+
+rtv01:- true | merge(X,Z), rtv01get(X)@priority(*,2048), rtv01(Z).
+rtv01get(I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y), unify(X,Y,2000,1000)@priority(*,0).
+rtv01([a,b]):- put_console(c#"b") | rtv02.
+otherwise.
+rtv01(_):- put_console(c#"*") | rtv02.
+
+rtv02:- true | merge(X,Z), rtv02get(X)@priority(*,2048), rtv02(Z).
+rtv02get(I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y), unify(X,Y,-1000,-2000)@priority(*,0).
+rtv02([a,b]):- put_console(c#"c") | rtv03.
+otherwise.
+rtv02(_):- put_console(c#"*") | rtv03.
+
+rtv03:- true | merge(X,Z), rtv03get(X)@priority(*,2048), rtv03(Z).
+rtv03get(I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y), unify(X,Y,-2000,-1000)@priority(*,0).
+rtv03([a,b]):- put_console(c#"d") | rtv04.
+otherwise.
+rtv03(_):- put_console(c#"*") | rtv04.
+
+rtv04:- put_console(key#lf) | done.
+
+done:- true | true.
+
+get(X,A):- true | X=A.
+unify(X,A):- true | X=A.
+unify(X,Y,A,B):- true | unify(X,A), unify(Y,B).

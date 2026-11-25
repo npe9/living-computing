@@ -1,0 +1,787 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_cmd_code.
+:- public is_command/2,do_command/2,help/2.
+:- with_macro pdss.
+
+%is_command(dload(_,_,_),      	X):- true| X = yes.
+is_command(ch_savedir(_),	X):- true| X = yes.
+is_command(public(_),		X):- true| X = yes.
+is_command(public(_,_),		X):- true| X = yes.
+is_command(save_all,           	X):- true| X = yes.
+is_command(load(_),  		X):- true| X = yes.
+is_command(dload(_),  		X):- true| X = yes.
+is_command(save(_,_),  		X):- true| X = yes.
+is_command(save(_),  		X):- true| X = yes.
+is_command(listing,             X):- true| X = yes.
+is_command(listing(_),          X):- true| X = yes.
+is_command(comp(_,_),  		X):- true| X = yes.
+is_command(comp(_),  		X):- true| X = yes.
+is_command(compile(_), 		X):- true| X = yes.
+is_command(kl1cmp, 		X):- true| X = yes.
+otherwise.
+is_command(_,  			X):- true| X = no.
+
+
+
+%% do_commnd(CM, SS).
+%%     CM : Command from user
+%%     SS : ShellStream to shell
+
+do_command(ch_savedir(Dir), SS):-
+    string(Dir,_,8)|
+    SS = [getenv(savedir,SaD)|SS1],
+    ch_svdir_action(SS1,Dir,SaD).
+do_command(ch_savedir(DirA), SS):-
+    atom(DirA)|
+    atom_name(DirA,Dir),
+    do_command(ch_savedir(Dir), SS).
+do_command(public(MN), SS):-
+    atom(MN), MN \= []|
+    SS = [code(get_public_predicates(MN,Pub,Status))|SS1],
+    public_action(Pub,Status,SS1).
+do_command(public(ML), SS):-
+    list(ML)|
+    mpimos_cmd_utl:apply_action((public),ML,SS).
+do_command(public([]), SS):-
+    true|
+    SS = [].
+do_command(public(MN,PL), SS):-
+    atom(MN)|
+    SS = [code(get_public_predicates(MN,Pub,Status))|SS1],
+    return_public(Pub,PL,Status,SS1).
+do_command(comp(InF,OutF), SS):-
+    string(InF,_,8),
+    string(OutF,_,8) |
+    compile_one_file(SS,InF,OutF,Status),
+    wait_comp(Status).
+do_command(comp(InFA,OutF), SS):-
+    atom(InFA) |
+    atom_name(InFA,InF),
+    do_command(comp(InF,OutF), SS).
+do_command(comp(InF,OutFA), SS):-
+    atom(OutFA) |
+    atom_name(OutFA,OutF),
+    do_command(comp(InF,OutF), SS).
+do_command(comp(InF), SS):-
+    string(InF,_,8)|
+    SS = [getuc(UN)|SS0], mpimos_utility:integer_to_string(UN,SUN),
+    mpimos_utility:string_append([string#"pdsscmp$$$$$",SUN,string#".asm"],
+				 TMPF),
+    DN = string#"/tmp/",
+    append_string(DN,TMPF,OutF),
+    raise(shoen_tag#mpimos_request,after_care,
+	mpimos_directory:create([delete(TMPF,_)],DN,_)),
+    SS0 = {SS1,SS2},
+    compile_one_file(SS1,InF,OutF,Status),
+    wait_comp1(SS2,DN,TMPF,OutF,Status).
+do_command(comp(InFA), SS):-
+    atom(InFA), InFA \= []|
+    atom_name(InFA,InF),
+    do_command(comp(InF), SS).
+do_command(comp(InFL), SS):-
+    list(InFL)|
+    mpimos_cmd_utl:apply_action(comp,InFL,SS).
+do_command(comp([]), SS):-
+    true|
+    SS = [].
+do_command(compile(InF), SS):-
+    list(InF)|
+    correct_extention(InF,string#".kl1",CInF),
+    compile_action(CInF,SS,success).
+do_command(compile(InFA), SS):-
+    atom(InFA)|
+    do_command(compile([InFA]),SS).
+do_command(compile(InF), SS):-
+    string(InF,_,_)|
+    do_command(compile([InF]),SS).
+do_command(kl1cmp, SS):-
+    true |
+    SS = [getuc(UN)|SS0],
+    SS0 = {SS1,SS2},
+    mpimos_utility:integer_to_string(UN,SUN),
+    append_string(string#"COMPILER",SUN,CWN),
+    mpimos_window:create([show,prompt(_,string#" : ")|Window], CWN),
+    kl1cmp_input_window(Mode,Opt,Kl1F,AsmF,SavF,Window,Error),
+    compile_one_file(SS1,Error,[],Kl1F,AsmF,Opt,Status),
+    wait_kl1cmp(SS2,Mode,AsmF,SavF,Status).
+do_command(load(F), SS):-
+    string(F,_,8) |
+    SS = [window([putt(F),putb(string#" : ")])|SS1],
+    load_one_file(SS1, _, F, nodebug, Status),
+    wait_status(Status).
+do_command(load(FA), SS):-
+    atom(FA), FA \= [] |
+    atom_name(FA,F),
+    do_command(load(F), SS).
+do_command(load(FL), SS):-
+    list(FL) |
+    mpimos_cmd_utl:apply_action(load,FL,SS).
+do_command(load([]), SS):-
+    true |
+    SS = [].
+do_command(dload(F), SS):-
+    string(F,_,8) |
+    SS = [window([putt(F),putb(string#" : ")])|SS1],
+    load_one_file(SS1, _, F, debug, Status),
+    wait_status(Status).
+do_command(dload(FA), SS):-
+    atom(FA), FA \= [] |
+    atom_name(FA,F),
+    do_command(dload(F), SS).
+do_command(dload(FL), SS):-
+    list(FL) |
+    mpimos_cmd_utl:apply_action(dload,FL,SS).
+do_command(dload([]), SS):-
+    true |
+    SS = [].
+do_command(save(ModuleName,F), SS):-
+    atom(ModuleName), string(F,_,8) |
+    SS = [window([putt(F),putb(string#" : ")])|SS1],
+    save_one_file(SS1,ModuleName,F,Status),
+    wait_status(Status).
+do_command(save(ModuleName,FA), SS):-
+    atom(ModuleName), atom(FA) |
+    atom_name(FA,F),
+    do_command(save(ModuleName,F), SS).
+do_command(save(ModuleName), SS):-
+    atom(ModuleName) |
+    SS = [getenv(savedir,SDir)|SS1],
+    save_action(SDir,ModuleName,SS1).
+do_command(save(ModuleL), SS):-
+    list(ModuleL) |
+    mpimos_cmd_utl:apply_action(save,ModuleL,SS).
+do_command(save_all,SS):-
+     true|
+	SS = [getenv(savedir,SDir)|SS1],
+	save_all_action(SDir,SS1).
+do_command(listing,SS):-
+     true|
+	SS = [code(get_all_modules(All)),getenv(savedir,SDir)|SS1],
+	listing_action(SDir,All,SS1).
+do_command(listing(Modules),SS):-
+     true|
+	mpimos_cmd_utl:protect(Modules0,Modules),
+	SS = [code(get_all_modules(Modules0))].
+otherwise.
+do_command(Com,SS):-
+     true|
+     mpimos_utility:freeze(Com,FCom),
+     mpimos_cmd_utl:send_shell(window(
+         	     [putb(string#"ArgumentError detected in "),
+		      putt(FCom),nl]),SS,[window([flush(EF)])]),
+    fail_action(EF).
+
+
+save_action(SDir0,ModuleName,SS):-
+    atom(ModuleName),
+    true|
+	mpimos_cmd_utl:check_savedir(SDir0,SDir,S,SS,SS1),
+	save_action0(S,SDir,ModuleName,SS1).
+
+save_action0(success,SDir,ModuleName,SS):-
+    wait(SDir)|
+	SS =[code(auto_save_module(SDir,ModuleName,Status)),
+             window([putt(ModuleName),putb(string#" : Saving ... "),
+             flush(WSt)])|SS1],
+	wait_save(SS1, Status, WSt).
+otherwise.
+save_action0(_,_,_,SS):-
+     true|
+	SS = [window([flush(EF)])],
+	abort_action(EF).
+
+wait_save(SS, success, done):-
+    true|
+    SS = [window([putb(string#"done"),nl,flush(EF)])],
+    wait(EF).
+otherwise.
+wait_save(SS, ST, done):-
+    wait(ST) |
+    SS = [window([putb(string#"Error <"),putt(ST),putb(string#">"),nl,
+	  flush(WSt)])],
+    raise_fail(ST,WSt).
+
+wait_status(success) :- true | true.
+otherwise.
+wait_status(      _) :- true | fail_action(done).
+
+load_one_file(SS,Module,File,Debug,Status) :-
+    true |
+	SS = [getenv(world,DN)|SS1],
+	mpimos_utility:pathname(DN,File,FF),
+	mpimos_cmd_utl:wait_send([FF],
+				 code(load_module(Module,FF,ST)),
+				 SS1,SS2),
+	SS2 = [window([putb(string#"Loading ... "),flush(WSt)])|SS3],
+	wait_load_one_file(SS3,Module,Debug,Status,ST,WSt).
+
+wait_load_one_file(SS,MN,nodebug,Status,success,WSt) :-
+    wait(WSt) |
+	SS = [window([putb(string#"done"),nl,
+		      putb(string#"Module name : "),putt(MN),nl,flush(EF)])],
+	return_status(EF,success,Status).
+wait_load_one_file(SS,MN,debug,Status,success,WSt) :-
+    wait(WSt) |
+	SS = [window([putb(string#"done"),nl,
+		      putb(string#"Module name : "),putt(MN),nl]),
+	      code(trace_module(MN, on, _)),setenv(trace,on),initenv,
+	      window([prompt(_,string#"[debug]?- "),flush(EF)])],
+	return_status(EF,success,Status).
+otherwise.
+wait_load_one_file(SS,_,_,Status,ST,WSt) :-
+    wait(WSt)|
+	SS = [window([putb(string#"Error <"),putt(ST),putb(string#">"),nl,
+	      flush(EF)])],
+	return_status(EF,ST,Status).
+
+save_one_file(SS,Module,File,Status) :-
+    true |
+	SS = [getenv(world,DN)|SS1],
+	mpimos_utility:pathname(DN,File,FF),
+	mpimos_utility:extend_name(FF,string#"sav",FFF),
+	mpimos_cmd_utl:wait_send([FFF],
+				 code(save_module(Module,FFF,ST)),
+				 SS1,SS2),
+	SS2 = [window([putb(string#"Saving ... "),flush(WSt)])|SS3],
+	wait_save_one_file(SS3,Status,ST,WSt).
+
+wait_save_one_file(SS,Status,success,WSt):-
+    wait(WSt) |
+	SS = [window([putb(string#"done"),nl,flush(EF)])],
+	return_status(EF,success,Status).
+otherwise.
+wait_save_one_file(SS,Status,ST,WSt):-
+    wait(WSt) |
+	SS = [window([putb(string#"Error <"),putt(ST),putb(string#">"),nl,
+	      flush(EF)])],
+	return_status(EF,ST,Status).
+
+
+raise_fail(ST, done):-
+    true |
+    raise(shoen_tag#mpimos_unit,shell(fail),ST).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+save_all_action(SDir,SS):-
+     true|
+	mpimos_cmd_utl:check_savedir(SDir,NSDir,S,SS,NSS),
+	save_all_action_wait_dir(S,NSDir,NSS).
+
+save_all_action_wait_dir(success,SDir,SS):-
+    true|
+	SS = [code(get_unsaved_modules(SDir,Mods))|SS1],
+	save_all_action(SDir,Mods,SS1).
+otherwise.
+save_all_action_wait_dir(_,_,SS):-
+     true|
+	SS = [window([flush(EF)])],
+	abort_action(EF).
+
+
+save_all_action(_,[],SS):-
+     true|
+	SS = [window([putb(string#"All modules are saved !! "),nl,flush(_)])].
+otherwise.
+save_all_action(SDir,MODS,SS):-
+     true|
+	save_all_action0(SDir,MODS,SS).
+
+save_all_action0(_,[],SS):-
+     true|
+	SS = [window([putb(string#"save_all ended."),nl,flush(EF)])],
+	wait(EF).
+save_all_action0(SDir,[Module|TM],SS):-
+     wait(Module)|
+	SS = [window([putt(Module),putb(string#" : Saving ... "),flush(_)]),
+	      code(auto_save_module(SDir,Module,S))|SS1],
+	save_all_action00(SDir,S,TM,SS1).
+
+save_all_action00(SDir,success,MODS,SS):-
+     true|
+	SS = [window([putb(string#"done"),nl,flush(_)])|SS1],
+	save_all_action0(SDir,MODS,SS1).
+otherwise.
+save_all_action00(_,_,_,SS):-
+     true|
+	SS = [window([nl,putb(string#"Error save_all/0 command !!"),
+		      nl,flush(F)])],
+	fail_action(F).
+
+
+
+listing_action(_,[],SS):-
+     true|
+	SS = [window([putb(string#"Empty. "),nl,flush(EF)])],
+	wait(EF).
+otherwise.
+listing_action(SDir,All,SS):-
+     wait(SDir)|
+	mpimos_cmd_utl:check_savedir(SDir,NSDir,S,SS,NSS),
+	listing_action_wait_dir(S,NSDir,All,NSS).
+
+listing_action_wait_dir(success,SDir,All,SS):-
+     string(SDir,_,8)|
+	mpimos_monogyny_list_index:create(LI),
+	SS = [window([putb(string#"savedir = "),putt(SDir),nl]),
+	      code(get_unsaved_modules(SDir,UAll))|SS1],
+	put_all(All,LI,LI1,on),
+	put_all(UAll,LI1,LI2,off),
+	max_size(All,Max),
+	display_head(Max,SS1,SS2),
+	listing_action0(All,LI2,SS2,Max).
+otherwise.
+listing_action_wait_dir(_,_,All,SS):-
+     true|
+	max_size(All,Max),
+	display_head(Max,SS,SS1),
+	listing_action00(All,SS1,Max).
+
+listing_action0([MN|TM],LI,SS,Max):-
+     wait(MN)|
+	SS = [code(get_module_status(MN,TR,_)),
+	      code(get_spied_predicates(MN,PreL,_))|SS1],
+	LI = [get_at(SA,MN,_)|LI1],
+	count(PreL,PN),
+	display_line(Max,MN,TR,SA,PN,SS1,SS2),
+	listing_action0(TM,LI1,SS2,Max).
+listing_action0([],LI,SS,Max):-
+     Max<12|
+	LI = [],
+	line(#"-",33,Line),
+	mpimos_cmd_utl:send_shell(window([putb(Line),nl]),
+				  SS,[window([flush(EF)])]),
+	wait(EF).
+listing_action0([],LI,SS,Max):-
+     Max>11|
+	LI = [],
+	LineN := Max + 22,
+	line(#"-",LineN,Line),
+	mpimos_cmd_utl:send_shell(window([putb(Line),nl]),
+				  SS,[window([flush(EF)])]),
+	wait(EF).
+
+listing_action00([MN|TM],SS,Max):-
+     wait(MN)|
+	SS = [code(get_module_status(MN,TR,_)),
+	      code(get_spied_predicates(MN,PreL,_))|SS1],
+	count(PreL,PN),
+	display_line(Max,MN,TR,'?',PN,SS1,SS2),
+	listing_action00(TM,SS2,Max).
+listing_action00([],SS,Max):-
+    true|
+	listing_action0([],_,SS,Max).
+
+count([],N):- true|N = 0.
+count([_|T],N):- true|N := NN + 1,count(T,NN).
+count(no_information,N):- true| N = -1.
+
+max_size(All,Max):-
+    true|
+	symbol_to_string(All,SAll),
+	max_size(SAll,0,Max).
+
+max_size([H|T],Sz,Max):-
+     string(H,Sz0,_),
+     Sz0>=Sz|
+	max_size(T,Sz0,Max).
+max_size([H|T],Sz,Max):-
+     string(H,Sz0,_),
+     Sz0<Sz|
+	max_size(T,Sz,Max).
+max_size([],Sz,Max):-
+     true|
+	Max = Sz.
+
+symbol_to_string([H|T],SAll):-
+     true|
+	atom_name(H,S),
+	SAll = [S|SAll1],
+	symbol_to_string(T,SAll1).
+symbol_to_string([],SAll):-
+     true|
+	SAll = [].
+
+display_head(Max,SS,SST):-
+     Max<12|
+	SS = [window([putb(string#"_________________________________"),nl,
+		      putb(string#" Module_Name  Trace  Saved  SpyPN"),nl,
+		      putb(string#"---------------------------------"),nl])|SST].
+otherwise.
+display_head(Max,SS,SST):-
+     true|
+	Tab:=Max-11,
+	line(#"-",Tab,Line),
+	line(#"_",Tab,ULine),
+	mpimos_cmd_utl:send_shell(
+		       window([putb(string#"____________"),putb(ULine),
+			       putb(string#"_____________________"),nl,
+			       putb(string#" Module_Name"),tab(Tab),
+			       putb(string#"  Trace  Saved  SpyPN"),nl,
+			       putb(string#"------------"),putb(Line),
+			       putb(string#"---------------------"),nl]),SS,SST).
+
+line(E,LineN,Line):-
+     true|
+	new_string(Line0,LineN,8),
+	line0(E,LineN,Line0,Line).
+
+line0(_,0,Line0,Line):-
+     true|
+	Line0 = Line.
+line0(E,N,Line0,Line):-
+     N > 0|
+	NN := N - 1,
+	set_string_element(Line0,NN,E,Line1),
+	line0(E,NN,Line1,Line).
+
+display_line(Max,MN,TR,SA,PN,SS,SST):-
+     true|
+     	atom_name(MN,SMN0),
+	string(SMN0,Sz,_,SMN),
+	mpimos_utility:integer_to_string(PN,SPN),
+	flag(TR,STR),
+	flag(SA,SSA),
+	display_line0(Max,Sz,SMN,STR,SSA,SPN,SS,SST).
+
+display_line0(Max,Sz,MN,TR,SA,PN,SS,SST):-
+     Max<12|
+	Tab:=13-Sz,
+	mpimos_cmd_utl:send_shell(
+		      window([putb(string#" "),putb(MN),tab(Tab),
+			      putb(TR),tab(6),putb(SA),
+			      tab(6),putb(PN),nl]),SS,SST).
+otherwise.
+display_line0(Max,Sz,MN,TR,SA,PN,SS,SST):-
+     true|
+	Tab0:=Max-Sz,
+	Tab:=Tab0+2,
+	mpimos_cmd_utl:send_shell(
+		      window([putb(string#" "),putb(MN),tab(Tab),
+			      putb(TR),tab(6),putb(SA),
+			      tab(6),putb(PN),nl]),SS,SST).
+
+flag(on,S):-  true| S = string#"*".
+flag(off,S):- true| S = string#" ".
+flag('?',S):- true| S = string#"?".
+
+put_all([Key|TM],LI,NLI,Data):-
+     true|
+	LI = [put_at(Data,Key)|LI1],
+	put_all(TM,LI1,NLI,Data).
+put_all([],LI,NLI,_):-
+     true|
+	LI = NLI.
+
+
+public_action([],success,SS):-
+    true|
+	SS = [window([putb(string#"Unknown public predicates in this module."),
+		      nl,flush(F)])],
+	wait(F).
+public_action([H|T],success,SS):-
+    true|
+	display_public([H|T],SS).
+otherwise.
+public_action(_,ST,SS):-
+    true|
+	SS = [window([putb(string#"Error <"),putt(ST),putb(string#">"),nl,
+	      flush(WSt)])],
+	fail_action(WSt).
+
+display_public([H|T],SS):-
+    vector_element(H,0,MN),
+    vector_element(H,1,AN)|
+	SS = [window([putt(MN),putb(string#"/"),putt(AN),putb(string#", ")])|SS1],
+	display_public(T,SS1).
+display_public([],SS):-
+    true|
+	SS = [window([putb(string#"END."),nl,flush(F)])],
+	wait(F).
+
+return_public(Pub,PL,success,SS):-
+    true|
+	SS = [],
+	mpimos_cmd_utl:protect(Pub,PL).
+otherwise.
+return_public(_,_,ST,SS):-
+    true|
+	SS = [window([putb(string#"Error <"),putt(ST),putb(string#">"),nl,
+	      flush(WSt)])],
+	fail_action(WSt).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+abort_action(F):-
+     wait(F)|
+	raise(shoen_tag#mpimos_unit,shell(aborted),_).
+
+fail_action(F):-
+     wait(F)|
+	raise(shoen_tag#mpimos_unit,shell(fail),_).
+
+append_mess([H|T],L1,L2):- true|L2=[H,flush(_)|L3],append_mess(T,L1,L3).
+append_mess([],L1,L2):- true|L1=L2.
+
+compile_one_file(SS,InF,OutF,Status) :-
+    true |
+	SS = [getuc(UN)|SS1],
+	mpimos_utility:integer_to_string(UN,SUN),
+	append_string(string#"COMPILER",SUN,CWN),
+	mpimos_window:create([show|Error], CWN),
+	compile_one_file(SS1,Error,
+			 [nl,putb(string#"(type any key) ?"),getl(_)],
+			 InF,OutF,3,Status).
+
+compile_one_file(SS,Error,EL,InF,OutF,Mode,Status) :-
+    true |
+	SS = [window([putt(InF),putb(string#" : Compiling ... "),flush(WSt)])
+	     |SS1],
+	mpimos_utility:extend_name(InF,string#"kl1",EInF),
+	mpimos_utility:extend_name(OutF,string#"asm",EOutF),
+	mpimos_file:create(Istream,EInF,'r',S),
+	compile_wait_in_file(SS1,Error,EL,Istream,EOutF,Mode,Status,S,WSt,EInF).
+
+compile_wait_in_file(SS,Error,EL,Istream,OutF,Mode,Status,success,done,_) :-
+    true |
+	mpimos_file:create(Ostream,OutF,'w',S),
+	compile_wait_out_file(SS,Error,EL,Istream,Ostream,Mode,Status,S,OutF).
+compile_wait_in_file(SS,Error,_,Istream,_,_,Status,error(S),done,InF) :-
+    true |
+	SS = [window([putb(string#"Error "),putt(InF),
+		      putb(string#" <"),putt(S),putb(string#">"),nl,
+		      flush(EF)])],
+	Error = [],
+	Istream = [],
+	return_status(EF,S,Status).
+
+compile_wait_out_file(SS,Error,EL,Istream,Ostream,Mode,Status,success,_) :-
+    true |
+	append_mess(Error0, [nl,putt(Ext), nl, putt(Ack),flush(F)|Err],Error),
+	kl1cmp_command:compile_for_pdss(Mode,Istream,Ostream,Error0,Ext,Ack),
+	wait_compile_one_file(SS,Err,EL,Status,Ack,F).
+compile_wait_out_file(SS,Error,_,Istream,Ostream,_,Status,error(S),OutF) :-
+    true |
+	SS = [window([putb(string#"Error "),putt(OutF),
+		      putb(string#" <"),putt(S),putb(string#">"),nl,
+		      flush(EF)])],
+	Istream = [],
+	Ostream = [],
+	Error = [],
+	return_status(EF,S,Status).
+
+wait_compile_one_file(SS,Error,_,Status,success,F) :-
+    wait(F) |
+	SS = [window([putb(string#"done"),nl,flush(EF)])],
+	Error = [],
+	return_status(EF,success,Status).
+otherwise.
+wait_compile_one_file(SS,Error,EL,Status,S,F) :-
+    wait(F) |
+	SS = [window([putb(string#"Error <compile_error>"),nl,flush(EF)])],
+	Error = [do(EL),flush(FF)],
+	return_status(EF,FF,Tmp),
+	return_status(Tmp,S,Status).
+
+return_status(EF,S,Status) :- wait(EF) | Status = S.
+
+wait_comp(success) :- true | true.
+otherwise.
+wait_comp(      _) :- true | fail_action(done).
+
+wait_comp1(SS,DN,TMPF,ASMF,success) :-
+    true |
+	load_one_file(SS,_,ASMF,nodebug,Status),
+	wait_comp1_load(DN,TMPF,Status).
+otherwise.
+wait_comp1(SS,_,_,_,_) :-
+    true |
+	SS = [],
+	fail_action(done).
+
+wait_comp1_load(DN,TMPF,success) :-
+    true |
+	mpimos_directory:create([delete(TMPF,DF)],DN,_),
+	wait(DF).
+otherwise.
+wait_comp1_load(DN,TMPF,_) :-
+    true |
+	mpimos_directory:create([delete(TMPF,DF)],DN,_),
+	fail_action(DF).
+
+kl1cmp_input_window(Mode,Opt,Kl1F,AsmF,SavF,W,WL):-
+    true|
+	W = [putb(string#"Assemble"),getft(Mode,_),
+	     putb(string#"Optimize"),getft(Opt,_),
+	     putb(string#"KL1 File"),getft(Kl1FA,_),
+	     putb(string#"ASM File"),getft(AsmFA,_)|W1],
+	atom_name(Kl1FA,Kl1F), atom_name(AsmFA,AsmF),
+	kl1cmp_input_window1(Mode,SavF,W1,WL).
+
+kl1cmp_input_window1(no,_,W,WL):-
+    true|
+	W = WL.
+kl1cmp_input_window1(yes,SavF,W,WL):-
+    true|
+	W = [putb(string#"SAV File"),getft(SavFA,_)|WL],
+	atom_name(SavFA,SavF).
+
+wait_kl1cmp(SS,no,_,_,success) :-
+    true |
+	SS = [],
+	halt(0).
+wait_kl1cmp(SS,yes,AsmF,SavF,success) :-
+    true |
+	SS = {SS1,SS2},
+	load_one_file(SS1,Module,AsmF,nodebug,Status),
+	wait_kl1cmp_load(SS2,SavF,Module,Status).
+otherwise.
+wait_kl1cmp(SS,_,_,_,_) :-
+    true |
+	SS = [],
+	halt(1).
+
+wait_kl1cmp_load(SS,SavF,Module,success):-
+    true |
+	save_one_file(SS,Module,SavF,Status),
+	wait_kl1cmp_save(Status).
+otherwise.
+wait_kl1cmp_load(SS,_,_,_):-
+    true |
+	SS = [],
+	halt(1).
+
+wait_kl1cmp_save(success):- true | halt(0).
+otherwise.
+wait_kl1cmp_save(      _):- true | halt(1).
+
+halt(HN):- halt(HN) | true.
+
+compile_action([File|FL],SS,F) :-
+    wait(F) |
+	SS = {SS1,SS2},
+	compile_one_file(SS1,File,File,Status),
+	wait_compile(FL,SS2,File,Status,F).
+compile_action([],SS,success) :-
+    true |
+	SS = [].
+otherwise.
+compile_action([],SS,_) :-
+    true |
+	SS = [],
+	fail_action(done).
+
+wait_compile(FL,SS,File,success,GF) :-
+    true |
+	SS = {SS1,SS2},
+	mpimos_utility:extend_name(File,string#"asm",EFile),
+	load_one_file(SS1,Module,EFile,nodebug,Status),
+	wait_compile_load(FL,SS2,File,Module,Status,GF).
+otherwise.
+wait_compile(FL,SS,_,F,_) :-
+    true |
+	compile_action(FL,SS,F).
+
+wait_compile_load(FL,SS,File,Module,success,_) :-
+    true |
+	SS = {SS1,SS2},
+	save_one_file(SS1,Module,File,Status),
+	compile_action(FL,SS2,Status).
+otherwise.
+wait_compile_load(FL,SS,_,_,F,_) :-
+    true |
+	compile_action(FL,SS,F).
+
+correct_extention([File|FL],Ext,DFL) :-
+    string(File,_,_)|
+	mpimos_utility:compress(File,CFile),
+	delete_extention_one(CFile,Ext,DFile),
+	DFL = [DFile|DFLL],
+	correct_extention(FL,Ext,DFLL).
+correct_extention([FileA|FL],Ext,DFL) :-
+    atom(FileA), FileA \= []|
+	atom_name(FileA,File),
+	mpimos_utility:compress(File,CFile),
+	delete_extention_one(CFile,Ext,DFile),
+	DFL = [DFile|DFLL],
+	correct_extention(FL,Ext,DFLL).
+correct_extention([[]],_,DFL) :-
+    true |
+	DFL = [].
+correct_extention([],_,DFL) :-
+    true |
+	DFL = [].
+
+delete_extention_one(File,Ext,DFile) :-
+    string(File,L,_), string(Ext,EL,_), L>EL |
+	P := L-EL,
+	substring(File,P,EL,EStr,NFile),
+	delete_extention_one_1(NFile,P,Ext,EStr,DFile).
+delete_extention_one(File,Ext,DFile) :-
+    string(File,L,_), string(Ext,EL,_), L=<EL |
+	DFile = File.
+
+delete_extention_one_1(File,P,Ext,Ext,DFile) :-
+    true |
+	substring(File,0,P,DFile,_).
+delete_extention_one_1(File,_,Ext,EStr,DFile) :-
+    Ext \= EStr |
+	DFile = File.
+
+ch_svdir_action(SS,Dir,DN) :-
+    string(DN,_,8) |
+    mpimos_utility:pathname(DN,Dir,DDir),
+    mpimos_directory:create(DS,DDir,St),
+    ch_svdir_action0(SS,DS,St).
+otherwise.
+ch_svdir_action(SS,Dir,DN) :-
+    true |
+    SS = [window([putb(string#"Illegal environment variable ::: savedir = "),
+			 putt(DN),nl,flush(_)])|SS1],
+    mpimos_utility:pathname(string#"~/.PDSSsave",Dir,DDir),
+    mpimos_directory:create(DS,DDir,St),
+    ch_svdir_action0(SS1,DS,St).
+
+ch_svdir_action0(SS, DS, success):-
+    true |
+    DS = [pathname(DN)],
+    mpimos_cmd_utl:send_shell(window([putb(string#"savedir = "),putb(DN),nl]),
+			      SS,[window([flush(EF)]),setenv(savedir,DN)]),
+    wait(EF).
+ch_svdir_action0(SS, DS, error(_)):-
+    true |
+    DS = [],
+    SS = [window([putb(string#"Error <cannot access this directory>"),nl,
+	  flush(EF)])],
+    fail_action(EF).
+
+wait(F):- wait(F)|true.
+
+
+help(menu,MSG):-
+     true|
+    MSG = string#"comp,public,load,save,listing,etc.".
+help(item,MSG):-
+     true|
+    MSG = code.
+help(message,MSG):-
+     true|
+    MSG = [string#"There are following code commands.",
+   string#"comp(FILE)         --- Compile FILE and load in non trace mode.",
+   string#"comp(FILE,AFILE)   --- Compile FILE and output AFILE.",
+   string#"compile(FILE)      --- Compile FILE and load, save.",
+   string#"public(MODULE)     --- Print public of MODULE.",
+   string#"public(MODULE,PL)  --- Get public of MODULE to PL.",
+   string#"load(FILE)         --- Load FILE in non trace mode.",
+   string#"dload(FILE)        --- Load FILE in trace mode.",
+   string#"ch_savedir(DIRECTORY)- Change save directory to DIRECTORY.",
+   string#"save(MODULE)       --- Save the code of MODULE.",
+   string#"save(MODULE,FILE)  --- Save the code of MODULE to FILE.",
+   string#"save_all           --- Save all the loaded modules code.",
+   string#"listing            --- List all loaded modules informations.",
+   string#"listing(MODULE)    --- Get all loaded modules to MODULE."].

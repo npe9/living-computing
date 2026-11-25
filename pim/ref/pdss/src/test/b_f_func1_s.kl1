@@ -1,0 +1,145 @@
+%%% KL1-B Test for B_Float_Function_1_Arg (Suspend) %%%
+% B_Float_Abs %%%%%%%%%%% abc
+% B_Float_Floor %%%%%%%%% abc
+% B_Float_Sqrt %%%%%%%%%% ab
+% B_Float_Ln %%%%%%%%%%%% a
+% B_Float_Log %%%%%%%%%%% a
+% B_Float_Exp %%%%%%%%%%% abc
+% B_Integer_To_Float %%%% abc
+% B_Float_To_Integer %%%% abc
+
+:- module b_f_func1_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Float_Function_1_Arg (Suspend) %%%"), put_console(key#lf) | abs.
+
+abs:- put_console(ascii#"% B_Float_Abs %%%%%%%%%%% ") | abs00.
+
+abs00:- true | Z$:=abs(X), unify(X,100.0), abs00(Z).
+abs00(Z):- 100.0-1.0e-3$<Z, Z$< 100.0+1.0e-3, put_console(c#"a") | abs01.
+otherwise.
+abs00(_):- put_console(c#"*") | abs01.
+
+abs01:- true | Z$:=abs(X), unify(X,0.0), abs01(Z).
+abs01(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | abs02.
+otherwise.
+abs01(_):- put_console(c#"*") | abs02.
+
+abs02:- true | Z$:=abs(X), unify(X,-100.0), abs02(Z).
+abs02(Z):- 100.0-1.0e-3$<Z, Z$< 100.0+1.0e-3, put_console(c#"c") | abs03.
+otherwise.
+abs02(_):- put_console(c#"*") | abs03.
+
+abs03:- put_console(key#lf) | flr.
+
+flr:- put_console(ascii#"% B_Float_Floor %%%%%%%%% ") | flr00.
+
+flr00:- true | Z$:=floor(X), unify(X,100.0), flr00(Z).
+flr00(Z):- 100.0-1.0e-3$<Z, Z$< 100.0+1.0e-3, put_console(c#"a") | flr01.
+otherwise.
+flr00(_):- put_console(c#"*") | flr01.
+
+flr01:- true | Z$:=floor(X), unify(X,0.0), flr01(Z).
+flr01(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | flr02.
+otherwise.
+flr01(_):- put_console(c#"*") | flr02.
+
+flr02:- true | Z$:=floor(X), unify(X,-100.0), flr02(Z).
+flr02(Z):- -100.0-1.0e-3$<Z, Z$< -100.0+1.0e-3, put_console(c#"c") | flr03.
+otherwise.
+flr02(_):- put_console(c#"*") | flr03.
+
+flr03:- put_console(key#lf) | srt.
+
+srt:- put_console(ascii#"% B_Float_Sqrt %%%%%%%%%% ") | srt00.
+
+srt00:- true | Z$:=sqrt(X), unify(X,100.0), srt00(Z).
+srt00(Z):- 10.0-1.0e-4$<Z, Z$< 10.0+1.0e-4, put_console(c#"a") | srt01.
+otherwise.
+srt00(_):- put_console(c#"*") | srt01.
+
+srt01:- true | Z$:=sqrt(X), unify(X,0.0), srt01(Z).
+srt01(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | srt02.
+otherwise.
+srt01(_):- put_console(c#"*") | srt02.
+
+srt02:- put_console(key#lf) | ln.
+
+ln:- put_console(ascii#"% B_Float_Ln %%%%%%%%%%%% ") | ln00.
+
+ln00:- true | Z$:=ln(X), unify(X,100.0), ln00(Z).
+ln00(Z):- 4.60517-1.0e-5$<Z, Z$< 4.60517+1.0e-5, put_console(c#"a") | ln01.
+otherwise.
+ln00(_):- put_console(c#"*") | ln01.
+
+ln01:- put_console(key#lf) | log.
+
+log:- put_console(ascii#"% B_Float_Log %%%%%%%%%%% ") | log00.
+
+log00:- true | Z$:=log(X), unify(X,100.0), log00(Z).
+log00(Z):- 2.0-1.0e-5$<Z, Z$< 2.0+1.0e-5, put_console(c#"a") | log01.
+otherwise.
+log00(_):- put_console(c#"*") | log01.
+
+log01:- put_console(key#lf) | exp.
+
+exp:- put_console(ascii#"% B_Float_Exp %%%%%%%%%%% ") | exp00.
+
+exp00:- true | Z$:=exp(X), unify(X,0.0), exp00(Z).
+exp00(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"a") | exp01.
+otherwise.
+exp00(_):- put_console(c#"*") | exp01.
+
+exp01:- true | Z$:=exp(X), unify(X,2.0), exp01(Z).
+exp01(Z):- 7.38906-1.0e-5$<Z, Z$< 7.38906+1.0e-5, put_console(c#"b") | exp02.
+otherwise.
+exp01(_):- put_console(c#"*") | exp02.
+
+exp02:- true | Z$:=exp(X), unify(X,-2.0), exp02(Z).
+exp02(Z):- 0.135335-1.0e-6$<Z, Z$< 0.135335+1.0e-6, put_console(c#"c") | exp03.
+otherwise.
+exp02(_):- put_console(c#"*") | exp03.
+
+exp03:- put_console(key#lf) | itf.
+
+itf:- put_console(ascii#"% B_Integer_To_Float %%%% ") | itf00.
+
+itf00:- true | Z$:=float(X), unify(X,1234), itf00(Z).
+itf00(Z):- 1234.0-1.0e-2$<Z, Z$< 1234.0+1.0e-2, put_console(c#"a") | itf01.
+otherwise.
+itf00(_):- put_console(c#"*") | itf01.
+
+itf01:- true | Z$:=float(X), unify(X,0), itf01(Z).
+itf01(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | itf02.
+otherwise.
+itf01(_):- put_console(c#"*") | itf02.
+
+itf02:- true | Z$:=float(X), unify(X,-1234), itf02(Z).
+itf02(Z):- -1234.0-1.0e-2$<Z, Z$< -1234.0+1.0e-2, put_console(c#"c") | itf03.
+otherwise.
+itf02(_):- put_console(c#"*") | itf03.
+
+itf03:- put_console(key#lf) | fti.
+
+fti:- put_console(ascii#"% B_Float_To_Integer %%%% ") | fti00.
+
+fti00:- true | Z:=int(X), unify(X,100.0), fti00(Z).
+fti00(100):- put_console(c#"a") | fti01.
+otherwise.
+fti00(_):- put_console(c#"*") | fti01.
+
+fti01:- true | Z:=int(X), unify(X,0.0), fti01(Z).
+fti01(0):- put_console(c#"b") | fti02.
+otherwise.
+fti01(_):- put_console(c#"*") | fti02.
+
+fti02:- true | Z:=int(X), unify(X,-100.0), fti02(Z).
+fti02(-100):- put_console(c#"c") | fti03.
+otherwise.
+fti02(_):- put_console(c#"*") | fti03.
+
+fti03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,A):- true | X=A.

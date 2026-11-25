@@ -1,0 +1,528 @@
+Making log on Symmetry S-81 (DYNIX V3.0.17.v3 NFS)
+------------------------------------------------------------------------
+
+% ls
+DISTRIBUTE	README		doc.e/		mpimos/		test/
+INSTALL		README.J	doc.j/		pdsscmp*
+INSTALL.J	compiler/	emacs/		pimos_utl/
+LOG		compiler_pl/	emulator/	runtime/
+Makefile	debug_utl/	macro/		sample/
+% 
+% 
+% make
+	cd emulator	; make all
+	touch pdss.h
+	cc -O -c pdss.c
+	cc -O -c option.c
+	cc -O -c emulate.c
+	cc -O -c blt_basic.c
+	cc -O -c blt_float.c
+	cc -O -c blt_shoen.c
+	cc -O -c blt_iodev.c
+	cc -O -c blt_code.c
+	cc -O -c blt_system.c
+	cc -O -c deref.c
+	cc -O -c passive.c
+	cc -O -c unify.c
+	cc -O -c goal.c
+	cc -O -c shoen.c
+	cc -O -c exception.c
+	cc -O -c memory.c
+	cc -O -c atom.c
+	cc -O -c module.c
+	cc -O -c dcode.c
+	cc -O -c float.c
+	cc -O -c string.c
+	cc -O -c gc.c
+	cc -O -c gc_ctrl.c
+	cc -O -c gc_cell.c
+	cc -O -c gc_code.c
+	cc -O -c gc_dead.c
+	cc -O -c mrbgc.c
+	cc -O -c instr.c
+	cc -O -c invassm.c
+	cc -O -c assemble.c
+	cc -O -c saveload.c
+	cc -O -c native.c
+	cc -O -c tracer.c
+	cc -O -c print.c
+	cc -O -c io.c
+	cc -O -c iosub.c
+	cc -O -c timer.c
+	cc -O -c path.c
+	cc -O -c ctype.c
+	cc -O -o pdss.x -D"MAKEDATE=\"`date`\"" version.c pdss.o option.o emulate.o blt_basic.o blt_float.o blt_shoen.o blt_iodev.o blt_code.o blt_system.o deref.o passive.o unify.o goal.o shoen.o exception.o memory.o atom.o module.o dcode.o float.o string.o gc.o gc_ctrl.o gc_cell.o gc_code.o gc_dead.o mrbgc.o instr.o invassm.o assemble.o saveload.o native.o tracer.o print.o io.o iosub.o timer.o path.o ctype.o -lm
+	mv -f pdss.x pdss
+	rm -f version.o
+	cc -O -c pdssasm.c
+	cc -O -o pdssasm.x -D"MAKEDATE=\"`date`\"" version.c pdssasm.o memory.o atom.o module.o instr.o assemble.o saveload.o float.o ctype.o -lm
+	mv -f pdssasm.x pdssasm
+	rm -f version.o
+	cc -O -c pdssmerge.c
+	cc -o pdssmerge.x pdssmerge.o
+	mv -f pdssmerge.x pdssmerge
+	sh -c "test ! -d compiler_pl || (cd compiler_pl ; make all)"
+	echo "compile('pdss_sys.pl'), make_kl1cmp_for_pdss." | sicstus
+SICStus 0.7 #4: Tue Sep 10 13:49:53 GMT+9:00 1991
+{compiling /usr/local/src/pdss/compiler_pl/pdss_sys.pl...}
+{/usr/local/src/pdss/compiler_pl/pdss_sys.pl compiled, 1810 msec 3392 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/top2.pl...}
+{Warning: [Index,Old,Opt] - singleton variables in tsscomp/2 in lines 121-127}
+{Warning: [Old] - singleton variables in tsscomp/0 in lines 127-137}
+{Warning: [One] - singleton variables in new_pragma_variable/4 in lines 166-169}
+{Warning: [Ex0] - singleton variables in read_and_compile_predicate/4 in lines 236-241}
+{Warning: [Pred] - singleton variables in read_predicate_one_block/7 in lines 278-281}
+{Warning: [B,G] - singleton variables in identify_predicate/2 in lines 304-305}
+{Warning: [B] - singleton variables in identify_predicate/2 in lines 305-306}
+{Warning: [Label] - singleton variables in compile_by_option/5 in lines 311-315}
+{Warning: [Cn] - singleton variables in compile_one_block/6 in lines 323-327}
+{Warning: [Cn,Index,It] - singleton variables in compile_one_block/6 in lines 332-334}
+{Warning: [Bref,Gref,Used] - singleton variables in compile_leaf_clause/5 in lines 352-391}
+{Warning: [Rest] - singleton variables in compile_predicate/4 in lines 395-400}
+{Warning: [One] - singleton variables in compile_predicate/4 in lines 400-403}
+{Warning: [Pred] - singleton variables in compile_predicate/4 in lines 403-405}
+{Warning: [Bref,Gref,Used] - singleton variables in compile_one_predicate/4 in lines 414-428}
+{/usr/local/src/pdss/compiler_pl/top2.pl compiled, 20490 msec 35836 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/read.pl...}
+{Warning: [B,G,Rest] - singleton variables in read_clause/4 in lines 11-20}
+{/usr/local/src/pdss/compiler_pl/read.pl compiled, 5210 msec 4720 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/write2.pl...}
+{Warning: [Ai] - singleton variables in erasable/2 in lines 28-30}
+{Warning: [A,Reg,X] - singleton variables in erasable/2 in lines 32-34}
+{Warning: [A,Reg,X] - singleton variables in erasable/2 in lines 34-36}
+{Warning: [T] - singleton variables in write_structured_arg/2 in lines 193-194}
+{/usr/local/src/pdss/compiler_pl/write2.pl compiled, 11880 msec 33820 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/norm3.pl...}
+{Warning: [E0] - singleton variables in intern_new_variable_table/3 in lines 38-39}
+{Warning: [Cdr] - singleton variables in is_head_var_interned/2 in lines 42-43}
+{Warning: [Dtype] - singleton variables in normalize_guard/4 in lines 52-56}
+{Warning: [In] - singleton variables in normalize_builtin/8 in lines 60-62}
+{Warning: [Dtype] - singleton variables in set_preceding_builtin/4 in lines 78-82}
+{Warning: [Dtype,X] - singleton variables in expand_guard_macro/5 in lines 122-126}
+{Warning: [Res] - singleton variables in expand_guard_macro/5 in lines 126-128}
+{Warning: [A] - singleton variables in normalize_variable_unify/5 in lines 148-150}
+{Warning: [F] - singleton variables in normalize_guard_structure/6 in lines 181-183}
+{Warning: [M] - singleton variables in normalize_indexed_arg/6 in lines 187-189}
+{Warning: [M] - singleton variables in normalize_indexed_arg/6 in lines 189-192}
+{Warning: [M] - singleton variables in normalize_structure_args/9 in lines 205-207}
+{Warning: [Attr,M,X] - singleton variables in normalize_one_arg/8 in lines 213-214}
+{Warning: [Vt] - singleton variables in convert_body_goal_variables/5 in lines 249-250}
+{Warning: [A,Vt] - singleton variables in convert_body_goal_variables/5 in lines 252-254}
+{Warning: [New,Vt,X] - singleton variables in convert_body_goal_variables_1/7 in lines 260-261}
+{Warning: [Vt] - singleton variables in convert_one_variable/5 in lines 269-272}
+{Warning: [Vt] - singleton variables in convert_one_variable/5 in lines 272-273}
+{Warning: [Cdr] - singleton variables in normalize_body_builtin/4 in lines 291-293}
+{Warning: [F0,N0,N0N1,N1] - singleton variables in expand_body_macro/5 in lines 331-337}
+{Warning: [Res] - singleton variables in expand_body_macro/5 in lines 337-339}
+{Warning: [G] - singleton variables in normalize_by_pragma/5 in lines 388-390}
+{Warning: [N3] - singleton variables in calculate_priority/6 in lines 397-399}
+{Warning: [Res] - singleton variables in calculate_priority/6 in lines 414-417}
+{Warning: [Res] - singleton variables in calculate_processor/5 in lines 425-427}
+{Warning: [Res] - singleton variables in calculate_node/5 in lines 435-437}
+{Warning: [X,Y] - singleton variables in normalize_active_struct_unify/7 in lines 550-552}
+{/usr/local/src/pdss/compiler_pl/norm3.pl compiled, 42171 msec 41064 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/comp2.pl...}
+{Warning: [V] - singleton variables in compile_get_variable/9 in lines 35-41}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 97-103}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 103-109}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 109-114}
+{Warning: [Fail] - singleton variables in compile_get_value/10 in lines 114-118}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 118-123}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 123-131}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 131-136}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 136-145}
+{Warning: [Data] - singleton variables in compile_get_value/10 in lines 145-150}
+{Warning: [Keep0] - singleton variables in compile_get_value/10 in lines 159-165}
+{Warning: [X] - singleton variables in is_var_type_same/6 in lines 171-175}
+{Warning: [V] - singleton variables in is_var_type_same/6 in lines 175-177}
+{Warning: [V,X] - singleton variables in is_var_type_same/6 in lines 177-178}
+{Warning: [Type,V] - singleton variables in compile_indexed_argument/7 in lines 184-185}
+{Warning: [T] - singleton variables in compile_write_element/8 in lines 219-221}
+{Warning: [Fail] - singleton variables in compile_passive_check/9 in lines 226-228}
+{Warning: [Fail] - singleton variables in compile_passive_check/9 in lines 228-231}
+{Warning: [X] - singleton variables in check_instantiated_data/1 in lines 241-242}
+{Warning: [Keep0,X] - singleton variables in guard_type_code_gen/10 in lines 249-252}
+{Warning: [Keep0] - singleton variables in guard_type_code_gen/10 in lines 252-257}
+{Warning: [Keep0] - singleton variables in guard_type_code_gen/10 in lines 257-260}
+{Warning: [X] - singleton variables in guard_type_code_gen/10 in lines 260-262}
+{Warning: [F] - singleton variables in compile_passive_calculate/8 in lines 268-276}
+{Warning: [F] - singleton variables in compile_passive_branch/8 in lines 278-286}
+{Warning: [F,Keep0] - singleton variables in compile_passive_compare/9 in lines 291-297}
+{Warning: [F] - singleton variables in compile_body_goal/8 in lines 343-346}
+{Warning: [T] - singleton variables in compile_put_variable/8 in lines 382-385}
+{Warning: [T] - singleton variables in compile_general_unify/8 in lines 404-407}
+{Warning: [T] - singleton variables in compile_active_write/8 in lines 417-420}
+{Warning: [T] - singleton variables in compile_set_variable/8 in lines 454-456}
+{/usr/local/src/pdss/compiler_pl/comp2.pl compiled, 34601 msec 42796 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/mrb4.pl...}
+{Warning: [Gc] - singleton variables in gc_option/6 in lines 12-18}
+{Warning: [Attr,ElemList] - singleton variables in mrb_has_element_attr/5 in lines 76-79}
+{Warning: [Cdr] - singleton variables in mrb_has_element_attr/5 in lines 79-85}
+{Warning: [Cdr] - singleton variables in mrb_has_element_attr/5 in lines 85-91}
+{Warning: [Cdr] - singleton variables in mrb_has_element_attr/5 in lines 91-97}
+{Warning: [V] - singleton variables in mrb_gen_mark_instruction_in_nested_structure/4 in lines 104-107}
+{Warning: [V] - singleton variables in mrb_gen_mark_instruction_in_nested_structure/4 in lines 107-110}
+{Warning: [I,V] - singleton variables in mrb_gen_mark_instruction_in_nested_structure/4 in lines 110-113}
+{Warning: [I,V] - singleton variables in mrb_gen_mark_instruction_in_nested_structure/4 in lines 113-115}
+{Warning: [L,Type] - singleton variables in mrb_gc_check/5 in lines 207-214}
+{Warning: [L,Type] - singleton variables in mrb_gc_check/5 in lines 214-221}
+{Warning: [L,Type] - singleton variables in mrb_gc_check/5 in lines 221-228}
+{Warning: [L,Type] - singleton variables in mrb_gc_check/5 in lines 228-235}
+{Warning: [Inst] - singleton variables in mrb_gc_check/5 in lines 237-238}
+{Warning: [Aj] - singleton variables in mrb_is_void_check_inst/2 in lines 258-259}
+{Warning: [AttrCons] - singleton variables in mrb_is_var_attr_element/4 in lines 291-292}
+{Warning: [Attr] - singleton variables in mrb_generate_collect_value/6 in lines 308-310}
+{Warning: [Type] - singleton variables in mrb_generate_collect_value/6 in lines 310-313}
+{Warning: [Type] - singleton variables in mrb_generate_collect_value/6 in lines 313-316}
+{Warning: [Attr,Vattr] - singleton variables in mrb_is_vector_element/4 in lines 341-342}
+{Warning: [Vattr] - singleton variables in mrb_is_vector_element/4 in lines 342-346}
+{Warning: [Vattr] - singleton variables in mrb_is_vector_element/4 in lines 346-350}
+{Warning: [Vattr] - singleton variables in mrb_is_vector_element/4 in lines 350-354}
+{Warning: [Gref] - singleton variables in mrb_one_body_code/4 in lines 391-397}
+{Warning: [Gref] - singleton variables in mrb_one_body_code/4 in lines 397-401}
+{Warning: [PC] - singleton variables in mrb_get_reusable_structure_reg/3 in lines 472-475}
+{Warning: [PC] - singleton variables in mrb_get_reusable_structure_reg/3 in lines 475-478}
+{/usr/local/src/pdss/compiler_pl/mrb4.pl compiled, 28691 msec 43444 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/reg.pl...}
+{Warning: [Max] - singleton variables in register_preference/5 in lines 39-50}
+{Warning: [X] - singleton variables in return_less/3 in lines 55-56}
+{Warning: [Y] - singleton variables in return_greater/3 in lines 59-60}
+{/usr/local/src/pdss/compiler_pl/reg.pl compiled, 7610 msec 5948 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/index2.pl...}
+{Warning: [H] - singleton variables in initiate_predefined_head/4 in lines 31-32}
+{Warning: [Guard,Vect] - singleton variables in term_dependency/5 in lines 61-62}
+{Warning: [Arg] - singleton variables in guard_variable_check/3 in lines 71-72}
+{Warning: [Arg,X,Y] - singleton variables in guard_variable_check/3 in lines 80-81}
+{Warning: [X] - singleton variables in guard_variable_check/3 in lines 81-83}
+{Warning: [X] - singleton variables in guard_variable_check/3 in lines 86-86}
+{Warning: [Arg] - singleton variables in builtin_arg_dependency/3 in lines 89-90}
+{Warning: [Key] - singleton variables in type_key/3 in lines 171-172}
+{Warning: [Next] - singleton variables in create_type_node/7 in lines 279-283}
+{Warning: [Next] - singleton variables in create_switch_node/7 in lines 288-292}
+{Warning: [In,Next,Reg] - singleton variables in classify_cons_node/6 in lines 309-310}
+{Warning: [Next] - singleton variables in create_one_string_node/4 in lines 383-386}
+{Warning: [In,Next,Reg] - singleton variables in classify_var_clses/5 in lines 427-428}
+{Warning: [In] - singleton variables in classify_var_clses/5 in lines 428-431}
+{Warning: [One] - singleton variables in pick_up_one_clause/5 in lines 644-645}
+{Warning: [Y] - singleton variables in pick_up_one_clause/5 in lines 647-650}
+{Warning: [One] - singleton variables in pick_up_one_clause/5 in lines 650-651}
+{Warning: [Y] - singleton variables in drop_one_clause/5 in lines 666-668}
+{Warning: [One] - singleton variables in drop_one_clause/5 in lines 671-672}
+{Warning: [A] - singleton variables in get_next_indexing_guard/10 in lines 675-688}
+{Warning: [Y] - singleton variables in extract_CnL_from_pos_list/3 in lines 700-702}
+{Warning: [X,Y] - singleton variables in get_revolt_pos_list/4 in lines 709-713}
+{Warning: [ComPosL] - singleton variables in get_revolt_pos_list/4 in lines 713-716}
+{Warning: [Y] - singleton variables in exists_element_in_list/3 in lines 759-760}
+{Warning: [Y] - singleton variables in exists_element_in_list/3 in lines 760-762}
+{Warning: [Blt] - singleton variables in check_if_pred_already_set/5 in lines 805-807}
+{Warning: [Used_Reg] - singleton variables in initiate_clause_table/6 in lines 992-1001}
+{Warning: [Used_Reg] - singleton variables in reconstruct_clauses/4 in lines 1058-1059}
+{Warning: [TbyG] - singleton variables in reconstruct_one_clause_with_guard/5 in lines 1090-1097}
+{Warning: [Type] - singleton variables in attach_type_information/3 in lines 1120-1121}
+{Warning: [Array] - singleton variables in convert_array_to_list/4 in lines 1134-1135}
+{Warning: [In] - singleton variables in compile_indexed_tree/5 in lines 1158-1164}
+{Warning: [Pred] - singleton variables in compile_indexed_tree/5 in lines 1169-1171}
+{Warning: [In,Next] - singleton variables in compile_typed_tree/5 in lines 1193-1199}
+{Warning: [In,Next] - singleton variables in compile_tree_by_type/7 in lines 1275-1278}
+{Warning: [In,Key] - singleton variables in compile_type_tree/6 in lines 1324-1326}
+{Warning: [In] - singleton variables in compile_list_tree/6 in lines 1356-1359}
+{Warning: [Fail] - singleton variables in compile_cons_tree/5 in lines 1361-1362}
+{Warning: [In] - singleton variables in compile_string_tree/6 in lines 1403-1408}
+{Warning: [Float,In,Type] - singleton variables in compile_else_tree/6 in lines 1419-1422}
+{Warning: [Fail,In,Next] - singleton variables in compile_else_tree/6 in lines 1422-1425}
+{Warning: [Fail] - singleton variables in compile_try_clauses/5 in lines 1466-1468}
+{Warning: [Pred] - singleton variables in compile_try_clauses/5 in lines 1468-1470}
+{Warning: [X] - singleton variables in drop_same_element_of_sort_1/3 in lines 1486-1487}
+{Warning: [X] - singleton variables in drop_same_element_of_sort_1/3 in lines 1489-1490}
+{Warning: [Tree] - singleton variables in debug_display_tree_1/3 in lines 1501-1503}
+{/usr/local/src/pdss/compiler_pl/index2.pl compiled, 74030 msec 125872 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/macro2.pl...}
+{Warning: [Dict3] - singleton variables in translate_one_clause/3 in lines 171-176}
+{Warning: [C1] - singleton variables in translate_one_clause_/2 in lines 197-199}
+{Warning: [X] - singleton variables in check_declaration_of_implicit_args/3 in lines 217-219}
+{Warning: [T] - singleton variables in replace_implicit_arg_template/3 in lines 235-237}
+{Warning: [T] - singleton variables in replace_implicit_arg_template/3 in lines 238-240}
+{Warning: [Type] - singleton variables in translate_finalize/3 in lines 255-258}
+{Warning: [PF] - singleton variables in make_pragma_goal/5 in lines 320-328}
+{Warning: [UN] - singleton variables in make_pragma_goal/5 in lines 328-332}
+{Warning: [Pos] - singleton variables in translate_goal/6 in lines 385-389}
+{Warning: [Pos] - singleton variables in translate_goal/6 in lines 389-393}
+{Warning: [Pos] - singleton variables in translate_goal/6 in lines 393-397}
+{Warning: [Position] - singleton variables in translate_implicit_goal/9 in lines 501-505}
+{Warning: [Position] - singleton variables in translate_implicit_goal/9 in lines 511-514}
+{Warning: [Pos] - singleton variables in trans_implicit_/11 in lines 521-526}
+{Warning: [Pos] - singleton variables in trans_implicit_/11 in lines 530-538}
+{Warning: [Pos] - singleton variables in trans_implicit_/11 in lines 538-541}
+{Warning: [Pos] - singleton variables in trans_implicit_/11 in lines 541-546}
+{Warning: [SW] - singleton variables in replace_i_dict/4 in lines 587-588}
+{Warning: [V1,V2] - singleton variables in make_dict/2 in lines 627-629}
+{Warning: [Var] - singleton variables in make_dict/2 in lines 629-631}
+{Warning: [A] - singleton variables in not_duplicated/1 in lines 642-643}
+{Warning: [Position] - singleton variables in expand_term/7 in lines 690-711}
+{Warning: [Id3] - singleton variables in expand_term/7 in lines 711-728}
+{Warning: [X] - singleton variables in expand_arg_elem/10 in lines 751-754}
+{Warning: [Position] - singleton variables in expand_arg_elem_/11 in lines 770-777}
+{Warning: [Id3] - singleton variables in expand_float_arith/7 in lines 992-999}
+{Warning: [D,K,Pat] - singleton variables in expand_sharp_macro/4 in lines 1112-1116}
+{Warning: [D,Dep,Exp,K] - singleton variables in expand_sharp_macro/4 in lines 1116-1118}
+{Warning: [Dep,Pat] - singleton variables in expand_sharp_macro/4 in lines 1118-1119}
+{Warning: [B] - singleton variables in computable/5 in lines 1167-1172}
+{Warning: [F] - singleton variables in list_variables/3 in lines 1366-1367}
+{Warning: [Y] - singleton variables in intersection/3 in lines 1381-1382}
+{Warning: [Call,Pred] - singleton variables in case_expand_clauses/6 in lines 1396-1397}
+{Warning: [Call,Pred] - singleton variables in case_expand_clauses/6 in lines 1397-1398}
+{Warning: [Name] - singleton variables in read_one_def/3 in lines 1509-1511}
+{/usr/local/src/pdss/compiler_pl/macro2.pl compiled, 94189 msec 118624 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/convert.pl...}
+{Warning: [Y] - singleton variables in check_if_arg_var_and_atomic/2 in lines 41-42}
+{Warning: [P,P0] - singleton variables in convert_goal_args/6 in lines 59-62}
+{Warning: [F] - singleton variables in convert_one_structure_arg/8 in lines 96-102}
+{/usr/local/src/pdss/compiler_pl/convert.pl compiled, 7280 msec 6548 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/code_opt2.pl...}
+{Warning: [Flag] - singleton variables in give_address_of_labels/6 in lines 45-50}
+{Warning: [Pred] - singleton variables in give_address_of_labels/6 in lines 58-59}
+{Warning: [Next] - singleton variables in delete_redundant_labels/4 in lines 90-92}
+{Warning: [Ltree] - singleton variables in delete_redundant_labels/4 in lines 94-95}
+{Warning: [Ltree] - singleton variables in check_if_label_used/3 in lines 100-102}
+{Warning: [Ltree,Next] - singleton variables in check_if_label_used/3 in lines 102-103}
+{Warning: [Branch] - singleton variables in can_be_modified/2 in lines 130-132}
+{Warning: [Label] - singleton variables in can_be_modified/2 in lines 132-134}
+{Warning: [One,Pred] - singleton variables in give_identical_label/5 in lines 167-168}
+{Warning: [Fl] - singleton variables in merge_from_wait_inst/6 in lines 180-183}
+{Warning: [Fl] - singleton variables in merge_from_wait_inst/6 in lines 193-196}
+{Warning: [Fl] - singleton variables in merge_from_wait_inst/6 in lines 206-209}
+{Warning: [Fl] - singleton variables in merge_from_wait_inst/6 in lines 212-214}
+{Warning: [Fl] - singleton variables in merge_from_wait_inst/6 in lines 221-224}
+{Warning: [Fl] - singleton variables in merge_from_wait_inst/6 in lines 227-229}
+{Warning: [Pred] - singleton variables in create_block_list/6 in lines 269-270}
+{Warning: [Label] - singleton variables in divide_code/9 in lines 285-286}
+{Warning: [Pred] - singleton variables in divide_code_1/7 in lines 306-308}
+{Warning: [A,L,Pred] - singleton variables in generate_branch_list/3 in lines 336-339}
+{Warning: [A,Name] - singleton variables in is_guard_builtin/2 in lines 360-364}
+{Warning: [Called] - singleton variables in gen_optimized_code/5 in lines 378-379}
+{Warning: [Acp] - singleton variables in delete_same_acp/5 in lines 432-433}
+{Warning: [Acp] - singleton variables in delete_same_acp/5 in lines 435-437}
+{Warning: [One] - singleton variables in gen_hash_value/4 in lines 464-465}
+{Warning: [Block] - singleton variables in set_same_labels/5 in lines 526-527}
+{Warning: [Block,Ltree,Same_Labels] - singleton variables in output_blocks/7 in lines 542-543}
+{Warning: [Label,Ltree] - singleton variables in check_if_label_can_be_deleted/4 in lines 558-559}
+{Warning: [F] - singleton variables in convert_optimized_labeled_code/3 in lines 622-626}
+{Warning: [Labels] - singleton variables in find_new_label_loop/4 in lines 639-640}
+{Warning: [C] - singleton variables in reconstruct_labels_list/4 in lines 652-653}
+{Warning: [A,F] - singleton variables in hash_code/2 in lines 733-737}
+{/usr/local/src/pdss/compiler_pl/code_opt2.pl compiled, 35159 msec 70012 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/aux2.pl...}
+{Warning: [Attr] - singleton variables in var_aux/4 in lines 44-45}
+{Warning: [Type] - singleton variables in var_aux/4 in lines 45-46}
+{Warning: [Attr] - singleton variables in check_var_instantiated/2 in lines 96-98}
+{Warning: [Attr] - singleton variables in check_var_unbound/2 in lines 100-101}
+{Warning: [X] - singleton variables in kl1_nonvar/1 in lines 184-185}
+{Warning: [Array,Init] - singleton variables in init_array/3 in lines 273-274}
+{Warning: [L,R] - singleton variables in get_tree/3 in lines 317-318}
+{/usr/local/src/pdss/compiler_pl/aux2.pl compiled, 22060 msec 36412 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/pdss_blt.pl...}
+{Warning: [X,Y] - singleton variables in builtin/7 in lines 30-34}
+{Warning: [Z] - singleton variables in builtin/7 in lines 63-65}
+{Warning: [Z] - singleton variables in builtin/7 in lines 65-67}
+{Warning: [Z] - singleton variables in builtin/7 in lines 83-85}
+{Warning: [X] - singleton variables in builtin/7 in lines 89-92}
+{Warning: [X] - singleton variables in builtin/7 in lines 92-93}
+{Warning: [X] - singleton variables in builtin/7 in lines 93-94}
+{Warning: [A] - singleton variables in builtin/7 in lines 170-171}
+{Warning: [A] - singleton variables in builtin/7 in lines 171-172}
+{Warning: [A] - singleton variables in builtin/7 in lines 172-173}
+{Warning: [A] - singleton variables in builtin/7 in lines 173-174}
+{Warning: [A] - singleton variables in builtin/7 in lines 174-175}
+{Warning: [A] - singleton variables in builtin/7 in lines 175-176}
+{Warning: [X] - singleton variables in builtin/7 in lines 176-180}
+{Warning: [X] - singleton variables in builtin/7 in lines 180-182}
+{Warning: [X] - singleton variables in builtin/7 in lines 182-184}
+{Warning: [X] - singleton variables in builtin/7 in lines 184-186}
+{/usr/local/src/pdss/compiler_pl/pdss_blt.pl compiled, 25420 msec 51688 bytes}
+{compiling /usr/local/src/pdss/compiler_pl/libdir.pl...}
+{/usr/local/src/pdss/compiler_pl/libdir.pl compiled, 149 msec 244 bytes}
+{ SICStus state saved into /usr/local/src/pdss/compiler_pl/kl1cmp }
+**** KL1/B Compiler Ver.0.96(890922) ****
+****       for PDSS Ver.2.52(890922) ****
+
+Compiler Mode : 
+%%% ERROR !! end_of_file was read
+
+{ End of SICStus execution, user time 411.260 }
+	chmod +x kl1cmp
+	echo "compile(['pdsstrans.pl']), go." | sicstus
+SICStus 0.7 #4: Tue Sep 10 13:49:53 GMT+9:00 1991
+{compiling /usr/local/src/pdss/compiler_pl/pdsstrans.pl...}
+{Warning: [Lab0] - singleton variables in tbl/2 in lines 153-153}
+{Warning: [PN] - singleton variables in tbl/2 in lines 158-159}
+{Warning: [PN,Xi] - singleton variables in tbl/2 in lines 159-160}
+{Warning: [Mod,PN] - singleton variables in tbl/2 in lines 160-161}
+{Warning: [Mod,Na,PN,Xi] - singleton variables in tbl/2 in lines 161-162}
+{Warning: [PN,Proc] - singleton variables in tbl/2 in lines 162-163}
+{Warning: [PN,Proc] - singleton variables in tbl/2 in lines 163-164}
+{Warning: [PN,Proc,Xi] - singleton variables in tbl/2 in lines 164-165}
+{Warning: [PN,Proc,Xi] - singleton variables in tbl/2 in lines 165-166}
+{Warning: [Proc] - singleton variables in tbl/2 in lines 168-170}
+{Warning: [Proc] - singleton variables in tbl/2 in lines 170-172}
+{Warning: [Proc] - singleton variables in tbl/2 in lines 174-176}
+{Warning: [Proc] - singleton variables in tbl/2 in lines 176-178}
+{Warning: [N] - singleton variables in tbl/2 in lines 208-212}
+{Warning: [Xj] - singleton variables in tbl/2 in lines 254-262}
+{Warning: [Xi] - singleton variables in tbl/2 in lines 262-263}
+{Warning: [NAr] - singleton variables in tbl/2 in lines 285-287}
+{Warning: [Xi] - singleton variables in tbl/2 in lines 346-347}
+{Warning: [Xl] - singleton variables in tbl/2 in lines 348-349}
+{Warning: [N] - singleton variables in tbl/2 in lines 349-350}
+{Warning: [N,Xv] - singleton variables in tbl/2 in lines 350-351}
+{Warning: [N] - singleton variables in gen_indx_instrs/4 in lines 463-469}
+{Warning: [N] - singleton variables in gen_indx_instrs/4 in lines 469-474}
+{Warning: [TableSize] - singleton variables in densely/2 in lines 499-501}
+{Warning: [Cdr] - singleton variables in less_than/2 in lines 522-523}
+{Warning: [S] - singleton variables in trans_string_value/5 in lines 740-743}
+{/usr/local/src/pdss/compiler_pl/pdsstrans.pl compiled, 42640 msec 70352 bytes}
+{ SICStus state saved into /usr/local/src/pdss/compiler_pl/pdsstrans }
+Debug mode  : 
+** end_of_file was read
+
+{ End of SICStus execution, user time 42.830 }
+	chmod +x pdsstrans
+	sh -c "test ! -d emacs       || (cd emacs       ; make all)"
+	nemacs -batch -f batch-byte-compile pdss.el
+Compiling /usr/local/src/pdss/emacs/pdss.el...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-mode)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-input)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-copy-last-input)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-buffer-erase)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-all-buffer-erase)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-interrupt)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-statistics)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-end-of-file)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-trace-on)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-gc-on)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-send-terminate)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-cancel-input)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-sentinel)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-filter)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-read-tag)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-read-buffer-name)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-create-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-insert-to-current-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-insert)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-kill-all-buffers)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-kill-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-show-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-hide-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-special-function)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-special-function-set-mode-name)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-insert-predicate-id)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-get-module-predicate)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-buffer-menu)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-switch-next-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-popup-next-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-warning-kill-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-kill-buffer-2)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-read-y)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-dabbrev-expand)...
+Compiling /usr/local/src/pdss/emacs/pdss.el (pdss-dabbrevs-search)...
+Wrote /usr/local/src/pdss/emacs/pdss.elc
+Done
+	nemacs -batch -f batch-byte-compile pdss-manual.el
+Compiling /usr/local/src/pdss/emacs/pdss-manual.el...
+Compiling /usr/local/src/pdss/emacs/pdss-manual.el (pdss-manual-builtin-predicate)...
+Compiling /usr/local/src/pdss/emacs/pdss-manual.el (pdss-manual-mpimos-command)...
+Wrote /usr/local/src/pdss/emacs/pdss-manual.elc
+Done
+	nemacs -batch -f batch-byte-compile pdss-kl1cmp.el
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-buffer-mode)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-copy-region-to-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-get-macro-def)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-clear-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-compile-regions)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-compile-current-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-compile)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-compile-sentinel-p)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-compile-sentinel-k)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-translate)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-translate-sentinel)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-removeklb)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-removeklb-sentinel)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-merge)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-merge-sentinel)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-removetmp)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-removetmp-sentinel)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-assemble)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-assemble-sentinel)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-abort-compiler)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-filter)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-filter2)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-message-to-window)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-check-error-message-p)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-check-error-message-k)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-check-error-message-t)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-check-error-message-a)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-kill-buffer)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-get-buffer-create)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-switch-system-mode)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-switch-indexing-mode)...
+Compiling /usr/local/src/pdss/emacs/pdss-kl1cmp.el (pdss-kl1cmp-switch-mrbgc-mode)...
+Wrote /usr/local/src/pdss/emacs/pdss-kl1cmp.elc
+Done
+	nemacs -batch -f batch-byte-compile kl1-mode.el
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-mode)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-backward-clause)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-forward-clause)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-kill-clause)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-what-clause)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-count-argument)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-count-implicit-argument)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-is-point-out-of-clause)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-is-point-in-string)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-is-point-in-comment)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-where-is-point)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-get-indent-column)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-indent-line)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-get-comment-column)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-indent-comment)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-encomment)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-decomment)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-untabify)...
+Compiling /usr/local/src/pdss/emacs/kl1-mode.el (kl1-tabify)...
+Wrote /usr/local/src/pdss/emacs/kl1-mode.elc
+Done
+% 
+% 
+% cd emulator
+/usr/local/src/pdss/emulator
+pdss@icot21[71]% ./pdss
+***** PDSS-KL1 V2.52.21 (Wed Jul 15 18:51:04 GMT+9:00 1992) *****
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is /usr/local/src/pdss/emulator
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- compile(sample).
+"sample" : Compiling ... primes/0,primes/2,gen/3,sift/2,filter/3,display/1,END.
+
+[primes/0,primes/2]
+successdone
+Loading ... done
+Module name : sample
+Saving ... done
+
+yes.
+| ?- stat(sample:primes).
+[2,3,5,7,11,13,17,19,23,29,31,37,...]
+Total of 5880 reductions in 1020 msec.
+
+yes.
+| ?- halt.
+
+% 

@@ -1,0 +1,44 @@
+% <OKUMURA.WORK>Q.GHC.9,  3-Feb-87 11:44:12, Edit by OKUMURA
+% N-queens Problem: layered-stream method.
+:- module qlay.
+:- public qlay4/0, qlay5/0, qlay6/0, qlay7/0, qlay8/0.
+ 
+qlay4 :- true | n_queen(4,A).
+qlay5 :- true | n_queen(5,A).
+qlay6 :- true | n_queen(6,A).
+qlay7 :- true | n_queen(7,A).
+qlay8 :- true | n_queen(8,A).
+%go4 :- true | n_queen(4,A),outstream(A).
+%go5 :- n_queen(5,A),display(A).
+%go6 :- n_queen(6,A),display(A).
+%go7 :- n_queen(7,A),display(A).
+%go8 :- n_queen(8,A),display(A).
+
+%display(A) :- display_console(A), display_console(nl) | true.
+
+n_queen(N,Out) :- true | queen(1,N,begin,Out).
+ 
+queen(I,N,In,Out) :- I =< N ,
+        I1 := I+1 | 
+        q(1,N,In,In1),
+        queen(I1,N,In1,Out).
+queen(I,N,In,Out) :- I > N | Out = In.
+ 
+q(I,N,In,Out) :- I =< N ,
+	 I1 := I+1 |
+        Out = [[I|In1]|Out1],
+        filter(In,I,1,In1), 
+        q(I1,N,In,Out1).
+q(I,N,_,Out) :- I > N | Out = [].
+ 
+filter(begin,_,_,Out) :- true | Out = begin.
+filter([],_,_,Out) :- true | Out = [].
+filter([[I|_]|Ins],I,K,Out) :- true | filter(Ins,I,K,Out).
+filter([[J|_]|Ins],I,K,Out) :- K := I-J | filter(Ins,I,K,Out).
+filter([[J|_]|Ins],I,K,Out) :- K := J-I | filter(Ins,I,K,Out).
+filter([[J|In]|Ins],I,K,Out) :- 
+	I =\= J, K2:=I-J, K =\= K2, K3:=J-I, K=\=K3 ,
+	 K1 := K+1 |
+        Out = [[J|NewIn]|Out1],
+        filter(In,I,K1,NewIn),
+        filter(Ins,I,K,Out1).

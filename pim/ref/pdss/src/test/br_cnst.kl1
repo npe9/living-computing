@@ -1,0 +1,150 @@
+/* このテストプログラムはProlog版コンパイラで */
+/* クローズインデキシングを掛けた場合のみ有効 */
+%%% KL1-B Test for Branch_On_Constant %%%
+% Jump_On_Integer %%%%%%% abc
+% Jump_On_Arity %%%%%%%%% abc
+% Branch_On_Integer %%%%% abc
+% Branch_On_Atom %%%%%%%% abc
+% Hash_On_Integer %%%%%%% abc
+% Hash_On_Atom %%%%%%%%%% abc
+
+:- module br_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Branch_On_Constant %%%"), put_console(key#lf) | jin.
+
+jin:- put_console(ascii#"% Jump_On_Integer %%%%%%% ") | jin00.
+jin(0,F):- true | F=c.
+jin(1,F):- true | F=c.
+jin(2,F):- true | F=c.
+otherwise.
+jin(_,F):- true | F=f.
+
+jin00:- true | jin(0,F), jin00(F).
+jin00(c):- put_console(c#"a") | jin01.
+jin00(f):- put_console(c#"*") | jin01.
+
+jin01:- true | jin(2,F), jin01(F).
+jin01(c):- put_console(c#"b") | jin02.
+jin01(f):- put_console(c#"*") | jin02.
+
+jin02:- true | jin(3,F), jin02(F).
+jin02(c):- put_console(c#"*") | jin03.
+jin02(f):- put_console(c#"c") | jin03.
+
+jin03:- put_console(key#lf) | jar.
+
+jar:- put_console(ascii#"% Jump_On_Arity %%%%%%%%% ") | jar00.
+jar({},F):- true | F=c.
+jar({_},F):- true | F=c.
+jar({_,_},F):- true | F=c.
+otherwise.
+jar(_,F):- true | F=f.
+
+jar00:- true | jar({},F), jar00(F).
+jar00(c):- put_console(c#"a") | jar01.
+jar00(f):- put_console(c#"*") | jar01.
+
+jar01:- true | jar({0,1},F), jar01(F).
+jar01(c):- put_console(c#"b") | jar02.
+jar01(f):- put_console(c#"*") | jar02.
+
+jar02:- true | jar({0,1,2},F), jar02(F).
+jar02(c):- put_console(c#"*") | jar03.
+jar02(f):- put_console(c#"c") | jar03.
+
+jar03:- put_console(key#lf) | bin.
+
+bin:- put_console(ascii#"% Branch_On_Integer %%%%% ") | bin00.
+bin(100,F):- true | F=c.
+bin(101,F):- true | F=c.
+bin(102,F):- true | F=c.
+otherwise.
+bin(_,F):- true | F=f.
+
+bin00:- true | bin(100,F), bin00(F).
+bin00(c):- put_console(c#"a") | bin01.
+bin00(f):- put_console(c#"*") | bin01.
+
+bin01:- true | bin(102,F), bin01(F).
+bin01(c):- put_console(c#"b") | bin02.
+bin01(f):- put_console(c#"*") | bin02.
+
+bin02:- true | bin(103,F), bin02(F).
+bin02(c):- put_console(c#"*") | bin03.
+bin02(f):- put_console(c#"c") | bin03.
+
+bin03:- put_console(key#lf) | bat.
+
+bat:- put_console(ascii#"% Branch_On_Atom %%%%%%%% ") | bat00.
+bat(a,F):- true | F=c.
+bat(b,F):- true | F=c.
+bat(c,F):- true | F=c.
+otherwise.
+bat(_,F):- true | F=f.
+
+bat00:- true | bat(a,F), bat00(F).
+bat00(c):- put_console(c#"a") | bat01.
+bat00(f):- put_console(c#"*") | bat01.
+
+bat01:- true | bat(c,F), bat01(F).
+bat01(c):- put_console(c#"b") | bat02.
+bat01(f):- put_console(c#"*") | bat02.
+
+bat02:- true | bat(d,F), bat02(F).
+bat02(c):- put_console(c#"*") | bat03.
+bat02(f):- put_console(c#"c") | bat03.
+
+bat03:- put_console(key#lf) | hin.
+
+hin:- put_console(ascii#"% Hash_On_Integer %%%%%%% ") | hin00.
+hin(100,F):- true | F=c.
+hin(101,F):- true | F=c.
+hin(102,F):- true | F=c.
+hin(103,F):- true | F=c.
+hin(104,F):- true | F=c.
+hin(105,F):- true | F=c.
+hin(106,F):- true | F=c.
+otherwise.
+hin(_,F):- true | F=f.
+
+hin00:- true | hin(100,F), hin00(F).
+hin00(c):- put_console(c#"a") | hin01.
+hin00(f):- put_console(c#"*") | hin01.
+
+hin01:- true | hin(106,F), hin01(F).
+hin01(c):- put_console(c#"b") | hin02.
+hin01(f):- put_console(c#"*") | hin02.
+
+hin02:- true | hin(107,F), hin02(F).
+hin02(c):- put_console(c#"*") | hin03.
+hin02(f):- put_console(c#"c") | hin03.
+
+hin03:- put_console(key#lf) | hat.
+
+hat:- put_console(ascii#"% Hash_On_Atom %%%%%%%%%% ") | hat00.
+hat(a,F):- true | F=c.
+hat(b,F):- true | F=c.
+hat(c,F):- true | F=c.
+hat(d,F):- true | F=c.
+hat(e,F):- true | F=c.
+hat(f,F):- true | F=c.
+hat(g,F):- true | F=c.
+otherwise.
+hat(_,F):- true | F=f.
+
+hat00:- true | hat(a,F), hat00(F).
+hat00(c):- put_console(c#"a") | hat01.
+hat00(f):- put_console(c#"*") | hat01.
+
+hat01:- true | hat(g,F), hat01(F).
+hat01(c):- put_console(c#"b") | hat02.
+hat01(f):- put_console(c#"*") | hat02.
+
+hat02:- true | hat(h,F), hat02(F).
+hat02(c):- put_console(c#"*") | hat03.
+hat02(f):- put_console(c#"c") | hat03.
+
+hat03:- put_console(key#lf) | done.
+
+done:- true | true.

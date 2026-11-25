@@ -1,0 +1,220 @@
+%%% KL1-B Test for G_Vector_String %%%
+% G_Vector %%%%%%%%%%%%%% ab
+% G_String %%%%%%%%%%%%%% abcdef
+% G_Vector_Element %%%%%% abcdef
+% G_String_Element %%%%%% abcdefghijklmnopqr
+
+:- module g_vec_str.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Vector_String %%%"), put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% G_Vector %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00({}).
+vec00(X):- vector(X,Z) | vec00size(Z).
+vec00size(0):- put_console(c#"a") | vec01.
+otherwise.
+vec00size(_):- put_console(c#"*") | vec01.
+
+vec01:- true | vec01({0,1,2}).
+vec01(X):- vector(X,Z) | vec01size(Z).
+vec01size(3):- put_console(c#"b") | vec02.
+otherwise.
+vec01size(_):- put_console(c#"*") | vec02.
+
+vec02:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% G_String %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | str00(ascii#"").
+str00(X):- string(X,Y,Z) | str00size(Y,Z).
+str00size(0,8):- put_console(c#"a") | str01.
+otherwise.
+str00size(_,_):- put_console(c#"*") | str01.
+
+str01:- true | str01(ascii#"Str").
+str01(X):- string(X,Y,Z) | str01size(Y,Z).
+str01size(3,8):- put_console(c#"b") | str02.
+otherwise.
+str01size(_,_):- put_console(c#"*") | str02.
+
+str02:- true | str02(S), new_string(S,0,2).
+str02(X):- string(X,Y,Z) | str02size(Y,Z).
+str02size(0,2):- put_console(c#"c") | str03.
+otherwise.
+str02size(_,_):- put_console(c#"*") | str03.
+
+str03:- true | str03(S), new_string(S,3,2).
+str03(X):- string(X,Y,Z) | str03size(Y,Z).
+str03size(3,2):- put_console(c#"d") | str04.
+otherwise.
+str03size(_,_):- put_console(c#"*") | str04.
+
+str04:- true | str04(S), new_string(S,0,32).
+str04(X):- string(X,Y,Z) | str04size(Y,Z).
+str04size(0,32):- put_console(c#"e") | str05.
+otherwise.
+str04size(_,_):- put_console(c#"*") | str05.
+
+str05:- true | str05(S), new_string(S,3,32).
+str05(X):- string(X,Y,Z) | str05size(Y,Z).
+str05size(3,32):- put_console(c#"f") | str06.
+otherwise.
+str05size(_,_):- put_console(c#"*") | str06.
+
+str06:- put_console(key#lf) | vel.
+
+vel:- put_console(ascii#"% G_Vector_Element %%%%%% ") | vel00.
+
+vel00:- true | vel00(-1,{}).
+vel00(Y,X):- vector_element(X,Y,Z), put_console(c#"*") | vel01.
+otherwise.
+vel00(_,_):- put_console(c#"a") | vel01.
+
+vel01:- true | vel01(0,{}).
+vel01(Y,X):- vector_element(X,Y,Z), put_console(c#"*") | vel02.
+otherwise.
+vel01(_,_):- put_console(c#"b") | vel02.
+
+vel02:- true | vel02(-1,{0,1,2}).
+vel02(Y,X):- vector_element(X,Y,Z), put_console(c#"*") | vel03.
+otherwise.
+vel02(_,_):- put_console(c#"c") | vel03.
+
+vel03:- true | vel03(0,{0,1,2}).
+vel03(Y,X):- vector_element(X,Y,Z) | vel03elm(Z).
+otherwise.
+vel03(_):- put_console(c#"*") | vel04.
+vel03elm(0):- put_console(c#"d") | vel04.
+otherwise.
+vel03elm(_):- put_console(c#"*") | vel04.
+
+vel04:- true | vel04(2,{0,1,2}).
+vel04(Y,X):- vector_element(X,Y,Z) | vel04elm(Z).
+otherwise.
+vel04(_):- put_console(c#"*") | vel05.
+vel04elm(2):- put_console(c#"e") | vel05.
+otherwise.
+vel04elm(_):- put_console(c#"*") | vel05.
+
+vel05:- true | vel05(3,{0,1,2}).
+vel05(Y,X):- vector_element(X,Y,Z), put_console(c#"*") | vel06.
+otherwise.
+vel05(_,_):- put_console(c#"f") | vel06.
+
+vel06:- put_console(key#lf) | sel.
+
+sel:- put_console(ascii#"% G_String_Element %%%%%% ") | sel00.
+
+sel00:- true | sel00(-1,ascii#"").
+sel00(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel01.
+otherwise.
+sel00(_,_):- put_console(c#"a") | sel01.
+
+sel01:- true | sel01(0,ascii#"").
+sel01(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel02.
+otherwise.
+sel01(_,_):- put_console(c#"b") | sel02.
+
+sel02:- true | sel02(-1,ascii#"Str").
+sel02(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel03.
+otherwise.
+sel02(_,_):- put_console(c#"c") | sel03.
+
+sel03:- true | sel03(0,ascii#"Str").
+sel03(Y,X):- string_element(X,Y,Z) | sel03elm(Z).
+otherwise.
+sel03(_):- put_console(c#"*") | sel04.
+sel03elm(c#"S"):- put_console(c#"d") | sel04.
+otherwise.
+sel03elm(_):- put_console(c#"*") | sel04.
+
+sel04:- true | sel04(2,ascii#"Str").
+sel04(Y,X):- string_element(X,Y,Z) | sel04elm(Z).
+otherwise.
+sel04(_):- put_console(c#"*") | sel05.
+sel04elm(c#"r"):- put_console(c#"e") | sel05.
+otherwise.
+sel04elm(_):- put_console(c#"*") | sel05.
+
+sel05:- true | sel05(3,ascii#"Str").
+sel05(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel06.
+otherwise.
+sel05(_,_):- put_console(c#"f") | sel06.
+
+sel06:- true | sel06(-1,S), new_string(S,0,2).
+sel06(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel07.
+otherwise.
+sel06(_,_):- put_console(c#"g") | sel07.
+
+sel07:- true | sel07(0,S), new_string(S,0,2).
+sel07(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel08.
+otherwise.
+sel07(_,_):- put_console(c#"h") | sel08.
+
+sel08:- true | sel08(-1,S), new_string(S,3,2).
+sel08(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel09.
+otherwise.
+sel08(_,_):- put_console(c#"i") | sel09.
+
+sel09:- true | sel09(0,S), new_string(S,3,2).
+sel09(Y,X):- string_element(X,Y,Z) | sel09elm(Z).
+otherwise.
+sel09(_):- put_console(c#"*") | sel10.
+sel09elm(0):- put_console(c#"j") | sel10.
+otherwise.
+sel09elm(_):- put_console(c#"*") | sel10.
+
+sel10:- true | sel10(2,S), new_string(S,3,2).
+sel10(Y,X):- string_element(X,Y,Z) | sel10elm(Z).
+otherwise.
+sel10(_):- put_console(c#"*") | sel11.
+sel10elm(0):- put_console(c#"k") | sel11.
+otherwise.
+sel10elm(_):- put_console(c#"*") | sel11.
+
+sel11:- true | sel11(3,S), new_string(S,3,2).
+sel11(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel12.
+otherwise.
+sel11(_,_):- put_console(c#"l") | sel12.
+
+sel12:- true | sel12(-1,S), new_string(S,0,32).
+sel12(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel13.
+otherwise.
+sel12(_,_):- put_console(c#"m") | sel13.
+
+sel13:- true | sel13(0,S), new_string(S,0,32).
+sel13(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel14.
+otherwise.
+sel13(_,_):- put_console(c#"n") | sel14.
+
+sel14:- true | sel14(-1,S), new_string(S,3,32).
+sel14(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel15.
+otherwise.
+sel14(_,_):- put_console(c#"o") | sel15.
+
+sel15:- true | sel15(0,S), new_string(S,3,32).
+sel15(Y,X):- string_element(X,Y,Z) | sel15elm(Z).
+otherwise.
+sel15(_):- put_console(c#"*") | sel16.
+sel15elm(0):- put_console(c#"p") | sel16.
+otherwise.
+sel15elm(_):- put_console(c#"*") | sel16.
+
+sel16:- true | sel16(2,S), new_string(S,3,32).
+sel16(Y,X):- string_element(X,Y,Z) | sel16elm(Z).
+otherwise.
+sel16(_):- put_console(c#"*") | sel17.
+sel16elm(0):- put_console(c#"q") | sel17.
+otherwise.
+sel16elm(_):- put_console(c#"*") | sel17.
+
+sel17:- true | sel17(3,S), new_string(S,3,32).
+sel17(Y,X):- string_element(X,Y,Z), put_console(c#"*") | sel18.
+otherwise.
+sel17(_,_):- put_console(c#"r") | sel18.
+
+sel18:- put_console(key#lf) | done.
+
+done:- true | true.

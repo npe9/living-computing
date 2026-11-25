@@ -1,0 +1,789 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS Window Monitor.
+
+:- module mpimos_window.
+:- public create/2,create/3,request/7,os_create/6.
+:- with_macro pdss.
+
+%%  Create a window.
+%%  create(Window,Name).
+%%	Window :: Command stream to window.
+%%	Name   :: Window name.
+
+create(Window,Name):-
+    true |
+	raise(shoen_tag#mpimos_request,window,create(Window,Name)),
+	consume_resource(2).
+
+%%  Create a window.
+%%  create(Window,Name,Status).
+%%	Window :: Command stream to window.
+%%	Name   :: Window name.
+%%	Status :: Create information.
+
+create(Window,Name,Status):-
+    true |
+	raise(shoen_tag#mpimos_request,window,create(Window,Name,Status)),
+	consume_resource(2).
+
+%%  Window request.
+%%  request(Info,WS,TF,TC,SS).
+%%	Info : Raised information.
+%%	WS  :: Command stream from task monitor.
+%%	TF  :: Termination flag.
+%%	TC  :: Task control (interrupt).
+%%	VI  :: Valve input stream.
+%%	VI  :: Valve output stream.
+%%	SS  :: System stream.
+
+request(create(Window,Name),WS,TF,TC,VI,VO,SS):-
+    string(Name,_,8) |
+	SS = [window_manager:create({VO,WS},Name,Status,TF,TC)],
+	consume_resource(10),
+	create_monitor(Window,VI,Name,no_status,Status).
+request(create(Window,Name,Sts),WS,TF,TC,VI,VO,SS):-
+    string(Name,_,8) |
+	SS = [window_manager:create({VO,WS},Name,Status,TF,TC)],
+	consume_resource(10),
+	create_monitor(Window,VI,Name,status(Sts),Status).
+otherwise.
+request(create(Window,Name),WS,TF,TC,VI,VO,SS):-
+    true |
+	SS = [],
+	VI = [],
+	consume_resource(1),
+	create_error(bad_window_name_type,Window,Name,no_status).
+request(create(Window,Name,Sts),WS,TF,TC,VI,VO,SS):-
+    true |
+	SS = [],
+	VI = [],
+	consume_resource(1),
+	create_error(bad_window_name_type,Window,Name,status(Sts)).
+
+%%  OS create a window.
+%%  os_create(Window,Name,TF,TC,SSH,SSL).
+%%	Window :: Command stream to window.
+%%	Name   :: Window name.
+%%	TF     :: Termination flag.
+%%	TC     :: Task control (interrupt).
+%%	SSH    :: System stream (head).
+%%	SSL    :: System stream (tail).
+
+os_create(Window,Name,TF,TC,SSH,SSL):-
+    string(Name,_,8) |
+	SSH = [window_manager:create(Com,Name,Status,TF,TC)|SSL],
+	consume_resource(10),
+	create_monitor(Window,Com,Name,no_status,Status).
+
+%%  Create monitor.
+%%  create_monitor(In,Out,Name,Sts,S).
+%%	In  :: Command stream from user.
+%%	Out :: Command stream to window.
+%%	Name : Window name.
+%%	Sts :: Create information.
+%%	S   :: Status of window create.
+
+create_monitor(In,Out,Name,Sts,fep#normal) :-
+    true |
+	consume_resource(2),
+	merge(In,In2),
+	mpimos_operator_manipulator:create(Opr),
+	mpimos_parser:do(Par,Opr3),
+	mpimos_unparser:create([print_length(10),print_depth(10),
+				print_var_mode(na)|UnP],Opr1),
+	merge({Opr1,Opr2,Opr3},Opr),
+	new_string(Bf,512,8),
+	create_success(Sts),
+	monitor(In2,Out,Opr2,Par,UnP,status(10,10,512,string#"?- ",Name),Bf,512,0).
+create_monitor(In,Out,Name,Sts,fep#abnormal) :-
+    true |
+	Out = [],
+	create_error(cannot_create_window,In,Name,Sts).
+
+create_success(no_status) :- true | true.
+create_success(status(S)) :- true | S = success.
+
+create_error(Info,In,WN,no_status) :-
+    true |
+	mpimos_utility:freeze(WN,FWN),
+	message(Info,Msg),
+	raise_error(error,FWN,[putb(string#" / "),putb(Msg)]),
+	closed(In,_,_,_,_,status(10,10,512,string#":- ",WN),_,512,0).
+create_error(Info,In,WN,status(S)) :-
+    true |
+	S = error(Info),
+	closed(In,_,_,_,_,status(10,10,512,string#":- ",WN),_,512,0).
+
+
+%%  Command stream monitor.
+%%  monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+%%	In  :: Command stream from user.
+%%	Out :: Command stream to window.
+%%	Opr :: Stream to operator manipulator.
+%%	Par :: Stream to parser.
+%%	UnP :: Stream to unparser.
+%%	Stt :: Monitor status.
+%%	Bf  :: Output buffer.
+%%	BL  :: Buffer length.
+%%	BC  :: Buffer counter.
+
+%%  Get commands to the window.
+monitor([getc(Char)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut=[getc(Char0,F)|OutL],
+	consume_resource(3),
+	wait_char(In,OutL,Opr,Par,UnP,Stt,NBf,BL,Char,Char0,F).
+monitor([getl(Line)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut=[getl(Line0,F)|OutL],
+	consume_resource(3),
+	wait_line(In,OutL,Opr,Par,UnP,Stt,NBf,BL,Line,Line0,F).
+monitor([getb(Buffer,Size)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    Size>0 |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut=[getb(Buffer0,Size,F)|OutL],
+	consume_resource(3),
+	wait_buffer(In,OutL,Opr,Par,UnP,Stt,NBf,BL,Buffer,Buffer0,Size,F).
+monitor([gett(Term)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	vector_element(Stt,4,Prompt,St1),
+	NOut=[putb(Prompt,_),gettkn(TokenP,F,NVP)|OutL],
+	consume_resource(6),
+	wait_token(In,OutL,Opr,Par,UnP,St1,NBf,BL,gett(Term),TokenP,NVP,F).
+monitor([gett(Term,S)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	vector_element(Stt,4,Prompt,St1),
+	NOut=[putb(Prompt,_),gettkn(TokenP,F,NVP)|OutL],
+	consume_resource(6),
+	wait_token(In,OutL,Opr,Par,UnP,St1,NBf,BL,gett(Term,S),TokenP,NVP,F).
+monitor([getft(Term,NV)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	vector_element(Stt,4,Prompt,St1),
+	NOut=[putb(Prompt,_),gettkn(TokenP,F,NVP)|OutL],
+	consume_resource(6),
+	wait_token(In,OutL,Opr,Par,UnP,St1,NBf,BL,getft(Term,NV),TokenP,NVP,F).
+monitor([getft(Term,NV,S)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	vector_element(Stt,4,Prompt,St1),
+	NOut=[putb(Prompt,_),gettkn(TokenP,F,NVP)|OutL],
+	consume_resource(6),
+	wait_token(In,OutL,Opr,Par,UnP,St1,NBf,BL,getft(Term,NV,S),TokenP,NVP,F).
+monitor([getet(Term,NV,S)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	vector_element(Stt,4,Prompt,St1),
+	NOut=[putb(Prompt,_),gettkn(TokenP,F,NVP)|OutL],
+	consume_resource(6),
+	wait_token(In,OutL,Opr,Par,UnP,St1,NBf,BL,getet(Term,NV,S),TokenP,NVP,F).
+monitor([skip(Char)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    Char>=0, Char=<255 |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut=[getc(Char0,F)|OutL],
+	consume_resource(3),
+	skip_char(In,OutL,Opr,Par,UnP,Stt,NBf,BL,Char,Char0,F).
+%%  Put commands to the window.
+monitor([putc(Char)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    Char>=0, Char=<255 |
+	set_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Char).
+monitor([putl(Line)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    string(Line,_,8) |
+	set_string([nl|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC,Line).
+monitor([putb(Buffer)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    string(Buffer,_,8) |
+	set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Buffer).
+monitor([putb(Buffer,Count)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    string(Buffer,Len,8), Count >= 0 |
+	get_buffer(Buffer,Len,Count,NewBuffer),
+	set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,NewBuffer).
+monitor([putt(Term)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    wait(Term) |
+	UnP = [putt(Term,SL)|UnP2],
+	set_string_list(In,Out,Opr,Par,UnP2,Stt,Bf,BL,BC,SL).
+monitor([putt(Term,PL,PD)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    wait(Term), PL>0, PD>0 |
+	vector_element(Stt,1,OPL,St1),
+	vector_element(St1,2,OPD,St2),
+	UnP = [print_length(PL),print_depth(PD),putt(Term,SL),
+	       print_length(OPL),print_depth(OPD)|UnP2],
+	set_string_list(In,Out,Opr,Par,UnP2,St2,Bf,BL,BC,SL).
+monitor([puttq(Term)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    wait(Term) |
+	UnP = [puttq(Term,SL)|UnP2],
+	set_string_list(In,Out,Opr,Par,UnP2,Stt,Bf,BL,BC,SL).
+monitor([puttq(Term,PL,PD)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    wait(Term), PL>0, PD>0 |
+	vector_element(Stt,1,OPL,St1),
+	vector_element(St1,2,OPD,St2),
+	UnP = [print_length(PL),print_depth(PD),puttq(Term,SL),
+	       print_length(OPL),print_depth(OPD)|UnP2],
+	set_string_list(In,Out,Opr,Par,UnP2,St2,Bf,BL,BC,SL).
+monitor([putet(Term)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    wait(Term) |
+	UnP = [putet(Term,SL)|UnP2],
+	set_string_list(In,Out,Opr,Par,UnP2,Stt,Bf,BL,BC,SL).
+monitor([putet(Term,PL,PD)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    wait(Term), PL>0, PD>0 |
+	vector_element(Stt,1,OPL,St1),
+	vector_element(St1,2,OPD,St2),
+	UnP = [print_length(PL),print_depth(PD),putet(Term,SL),
+	       print_length(OPL),print_depth(OPD)|UnP2],
+	set_string_list(In,Out,Opr,Par,UnP2,St2,Bf,BL,BC,SL).
+
+%%  Macro commands.
+monitor([nl|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	set_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,10).
+monitor([tab(N)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    N>=0, N<1000 |
+	tab(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,N).
+monitor([clear|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	set_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,12).
+monitor([beep|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	set_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,7).
+monitor([do([H|L])|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	do([H|L],InH,In),
+	monitor(InH,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+monitor([do([])|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+
+%%  Operator manipulater control commands.
+monitor([add_op(Prec,Type,OP)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    Prec>=1, Prec=<1200, atom(Type), atom(OP) |
+	Opr=[add_operator(Prec,Type,OP,F)|OprL],
+	wait_add_op(In,Out,OprL,Par,UnP,Stt,Bf,BL,BC,F,Prec,Type,OP).
+monitor([remove_op(Prec,Type,OP)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    Prec>=1, Prec=<1200, atom(Type), atom(OP) |
+	Opr=[remove_operator(Prec,Type,OP,F)|OprL],
+	wait_remove_op(In,Out,OprL,Par,UnP,Stt,Bf,BL,BC,F,Prec,Type,OP).
+monitor([remove_op(OP)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    atom(OP) |
+	Opr=[remove_operator(OP,F)|OprL],
+	wait_remove_op(In,Out,OprL,Par,UnP,Stt,Bf,BL,BC,F,Prec,Type,OP).
+monitor([operator(OP,Definition)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    atom(OP) |
+	Opr=[operator(OP,Definition)|OprL],
+	monitor(In,Out,OprL,Par,UnP,Stt,Bf,BL,BC).
+monitor([replace_op_pool(OldPool,NewPool)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	Opr=[replace_operator_pool(OldPool,NewPool)|OprL],
+	monitor(In,Out,OprL,Par,UnP,Stt,Bf,BL,BC).
+monitor([change_op_pool(NewPool)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	Opr=[replace_operator_pool(_,NewPool)|OprL],
+	monitor(In,Out,OprL,Par,UnP,Stt,Bf,BL,BC).
+
+%%  Window control command.
+monitor([show|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut=[show(F)|OutL],
+	consume_resource(3),
+	wait(In,OutL,Opr,Par,UnP,Stt,NBf,BL,0,F,_).
+monitor([hide|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut=[hide(F)|OutL],
+	consume_resource(3),
+	wait(In,OutL,Opr,Par,UnP,Stt,NBf,BL,0,F,_).
+
+%%  Status setting commands.
+monitor([print_length(PL)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    PL>0 |
+	UnP = [print_length(PL)|UnP2],
+	set_vector_element(Stt,1,_,PL,St1),
+	monitor(In,Out,Opr,Par,UnP2,St1,Bf,BL,BC).
+monitor([print_depth(PD)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    PD>0 |
+	UnP = [print_depth(PD)|UnP2],
+	set_vector_element(Stt,2,_,PD,St1),
+	monitor(In,Out,Opr,Par,UnP2,St1,Bf,BL,BC).
+monitor([print_var_mode(VM)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    atom(VM) |
+	UnP = [print_var_mode(VM)|UnP2],
+	monitor(In,Out,Opr,Par,UnP2,Stt,Bf,BL,BC).
+monitor([buffer_length(BLen)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    BLen>0 |
+	set_vector_element(Stt,3,_,BLen,St1),
+	new_string(NewBf,BLen,8),
+	substring(Bf,0,BC,OS,_),
+	set_string(In,Out,Opr,Par,UnP,St1,NewBf,BLen,0,OS).
+monitor([prompt(Old,New)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    string(New,_,8) |
+	set_vector_element(Stt,4,Old,New,St1),
+	monitor(In,Out,Opr,Par,UnP,St1,Bf,BL,BC).
+
+%%  Flush buffer.
+monitor([flush(S)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,F),
+	wait(In,NOut,Opr,Par,UnP,Stt,NBf,BL,0,F,S).
+
+%%  Termination.
+monitor([close(S)|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut = [close(F)|OutL],
+	consume_resource(2),
+	wait_close(In,OutL,Opr,Par,UnP,Stt,NBf,BL,0,F,S).
+monitor([],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	flush_buffer(Bf,BC,Out,NBf,NOut,_),
+	NOut = [close(F)],
+	consume_resource(2),
+	wait(F),
+	Opr=[], Par=[], UnP=[].
+
+%%  Error.
+otherwise.
+monitor([X|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	command_error(warning,illegal_command,X,Stt,Stt2),
+	monitor(In,Out,Opr,Par,UnP,Stt2,Bf,BL,BC).
+otherwise.
+monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	command_error(error,not_command_stream,In,Stt,Stt2),
+	monitor(In,Out,Opr,Par,UnP,Stt2,Bf,BL,BC).
+
+closed([],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	Out = [],
+	Opr = [], Par = [], UnP = [].
+closed([X|In],Out,Opr,Par,UnP,Stt,Bf,BL,BC):-
+    true |
+	command_error(warning,window_not_open,X,Stt,Stt2),
+	closed(In,Out,Opr,Par,UnP,Stt2,Bf,BL,BC).
+
+wait_close(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,fep#normal,S):-
+    true |
+	S = success,
+	closed(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+
+%% flush buffer.
+flush_buffer(Bf,BC,Out,NBf,NOut,F) :-
+    BC > 0 |
+	substring(Bf,0,BC,OutStr,NBf),
+	Out = [putb(OutStr,F)|NOut],
+	consume_resource(3).
+flush_buffer(Bf,0,Out,NBf,NOut,F) :-
+    true |
+	NBf = Bf,
+	NOut = Out,
+	F = fep#normal.
+
+get_buffer(Buffer,Len,Count,NewBuffer) :-
+    Len > Count |
+	substring(Buffer,0,Count,NewBuffer,_).
+get_buffer(Buffer,Len,Count,NewBuffer) :-
+    Len =< Count |
+	NewBuffer = Buffer.
+
+%%  Wait I/O status.
+wait(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,fep#normal,S):-
+    true |
+	S = done,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+
+wait(fep#normal) :- true | true.
+
+%%  Wait character.
+wait_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,Char,Char0,fep#normal):-
+    integer(Char0) |
+	Char=Char0,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,Char,_,fep#abort):-
+    true |
+	consume_resource(14), % C-c C-z 100 =< reductions =< 999
+	monitor([getc(Char)|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,Char,_,fep#end_of_file):-
+    true |
+	Char=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+
+%%  Skip character.
+skip_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,Char,C,fep#normal):-
+    C =:= Char |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+skip_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,Char,C,fep#normal):-
+    C =\= Char |
+	Out=[getc(Char0,F)|OutL],
+	consume_resource(3),
+	skip_char(In,OutL,Opr,Par,UnP,Stt,Bf,BL,Char,Char0,F).
+skip_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,Char,_,fep#abort):-
+    true |
+	consume_resource(14), % C-c C-z 100 =< reductions =< 999
+	monitor([skip(Char)|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+skip_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,_,_,fep#end_of_file):-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+
+%%  Wait line.
+wait_line(In,Out,Opr,Par,UnP,Stt,Bf,BL,Line,Line0,fep#normal):-
+    string(Line0,_,8) |
+	Line=Line0,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_line(In,Out,Opr,Par,UnP,Stt,Bf,BL,Line,_,fep#abort):-
+    true |
+	consume_resource(14), % C-c C-z 100 =< reductions =< 999
+	monitor([getl(Line)|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_line(In,Out,Opr,Par,UnP,Stt,Bf,BL,Line,_,fep#end_of_file):-
+    true |
+	Line=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+
+%%  Wait buffer.
+wait_buffer(In,Out,Opr,Par,UnP,Stt,Bf,BL,Buffer,Buffer0,Size,fep#normal):-
+    string(Buffer0,_,8) |
+	Buffer=Buffer0,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_buffer(In,Out,Opr,Par,UnP,Stt,Bf,BL,Buffer,_,Size,fep#abort):-
+    true |
+	consume_resource(14), % C-c C-z 100 =< reductions =< 999
+	monitor([getb(Buffer,Size)|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_buffer(In,Out,Opr,Par,UnP,Stt,Bf,BL,Buffer,_,Size,fep#end_of_file):-
+    true |
+	Buffer=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+
+%%  Wait token.
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,Command,TokenP,NVP,fep#normal):-
+    vector_element(Command,0,C), C\=getet |
+	Par=[parse(TokenP,Term1,F)|ParL],
+	wait_parse(In,Out,Opr,ParL,UnP,Stt,Bf,BL,Command,TokenP,NVP,Term1,F).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,Command,TokenP,NVP,fep#normal):-
+    vector_element(Command,0,getet) |
+	Par=[parse_ex(TokenP,Term1,F)|ParL],
+	wait_parse(In,Out,Opr,ParL,UnP,Stt,Bf,BL,Command,TokenP,NVP,Term1,F).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,Command,TokenP,_,fep#abort):-
+    true |
+	consume_resource(14), % C-c C-z 100 =< reductions =< 999
+	monitor([nl,Command|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term),TokenP,_,fep#end_of_file):-
+    true |
+	Term=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term,S),TokenP,_,fep#end_of_file):-
+    true |
+	Term=end_of_file, S=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,getft(Term,NV),TokenP,_,fep#end_of_file):-
+    true |
+	Term=end_of_file, NV=0,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,getft(Term,NV,S),TokenP,_,fep#end_of_file):-
+    true |
+	Term=end_of_file, NV=0, S=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_token(In,Out,Opr,Par,UnP,Stt,Bf,BL,getet(Term,NV,S),TokenP,_,fep#end_of_file):-
+    true |
+	Term=end_of_file, NV=0, S=end_of_file,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+
+
+%%  Wait parser, and display message if error is occured.
+%%  wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,TK,NV,FT,F).
+%%	In  :: Command stream from user.
+%%	Out :: Command stream to window.
+%%	Opr :: Stream to operator manipulator.
+%%	Par :: Stream to parser.
+%%	UnP :: Stream to unparser.
+%%	Stt :: Monitor status.
+%%	Bf  :: Output buffer.
+%%	BL  :: Buffer length.
+%%      Cmd :: Command (gett(Term) or getft(Term,NV)).
+%%	TK  :: Token list.
+%%	NV  :: Number of variabe.
+%%	FT  :: Flozen term (output of parser).
+%%	F   :: Status of parser.
+
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term),_,0,FT,parsed):-
+    true |
+	Term=FT,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term),_,NV,FT,parsed):-
+    NV>0 |
+	mpimos_utility:melt(FT,NV,Term),
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term,S),_,0,FT,parsed):-
+    true |
+	Term=FT, S=success,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term,S),_,NV,FT,parsed):-
+    NV>0 |
+	mpimos_utility:melt(FT,NV,Term),
+	S=success,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,getft(Term,NVar),_,NV,FT,parsed):-
+    true |
+	Term=FT, NVar=NV,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,getft(Term,NVar,S),_,NV,FT,parsed):-
+    true |
+	Term=FT, NVar=NV, S=success,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,getet(Term,NVar,S),_,NV,FT,parsed):-
+    true |
+	Term=FT, NVar=NV, S=success,
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,TK,NV,_,error(Pos,_)):-
+    true |
+	parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,syntax_error,Pos,TK,NV).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,TK,NV,_,ambiguous(Pos,_)):-
+    true |
+	parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,ambiguous,Pos,TK,NV).
+wait_parse(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,TK,NV,_,remained(_,Remained)):-
+    true |
+	length(TK,TKLen),
+	length(Remained,RELen),
+	Pos := TKLen-RELen,
+	parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,Cmd,syntax_error,Pos,TK,NV).
+
+parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term),Error,Pos,TK,_):-
+    true |
+	message(Error,Message),
+	DL=[putb(string#"**** "),putb(Message),putb(string#" ****"),nl|DL1],
+	mpimos_utility:report_tokens(TK,Pos,DL1),
+	monitor([do(DL),gett(Term)|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,getft(Term,NV),Error,Pos,TK,_):-
+    true |
+	message(Error,Message),
+	DL=[putb(string#"**** "),putb(Message),putb(string#" ****"),nl|DL1],
+	mpimos_utility:report_tokens(TK,Pos,DL1),
+	monitor([do(DL),getft(Term,NV)|In],Out,Opr,Par,UnP,Stt,Bf,BL,0).
+parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,gett(Term,S),Error,Pos,TK,_):-
+    true |
+	Term=TK, S={Error,Pos},
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,getft(Term,Nv,S),Error,Pos,TK,NV):-
+    true |
+	Term=TK, Nv=NV, S={Error,Pos},
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+parse_error(In,Out,Opr,Par,UnP,Stt,Bf,BL,getet(Term,Nv,S),Error,Pos,TK,NV):-
+    true |
+	Term=TK, Nv=NV, S={Error,Pos},
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,0).
+
+
+%%  Set charactor to buffer.
+set_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Char) :-
+    BC < BL |
+	set_string_element(Bf,BC,Char,NBf),
+	BC2 := BC + 1,
+	monitor(In,Out,Opr,Par,UnP,Stt,NBf,BL,BC2).
+set_char(In,Out,Opr,Par,UnP,Stt,Bf,BL,BL,Char) :-
+    true |
+	flush_buffer(Bf,BL,Out,NBf,NOut,F),
+	set_string_element(NBf,0,Char,NNBf),
+	wait(In,NOut,Opr,Par,UnP,Stt,NNBf,BL,1,F,_).
+
+%%  Tab (set spaces to buffer).
+tab(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,0) :-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+otherwise.
+tab(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,N) :-
+    BC < BL |
+	set_string_element(Bf,BC,32,NBf),
+	BC2 := BC + 1, N2 := N - 1,
+	tab(In,Out,Opr,Par,UnP,Stt,NBf,BL,BC2,N2).
+tab(In,Out,Opr,Par,UnP,Stt,Bf,BL,BL,N) :-
+    true |
+	flush_buffer(Bf,BL,Out,NBf,NOut,F),
+	wait_tab_write(In,NOut,Opr,Par,UnP,Stt,NBf,BL,F,N).
+
+wait_tab_write(In,OutL,Opr,Par,UnP,Stt,Bf,BL,fep#normal,N) :-
+    true |
+	tab(In,OutL,Opr,Par,UnP,Stt,Bf,BL,0,N).
+
+%%  Set string to buffer.
+set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Str) :-
+    string(Str,0,8) |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Str) :-
+    string(Str,SL,8), SL > 0 |
+	Left := BL - BC,
+	set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Str,SL,Left).
+
+set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Str,SL,0) :-
+    true |
+	flush_buffer(Bf,BL,Out,NBf,NOut,F),
+	wait_putb(In,NOut,Opr,Par,UnP,Stt,NBf,BL,F,Str,SL).
+otherwise.
+set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Str,SL,Left) :-
+    SL =< Left |
+	set_substring(Bf,BC,Str,NBf),
+	BC2 := BC + SL,
+	monitor(In,Out,Opr,Par,UnP,Stt,NBf,BL,BC2).
+set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,Str,SL,Left) :-
+    SL > Left |
+	substring(Str,0,Left,S2,NStr),
+	set_substring(Bf,BC,S2,NBf),
+	flush_buffer(NBf,BL,Out,NNBf,NOut,F),
+	SL2 := SL - Left,
+	substring(NStr,Left,SL2,Str2,_),
+	wait_putb(In,NOut,Opr,Par,UnP,Stt,NNBf,BL,F,Str2,SL2).
+
+wait_putb(In,Out,Opr,Par,UnP,Stt,Bf,BL,fep#normal,Str,SL) :-
+    true |
+	set_string(In,Out,Opr,Par,UnP,Stt,Bf,BL,0,Str,SL,BL).
+
+%%  Set string list to buffer.
+set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,[]) :-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,[Str|SList]) :-
+    string(Str,0,8) |
+	set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SList).
+set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,[Str|SList]) :-
+    string(Str,SL,8), SL > 0 |
+	Left := BL - BC,
+	set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SList,Str,SL,Left).
+
+set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SList,Str,SL,0) :-
+    true |
+	flush_buffer(Bf,BL,Out,NBf,NOut,F),
+	wait_list_putb(In,NOut,Opr,Par,UnP,Stt,NBf,BL,F,SList,Str,SL).
+otherwise.
+set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SList,Str,SL,Left) :-
+    SL =< Left |
+	set_substring(Bf,BC,Str,NBf),
+	BC2 := BC + SL,
+	set_string_list(In,Out,Opr,Par,UnP,Stt,NBf,BL,BC2,SList).
+set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SList,Str,SL,Left) :-
+    SL > Left |
+	substring(Str,0,Left,S2,NStr),
+	set_substring(Bf,BC,S2,NBf),
+	flush_buffer(NBf,BL,Out,NNBf,NOut,F),
+	SL2 := SL - Left,
+	substring(NStr,Left,SL2,Str2,_),
+	wait_list_putb(In,NOut,Opr,Par,UnP,Stt,NNBf,BL,F,SList,Str2,SL2).
+
+wait_list_putb(In,Out,Opr,Par,UnP,Stt,Bf,BL,fep#normal,SList,Str,SL) :-
+    true |
+	set_string_list(In,Out,Opr,Par,UnP,Stt,Bf,BL,0,SList,Str,SL,BL).
+
+
+%%  Wait add operator, and display message if error is occured.
+%%  wait_add_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SS,Prc,Typ,OP).
+%%	In  :: Command stream from user.
+%%	Out :: Command stream to window.
+%%	Opr :: Stream to operator manipulator.
+%%	Par :: Stream to parser.
+%%	UnP :: Stream to unparser.
+%%	Stt :: Monitor status.
+%%	Bf  :: Output Buffer.
+%%	BL  :: Buffer length.
+%%	BC  :: Buffer counter.
+%%      SS  :: Status of add_op.
+%%	Prc :: Operator precedance.
+%%	Typ :: Operator type.
+%%	OP  :: Operator.
+
+wait_add_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,success,_,_,_):-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+wait_add_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,already_exist,_,_,_):-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+
+
+%%  Wait remove operator, and display message if error is occured.
+%%  wait_remove_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,SS,Prc,Typ,OP).
+%%	In  :: Command stream from user.
+%%	Out :: Command stream to window.
+%%	Opr :: Stream to operator manipulator.
+%%	UnP :: Stream to unparser.
+%%	Stt :: Monitor status.
+%%	Bf  :: Output buffer.
+%%	BL  :: Buffer length.
+%%	BC  :: Buffer counter.
+%%      SS  :: Status of remove_op.
+%%	Prc :: Operator precedance.
+%%	Typ :: Operator type.
+%%	OP  :: Operator.
+
+wait_remove_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,success,_,_,_):-
+    true |
+	monitor(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC).
+wait_remove_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,not_find(_,_,_),Prc,Typ,OP):-
+    true |
+	command_error(warning,operator_not_found,
+		      remove_op(Prc,Typ,OP),Stt,Stt2),
+	monitor(In,Out,Opr,Par,UnP,Stt2,Bf,BL,BC).
+wait_remove_op(In,Out,Opr,Par,UnP,Stt,Bf,BL,BC,not_find(_),Prc,Typ,OP):-
+    true |
+	command_error(warning,operator_not_found,
+		      remove_op(OP),Stt,Stt2),
+	monitor(In,Out,Opr,Par,UnP,Stt2,Bf,BL,BC).
+
+
+%%  Do command.
+%%  do(CL,H,L).
+%%	CL :: Command list.
+%%	H  :: Command stream to monitor (head).
+%%	L  :: Command stream to monitor (tail).
+
+do([C|CR],H,L):- true | H=[C|HR], do(CR,HR,L).
+do([]    ,H,L):- true | H=L.
+
+
+%%  Get length of list.
+%%  length(List,Length).
+
+length(List,Length):- true | length(List,Length,0).
+
+length([_|List],Length,C):- true | CC := C+1, length(List,Length,CC).
+length([]      ,Length,C):- true | Length=C.
+
+%%  Command warning.
+%%  command_warning(Type,Info,Cmd,Stt,NStt).
+%%	Type : Error type.
+%%	Info : Infomation of error.
+%%	Cmd :: Executed command.
+%%	Stt :: Window status.
+%%	NStt : Window status (new).
+
+command_error(Type,Info,Cmd,Stt,NStt) :-
+    true |
+	vector_element(Stt,5,WN,NStt),
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,WN,[putb(string#" / "),putb(Msg),putb(string#" : "),putt(FC)]).
+
+%%  Raise error.
+%%  raise_error(Ty,FN,PL).
+%%	Ty :: Error type.
+%%	WN :: Window name.
+%%	PL :: Output list.
+
+raise_error(Ty,WN,PL) :-
+    true |
+	raise(shoen_tag#mpimos_error,Ty,
+	      [putb(string#">>> error in window ("),
+	       putt(WN),putb(string#")"),do(PL),putb(string#"."),nl]),
+	consume_resource(5).
+
+message(cannot_create_window,Msg) :- true | Msg=string#"cannot create window".
+message(bad_window_name_type,Msg) :- true | Msg=string#"window name is not string".
+message(window_not_open,     Msg) :- true | Msg=string#"window is not open".
+message(illegal_command,     Msg) :- true | Msg=string#"illegal command".
+message(not_command_stream,  Msg) :- true | Msg=string#"command-stream is not list".
+message(operator_not_found,  Msg) :- true | Msg=string#"cannot remove operator".
+message(syntax_error,        Msg) :- true | Msg=string#"Syntax Error".
+message(ambiguous,           Msg) :- true | Msg=string#"Ambiguous Expression".

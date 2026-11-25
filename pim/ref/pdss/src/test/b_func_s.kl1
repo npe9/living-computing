@@ -1,0 +1,131 @@
+%%% KL1-B Test for B_Function (Suspend) %%%
+% B_Min %%%%%%%%%%%%%%%%% abcdefghi
+% B_Max %%%%%%%%%%%%%%%%% abcdefghi
+% B_Abs %%%%%%%%%%%%%%%%% abc
+
+:- module b_func_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Function (Suspend) %%%"), put_console(key#lf) | min.
+
+min:- put_console(ascii#"% B_Min %%%%%%%%%%%%%%%%% ") | min00.
+
+min00:- true | Z:=min(X,Y), unify(X,Y,1234,1234), min00(Z).
+min00(1234):- put_console(c#"a") | min01.
+otherwise.
+min00(_):- put_console(c#"*") | min01.
+
+min01:- true | Z:=min(X,Y), unify(X,Y,1234,0), min01(Z).
+min01(0):- put_console(c#"b") | min02.
+otherwise.
+min01(_):- put_console(c#"*") | min02.
+
+min02:- true | Z:=min(X,Y), unify(X,Y,1234,-1234), min02(Z).
+min02(-1234):- put_console(c#"c") | min03.
+otherwise.
+min02(_):- put_console(c#"*") | min03.
+
+min03:- true | Z:=min(X,Y), unify(X,Y,0,1234), min03(Z).
+min03(0):- put_console(c#"d") | min04.
+otherwise.
+min03(_):- put_console(c#"*") | min04.
+
+min04:- true | Z:=min(X,Y), unify(X,Y,0,0), min04(Z).
+min04(0):- put_console(c#"e") | min05.
+otherwise.
+min04(_):- put_console(c#"*") | min05.
+
+min05:- true | Z:=min(X,Y), unify(X,Y,0,-1234), min05(Z).
+min05(-1234):- put_console(c#"f") | min06.
+otherwise.
+min05(_):- put_console(c#"*") | min06.
+
+min06:- true | Z:=min(X,Y), unify(X,Y,-1234,1234), min06(Z).
+min06(-1234):- put_console(c#"g") | min07.
+otherwise.
+min06(_):- put_console(c#"*") | min07.
+
+min07:- true | Z:=min(X,Y), unify(X,Y,-1234,0), min07(Z).
+min07(-1234):- put_console(c#"h") | min08.
+otherwise.
+min07(_):- put_console(c#"*") | min08.
+
+min08:- true | Z:=min(X,Y), unify(X,Y,-1234,-1234), min08(Z).
+min08(-1234):- put_console(c#"i") | min09.
+otherwise.
+min08(_):- put_console(c#"*") | min09.
+
+min09:- put_console(key#lf) | max.
+
+max:- put_console(ascii#"% B_Max %%%%%%%%%%%%%%%%% ") | max00.
+
+max00:- true | Z:=max(X,Y), unify(X,Y,1234,1234), max00(Z).
+max00(1234):- put_console(c#"a") | max01.
+otherwise.
+max00(_):- put_console(c#"*") | max01.
+
+max01:- true | Z:=max(X,Y), unify(X,Y,1234,0), max01(Z).
+max01(1234):- put_console(c#"b") | max02.
+otherwise.
+max01(_):- put_console(c#"*") | max02.
+
+max02:- true | Z:=max(X,Y), unify(X,Y,1234,-1234), max02(Z).
+max02(1234):- put_console(c#"c") | max03.
+otherwise.
+max02(_):- put_console(c#"*") | max03.
+
+max03:- true | Z:=max(X,Y), unify(X,Y,0,1234), max03(Z).
+max03(1234):- put_console(c#"d") | max04.
+otherwise.
+max03(_):- put_console(c#"*") | max04.
+
+max04:- true | Z:=max(X,Y), unify(X,Y,0,0), max04(Z).
+max04(0):- put_console(c#"e") | max05.
+otherwise.
+max04(_):- put_console(c#"*") | max05.
+
+max05:- true | Z:=max(X,Y), unify(X,Y,0,-1234), max05(Z).
+max05(0):- put_console(c#"f") | max06.
+otherwise.
+max05(_):- put_console(c#"*") | max06.
+
+max06:- true | Z:=max(X,Y), unify(X,Y,-1234,1234), max06(Z).
+max06(1234):- put_console(c#"g") | max07.
+otherwise.
+max06(_):- put_console(c#"*") | max07.
+
+max07:- true | Z:=max(X,Y), unify(X,Y,-1234,0), max07(Z).
+max07(0):- put_console(c#"h") | max08.
+otherwise.
+max07(_):- put_console(c#"*") | max08.
+
+max08:- true | Z:=max(X,Y), unify(X,Y,-1234,-1234), max08(Z).
+max08(-1234):- put_console(c#"i") | max09.
+otherwise.
+max08(_):- put_console(c#"*") | max09.
+
+max09:- put_console(key#lf) | abs.
+
+abs:- put_console(ascii#"% B_Abs %%%%%%%%%%%%%%%%% ") | abs00.
+
+abs00:- true | Z:=abs(X), unify(X,1234), abs00(Z).
+abs00(1234):- put_console(c#"a") | abs01.
+otherwise.
+abs00(_):- put_console(c#"*") | abs01.
+
+abs01:- true | Z:=abs(X), unify(X,0), abs01(Z).
+abs01(0):- put_console(c#"b") | abs02.
+otherwise.
+abs01(_):- put_console(c#"*") | abs02.
+
+abs02:- true | Z:=abs(X), unify(X,-1234), abs02(Z).
+abs02(1234):- put_console(c#"c") | abs03.
+otherwise.
+abs02(_):- put_console(c#"*") | abs03.
+
+abs03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,Y,A,B):- true | X=A, Y=B.
+unify(X,A):- true | X=A.

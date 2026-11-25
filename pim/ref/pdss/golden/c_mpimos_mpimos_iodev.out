@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/mpimos_iodev.kl1" : Compiling ... windows/1,window_request/3,files/1,file_request/4,timer/1,timer_request/3,END.
+
+[windows/1,window_request/3,files/1,file_request/4,timer/1,timer_request/3]
+successdone
+
+exit 0
+asm b291b25d9ef603789a13fe92053dbd498ba8af59c37716d4dd87a1af3d3a9a80
+sav none

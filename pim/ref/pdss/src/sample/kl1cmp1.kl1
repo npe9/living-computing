@@ -1,0 +1,1356 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%   KL1 compiler for bench mark test, written in KL1 with macro.   %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp.
+:- public compile/2,file/2,
+	  go1/0,go2/0,go3/0,go4/0, go1/1,go2/1,go3/1,go4/1.
+
+
+go1:- true | kl1cmp2:pr1(KL1), file(Input,KL1), compile(Input,_).
+go2:- true | kl1cmp2:pr2(KL1), file(Input,KL1), compile(Input,_).
+go3:- true | kl1cmp2:pr3(KL1), file(Input,KL1), compile(Input,_).
+go4:- true | kl1cmp2:pr4(KL1), file(Input,KL1), compile(Input,_).
+
+go1(Output):- true | kl1cmp2:pr1(KL1), file(Input,KL1), compile(Input,Output).
+go2(Output):- true | kl1cmp2:pr2(KL1), file(Input,KL1), compile(Input,Output).
+go3(Output):- true | kl1cmp2:pr3(KL1), file(Input,KL1), compile(Input,Output).
+go4(Output):- true | kl1cmp2:pr4(KL1), file(Input,KL1), compile(Input,Output).
+
+
+file([getft(T,N)|Msg],[T0:N0|Rest]):- true |
+    T=T0, N=N0, file(Msg,Rest).
+file([getft(T,N)|Msg],[]):- true |
+    T=end_of_file, N=0, file(Msg,[]).
+file([],[]):- true | true.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%  KL1/KL1 Compiler  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit writer:oldnew, reader:oldnew.
+
+compile(Input,Output):- true |
+    reader(Reader,Input),
+    writer(Writer,Output),
+    compile(Writer,[],Reader,[]).
+
+compile --> true |
+    &reader <<= [read_predicate(Clauses,Pred)],
+    compile(Clauses,Pred).
+
+compile(_,end_of_file) --> true | true.
+otherwise.
+compile(Clauses,Pred) --> true |
+    &writer <<= [code_head(Pred),label(Pred)],
+    {{ compile_predicate(&writer,1,_,Pred,Clauses) }},
+    &writer <<= [code_end(Pred)],
+    compile.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Compiling Predicates  %%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit writer:oldnew, clsctr:oldnew, predid:shared.
+
+compile_predicate([One]) --> true |
+    compile_last_one_block(One).
+otherwise.
+compile_predicate([OneBlock|Rest]) --> true |
+    compile_one_block(OneBlock),
+    compile_predicate(Rest).
+
+compile_last_one_block([One]) --> true |
+    {{ compile_one_clause(One,(&predid)/0,Code,[],Fr0,To0,Re0,Nv,PC) }},
+    {{ register_maintenance(Fr0,Fr1,To0,To1,Re0,Re1,PC,Code,Nv) }},
+    {{ erase_or_convert_instruction(&writer,Fr1,To1,Re1,Code,Nv) }},
+    &writer <<= [label((&predid)/0)].
+otherwise.
+compile_last_one_block([otherwise|Rest]) --> true |
+    &writer <<= [otherwise(&predid)],
+    &clsctr++,
+    compile_last_one_block(Rest).
+compile_last_one_block([alternatively|Rest]) --> true |
+    &writer <<= [alternatively],
+    &clsctr++,
+    compile_last_one_block(Rest).
+otherwise.
+compile_last_one_block([One|Rest]) --> true |
+    {{ compile_one_clause(One,(&predid)/(&clsctr(old)),
+			      Code,[],Fr0,To0,Re0,Nv,PC) }},
+    {{ register_maintenance(Fr0,Fr1,To0,To1,Re0,Re1,PC,Code,Nv) }},
+    {{ erase_or_convert_instruction(&writer,Fr1,To1,Re1,Code,Nv) }},
+    &writer <<= [label((&predid)/(&clsctr(old)))],
+    &clsctr++,
+    compile_last_one_block(Rest).
+
+
+compile_one_block([]) --> true | true.
+compile_one_block([otherwise|Rest]) --> true |
+    &writer <<= [otherwise(&predid)],
+    &clsctr++,
+    compile_one_block(Rest).
+compile_one_block([alternatively|Rest]) --> true |
+    &writer <<= [alternatively],
+    &clsctr++,
+    compile_one_block(Rest).
+otherwise.
+compile_one_block([One|Rest]) --> true |
+    {{ compile_one_clause(One,(&predid)/(&clsctr(old)),
+			      Code,[],Fr0,To0,Re0,Nv,PC) }},
+    {{ register_maintenance(Fr0,Fr1,To0,To1,Re0,Re1,PC,Code,Nv) }},
+    {{ erase_or_convert_instruction(&writer,Fr1,To1,Re1,Code,Nv) }},
+    &writer <<= [label((&predid)/(&clsctr(old)))],
+    &clsctr++,
+    compile_one_block(Rest).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  Compiling Clause  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+compile_one_clause(Clause0,Fail,C0,C,Fr,To,Re,Nv,PC):- true |
+    count_variables(0,Nvc,Clause0,Clause),
+    normalize(Clause,H,Nvc,Nv,G,B),
+    functor(H,_,A),
+    new_vector(Fr0,Nv,[]), new_vector(To0,Nv,[]), new_vector(Re0,Nv,[]),
+    new_vector(Ptbl0,Nv,0), new_vector(Btbl0,Nv,0),
+    initiate_head_arguments(Fr0,Fr1,To0,To1,Re0,Re1,0,A,H),
+    compile_guard(C0,C1,1,PC1,1,Keep,Fail,Fr1,Fr2,To1,To2,Re1,Re2,
+							[try_me_else|G]),
+    keep_head_arguments(Fr2,Fr3,To2,To3,Re2,Re3,Keep,A,H),
+    set_guard_arg_ref_count(Fr3,Fr4,To3,To4,Re3,Re4,Ptbl0,Ptbl,PC1,Nv),
+    compile_body(C1,C,PC1,PC,Btbl0,Btbl,Fr4,Fr,To4,To,Re4,Re,[commit|B]).
+
+
+:- local_implicit varctr:oldnew.
+
+count_variables(X,Y) --> atom(X) | Y=X.
+count_variables(X,Y) --> integer(X) | Y=X.
+count_variables(X,Y) --> string(X,_,_) | Y=X.
+count_variables([H|T],Y) --> true |
+    Y=[HY|TY],
+    count_variables(H,HY),
+    count_variables(T,TY).
+count_variables('$VAR'(N),Y) --> N>= &varctr(old) |
+    Y='$VAR'(N), &varctr <= N+1.
+count_variables('$VAR'(N),Y) --> N< &varctr(old) |
+    Y='$VAR'(N).
+count_variables('$VAR'(N,S),Y) --> string(S,_,_), N>= &varctr(old) |
+    Y='$VAR'(N), &varctr <= N+1.
+count_variables('$VAR'(N,S),Y) --> string(S,_,_), N< &varctr(old) |
+    Y='$VAR'(N).
+otherwise.
+count_variables(X,Y) --> vector(X,A) |
+    count_variables_args(X,Y,0,A).
+
+count_variables_args(X,Y,K,A) --> K<A |
+    {{ set_vector_element(X,K,EX,EY,X1) }},
+    count_variables(EX,EY),
+    count_variables_args(X1,Y,~(K+1),A).
+count_variables_args(X,Y,A,A) --> true | Y=X.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Compile Guard  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit object:oldnew, proctr:oldnew, keep:oldnew, fail:shared,
+		  fromtbl:oldnew, totbl:oldnew, regtbl:oldnew.
+
+compile_guard([H|T]) --> true |
+    compile_guard_goal(H), 
+    compile_guard(T).
+compile_guard([]) --> true | true.
+
+compile_guard_goal(integer(X)) --> true |
+    {{ how_do_you_do(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ compile_guard_integer(&object,&proctr,&keep,X,WhenX) }}.
+compile_guard_goal(wait(X)) --> true |
+    {{ how_do_you_do(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ compile_guard_wait(&object,&proctr,&keep,X,WhenX) }}.
+compile_guard_goal(X=Y) --> true |
+    {{ how_do_you_do(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),Y,WhenY) }},
+    {{ compile_get_valuable(&object,&proctr,&keep,WhenX,X,Y,WhenY) }}.
+compile_guard_goal(unify(X)) --> true |
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ compile_passive_unify(&object,&proctr,&keep,X,WhenX) }}.
+compile_guard_goal(draw(X)) --> true |
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ compile_guard_draw(&object,&proctr,&keep,X,WhenX) }}.
+compile_guard_goal(builtin(X)) --> true |
+    {{ functor(X,_,N) }},
+    {{ set_life_time(&fromtbl,&totbl,&regtbl,&proctr(old),N,X) }},
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [builtin(X)].
+compile_guard_goal(try_me_else) --> true |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [try_me_else(&fail)].
+
+
+:- local_implicit object:oldnew, proctr:oldnew, keep:oldnew.
+
+compile_guard_integer(X,_) --> integer(X) | true.
+compile_guard_integer('$VAR'(N),WhenX) --> integer(WhenX) |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [integer('$VAR'(N))].
+
+compile_guard_wait('$VAR'(N),WhenX) --> integer(WhenX) |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [wait('$VAR'(N))].
+otherwise.
+compile_guard_wait(_,_) --> true | true.
+   
+
+compile_get_valuable([],X,YY,WhenY) --> true |
+    compile_get_variable(YY,WhenY,X).
+compile_get_valuable(WhenX,X,YY,WhenY) --> integer(WhenX) |
+    compile_get_value(YY,WhenY,X).
+
+compile_get_variable(var(Y),WhenY,X) --> integer(WhenY) |
+    &proctr++,
+    &object <<= [wait_variable(X,Y)].
+compile_get_variable(atomic(Y),_,X) --> true |
+    &proctr++,
+    &object <<= [put_constant(Y,X)].
+compile_get_variable(list,_,X) --> true |
+    &proctr++,
+    &object <<= [put_list(X)].
+compile_get_variable(vector(N),_,X) --> true |
+    &proctr++,
+    &object <<= [put_vector(X,N)].
+
+compile_get_value(var(Y),[],X) --> true |
+    &proctr++,
+    &object <<= [wait_variable(Y,X)].
+compile_get_value(var(Y),WhenY,X) --> integer(WhenY) |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [wait_value(X,Y)].
+compile_get_value(atomic(Y),_,X) --> true |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [wait_constant(Y,X)].
+compile_get_value(list,_,X) --> true |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [wait_list(X)].
+compile_get_value(vector(N),_,X) --> true |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [wait_vector(X,N)].
+
+
+compile_passive_unify(var(X),[]) --> true |
+    &proctr++,
+    &object <<= [read_variable(X)].
+compile_passive_unify(var(X),WhenX) --> integer(WhenX) |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [read_value(X)].
+compile_passive_unify(atomic(X),_) --> true |
+    &keep <= &proctr(old),
+    &proctr++,
+    &object <<= [read_constant(X)].
+
+
+compile_guard_draw(var(X),[]) --> true |
+    &proctr++,
+    &object <<= [write_variable(X)].
+compile_guard_draw(var(X),WhenX) --> integer(WhenX) |
+    &proctr++,
+    &object <<= [write_value(X)].
+compile_guard_draw(atomic(X),_) --> true |
+    &proctr++,
+    &object <<= [write_constant(X)].
+  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Compile Body  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit object:oldnew, proctr:oldnew, bdytbl:oldnew,
+		  fromtbl:oldnew, totbl:oldnew, regtbl:oldnew.
+
+compile_body([]) --> true | true.
+compile_body([H|T]) --> true |
+   compile_body_goal(H),
+   compile_body(T).
+
+compile_body_goal(X=Y) --> true |
+    {{ how_do_you_do(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),Y,WhenY) }},
+    {{ mrb_body_ref(&bdytbl,X) }},
+    {{ compile_put_valuable(&object,&proctr,&bdytbl,Y,WhenY,X,WhenX) }}.
+compile_body_goal(draw(X)) --> true |
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ compile_active_draw(&object,&proctr,&bdytbl,X,WhenX) }}.
+compile_body_goal(Arg:=X) --> true |
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ compile_set_arg(&object,&proctr,&bdytbl,X,WhenX,Arg) }}.
+compile_body_goal(X<=Y) --> true |
+    {{ how_do_you_do(&fromtbl,&totbl,&regtbl,&proctr(old),X,WhenX) }},
+    {{ how_do_you_foo(&fromtbl,&totbl,&regtbl,&proctr(old),Y,WhenY) }},
+    %% always integer(WhenY)
+    {{ compile_struct(&object,&proctr,&bdytbl,Y,WhenX,X) }}.
+compile_body_goal(blt(X)) --> true |
+    {{ functor(X,_,N) }},
+    {{ set_life_time(&fromtbl,&totbl,&regtbl,&proctr(old),N,X) }},
+    {{ set_mrb_body_ref(&bdytbl,N,X) }},
+    &proctr++,
+    &object <<= [builtin(X)].
+compile_body_goal(create_goal(X)) --> true |
+    &proctr++,
+    &object <<= [create_goal(X)].
+compile_body_goal(enqueue_goal(X)) --> true |
+    &proctr++,
+    &object <<= [enqueue_goal(X)].
+compile_body_goal(execute(X)) --> true |
+    {{ functor(X,F,A) }},
+    {{ register_body_arguments(&fromtbl,&totbl,&regtbl,&proctr(old),A,X) }},
+    &proctr++,
+    &object <<= [execute(F/A)].
+compile_body_goal(proceed) --> true |
+    &proctr++,
+    &object <<= [proceed].
+compile_body_goal(commit) --> true |
+    &proctr++,
+    &object <<= [commit].
+
+
+:- local_implicit object:oldnew, proctr:oldnew, bdytbl:oldnew.
+
+compile_put_valuable(var(Y),[],X,[]) --> true |
+    {{ mrb_body_ref(&bdytbl,Y) }},
+    &proctr++,
+    &object <<= [put_variable(Y,X)].
+compile_put_valuable(var(Y),WhenY,X,[]) --> integer(WhenY) |
+    {{ mrb_body_ref(&bdytbl,Y) }},
+    &proctr++,
+    &object <<= [put_value(Y,X)].
+compile_put_valuable(var(Y),[],X,WhenX) --> integer(WhenX) |
+    {{ mrb_body_ref(&bdytbl,Y) }},
+    &proctr++,
+    &object <<= [put_value(X,Y)].
+compile_put_valuable(var(Y),WhenY,X,WhenX) --> integer(WhenX),integer(WhenY) |
+    {{ mrb_body_ref(&bdytbl,Y) }},
+    &proctr++,
+    &object <<= [get_value(Y,X)].
+compile_put_valuable(atomic(C),_,X,[]) --> true |
+    &proctr++,
+    &object <<= [put_constant(C,X)].
+compile_put_valuable(atomic(C),_,X,WhenX) --> integer(WhenX) |
+    &proctr++,
+    &object <<= [get_constant(C,X)].
+compile_put_valuable(list,_,X,[]) --> true |
+    &proctr++,
+    &object <<= [put_list(X)].
+compile_put_valuable(list,_,X,WhenX) --> integer(WhenX) |
+    &proctr++,
+    &object <<= [get_list(X)].
+compile_put_valuable(vector(N),_,X,[]) --> true |
+    &proctr++,
+    &object <<= [put_vector(X,N)].
+compile_put_valuable(vector(N),_,X,WhenX) --> integer(WhenX) |
+    &proctr++,
+    &object <<= [get_vector(X,N)].
+
+
+compile_active_draw(var(X),[]) --> true |
+    {{ mrb_body_ref(&bdytbl,X) }},
+    &proctr++,
+    &object <<= [write_variable(X)].
+compile_active_draw(var(X),WhenX) --> integer(WhenX)  |
+    {{ mrb_body_ref(&bdytbl,X) }},
+    &proctr++,
+    &object <<= [write_value(X)].
+compile_active_draw(atomic(C),_) --> true |
+    &proctr++,
+    &object <<= [write_constant(C)].
+
+
+compile_set_arg(var(X),[],Arg) --> true |
+    {{ mrb_body_ref(&bdytbl,X) }},
+    &proctr++,
+    &object <<= [set_variable(X,Arg)].
+compile_set_arg(var(X),WhenX,Arg) --> integer(WhenX) |
+    {{ mrb_body_ref(&bdytbl,X) }},
+    &proctr++,
+    &object <<= [set_value(X,Arg)].
+compile_set_arg(atomic(C),_,Arg) --> true |
+    &proctr++,
+    &object <<= [set_constant(C,Arg)].
+
+
+compile_struct(list(Y),[],X) --> true |
+    {{ mrb_body_ref(&bdytbl,Y,X) }},
+    &proctr++,
+    &object <<= [put_value(Y,X)].
+compile_struct(list(Y),WhenX,X) --> integer(WhenX) |
+    {{ mrb_body_ref(&bdytbl,Y,X) }},
+    &proctr++,
+    &object <<= [get_list_value(Y,X)].
+compile_struct(vector(Y),[],X) --> true |
+    {{ mrb_body_ref(&bdytbl,Y,X) }},
+    &proctr++,
+    &object <<= [put_value(Y,X)].
+compile_struct(vector(Y),WhenX,X) --> integer(WhenX) |
+    {{ mrb_body_ref(&bdytbl,Y,X) }},
+    &proctr++,
+    &object <<= [get_vector_value(Y,X)].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  Tracking Variables  %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit fromtbl:oldnew, totbl:oldnew, regtbl:oldnew,
+		  psvtbl:oldnew, proctr:shared.
+
+set_guard_arg_ref_count(N) --> N>0, N1:=N-1, &fromtbl(N1) < &proctr |
+    &psvtbl(N1) <= 1,
+    set_guard_arg_ref_count(N1).
+otherwise.
+set_guard_arg_ref_count(N) --> N>0 |
+    set_guard_arg_ref_count(~(N-1)).
+set_guard_arg_ref_count(0) --> true | true.
+
+
+:- local_implicit fromtbl:oldnew, totbl:oldnew, regtbl:oldnew,
+		  proctr:shared.
+
+initiate_head_arguments(K,X) --> K>0 |
+    {{ set_vector_element(X,K,A,_,X1) }},
+    newvar(A),
+    {{ usereg(&regtbl,A,K) }},
+    initiate_head_arguments(~(K-1),X1).
+initiate_head_arguments(0,_) --> true | true.
+
+
+keep_head_arguments(K,X) --> K>0 |
+    {{ set_vector_element(X,K,A,_,X1) }},
+    keep_head_arguments(A),
+    keep_head_arguments(~(K-1),X1).
+keep_head_arguments(0,_) --> true | true.
+
+keep_head_arguments('$VAR'(N)) --> &totbl(N) < &proctr |
+    &totbl(N) <= &proctr.  %% refvar('$VAR'(N)).
+otherwise.
+keep_head_arguments(_) --> true | true.
+
+
+register_body_arguments(K,X) --> K>0 |
+    {{ set_vector_element(X,K,A,_,X1) }},
+    refvar(A),
+    {{ usereg(&regtbl,A,K) }},
+    register_body_arguments(~(K-1),X1).
+register_body_arguments(0,_) --> true | true.
+
+
+newvar('$VAR'(N)) --> true |
+    &fromtbl(N) <= &proctr,
+    &totbl(N) <= &proctr.
+
+refvar('$VAR'(N)) --> true |
+    &totbl(N) <= &proctr.
+otherwise.
+refvar(_) --> true | true.
+
+
+:- local_implicit regtbl:oldnew.
+
+usereg('$VAR'(N),RN) --> true |
+    &regtbl(N) <= RN.
+otherwise.
+usereg(_,_) --> true | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%  More Tracking of Variables  %%%%%%%%%%%%%%%%%%%%%%
+
+% 1. The first argument is a variable which has never been seen before.
+%    It is entered in the From and To tables and [] is returned.
+% 2. The first argument is a variable which has been seen before.
+%    Its entry in the To table is updated and its value in the From table
+%    is returned.
+% 3. The first argument is not a variable.  [] is returned.
+
+:- local_implicit fromtbl:oldnew, totbl:oldnew, regtbl:oldnew,
+		  proctr:shared.
+
+how_do_you_do('$VAR'(N),Acq) --> &fromtbl(N)=[] |
+    Acq=[],
+    &fromtbl(N) <= &proctr,
+    &totbl(N) <= &proctr.
+how_do_you_do('$VAR'(N),Acq) --> integer(&fromtbl(N)) |
+    Acq= &fromtbl(N),
+    &totbl(N) <= &proctr.
+otherwise.
+how_do_you_do(_,Acq) --> true | Acq=[].
+
+
+set_life_time(N,X) --> N>0 |
+    {{ set_vector_element(X,N,A,_,X1) }},
+    how_do_you_do(A,_),
+    set_life_time(~(N-1),X1).
+set_life_time(0,_) --> true | true.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Tracking Terms  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 1. If the first argument is var(V), list(V) or vector(V), say
+%    how_do_you_do to V (see above).
+% 2. If the first argument is none of these, return [].
+
+how_do_you_foo(var(V),Acq) --> true |
+    how_do_you_do(V,Acq).
+how_do_you_foo(list(V),Acq) --> true |
+    how_do_you_do(V,Acq).
+how_do_you_foo(vector(V),Acq) --> true |
+    how_do_you_do(V,Acq).
+otherwise.
+how_do_you_foo(_,Acq) --> true | Acq=[].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  MRB Support  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit bdytbl:oldnew.
+
+set_mrb_body_ref(N,X) --> N > 0 |
+    {{ set_vector_element(X,N,A,_,X1) }},
+    set_mrb_body_ref00(~(N-1),X1,A).
+set_mrb_body_ref(0,_) --> true | true.
+
+set_mrb_body_ref00(N,X,A) --> atom(A) |
+    set_mrb_body_ref(N,X).
+set_mrb_body_ref00(N,X,A) --> integer(A) |
+    set_mrb_body_ref(N,X).
+set_mrb_body_ref00(N,X,A) --> string(A,_,_) |
+    set_mrb_body_ref(N,X).
+set_mrb_body_ref00(N,X,'$VAR'(V)) --> true |
+    mrb_body_ref('$VAR'(V)),
+    set_mrb_body_ref(N,X).
+otherwise.
+set_mrb_body_ref00(N,X,A) --> vector(A,K) |
+    set_mrb_body_ref(K,A),
+    set_mrb_body_ref(N,X).
+
+mrb_body_ref(Body0,Body,'$VAR'(X)):- true |
+    set_vector_element(Body0,X,Old,New,Body),
+    New:=Old+1.
+
+mrb_body_ref(Body0,Body,'$VAR'(X),'$VAR'(Y)):- true |
+    set_vector_element(Body0,X,OldX,NewX,Body1),
+    NewX:=OldX+1,
+    set_vector_element(Body1,Y,OldY,NewY,Body),
+    NewY:=OldY+1.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%  Erase/Convert Instruction  %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit writer:oldnew, typetbl:oldnew,
+		  fromtbl:oldnew, totbl:oldnew, regtbl:oldnew.
+
+erase_or_convert_instruction(W0,W,From,To,Reg,Instr,Nv):- true |
+    new_vector(Type,Nv,[]),
+    erase_or_convert_instruction(W0,W,Type,_,From,_,To,_,Reg,_,Instr,0).
+
+erase_or_convert_instruction([H|T],P) --> true |
+    erase_or_convert_one_instructions(H,P),
+    erase_or_convert_instruction(T,~(P+1)).
+erase_or_convert_instruction([],_) --> true | true.
+
+
+erase_or_convert_one_instructions(wait_variable('$VAR'(X),'$VAR'(Y)),_) -->
+  &regtbl(X) = &regtbl(Y) |
+    {{ set_type(&typetbl,X,Y) }}.
+erase_or_convert_one_instructions(put_value('$VAR'(X),'$VAR'(Y)),_) -->
+  &regtbl(X) = &regtbl(Y) | true.
+erase_or_convert_one_instructions(get_list_value('$VAR'(X),'$VAR'(Y)),_) -->
+  &regtbl(X) = &regtbl(Y) | true.
+erase_or_convert_one_instructions(integer('$VAR'(X)),P) -->
+  &typetbl(X) = integer,
+  &fromtbl(X) =< P, P =< &totbl(X) | true.
+erase_or_convert_one_instructions(get_marked_value(Ai,Aj),_) --> true |
+    {{ convert_variable(&writer,&regtbl,put_marked_value(Ai,Ai)) }},
+    {{ convert_variable(&writer,&regtbl,get_value(Ai,Aj)) }}.
+erase_or_convert_one_instructions(commit,_) --> true | true.
+erase_or_convert_one_instructions(try_me_else(Label),_) --> true |
+    {{ convert_variable(&writer,&regtbl,try_me_else(Label)) }}.
+otherwise.
+erase_or_convert_one_instructions(wait_variable(Ai,Aj),_) --> true |
+    {{ convert_variable(&writer,&regtbl,put_value(Aj,Ai)) }}.
+otherwise.
+erase_or_convert_one_instructions(Code,_) --> true |
+    {{ obtain_type_info(&typetbl,Code) }},
+    {{ convert_variable(&writer,&regtbl,Code) }}.
+
+
+:- local_implicit typetbl:oldnew.
+
+set_type(X,Y) --> &typetbl(X) = integer | &typetbl(Y) <= integer.
+set_type(X,Y) --> &typetbl(Y) = integer | &typetbl(X) <= integer.
+otherwise.
+set_type(_,_) --> true | true.
+
+
+obtain_type_info(integer('$VAR'(N))) --> true |
+    &typetbl(N) <= integer.
+obtain_type_info(wait_variable('$VAR'(M),'$VAR'(N))) -->
+  &typetbl(N) = integer |
+    &typetbl(M) <= integer.
+otherwise.
+obtain_type_info(_) --> true | true.
+
+
+:- local_implicit writer:oldnew, regtbl:oldnew.
+
+convert_variable(X) --> atom(X) |
+    &writer <<= [X].
+convert_variable(builtin(X)) --> true | 
+    convert_variable(X).
+otherwise.
+convert_variable(X) --> vector(X,A), A>1 |
+    convert_args(A,X).
+
+convert_args(A,X) --> A>0 |
+    A1:=A-1,
+    {{ set_vector_element(X,A1,Arg,NewArg,X1) }},
+    {{ convert_one_arg(&regtbl,Arg,NewArg) }},
+    convert_args(A1,X1).
+convert_args(0,X) --> true |
+    &writer <<= [X].
+
+
+:- local_implicit regtbl:oldnew.
+
+convert_one_arg('$VAR'(N),NewArg) --> true |
+    NewArg = &regtbl(N).
+otherwise.
+convert_one_arg(Arg,NewArg) --> true |
+    NewArg=Arg.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%  Register Maintenance  %%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit usedtbl:oldnew,
+		  fromtbl:oldnew, totbl:oldnew, regtbl:oldnew.
+
+register_maintenance(From0,From,To0,To,Reg0,Reg,PC,Code,Nv):- true |
+    new_vector(Used0,PC,0),
+    register_predefined(Used0,Used1,From0,From1,To0,To1,Reg0,Reg1,Nv),
+    register_preference(Used1,Used2,From1,From2,To1,To2,Reg1,Reg2,Code),
+    determine_registers(Used2,_,From2,From,To2,To,Reg2,Reg,Nv,0).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  Register Allocation  %%%%%%%%%%%%%%%%%%%%%%%%%
+
+register_predefined(V) -->
+  V>0, V1:=V-1, R= &regtbl(V1), integer(R) |
+    Fv = &fromtbl(V1),
+    Tv = &totbl(V1),
+    {{ use_register(&usedtbl,Fv,Tv,R) }},
+    register_predefined(V1).
+otherwise.
+register_predefined(V) --> V>0 |
+    register_predefined(~(V-1)).
+register_predefined(0) --> true | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Register Preferences  %%%%%%%%%%%%%%%%%%%%%%%%%
+
+register_preference([Instr|Code]) --> true |
+    one_register_pref(Instr),
+    register_preference(Code).
+register_preference([]) --> true | true.
+
+one_register_pref(wait_variable('$VAR'(X),'$VAR'(Y))) --> true |
+    Rx = &regtbl(X),
+    Ry = &regtbl(Y),
+    one_register_pref_foo_bar(X,Y,Rx,Ry).
+one_register_pref(put_value('$VAR'(X),'$VAR'(Y))) --> true |
+    Rx = &regtbl(X),
+    Ry = &regtbl(Y),
+    one_register_pref_foo_bar(X,Y,Rx,Ry).
+otherwise.
+one_register_pref(_) --> true | true.
+
+one_register_pref_foo_bar(X,Y,[],[]) --> true |
+    one_register_pref_bar(X,Y).
+otherwise.
+one_register_pref_foo_bar(X,Y,[],Ry) --> true |
+    one_register_pref_foo(X,Y,Ry).
+one_register_pref_foo_bar(X,Y,Rx,[]) --> true |
+    one_register_pref_foo(Y,X,Rx).
+otherwise.
+one_register_pref_foo_bar(_,_,_,_) --> true | true.
+
+
+one_register_pref_foo(X,Y,R) --> true |
+    Fx = &fromtbl(X), Tx = &totbl(X),
+    Fy = &fromtbl(Y), Ty = &totbl(Y),
+    {{ return_less(Fx,Fy,F), return_greater(Ty,Tx,T) }},
+    {{ register_available(&usedtbl,F,Fy,R,PF) }},
+    {{ register_available(&usedtbl,Ty,T,R,PT) }},
+    one_register_pref_foo(X,Y,R,vvv(F,T,Fy,Ty),PF,PT).
+
+one_register_pref_foo(X,Y,R,vvv(F,T,Fy,Ty),yes,yes) --> true |
+    {{ use_register(&usedtbl,F,Fy,R) }},
+    {{ use_register(&usedtbl,Ty,T,R) }},
+    one_register_pref_foobar(X,Y,F,T,R).
+otherwise.
+one_register_pref_foo(_,_,_,_,_,_) --> true | true.
+
+
+one_register_pref_bar(X,Y) --> true |
+    Fx = &fromtbl(X), Tx = &totbl(X),
+    Fy = &fromtbl(Y), Ty = &totbl(Y),
+    {{ return_less(Fx,Fy,F), return_greater(Ty,Tx,T) }},
+    {{ number_of_registers(Max) }},
+    {{ find_free_register(&usedtbl,1,Max,F,T,R) }},
+    one_register_pref_foobar(X,Y,F,T,R).
+
+
+one_register_pref_foobar(X,Y,F,T,R) --> true |
+    &fromtbl(X) <= F, &totbl(X) <= T, &regtbl(X) <= R,
+    &fromtbl(Y) <= F, &totbl(Y) <= T, &regtbl(Y) <= R.
+
+
+return_less(X,Y,Z):- X=<Y | Z=X.
+return_less(X,Y,Z):- X>=Y | Z=Y.
+
+return_greater(X,Y,Z):- X>=Y | Z=X.
+return_greater(X,Y,Z):- X=<Y | Z=Y.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Determine Registers  %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+determine_registers(V,I) --> V>0, &regtbl(I)=[] |
+    F = &fromtbl(I),
+    T = &totbl(I),
+    determine_registers(V,I,F,T).
+otherwise.
+determine_registers(V,I) --> V>0 |
+    determine_registers(~(V-1),~(I+1)).
+determine_registers(0,_) --> true | true.
+
+determine_registers(V,I,FT,FT) --> true |
+    &regtbl(I) <= 0,
+    determine_registers(~(V-1),~(I+1)).
+otherwise.
+determine_registers(V,I,F,T) --> true |
+    {{ number_of_registers(Max) }},
+    {{ find_free_register(&usedtbl,1,Max,F,T,R) }},
+    &regtbl(I) <= R,
+    determine_registers(~(V-1),~(I+1)).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Find a Free Register  %%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit usedtbl:oldnew.
+
+number_of_registers(X) :- true | X=32.
+
+find_free_register(N,Max,From,To,R) --> true |
+    check_used_bit(From,To,0,F),
+    find_free_register(N,Max,From,To,R,F).
+
+find_free_register(N,Max,From,To,R,F) --> N<Max, F/\(1<<N)=:=0 |
+    use_register(From,To,N), R=N.
+find_free_register(N,Max,From,To,R,F) --> N<Max, F/\(1<<N)=\=0 |
+    find_free_register(~(N+1),Max,From,To,R,F).
+find_free_register(Max,Max,_,_,R,_) --> true | R=0.
+
+register_available(From,To,R,P) --> true |
+    check_used_bit(From,To,0,F),
+    register_available(From,To,R,P,F).
+
+register_available(From,To,R,P,F) --> F/\(1<<R)=:=0 | P=yes.
+register_available(From,To,R,P,F) --> F/\(1<<R)=\=0 | P=no.
+
+check_used_bit(F,T,X,Y) --> F<T, X1 := X\/ &usedtbl(F) |
+    check_used_bit(~(F+1),T,X1,Y).
+check_used_bit(T,T,X,Y) --> true | Y=X.
+
+
+use_register(From,To,R) --> true |
+    set_used_bit(From,To,~(1<<R)).
+
+set_used_bit(F,T,M) --> F<T, X := &usedtbl(F)\/M |
+    &usedtbl(F) <= X,
+    set_used_bit(~(F+1),T,M).
+set_used_bit(T,T,_) --> true | true.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+normalize((Head:-Guard;Body),H,V0,V,G0,B0):- true |
+    normalize_functor(Head,Head1,H0,A),
+    normalize_args(V0,V1,G0,G1,A,Head1,H0,H,Guard,BigGuard),
+    normalize_guard(V1,V2,G1,[],BigGuard),
+    normalize_body_builtin(V2,V3,B0,B1,BG,[],Body),
+    reverse_body_goals(BG,[],BG1),
+    normalize_body(V3,V,B1,[],BG1).
+
+reverse_body_goals([A|BG],Rev,BG1):- true |
+    reverse_body_goals(BG,[A|Rev],BG1).
+reverse_body_goals([],Rev,BG1):- true | BG1=Rev.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%  Normalize Guard  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit varnum:oldnew, normal:oldnew.
+
+normalize_functor(X,Y,Z,A):- atom(X) | Y=X, Z=X, A=0.
+normalize_functor(X,Y,Z,A):-
+  vector(X,A0), A0>=2, vector_element(X,0,F), atom(F) |
+    X=Y, A:=A0-1,
+    new_vector(Z0,A0),
+    set_vector_element(Z0,0,_,F,Z).
+
+normalize_args(K,H0,H,HH,G0,G) --> K>0 |
+    A='$VAR'(&varnum(old)), &varnum++,  %% new_variable(A),
+    {{ set_vector_element(H0,K,A0,_,H01) }},
+    {{ set_vector_element(H,K,_,A,H1) }},
+    normalize_args(~(K-1),H01,H1,HH,(A0=A,G0),G).
+normalize_args(0,_,H,HH,G0,G) --> true | H=HH, G0=G.
+
+
+normalize_guard(true)  --> true | true.
+normalize_guard((X,Y)) --> true | normalize_guard(X), normalize_guard(Y).
+normalize_guard(X=Y)   --> true | normalize_guard_unify(X,Y).
+normalize_guard(X:=Y)  --> true | normalize_guard_becomes(X,Y).
+otherwise.
+normalize_guard(Goal) --> true |
+    {{kl1cmp2:builtin(NewGoal,In,Out,Pre,PreL,Type,Goal) }},
+    normalize_guard(NewGoal,In,Out,Pre,PreL,Type).
+
+normalize_guard(NewGoal,In,Out,Pre,PreL,builtin) --> true |
+    normalize_guard_builtin(NewGoal,In,Out,Pre,PreL).
+normalize_guard(NewGoal,In,_,_,_,relop) --> true |
+    In=[X1,Y1,X2,Y2],
+    expand_expression(NewGoal,G1,X2,Y2),
+    expand_expression(G1,G2,X1,Y1),
+    normalize_guard(G2).
+normalize_guard(NewGoal,In,Out,_,_,int_or_wait) --> true |
+    normalize_builtin_args(In),
+    &normal <<= [NewGoal],
+    normalize_builtin_args(Out).
+
+
+normalize_guard_unify('$VAR'(N),Y) --> true |
+    normalize_guard_unify_variable(Y,'$VAR'(N)).
+normalize_guard_unify(X,'$VAR'(N)) --> true |
+    normalize_guard_unify_variable(X,'$VAR'(N)).
+otherwise.
+normalize_guard_unify(X,Y) --> vector(X,_), vector(Y,_) |
+    normalize_unify_structure_arg(X,X1),
+    normalize_unify_structure_arg(Y,Y1),
+    &normal <<= [X1=var(Y1)].
+normalize_guard_unify(X,Y) --> list(X), list(Y) |
+    normalize_unify_structure_arg(X,X1),
+    normalize_unify_structure_arg(Y,Y1),
+    &normal <<= [X1=var(Y1)].
+
+normalize_guard_unify_variable(X,Y) --> atom(X) |
+    &normal <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X,Y) --> integer(X) |
+    &normal <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X,Y) --> string(X,_,_) |
+    &normal <<= [Y=atomic(X)].
+normalize_guard_unify_variable(X,Y) --> list(X) |
+    &normal <<= [Y=list],
+    normalize_list_args(G0,G,X),
+    {{ 'C'(&normal,G0,G) }}.
+normalize_guard_unify_variable('$VAR'(N),Y) --> true |
+    &normal <<= [Y=var('$VAR'(N))].
+otherwise.
+normalize_guard_unify_variable(X,Y) --> vector(X,N) |
+    &normal <<= [Y=vector(N)],
+    normalize_structure_args(G0,G,N,0,X),
+    {{ 'C'(&normal,G0,G) }}.
+
+
+:- local_implicit varnum:oldnew, normal:oldnew, normal2:oldnew.
+
+normalize_structure_args(A,K,X) --> A>0 |
+    {{ set_vector_element(X,K,E,_,X1) }},
+    normalize_one_arg(E),
+    normalize_structure_args(~(A-1),~(K+1),X1).
+normalize_structure_args(0,_,_) --> true | true.   
+
+normalize_list_args([H|T]) --> true |
+    normalize_one_arg(H),
+    normalize_one_arg(T).
+
+normalize_one_arg(X) --> atom(X) |
+    &normal <<= [unify(atomic(X))].
+normalize_one_arg(X) --> integer(X) |
+    &normal <<= [unify(atomic(X))].
+normalize_one_arg(X) --> string(X,_,_) |
+    &normal <<= [unify(atomic(X))].
+normalize_one_arg('$VAR'(N)) --> true |
+    &normal <<= [unify(var('$VAR'(N)))].
+otherwise.
+normalize_one_arg(X) --> true |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    &normal <<= [unify(var(Y))],
+    {{ normalize_guard_unify_variable(&varnum,&normal2,X,Y) }}.
+
+
+:- local_implicit varnum:oldnew, normal:oldnew.
+
+normalize_unify_structure_arg(Y0,Y) --> atom(Y0) |
+    &normal <<= [Y=atomic(Y0)].
+normalize_unify_structure_arg(Y0,Y) --> integer(Y0) |
+    &normal <<= [Y=atomic(Y0)].
+normalize_unify_structure_arg(Y0,Y) --> string(Y0,_,_) |
+    &normal <<= [Y=atomic(Y0)].
+normalize_unify_structure_arg(Y0,Y) --> list(Y0) |
+    normalize_body_list(Y0,Y).
+normalize_unify_structure_arg('$VAR'(N),Y) --> true |
+    &normal <<= [Y=var('$VAR'(N))].
+otherwise.
+normalize_unify_structure_arg(Y0,Y) --> vector(Y0,N) |
+    normalize_body_vector(Y0,Y,N).
+
+
+normalize_guard_builtin(Y0,In,Out,Pre,PreL) --> true |
+    normalize_builtin_args(In),
+    {{ 'C'(&normal,Pre,PreL) }},
+    &normal <<= [builtin(Y0)],
+    normalize_builtin_args(Out).
+
+normalize_builtin_args([X,Y|L]) --> true |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    normalize_guard_unify(X,Y), 
+    normalize_builtin_args(L).
+normalize_builtin_args([]) --> true | true.
+
+
+normalize_guard_becomes('$VAR'(N),Y) --> true |
+    expand_expression(('$VAR'(N)=Z),E,Y,Z),
+    normalize_guard(E).
+
+:- local_implicit varnum:oldnew, normal:oldnew, goals:oldnew.
+
+expand_expression(X,Y) --> atom(X) | X=Y.
+expand_expression(X,Y) --> integer(X) | X=Y.
+expand_expression(X,Y) --> string(X,_,_) | X=Y.
+expand_expression('$VAR'(N),Y) --> true | '$VAR'(N)=Y.
+otherwise.
+expand_expression(X,Y) --> true |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    {{ kl1cmp2:expression(Goal,In,Y,X) }},
+    &goals <= (Goal,&goals(old)),
+    expand_expr(In).
+
+expand_expr([X,Y|L]) --> true |
+    expand_expression(X,Y),
+    expand_expr(L).
+expand_expr([]) --> true | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%  Normalize Body Builtins  %%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit varnum:oldnew, normal:oldnew, userdef:oldnew.
+
+normalize_body_builtin(true) --> true | true.
+normalize_body_builtin((X,Y)) --> true |
+    normalize_body_builtin(X),
+    normalize_body_builtin(Y).
+normalize_body_builtin(X=Y) --> true |
+    {{ normalize_body_unify(&varnum,&normal,X,Y) }}.
+normalize_body_builtin(X:=Y) --> true |
+    normalize_body_becomes(X,Y).
+otherwise.
+normalize_body_builtin(X) --> true |
+    {{ kl1cmp2:active_builtin(Y,In,Out,Type,X) }},
+    normalize_body_builtin(Y,In,Out,Type).
+
+normalize_body_builtin(Y,In,Out,builtin) --> true |
+    {{ normalize_body_args(&varnum,&normal,In) }},
+    &normal <<= [blt(Y)],
+    {{ normalize_body_args(&varnum,&normal,Out) }}.
+normalize_body_builtin(Y,_,_,none) --> true |
+    &userdef <<= [Y].
+
+normalize_body_becomes('$VAR'(N),Y) --> true |
+    {{ expand_body_expression(&varnum,&normal,true,G,Y,'$VAR'(N)) }},
+    normalize_body_builtin(G).
+
+
+:- local_implicit varnum:oldnew, normal:oldnew, goals:oldnew.
+
+expand_body_expression(Y,X) --> atom(Y) |
+    &goals <= (X=Y,&goals(old)).
+expand_body_expression(Y,X) --> integer(Y) |
+    &goals <= (X=Y,&goals(old)).
+expand_body_expression(Y,X) --> string(Y,_,_) |
+    &goals <= (X=Y,&goals(old)).
+expand_body_expression('$VAR'(N),X) --> true |
+    &goals <= (X='$VAR'(N),&goals(old)).
+otherwise.
+expand_body_expression(Y,X) --> true |
+    Out='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Out),
+    {{ kl1cmp2:expression(Goal,In,Out,Y) }},
+    &goals <= (Goal,X=Out,&goals(old)),
+    expand_body_expr(In).
+
+expand_body_expr([X,Y|L]) --> true |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    expand_body_expression(X,Y),
+    expand_body_expr(L).
+expand_body_expr([]) --> true | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%  Normalize User Goals  %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit varnum:oldnew, normal:oldnew.
+
+normalize_body([X|BG]) --> list(BG) |
+    normalize_body_goal(X),
+    normalize_body(BG).
+normalize_body([X]) --> true |
+    normalize_last_body_goal(X).
+normalize_body([]) --> true |
+    &normal <<= [proceed].
+
+normalize_last_body_goal(Goal00) --> true |
+    {{ normalize_functor(Goal00,Goal0,Goal,A) }},
+    extract_args(A,1,Goal0,Goal,Goal1,Args),
+    normalize_body_goal_args(Args),
+    &normal <<= [execute(Goal1)].
+
+normalize_body_goal(Goal0) --> true |
+    {{ functor(Goal0,F,A,Goal) }},
+    &normal <<= [create_goal(F/A)],
+    extract_and_normalize_fork_args(A,Goal),
+    &normal <<= [enqueue_goal(F/A)].
+
+
+extract_args(N,K,X,Y,YY,L0) --> N>0 |
+    AY='$VAR'(&varnum(old)), &varnum++,  %% new_variable(AY),
+    {{ set_vector_element(X,K,AX,_,X1) }},
+    {{ set_vector_element(Y,K,_,AY,Y1) }},
+    L0=[AX,AY|L1],
+    extract_args(~(N-1),~(K+1),X1,Y1,YY,L1).
+extract_args(0,_,_,Y,YY,L0) --> true | Y=YY, L0=[].
+
+
+normalize_body_args([X1,Y1|L]) --> true |
+    Y1='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y1),
+    normalize_body_unify_variable(X1,Y1),
+    normalize_body_args(L).
+normalize_body_args([]) --> true | true.
+
+normalize_body_goal_args([X1,Y1|L]) --> true |
+    normalize_body_goal_unify_variable(X1,Y1),
+    normalize_body_goal_args(L).
+normalize_body_goal_args([]) --> true | true.
+
+extract_and_normalize_fork_args(A,X) --> true |
+    {{ 'C'(&normal,G0,G) }},
+    extract_and_normalize_fork_args(G0,G,A,1,X).
+
+
+:- local_implicit varnum:oldnew, normal:oldnew, normal2:oldnew.
+
+extract_and_normalize_fork_args(N,K,X0) --> N>0 |
+    {{ set_vector_element(X0,K,Y,_,X) }},
+    normalize_argument_put(Y,K),
+    extract_and_normalize_fork_args(~(N-1),~(K+1),X).
+extract_and_normalize_fork_args(0,_,_) --> true | true.
+
+normalize_argument_put(Y,K) --> atom(Y) |
+    &normal <<= [K:=atomic(Y)].
+normalize_argument_put(Y,K) --> integer(Y) |
+    &normal <<= [K:=atomic(Y)].
+normalize_argument_put(Y,K) --> string(Y,_,_) |
+    &normal <<= [K:=atomic(Y)].
+normalize_argument_put(Y,K) --> list(Y) |
+    V='$VAR'(&varnum(old)), &varnum++,  %% new_variable(V),
+    &normal <<= [K:=var(V)],
+    {{ normalize_body_list(&varnum,&normal2,Y,V) }}.
+normalize_argument_put('$VAR'(N),K) --> true |
+    &normal <<= [K:=var('$VAR'(N))].
+otherwise.
+normalize_argument_put(Y,K) --> vector(Y,N) |
+    V='$VAR'(&varnum(old)), &varnum++,  %% new_variable(V),
+    &normal <<= [K:=var(V)],
+    {{ normalize_body_vector(&varnum,&normal2,Y,V,N) }}.
+
+
+%%%%%%%%%%%%%%%%%%%%%  Normalize Active Unification  %%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit varnum:oldnew, normal:oldnew.
+
+normalize_body_unify('$VAR'(N),Y) --> true |
+   normalize_body_unify_variable(Y,'$VAR'(N)).
+normalize_body_unify(X,'$VAR'(N)) --> true |
+   normalize_body_unify_variable(X,'$VAR'(N)).
+
+normalize_body_unify_variable(Y,X) --> atom(Y) |
+    &normal <<= [X=atomic(Y)].
+normalize_body_unify_variable(Y,X) --> integer(Y) |
+    &normal <<= [X=atomic(Y)].
+normalize_body_unify_variable(Y,X) --> string(Y,_,_) |
+    &normal <<= [X=atomic(Y)].
+normalize_body_unify_variable(Y0,X) --> list(Y0) |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    normalize_body_list(Y0,Y),
+    &normal <<= [X<=list(Y)].
+normalize_body_unify_variable('$VAR'(N),X) --> true |
+    &normal <<= [X=var('$VAR'(N))].
+otherwise.
+normalize_body_unify_variable(Y0,X) --> vector(Y0,N) |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    normalize_body_vector(Y0,Y,N),
+    &normal <<= [X<=vector(Y)].   
+
+
+normalize_body_vector(Y,X,N) --> true |
+    {{ 'C'(&normal,B0,B) }},
+    &normal <<= [X=vector(N)],
+    normalize_body_structure_args(B0,B,N,0,Y).
+
+normalize_body_list(Y,X) --> true |
+    {{ 'C'(&normal,B0,B) }},
+    &normal <<= [X=list],
+    normalize_body_list_args(B0,B,Y).
+
+
+:- local_implicit varnum:oldnew, normal:oldnew, normal2:oldnew.
+
+normalize_body_structure_args(N,K,Y0) --> N>0 |
+    {{ set_vector_element(Y0,K,E,_,Y1) }},
+    normalize_body_one_arg(E),
+    normalize_body_structure_args(~(N-1),~(K+1),Y1).
+normalize_body_structure_args(0,_,_) --> true | true.
+
+normalize_body_list_args([H|T]) --> true |
+    normalize_body_one_arg(H),
+    normalize_body_one_arg(T).
+
+normalize_body_one_arg(X) --> atom(X) |
+    &normal <<= [draw(atomic(X))].
+normalize_body_one_arg(X) --> integer(X) |
+    &normal <<= [draw(atomic(X))].
+normalize_body_one_arg(X) --> string(X,_,_) |
+    &normal <<= [draw(atomic(X))].
+normalize_body_one_arg(X) --> list(X) |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    &normal <<= [draw(var(Y))],
+    {{ normalize_body_list(&varnum,&normal2,X,Y) }}.
+normalize_body_one_arg('$VAR'(N)) --> true |
+    &normal <<= [draw(var('$VAR'(N)))].
+otherwise.
+normalize_body_one_arg(X) --> vector(X,N) |
+    Y='$VAR'(&varnum(old)), &varnum++,  %% new_variable(Y),
+    &normal <<= [draw(var(Y))],
+    {{ normalize_body_vector(&varnum,&normal2,X,Y,N) }}.
+
+
+:- local_implicit varnum:oldnew, normal:oldnew.
+
+normalize_body_goal_unify('$VAR'(N),Y) --> true |
+    normalize_body_goal_unify_variable(Y,'$VAR'(N)).
+normalize_body_goal_unify(X,'$VAR'(N)) --> true |
+    normalize_body_goal_unify_variable(X,'$VAR'(N)).
+
+normalize_body_goal_unify_variable(Y,X) --> atom(Y) |
+    &normal <<= [X=atomic(Y)].
+normalize_body_goal_unify_variable(Y,X) --> integer(Y) |
+    &normal <<= [X=atomic(Y)].
+normalize_body_goal_unify_variable(Y,X) --> string(Y,_,_) |
+    &normal <<= [X=atomic(Y)].
+normalize_body_goal_unify_variable(Y,X) --> list(Y) |
+    normalize_body_list(Y,X).
+normalize_body_goal_unify_variable('$VAR'(N),X) --> true |
+    &normal <<= [X=var('$VAR'(N))].
+otherwise.
+normalize_body_goal_unify_variable(Y,X) --> vector(Y,N) |
+    normalize_body_vector(Y,X,N).
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%  Reading predicates  %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit input:oldnew.
+
+reader(Request,Input):- true |
+    non_expanded_read(Input,S2,C,P),
+    reader(S2,[],Request,C,P).
+
+
+reader([read_predicate(Clauses,Pred)|Req],_,end_of_file) --> true |
+    Clauses=[], Pred=end_of_file,
+    reader(Req,end_of_file,end_of_file).
+otherwise.
+reader([read_predicate(Clauses,Pred)|Req],C,P) --> true |
+    non_expanded_read(C2,P2),
+    read_predicate(Req,C2,P2,P,[C|CL],CL,Clauses,Pred).
+reader([],_,_) --> true | true.
+
+read_predicate(Req,_,end_of_file,P,CH,CL,Clauses,Pred) --> true |
+    Clauses=[CH], CL=[], Pred=P,
+    reader(Req,end_of_file,end_of_file).
+read_predicate(Req,_,otherwise,P,CH,CL,Clauses,Pred) --> true |
+    Clauses=[CH|Clauses2], CL=[],
+    non_expanded_read(C3,P3),
+    read_predicate(Req,C3,P3,P,[otherwise|CL2],CL2,Clauses2,Pred).
+read_predicate(Req,_,alternatively,P,CH,CL,Clauses,Pred) --> true |
+    Clauses=[CH|Clauses2], CL=[],
+    non_expanded_read(C3,P3),
+    read_predicate(Req,C3,P3,P,[alternatively|CL2],CL2,Clauses2,Pred).
+read_predicate(Req,C,P,P,CH,CL,Clauses,Pred) --> true |
+    CL=[C|CL2],
+    non_expanded_read(C3,P3),
+    read_predicate(Req,C3,P3,P,CH,CL2,Clauses,Pred).
+otherwise.
+read_predicate(Req,C2,P2,P,CH,CL,Clauses,Pred) --> true |
+    Clauses=[CH], CL=[], Pred=P,
+    reader(Req,C2,P2).
+
+
+non_expanded_read(C,P) --> true |
+    &input <<= [getft(Term,_)],
+    non_expanded_read(C,P,Term).
+
+non_expanded_read(C,P,(:-_)) --> true |
+    &input <<= [getft(Term,_)],
+    non_expanded_read(C,P,Term).
+non_expanded_read(C,P,end_of_file) --> true |
+    C=end_of_file, P=end_of_file.
+non_expanded_read(C,P,otherwise) --> true |
+    C=otherwise, P=otherwise.
+non_expanded_read(C,P,alternatively) --> true |
+    C=alternatively, P=alternatively.
+non_expanded_read(C,P,(H:-G;B)) --> atom(H) |
+    C=(H:-G;B), P=H/0.
+non_expanded_read(C,P,(H:-G;B)) -->
+  vector(H,A), A>=2, vector_element(H,0,F), atom(F) |
+    C=(H:-G;B), P=F/ ~(A-1).
+non_expanded_read(C,P,(H:-'|'(G,B))) --> atom(H) |
+    C=(H:-G;B), P=H/0.
+non_expanded_read(C,P,(H:-'|'(G,B))) -->
+  vector(H,A), A>=2, vector_element(H,0,F), atom(F) |
+    C=(H:-G;B), P=F/ ~(A-1).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Writer  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit output:oldnew.
+
+writer(Request,Output):- true |
+    write_object_code(Output,[],Request).
+
+write_object_code([H|T]) --> true |
+    write_one_object_code(H),
+    write_object_code(T).
+write_object_code([]) --> true | true.
+
+write_one_object_code(code_head(F/A)) --> true |
+    &output <<= [putc(9),putt(procedure),
+		 putc(9),putc(9),putt(F),putt(','),putt(A),nl].
+write_one_object_code(code_end(Pred)) --> true |
+    &output <<= [putc(9),putt(suspend),putc(9),putc(9)],
+    write_label(Pred),
+    &output <<= [nl].
+write_one_object_code(label(Label)) --> true |
+    write_label(Label),
+    &output <<= [putt(':'),nl].
+write_one_object_code(otherwise(Pred)) --> true |
+    &output <<= [putc(9),putt('otherwise'),putc(9),putc(9)],
+    write_label(Pred),
+    &output <<= [nl].
+write_one_object_code(alternatively) --> true |
+    &output <<= [putc(9),putt(read_eagerly),nl].
+write_one_object_code(execute(F/A)) --> true |
+    &output <<= [putc(9),putt(execute),putc(9),putc(9),putt(A),putt(',')],
+    write_label(F/A),
+    &output <<= [nl].
+write_one_object_code(create_goal(F/A)) --> true |
+    &output <<= [putc(9),putt(create_goal),putc(9),putc(9),putt(A),putt(',')],
+    write_label(F/A),
+    &output <<= [nl].
+write_one_object_code(enqueue_goal(F/A)) --> true |
+    &output <<= [putc(9),putt(enqueue_goal),putc(9),putc(9),putt(A),putt(',')],
+    write_label(F/A),
+    &output <<= [nl].
+otherwise.
+write_one_object_code(Code) --> atom(Code) |
+    &output <<= [putc(9),putt(Code),nl].
+write_one_object_code(Code) --> vector(Code,N) |
+    {{ set_vector_element(Code,0,Op,_,Code1) }},
+    &output <<= [putc(9),putt(Op),putc(9),putc(9)],
+    write_args(1,~(N-1),Code1).
+   
+write_args(N,A,Code) --> N<A |
+    {{ set_vector_element(Code,N,Arg,_,Code1) }},
+    write_one_arg(Arg),
+    &output <<= [putt(',')],
+    write_args(~(N+1),A,Code1).
+write_args(A,A,Code) --> true |
+    {{ set_vector_element(Code,A,Arg,_,_) }},
+    write_one_arg(Arg),
+    &output <<= [nl].
+
+write_one_arg(Arg) --> atom(Arg) |
+    &output <<= [putt(Arg)].
+write_one_arg(Arg) --> integer(Arg) |
+    &output <<= [putt(Arg)].
+write_one_arg(Arg) --> string(Arg,_,_) |
+    &output <<= [putt(Arg)].
+otherwise.
+write_one_arg(Arg) --> true |
+    write_label(Arg).
+
+write_label(P/A) --> true |
+    write_label(P),
+    &output <<= [putt('_')],
+    write_label(A).
+otherwise.
+write_label(A) --> true |
+    &output <<= [putt(A)].
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+functor(X,F,A):- atom(X) | F=X, A=0.
+functor(X,F,A):- vector(X,A0), A0>=2, vector_element(X,0,F0), atom(F0) |
+    F=F0, A:=A0-1.
+
+functor(X,F,A,Y):- atom(X) | F=X, A=0, Y=X.
+functor(X,F,A,Y):- vector(X,A0), A0>=2, vector_element(X,0,F0), atom(F0) |
+    F=F0, A:=A0-1, Y=X.
+
+new_vector(Array,Size,0):- true |
+    new_vector(Array,Size).
+otherwise.
+new_vector(Array,Size,Initial):- true |
+    new_vector(Array0,Size),
+    new_vector(Size,Initial,Array0,Array).
+
+new_vector(N,Initial,Array0,Array):- N>0 |
+    N1:=N-1,
+    set_vector_element(Array0,N1,_,Initial,Array1),
+    new_vector(N1,Initial,Array1,Array).
+new_vector(0,_,Array0,Array):- true | Array=Array0.
+
+'C'(X0,X,S0,S):- true | X0=S0,X=S.

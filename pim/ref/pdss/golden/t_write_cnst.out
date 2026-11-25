@@ -1,0 +1,30 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/write_cnst" : Compiling ... go/0,car/0,car00/0,car00/1,car01/0,car01/1,car02/0,car02/1,car03/0,car03/1,car04/0,cdr/0,cdr00/0,cdr00/1,cdr01/0,cdr01/1,cdr02/0,cdr02/1,cdr03/0,cdr03/1,cdr04/0,elm/0,elm00/0,elm00/1,elm01/0,elm01/1,elm02/0,elm02/1,elm03/0,elm03/1,elm04/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : write_cnst
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Write_Constant %%%
+% Write_Car_Constant %%%% abcd
+% Write_Cdr_Constant %%%% abcd
+% Write_Element_Constant  abcd
+Total of 36 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm a08eb88c36a6305f96dd4038d18e6bdcf6be2ff207d10246df73068b3c9a82ba
+sav 4fc6855b90b54b3ab9e4a36e4ffa18ef136375cd749507693ea77f4b8fe0b996

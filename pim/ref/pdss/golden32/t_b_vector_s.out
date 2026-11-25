@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_vector_s" : Compiling ... go/0,vec/0,vec00/0,vec00/2,vec01/0,vec01/2,vec02/0,vec02/2,vec03/0,nvc/0,nvc00/0,nvc00/1,nvc01/0,nvc01/1,nvc02/0,vce/0,vce00/0,vce00/2,vce01/0,vce01/2,vce02/0,vce02/2,vce03/0,sve/0,sve00/0,sve00/2,sve01/0,sve01/2,sve02/0,sve02/2,sve03/0,done/0,unify/2,unify/4,unify/6,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_vector_s
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Vector (Suspend) %%%
+% B_Vector %%%%%%%%%%%%%% abc
+% B_New_Vector %%%%%%%%%% ab
+% B_Vector_Element %%%%%% abc
+% B_Set_Vector_Element %% abc
+Total of 47 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 5632a62464742836388e809916ca89151d38ee951a391aa789d5fda2ddd5c3e4
+sav 94aa25551c96c39211beee81f5ab55da909e078ffa82db78951ecd557271f49a

@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/quick_sort.kl1" : Compiling ... sort/3,sort/4,part/8,part/7,wait_comp/9,part_atom/8,wait_comp_atom/10,part_descending/7,wait_comp_descending/9,part_descending_atom/8,wait_comp_descending_atom/10,part_user_defined/8,wait_comp_user_defined/10,key_sort/3,key_sort/4,kpart/8,kpart/7,wait_kcomp/9,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194774     50    174    10    1584000        0
+After:       8731     38    106     3      84584        0
+GCed :     186043     12     68     7    1499416        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+kpart_atom/8,wait_kcomp_atom/10,kpart_descending/7,wait_kcomp_descending/9,kpart_descending_atom/8,wait_kcomp_descending_atom/10,kpart_user_defined/8,wait_kcomp_user_defined/10,raise_error/1,END.
+
+[sort/3,key_sort/3]
+successdone
+
+exit 0
+asm 05c4a6c570737cf8a6febc601ee9e14743323e7b9f0417ad8394f3ee3573c8ae
+sav none

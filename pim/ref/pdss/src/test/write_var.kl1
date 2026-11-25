@@ -1,0 +1,362 @@
+%%% KL1-B Test for Write_Variable %%%
+% Write_Car_Variable %%%% abcdef
+% Write_Cdr_Variable %%%% abcdef
+% Write_Elm_Variable %%%% abcdef
+% Write_Car_Mk_Variable % abcdef
+% Write_Cdr_Mk_Variable % abcdef
+% Write_Elm_Mk_Variable % abcdef
+
+:- module write_var.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Write_Variable %%%"), put_console(key#lf) | car.
+
+car:- put_console(ascii#"% Write_Car_Variable %%%% ") | car00.
+
+car00:- true | car00([X],X).
+car00([X|_],Y):- wait(X), put_console(c#"*") | car01.
+car00(X,Y):- wait(Y), put_console(c#"*") | car01.
+alternatively.
+car00(X,Y):- true | Y=atom, car00(X).
+car00([atom|_]):- put_console(c#"a") | car01.
+alternatively.
+car00(_):- put_console(c#"*") | car01.
+
+car01:- true | car01([X],X).
+car01([X|_],Y):- wait(X), put_console(c#"*") | car02.
+car01(X,Y):- wait(Y), put_console(c#"*") | car02.
+alternatively.
+car01(X,Y):- true | Y=1234, car01(X).
+car01([1234|_]):- put_console(c#"b") | car02.
+alternatively.
+car01(_):- put_console(c#"*") | car02.
+
+car02:- true | car02([X],X).
+car02([X|_],Y):- wait(X), put_console(c#"*") | car03.
+car02(X,Y):- wait(Y), put_console(c#"*") | car03.
+alternatively.
+car02(X,Y):- true | Y=12.34, car02(X).
+car02([12.34|_]):- put_console(c#"c") | car03.
+alternatively.
+car02(_):- put_console(c#"*") | car03.
+
+car03:- true | car03([X],X).
+car03([X|_],Y):- wait(X), put_console(c#"*") | car04.
+car03(X,Y):- wait(Y), put_console(c#"*") | car04.
+alternatively.
+car03(X,Y):- true | Y=[list], car03(X).
+car03([[list]|_]):- put_console(c#"d") | car04.
+alternatively.
+car03(_):- put_console(c#"*") | car04.
+
+car04:- true | car04([X],X).
+car04([X|_],Y):- wait(X), put_console(c#"*") | car05.
+car04(X,Y):- wait(Y), put_console(c#"*") | car05.
+alternatively.
+car04(X,Y):- true | Y={0,1}, car04(X).
+car04([{0,1}|_]):- put_console(c#"e") | car05.
+alternatively.
+car04(_):- put_console(c#"*") | car05.
+
+car05:- true | car05([X],X).
+car05([X|_],Y):- wait(X), put_console(c#"*") | car06.
+car05(X,Y):- wait(Y), put_console(c#"*") | car06.
+alternatively.
+car05(X,Y):- true | Y=ascii#"String", car05(X).
+car05([ascii#"String"|_]):- put_console(c#"f") | car06.
+alternatively.
+car05(_):- put_console(c#"*") | car06.
+
+car06:- put_console(key#lf) | cdr.
+
+cdr:- put_console(ascii#"% Write_Cdr_Variable %%%% ") | cdr00.
+
+cdr00:- true | cdr00([[]|X],X).
+cdr00([_|X],Y):- wait(X), put_console(c#"*") | cdr01.
+cdr00(X,Y):- wait(Y), put_console(c#"*") | cdr01.
+alternatively.
+cdr00(X,Y):- true | Y=atom, cdr00(X).
+cdr00([_|atom]):- put_console(c#"a") | cdr01.
+alternatively.
+cdr00(_):- put_console(c#"*") | cdr01.
+
+cdr01:- true | cdr01([[]|X],X).
+cdr01([_|X],Y):- wait(X), put_console(c#"*") | cdr02.
+cdr01(X,Y):- wait(Y), put_console(c#"*") | cdr02.
+alternatively.
+cdr01(X,Y):- true | Y=1234, cdr01(X).
+cdr01([_|1234]):- put_console(c#"b") | cdr02.
+alternatively.
+cdr01(_):- put_console(c#"*") | cdr02.
+
+cdr02:- true | cdr02([[]|X],X).
+cdr02([_|X],Y):- wait(X), put_console(c#"*") | cdr03.
+cdr02(X,Y):- wait(Y), put_console(c#"*") | cdr03.
+alternatively.
+cdr02(X,Y):- true | Y=12.34, cdr02(X).
+cdr02([_|12.34]):- put_console(c#"c") | cdr03.
+alternatively.
+cdr02(_):- put_console(c#"*") | cdr03.
+
+cdr03:- true | cdr03([[]|X],X).
+cdr03([_|X],Y):- wait(X), put_console(c#"*") | cdr04.
+cdr03(X,Y):- wait(Y), put_console(c#"*") | cdr04.
+alternatively.
+cdr03(X,Y):- true | Y=[list], cdr03(X).
+cdr03([_|[list]]):- put_console(c#"d") | cdr04.
+alternatively.
+cdr03(_):- put_console(c#"*") | cdr04.
+
+cdr04:- true | cdr04([[]|X],X).
+cdr04([_|X],Y):- wait(X), put_console(c#"*") | cdr05.
+cdr04(X,Y):- wait(Y), put_console(c#"*") | cdr05.
+alternatively.
+cdr04(X,Y):- true | Y={0,1}, cdr04(X).
+cdr04([_|{0,1}]):- put_console(c#"e") | cdr05.
+alternatively.
+cdr04(_):- put_console(c#"*") | cdr05.
+
+cdr05:- true | cdr05([[]|X],X).
+cdr05([_|X],Y):- wait(X), put_console(c#"*") | cdr06.
+cdr05(X,Y):- wait(Y), put_console(c#"*") | cdr06.
+alternatively.
+cdr05(X,Y):- true | Y=ascii#"String", cdr05(X).
+cdr05([_|ascii#"String"]):- put_console(c#"f") | cdr06.
+alternatively.
+cdr05(_):- put_console(c#"*") | cdr06.
+
+cdr06:- put_console(key#lf) | elm.
+
+elm:- put_console(ascii#"% Write_Elm_Variable %%%% ") | elm00.
+
+elm00:- true | elm00({[],X},X).
+elm00({_,X},Y):- wait(X), put_console(c#"*") | elm01.
+elm00(X,Y):- wait(Y), put_console(c#"*") | elm01.
+alternatively.
+elm00(X,Y):- true | Y=atom, elm00(X).
+elm00({_,atom}):- put_console(c#"a") | elm01.
+alternatively.
+elm00(_):- put_console(c#"*") | elm01.
+
+elm01:- true | elm01({[],X},X).
+elm01({_,X},Y):- wait(X), put_console(c#"*") | elm02.
+elm01(X,Y):- wait(Y), put_console(c#"*") | elm02.
+alternatively.
+elm01(X,Y):- true | Y=1234, elm01(X).
+elm01({_,1234}):- put_console(c#"b") | elm02.
+alternatively.
+elm01(_):- put_console(c#"*") | elm02.
+
+elm02:- true | elm02({[],X},X).
+elm02({_,X},Y):- wait(X), put_console(c#"*") | elm03.
+elm02(X,Y):- wait(Y), put_console(c#"*") | elm03.
+alternatively.
+elm02(X,Y):- true | Y=12.34, elm02(X).
+elm02({_,12.34}):- put_console(c#"c") | elm03.
+alternatively.
+elm02(_):- put_console(c#"*") | elm03.
+
+elm03:- true | elm03({[],X},X).
+elm03({_,X},Y):- wait(X), put_console(c#"*") | elm04.
+elm03(X,Y):- wait(Y), put_console(c#"*") | elm04.
+alternatively.
+elm03(X,Y):- true | Y=[list], elm03(X).
+elm03({_,[list]}):- put_console(c#"d") | elm04.
+alternatively.
+elm03(_):- put_console(c#"*") | elm04.
+
+elm04:- true | elm04({[],X},X).
+elm04({_,X},Y):- wait(X), put_console(c#"*") | elm05.
+elm04(X,Y):- wait(Y), put_console(c#"*") | elm05.
+alternatively.
+elm04(X,Y):- true | Y={0,1}, elm04(X).
+elm04({_,{0,1}}):- put_console(c#"e") | elm05.
+alternatively.
+elm04(_):- put_console(c#"*") | elm05.
+
+elm05:- true | elm05({[],X},X).
+elm05({_,X},Y):- wait(X), put_console(c#"*") | elm06.
+elm05(X,Y):- wait(Y), put_console(c#"*") | elm06.
+alternatively.
+elm05(X,Y):- true | Y=ascii#"String", elm05(X).
+elm05({_,ascii#"String"}):- put_console(c#"f") | elm06.
+alternatively.
+elm05(_):- put_console(c#"*") | elm06.
+
+elm06:- put_console(key#lf) | cak.
+
+cak:- put_console(ascii#"% Write_Car_Mk_Variable % ") | cak00.
+
+cak00:- true | cak00([X],X,X).
+cak00([X|_],Y,_):- wait(X), put_console(c#"*") | cak01.
+cak00(X,Y,_):- wait(Y), put_console(c#"*") | cak01.
+alternatively.
+cak00(X,Y,_):- true | Y=atom, cak00(X).
+cak00([atom|_]):- put_console(c#"a") | cak01.
+alternatively.
+cak00(_):- put_console(c#"*") | cak01.
+
+cak01:- true | cak01([X],X,X).
+cak01([X|_],Y,_):- wait(X), put_console(c#"*") | cak02.
+cak01(X,Y,_):- wait(Y), put_console(c#"*") | cak02.
+alternatively.
+cak01(X,Y,_):- true | Y=1234, cak01(X).
+cak01([1234|_]):- put_console(c#"b") | cak02.
+alternatively.
+cak01(_):- put_console(c#"*") | cak02.
+
+cak02:- true | cak02([X],X,X).
+cak02([X|_],Y,_):- wait(X), put_console(c#"*") | cak03.
+cak02(X,Y,_):- wait(Y), put_console(c#"*") | cak03.
+alternatively.
+cak02(X,Y,_):- true | Y=12.34, cak02(X).
+cak02([12.34|_]):- put_console(c#"c") | cak03.
+alternatively.
+cak02(_):- put_console(c#"*") | cak03.
+
+cak03:- true | cak03([X],X,X).
+cak03([X|_],Y,_):- wait(X), put_console(c#"*") | cak04.
+cak03(X,Y,_):- wait(Y), put_console(c#"*") | cak04.
+alternatively.
+cak03(X,Y,_):- true | Y=[list], cak03(X).
+cak03([[list]|_]):- put_console(c#"d") | cak04.
+alternatively.
+cak03(_):- put_console(c#"*") | cak04.
+
+cak04:- true | cak04([X],X,X).
+cak04([X|_],Y,_):- wait(X), put_console(c#"*") | cak05.
+cak04(X,Y,_):- wait(Y), put_console(c#"*") | cak05.
+alternatively.
+cak04(X,Y,_):- true | Y={0,1}, cak04(X).
+cak04([{0,1}|_]):- put_console(c#"e") | cak05.
+alternatively.
+cak04(_):- put_console(c#"*") | cak05.
+
+cak05:- true | cak05([X],X,X).
+cak05([X|_],Y,_):- wait(X), put_console(c#"*") | cak06.
+cak05(X,Y,_):- wait(Y), put_console(c#"*") | cak06.
+alternatively.
+cak05(X,Y,_):- true | Y=ascii#"String", cak05(X).
+cak05([ascii#"String"|_]):- put_console(c#"f") | cak06.
+alternatively.
+cak05(_):- put_console(c#"*") | cak06.
+
+cak06:- put_console(key#lf) | cdk.
+
+cdk:- put_console(ascii#"% Write_Cdr_Mk_Variable % ") | cdk00.
+
+cdk00:- true | cdk00([[]|X],X,X).
+cdk00([_|X],Y,_):- wait(X), put_console(c#"*") | cdk01.
+cdk00(X,Y,_):- wait(Y), put_console(c#"*") | cdk01.
+alternatively.
+cdk00(X,Y,_):- true | Y=atom, cdk00(X).
+cdk00([_|atom]):- put_console(c#"a") | cdk01.
+alternatively.
+cdk00(_):- put_console(c#"*") | cdk01.
+
+cdk01:- true | cdk01([[]|X],X,X).
+cdk01([_|X],Y,_):- wait(X), put_console(c#"*") | cdk02.
+cdk01(X,Y,_):- wait(Y), put_console(c#"*") | cdk02.
+alternatively.
+cdk01(X,Y,_):- true | Y=1234, cdk01(X).
+cdk01([_|1234]):- put_console(c#"b") | cdk02.
+alternatively.
+cdk01(_):- put_console(c#"*") | cdk02.
+
+cdk02:- true | cdk02([[]|X],X,X).
+cdk02([_|X],Y,_):- wait(X), put_console(c#"*") | cdk03.
+cdk02(X,Y,_):- wait(Y), put_console(c#"*") | cdk03.
+alternatively.
+cdk02(X,Y,_):- true | Y=12.34, cdk02(X).
+cdk02([_|12.34]):- put_console(c#"c") | cdk03.
+alternatively.
+cdk02(_):- put_console(c#"*") | cdk03.
+
+cdk03:- true | cdk03([[]|X],X,X).
+cdk03([_|X],Y,_):- wait(X), put_console(c#"*") | cdk04.
+cdk03(X,Y,_):- wait(Y), put_console(c#"*") | cdk04.
+alternatively.
+cdk03(X,Y,_):- true | Y=[list], cdk03(X).
+cdk03([_|[list]]):- put_console(c#"d") | cdk04.
+alternatively.
+cdk03(_):- put_console(c#"*") | cdk04.
+
+cdk04:- true | cdk04([[]|X],X,X).
+cdk04([_|X],Y,_):- wait(X), put_console(c#"*") | cdk05.
+cdk04(X,Y,_):- wait(Y), put_console(c#"*") | cdk05.
+alternatively.
+cdk04(X,Y,_):- true | Y={0,1}, cdk04(X).
+cdk04([_|{0,1}]):- put_console(c#"e") | cdk05.
+alternatively.
+cdk04(_):- put_console(c#"*") | cdk05.
+
+cdk05:- true | cdk05([[]|X],X,X).
+cdk05([_|X],Y,_):- wait(X), put_console(c#"*") | cdk06.
+cdk05(X,Y,_):- wait(Y), put_console(c#"*") | cdk06.
+alternatively.
+cdk05(X,Y,_):- true | Y=ascii#"String", cdk05(X).
+cdk05([_|ascii#"String"]):- put_console(c#"f") | cdk06.
+alternatively.
+cdk05(_):- put_console(c#"*") | cdk06.
+
+cdk06:- put_console(key#lf) | elk.
+
+elk:- put_console(ascii#"% Write_Elm_Mk_Variable % ") | elk00.
+
+elk00:- true | elk00({[],X},X,X).
+elk00({_,X},Y,_):- wait(X), put_console(c#"*") | elk01.
+elk00(X,Y,_):- wait(Y), put_console(c#"*") | elk01.
+alternatively.
+elk00(X,Y,_):- true | Y=atom, elk00(X).
+elk00({_,atom}):- put_console(c#"a") | elk01.
+alternatively.
+elk00(_):- put_console(c#"*") | elk01.
+
+elk01:- true | elk01({[],X},X,X).
+elk01({_,X},Y,_):- wait(X), put_console(c#"*") | elk02.
+elk01(X,Y,_):- wait(Y), put_console(c#"*") | elk02.
+alternatively.
+elk01(X,Y,_):- true | Y=1234, elk01(X).
+elk01({_,1234}):- put_console(c#"b") | elk02.
+alternatively.
+elk01(_):- put_console(c#"*") | elk02.
+
+elk02:- true | elk02({[],X},X,X).
+elk02({_,X},Y,_):- wait(X), put_console(c#"*") | elk03.
+elk02(X,Y,_):- wait(Y), put_console(c#"*") | elk03.
+alternatively.
+elk02(X,Y,_):- true | Y=12.34, elk02(X).
+elk02({_,12.34}):- put_console(c#"c") | elk03.
+alternatively.
+elk02(_):- put_console(c#"*") | elk03.
+
+elk03:- true | elk03({[],X},X,X).
+elk03({_,X},Y,_):- wait(X), put_console(c#"*") | elk04.
+elk03(X,Y,_):- wait(Y), put_console(c#"*") | elk04.
+alternatively.
+elk03(X,Y,_):- true | Y=[list], elk03(X).
+elk03({_,[list]}):- put_console(c#"d") | elk04.
+alternatively.
+elk03(_):- put_console(c#"*") | elk04.
+
+elk04:- true | elk04({[],X},X,X).
+elk04({_,X},Y,_):- wait(X), put_console(c#"*") | elk05.
+elk04(X,Y,_):- wait(Y), put_console(c#"*") | elk05.
+alternatively.
+elk04(X,Y,_):- true | Y={0,1}, elk04(X).
+elk04({_,{0,1}}):- put_console(c#"e") | elk05.
+alternatively.
+elk04(_):- put_console(c#"*") | elk05.
+
+elk05:- true | elk05({[],X},X,X).
+elk05({_,X},Y,_):- wait(X), put_console(c#"*") | elk06.
+elk05(X,Y,_):- wait(Y), put_console(c#"*") | elk06.
+alternatively.
+elk05(X,Y,_):- true | Y=ascii#"String", elk05(X).
+elk05({_,ascii#"String"}):- put_console(c#"f") | elk06.
+alternatively.
+elk05(_):- put_console(c#"*") | elk06.
+
+elk06:- put_console(key#lf) | done.
+
+done:- true | true.

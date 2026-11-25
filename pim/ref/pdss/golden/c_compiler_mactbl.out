@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/mactbl.kl1" : Compiling ... generate_macro_table_process/7,macro_management_process/6,find_arg/5,get_arg/5,find_and_get_arg/8,insert_arg/6,get_old/6,get_new/6,clear_table/5,check_accessed_flg/6,init_table/5,count_implicit_args/5,get_old_and_new/6,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194664     50    176    10    1584000        0
+After:       4282     36    101     3      48584        0
+GCed :     190382     14     75     7    1535416        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+read_declaration/11,make_table/5,check_type/6,check_table/5,check_table/6,convert_list_to_vector/2,len/5,check_length_and_copy_elements/4,copy_elements/4,END.
+
+[generate_macro_table_process/7,make_table/5]
+successdone
+
+exit 0
+asm 0601bd5a323df9f81cbc23e654710145f4ccb0c0f8c573aea9391e10b1dd3712
+sav none

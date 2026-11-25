@@ -1,0 +1,65 @@
+%%% KL1-B Test for B_Code (Suspend) %%%
+% B_Predicate_To_Code %%% abcd
+% B_Code_To_Predicate %%% ab
+% B_Apply %%%%%%%%%%%%%%% a
+
+:- module b_code_s.
+:- public go/0,get/1.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Code (Suspend) %%%"), put_console(key#lf) | ptc.
+
+ptc:- put_console(ascii#"% B_Predicate_To_Code %%% ") | ptc00.
+
+ptc00:- true | predicate_to_code(X,Y,Z,A), unify(X,Y,Z,b_code_s,get,1), ptc00(A).
+ptc00({b_code_s,get,1}):- put_console(c#"a") | ptc01.
+otherwise.
+ptc00(_):- put_console(c#"*") | ptc01.
+
+ptc01:- true | predicate_to_code(X,Y,Z,A), unify(X,Y,Z,no_module,get,1), ptc01(A).
+ptc01([]):- put_console(c#"b") | ptc02.
+otherwise.
+ptc01(_):- put_console(c#"*") | ptc02.
+
+ptc02:- true | predicate_to_code(X,Y,Z,A), unify(X,Y,Z,b_code_s,no_predicate,1), ptc02(A).
+ptc02([]):- put_console(c#"c") | ptc03.
+otherwise.
+ptc02(_):- put_console(c#"*") | ptc03.
+
+ptc03:- true | predicate_to_code(X,Y,Z,A), unify(X,Y,Z,b_code_s,get,2), ptc03(A).
+ptc03([]):- put_console(c#"d") | ptc04.
+otherwise.
+ptc03(_):- put_console(c#"*") | ptc04.
+
+ptc04:- put_console(key#lf) | ctp.
+
+ctp:- put_console(ascii#"% B_Code_To_Predicate %%% ") | ctp00.
+
+ctp00:- true | code_to_predicate(X,A,B,C,D), unify(X,{b_code_s,get,1}), ctp00(A,B,C,D).
+ctp00(b_code_s,get,1,F):- integer(F), put_console(c#"a") | ctp01.
+otherwise.
+ctp00(_,_,_,_):- put_console(c#"*") | ctp01.
+
+ctp01:- true | code_to_predicate(X,A,B,C,D), unify(X,{b_code_s,not_public,0}), ctp01(A,B,C,D).
+ctp01(b_code_s,not_public,0,F):- integer(F), put_console(c#"b") | ctp02.
+otherwise.
+ctp01(_,_,_,_):- put_console(c#"*") | ctp02.
+
+ctp02:- put_console(key#lf) | apl.
+
+apl:- put_console(ascii#"% B_Apply %%%%%%%%%%%%%%% ") | apl00.
+
+apl00:- true | apply(X,Y), unify(X,Y,{b_code_s,get,1},{A}), apl00(A).
+apl00(done):- put_console(c#"a") | apl01.
+otherwise.
+apl00(_):- put_console(c#"*") | apl01.
+
+apl01:- put_console(key#lf) | done.
+
+done:- true | true.
+
+get(X):- true | X=done.
+not_public:- true | true.
+
+unify(X,A):- true | X=A.
+unify(X,Y,A,B):- true | X=A, Y=B.
+unify(X,Y,Z,A,B,C):- true | X=A, Y=B, Z=C.

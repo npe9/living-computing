@@ -1,0 +1,157 @@
+%%% KL1-B Test for B_String %%%
+% B_String %%%%%%%%%%%%%% ab
+% B_New_String %%%%%%%%%% ab
+% B_String_Element %%%%%% abc
+% B_Set_String_Element %% abc
+% B_Substring %%%%%%%%%%% abc
+% B_Set_Substring %%%%%%% abc
+% B_Append_String %%%%%%% abc
+
+:- module b_string.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_String %%%"), put_console(key#lf) | str.
+
+str:- put_console(ascii#"% B_String %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | str00(ascii#"ab").
+str00(X):- true | string(X,A,B,C), str00ans(A,B,C).
+str00ans(2,8,ascii#"ab"):- put_console(c#"a") | str01.
+otherwise.
+str00ans(_,_,_):- put_console(c#"*") | str01.
+
+str01:- true | str01(S), new_string(S,2,32).
+str01(X):- true | string(X,A,B,C), str01ans(A,B,C).
+str01ans(2,32,S):- string(S,2,32), string_element(S,0,0), string_element(S,1,0), put_console(c#"b") | str02.
+otherwise.
+str01ans(_,_,_):- put_console(c#"*") | str02.
+
+str02:- put_console(key#lf) | nst.
+
+nst:- put_console(ascii#"% B_New_String %%%%%%%%%% ") | nst00.
+
+nst00:- true | nst00(2,8).
+nst00(X,Y):- true | new_string(A,X,Y), nst00ans(A).
+nst00ans(S):- string(S,2,8), string_element(S,0,0), string_element(S,1,0), put_console(c#"a") | nst01.
+otherwise.
+nst00ans(_):- put_console(c#"*") | nst01.
+
+nst01:- true | nst01(2,32).
+nst01(X,Y):- true | new_string(A,X,Y), nst01ans(A).
+nst01ans(S):- string(S,2,32), string_element(S,0,0), string_element(S,1,0), put_console(c#"b") | nst02.
+otherwise.
+nst01ans(_):- put_console(c#"*") | nst02.
+
+nst02:- put_console(key#lf) | ste.
+
+ste:- put_console(ascii#"% B_String_Element %%%%%% ") | ste00.
+
+ste00:- true | ste00(ascii#"abc",0).
+ste00(X,Y):- true | string_element(X,Y,A,B), ste00ans(A,B).
+ste00ans(c#"a",ascii#"abc"):- put_console(c#"a") | ste01.
+otherwise.
+ste00ans(_,_):- put_console(c#"*") | ste01.
+
+ste01:- true | ste01(ascii#"abc",2).
+ste01(X,Y):- true | string_element(X,Y,A,B), ste01ans(A,B).
+ste01ans(c#"c",ascii#"abc"):- put_console(c#"b") | ste02.
+otherwise.
+ste01ans(_,_):- put_console(c#"*") | ste02.
+
+ste02:- true | ste02(S,2), new_string(A,3,32), set_string_element(A,2,c#"a",S).
+ste02(X,Y):- true | string_element(X,Y,A,B), ste02ans(A,B).
+ste02ans(c#"a",S):- string_element(S,0,0), string_element(S,1,0), string_element(S,2,c#"a"), put_console(c#"c") | ste03.
+otherwise.
+ste02ans(_,_):- put_console(c#"*") | ste03.
+
+ste03:- put_console(key#lf) | sse.
+
+sse:- put_console(ascii#"% B_Set_String_Element %% ") | sse00.
+
+sse00:- true | sse00(S,0,c#"a"), new_string(S,3,8).
+sse00(X,Y,Z):- true | set_string_element(X,Y,Z,A), sse00ans(A).
+sse00ans(S):- string_element(S,0,c#"a"), string_element(S,1,0), string_element(S,2,0), put_console(c#"a") | sse01.
+otherwise.
+sse00ans(_):- put_console(c#"*") | sse01.
+
+sse01:- true | sse01(ascii#"abc",2,c#"a").
+sse01(X,Y,Z):- true | set_string_element(X,Y,Z,A), sse01ans(A).
+sse01ans(ascii#"aba"):- put_console(c#"b") | sse02.
+otherwise.
+sse01ans(_):- put_console(c#"*") | sse02.
+
+sse02:- true | sse02(S,2,c#"a"), new_string(S,3,32).
+sse02(X,Y,Z):- true | set_string_element(X,Y,Z,A), sse02ans(A).
+sse02ans(S):- string_element(S,0,0), string_element(S,1,0), string_element(S,2,c#"a"), put_console(c#"c") | sse03.
+otherwise.
+sse02ans(_):- put_console(c#"*") | sse03.
+
+sse03:- put_console(key#lf) | sst.
+
+sst:- put_console(ascii#"% B_Substring %%%%%%%%%%% ") | sst00.
+
+sst00:- true | sst00(ascii#"abc",0,0).
+sst00(X,Y,Z):- true | substring(X,Y,Z,A,B), sst00ans(A,B).
+sst00ans(ascii#"",ascii#"abc"):- put_console(c#"a") | sst01.
+otherwise.
+sst00ans(_,_):- put_console(c#"*") | sst01.
+
+sst01:- true | sst01(ascii#"abc",1,2).
+sst01(X,Y,Z):- true | substring(X,Y,Z,A,B), sst01ans(A,B).
+sst01ans(ascii#"bc",ascii#"abc"):- put_console(c#"b") | sst02.
+otherwise.
+sst01ans(_,_):- put_console(c#"*") | sst02.
+
+sst02:- true | sst02(S,1,2), new_string(A,3,32), set_string_element(A,0,c#"a",B), set_string_element(B,1,c#"b",C), set_string_element(C,2,c#"c",S).
+sst02(X,Y,Z):- true | substring(X,Y,Z,A,B), sst02ans(A,B).
+sst02ans(S,T):- string_element(S,0,c#"b"), string_element(S,1,c#"c"), string_element(T,0,c#"a"), string_element(T,1,c#"b"), string_element(T,2,c#"c"), put_console(c#"c") | sst03.
+otherwise.
+sst02ans(_,_):- put_console(c#"*") | sst03.
+
+sst03:- put_console(key#lf) | sss.
+
+sss:- put_console(ascii#"% B_Set_Substring %%%%%%% ") | sss00.
+
+sss00:- true | sss00(S,0,ascii#"ab"), new_string(S,3,8).
+sss00(X,Y,Z):- true | set_substring(X,Y,Z,A), sss00ans(A).
+sss00ans(S):- string_element(S,0,c#"a"), string_element(S,1,c#"b"), string_element(S,2,0), put_console(c#"a") | sss01.
+otherwise.
+sss00ans(_):- put_console(c#"*") | sss01.
+
+sss01:- true | sss01(ascii#"abc",1,ascii#"ab").
+sss01(X,Y,Z):- true | set_substring(X,Y,Z,A), sss01ans(A).
+sss01ans(ascii#"aab"):- put_console(c#"b") | sss02.
+otherwise.
+sss01ans(_):- put_console(c#"*") | sss02.
+
+sss02:- true | sss02(S,1,C), new_string(S,3,32), new_string(A,2,32), set_string_element(A,0,c#"a",B), set_string_element(B,1,c#"b",C).
+sss02(X,Y,Z):- true | set_substring(X,Y,Z,A), sss02ans(A).
+sss02ans(S):- string_element(S,0,0), string_element(S,1,c#"a"), string_element(S,2,c#"b"), put_console(c#"c") | sss03.
+otherwise.
+sss02ans(_):- put_console(c#"*") | sss03.
+
+sss03:- put_console(key#lf) | ast.
+
+ast:- put_console(ascii#"% B_Append_String %%%%%%% ") | ast00.
+
+ast00:- true | ast00(ascii#"ab",ascii#"").
+ast00(X,Y):- true | append_string(X,Y,A), ast00ans(A).
+ast00ans(ascii#"ab"):- put_console(c#"a") | ast01.
+otherwise.
+ast00ans(_):- put_console(c#"*") | ast01.
+
+ast01:- true | ast01(ascii#"ab",ascii#"cd").
+ast01(X,Y):- true | append_string(X,Y,A), ast01ans(A).
+ast01ans(ascii#"abcd"):- put_console(c#"b") | ast02.
+otherwise.
+ast01ans(_):- put_console(c#"*") | ast02.
+
+ast02:- true | ast02(S,T), new_string(S,2,32), new_string(A,2,32), set_string_element(A,0,c#"a",B), set_string_element(B,1,c#"b",T).
+ast02(X,Y):- true | append_string(X,Y,A), ast02ans(A).
+ast02ans(S):- string_element(S,0,0), string_element(S,1,0), string_element(S,2,c#"a"), string_element(S,3,c#"b"), put_console(c#"c") | ast03.
+otherwise.
+ast02ans(_):- put_console(c#"*") | ast03.
+
+ast03:- put_console(key#lf) | done.
+
+done:- true | true.

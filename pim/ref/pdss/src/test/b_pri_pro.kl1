@@ -1,0 +1,97 @@
+%%% KL1-B Test for B_Priority_Processor %%%
+% B_Rate %%%%%%%%%%%%%%%% ab
+% B_Rltv %%%%%%%%%%%%%%%% abcd
+% B_Current_Priority %%%% abc
+% B_Current_Processor %%% a
+
+:- module b_pri_pro.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Priority_Processor %%%"), put_console(key#lf) | rat.
+
+rat:- put_console(ascii#"% B_Rate %%%%%%%%%%%%%%%% ") | rat00.
+
+rat00:- true | merge(X,Z), rat00get(1000,2000,X), rat00(Z).
+rat00get(X,Y,I):- true | I={A,B}, get(A,[a])@priority(*,X), get(B,[b])@priority(*,Y).
+rat00([b,a]):- put_console(c#"a") | rat01.
+otherwise.
+rat00(_):- put_console(c#"*") | rat01.
+
+rat01:- true | merge(X,Z), rat01get(2000,1000,X), rat01(Z).
+rat01get(X,Y,I):- true | I={A,B}, get(A,[a])@priority(*,X), get(B,[b])@priority(*,Y).
+rat01([a,b]):- put_console(c#"b") | rat02.
+otherwise.
+rat01(_):- put_console(c#"*") | rat02.
+
+rat02:- put_console(key#lf) | rtv.
+
+rtv:- put_console(ascii#"% B_Rltv %%%%%%%%%%%%%%%% ") | rtv00.
+
+rtv00:- true | merge(X,Z), rtv00get(1000,2000,X)@priority(*,2048), rtv00(Z).
+rtv00get(X,Y,I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y).
+rtv00([b,a]):- put_console(c#"a") | rtv01.
+otherwise.
+rtv00(_):- put_console(c#"*") | rtv01.
+
+rtv01:- true | merge(X,Z), rtv01get(2000,1000,X)@priority(*,2048), rtv01(Z).
+rtv01get(X,Y,I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y).
+rtv01([a,b]):- put_console(c#"b") | rtv02.
+otherwise.
+rtv01(_):- put_console(c#"*") | rtv02.
+
+rtv02:- true | merge(X,Z), rtv02get(-1000,-2000,X)@priority(*,2048), rtv02(Z).
+rtv02get(X,Y,I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y).
+rtv02([a,b]):- put_console(c#"c") | rtv03.
+otherwise.
+rtv02(_):- put_console(c#"*") | rtv03.
+
+rtv03:- true | merge(X,Z), rtv03get(-2000,-1000,X)@priority(*,2048), rtv03(Z).
+rtv03get(X,Y,I):- true | I={A,B}, get(A,[a])@priority($,X), get(B,[b])@priority($,Y).
+rtv03([b,a]):- put_console(c#"d") | rtv04.
+otherwise.
+rtv03(_):- put_console(c#"*") | rtv04.
+
+rtv04:- put_console(key#lf) | cpr.
+
+cpr:- put_console(ascii#"% B_Current_Priority %%%% ") | cpr00.
+
+cpr00:- true | cpr00func@priority(*,2048).
+cpr00func:- true | current_priority(A,B,C), comp(A,B,X), comp(A,C,Y), cpr00(X,Y).
+cpr00(greater,less):- put_console(c#"a") | cpr01.
+otherwise.
+cpr00(_,_):- put_console(c#"*") | cpr01.
+
+cpr01:- true | cpr01func@priority(*,0).
+cpr01func:- true | current_priority(A,B,C), comp(A,B,X), comp(A,C,Y), cpr01(X,Y).
+cpr01(equal,less):- put_console(c#"b") | cpr02.
+otherwise.
+cpr01(_,_):- put_console(c#"*") | cpr02.
+
+cpr02:- true | cpr02func@priority(*,4096).
+cpr02func:- true | current_priority(A,B,C), comp(A,B,X), comp(A,C,Y), cpr02(X,Y).
+cpr02(greater,equal):- put_console(c#"c") | cpr03.
+otherwise.
+cpr02(_,_):- put_console(c#"*") | cpr03.
+
+cpr03:- put_console(key#lf) | cpc.
+
+cpc:- put_console(ascii#"% B_Current_Processor %%% ") | cpc00.
+
+cpc00:- true | current_processor(A,B,C), cpc00(A,B,C).
+cpc00(0,1,1):- put_console(c#"a") | cpc01.
+otherwise.
+cpc00(_,_,_):- put_console(c#"*") | cpc01.
+
+cpc01:- put_console(key#lf) | done.
+
+done:- true | true.
+
+get(X,A):- true | X=A.
+
+comp(X,Y,S):- X=:=Y | S=equal.
+comp(X,Y,S):- X>=0, Y>=0, X>Y | S=greater.
+comp(X,Y,S):- X>=0, Y>=0, X<Y | S=less.
+comp(X,Y,S):- X>=0, Y<0 | S=less.
+comp(X,Y,S):- X<0, Y>=0 | S=greater.
+comp(X,Y,S):- X<0, Y<0, X>Y | S=greater.
+comp(X,Y,S):- X<0, Y<0, X<Y | S=less.

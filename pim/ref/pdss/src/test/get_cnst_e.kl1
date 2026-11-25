@@ -1,0 +1,297 @@
+%%% KL1-B Test for Get_Constant (Exception) %%%
+% Get_Atom %%%%%%%%%%%%%% abcdefgh
+% Get_Nil %%%%%%%%%%%%%%% abcdefgh
+% Get_Integer %%%%%%%%%%% abcdefgh
+% Get_Float %%%%%%%%%%%%% abcdefgh
+% Get_List_Value %%%%%%%% abcdefg
+% Get_Vect_Value %%%%%%%% abcdefgh
+
+:- module get_cnst_e.
+:- public go/0,
+          atm00get/1,atm01get/1,atm02get/1,atm03get/1,atm04get/1,
+          atm05get/1,atm06get/1,atm07get/1,
+          nil00get/1,nil01get/1,nil02get/1,nil03get/1,nil04get/1,
+          nil05get/1,nil06get/1,nil07get/1,
+          int00get/1,int01get/1,int02get/1,int03get/1,int04get/1,
+          int05get/1,int06get/1,int07get/1,
+          flt00get/1,flt01get/1,flt02get/1,flt03get/1,flt04get/1,
+          flt05get/1,flt06get/1,flt07get/1,
+          lst00get/1,lst01get/1,lst02get/1,lst03get/1,lst04get/1,
+          lst05get/1,lst06get/1,
+          vec00get/1,vec01get/1,vec02get/1,vec03get/1,vec04get/1,
+          vec05get/1,vec06get/1,vec07get/1.
+
+go:- put_console(ascii#"%%% KL1-B Test for Get_Constant (Exception) %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Get_Atom %%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | execute_in_shoen(atm00get,atom,R), atm00(R).
+atm00get(X):- true | X=atom.
+atm00(success):- put_console(c#"a") | atm01.
+atm00(exception):- put_console(c#"*") | atm01.
+
+atm01:- true | execute_in_shoen(atm01get,[],R), atm01(R).
+atm01get(X):- true | X=atom.
+atm01(exception):- put_console(c#"b") | atm02.
+atm01(success):- put_console(c#"*") | atm02.
+
+atm02:- true | execute_in_shoen(atm02get,1234,R), atm02(R).
+atm02get(X):- true | X=atom.
+atm02(exception):- put_console(c#"c") | atm03.
+atm02(success):- put_console(c#"*") | atm03.
+
+atm03:- true | execute_in_shoen(atm03get,12.34,R), atm03(R).
+atm03get(X):- true | X=atom.
+atm03(exception):- put_console(c#"d") | atm04.
+atm03(success):- put_console(c#"*") | atm04.
+
+atm04:- true | execute_in_shoen(atm04get,[list],R), atm04(R).
+atm04get(X):- true | X=atom.
+atm04(exception):- put_console(c#"e") | atm05.
+atm04(success):- put_console(c#"*") | atm05.
+
+atm05:- true | execute_in_shoen(atm05get,{0,1},R), atm05(R).
+atm05get(X):- true | X=atom.
+atm05(exception):- put_console(c#"f") | atm06.
+atm05(success):- put_console(c#"*") | atm06.
+
+atm06:- true | execute_in_shoen(atm06get,ascii#"String",R), atm06(R).
+atm06get(X):- true | X=atom.
+atm06(exception):- put_console(c#"g") | atm07.
+atm06(success):- put_console(c#"*") | atm07.
+
+atm07:- true | execute_in_shoen(atm07get,_,R), atm07(R).
+atm07get(X):- true | X=atom.
+atm07(success):- put_console(c#"h") | atm08.
+atm07(exception):- put_console(c#"*") | atm08.
+
+atm08:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Get_Nil %%%%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | execute_in_shoen(nil00get,atom,R), nil00(R).
+nil00get(X):- true | X=[].
+nil00(exception):- put_console(c#"a") | nil01.
+nil00(success):- put_console(c#"*") | nil01.
+
+nil01:- true | execute_in_shoen(nil01get,[],R), nil01(R).
+nil01get(X):- true | X=[].
+nil01(success):- put_console(c#"b") | nil02.
+nil01(exception):- put_console(c#"*") | nil02.
+
+nil02:- true | execute_in_shoen(nil02get,1234,R), nil02(R).
+nil02get(X):- true | X=[].
+nil02(exception):- put_console(c#"c") | nil03.
+nil02(success):- put_console(c#"*") | nil03.
+
+nil03:- true | execute_in_shoen(nil03get,12.34,R), nil03(R).
+nil03get(X):- true | X=[].
+nil03(exception):- put_console(c#"d") | nil04.
+nil03(success):- put_console(c#"*") | nil04.
+
+nil04:- true | execute_in_shoen(nil04get,[list],R), nil04(R).
+nil04get(X):- true | X=[].
+nil04(exception):- put_console(c#"e") | nil05.
+nil04(success):- put_console(c#"*") | nil05.
+
+nil05:- true | execute_in_shoen(nil05get,{0,1},R), nil05(R).
+nil05get(X):- true | X=[].
+nil05(exception):- put_console(c#"f") | nil06.
+nil05(success):- put_console(c#"*") | nil06.
+
+nil06:- true | execute_in_shoen(nil06get,ascii#"String",R), nil06(R).
+nil06get(X):- true | X=[].
+nil06(exception):- put_console(c#"g") | nil07.
+nil06(success):- put_console(c#"*") | nil07.
+
+nil07:- true | execute_in_shoen(nil07get,_,R), nil07(R).
+nil07get(X):- true | X=[].
+nil07(success):- put_console(c#"h") | nil08.
+nil07(exception):- put_console(c#"*") | nil08.
+
+nil08:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Get_Integer %%%%%%%%%%% ") | int00.
+
+int00:- true | execute_in_shoen(int00get,atom,R), int00(R).
+int00get(X):- true | X=1234.
+int00(exception):- put_console(c#"a") | int01.
+int00(success):- put_console(c#"*") | int01.
+
+int01:- true | execute_in_shoen(int01get,1234,R), int01(R).
+int01get(X):- true | X=1234.
+int01(success):- put_console(c#"b") | int02.
+int01(exception):- put_console(c#"*") | int02.
+
+int02:- true | execute_in_shoen(int02get,123456,R), int02(R).
+int02get(X):- true | X=1234.
+int02(exception):- put_console(c#"c") | int03.
+int02(success):- put_console(c#"*") | int03.
+
+int03:- true | execute_in_shoen(int03get,12.34,R), int03(R).
+int03get(X):- true | X=1234.
+int03(exception):- put_console(c#"d") | int04.
+int03(success):- put_console(c#"*") | int04.
+
+int04:- true | execute_in_shoen(int04get,[list],R), int04(R).
+int04get(X):- true | X=1234.
+int04(exception):- put_console(c#"e") | int05.
+int04(success):- put_console(c#"*") | int05.
+
+int05:- true | execute_in_shoen(int05get,{0,1},R), int05(R).
+int05get(X):- true | X=1234.
+int05(exception):- put_console(c#"f") | int06.
+int05(success):- put_console(c#"*") | int06.
+
+int06:- true | execute_in_shoen(int06get,ascii#"String",R), int06(R).
+int06get(X):- true | X=1234.
+int06(exception):- put_console(c#"g") | int07.
+int06(success):- put_console(c#"*") | int07.
+
+int07:- true | execute_in_shoen(int07get,_,R), int07(R).
+int07get(X):- true | X=1234.
+int07(success):- put_console(c#"h") | int08.
+int07(exception):- put_console(c#"*") | int08.
+
+int08:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Get_Float %%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | execute_in_shoen(flt00get,atom,R), flt00(R).
+flt00get(X):- true | X=12.34.
+flt00(exception):- put_console(c#"a") | flt01.
+flt00(success):- put_console(c#"*") | flt01.
+
+flt01:- true | execute_in_shoen(flt01get,1234,R), flt01(R).
+flt01get(X):- true | X=12.34.
+flt01(exception):- put_console(c#"b") | flt02.
+flt01(success):- put_console(c#"*") | flt02.
+
+flt02:- true | execute_in_shoen(flt02get,12.34,R), flt02(R).
+flt02get(X):- true | X=12.34.
+flt02(success):- put_console(c#"c") | flt03.
+flt02(exception):- put_console(c#"*") | flt03.
+
+flt03:- true | execute_in_shoen(flt03get,123.456,R), flt03(R).
+flt03get(X):- true | X=12.34.
+flt03(exception):- put_console(c#"d") | flt04.
+flt03(success):- put_console(c#"*") | flt04.
+
+flt04:- true | execute_in_shoen(flt04get,[list],R), flt04(R).
+flt04get(X):- true | X=12.34.
+flt04(exception):- put_console(c#"e") | flt05.
+flt04(success):- put_console(c#"*") | flt05.
+
+flt05:- true | execute_in_shoen(flt05get,{0,1},R), flt05(R).
+flt05get(X):- true | X=12.34.
+flt05(exception):- put_console(c#"f") | flt06.
+flt05(success):- put_console(c#"*") | flt06.
+
+flt06:- true | execute_in_shoen(flt06get,ascii#"String",R), flt06(R).
+flt06get(X):- true | X=12.34.
+flt06(exception):- put_console(c#"g") | flt07.
+flt06(success):- put_console(c#"*") | flt07.
+
+flt07:- true | execute_in_shoen(flt07get,_,R), flt07(R).
+flt07get(X):- true | X=12.34.
+flt07(success):- put_console(c#"h") | flt08.
+flt07(exception):- put_console(c#"*") | flt08.
+
+flt08:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% Get_List_Value %%%%%%%% ") | lst00.
+
+lst00:- true | execute_in_shoen(lst00get,atom,R), lst00(R).
+lst00get(X):- true | X=[_|_].
+lst00(exception):- put_console(c#"a") | lst01.
+lst00(success):- put_console(c#"*") | lst01.
+
+lst01:- true | execute_in_shoen(lst01get,1234,R), lst01(R).
+lst01get(X):- true | X=[_|_].
+lst01(exception):- put_console(c#"b") | lst02.
+lst01(success):- put_console(c#"*") | lst02.
+
+lst02:- true | execute_in_shoen(lst02get,12.34,R), lst02(R).
+lst02get(X):- true | X=[_|_].
+lst02(exception):- put_console(c#"c") | lst03.
+lst02(success):- put_console(c#"*") | lst03.
+
+lst03:- true | execute_in_shoen(lst03get,[list],R), lst03(R).
+lst03get(X):- true | X=[_|_].
+lst03(success):- put_console(c#"d") | lst04.
+lst03(exception):- put_console(c#"*") | lst04.
+
+lst04:- true | execute_in_shoen(lst04get,{0,1},R), lst04(R).
+lst04get(X):- true | X=[_|_].
+lst04(exception):- put_console(c#"e") | lst05.
+lst04(success):- put_console(c#"*") | lst05.
+
+lst05:- true | execute_in_shoen(lst05get,ascii#"String",R), lst05(R).
+lst05get(X):- true | X=[_|_].
+lst05(exception):- put_console(c#"f") | lst06.
+lst05(success):- put_console(c#"*") | lst06.
+
+lst06:- true | execute_in_shoen(lst06get,_,R), lst06(R).
+lst06get(X):- true | X=[_|_].
+lst06(success):- put_console(c#"g") | lst07.
+lst06(exception):- put_console(c#"*") | lst07.
+
+lst07:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% Get_Vect_Value %%%%%%%% ") | vec00.
+
+vec00:- true | execute_in_shoen(vec00get,atom,R), vec00(R).
+vec00get(X):- true | X={_,_}.
+vec00(exception):- put_console(c#"a") | vec01.
+vec00(success):- put_console(c#"*") | vec01.
+
+vec01:- true | execute_in_shoen(vec01get,1234,R), vec01(R).
+vec01get(X):- true | X={_,_}.
+vec01(exception):- put_console(c#"b") | vec02.
+vec01(success):- put_console(c#"*") | vec02.
+
+vec02:- true | execute_in_shoen(vec02get,12.34,R), vec02(R).
+vec02get(X):- true | X={_,_}.
+vec02(exception):- put_console(c#"c") | vec03.
+vec02(success):- put_console(c#"*") | vec03.
+
+vec03:- true | execute_in_shoen(vec03get,[list],R), vec03(R).
+vec03get(X):- true | X={_,_}.
+vec03(exception):- put_console(c#"d") | vec04.
+vec03(success):- put_console(c#"*") | vec04.
+
+vec04:- true | execute_in_shoen(vec04get,{0,1},R), vec04(R).
+vec04get(X):- true | X={_,_}.
+vec04(success):- put_console(c#"e") | vec05.
+vec04(exception):- put_console(c#"*") | vec05.
+
+vec05:- true | execute_in_shoen(vec05get,{0,1,2},R), vec05(R).
+vec05get(X):- true | X={_,_}.
+vec05(exception):- put_console(c#"f") | vec06.
+vec05(success):- put_console(c#"*") | vec06.
+
+vec06:- true | execute_in_shoen(vec06get,ascii#"String",R), vec06(R).
+vec06get(X):- true | X={_,_}.
+vec06(exception):- put_console(c#"g") | vec07.
+vec06(success):- put_console(c#"*") | vec07.
+
+vec07:- true | execute_in_shoen(vec07get,_,R), vec07(R).
+vec07get(X):- true | X={_,_}.
+vec07(success):- put_console(c#"h") | vec08.
+vec07(exception):- put_console(c#"*") | vec08.
+
+vec08:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- true |
+	'Sho-en':execute({get_cnst_e,P,1},{A}, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(10,{0,X,Y},NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=exception, C=[abort].

@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/queue.kl1" : Compiling ... queue/1,queue/4,empty/2,get/5,get_if_any/5,carbon_copy/4,prepend/3,END.
+
+[queue/1]
+successdone
+
+exit 0
+asm 4b0c2ee721b849d51d82cff0acb89382e20690a5abdc6593fa5f3f279ecdcdc1
+sav none

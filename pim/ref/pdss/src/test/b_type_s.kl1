@@ -1,0 +1,45 @@
+%%% KL1-B Test for B_Type_Function (Suspend) %%%
+% B_Hash %%%%%%%%%%%%%%%% abcdef
+
+:- module b_type_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Type_Function (Suspend) %%%"), put_console(key#lf) | hsh.
+
+hsh:- put_console(ascii#"% B_Hash %%%%%%%%%%%%%%%% ") | hsh00.
+
+hsh00:- true | hash(X,A,B), unify(X,atom), hsh00(A,B).
+hsh00(V,atom):- integer(V), put_console(c#"a") | hsh01.
+otherwise.
+hsh00(_,_):- put_console(c#"*") | hsh01.
+
+hsh01:- true | hash(X,A,B), unify(X,1234), hsh01(A,B).
+hsh01(1234,1234):- put_console(c#"b") | hsh02.
+otherwise.
+hsh01(_,_):- put_console(c#"*") | hsh02.
+
+hsh02:- true | hash(X,A,B), unify(X,12.34), hsh02(A,B).
+hsh02(1095069860,12.34):- put_console(c#"c") | hsh03.
+otherwise.
+hsh02(_,_):- put_console(c#"*") | hsh03.
+
+hsh03:- true | hash(X,A,B), unify(X,[list]), hsh03(A,B).
+hsh03(-1,[list]):- put_console(c#"d") | hsh04.
+otherwise.
+hsh03(_,_):- put_console(c#"*") | hsh04.
+
+hsh04:- true | hash(X,A,B), unify(X,{0,1}), hsh04(A,B).
+hsh04(2,{0,1}):- put_console(c#"e") | hsh05.
+otherwise.
+hsh04(_,_):- put_console(c#"*") | hsh05.
+
+hsh05:- true | hash(X,A,B), unify(X,ascii#"String"), hsh05(A,B).
+hsh05(1769188620,ascii#"String"):- put_console(c#"f") | hsh06.
+otherwise.
+hsh05(_,_):- put_console(c#"*") | hsh06.
+
+hsh06:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,A):- true | X=A.

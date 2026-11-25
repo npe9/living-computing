@@ -1,0 +1,16 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module file.
+:- public create/3,create/4,os_create/7,request/4.
+
+
+create(A1,A2,A3):-true|mpimos_file:create(A1,A2,A3).
+create(A1,A2,A3,A4):-true|mpimos_file:create(A1,A2,A3,A4).
+request(A1,A2,A3,A4):-true|mpimos_file:request(A1,A2,A3,A4).
+os_create(A1,A2,A3,A4,A5,A6,A7):-true|
+	mpimos_file:os_create(A1,A2,A3,A4,A5,A6,A7).

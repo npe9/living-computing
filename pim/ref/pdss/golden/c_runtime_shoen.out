@@ -1,0 +1,11 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../runtime/shoen.kl1" : Compiling ... create/8,create/7,shoen/4,execute/8,execute/7,normal/4,normal_control/4,normal_report/4,reported/4,reported_control/4,reported_report/4,reported_low/4,exit/4,removed/2,removed_reported/2,report_handler/3,add_resource/5,statistics/2,Warning:This predicate overlapped with builtin predicate
+	raise/3
+raise/3,END.
+
+[create/8,create/7,execute/8,execute/7,raise/3]
+successdone
+
+exit 0
+asm e27350e477bf77940ec73a174b4d44a25f21ebb30c780ab7b997b1e61b982314
+sav none

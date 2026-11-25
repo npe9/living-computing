@@ -1,0 +1,96 @@
+%%% KL1-B Test for B_Type_Function %%%
+% B_Hash %%%%%%%%%%%%%%%% abcdef
+% B_Unbound %%%%%%%%%%%%% abcdefg
+
+:- module b_type.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Type_Function %%%"), put_console(key#lf) | hsh.
+
+hsh:- put_console(ascii#"% B_Hash %%%%%%%%%%%%%%%% ") | hsh00.
+
+hsh00:- true | hsh00(atom).
+hsh00(X):- true | hash(X,A,B), hsh00ans(A,B).
+hsh00ans(V,atom):- integer(V), put_console(c#"a") | hsh01.
+otherwise.
+hsh00ans(_,_):- put_console(c#"*") | hsh01.
+
+hsh01:- true | hsh01(1234).
+hsh01(X):- true | hash(X,A,B), hsh01ans(A,B).
+hsh01ans(1234,1234):- put_console(c#"b") | hsh02.
+otherwise.
+hsh01ans(_,_):- put_console(c#"*") | hsh02.
+
+hsh02:- true | hsh02(12.34).
+hsh02(X):- true | hash(X,A,B), hsh02ans(A,B).
+hsh02ans(1095069860,12.34):- put_console(c#"c") | hsh03.
+otherwise.
+hsh02ans(_,_):- put_console(c#"*") | hsh03.
+
+hsh03:- true | hsh03([list]).
+hsh03(X):- true | hash(X,A,B), hsh03ans(A,B).
+hsh03ans(-1,[list]):- put_console(c#"d") | hsh04.
+otherwise.
+hsh03ans(_,_):- put_console(c#"*") | hsh04.
+
+hsh04:- true | hsh04({0,1}).
+hsh04(X):- true | hash(X,A,B), hsh04ans(A,B).
+hsh04ans(2,{0,1}):- put_console(c#"e") | hsh05.
+otherwise.
+hsh04ans(_,_):- put_console(c#"*") | hsh05.
+
+hsh05:- true | hsh05(ascii#"String").
+hsh05(X):- true | hash(X,A,B), hsh05ans(A,B).
+hsh05ans(1769188620,ascii#"String"):- put_console(c#"f") | hsh06.
+otherwise.
+hsh05ans(_,_):- put_console(c#"*") | hsh06.
+
+hsh06:- put_console(key#lf) | ubd.
+
+ubd:- put_console(ascii#"% B_Unbound %%%%%%%%%%%%% ") | ubd00.
+
+ubd00:- true | ubd00(atom).
+ubd00(X):- true | unbound(X,A,B,C), ubd00ans(A,B,C).
+ubd00ans([],[],atom):- put_console(c#"a") | ubd01.
+otherwise.
+ubd00ans(_,_,_):- put_console(c#"*") | ubd01.
+
+ubd01:- true | ubd01(1234).
+ubd01(X):- true | unbound(X,A,B,C), ubd01ans(A,B,C).
+ubd01ans([],[],1234):- put_console(c#"b") | ubd02.
+otherwise.
+ubd01ans(_,_,_):- put_console(c#"*") | ubd02.
+
+ubd02:- true | ubd02(12.34).
+ubd02(X):- true | unbound(X,A,B,C), ubd02ans(A,B,C).
+ubd02ans([],[],12.34):- put_console(c#"c") | ubd03.
+otherwise.
+ubd02ans(_,_,_):- put_console(c#"*") | ubd03.
+
+ubd03:- true | ubd03([list]).
+ubd03(X):- true | unbound(X,A,B,C), ubd03ans(A,B,C).
+ubd03ans([],[],[list]):- put_console(c#"d") | ubd04.
+otherwise.
+ubd03ans(_,_,_):- put_console(c#"*") | ubd04.
+
+ubd04:- true | ubd04({0,1}).
+ubd04(X):- true | unbound(X,A,B,C), ubd04ans(A,B,C).
+ubd04ans([],[],{0,1}):- put_console(c#"e") | ubd05.
+otherwise.
+ubd04ans(_,_,_):- put_console(c#"*") | ubd05.
+
+ubd05:- true | ubd05(ascii#"String").
+ubd05(X):- true | unbound(X,A,B,C), ubd05ans(A,B,C).
+ubd05ans([],[],ascii#"String"):- put_console(c#"f") | ubd06.
+otherwise.
+ubd05ans(_,_,_):- put_console(c#"*") | ubd06.
+
+ubd06:- true | ubd06(_).
+ubd06(X):- true | unbound(X,A,B,C), ubd06ans(A,B,C).
+ubd06ans(0,A,_):- integer(A), put_console(c#"g") | ubd07.
+otherwise.
+ubd06ans(_,_,_):- put_console(c#"*") | ubd07.
+
+ubd07:- put_console(key#lf) | done.
+
+done:- true | true.

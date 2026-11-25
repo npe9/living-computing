@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/struct.kl1" : Compiling ... struct_processor/5,struct_header/3,struct_processor/7,struct_processor_/5,struct_process/8,find_module_declaration/3,label_generator/2,label_generator/3,convert_clauses/5,convert_one_block/5,convert_guard_unify/6,extract_struct_unify/5,convert_arg_to_list/7,convert_arg_to_list_one_part/5,convert_arg_to_list_one_goal/6,convert_one_arg_to_list/4,convert_one_vect_arg_to_list/6,convert_terms/6,convert_one_term/6,convert_args/5,convert_one_arg/5,convert_vect_args/7,check_list_constant_or_not/4,check_vect_constant_or_not/5,define_desc/4,not_used/5,define_type/3,convert_integer_to_string/2,define_int/5,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195059     50    176    10    1584000        0
+After:       7179     38    135     3      74212        0
+GCed :     187880     12     41     7    1509788        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+define_one_word/4,calcurate_right_hand/4,decision_on_flg/4,is_integer/4,calcurate/2,make_constant_code/8,check_constant_top/6,check_constant_top_vect/8,make_define_int/3,construct_constant_code/5,C/4,construct_constant_code_element/8,construct_constant_code_element/6,test/0,compiler/4,check_clause/6,out_to_stream/3,END.
+
+[struct_processor/5,test/0,calcurate_right_hand/4]
+successdone
+
+exit 0
+asm 2bbafc864242b47b44f2be4fcf02f991d184e76c8b34c1f1497e387888f5ce24
+sav none

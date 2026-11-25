@@ -1,0 +1,477 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_varchk.
+:- public go/2,go/3,go_f/3,start/4,go_p/3.
+
+go(INfileName,Op):-
+    true|
+	mpimos_window:create([show|Window],string#"varchk"),
+	start(INfileName,Window,[getl(_)],Op).
+
+go(INfileName,WindowName,Op):-
+    true|
+	mpimos_window:create([show|Window],WindowName),
+	start(INfileName,Window,[getl(_)],Op).
+
+go_f(INfileName,OUTfileName,Op):-
+    true|
+	mpimos_file:create(OUTfile,OUTfileName,w),
+	start(INfileName,OUTfile,[],Op).
+
+go_p(INfileName,WindowName,Op):-
+    true|
+	mpimos_window:create([show|Window],WindowName),
+	mpimos_pretty_printer:pprinter(Window1,Window),
+	start(INfileName,Window1,[getl(_)],Op).
+
+
+start(FileName,OUTstream0,OUTstreamL,Op):-
+     atom(Op)|
+	mpimos_file:create(File,FileName,'r'),
+	OUTstream0 = [print_length(30),print_depth(30),
+		      putb(string#"File Name : "),
+		      putt(FileName),nl|OUTstream1],
+	merge({ReadOut,OUTstream2},OUTstream1),
+	kl1cmp_reader:trans_io_instr(ReadOut,[],ReadError),
+	kl1cmp_reader:create_varchk_reader(File,[],ReadError,[],Reader),
+	loop(Reader,OUTstream2,OUTstreamL,Op).
+
+
+loop(Reader,OutS,OutSL,Op):-
+    true|
+	Reader=[read_predicate(Clauses,Pred)|ReaderL],
+	loop0(ReaderL,OutS,OutSL,Op,Clauses,Pred).
+
+loop0(Reader,OutS,OutSL,Op,_,end_of_file):-
+    true |
+	Reader=[],
+	OutS=[nl,nl,putb(string#"DONE.")|OutSL].
+loop0(Reader,OutS,OutSL,Op,Directives,directive):-
+    true|
+	check_directives(Reader,OutS,OutSL,Op,Directives).
+otherwise.
+loop0(Reader,OutS,OutSL,Op,Clauses,Pred):-
+    true |
+	loop1(Reader,OutS,OutSL,Op,Clauses).
+
+check_directives(Reader,OutS,OutSL,Op,[(:- op(P,T,O))|Directives]):-
+    P>=1, P=<1200, atom(T), atom(O)|
+	OutS = [add_op(P,T,O)|NOutS],
+	check_directives(Reader,NOutS,OutSL,Op,Directives).
+check_directives(Reader,OutS,OutSL,Op,[]):-
+    true|
+	loop(Reader,OutS,OutSL,Op).
+otherwise.
+check_directives(Reader,OutS,OutSL,Op,[_|Directives]):-
+    true|
+	check_directives(Reader,OutS,OutSL,Op,Directives).
+
+loop1(Reader,OutS,OutSL,Op,[Block|BL]):-
+    list(Block)|
+	loop2(Reader,OutS,OutSL,Op,BL,Block,done).
+loop1(Reader,OutS,OutSL,Op,[otherwise|BL]):-
+    true|
+	loop1(Reader,OutS,OutSL,Op,BL).
+loop1(Reader,OutS,OutSL,Op,[alternatively|BL]):-
+    true|
+	loop1(Reader,OutS,OutSL,Op,BL).
+loop1(Reader,OutS,OutSL,Op,[]):-
+    true|
+	loop(Reader,OutS,OutSL,Op).
+
+loop2(Reader,OutS,OutSL,Op,BL,[],S):-
+    true |
+	loop1(Reader,OutS,OutSL,Op,BL).
+loop2(Reader,OutS,OutSL,Op,BL,[Clause+NVar|CL],done):-
+    true |
+	varchk(Clause,NVar,Op,OutS,[flush(S)|NOutS]),
+	loop2(Reader,NOutS,OutSL,Op,BL,CL,S).
+otherwise.
+loop2(Reader,OutS,OutSL,Op,BL,[Clause|CL],done):-
+    true |
+	kl1cmp_reader:count_variables(Clause,0,NVar),
+	varchk(Clause,NVar,Op,OutS,[flush(S)|NOutS]),
+	loop2(Reader,NOutS,OutSL,Op,BL,CL,S).
+
+varchk(Term,NVar,Op,Window,WindowL):-
+    true |
+	option(Op,NOp),
+	make_tbl(Term,NVar,NOp,GTbl,BTbl,NTbl),
+	varchk3(Window2,WindowL,0,NVar,GTbl,BTbl,NTbl,NOp,N),
+	varchk2(N,Term,Window,Window2).
+
+varchk2(0,Term,Window,WindowL):-
+    true |
+	Window=WindowL.
+varchk2(N,Term,Window,WindowL):-
+    N>0 |
+	Window=[nl,nl,
+		putl(string#"****************************************************"),
+		puttq(Term),putc(#"."),nl,nl,putb(string#"::: ")|WindowL].
+
+varchk3(Window,WindowL,P,NVar,GTbl,BTbl,NTbl,Op,N):-
+    P<NVar|
+	string_element(GTbl,P,G,NGTbl),
+	string_element(BTbl,P,B,NBTbl),
+	check(G,B,Op,S),
+	wait_check(S,Window,WindowL,P,NVar,NGTbl,NBTbl,NTbl,Op,N).
+varchk3(Window,WindowL,P,NVar,_,_,_,_,N):-
+    P>=NVar |
+	Window=WindowL,
+	N=0.
+
+
+wait_check(on,Window,WindowL,P,NVar,GTbl,BTbl,NTbl,Op,N):-
+     true|
+	vector_element(NTbl,P,Name,NNTbl),
+	Window=[putb(Name),tab(1)|Window2],
+	PP := P+1, N := NN+1,
+	varchk3(Window2,WindowL,PP,NVar,GTbl,BTbl,NNTbl,Op,NN).
+otherwise.
+wait_check(_,Window,WindowL,P,NVar,GTbl,BTbl,NTbl,Op,N):-
+     true|
+	PP := P+1,
+	varchk3(Window,WindowL,PP,NVar,GTbl,BTbl,NTbl,Op,N).
+
+count('$VAR'(N,Str),Tbl,Tbl2,NTbl,NTbl2):-
+    N >= 0,
+    Str = string#"_"|
+	NTbl = NTbl2,
+	Tbl = Tbl2.
+count([H|L],Tbl,Tbl3,NTbl,NTbl2):-
+    true |
+	count(H,Tbl,Tbl2,NTbl,NTbl1),
+	count(L,Tbl2,Tbl3,NTbl1,NTbl2).
+otherwise.
+count('$VAR'(N,Str),Tbl,Tbl2,NTbl,NTbl2):-
+    N >= 0,
+    string(Str,_,8),
+    string_element(Tbl,N,C) |
+	CC := C+1,
+	set_vector_element(NTbl,N,_,Str,NTbl2),
+	set_string_element(Tbl,N,CC,Tbl2).
+otherwise.
+count(X,Tbl,Tbl2,NTbl,NTbl2):-
+    vector(X,L) |
+	count_vector(X,Tbl,Tbl2,NTbl,NTbl2,0,L).
+otherwise.
+count(X,Tbl,Tbl2,NTbl,NTbl2):-
+    true|
+	NTbl = NTbl2,
+	Tbl = Tbl2.
+
+count_vector(X,Tbl,Tbl3,NTbl,NTbl2,P,L):-
+    P<L |
+	set_vector_element(X,P,E,[],NX),
+	count(E,Tbl,Tbl2,NTbl,NTbl1),
+	PP := P+1,
+	count_vector(NX,Tbl2,Tbl3,NTbl1,NTbl2,PP,L).
+count_vector(X,Tbl,Tbl2,NTbl,NTbl2,P,L):-
+    P>=L |
+	NTbl = NTbl2,
+	Tbl=Tbl2.
+
+count_goals(vector_element(A1,A2,A3),Tbl,Tbl4,NTbl,NTbl4,VE,VEL,guard):-
+    A1 = '$VAR'(N,Str),
+    N >= 0|
+	VE = [{N,VarL}|VEL],
+	count(A1,Tbl,Tbl2,NTbl,NTbl2),
+	count(A2,Tbl2,Tbl3,NTbl2,NTbl3),
+	count_mrb(VarL,[],A3,Tbl3,Tbl4,NTbl3,NTbl4).
+count_goals(vector_element(A1,A2,A3,A4),Tbl,Tbl5,NTbl,NTbl5,VE,VEL,body):-
+    true|
+	count(A1,Tbl,Tbl2,NTbl,NTbl2),
+	count(A2,Tbl2,Tbl3,NTbl2,NTbl3),
+	count_mrb(VE,VEL,A3,Tbl3,Tbl4,NTbl3,NTbl4),
+	count(A4,Tbl4,Tbl5,NTbl4,NTbl5).
+count_goals((X1,X2),Tbl,Tbl3,NTbl,NTbl3,VE,VEL,Pos):-
+    true|
+	count_goals(X1,Tbl,Tbl2,NTbl,NTbl2,VE,VE2,Pos),
+	count_goals(X2,Tbl2,Tbl3,NTbl2,NTbl3,VE2,VEL,Pos).
+otherwise.
+count_goals(X,Tbl,Tbl2,NTbl,NTbl2,VE,VEL,Pos):-
+    true|
+	VE = VEL,
+	count(X,Tbl,Tbl2,NTbl,NTbl2).
+
+:- local_implicit varlist:oldnew.
+
+count_mrb('$VAR'(N,Str),Tbl,Tbl2,NTbl,NTbl2) -->
+    N >= 0,
+    Str = string#"_"|
+	NTbl = NTbl2,
+	Tbl = Tbl2.
+count_mrb([H|L],Tbl,Tbl3,NTbl,NTbl2)-->
+    true |
+	count_mrb(H,Tbl,Tbl2,NTbl,NTbl1),
+	count_mrb(L,Tbl2,Tbl3,NTbl1,NTbl2).
+otherwise.
+count_mrb('$VAR'(N,Str),Tbl,Tbl2,NTbl,NTbl2)-->
+    N >= 0,
+    string(Str,_,8),
+    string_element(Tbl,N,C) |
+	CC := C+1,
+	{{ set_vector_element(NTbl,N,_,Str,NTbl2),
+	   set_string_element(Tbl,N,CC,Tbl2) }},
+	&varlist <<= [N].
+otherwise.
+count_mrb(X,Tbl,Tbl2,NTbl,NTbl2)-->
+    vector(X,L) |
+	count_mrb_vector(X,Tbl,Tbl2,NTbl,NTbl2,0,L).
+otherwise.
+count_mrb(X,Tbl,Tbl2,NTbl,NTbl2)-->
+    true|
+	NTbl = NTbl2,
+	Tbl = Tbl2.
+
+count_mrb_vector(X,Tbl,Tbl3,NTbl,NTbl2,P,L)-->
+    P<L |
+	{{ set_vector_element(X,P,E,[],NX) }},
+	count_mrb(E,Tbl,Tbl2,NTbl,NTbl1),
+	PP := P+1,
+	count_mrb_vector(NX,Tbl2,Tbl3,NTbl1,NTbl2,PP,L).
+count_mrb_vector(X,Tbl,Tbl2,NTbl,NTbl2,P,L)-->
+    P>=L |
+	NTbl = NTbl2,
+	Tbl=Tbl2.
+
+option(o  ,Op):- true | Op = one.
+option(one,Op):- true | Op = one.
+option(m  ,Op):- true | Op = mrb.
+option(mrb,Op):- true | Op = mrb.
+option(a  ,Op):- true | Op = all.
+option(all,Op):- true | Op = all.
+otherwise.
+option(_,  Op):- true | Op = bad.
+
+
+check(G,B,Op,S):-
+     true|
+	check_tbl(G,B,S0),
+	check0(Op,S0,S).
+
+check0(one,1 ,S):- true    | S = on.
+check0(mrb,2 ,S):- true    | S = on.
+check0(all,S0,S):- S0 \= 0 | S = on.
+otherwise.
+check0(_,  _, S):- true    | S = off.
+
+check_tbl(0,0,S):- true       | S = 0.
+check_tbl(0,1,S):- true       | S = 1.
+check_tbl(0,2,S):- true       | S = 0.
+check_tbl(0,B,S):- B > 2      | S = 2.
+check_tbl(1,0,S):- true       | S = 1.
+check_tbl(1,1,S):- true       | S = 0.
+check_tbl(1,2,S):- true       | S = 2.
+check_tbl(1,B,S):- B > 2      | S = 2.
+check_tbl(G,0,S):- G > 1      | S = 0.
+check_tbl(G,1,S):- G > 1      | S = 0.
+check_tbl(G,2,S):- G > 1      | S = 2.
+check_tbl(G,B,S):- G > 1,B > 2| S = 2.
+
+
+make_tbl(Term,NVar,Op,GTbl,BTbl,NTbl):-
+    Op = mrb|
+	new_vector(NTbl0,NVar),
+	new_string(GTbl0,NVar,32),
+	count_guard_mrb(Term,GTbl0,GTbl,NTbl0,NTbl1,VectElmGL,[]),
+	new_string(BTbl0,NVar,32),
+	count_body_mrb(Term,BTbl0,BTbl1,NTbl1,NTbl,VectElmBL,[]),
+	mrb_guard_vector_element(VectElmGL,BTbl1,BTbl2),
+	mrb_body_vector_element(VectElmBL,BTbl2,BTbl).
+make_tbl(Term,NVar,Op,GTbl,BTbl,NTbl):-
+    Op = all|
+	new_vector(NTbl0,NVar),
+	new_string(GTbl0,NVar,32),
+	count_guard_mrb(Term,GTbl0,GTbl,NTbl0,NTbl1,VectElmGL,[]),
+	new_string(BTbl0,NVar,32),
+	count_body_mrb(Term,BTbl0,BTbl1,NTbl1,NTbl,VectElmBL,[]),
+	mrb_guard_vector_element(VectElmGL,BTbl1,BTbl2),
+	mrb_body_vector_element(VectElmBL,BTbl2,BTbl).
+otherwise.
+make_tbl(Term,NVar,Op,GTbl,BTbl,NTbl):-
+    true|
+	new_vector(NTbl0,NVar),
+	new_string(GTbl0,NVar,32),
+	count_guard(Term,GTbl0,GTbl,NTbl0,NTbl1),
+	new_string(BTbl0,NVar,32),
+	count_body(Term,BTbl0,BTbl,NTbl1,NTbl).
+
+count_guard((H:-GB),Gtbl,NGtbl,NTbl0,NTbl):-  %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,1,G)|
+	count(H,Gtbl,Gtbl2,NTbl0,NTbl1),
+	count(G,Gtbl2,NGtbl,NTbl1,NTbl).
+count_guard((H-->GB),Gtbl,NGtbl,NTbl0,NTbl):-  %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,1,G)|
+	count(H,Gtbl,Gtbl2,NTbl0,NTbl1),
+	count(G,Gtbl2,NGtbl,NTbl1,NTbl).
+otherwise.
+count_guard((H:-B),Gtbl,NGtbl,NTbl0,NTbl):-
+     true|
+	count(H,Gtbl,NGtbl,NTbl0,NTbl).
+count_guard((H-->B),Gtbl,NGtbl,NTbl0,NTbl):-
+     true|
+	count(H,Gtbl,NGtbl,NTbl0,NTbl).
+otherwise.
+count_guard((:-B),Gtbl,NGtbl,NTbl0,NTbl):-
+     true|
+	Gtbl = NGtbl,
+	NTbl0 = NTbl.
+otherwise.
+count_guard(H,Gtbl,NGtbl,NTbl0,NTbl):-
+     true|
+	count(H,Gtbl,NGtbl,NTbl0,NTbl).
+
+count_guard_mrb((H:-GB),Gtbl,NGtbl,NTbl0,NTbl,VE,VEL):-  %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,1,G)|
+	count(H,Gtbl,Gtbl2,NTbl0,NTbl1),
+	count_goals(G,Gtbl2,NGtbl,NTbl1,NTbl,VE,VEL,guard).
+count_guard_mrb((H-->GB),Gtbl,NGtbl,NTbl0,NTbl,VE,VEL):-  %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,1,G)|
+	count(H,Gtbl,Gtbl2,NTbl0,NTbl1),
+	count_goals(G,Gtbl2,NGtbl,NTbl1,NTbl,VE,VEL,guard).
+otherwise.
+count_guard_mrb((H:-B),Gtbl,NGtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	VE = VEL,
+	count(H,Gtbl,NGtbl,NTbl0,NTbl).
+count_guard_mrb((H-->B),Gtbl,NGtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	VE = VEL,
+	count(H,Gtbl,NGtbl,NTbl0,NTbl).
+otherwise.
+count_guard_mrb((:-B),Gtbl,NGtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	Gtbl = NGtbl,
+	NTbl0 = NTbl,
+	VE = VEL.
+otherwise.
+count_guard_mrb(H,Gtbl,NGtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	VE = VEL,
+	count(H,Gtbl,NGtbl,NTbl0,NTbl).
+
+count_body((H:-GB),Btbl,NBtbl,NTbl0,NTbl):-   %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,2,B)|
+	count(B,Btbl,NBtbl,NTbl0,NTbl).
+count_body((H-->GB),Btbl,NBtbl,NTbl0,NTbl):-   %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,2,B)|
+	count(B,Btbl,NBtbl,NTbl0,NTbl).
+otherwise.
+count_body((H:-B),Btbl,NBtbl,NTbl0,NTbl):-
+     true|
+	count(B,Btbl,NBtbl,NTbl0,NTbl).
+count_body((H-->B),Btbl,NBtbl,NTbl0,NTbl):-
+     true|
+	count(B,Btbl,NBtbl,NTbl0,NTbl).
+otherwise.
+count_body((:-B),Btbl,NBtbl,NTbl0,NTbl):-
+     true|
+	count(B,Btbl,NBtbl,NTbl0,NTbl).
+otherwise.
+count_body(_,Btbl,NBtbl,NTbl0,NTbl):-
+     true|
+	Btbl = NBtbl,
+	NTbl0 = NTbl.
+
+count_body_mrb((H:-GB),Btbl,NBtbl,NTbl0,NTbl,VE,VEL):-   %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,2,B)|
+	count_goals(B,Btbl,NBtbl,NTbl0,NTbl,VE,VEL,body).
+count_body_mrb((H-->GB),Btbl,NBtbl,NTbl0,NTbl,VE,VEL):-   %% GB => G|B
+     vector(GB,3),
+     vector_element(GB,0,('|')),
+     vector_element(GB,2,B)|
+	count_goals(B,Btbl,NBtbl,NTbl0,NTbl,VE,VEL,body).
+otherwise.
+count_body_mrb((H:-B),Btbl,NBtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	count_goals(B,Btbl,NBtbl,NTbl0,NTbl,VE,VEL,body).
+count_body_mrb((H-->B),Btbl,NBtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	count_goals(B,Btbl,NBtbl,NTbl0,NTbl,VE,VEL,body).
+otherwise.
+count_body_mrb((:-B),Btbl,NBtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	VE = VEL,
+	count(B,Btbl,NBtbl,NTbl0,NTbl).
+otherwise.
+count_body_mrb(_,Btbl,NBtbl,NTbl0,NTbl,VE,VEL):-
+     true|
+	Btbl = NBtbl,
+	NTbl0 = NTbl,
+	VE = VEL.
+
+% check MRB of vector_element in guard
+mrb_guard_vector_element([{VN,VarL}|L],BTbl,BTbl3):-
+    string_element(BTbl,VN,C),
+    C > 0|
+	mrb_guard_vector_element_mark(VarL,BTbl,BTbl1),
+	mrb_guard_vector_element_sub(VarL,L,LL,BTbl1,BTbl2),
+	mrb_guard_vector_element(LL,BTbl2,BTbl3).
+mrb_guard_vector_element([{VN,VarL}|L],BTbl,BTbl2):-
+    string_element(BTbl,VN,0)|
+	mrb_guard_vector_element(L,BTbl,BTbl2).
+mrb_guard_vector_element([],BTbl,BTbl2):-
+    true|
+	BTbl = BTbl2.
+
+mrb_guard_vector_element_mark([N|VarL],BTbl,BTbl2):- 
+    string_element(BTbl,N,1)|
+	set_string_element(BTbl,N,3,BTbl1), % mark MRB on
+	mrb_guard_vector_element_mark(VarL,BTbl1,BTbl2).
+mrb_guard_vector_element_mark([N|VarL],BTbl,BTbl2):- 
+    string_element(BTbl,N,C), C =\= 1|
+	mrb_guard_vector_element_mark(VarL,BTbl,BTbl2).
+mrb_guard_vector_element_mark([],BTbl,BTbl2):- 
+    true|
+	BTbl = BTbl2.
+
+mrb_guard_vector_element_sub([Var|VarL],L,LL,BTbl,BTbl2):-
+    true|
+	mrb_guard_vector_element_sub_var(Var,L,L2,BTbl,BTbl1),
+	mrb_guard_vector_element_sub(VarL,L2,LL,BTbl1,BTbl2).
+mrb_guard_vector_element_sub([],L,LL,BTbl,BTbl2):-
+    true|
+	L = LL,
+	BTbl = BTbl2.
+
+mrb_guard_vector_element_sub_var(Var,[{VN,VarL}|L],LL,BTbl,BTbl2):-
+    Var =:= VN|
+	mrb_guard_vector_element_mark(VarL,BTbl,BTbl1),
+	mrb_guard_vector_element_sub_var(Var,L,LL,BTbl1,BTbl2).
+mrb_guard_vector_element_sub_var(Var,[{VN,VarL}|L],LL,BTbl,BTbl2):-
+    Var =\= VN|
+	LL = [{VN,VarL}|LL2],
+	mrb_guard_vector_element_sub_var(Var,L,LL2,BTbl,BTbl2).
+mrb_guard_vector_element_sub_var(_,[],LL,BTbl,BTbl2):-
+    true|
+	LL = [],
+	BTbl = BTbl2.
+
+% check MRB of vector_element in guard
+mrb_body_vector_element([N|VarL],BTbl,BTbl2):- 
+    true|
+	set_string_element(BTbl,N,3,BTbl1), % mark MRB on
+	mrb_body_vector_element(VarL,BTbl1,BTbl2).
+mrb_body_vector_element([],BTbl,BTbl2):- 
+    true|
+	BTbl = BTbl2.

@@ -1,0 +1,44 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/multiply_keyed_bag.kl1" : Compiling ... multiply_keyed_bag/3,init_datafile/5,get_param/5,get_packing_size/2,init_indexes/6,init_indexes/8,if_generate_index/8,if_succeeded/2,generate_index/7,ordered_index/3,hashed_index/5,no_index/3,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194883     50    186    10    1583632        0
+After:      21853     38    127     3     190196        0
+GCed :     173030     12     59     7    1393436        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+multiply_keyed_bag/11,terminate_indexes/2,empty/2,empty/10,if_empty/4,put/18,remake_and_put/13,get/17,do_get/15,raise_message/3,if_pack/11,get_if_any/16,do_get_if_any/13,max_if_any/11,if_ordered_index/8,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     184723    168    909     3    1584004        0
+After:      23290     42    126     3     201748        0
+GCed :     161433    126    783     0    1382256        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+max/7,max_sequential/7,get_and_put_all/6,if_empty_element/7,max_sequential/5,max_seq/7,do_max_seq/6,wait_compared_max/9,do_min_seq/6,wait_compared_min/9,get_all/5,if_get_all/3,get_all/16,get_all_i/7,sort/4,trans_datalist/3,return_datalist/3,get_ids_only/2,do_get_all_i/4,do_get_all/13,carbon_copy/5,if_carbon_copy/4,carbon_copy/10,carbon_copy_i/7,do_carbon_copy_i/4,do_carbon_copy/4,get_and_put/13,do_get_and_put/11,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     189479    142    570     3    1583932        0
+After:      26517     38    317     3     249124        0
+GCed :     162962    104    253     0    1334808        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+raise_message/4,get_if_any_and_put/20,do_get_if_any_and_put/20,get_and_put_if_any/14,do_get_and_put_if_any/12,get_data_ids/11,get_attr_position/3,get_ids/8,do_get_ids/8,sequential_search/7,if_same_key/8,check_if_same_key/7,do_and/3,do_do_and/3,get_away_x/4,get_away_y/4,do_or/3,
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     190930    118    477     3    1584332        0
+After:      29194     40    158     3     251876        0
+GCed :     161736     78    319     0    1332456        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+do_do_or/3,consume_x/4,consume_y/4,do_not/3,do_do_not/4,append_rest/3,add_to_indexes/6,get_index_stream/4,modify_indexes/11,modify_indexes/7,unify_new_keyes/7,unify_new_keyes/4,modify_indexes/8,modify_index/6,return_ids/4,remake/9,if_move_element/8,clear_indexes/3,pack/6,do_pack/7,find_space/7,find_element/7,do_find_element/7,get_part/7,part/6,get_part_if_any/6,do_get_part_if_any/5,get_part_all/6,get_part_all/4,get_part_and_put/9,get_part_and_put1/7,unify_part/4,do_unify_part/3,get_part_and_put_if_any/9,get_part_and_put_if_any1/8,
+GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194938     50    197     3    1583980        0
+After:      35927     38    125     3     302580        0
+GCed :     159011     12     72     0    1281400        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+get_format/7,get_format/8,if_correct/6,if_if_correct/4,END.
+
+[multiply_keyed_bag/3]
+successdone
+
+exit 0
+asm 39d5ab6cc01ebaec8fbafe21043ff35974135bfcaefe103dff1cd16bc0a5f648
+sav none

@@ -1,0 +1,61 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/etsmall" : Compiling ... puzzle/0,go/1,select/6,check/6,check1/10,check2/9,remove/5,remove2/6,translate/4,append/3,count/2,count/3,initial/2,piece_list/1,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193064     60    299    10    1584016        0
+After:      21653     33     91     3     184092        0
+GCed :     171411     27    208     7    1399924        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+squares/1,END.
+
+[puzzle/0,go/1]
+successdone
+Loading ... done
+Module name : puzzle
+Saving ... done
+
+yes.
+| ?-
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195963     33    128    13    1584012    10924
+After:       1623     16     81     5      22492    10924
+GCed :     194340     17     47     8    1561520        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     196761     16     85     5    1584012    10924
+After:       1749     16     79     5      23292    10924
+GCed :     195012      0      6     0    1560720        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     196761     16     85     5    1584012    10924
+After:       2445     16     79     5      28860    10924
+GCed :     194316      0      6     0    1555152        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     196761     16     85     5    1584012    10924
+After:       2750     16     83     5      31716    10924
+GCed :     194011      0      2     0    1552296        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+Total of 852614 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 47ee9d8293c739727ca505e76ed0e4084ca39d82b46d1c1f37287b7a0da736e8
+sav cb534d36bf58d030a55e8c4907f819940e0b5af342d149d1792b890b7f051f43

@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/bestpath" : Compiling ... test/0,test1/0,test2/0,go/3,go/4,get_id/4,END.
+
+[go/3,go/4,test/0,test1/0,test2/0]
+successdone
+Loading ... done
+Module name : bestpath
+Saving ... done
+
+yes.
+| ?- bp : Auto loading ... Illegal environment variable ::: loaddir = "~/.PDSSsave"
+Error <this module is not saved>
+Aborted(type RETURN key) ? Task task_1/{147} was aborted !!
+
+no.
+| ?-
+exit 0
+asm d983524a92300114314ffa5194b228132a69b97b4a07f007f9c8f09971109c58
+sav 288ae9cf286983c9755d313daec838886c7fc5894909c9183953b163ce8d48bc

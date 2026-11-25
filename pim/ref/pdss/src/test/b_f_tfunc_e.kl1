@@ -1,0 +1,459 @@
+%%% KL1-B Test for B_Float_Tri_Function (Exception) %%%
+% B_Float_Sin %%%%%%%%%%% abcdefg
+% B_Float_Cos %%%%%%%%%%% abcdefg
+% B_Float_Tan %%%%%%%%%%% abcdefg
+% B_Float_Asin %%%%%%%%%% abcdefg
+% B_Float_Acos %%%%%%%%%% abcdefg
+% B_Float_Atan %%%%%%%%%% abcdefg
+% B_Float_Sinh %%%%%%%%%% abcdefg
+% B_Float_Cosh %%%%%%%%%% abcdefg
+% B_Float_Tanh %%%%%%%%%% abcdefg
+% B_Float_Atan2 %%%%%%%%% abcdefghijkl
+
+:- module b_f_tfunc_e.
+:- public go/0
+,do_sin/2,do_cos/2,do_tan/2,do_asin/2,do_acos/2,do_atan/2,do_sinh/2,do_cosh/2,do_tanh/2,do_atan2/3.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Float_Tri_Function (Exception) %%%"), put_console(key#lf) | sin.
+
+sin:- put_console(ascii#"% B_Float_Sin %%%%%%%%%%% ") | sin00.
+
+sin00:- true | execute_in_shoen(do_sin,{3.141592654,Z},R), sin00(R,Z).
+sin00(success,_):- put_console(c#"a") | sin01.
+otherwise.
+sin00(_,_):- put_console(c#"*") | sin01.
+
+sin01:- true | execute_in_shoen(do_sin,{0.0,Z},R), sin01(R,Z).
+sin01(success,_):- put_console(c#"b") | sin02.
+otherwise.
+sin01(_,_):- put_console(c#"*") | sin02.
+
+sin02:- true | execute_in_shoen(do_sin,{1234,Z},R), sin02(R,Z).
+sin02(illegal_input,_):- put_console(c#"c") | sin03.
+otherwise.
+sin02(_,_):- put_console(c#"*") | sin03.
+
+sin03:- true | execute_in_shoen(do_sin,{atom,Z},R), sin03(R,Z).
+sin03(illegal_input,_):- put_console(c#"d") | sin04.
+otherwise.
+sin03(_,_):- put_console(c#"*") | sin04.
+
+sin04:- true | execute_in_shoen(do_sin,{[list],Z},R), sin04(R,Z).
+sin04(illegal_input,_):- put_console(c#"e") | sin05.
+otherwise.
+sin04(_,_):- put_console(c#"*") | sin05.
+
+sin05:- true | execute_in_shoen(do_sin,{{0,1},Z},R), sin05(R,Z).
+sin05(illegal_input,_):- put_console(c#"f") | sin06.
+otherwise.
+sin05(_,_):- put_console(c#"*") | sin06.
+
+sin06:- true | execute_in_shoen(do_sin,{ascii#"String",Z},R), sin06(R,Z).
+sin06(illegal_input,_):- put_console(c#"g") | sin07.
+otherwise.
+sin06(_,_):- put_console(c#"*") | sin07.
+
+sin07:- put_console(key#lf) | cos.
+
+cos:- put_console(ascii#"% B_Float_Cos %%%%%%%%%%% ") | cos00.
+
+cos00:- true | execute_in_shoen(do_cos,{3.141592654,Z},R), cos00(R,Z).
+cos00(success,_):- put_console(c#"a") | cos01.
+otherwise.
+cos00(_,_):- put_console(c#"*") | cos01.
+
+cos01:- true | execute_in_shoen(do_cos,{0.0,Z},R), cos01(R,Z).
+cos01(success,_):- put_console(c#"b") | cos02.
+otherwise.
+cos01(_,_):- put_console(c#"*") | cos02.
+
+cos02:- true | execute_in_shoen(do_cos,{1234,Z},R), cos02(R,Z).
+cos02(illegal_input,_):- put_console(c#"c") | cos03.
+otherwise.
+cos02(_,_):- put_console(c#"*") | cos03.
+
+cos03:- true | execute_in_shoen(do_cos,{atom,Z},R), cos03(R,Z).
+cos03(illegal_input,_):- put_console(c#"d") | cos04.
+otherwise.
+cos03(_,_):- put_console(c#"*") | cos04.
+
+cos04:- true | execute_in_shoen(do_cos,{[list],Z},R), cos04(R,Z).
+cos04(illegal_input,_):- put_console(c#"e") | cos05.
+otherwise.
+cos04(_,_):- put_console(c#"*") | cos05.
+
+cos05:- true | execute_in_shoen(do_cos,{{0,1},Z},R), cos05(R,Z).
+cos05(illegal_input,_):- put_console(c#"f") | cos06.
+otherwise.
+cos05(_,_):- put_console(c#"*") | cos06.
+
+cos06:- true | execute_in_shoen(do_cos,{ascii#"String",Z},R), cos06(R,Z).
+cos06(illegal_input,_):- put_console(c#"g") | cos07.
+otherwise.
+cos06(_,_):- put_console(c#"*") | cos07.
+
+cos07:- put_console(key#lf) | tan.
+
+tan:- put_console(ascii#"% B_Float_Tan %%%%%%%%%%% ") | tan00.
+
+tan00:- true | execute_in_shoen(do_tan,{3.141592654,Z},R), tan00(R,Z).
+tan00(success,_):- put_console(c#"a") | tan01.
+otherwise.
+tan00(_,_):- put_console(c#"*") | tan01.
+
+tan01:- true | execute_in_shoen(do_tan,{0.0,Z},R), tan01(R,Z).
+tan01(success,_):- put_console(c#"b") | tan02.
+otherwise.
+tan01(_,_):- put_console(c#"*") | tan02.
+
+tan02:- true | execute_in_shoen(do_tan,{1234,Z},R), tan02(R,Z).
+tan02(illegal_input,_):- put_console(c#"c") | tan03.
+otherwise.
+tan02(_,_):- put_console(c#"*") | tan03.
+
+tan03:- true | execute_in_shoen(do_tan,{atom,Z},R), tan03(R,Z).
+tan03(illegal_input,_):- put_console(c#"d") | tan04.
+otherwise.
+tan03(_,_):- put_console(c#"*") | tan04.
+
+tan04:- true | execute_in_shoen(do_tan,{[list],Z},R), tan04(R,Z).
+tan04(illegal_input,_):- put_console(c#"e") | tan05.
+otherwise.
+tan04(_,_):- put_console(c#"*") | tan05.
+
+tan05:- true | execute_in_shoen(do_tan,{{0,1},Z},R), tan05(R,Z).
+tan05(illegal_input,_):- put_console(c#"f") | tan06.
+otherwise.
+tan05(_,_):- put_console(c#"*") | tan06.
+
+tan06:- true | execute_in_shoen(do_tan,{ascii#"String",Z},R), tan06(R,Z).
+tan06(illegal_input,_):- put_console(c#"g") | tan07.
+otherwise.
+tan06(_,_):- put_console(c#"*") | tan07.
+
+tan07:- put_console(key#lf) | asn.
+
+asn:- put_console(ascii#"% B_Float_Asin %%%%%%%%%% ") | asn00.
+
+asn00:- true | execute_in_shoen(do_asin,{0.0,Z},R), asn00(R,Z).
+asn00(success,_):- put_console(c#"a") | asn01.
+otherwise.
+asn00(_,_):- put_console(c#"*") | asn01.
+
+asn01:- true | execute_in_shoen(do_asin,{2.0,Z},R), asn01(R,Z).
+asn01(floating_point_error,_):- put_console(c#"b") | asn02.
+otherwise.
+asn01(_,_):- put_console(c#"*") | asn02.
+
+asn02:- true | execute_in_shoen(do_asin,{1234,Z},R), asn02(R,Z).
+asn02(illegal_input,_):- put_console(c#"c") | asn03.
+otherwise.
+asn02(_,_):- put_console(c#"*") | asn03.
+
+asn03:- true | execute_in_shoen(do_asin,{atom,Z},R), asn03(R,Z).
+asn03(illegal_input,_):- put_console(c#"d") | asn04.
+otherwise.
+asn03(_,_):- put_console(c#"*") | asn04.
+
+asn04:- true | execute_in_shoen(do_asin,{[list],Z},R), asn04(R,Z).
+asn04(illegal_input,_):- put_console(c#"e") | asn05.
+otherwise.
+asn04(_,_):- put_console(c#"*") | asn05.
+
+asn05:- true | execute_in_shoen(do_asin,{{0,1},Z},R), asn05(R,Z).
+asn05(illegal_input,_):- put_console(c#"f") | asn06.
+otherwise.
+asn05(_,_):- put_console(c#"*") | asn06.
+
+asn06:- true | execute_in_shoen(do_asin,{ascii#"String",Z},R), asn06(R,Z).
+asn06(illegal_input,_):- put_console(c#"g") | asn07.
+otherwise.
+asn06(_,_):- put_console(c#"*") | asn07.
+
+asn07:- put_console(key#lf) | acs.
+
+acs:- put_console(ascii#"% B_Float_Acos %%%%%%%%%% ") | acs00.
+
+acs00:- true | execute_in_shoen(do_acos,{0.0,Z},R), acs00(R,Z).
+acs00(success,_):- put_console(c#"a") | acs01.
+otherwise.
+acs00(_,_):- put_console(c#"*") | acs01.
+
+acs01:- true | execute_in_shoen(do_acos,{2.0,Z},R), acs01(R,Z).
+acs01(floating_point_error,_):- put_console(c#"b") | acs02.
+otherwise.
+acs01(_,_):- put_console(c#"*") | acs02.
+
+acs02:- true | execute_in_shoen(do_acos,{1234,Z},R), acs02(R,Z).
+acs02(illegal_input,_):- put_console(c#"c") | acs03.
+otherwise.
+acs02(_,_):- put_console(c#"*") | acs03.
+
+acs03:- true | execute_in_shoen(do_acos,{atom,Z},R), acs03(R,Z).
+acs03(illegal_input,_):- put_console(c#"d") | acs04.
+otherwise.
+acs03(_,_):- put_console(c#"*") | acs04.
+
+acs04:- true | execute_in_shoen(do_acos,{[list],Z},R), acs04(R,Z).
+acs04(illegal_input,_):- put_console(c#"e") | acs05.
+otherwise.
+acs04(_,_):- put_console(c#"*") | acs05.
+
+acs05:- true | execute_in_shoen(do_acos,{{0,1},Z},R), acs05(R,Z).
+acs05(illegal_input,_):- put_console(c#"f") | acs06.
+otherwise.
+acs05(_,_):- put_console(c#"*") | acs06.
+
+acs06:- true | execute_in_shoen(do_acos,{ascii#"String",Z},R), acs06(R,Z).
+acs06(illegal_input,_):- put_console(c#"g") | acs07.
+otherwise.
+acs06(_,_):- put_console(c#"*") | acs07.
+
+acs07:- put_console(key#lf) | atn.
+
+atn:- put_console(ascii#"% B_Float_Atan %%%%%%%%%% ") | atn00.
+
+atn00:- true | execute_in_shoen(do_atan,{0.0,Z},R), atn00(R,Z).
+atn00(success,_):- put_console(c#"a") | atn01.
+otherwise.
+atn00(_,_):- put_console(c#"*") | atn01.
+
+atn01:- true | execute_in_shoen(do_atan,{2.0,Z},R), atn01(R,Z).
+atn01(success,_):- put_console(c#"b") | atn02.
+otherwise.
+atn01(_,_):- put_console(c#"*") | atn02.
+
+atn02:- true | execute_in_shoen(do_atan,{1234,Z},R), atn02(R,Z).
+atn02(illegal_input,_):- put_console(c#"c") | atn03.
+otherwise.
+atn02(_,_):- put_console(c#"*") | atn03.
+
+atn03:- true | execute_in_shoen(do_atan,{atom,Z},R), atn03(R,Z).
+atn03(illegal_input,_):- put_console(c#"d") | atn04.
+otherwise.
+atn03(_,_):- put_console(c#"*") | atn04.
+
+atn04:- true | execute_in_shoen(do_atan,{[list],Z},R), atn04(R,Z).
+atn04(illegal_input,_):- put_console(c#"e") | atn05.
+otherwise.
+atn04(_,_):- put_console(c#"*") | atn05.
+
+atn05:- true | execute_in_shoen(do_atan,{{0,1},Z},R), atn05(R,Z).
+atn05(illegal_input,_):- put_console(c#"f") | atn06.
+otherwise.
+atn05(_,_):- put_console(c#"*") | atn06.
+
+atn06:- true | execute_in_shoen(do_atan,{ascii#"String",Z},R), atn06(R,Z).
+atn06(illegal_input,_):- put_console(c#"g") | atn07.
+otherwise.
+atn06(_,_):- put_console(c#"*") | atn07.
+
+atn07:- put_console(key#lf) | snh.
+
+snh:- put_console(ascii#"% B_Float_Sinh %%%%%%%%%% ") | snh00.
+
+snh00:- true | execute_in_shoen(do_sinh,{3.141592654,Z},R), snh00(R,Z).
+snh00(success,_):- put_console(c#"a") | snh01.
+otherwise.
+snh00(_,_):- put_console(c#"*") | snh01.
+
+snh01:- true | execute_in_shoen(do_sinh,{0.0,Z},R), snh01(R,Z).
+snh01(success,_):- put_console(c#"b") | snh02.
+otherwise.
+snh01(_,_):- put_console(c#"*") | snh02.
+
+snh02:- true | execute_in_shoen(do_sinh,{1234,Z},R), snh02(R,Z).
+snh02(illegal_input,_):- put_console(c#"c") | snh03.
+otherwise.
+snh02(_,_):- put_console(c#"*") | snh03.
+
+snh03:- true | execute_in_shoen(do_sinh,{atom,Z},R), snh03(R,Z).
+snh03(illegal_input,_):- put_console(c#"d") | snh04.
+otherwise.
+snh03(_,_):- put_console(c#"*") | snh04.
+
+snh04:- true | execute_in_shoen(do_sinh,{[list],Z},R), snh04(R,Z).
+snh04(illegal_input,_):- put_console(c#"e") | snh05.
+otherwise.
+snh04(_,_):- put_console(c#"*") | snh05.
+
+snh05:- true | execute_in_shoen(do_sinh,{{0,1},Z},R), snh05(R,Z).
+snh05(illegal_input,_):- put_console(c#"f") | snh06.
+otherwise.
+snh05(_,_):- put_console(c#"*") | snh06.
+
+snh06:- true | execute_in_shoen(do_sinh,{ascii#"String",Z},R), snh06(R,Z).
+snh06(illegal_input,_):- put_console(c#"g") | snh07.
+otherwise.
+snh06(_,_):- put_console(c#"*") | snh07.
+
+snh07:- put_console(key#lf) | csh.
+
+csh:- put_console(ascii#"% B_Float_Cosh %%%%%%%%%% ") | csh00.
+
+csh00:- true | execute_in_shoen(do_cosh,{3.141592654,Z},R), csh00(R,Z).
+csh00(success,_):- put_console(c#"a") | csh01.
+otherwise.
+csh00(_,_):- put_console(c#"*") | csh01.
+
+csh01:- true | execute_in_shoen(do_cosh,{0.0,Z},R), csh01(R,Z).
+csh01(success,_):- put_console(c#"b") | csh02.
+otherwise.
+csh01(_,_):- put_console(c#"*") | csh02.
+
+csh02:- true | execute_in_shoen(do_cosh,{1234,Z},R), csh02(R,Z).
+csh02(illegal_input,_):- put_console(c#"c") | csh03.
+otherwise.
+csh02(_,_):- put_console(c#"*") | csh03.
+
+csh03:- true | execute_in_shoen(do_cosh,{atom,Z},R), csh03(R,Z).
+csh03(illegal_input,_):- put_console(c#"d") | csh04.
+otherwise.
+csh03(_,_):- put_console(c#"*") | csh04.
+
+csh04:- true | execute_in_shoen(do_cosh,{[list],Z},R), csh04(R,Z).
+csh04(illegal_input,_):- put_console(c#"e") | csh05.
+otherwise.
+csh04(_,_):- put_console(c#"*") | csh05.
+
+csh05:- true | execute_in_shoen(do_cosh,{{0,1},Z},R), csh05(R,Z).
+csh05(illegal_input,_):- put_console(c#"f") | csh06.
+otherwise.
+csh05(_,_):- put_console(c#"*") | csh06.
+
+csh06:- true | execute_in_shoen(do_cosh,{ascii#"String",Z},R), csh06(R,Z).
+csh06(illegal_input,_):- put_console(c#"g") | csh07.
+otherwise.
+csh06(_,_):- put_console(c#"*") | csh07.
+
+csh07:- put_console(key#lf) | tnh.
+
+tnh:- put_console(ascii#"% B_Float_Tanh %%%%%%%%%% ") | tnh00.
+
+tnh00:- true | execute_in_shoen(do_tanh,{3.141592654,Z},R), tnh00(R,Z).
+tnh00(success,_):- put_console(c#"a") | tnh01.
+otherwise.
+tnh00(_,_):- put_console(c#"*") | tnh01.
+
+tnh01:- true | execute_in_shoen(do_tanh,{0.0,Z},R), tnh01(R,Z).
+tnh01(success,_):- put_console(c#"b") | tnh02.
+otherwise.
+tnh01(_,_):- put_console(c#"*") | tnh02.
+
+tnh02:- true | execute_in_shoen(do_tanh,{1234,Z},R), tnh02(R,Z).
+tnh02(illegal_input,_):- put_console(c#"c") | tnh03.
+otherwise.
+tnh02(_,_):- put_console(c#"*") | tnh03.
+
+tnh03:- true | execute_in_shoen(do_tanh,{atom,Z},R), tnh03(R,Z).
+tnh03(illegal_input,_):- put_console(c#"d") | tnh04.
+otherwise.
+tnh03(_,_):- put_console(c#"*") | tnh04.
+
+tnh04:- true | execute_in_shoen(do_tanh,{[list],Z},R), tnh04(R,Z).
+tnh04(illegal_input,_):- put_console(c#"e") | tnh05.
+otherwise.
+tnh04(_,_):- put_console(c#"*") | tnh05.
+
+tnh05:- true | execute_in_shoen(do_tanh,{{0,1},Z},R), tnh05(R,Z).
+tnh05(illegal_input,_):- put_console(c#"f") | tnh06.
+otherwise.
+tnh05(_,_):- put_console(c#"*") | tnh06.
+
+tnh06:- true | execute_in_shoen(do_tanh,{ascii#"String",Z},R), tnh06(R,Z).
+tnh06(illegal_input,_):- put_console(c#"g") | tnh07.
+otherwise.
+tnh06(_,_):- put_console(c#"*") | tnh07.
+
+tnh07:- put_console(key#lf) | atn2.
+
+atn2:- put_console(ascii#"% B_Float_Atan2 %%%%%%%%% ") | atn200.
+
+atn200:- true | execute_in_shoen(do_atan2,{0.0,2.0,Z},R), atn200(R,Z).
+atn200(success,_):- put_console(c#"a") | atn201.
+otherwise.
+atn200(_,_):- put_console(c#"*") | atn201.
+
+atn201:- true | execute_in_shoen(do_atan2,{0.0,1234,Z},R), atn201(R,Z).
+atn201(illegal_input,_):- put_console(c#"b") | atn202.
+otherwise.
+atn201(_,_):- put_console(c#"*") | atn202.
+
+atn202:- true | execute_in_shoen(do_atan2,{0.0,atom,Z},R), atn202(R,Z).
+atn202(illegal_input,_):- put_console(c#"c") | atn203.
+otherwise.
+atn202(_,_):- put_console(c#"*") | atn203.
+
+atn203:- true | execute_in_shoen(do_atan2,{0.0,[list],Z},R), atn203(R,Z).
+atn203(illegal_input,_):- put_console(c#"d") | atn204.
+otherwise.
+atn203(_,_):- put_console(c#"*") | atn204.
+
+atn204:- true | execute_in_shoen(do_atan2,{0.0,{0,1},Z},R), atn204(R,Z).
+atn204(illegal_input,_):- put_console(c#"e") | atn205.
+otherwise.
+atn204(_,_):- put_console(c#"*") | atn205.
+
+atn205:- true | execute_in_shoen(do_atan2,{0.0,ascii#"String",Z},R), atn205(R,Z).
+atn205(illegal_input,_):- put_console(c#"f") | atn206.
+otherwise.
+atn205(_,_):- put_console(c#"*") | atn206.
+
+atn206:- true | execute_in_shoen(do_atan2,{2.0,0.0,Z},R), atn206(R,Z).
+atn206(success,_):- put_console(c#"g") | atn207.
+otherwise.
+atn206(_,_):- put_console(c#"*") | atn207.
+
+atn207:- true | execute_in_shoen(do_atan2,{1234,0.0,Z},R), atn207(R,Z).
+atn207(illegal_input,_):- put_console(c#"h") | atn208.
+otherwise.
+atn207(_,_):- put_console(c#"*") | atn208.
+
+atn208:- true | execute_in_shoen(do_atan2,{atom,0.0,Z},R), atn208(R,Z).
+atn208(illegal_input,_):- put_console(c#"i") | atn209.
+otherwise.
+atn208(_,_):- put_console(c#"*") | atn209.
+
+atn209:- true | execute_in_shoen(do_atan2,{[list],0.0,Z},R), atn209(R,Z).
+atn209(illegal_input,_):- put_console(c#"j") | atn210.
+otherwise.
+atn209(_,_):- put_console(c#"*") | atn210.
+
+atn210:- true | execute_in_shoen(do_atan2,{{0,1},0.0,Z},R), atn210(R,Z).
+atn210(illegal_input,_):- put_console(c#"k") | atn211.
+otherwise.
+atn210(_,_):- put_console(c#"*") | atn211.
+
+atn211:- true | execute_in_shoen(do_atan2,{ascii#"String",0.0,Z},R), atn211(R,Z).
+atn211(illegal_input,_):- put_console(c#"l") | atn212.
+otherwise.
+atn211(_,_):- put_console(c#"*") | atn212.
+
+atn212:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_f_tfunc_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(5,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=floating_point_error, C=[abort].
+
+do_sin(X,Z):- true | Z$:=sin(X).
+do_cos(X,Z):- true | Z$:=cos(X).
+do_tan(X,Z):- true | Z$:=tan(X).
+do_asin(X,Z):- true | Z$:=asin(X).
+do_acos(X,Z):- true | Z$:=acos(X).
+do_atan(X,Z):- true | Z$:=atan(X).
+do_sinh(X,Z):- true | Z$:=sinh(X).
+do_cosh(X,Z):- true | Z$:=cosh(X).
+do_tanh(X,Z):- true | Z$:=tanh(X).
+do_atan2(X,Y,Z):- true | Z$:=atan(X/Y).

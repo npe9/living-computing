@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/window_man.kl1" : Compiling ... create/3,manager/5,wait_create/11,wait_switch/6,END.
+
+[create/3]
+successdone
+
+exit 0
+asm d77df4c776bd7b1045df0fd40bf0a800f1a60cb0ba92d55f45d7318818a77ef1
+sav none

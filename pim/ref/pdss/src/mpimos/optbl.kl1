@@ -1,0 +1,150 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_opcode_table.
+:- public op/2.
+
+op(16#"C8",X):- true | X = add.
+op(16#"C9",X):- true | X = subtract.
+op(16#"CA",X):- true | X = multiply.
+op(16#"CB",X):- true | X = divide.
+op(16#"CC",X):- true | X = modulo.
+op(16#"CD",X):- true | X = minus.
+op(16#"CE",X):- true | X = increment.
+op(16#"CF",X):- true | X = decrement.
+op(16#"D0",X):- true | X = abs.
+op(16#"D1",X):- true | X = min.
+op(16#"D2",X):- true | X = max.
+op(16#"D3",X):- true | X = and.
+op(16#"D4",X):- true | X = or.
+op(16#"D5",X):- true | X = exclusive_or.
+op(16#"D6",X):- true | X = complement.
+op(16#"D7",X):- true | X = shift_left.
+op(16#"D8",X):- true | X = shift_right.
+
+op(16#"DA",X):- true | X = vector.
+op(16#"DB",X):- true | X = new_vector.
+op(16#"DC",X):- true | X = vector_element.
+op(16#"DD",X):- true | X = set_vector_element.
+
+op(16#"E0",X):- true | X = string.
+op(16#"E1",X):- true | X = new_string.
+op(16#"E2",X):- true | X = string_element.
+op(16#"E3",X):- true | X = set_string_element.
+op(16#"E4",X):- true | X = substring.
+op(16#"E5",X):- true | X = set_substring.
+op(16#"E6",X):- true | X = append_string.
+
+op(16#"1E0",X):- true | X = string_and.
+op(16#"1E1",X):- true | X = string_or.
+op(16#"1E2",X):- true | X = string_exclusive_or.
+op(16#"1E3",X):- true | X = string_complement.
+
+op(16#"E8",X):- true | X = new_atom.
+op(16#"E9",X):- true | X = intern_atom.
+op(16#"EA",X):- true | X = atom_name.
+op(16#"EB",X):- true | X = atom_number.
+
+op(16#"EE",X):- true | X = predicate_to_code.
+op(16#"EF",X):- true | X = code_to_predicate.
+
+op(16#"F3",X):- true | X = current_node.
+op(16#"F4",X):- true | X = apply.
+op(16#"F5",X):- true | X = raise.
+op(16#"F6",X):- true | X = merge.
+op(16#"F7",X):- true | X = current_processor.
+op(16#"F8",X):- true | X = current_priority.
+op(16#"F9",X):- true | X = b_rate.
+op(16#"FA",X):- true | X = b_rltv.
+op(16#"FB",X):- true | X = hash.
+op(16#"FC",X):- true | X = unbound.
+op(16#"FD",X):- true | X = get_print_image.
+op(16#"FE",X):- true | X = unbound.
+
+op(16#"130",X):- true | X = floating_point_add.
+op(16#"131",X):- true | X = floating_point_subtract.
+op(16#"132",X):- true | X = floating_point_multiply.
+op(16#"133",X):- true | X = floating_point_divide.
+op(16#"134",X):- true | X = floating_point_minus.
+op(16#"135",X):- true | X = floating_point_abs.
+op(16#"136",X):- true | X = floating_point_min.
+op(16#"137",X):- true | X = floating_point_max.
+op(16#"138",X):- true | X = floating_point_floor.
+op(16#"139",X):- true | X = floating_point_sqrt.
+op(16#"13A",X):- true | X = floating_point_ln.
+op(16#"13B",X):- true | X = floating_point_log.
+op(16#"13C",X):- true | X = floating_point_exp.
+op(16#"13D",X):- true | X = floating_point_pow.
+op(16#"13E",X):- true | X = floating_point_sin.
+op(16#"13F",X):- true | X = floating_point_cos.
+op(16#"140",X):- true | X = floating_point_tan.
+op(16#"141",X):- true | X = floating_point_asin.
+op(16#"142",X):- true | X = floating_point_acos.
+op(16#"143",X):- true | X = floating_point_atan.
+op(16#"144",X):- true | X = floating_point_atan.
+op(16#"145",X):- true | X = floating_point_sinh.
+op(16#"146",X):- true | X = floating_point_cosh.
+op(16#"147",X):- true | X = floating_point_tanh.
+
+op(16#"14E",X):- true | X = floating_point_to_integer.
+op(16#"14F",X):- true | X = integer_to_floating_point.
+
+op(16#"170",X):- true | X = create_shoen.
+op(16#"171",X):- true | X = start_shoen.
+op(16#"172",X):- true | X = stop_shoen.
+op(16#"173",X):- true | X = abort_shoen.
+op(16#"174",X):- true | X = remove_shoen.
+op(16#"175",X):- true | X = shoen_statistics.
+op(16#"176",X):- true | X = shoen_add_resource.
+op(16#"177",X):- true | X = consume_resource.
+
+op(16#"180",X):- true | X = create_window.
+op(16#"181",X):- true | X = remove_window.
+op(16#"182",X):- true | X = show_window.
+op(16#"183",X):- true | X = hide_window.
+op(16#"184",X):- true | X = create_file.
+op(16#"185",X):- true | X = remove_file.
+op(16#"186",X):- true | X = open_file.
+op(16#"187",X):- true | X = close_file.
+
+op(16#"188",X):- true | X = write_char.
+op(16#"189",X):- true | X = write_line.
+op(16#"18A",X):- true | X = write_buffer.
+op(16#"18B",X):- true | X = write_term.
+op(16#"18C",X):- true | X = read_char.
+op(16#"18D",X):- true | X = read_line.
+op(16#"18E",X):- true | X = read_buffer.
+op(16#"18F",X):- true | X = read_token.
+op(16#"190",X):- true | X = abort_read_command.
+
+op(16#"198",X):- true | X = test_directory.
+op(16#"199",X):- true | X = directory_pathname.
+op(16#"19A",X):- true | X = listing_files.
+op(16#"19B",X):- true | X = delete_files.
+
+op(16#"1A0",X):- true | X = get_time_count.
+op(16#"1A1",X):- true | X = on_at.
+op(16#"1A2",X):- true | X = on_after.
+
+op(16#"1B0",X):- true | X = save_module.
+op(16#"1B1",X):- true | X = load_module.
+op(16#"1B2",X):- true | X = assemble_module.
+op(16#"1B3",X):- true | X = remove_module.
+op(16#"1B4",X):- true | X = get_public_predicates.
+op(16#"1B5",X):- true | X = trace_module.
+op(16#"1B6",X):- true | X = get_module_status.
+op(16#"1B7",X):- true | X = spy_predicate.
+op(16#"1B8",X):- true | X = get_spied_predicates.
+op(16#"1B9",X):- true | X = reset_profile_info.
+op(16#"1BA",X):- true | X = get_profile_info.
+
+op(16#"1D0",X):- true | X = get_all_atom_name.
+op(16#"1D1",X):- true | X = unix.
+op(16#"1D2",X):- true | X = debug_monitor_stream.
+op(16#"1D3",X):- true | X = get_library_directory.
+otherwise.
+op(_,X):- true | X = '??Unknown??'.

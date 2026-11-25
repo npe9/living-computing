@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/merger.kl1" : Compiling ... merge/4,merge/5,wait_comp/6,merge_descending/5,wait_comp_descending/6,merge_user_defined/6,wait_comp_user_defined/7,key_merge/4,kmerge/7,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195191     50    172    10    1584000        0
+After:      10200     38    103     3      94092        0
+GCed :     184991     12     69     7    1489908        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+wait_kcomp/8,kmerge_descending/7,wait_kcomp_descending/8,kmerge_user_defined/8,wait_kcomp_user_defined/9,if_raise_error/1,if_raise_error_data_protocol/1,END.
+
+[merge/4,key_merge/4]
+successdone
+
+exit 0
+asm 5f696640fa8feaed9fc90b5dc52a3a7e932093a8ee0b7ad7ec3c70e8f04b5a66
+sav none

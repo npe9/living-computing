@@ -1,0 +1,39 @@
+%%% KL1-B Test for B_Merge %%%
+% B_Merge %%%%%%%%%%%%%%% abcd
+
+:- module b_merge.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Merge %%%"), put_console(key#lf) | mrg.
+
+mrg:- put_console(ascii#"% B_Merge %%%%%%%%%%%%%%% ") | mrg00.
+
+mrg00:- true | mrg00([]).
+mrg00(X):- true | merge(X,Z), mrg00ans(Z).
+mrg00ans([]):- put_console(c#"a") | mrg01.
+otherwise.
+mrg00ans(_):- put_console(c#"*") | mrg01.
+
+mrg01:- true | mrg01([a,b,c]).
+mrg01(X):- true | merge(X,Z), mrg01ans(Z).
+mrg01ans([a,b,c]):- put_console(c#"b") | mrg02.
+otherwise.
+mrg01ans(_):- put_console(c#"*") | mrg02.
+
+mrg02:- true | mrg02({}).
+mrg02(X):- true | merge(X,Z), mrg02ans(Z).
+mrg02ans([]):- put_console(c#"c") | mrg03.
+otherwise.
+mrg02ans(_):- put_console(c#"*") | mrg03.
+
+mrg03:- true | mrg03({{A,B},C}), get(B,[b]), get(C,[c]), get(A,[a]).
+mrg03(X):- true | merge(X,Z), mrg03ans(Z).
+mrg03ans([b,c,a]):- put_console(c#"d") | mrg04.
+otherwise.
+mrg03ans(_):- put_console(c#"*") | mrg04.
+
+mrg04:- put_console(key#lf) | done.
+
+done:- true | true.
+
+get(X,A):- true | X=A.

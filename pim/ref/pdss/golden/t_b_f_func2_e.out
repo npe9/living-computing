@@ -1,0 +1,30 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_f_func2_e" : Compiling ... go/0,min/0,min00/0,min00/2,min01/0,min01/2,min02/0,min02/2,min03/0,min03/2,min04/0,min04/2,min05/0,min05/2,min06/0,min06/2,min07/0,min07/2,min08/0,min08/2,min09/0,min09/2,min10/0,min10/2,min11/0,max/0,max00/0,max00/2,max01/0,max01/2,max02/0,max02/2,max03/0,max03/2,max04/0,max04/2,max05/0,max05/2,max06/0,max06/2,max07/0,max07/2,max08/0,max08/2,max09/0,max09/2,max10/0,max10/2,max11/0,pow/0,pow00/0,pow00/2,pow01/0,pow01/2,pow02/0,pow02/2,pow03/0,pow03/2,pow04/0,pow04/2,pow05/0,pow05/2,pow06/0,pow06/2,pow07/0,pow07/2,pow08/0,pow08/2,pow09/0,pow09/2,pow10/0,pow10/2,pow11/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_min/3,do_max/3,do_pow/3,END.
+
+[go/0,do_min/3,do_max/3,do_pow/3]
+successdone
+Loading ... done
+Module name : b_f_func2_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Float_Function_2_Args (Exception) %%%
+% B_Float_Min %%%%%%%%%%% abcdefghijk
+% B_Float_Max %%%%%%%%%%% abcdefghijk
+% B_Float_Pow %%%%%%%%%%% abcdefghijk
+Total of 657 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 241442a5ee3153a9c9145ab1ca42e5ecd693a8b751b042172a15c42d9b8043b3
+sav a8c6f63a3eaad264b998a899d23dfe1b9f4c23a80e994f779835147bec521896

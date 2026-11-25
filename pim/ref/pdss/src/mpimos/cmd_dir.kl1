@@ -1,0 +1,260 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_cmd_directory.
+:- public is_command/2,do_command/2,help/2.
+:- with_macro pdss.
+
+is_command(cd(_),               X):- true| X = yes.
+is_command(pwd,                 X):- true| X = yes.
+is_command(pwd(_),              X):- true| X = yes.
+is_command(ls(_),               X):- true| X = yes.
+is_command(ls(_,_),             X):- true| X = yes.
+is_command(rm(_),               X):- true| X = yes.
+otherwise.
+is_command(_,  			X):- true| X = no.
+
+
+%% do_commnd(CM, SS).
+%%     CM : Command from user
+%%     SS : ShellStream to shell
+
+do_command(cd(Dir), SS):-
+    string(Dir,_,8) |
+    SS = [getenv(world,DN)|SS1],
+    change_directory(SS1,Dir,DN).
+do_command(cd(DirA), SS):-
+    atom(DirA) |
+    atom_name(DirA,Dir),
+    do_command(cd(Dir), SS).
+do_command(pwd, SS):-
+    true |
+    new_string(Dir,0,8),
+    command_to_directory(Dir,[pathname(DN)],S,SS,SS1),
+    pwd(S,SS1,DN).
+do_command(pwd(World), SS):-
+    true |
+    new_string(Dir,0,8),
+    command_to_directory(Dir,[pathname(DN)],S,SS,SS1),
+    pwd(World,S,SS1,DN).
+do_command(ls(WCard), SS):-    %%%% Macro  ls ----> ls(*)
+    string(WCard,_,8) |
+    split_wildcard(WCard,Dir,Wild),
+    command_to_directory(Dir,[listing(Wild,FL,St)],S,SS,SS1),
+    file_list(SS1,S,St,FL).
+do_command(ls(WCardA), SS):-
+    atom(WCardA)|
+    atom_name(WCardA,WCard),
+    do_command(ls(WCard), SS).
+do_command(ls(WCard,FileL), SS):-
+    string(WCard,_,8)|
+    split_wildcard(WCard,Dir,Wild),
+    command_to_directory(Dir,[listing(Wild,FL,St)],S,SS,SS1),
+    wait_st(S,St,FL,FileL,SS1).
+do_command(ls(WCardA,FileL), SS):-
+    atom(WCardA)|
+    atom_name(WCardA,WCard),
+    do_command(ls(WCard,FileL), SS).
+do_command(rm(WCard), SS):-
+    string(WCard,_,8) |
+    split_wildcard(WCard,Dir,Wild),
+    command_to_directory(Dir,[delete(Wild,St)],S,SS,SS1),
+    wait_remove(SS1,S,St).
+do_command(rm(WCardA), SS):-
+    atom(WCardA) |
+    atom_name(WCardA, WCard),
+    do_command(rm(WCard), SS).
+otherwise.
+do_command(Com,SS):-
+     true|
+     mpimos_utility:freeze(Com,FCom),
+     mpimos_cmd_utl:send_shell(window(
+         	     [putb(string#"ArgumentError detected in "),
+			      putt(FCom),nl]),SS,[window([flush(EF)])]),
+     fail_action(EF).
+
+
+command_to_directory(Dir,Cmd,S,SS,NSS) :-
+    true |
+	SS = [getenv(world,DN)|SS1],
+	check_world(Dir,Cmd,S,SS1,NSS,DN).
+
+check_world(Dir,Cmd,S,SS,NSS,DN) :-
+    string(DN,_,8) |
+	mpimos_utility:pathname(DN,Dir,DirN),
+	mpimos_directory:create(Cmd,DirN,S0),
+	check_world_0(SS,NSS,S,S0).
+otherwise.
+check_world(_,_,S,SS,NSS,DN) :-
+    true |
+	S = fail,
+	SS = [window([putb(string#"Illegal environment variable ::: world = "),
+		      putt(DN),nl,flush(_)])|NSS].
+
+check_world_0(SS,NSS,S,success) :-
+    true |
+	S = success,
+	SS = NSS.
+otherwise.
+check_world_0(SS,NSS,S,error(S0)) :-
+    true |
+	S = error(S0),
+	SS = NSS.
+
+change_directory(SS,Dir,DN) :-
+    string(DN,_,8) |
+    mpimos_utility:pathname(DN,Dir,DDir),
+    mpimos_directory:create(DS,DDir,St),
+    change_directory0(SS,DS,St).
+otherwise.
+change_directory(SS,Dir,_) :-
+    true |
+    mpimos_directory:create(DS,Dir,St),
+    change_directory0(SS,DS,St).
+
+change_directory0(SS, DS, success):-
+    true |
+    DS = [pathname(DN)],
+    mpimos_cmd_utl:send_shell(window([putb(string#"world = "),putb(DN),nl]),
+			      SS,[window([flush(EF)]),setenv(world,DN)]),
+    wait(EF).
+change_directory0(SS, DS, error(_)):-
+    true |
+    DS = [],
+    SS = [window([putb(string#"No such directory"),nl,flush(EF)])],
+    wait_fail(EF).
+
+file_list(SS, success, success, FL):-
+    list(FL) |
+    file_list0(FL, L),
+    mpimos_cmd_utl:send_shell(window(L),SS,[window([flush(EF)])]),
+    wait(EF).
+file_list(SS, fail, _, _):-
+    true |
+    SS = [],
+    wait_fail(done).
+otherwise.
+file_list(SS, _, _, _):-
+    true |
+    SS = [window([putb(string#"Not found."),nl,flush(EF)])],
+    wait_fail(EF).
+
+file_list0([F|FL], L):-
+    string(F,_,_)|
+    L = [putl(F)|L1],
+    file_list0(FL, L1).
+file_list0([],     L):-
+    true |
+    L = [].
+
+wait_st(success,success,FL,FileL,SS):-
+    true|
+    SS = [],
+    FL = FileL.
+wait_st(fail,_,_,FileL,SS):-
+    true|
+    FileL = [],
+    SS = [],
+    wait_fail(done).
+otherwise.
+wait_st(_,_,_,FileL,SS):-
+    true|
+    FileL = [],
+    SS = [].
+
+wait_remove(SS, success, success):-
+    true |
+    SS = [window([putb(string#"Done."),nl,flush(EF)])],
+    wait(EF).
+wait_remove(SS, fail, _):-
+    true |
+    SS = [],
+    wait_fail(done).
+otherwise.
+wait_remove(SS, _, _):-
+    true |
+    SS = [window([putb(string#"Nonexistent."),nl,flush(EF)])],
+    wait_fail(EF).
+
+pwd(success,SS,DN):-
+    true |
+    SS = [window([putb(string#"world = "),putb(DN),nl,flush(EF)])],
+    wait(EF).
+otherwise.
+pwd(_,SS,_):-
+    true |
+    SS = [],
+    wait_fail(done).
+
+pwd(World,success,SS,DN):-
+    true |
+    World = DN,
+    SS = [].
+otherwise.
+pwd(World,_,SS,_):-
+    true |
+    new_string(World,0,8),
+    SS = [],
+    wait_fail(done).
+
+split_wildcard(Wildcard,Dir,Wild):-
+    string(Wildcard,L,8) |
+	mpimos_utility:compress(Wildcard,CWC),
+	LL := L - 1,
+	split_wildcard(CWC,Dir,Wild,LL,L).
+
+split_wildcard(Wildcard,Dir,Wild,P,_):-
+    P < 0 |
+	new_string(Dir,0,8),
+	Wild = Wildcard.
+split_wildcard(Wildcard,Dir,Wild,P,L):-
+    string_element(Wildcard,P,#"/"), P =:= L-1 |
+	substring(Wildcard,0,P,Dir,_),
+	new_string(Wild,0,8).
+split_wildcard(Wildcard,Dir,Wild,P,L):-
+    string_element(Wildcard,P,#"/"), P =\= L-1 |
+	substring(Wildcard,0,P,Dir,NWC),
+	PP := P + 1,
+	LL := L - P - 1,
+	substring(NWC,PP,LL,Wild,_).
+split_wildcard(Wildcard,Dir,Wild,0,_):-
+    string_element(Wildcard,0,#"~") |
+	Dir = Wildcard,
+	new_string(Wild,0,8).
+otherwise.
+split_wildcard(Wildcard,Dir,Wild,P,L):-
+    true |
+	PP := P - 1,
+	split_wildcard(Wildcard,Dir,Wild,PP,L).
+
+wait(EF):- wait(EF)|true.
+
+wait_fail(EF):-
+    wait(EF)|
+    raise(shoen_tag#mpimos_unit,shell(fail),_).
+
+
+fail_action(F):-
+    wait(F)|
+    raise(shoen_tag#mpimos_unit,shell(fail),_).
+
+
+help(menu,MSG):-
+    true|
+    MSG = string#"cd,pwd,ls,rm,etc.".
+help(item,MSG):-
+    true|
+    MSG = dir.
+help(message,MSG):-
+   true|
+   MSG = [string#"There are following directory commands.",
+   string#"cd(DIRECTORY)      --- Change current directory to DIRECTORY.",
+   string#"pwd                --- Print current ditrctory.",
+   string#"pwd(DIRECTORY)     --- Get current ditrctory to DIRECTORY.",
+   string#"ls(WILDCARD)       --- Listing file names matched WILDCARD.",
+   string#"ls(WILDCARD,FILES) --- Listing file names matched WILDCARD to FILES.",
+   string#"rm(WILDCARD)       --- Delete files matched WILDCARD."].

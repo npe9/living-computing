@@ -1,0 +1,88 @@
+/* このテストプログラムはProlog版コンパイラで */
+/* クローズインデキシングを掛けた場合のみ有効 */
+%%% KL1-B Test for Switch_On_Type %%%
+% (Atom) %%%%%%%%%%%%%%%% a
+% (Integer) %%%%%%%%%%%%% a
+% (List) %%%%%%%%%%%%%%%% a
+% (Vector) %%%%%%%%%%%%%% a
+% (String) %%%%%%%%%%%%%% a
+% (Float) %%%%%%%%%%%%%%% a
+
+:- module sw_type.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Switch_On_Type %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% (Atom) %%%%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom).
+atm00(X):- atom(X), put_console(c#"a") | atm01.
+atm00(X):- integer(X), put_console(c#"*") | atm01.
+atm00(X):- list(X), put_console(c#"*") | atm01.
+atm00(X):- vector(X), put_console(c#"*") | atm01.
+atm00(X):- string(X), put_console(c#"*") | atm01.
+atm00(X):- floating_point(X), put_console(c#"*") | atm01.
+
+atm01:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% (Integer) %%%%%%%%%%%%% ") | int00.
+
+int00:- true | int00(1234).
+int00(X):- atom(X), put_console(c#"*") | int01.
+int00(X):- integer(X), put_console(c#"a") | int01.
+int00(X):- list(X), put_console(c#"*") | int01.
+int00(X):- vector(X), put_console(c#"*") | int01.
+int00(X):- string(X), put_console(c#"*") | int01.
+int00(X):- floating_point(X), put_console(c#"*") | int01.
+
+int01:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% (List) %%%%%%%%%%%%%%%% ") | lst00.
+
+lst00:- true | lst00([list]).
+lst00(X):- atom(X), put_console(c#"*") | lst01.
+lst00(X):- integer(X), put_console(c#"*") | lst01.
+lst00(X):- list(X), put_console(c#"a") | lst01.
+lst00(X):- vector(X), put_console(c#"*") | lst01.
+lst00(X):- string(X), put_console(c#"*") | lst01.
+lst00(X):- floating_point(X), put_console(c#"*") | lst01.
+
+lst01:- put_console(key#lf) | vct.
+
+vct:- put_console(ascii#"% (Vector) %%%%%%%%%%%%%% ") | vct00.
+
+vct00:- true | vct00({0,1}).
+vct00(X):- atom(X), put_console(c#"*") | vct01.
+vct00(X):- integer(X), put_console(c#"*") | vct01.
+vct00(X):- list(X), put_console(c#"*") | vct01.
+vct00(X):- vector(X), put_console(c#"a") | vct01.
+vct00(X):- string(X), put_console(c#"*") | vct01.
+vct00(X):- floating_point(X), put_console(c#"*") | vct01.
+
+vct01:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% (String) %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | str00(ascii#"String").
+str00(X):- atom(X), put_console(c#"*") | str01.
+str00(X):- integer(X), put_console(c#"*") | str01.
+str00(X):- list(X), put_console(c#"*") | str01.
+str00(X):- vector(X), put_console(c#"*") | str01.
+str00(X):- string(X), put_console(c#"a") | str01.
+str00(X):- floating_point(X), put_console(c#"*") | str01.
+
+str01:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% (Float) %%%%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00(12.34).
+flt00(X):- atom(X), put_console(c#"*") | flt01.
+flt00(X):- integer(X), put_console(c#"*") | flt01.
+flt00(X):- list(X), put_console(c#"*") | flt01.
+flt00(X):- vector(X), put_console(c#"*") | flt01.
+flt00(X):- string(X), put_console(c#"*") | flt01.
+flt00(X):- floating_point(X), put_console(c#"a") | flt01.
+
+flt01:- put_console(key#lf) | done.
+
+done:- true | true.

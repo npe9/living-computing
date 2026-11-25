@@ -1,0 +1,45 @@
+/* このテストプログラムはProlog版コンパイラでのみ有効 */
+%%% KL1-B Test for Put_Reused_Structure %%%
+% Put_Reused_List %%%%%%% ab
+% Put_Reused_Vector %%%%% ab
+
+:- module reuse.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Put_Reused_Structure %%%"), put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% Put_Reused_List %%%%%%% ") | lst00.
+
+lst00:- true | lst00reuse([list|V]), V=[].
+lst00reuse([_|_]):- true | lst00([abcd|V]), V=[].
+lst00([abcd]):- put_console(c#"a") | lst01.
+otherwise.
+lst00(_):- put_console(c#"*") | lst01.
+
+lst01:- true | lst01([list|V]), V=[].
+lst01(X):- true | lst01reuse(X,X).
+lst01reuse([_|_],X):- true | lst01([abcd|V],X), V=[].
+lst01([abcd],[list]):- put_console(c#"b") | lst02.
+otherwise.
+lst01(_,_):- put_console(c#"*") | lst02.
+
+lst02:- put_console(key#lf) | vct.
+
+vct:- put_console(ascii#"% Put_Reused_Vector %%%%% ") | vct00.
+
+vct00:- true | vct00reuse({0,V}), V=[].
+vct00reuse({_,_}):- true | vct00({2,V}), V=[].
+vct00({2,[]}):- put_console(c#"a") | vct01.
+otherwise.
+vct00(_):- put_console(c#"*") | vct01.
+
+vct01:- true | vct01({0,V}), V=[].
+vct01(X):- true | vct01reuse(X,X).
+vct01reuse({_,_},X):- true | vct01({2,V},X), V=[].
+vct01({2,[]},{0,[]}):- put_console(c#"b") | vct02.
+otherwise.
+vct01(_,_):- put_console(c#"*") | vct02.
+
+vct02:- put_console(key#lf) | done.
+
+done:- true | true.

@@ -1,0 +1,78 @@
+%%% KL1-B Test for Put_Constant %%%
+% Put_Atom %%%%%%%%%%%%%% a
+% Put_Nil %%%%%%%%%%%%%%% a
+% Put_Integer %%%%%%%%%%% a
+% Put_Float %%%%%%%%%%%%% a
+% Put_List %%%%%%%%%%%%%% a
+% Put_Vector %%%%%%%%%%%% a
+% Put_Struct_Const %%%%%% a
+
+:- module put_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Put_Constant %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Put_Atom %%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom).
+atm00(atom):- put_console(c#"a") | atm01.
+alternatively.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Put_Nil %%%%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | nil00([]).
+nil00([]):- put_console(c#"a") | nil01.
+alternatively.
+nil00(_):- put_console(c#"*") | nil01.
+
+nil01:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Put_Integer %%%%%%%%%%% ") | int00.
+
+int00:- true | int00(1234).
+int00(1234):- put_console(c#"a") | int01.
+alternatively.
+int00(_):- put_console(c#"*") | int01.
+
+int01:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Put_Float %%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00(12.34).
+flt00(12.34):- put_console(c#"a") | flt01.
+alternatively.
+flt00(_):- put_console(c#"*") | flt01.
+
+flt01:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% Put_List %%%%%%%%%%%%%% ") | lst00.
+
+lst00:- true | lst00([_|_]).
+lst00([_|_]):- put_console(c#"a") | lst01.
+alternatively.
+lst00(_):- put_console(c#"*") | lst01.
+
+lst01:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% Put_Vector %%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00({_,_}).
+vec00({_,_}):- put_console(c#"a") | vec01.
+alternatively.
+vec00(_):- put_console(c#"*") | vec01.
+
+vec01:- put_console(key#lf) | stc.
+
+stc:- put_console(ascii#"% Put_Struct_Const %%%%%% ") | stc00.
+
+stc00:- true | stc00(ascii#"String").
+stc00(ascii#"String"):- put_console(c#"a") | stc01.
+alternatively.
+stc00(_):- put_console(c#"*") | stc01.
+
+stc01:- put_console(key#lf) | done.
+
+done:- true | true.

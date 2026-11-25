@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/dir_drv.kl1" : Compiling ... create/6,directory/6,listing/3,END.
+
+[create/6]
+successdone
+
+exit 0
+asm 9def9b745559279f7760a6d6d46d5878aa279b8de6a6cc7ea2e200bea118f190
+sav none

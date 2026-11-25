@@ -1,0 +1,86 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS Directory device driver.
+
+:- module mpimos_directory_device_driver.
+:- public create/6.
+
+%%  Create directory process.
+%%  create(Req,DS,MI,MO,TF,Atr).
+%%	Req :: Request stream from user.
+%%	DS  :: Directory stream to device.
+%%	MI  :: Directory monitor stream (in).
+%%	MO  :: Directory monitor stream (out).
+%%	TF  :: Termination flag.
+%%	Atr :: Attribute of directory (directory-name).
+
+create(Req,DS,MI,MO,TF,Atr) :-
+    true |
+	directory(Req,DS,MI,MO,TF,Atr).
+
+%%  Directory process.
+%%  directory(Req,DS,MI,MO,TF,Atr).
+%%	Req :: Request stream from user.
+%%	DS  :: Directory stream to device.
+%%	MI  :: Directory monitor stream (in).
+%%	MO  :: Directory monitor stream (out).
+%%	TF  :: Termination flag.
+%%	Atr :: Attribute of directory (directory-name).
+
+directory(Req,DS,MI,MO,die,Atr) :-
+    true |
+	DS = [],
+	MI = MO.
+alternatively.
+directory([pathname(PN,Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = pathname(PN,Sts,DS2),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([listing(WC,FNs,Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = listing(WC,NS,Sts,DS2),
+	listing(FNs,NS,TF),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([delete(WC,Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = delete(WC,Sts,DS2),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([undelete(WC,Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = undelete(WC,Sts,DS2),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([purge(WC,Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = purge(WC,Sts,DS2),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([deleted(WC,FNs,Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = deleted(WC,NS,Sts,DS2),
+	listing(FNs,NS,TF),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([expunge(Sts)|Req],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = expunge(Sts,DS2),
+	directory(Req,DS2,MI,MO,TF,Atr).
+directory([],DS,MI,MO,TF,Atr) :-
+    true |
+	DS = [],
+	MI = MO.
+
+%% Listing driver.
+listing(FNs,NS,die) :-
+    true |
+	NS = [].
+alternatively.
+listing([],NS,TF) :-
+    true |
+	NS = [].
+listing([next_file_name(FN,S)|FNs],NS,TF) :-
+    true |
+	NS = next_file_name(FN,S,NS2),
+	listing(FNs,NS2,TF).

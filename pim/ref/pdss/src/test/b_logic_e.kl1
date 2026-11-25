@@ -1,0 +1,417 @@
+%%% KL1-B Test for B_Logic (Exception) %%%
+% B_Shift_Left %%%%%%%%%% abcdefghijklmn
+% B_Shift_Right %%%%%%%%% abcdefghijklmn
+% B_And %%%%%%%%%%%%%%%%% abcdefghijkl
+% B_Or %%%%%%%%%%%%%%%%%% abcdefghijkl
+% B_Exclusive_Or %%%%%%%% abcdefghijkl
+% B_Complement %%%%%%%%%% abcdefg
+
+:- module b_logic_e.
+:- public go/0,do_shift_left/3,do_shift_right/3,do_and/3,do_or/3,do_exclusive_or/3,do_complement/2.
+
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Logic (Exception) %%%"), put_console(key#lf) | shl.
+
+shl:- put_console(ascii#"% B_Shift_Left %%%%%%%%%% ") | shl00.
+
+shl00:- true | execute_in_shoen(do_shift_left,{16#"5A5A5A5A",-1,Z},R), shl00(R,Z).
+shl00(range_overflow,_):- put_console(c#"a") | shl01.
+otherwise.
+shl00(_,_):- put_console(c#"*") | shl01.
+
+shl01:- true | execute_in_shoen(do_shift_left,{16#"5A5A5A5A",0,Z},R), shl01(R,Z).
+shl01(success,_):- put_console(c#"b") | shl02.
+otherwise.
+shl01(_,_):- put_console(c#"*") | shl02.
+
+shl02:- true | execute_in_shoen(do_shift_left,{16#"5A5A5A5A",31,Z},R), shl02(R,Z).
+shl02(success,_):- put_console(c#"c") | shl03.
+otherwise.
+shl02(_,_):- put_console(c#"*") | shl03.
+
+shl03:- true | execute_in_shoen(do_shift_left,{16#"5A5A5A5A",32,Z},R), shl03(R,Z).
+shl03(range_overflow,_):- put_console(c#"d") | shl04.
+otherwise.
+shl03(_,_):- put_console(c#"*") | shl04.
+
+shl04:- true | execute_in_shoen(do_shift_left,{0,atom,Z},R), shl04(R,Z).
+shl04(illegal_input,_):- put_console(c#"e") | shl05.
+otherwise.
+shl04(_,_):- put_console(c#"*") | shl05.
+
+shl05:- true | execute_in_shoen(do_shift_left,{0,12.34,Z},R), shl05(R,Z).
+shl05(illegal_input,_):- put_console(c#"f") | shl06.
+otherwise.
+shl05(_,_):- put_console(c#"*") | shl06.
+
+shl06:- true | execute_in_shoen(do_shift_left,{0,[list],Z},R), shl06(R,Z).
+shl06(illegal_input,_):- put_console(c#"g") | shl07.
+otherwise.
+shl06(_,_):- put_console(c#"*") | shl07.
+
+shl07:- true | execute_in_shoen(do_shift_left,{0,{0,1},Z},R), shl07(R,Z).
+shl07(illegal_input,_):- put_console(c#"h") | shl08.
+otherwise.
+shl07(_,_):- put_console(c#"*") | shl08.
+
+shl08:- true | execute_in_shoen(do_shift_left,{0,ascii#"String",Z},R), shl08(R,Z).
+shl08(illegal_input,_):- put_console(c#"i") | shl09.
+otherwise.
+shl08(_,_):- put_console(c#"*") | shl09.
+
+shl09:- true | execute_in_shoen(do_shift_left,{atom,0,Z},R), shl09(R,Z).
+shl09(illegal_input,_):- put_console(c#"j") | shl10.
+otherwise.
+shl09(_,_):- put_console(c#"*") | shl10.
+
+shl10:- true | execute_in_shoen(do_shift_left,{12.34,0,Z},R), shl10(R,Z).
+shl10(illegal_input,_):- put_console(c#"k") | shl11.
+otherwise.
+shl10(_,_):- put_console(c#"*") | shl11.
+
+shl11:- true | execute_in_shoen(do_shift_left,{[list],0,Z},R), shl11(R,Z).
+shl11(illegal_input,_):- put_console(c#"l") | shl12.
+otherwise.
+shl11(_,_):- put_console(c#"*") | shl12.
+
+shl12:- true | execute_in_shoen(do_shift_left,{{0,1},0,Z},R), shl12(R,Z).
+shl12(illegal_input,_):- put_console(c#"m") | shl13.
+otherwise.
+shl12(_,_):- put_console(c#"*") | shl13.
+
+shl13:- true | execute_in_shoen(do_shift_left,{ascii#"String",0,Z},R), shl13(R,Z).
+shl13(illegal_input,_):- put_console(c#"n") | shl14.
+otherwise.
+shl13(_,_):- put_console(c#"*") | shl14.
+
+shl14:- put_console(key#lf) | shr.
+
+shr:- put_console(ascii#"% B_Shift_Right %%%%%%%%% ") | shr00.
+
+shr00:- true | execute_in_shoen(do_shift_right,{16#"5A5A5A5A",-1,Z},R), shr00(R,Z).
+shr00(range_overflow,_):- put_console(c#"a") | shr01.
+otherwise.
+shr00(_,_):- put_console(c#"*") | shr01.
+
+shr01:- true | execute_in_shoen(do_shift_right,{16#"5A5A5A5A",0,Z},R), shr01(R,Z).
+shr01(success,_):- put_console(c#"b") | shr02.
+otherwise.
+shr01(_,_):- put_console(c#"*") | shr02.
+
+shr02:- true | execute_in_shoen(do_shift_right,{16#"5A5A5A5A",31,Z},R), shr02(R,Z).
+shr02(success,_):- put_console(c#"c") | shr03.
+otherwise.
+shr02(_,_):- put_console(c#"*") | shr03.
+
+shr03:- true | execute_in_shoen(do_shift_right,{16#"5A5A5A5A",32,Z},R), shr03(R,Z).
+shr03(range_overflow,_):- put_console(c#"d") | shr04.
+otherwise.
+shr03(_,_):- put_console(c#"*") | shr04.
+
+shr04:- true | execute_in_shoen(do_shift_right,{0,atom,Z},R), shr04(R,Z).
+shr04(illegal_input,_):- put_console(c#"e") | shr05.
+otherwise.
+shr04(_,_):- put_console(c#"*") | shr05.
+
+shr05:- true | execute_in_shoen(do_shift_right,{0,12.34,Z},R), shr05(R,Z).
+shr05(illegal_input,_):- put_console(c#"f") | shr06.
+otherwise.
+shr05(_,_):- put_console(c#"*") | shr06.
+
+shr06:- true | execute_in_shoen(do_shift_right,{0,[list],Z},R), shr06(R,Z).
+shr06(illegal_input,_):- put_console(c#"g") | shr07.
+otherwise.
+shr06(_,_):- put_console(c#"*") | shr07.
+
+shr07:- true | execute_in_shoen(do_shift_right,{0,{0,1},Z},R), shr07(R,Z).
+shr07(illegal_input,_):- put_console(c#"h") | shr08.
+otherwise.
+shr07(_,_):- put_console(c#"*") | shr08.
+
+shr08:- true | execute_in_shoen(do_shift_right,{0,ascii#"String",Z},R), shr08(R,Z).
+shr08(illegal_input,_):- put_console(c#"i") | shr09.
+otherwise.
+shr08(_,_):- put_console(c#"*") | shr09.
+
+shr09:- true | execute_in_shoen(do_shift_right,{atom,0,Z},R), shr09(R,Z).
+shr09(illegal_input,_):- put_console(c#"j") | shr10.
+otherwise.
+shr09(_,_):- put_console(c#"*") | shr10.
+
+shr10:- true | execute_in_shoen(do_shift_right,{12.34,0,Z},R), shr10(R,Z).
+shr10(illegal_input,_):- put_console(c#"k") | shr11.
+otherwise.
+shr10(_,_):- put_console(c#"*") | shr11.
+
+shr11:- true | execute_in_shoen(do_shift_right,{[list],0,Z},R), shr11(R,Z).
+shr11(illegal_input,_):- put_console(c#"l") | shr12.
+otherwise.
+shr11(_,_):- put_console(c#"*") | shr12.
+
+shr12:- true | execute_in_shoen(do_shift_right,{{0,1},0,Z},R), shr12(R,Z).
+shr12(illegal_input,_):- put_console(c#"m") | shr13.
+otherwise.
+shr12(_,_):- put_console(c#"*") | shr13.
+
+shr13:- true | execute_in_shoen(do_shift_right,{ascii#"String",0,Z},R), shr13(R,Z).
+shr13(illegal_input,_):- put_console(c#"n") | shr14.
+otherwise.
+shr13(_,_):- put_console(c#"*") | shr14.
+
+shr14:- put_console(key#lf) | and.
+
+and:- put_console(ascii#"% B_And %%%%%%%%%%%%%%%%% ") | and00.
+
+and00:- true | execute_in_shoen(do_and,{16#"5A5A5A5A",-1,Z},R), and00(R,Z).
+and00(success,_):- put_console(c#"a") | and01.
+otherwise.
+and00(_,_):- put_console(c#"*") | and01.
+
+and01:- true | execute_in_shoen(do_and,{16#"5A5A5A5A",0,Z},R), and01(R,Z).
+and01(success,_):- put_console(c#"b") | and02.
+otherwise.
+and01(_,_):- put_console(c#"*") | and02.
+
+and02:- true | execute_in_shoen(do_and,{0,atom,Z},R), and02(R,Z).
+and02(illegal_input,_):- put_console(c#"c") | and03.
+otherwise.
+and02(_,_):- put_console(c#"*") | and03.
+
+and03:- true | execute_in_shoen(do_and,{0,12.34,Z},R), and03(R,Z).
+and03(illegal_input,_):- put_console(c#"d") | and04.
+otherwise.
+and03(_,_):- put_console(c#"*") | and04.
+
+and04:- true | execute_in_shoen(do_and,{0,[list],Z},R), and04(R,Z).
+and04(illegal_input,_):- put_console(c#"e") | and05.
+otherwise.
+and04(_,_):- put_console(c#"*") | and05.
+
+and05:- true | execute_in_shoen(do_and,{0,{0,1},Z},R), and05(R,Z).
+and05(illegal_input,_):- put_console(c#"f") | and06.
+otherwise.
+and05(_,_):- put_console(c#"*") | and06.
+
+and06:- true | execute_in_shoen(do_and,{0,ascii#"String",Z},R), and06(R,Z).
+and06(illegal_input,_):- put_console(c#"g") | and07.
+otherwise.
+and06(_,_):- put_console(c#"*") | and07.
+
+and07:- true | execute_in_shoen(do_and,{atom,0,Z},R), and07(R,Z).
+and07(illegal_input,_):- put_console(c#"h") | and08.
+otherwise.
+and07(_,_):- put_console(c#"*") | and08.
+
+and08:- true | execute_in_shoen(do_and,{12.34,0,Z},R), and08(R,Z).
+and08(illegal_input,_):- put_console(c#"i") | and09.
+otherwise.
+and08(_,_):- put_console(c#"*") | and09.
+
+and09:- true | execute_in_shoen(do_and,{[list],0,Z},R), and09(R,Z).
+and09(illegal_input,_):- put_console(c#"j") | and10.
+otherwise.
+and09(_,_):- put_console(c#"*") | and10.
+
+and10:- true | execute_in_shoen(do_and,{{0,1},0,Z},R), and10(R,Z).
+and10(illegal_input,_):- put_console(c#"k") | and11.
+otherwise.
+and10(_,_):- put_console(c#"*") | and11.
+
+and11:- true | execute_in_shoen(do_and,{ascii#"String",0,Z},R), and11(R,Z).
+and11(illegal_input,_):- put_console(c#"l") | and12.
+otherwise.
+and11(_,_):- put_console(c#"*") | and12.
+
+and12:- put_console(key#lf) | or.
+
+or:- put_console(ascii#"% B_Or %%%%%%%%%%%%%%%%%% ") | or00.
+
+or00:- true | execute_in_shoen(do_or,{16#"5A5A5A5A",-1,Z},R), or00(R,Z).
+or00(success,_):- put_console(c#"a") | or01.
+otherwise.
+or00(_,_):- put_console(c#"*") | or01.
+
+or01:- true | execute_in_shoen(do_or,{16#"5A5A5A5A",0,Z},R), or01(R,Z).
+or01(success,_):- put_console(c#"b") | or02.
+otherwise.
+or01(_,_):- put_console(c#"*") | or02.
+
+or02:- true | execute_in_shoen(do_or,{0,atom,Z},R), or02(R,Z).
+or02(illegal_input,_):- put_console(c#"c") | or03.
+otherwise.
+or02(_,_):- put_console(c#"*") | or03.
+
+or03:- true | execute_in_shoen(do_or,{0,12.34,Z},R), or03(R,Z).
+or03(illegal_input,_):- put_console(c#"d") | or04.
+otherwise.
+or03(_,_):- put_console(c#"*") | or04.
+
+or04:- true | execute_in_shoen(do_or,{0,[list],Z},R), or04(R,Z).
+or04(illegal_input,_):- put_console(c#"e") | or05.
+otherwise.
+or04(_,_):- put_console(c#"*") | or05.
+
+or05:- true | execute_in_shoen(do_or,{0,{0,1},Z},R), or05(R,Z).
+or05(illegal_input,_):- put_console(c#"f") | or06.
+otherwise.
+or05(_,_):- put_console(c#"*") | or06.
+
+or06:- true | execute_in_shoen(do_or,{0,ascii#"String",Z},R), or06(R,Z).
+or06(illegal_input,_):- put_console(c#"g") | or07.
+otherwise.
+or06(_,_):- put_console(c#"*") | or07.
+
+or07:- true | execute_in_shoen(do_or,{atom,0,Z},R), or07(R,Z).
+or07(illegal_input,_):- put_console(c#"h") | or08.
+otherwise.
+or07(_,_):- put_console(c#"*") | or08.
+
+or08:- true | execute_in_shoen(do_or,{12.34,0,Z},R), or08(R,Z).
+or08(illegal_input,_):- put_console(c#"i") | or09.
+otherwise.
+or08(_,_):- put_console(c#"*") | or09.
+
+or09:- true | execute_in_shoen(do_or,{[list],0,Z},R), or09(R,Z).
+or09(illegal_input,_):- put_console(c#"j") | or10.
+otherwise.
+or09(_,_):- put_console(c#"*") | or10.
+
+or10:- true | execute_in_shoen(do_or,{{0,1},0,Z},R), or10(R,Z).
+or10(illegal_input,_):- put_console(c#"k") | or11.
+otherwise.
+or10(_,_):- put_console(c#"*") | or11.
+
+or11:- true | execute_in_shoen(do_or,{ascii#"String",0,Z},R), or11(R,Z).
+or11(illegal_input,_):- put_console(c#"l") | or12.
+otherwise.
+or11(_,_):- put_console(c#"*") | or12.
+
+or12:- put_console(key#lf) | exo.
+
+exo:- put_console(ascii#"% B_Exclusive_Or %%%%%%%% ") | exo00.
+
+exo00:- true | execute_in_shoen(do_exclusive_or,{16#"5A5A5A5A",-1,Z},R), exo00(R,Z).
+exo00(success,_):- put_console(c#"a") | exo01.
+otherwise.
+exo00(_,_):- put_console(c#"*") | exo01.
+
+exo01:- true | execute_in_shoen(do_exclusive_or,{16#"5A5A5A5A",0,Z},R), exo01(R,Z).
+exo01(success,_):- put_console(c#"b") | exo02.
+otherwise.
+exo01(_,_):- put_console(c#"*") | exo02.
+
+exo02:- true | execute_in_shoen(do_exclusive_or,{0,atom,Z},R), exo02(R,Z).
+exo02(illegal_input,_):- put_console(c#"c") | exo03.
+otherwise.
+exo02(_,_):- put_console(c#"*") | exo03.
+
+exo03:- true | execute_in_shoen(do_exclusive_or,{0,12.34,Z},R), exo03(R,Z).
+exo03(illegal_input,_):- put_console(c#"d") | exo04.
+otherwise.
+exo03(_,_):- put_console(c#"*") | exo04.
+
+exo04:- true | execute_in_shoen(do_exclusive_or,{0,[list],Z},R), exo04(R,Z).
+exo04(illegal_input,_):- put_console(c#"e") | exo05.
+otherwise.
+exo04(_,_):- put_console(c#"*") | exo05.
+
+exo05:- true | execute_in_shoen(do_exclusive_or,{0,{0,1},Z},R), exo05(R,Z).
+exo05(illegal_input,_):- put_console(c#"f") | exo06.
+otherwise.
+exo05(_,_):- put_console(c#"*") | exo06.
+
+exo06:- true | execute_in_shoen(do_exclusive_or,{0,ascii#"String",Z},R), exo06(R,Z).
+exo06(illegal_input,_):- put_console(c#"g") | exo07.
+otherwise.
+exo06(_,_):- put_console(c#"*") | exo07.
+
+exo07:- true | execute_in_shoen(do_exclusive_or,{atom,0,Z},R), exo07(R,Z).
+exo07(illegal_input,_):- put_console(c#"h") | exo08.
+otherwise.
+exo07(_,_):- put_console(c#"*") | exo08.
+
+exo08:- true | execute_in_shoen(do_exclusive_or,{12.34,0,Z},R), exo08(R,Z).
+exo08(illegal_input,_):- put_console(c#"i") | exo09.
+otherwise.
+exo08(_,_):- put_console(c#"*") | exo09.
+
+exo09:- true | execute_in_shoen(do_exclusive_or,{[list],0,Z},R), exo09(R,Z).
+exo09(illegal_input,_):- put_console(c#"j") | exo10.
+otherwise.
+exo09(_,_):- put_console(c#"*") | exo10.
+
+exo10:- true | execute_in_shoen(do_exclusive_or,{{0,1},0,Z},R), exo10(R,Z).
+exo10(illegal_input,_):- put_console(c#"k") | exo11.
+otherwise.
+exo10(_,_):- put_console(c#"*") | exo11.
+
+exo11:- true | execute_in_shoen(do_exclusive_or,{ascii#"String",0,Z},R), exo11(R,Z).
+exo11(illegal_input,_):- put_console(c#"l") | exo12.
+otherwise.
+exo11(_,_):- put_console(c#"*") | exo12.
+
+exo12:- put_console(key#lf) | cmp.
+
+cmp:- put_console(ascii#"% B_Complement %%%%%%%%%% ") | cmp00.
+
+cmp00:- true | execute_in_shoen(do_complement,{-1,Z},R), cmp00(R,Z).
+cmp00(success,_):- put_console(c#"a") | cmp01.
+otherwise.
+cmp00(_,_):- put_console(c#"*") | cmp01.
+
+cmp01:- true | execute_in_shoen(do_complement,{0,Z},R), cmp01(R,Z).
+cmp01(success,_):- put_console(c#"b") | cmp02.
+otherwise.
+cmp01(_,_):- put_console(c#"*") | cmp02.
+
+cmp02:- true | execute_in_shoen(do_complement,{atom,Z},R), cmp02(R,Z).
+cmp02(illegal_input,_):- put_console(c#"c") | cmp03.
+otherwise.
+cmp02(_,_):- put_console(c#"*") | cmp03.
+
+cmp03:- true | execute_in_shoen(do_complement,{12.34,Z},R), cmp03(R,Z).
+cmp03(illegal_input,_):- put_console(c#"d") | cmp04.
+otherwise.
+cmp03(_,_):- put_console(c#"*") | cmp04.
+
+cmp04:- true | execute_in_shoen(do_complement,{[list],Z},R), cmp04(R,Z).
+cmp04(illegal_input,_):- put_console(c#"e") | cmp05.
+otherwise.
+cmp04(_,_):- put_console(c#"*") | cmp05.
+
+cmp05:- true | execute_in_shoen(do_complement,{{0,1},Z},R), cmp05(R,Z).
+cmp05(illegal_input,_):- put_console(c#"f") | cmp06.
+otherwise.
+cmp05(_,_):- put_console(c#"*") | cmp06.
+
+cmp06:- true | execute_in_shoen(do_complement,{ascii#"String",Z},R), cmp06(R,Z).
+cmp06(illegal_input,_):- put_console(c#"g") | cmp07.
+otherwise.
+cmp06(_,_):- put_console(c#"*") | cmp07.
+
+cmp07:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_logic_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(1,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=range_overflow, C=[abort].
+shoen_check([exception(3,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=integer_overflow, C=[abort].
+
+do_shift_left(X,Y,Z):- true | Z:=X<<Y.
+do_shift_right(X,Y,Z):- true | Z:=X>>Y.
+do_and(X,Y,Z):- true | Z:=X/\Y.
+do_or(X,Y,Z):- true | Z:=X\/Y.
+do_exclusive_or(X,Y,Z):- true | Z:=X xor Y.
+do_complement(X,Z):- true | Z:= \(X).

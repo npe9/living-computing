@@ -1,0 +1,287 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_code_manager.
+:- public create/3,
+	  request/3,
+       	  get_command_stream/1,
+	  os_get_command_stream/3.
+:- with_macro pdss.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Create Code Manager Process
+%% create(Req,Code,Sys).
+%%     Req      :: request stream
+%%     Code     :: code device stream
+%%     Sys      :: system stream
+
+create(Request,Code,Sys):-
+     true|
+	mpimos_module_pool:create(MPOOL,32),
+	do0(Request,NRequest),
+	merge(NRequest,NNRequest),
+	do(NNRequest,Code,Sys,MPOOL).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Merge Command Stream
+%% do0(Req,NReq).
+%%     Req      :: request stream
+%%     NReq     :: request stream without "get_command_stream"
+
+do0([get_command_stream(Stream)|Req],NNReq):-
+     true|
+	NNReq = {Stream,NReq},
+	do0(Req,NReq).
+do0([get_command_stream(Stream,TF)|Req],NNReq):-
+     true|
+	valve(Stream,NStream,TF),
+	NNReq = {NStream,NReq},
+	do0(Req,NReq).
+otherwise.
+do0([Com|Req],NNReq):-
+     true|
+	NNReq = [Com|NReq],
+	do0(Req,NReq).
+do0([],NReq):-
+     true|
+	NReq = [].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Code Manager Process
+%% do(Req,Code,Sys,MPOOL).
+%%     Req      :: request stream
+%%     Code     :: code device stream
+%%     Sys      :: system stream
+%%     MPOOL    :: module pool stream
+
+do([load_module(ModuleName,FileName,S)|NReq],Code,Sys,MPOOL):-
+     true|
+	Code = [load_module(MN,FileName,SS)|NewCode],
+	do_wait_load(NReq,NewCode,ModuleName,MN,FileName,S,SS,Sys,MPOOL).
+do([auto_load_module(SaD,ModuleName,S)|NReq],Code,Sys,MPOOL):-
+     true|
+	MPOOL = [load(ModuleName,S,Code,NCode,SaD)|NMPOOL],
+	do(NReq,NCode,Sys,NMPOOL).
+do([auto_save_module(SaD,ModuleName,S)|NReq],Code,Sys,MPOOL):-
+     true|
+	MPOOL = [save(ModuleName,S,Code,NCode,SaD)|NMPOOL],
+	do(NReq,NCode,Sys,NMPOOL).
+do([remove_module(ModuleName,S)|NReq],Code,Sys,MPOOL):-
+     true|
+	Code = [remove_module(ModuleName,S)|NCode],
+	MPOOL = [delete(ModuleName)|NMPOOL],
+	do(NReq,NCode,Sys,NMPOOL).
+do([save_all(SaD,S)|NReq],Code,Sys,MPOOL):-
+     true|
+	MPOOL = [save_all(Code,NCode,SaD,S)|NMPOOL],
+	do(NReq,NCode,Sys,NMPOOL).
+do([get_unsaved_modules(SaD,MODS)|NReq],Code,Sys,MPOOL):-
+     true|
+	MPOOL = [un_saved_modules(SaD,MODS)|NMPOOL],
+	do(NReq,Code,Sys,NMPOOL).
+do([get_all_modules(MODS)|NReq],Code,Sys,MPOOL):-
+     true|
+	MPOOL = [modules(MODS)|NMPOOL],
+	do(NReq,Code,Sys,NMPOOL).
+do([get_public_predicates(ModuleName,Public)|NReq],Code,Sys,MPOOL):-
+     true|
+	Code = [get_public_predicates(ModuleName,Public)|NCode],
+	do(NReq,NCode,Sys,MPOOL).
+otherwise.
+do([Req|NReq],Code,Sys,MPOOL):-
+     true|
+	Code = [Req|NewCode],
+	do(NReq,NewCode,Sys,MPOOL).
+do([],Code,Sys,MPOOL):-
+     true|
+	Code = [],
+	Sys = [],
+	MPOOL = [].
+
+
+%% Code Manager Process wait load
+%% do_wait_load(Req,Code,MoN,S,SS,Sys,MPOOL,TempD,SaD).
+%%     Req      :: request stream
+%%     Code     :: code device stream
+%%     MoN	:: module name (return to user)
+%%     MoN0	:: module name (from device)
+%%     FileN	:: load file name
+%%     S	:: result
+%%     SS	:: load_module result
+%%     Sys      :: system stream
+%%     MPOOL    :: module pool stream
+
+do_wait_load(Req,Code,MoN,MoN0,_,S,success,Sys,MPOOL):-
+
+     true|
+	S = success, MoN=MoN0,
+	MPOOL = [up_date(MoN,[yes,[]])|NMPOOL],
+	do(Req,Code,Sys,NMPOOL).
+otherwise.
+do_wait_load(Req,Code,MoN,_,_,S,SS,Sys,MPOOL):-
+     true|
+	S = SS, MoN=[],
+	do(Req,Code,Sys,MPOOL).
+
+%% Valve
+%% valve(Req,NReq,TF).
+%%	Req   :: request stream
+%%	NReq  :: request stream with valve
+%%	TF    :: termination flag
+
+valve(S,NS,die):-
+	true|
+	NS = [].
+valve([H|T],NS,TF):-
+     true|
+	NS = [H|NT],
+	valve(T,NT,TF).
+valve([],NS,TF):-
+     true|
+	NS = [].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Get Command Stream from inter Task
+%% get_command_stream(RQ)
+%%   RQ		:: request stream to code_manager
+
+get_command_stream(RQS):- true|
+	raise(shoen_tag#mpimos_request,code_manager,get_command_stream(RQS0)),
+	monitor(RQS,RQS0).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Get Command Stream from OS
+%% get_command_stream(RQ,Sys,NSys)
+%%   RQ		:: request stream to code_manager
+%%   Sys	:: system stream
+%%   NSys	:: new system stream
+
+os_get_command_stream(RQS,Sys,NSys):- true|
+	Sys = [code_manager:get_command_stream(RQS)|NSys].
+
+
+%% Monitor request stream
+%% monitor(URQ,RQ)
+%%   URQ	:: request stream from user's program
+%%   RQ		:: request stream to code_manager
+
+monitor([load_module(MoN,FiN,S)|NRQS],RQS0):-
+     string(FiN,_,8)|
+    	RQS0 = [load_module(NMoN,FiN,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NMoN,MoN),
+	protect(NS,S).
+monitor([save_module(MoN,FiN,S)|NRQS],RQS0):-
+     atom(MoN),string(FiN,_,8)|
+    	RQS0 = [save_module(MoN,FiN,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([remove_module(MoN,S)|NRQS],RQS0):-
+     atom(MoN)|
+    	RQS0 = [remove_module(MoN,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([trace_module(MoN,Mode,S)|NRQS],RQS0):-
+     atom(MoN),atom(Mode)|
+    	RQS0 = [trace_module(MoN,Mode,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([spy_predicate(MoN,PredN,Arity,Mode,S)|NRQS],RQS0):-
+     atom(MoN),atom(PredN),integer(Arity),atom(Mode)|
+    	RQS0 = [spy_predicate(MoN,PredN,Arity,Mode,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([get_module_status(MoN,Mode,S)|NRQS],RQS0):-
+     atom(MoN)|
+	RQS0 = [get_module_status(MoN,NMode,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NMode,Mode),
+	protect(NS,S).
+monitor([get_spied_predicates(MoN,Pre_List,S)|NRQS],RQS0):-
+     atom(MoN)|
+	RQS0 = [get_spied_predicates(MoN,NPre_List,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NPre_List,Pre_List),
+	protect(NS,S).
+monitor([auto_load_module(MoN,S)|NRQS],RQS0):-
+     atom(MoN)|
+    	RQS0 = [auto_load_module(MoN,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([auto_save_module(MoN,S)|NRQS],RQS0):-
+     atom(MoN)|
+    	RQS0 = [auto_save_module(MoN,NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([save_all(S)|NRQS],RQS0):- true|
+	RQS0 = [save_all(NS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NS,S).
+monitor([get_unsaved_modules(MODS)|NRQS],RQS0):- true|
+	RQS0 = [get_unsaved_modules(NMODS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NMODS,MODS).
+monitor([get_all_modules(MODS)|NRQS],RQS0):- true|
+	RQS0 = [get_all_modules(NMODS)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NMODS,MODS).
+monitor([get_public_predicates(MoN,Publics)|NRQS],RQS0):-
+     atom(MoN)|
+	RQS0 = [get_public_predicates(MoN,NPublics)|NRQS0],
+	monitor(NRQS,NRQS0),
+	protect(NPublics,Publics).
+monitor([],RQS0):-
+     true|
+	RQS0 = [].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Protect
+%% protect OS from User
+%% protect(SYS,USER)
+%%	SYS   :: Data from Operating System
+%%	USER  :: Data to User Program
+
+protect(SYS,USER):-
+     atom(SYS)|
+	USER = SYS.
+protect(SYS,USER):-
+     integer(SYS)|
+	USER = SYS.
+protect(SYS,USER):-
+     string(SYS,_,_)|
+	USER = SYS.
+protect([SH|ST],USER):-
+     true|
+	USER = [USH|UST],
+	protect(SH,USH),
+	protect(ST,UST).
+protect(SYS,USER):-
+     vector(SYS,N)|
+	new_vector(USER0,N),
+	NN := N - 1,
+	protect_vector(SYS,USER,USER0,NN).
+
+protect_vector(SYS,USER,USER0,N):-
+     vector_element(SYS,N,SE)|
+	set_vector_element(USER0,N,_,USE,NUSER0),
+	protect(SE,USE),
+	NN := N - 1,
+	protect_vector(SYS,USER,NUSER0,NN).
+protect_vector(SYS,USER,USER0,N):-
+     N < 0|
+	USER = USER0.
+
+%%%%%%%
+%% request(Info,TF,SS).
+%%     Info : Raised information.
+%%     TF   : Termination flag.
+%%     SS   : System stream.
+
+request(get_command_stream(RQ),TF,SS):-
+   true |
+   SS = [code_manager:get_command_stream(RQ,TF)].

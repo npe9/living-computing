@@ -1,0 +1,291 @@
+%%% KL1-B Test for B_Arithmetic (Suspend) %%%
+% B_Add %%%%%%%%%%%%%%%%% abcdefghi
+% B_Subtract %%%%%%%%%%%% abcdefghi
+% B_Multiply %%%%%%%%%%%% abcdefghi
+% B_Divide %%%%%%%%%%%%%% abcdef
+% B_Modulo %%%%%%%%%%%%%% abcdef
+% B_Minus %%%%%%%%%%%%%%% abc
+% B_Increment %%%%%%%%%%% abc
+% B_Decrement %%%%%%%%%%% abc
+
+:- module b_arith_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Arithmetic (Suspend) %%%"), put_console(key#lf) | add.
+
+add:- put_console(ascii#"% B_Add %%%%%%%%%%%%%%%%% ") | add00.
+
+add00:- true | Z:=X+Y, unify(X,Y,1234,1234), add00(Z).
+add00(2468):- put_console(c#"a") | add01.
+otherwise.
+add00(_):- put_console(c#"*") | add01.
+
+add01:- true | Z:=X+Y, unify(X,Y,1234,0), add01(Z).
+add01(1234):- put_console(c#"b") | add02.
+otherwise.
+add01(_):- put_console(c#"*") | add02.
+
+add02:- true | Z:=X+Y, unify(X,Y,1234,-1234), add02(Z).
+add02(0):- put_console(c#"c") | add03.
+otherwise.
+add02(_):- put_console(c#"*") | add03.
+
+add03:- true | Z:=X+Y, unify(X,Y,0,1234), add03(Z).
+add03(1234):- put_console(c#"d") | add04.
+otherwise.
+add03(_):- put_console(c#"*") | add04.
+
+add04:- true | Z:=X+Y, unify(X,Y,0,0), add04(Z).
+add04(0):- put_console(c#"e") | add05.
+otherwise.
+add04(_):- put_console(c#"*") | add05.
+
+add05:- true | Z:=X+Y, unify(X,Y,0,-1234), add05(Z).
+add05(-1234):- put_console(c#"f") | add06.
+otherwise.
+add05(_):- put_console(c#"*") | add06.
+
+add06:- true | Z:=X+Y, unify(X,Y,-1234,1234), add06(Z).
+add06(0):- put_console(c#"g") | add07.
+otherwise.
+add06(_):- put_console(c#"*") | add07.
+
+add07:- true | Z:=X+Y, unify(X,Y,-1234,0), add07(Z).
+add07(-1234):- put_console(c#"h") | add08.
+otherwise.
+add07(_):- put_console(c#"*") | add08.
+
+add08:- true | Z:=X+Y, unify(X,Y,-1234,-1234), add08(Z).
+add08(-2468):- put_console(c#"i") | add09.
+otherwise.
+add08(_):- put_console(c#"*") | add09.
+
+add09:- put_console(key#lf) | sub.
+
+sub:- put_console(ascii#"% B_Subtract %%%%%%%%%%%% ") | sub00.
+
+sub00:- true | Z:=X-Y, unify(X,Y,1234,1234), sub00(Z).
+sub00(0):- put_console(c#"a") | sub01.
+otherwise.
+sub00(_):- put_console(c#"*") | sub01.
+
+sub01:- true | Z:=X-Y, unify(X,Y,1234,0), sub01(Z).
+sub01(1234):- put_console(c#"b") | sub02.
+otherwise.
+sub01(_):- put_console(c#"*") | sub02.
+
+sub02:- true | Z:=X-Y, unify(X,Y,1234,-1234), sub02(Z).
+sub02(2468):- put_console(c#"c") | sub03.
+otherwise.
+sub02(_):- put_console(c#"*") | sub03.
+
+sub03:- true | Z:=X-Y, unify(X,Y,0,1234), sub03(Z).
+sub03(-1234):- put_console(c#"d") | sub04.
+otherwise.
+sub03(_):- put_console(c#"*") | sub04.
+
+sub04:- true | Z:=X-Y, unify(X,Y,0,0), sub04(Z).
+sub04(0):- put_console(c#"e") | sub05.
+otherwise.
+sub04(_):- put_console(c#"*") | sub05.
+
+sub05:- true | Z:=X-Y, unify(X,Y,0,-1234), sub05(Z).
+sub05(1234):- put_console(c#"f") | sub06.
+otherwise.
+sub05(_):- put_console(c#"*") | sub06.
+
+sub06:- true | Z:=X-Y, unify(X,Y,-1234,1234), sub06(Z).
+sub06(-2468):- put_console(c#"g") | sub07.
+otherwise.
+sub06(_):- put_console(c#"*") | sub07.
+
+sub07:- true | Z:=X-Y, unify(X,Y,-1234,0), sub07(Z).
+sub07(-1234):- put_console(c#"h") | sub08.
+otherwise.
+sub07(_):- put_console(c#"*") | sub08.
+
+sub08:- true | Z:=X-Y, unify(X,Y,-1234,-1234), sub08(Z).
+sub08(0):- put_console(c#"i") | sub09.
+otherwise.
+sub08(_):- put_console(c#"*") | sub09.
+
+sub09:- put_console(key#lf) | mul.
+
+mul:- put_console(ascii#"% B_Multiply %%%%%%%%%%%% ") | mul00.
+
+mul00:- true | Z:=X*Y, unify(X,Y,1234,1234), mul00(Z).
+mul00(1522756):- put_console(c#"a") | mul01.
+otherwise.
+mul00(_):- put_console(c#"*") | mul01.
+
+mul01:- true | Z:=X*Y, unify(X,Y,1234,0), mul01(Z).
+mul01(0):- put_console(c#"b") | mul02.
+otherwise.
+mul01(_):- put_console(c#"*") | mul02.
+
+mul02:- true | Z:=X*Y, unify(X,Y,1234,-1234), mul02(Z).
+mul02(-1522756):- put_console(c#"c") | mul03.
+otherwise.
+mul02(_):- put_console(c#"*") | mul03.
+
+mul03:- true | Z:=X*Y, unify(X,Y,0,1234), mul03(Z).
+mul03(0):- put_console(c#"d") | mul04.
+otherwise.
+mul03(_):- put_console(c#"*") | mul04.
+
+mul04:- true | Z:=X*Y, unify(X,Y,0,0), mul04(Z).
+mul04(0):- put_console(c#"e") | mul05.
+otherwise.
+mul04(_):- put_console(c#"*") | mul05.
+
+mul05:- true | Z:=X*Y, unify(X,Y,0,-1234), mul05(Z).
+mul05(0):- put_console(c#"f") | mul06.
+otherwise.
+mul05(_):- put_console(c#"*") | mul06.
+
+mul06:- true | Z:=X*Y, unify(X,Y,-1234,1234), mul06(Z).
+mul06(-1522756):- put_console(c#"g") | mul07.
+otherwise.
+mul06(_):- put_console(c#"*") | mul07.
+
+mul07:- true | Z:=X*Y, unify(X,Y,-1234,0), mul07(Z).
+mul07(0):- put_console(c#"h") | mul08.
+otherwise.
+mul07(_):- put_console(c#"*") | mul08.
+
+mul08:- true | Z:=X*Y, unify(X,Y,-1234,-1234), mul08(Z).
+mul08(1522756):- put_console(c#"i") | mul09.
+otherwise.
+mul08(_):- put_console(c#"*") | mul09.
+
+mul09:- put_console(key#lf) | div.
+
+div:- put_console(ascii#"% B_Divide %%%%%%%%%%%%%% ") | div00.
+
+div00:- true | Z:=X/Y, unify(X,Y,1234,1234), div00(Z).
+div00(1):- put_console(c#"a") | div01.
+otherwise.
+div00(_):- put_console(c#"*") | div01.
+
+div01:- true | Z:=X/Y, unify(X,Y,1234,-1234), div01(Z).
+div01(-1):- put_console(c#"b") | div02.
+otherwise.
+div01(_):- put_console(c#"*") | div02.
+
+div02:- true | Z:=X/Y, unify(X,Y,0,1234), div02(Z).
+div02(0):- put_console(c#"c") | div03.
+otherwise.
+div02(_):- put_console(c#"*") | div03.
+
+div03:- true | Z:=X/Y, unify(X,Y,0,-1234), div03(Z).
+div03(0):- put_console(c#"d") | div04.
+otherwise.
+div03(_):- put_console(c#"*") | div04.
+
+div04:- true | Z:=X/Y, unify(X,Y,-1234,1234), div04(Z).
+div04(-1):- put_console(c#"e") | div05.
+otherwise.
+div04(_):- put_console(c#"*") | div05.
+
+div05:- true | Z:=X/Y, unify(X,Y,-1234,-1234), div05(Z).
+div05(1):- put_console(c#"f") | div06.
+otherwise.
+div05(_):- put_console(c#"*") | div06.
+
+div06:- put_console(key#lf) | mod.
+
+mod:- put_console(ascii#"% B_Modulo %%%%%%%%%%%%%% ") | mod00.
+
+mod00:- true | Z:=X mod Y, unify(X,Y,1234,1234), mod00(Z).
+mod00(0):- put_console(c#"a") | mod01.
+otherwise.
+mod00(_):- put_console(c#"*") | mod01.
+
+mod01:- true | Z:=X mod Y, unify(X,Y,1234,-1234), mod01(Z).
+mod01(0):- put_console(c#"b") | mod02.
+otherwise.
+mod01(_):- put_console(c#"*") | mod02.
+
+mod02:- true | Z:=X mod Y, unify(X,Y,0,1234), mod02(Z).
+mod02(0):- put_console(c#"c") | mod03.
+otherwise.
+mod02(_):- put_console(c#"*") | mod03.
+
+mod03:- true | Z:=X mod Y, unify(X,Y,0,-1234), mod03(Z).
+mod03(0):- put_console(c#"d") | mod04.
+otherwise.
+mod03(_):- put_console(c#"*") | mod04.
+
+mod04:- true | Z:=X mod Y, unify(X,Y,-1234,1234), mod04(Z).
+mod04(0):- put_console(c#"e") | mod05.
+otherwise.
+mod04(_):- put_console(c#"*") | mod05.
+
+mod05:- true | Z:=X mod Y, unify(X,Y,-1234,-1234), mod05(Z).
+mod05(0):- put_console(c#"f") | mod06.
+otherwise.
+mod05(_):- put_console(c#"*") | mod06.
+
+mod06:- put_console(key#lf) | min.
+
+min:- put_console(ascii#"% B_Minus %%%%%%%%%%%%%%% ") | min00.
+
+min00:- true | Z:= -X, unify(X,1234), min00(Z).
+min00(-1234):- put_console(c#"a") | min01.
+otherwise.
+min00(_):- put_console(c#"*") | min01.
+
+min01:- true | Z:= -X, unify(X,0), min01(Z).
+min01(0):- put_console(c#"b") | min02.
+otherwise.
+min01(_):- put_console(c#"*") | min02.
+
+min02:- true | Z:= -X, unify(X,-1234), min02(Z).
+min02(1234):- put_console(c#"c") | min03.
+otherwise.
+min02(_):- put_console(c#"*") | min03.
+
+min03:- put_console(key#lf) | inc.
+
+inc:- put_console(ascii#"% B_Increment %%%%%%%%%%% ") | inc00.
+
+inc00:- true | Z:=X+1, unify(X,1234), inc00(Z).
+inc00(1235):- put_console(c#"a") | inc01.
+otherwise.
+inc00(_):- put_console(c#"*") | inc01.
+
+inc01:- true | Z:=X+1, unify(X,0), inc01(Z).
+inc01(1):- put_console(c#"b") | inc02.
+otherwise.
+inc01(_):- put_console(c#"*") | inc02.
+
+inc02:- true | Z:=X+1, unify(X,-1234), inc02(Z).
+inc02(-1233):- put_console(c#"c") | inc03.
+otherwise.
+inc02(_):- put_console(c#"*") | inc03.
+
+inc03:- put_console(key#lf) | dec.
+
+dec:- put_console(ascii#"% B_Decrement %%%%%%%%%%% ") | dec00.
+
+dec00:- true | Z:=X-1, unify(X,1234), dec00(Z).
+dec00(1233):- put_console(c#"a") | dec01.
+otherwise.
+dec00(_):- put_console(c#"*") | dec01.
+
+dec01:- true | Z:=X-1, unify(X,0), dec01(Z).
+dec01(-1):- put_console(c#"b") | dec02.
+otherwise.
+dec01(_):- put_console(c#"*") | dec02.
+
+dec02:- true | Z:=X-1, unify(X,-1234), dec02(Z).
+dec02(-1235):- put_console(c#"c") | dec03.
+otherwise.
+dec02(_):- put_console(c#"*") | dec03.
+
+dec03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,Y,A,B):- true | X=A, Y=B.
+unify(X,A):- true | X=A.

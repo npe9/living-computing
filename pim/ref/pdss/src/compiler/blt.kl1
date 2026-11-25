@@ -1,0 +1,759 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_blttbl.
+:- public builtin/7, active_builtin/5, expression/6, float_expression/6.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Builtin predicates (passive)  %%%%%%%%%%%%%%%%%%%%%%
+
+% These are all defined builtin predicates for the passive part
+% with the exception of 'true', ':=' and '='.
+
+%:- mode builtin(+, -, -, -, -, -, -).
+% Type check.
+builtin(wait(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= wait(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=type_or_wait. %%!?
+builtin(atom(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= atom(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(integer(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= integer(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=type_or_wait. %%!?
+builtin(float(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= float(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=type_or_wait. %%!?
+builtin(list(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= list(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(vector(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= vector(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(string(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= string(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+
+%% Compare.
+builtin(diff(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= diff(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=builtin.
+% Synonym for previous:
+builtin((X1\=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= diff(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=builtin.
+
+builtin(equal(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[integer(X1), integer(X2)], Post=[], Type=builtin.
+builtin(not_equal(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= not_equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[integer(X1), integer(X2)], Post=[], Type=builtin.
+builtin(less_than(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[integer(X1), integer(X2)], Post=[], Type=builtin.
+builtin(not_less_than(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= not_less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[integer(X1), integer(X2)], Post=[], Type=builtin.
+
+builtin((X1=:=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=relop.
+builtin((X1=\=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= not_equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=relop.
+builtin((X1<X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=relop.
+builtin((X1>=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= not_less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=relop.
+builtin((X1>X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= less_than(Y2,Y1), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=relop.
+builtin((X1=<X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= not_less_than(Y2,Y1), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=relop.
+
+%% Arithmetic operation.
+builtin(add(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= add(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(subtract(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= subtract(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(multiply(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= multiply(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(divide(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= divide(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(modulo(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= modulo(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(minus(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= minus(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[integer(X1)], Post=[integer(X2)], Type=builtin.
+builtin(increment(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= increment(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[integer(X1)], Post=[integer(X2)], Type=builtin.
+builtin(decrement(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= decrement(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[integer(X1)], Post=[integer(X2)], Type=builtin.
+builtin(abs(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= abs(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[integer(X1)], Post=[integer(X2)], Type=builtin.
+builtin(min(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= min(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(max(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= max(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(and(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= and(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(or(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= or(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(exclusive_or(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= exclusive_or(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(complement(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= complement(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[integer(X1)], Post=[integer(X2)], Type=builtin.
+builtin(shift_left(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= shift_left(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+builtin(shift_right(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= shift_right(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[integer(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+
+% Arithmetic relation operators.
+builtin(vector(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= vector(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[vector(X1)], Post=[integer(X2)], Type=builtin.
+builtin(vector_element(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= vector_element(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[vector(X1), integer(X2)], Post=[], Type=builtin.
+builtin(string(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= string(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3],
+   Pre=[string(X1)], Post=[integer(X2),integer(X3)], Type=builtin.
+builtin(string_element(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= string_element(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[string(X1), integer(X2)], Post=[integer(X3)], Type=builtin.
+
+builtin(put_console(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= put_console(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(display_console(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= display_console(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(read_console(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= read_console(Y1), In=[], Out=[X1,Y1], Pre=[], Post=[], Type=builtin.
+
+%% Compare (float).
+builtin(floating_point_equal(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[float(X1), float(X2)], Post=[], Type=builtin.
+builtin(floating_point_not_equal(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_not_equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[float(X1), float(X2)], Post=[], Type=builtin.
+builtin(floating_point_less_than(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[float(X1), float(X2)], Post=[], Type=builtin.
+builtin(floating_point_not_less_than(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_not_less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[float(X1), float(X2)], Post=[], Type=builtin.
+
+builtin((X1$=:=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=float_relop.
+builtin((X1$=\=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_not_equal(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=float_relop.
+builtin((X1$<X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=float_relop.
+builtin((X1$>=X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_not_less_than(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=float_relop.
+builtin((X1$>X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_less_than(Y2,Y1), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=float_relop.
+builtin((X1$=<X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_not_less_than(Y2,Y1), In=[X1,Y1,X2,Y2], Out=[],
+   Pre=[], Post=[], Type=float_relop.
+
+%% Arithmetic operation (float).
+builtin(floating_point_add(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_add(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_subtract(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_subtract(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_multiply(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_multiply(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_divide(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_divide(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_minus(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_minus(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_abs(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_abs(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_min(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_min(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_max(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_max(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_floor(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_floor(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_sqrt(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_sqrt(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_ln(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_ln(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_log(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_log(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_exp(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_exp(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_pow(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_pow(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_sin(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_sin(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_cos(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_cos(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_tan(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_tan(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_asin(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_asin(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_acos(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_acos(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_atan(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_atan(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_atan(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_atan(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3],
+   Pre=[float(X1), float(X2)], Post=[float(X3)], Type=builtin.
+builtin(floating_point_sinh(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_sinh(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_cosh(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_cosh(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+builtin(floating_point_tanh(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_tanh(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[float(X2)], Type=builtin.
+
+builtin(floating_point_to_integer(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= floating_point_to_integer(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[float(X1)], Post=[integer(X2)], Type=builtin.
+builtin(integer_to_floating_point(X1,X2),Y,In,Out,Pre,Post,Type) :- true |
+   Y= integer_to_floating_point(Y1,Y2), In=[X1,Y1], Out=[X2,Y2],
+   Pre=[integer(X1)], Post=[float(X2)], Type=builtin.
+
+%% Special
+builtin(nop,Y,In,Out,Pre,Post,Type) :- true |
+   Y= nop, In=[], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(halt(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= halt(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(request_gc(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= request_gc(Y1), In=[X1,Y1], Out=[], Pre=[], Post=[], Type=builtin.
+builtin(statistics(X1,X2,X3,X4,X5,X6),Y,In,Out,Pre,Post,Type) :- true |
+   Y= statistics(Y1,Y2,Y3,Y4,Y5,Y6), In=[],
+   Out=[X1,Y1,X2,Y2,X3,Y3,X4,Y4,X5,Y5,X6,Y6], Pre=[],
+   Post=[integer(X1),integer(X2),integer(X3),
+	 integer(X4),integer(X5),integer(X6)], Type=builtin.
+builtin(get_cpu_time(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= get_cpu_time(Y1), In=[], Out=[X1,Y1],
+   Pre=[], Post=[integer(X1)], Type=builtin.
+builtin(get_current_time(X1,X2,X3,X4,X5,X6),Y,In,Out,Pre,Post,Type) :- true |
+   Y= get_current_time(Y1,Y2,Y3,Y4,Y5,Y6), In=[],
+   Out=[X1,Y1,X2,Y2,X3,Y3,X4,Y4,X5,Y5,X6,Y6], Pre=[],
+   Post=[integer(X1),integer(X2),integer(X3),
+	 integer(X4),integer(X5),integer(X6)], Type=builtin.
+builtin(set_scheduling_switch(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= set_scheduling_switch(Y1), In=[X1,Y1], Out=[],
+   Pre=[], Post=[], Type=builtin.
+builtin(set_trace_switch(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= set_trace_switch(Y1), In=[X1,Y1], Out=[],
+   Pre=[], Post=[], Type=builtin.
+builtin(set_backtrace_switch(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= set_backtrace_switch(Y1), In=[X1,Y1], Out=[],
+   Pre=[],Post=[], Type=builtin.
+builtin(device_dup_check(X1),Y,In,Out,Pre,Post,Type) :- true |
+   Y= device_dup_check(Y1), In=[X1,Y1], Out=[], Pre=[],
+   Post=[], Type=builtin.
+
+%% Firm Test
+builtin(tag_and_value(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= tag_and_value(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3],
+   Pre=[], Post=[integer(X2),integer(X3)], Type=builtin.
+builtin(register_tag_and_value(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= tag_and_value(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3],
+   Pre=[], Post=[integer(X2),integer(X3)], Type=builtin.
+builtin(word(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= word(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3],
+   Pre=[], Post=[integer(X2),integer(X3)], Type=builtin.
+builtin(set_tag_and_value(X1,X2,X3),Y,In,Out,Pre,Post,Type) :- true |
+   Y= set_tag_and_value(Y1,Y2,Y3), In=[X2,Y2,X3,Y3], Out=[X1,Y1],
+   Pre=[integer(X2),integer(X3)], Post=[], Type=builtin.
+
+otherwise.
+builtin(X,Y,In,Out,Pre,Post,Type) :- true | % prolog(nonvar(X)) |
+   Y=X, In=[], Out=[], Pre=[], Post=[], Type=none.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Builtin predicates (active)  %%%%%%%%%%%%%%%%%%%%%%%
+
+% These are all the builtin predicates for the active part with the exception
+% of 'true', '=' and ':='.
+
+%:- mode active_builtin(+, -, -, -, -).
+%% Arithmetic/Logical operation
+active_builtin(add(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_add(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(subtract(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_subtract(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(multiply(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_multiply(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(divide(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_divide(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(modulo(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_modulo(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(minus(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_minus(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(increment(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_increment(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(decrement(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_decrement(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(abs(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_abs(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(min(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_min(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(max(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_max(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(and(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_and(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(or(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_or(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(exclusive_or(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_exclusive_or(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(complement(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_complement(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(shift_left(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_shift_left(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(shift_right(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_shift_right(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+
+%% Vector.
+active_builtin(vector(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_vector(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(new_vector(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_new_vector(Y1,Y2), In=[X2,Y2], Out=[X1,Y1], Type=builtin.
+active_builtin(vector_element(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_vector_element(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(set_vector_element(X1,X2,X3,X4,X5),Y,In,Out,Type) :- true |
+   Y= b_set_vector_element(Y1,Y2,Y3,Y4,Y5),
+   In=[X1,Y1,X2,Y2,X4,Y4], Out=[X3,Y3,X5,Y5], Type=builtin.
+
+%% String.
+active_builtin(string(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_string(Y1,Y2,Y3,Y4),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4], Type=builtin.
+active_builtin(new_string(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_new_string(Y1,Y2,Y3),
+   In=[X2,Y2,X3,Y3], Out=[X1,Y1], Type=builtin.
+active_builtin(string_element(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_string_element(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(set_string_element(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_set_string_element(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[X4,Y4], Type=builtin.
+active_builtin(substring(X1,X2,X3,X4,X5),Y,In,Out,Type) :- true |
+   Y= b_substring(Y1,Y2,Y3,Y4,Y5),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[X4,Y4,X5,Y5], Type=builtin.
+active_builtin(set_substring(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_set_substring(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[X4,Y4], Type=builtin.
+active_builtin(append_string(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_append_string(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(string_and(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_string_and(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(string_or(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_string_or(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(string_exclusive_or(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_string_exclusive_or(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(string_complement(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_string_complement(Y1,Y2),
+   In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+
+active_builtin(new_atom(X1),Y,In,Out,Type) :- true |
+   Y= b_new_atom(Y1), In=[], Out=[X1,Y1], Type=builtin.
+active_builtin(intern_atom(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_intern_atom(Y1,Y2), In=[X2,Y2], Out=[X1,Y1], Type=builtin.
+active_builtin(atom_name(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_atom_name(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(atom_number(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_atom_number(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+
+%% Code.
+active_builtin(predicate_to_code(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_predicate_to_code(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[X4,Y4], Type=builtin.
+active_builtin(code_to_predicate(X1,X2,X3,X4,X5),Y,In,Out,Type) :- true |
+   Y= b_code_to_predicate(Y1,Y2,Y3,Y4,Y5),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4,X5,Y5], Type=builtin.
+
+%% Others.
+active_builtin(apply(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_apply(Y1,Y2), In=[X1,Y1,X2,Y2], Out=[], Type=builtin.
+active_builtin(raise(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_raise(Y1,Y2,Y3), In=[X1,Y1,X2,Y2,X3,Y3], Out=[], Type=builtin.
+active_builtin(merge(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_merge(Y1,Y2), In=[], Out=[X1,Y1,X2,Y2], Type=builtin.
+active_builtin(current_processor(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_current_processor(Y1,Y2,Y3),
+   In=[], Out=[X1,Y1,X2,Y2,X3,Y3], Type=builtin.
+active_builtin(current_node(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_current_node(Y1,Y2),
+   In=[], Out=[X1,Y1,X2,Y2], Type=builtin.
+active_builtin(current_priority(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_current_priority(Y1,Y2,Y3),
+   In=[], Out=[X1,Y1,X2,Y2,X3,Y3], Type=builtin.
+active_builtin('RATE'(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_rate(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin('RLTV'(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_rltv(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(hash(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_hash(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(unbound(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_unbound(Y1,Y2,Y3,Y4),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4], Type=builtin.
+active_builtin(unbound(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_unbound2(Y1,Y2),
+   In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(get_print_image(X1,X2,X3,X4,X5,X6),Y,In,Out,Type) :- true |
+   Y= b_get_print_image(Y1,Y2,Y3,Y4,Y5,Y6),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[X4,Y4,X5,Y5,X6,Y6], Type=builtin.
+
+%% Arithmetic operation (float)
+active_builtin(floating_point_add(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_add(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_subtract(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_subtract(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_multiply(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_multiply(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_divide(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_divide(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_minus(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_minus(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_abs(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_abs(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_min(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_min(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_max(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_max(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_floor(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_floor(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_sqrt(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_sqrt(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_ln(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_ln(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_log(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_log(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_exp(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_exp(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_pow(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_pow(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_sin(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_sin(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_cos(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_cos(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_tan(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_tan(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_asin(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_asin(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_acos(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_acos(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_atan(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_atan(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_atan(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_float_atan2(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(floating_point_sinh(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_sinh(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_cosh(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_cosh(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_tanh(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_tanh(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+
+active_builtin(integer_to_floating_point(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_integer_to_float(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(floating_point_to_integer(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_float_to_integer(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+
+%% Shoen control.
+active_builtin(create_shoen(X1,X2,X3,X4,X5,X6,X7),Y,In,Out,Type):- true |
+   Y= b_create_shoen(Y1,Y2,Y3,Y4,Y5,Y6,Y7),
+   In=[X1,Y1,X2,Y2,X3,Y3,X4,Y4,X5,Y5], Out=[X6,Y6,X7,Y7], Type=builtin.
+active_builtin(start_shoen(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_start_shoen(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(stop_shoen(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_stop_shoen(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(abort_shoen(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_abort_shoen(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(remove_shoen(X1),Y,In,Out,Type) :- true |
+   Y= b_remove_shoen(Y1), In=[X1,Y1], Out=[], Type=builtin.
+active_builtin(shoen_statistics(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_shoen_statistics(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(shoen_add_resource(X1,X2,X3),Y,In,Out,Type):- true |
+   Y= b_shoen_add_resource(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(consume_resource(X1),Y,In,Out,Type) :- true |
+   Y= b_consume_resource(Y1), In=[X1,Y1], Out=[], Type=builtin.
+
+%% Window.
+active_builtin(create_window(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_create_window(Y1,Y2,Y3,Y4),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4], Type=builtin.
+active_builtin(remove_window(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_remove_window(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(show_window(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_show_window(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(hide_window(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_hide_window(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+
+%% File.
+active_builtin(create_file(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_create_file(Y1,Y2), In=[], Out=[X1,Y1,X2,Y2], Type=builtin.
+active_builtin(remove_file(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_remove_file(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(open_file(X1,X2,X3,X4,X5),Y,In,Out,Type) :- true |
+   Y= b_open_file(Y1,Y2,Y3,Y4,Y5),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[X4,Y4,X5,Y5], Type=builtin.
+active_builtin(close_file(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_close_file(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+
+%% File & Window I/O.
+active_builtin(write_char(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_write_char(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(write_line(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_write_line(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(write_buffer(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_write_buffer(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(write_term(X1,X2,X3,X4,X5,X6),Y,In,Out,Type) :- true |
+   Y= b_write_term(Y1,Y2,Y3,Y4,Y5,Y6),
+   In=[X1,Y1,X2,Y2,X3,Y3,X4,Y4], Out=[X5,Y5,X6,Y6], Type=builtin.
+active_builtin(read_char(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_read_char(Y1,Y2,Y3,Y4),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4], Type=builtin.
+active_builtin(read_line(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_read_line(Y1,Y2,Y3,Y4),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4], Type=builtin.
+active_builtin(read_buffer(X1,X2,X3,X4,X5),Y,In,Out,Type) :- true |
+   Y= b_read_buffer(Y1,Y2,Y3,Y4,Y5),
+   In=[X1,Y1,X3,Y3], Out=[X2,Y2,X4,Y4,X5,Y5], Type=builtin.
+active_builtin(read_token(X1,X2,X3,X4,X5),Y,In,Out,Type) :- true |
+   Y= b_read_token(Y1,Y2,Y3,Y4,Y5),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3,X4,Y4,X5,Y5], Type=builtin.
+active_builtin(abort_read_command(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y=abort_read_command(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+
+%% Directory.
+active_builtin(test_directory(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_test_directory(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(directory_pathname(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_directory_pathname(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(listing_files(X1,X2,X3,X4),Y,In,Out,Type) :- true |
+   Y= b_listing_files(Y1,Y2,Y3,Y4),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3,X4,Y4], Type=builtin.
+active_builtin(delete_files(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_delete_files(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+
+%% Timer.
+active_builtin(get_time_count(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_get_time_count(Y1,Y2), In=[], Out=[X1,Y1,X2,Y2], Type=builtin.
+active_builtin(on_at(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_on_at(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(on_after(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_on_after(Y1,Y2,Y3), In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+
+%% Code.
+active_builtin(save_module(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_save_module(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(load_module(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_load_module(Y1,Y2,Y3), In=[X2,Y2], Out=[X1,Y1,X3,Y3], Type=builtin.
+active_builtin(assemble_module(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_assemble_module(Y1,Y2,Y3), In=[X2,Y2], Out=[X1,Y1,X3,Y3], Type=builtin.
+active_builtin(remove_module(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_remove_module(Y1,Y2), In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(get_public_predicates(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_get_public_predicates(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(trace_module(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_trace_module(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(get_module_status(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_get_module_status(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(spy_predicate(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_spy_predicate(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(get_spied_predicates(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_get_spied_predicates(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+active_builtin(reset_profile_info(X1,X2),Y,In,Out,Type) :- true |
+   Y= b_reset_profile_info(Y1,Y2),
+   In=[X1,Y1], Out=[X2,Y2], Type=builtin.
+active_builtin(get_profile_info(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_get_profile_info(Y1,Y2,Y3),
+   In=[X1,Y1], Out=[X2,Y2,X3,Y3], Type=builtin.
+
+active_builtin(get_all_atom_name(X1),Y,In,Out,Type) :- true |
+   Y= b_get_all_atom_name(Y1), In=[], Out=[X1,Y1], Type=builtin.
+active_builtin(unix(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_unix(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=[X3,Y3], Type=builtin.
+active_builtin(debug_monitor_stream(X1,X2,X3),Y,In,Out,Type) :- true |
+   Y= b_debug_monitor_stream(Y1,Y2,Y3),
+   In=[X1,Y1,X2,Y2,X3,Y3], Out=[], Type=builtin.
+active_builtin(get_library_directory(X1),Y,In,Out,Type) :- true |
+   Y= b_get_library_directory(Y1),
+   In=[], Out=[X1,Y1], Type=builtin.
+
+otherwise.
+active_builtin(X,Y,In,Out,Type) :- true |
+   Y=true, In=[], Out=[], Type=none.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Expressions  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% These are the valid expressions in ':=' and arithmetic relations.
+:- local_implicit io:oldnew.
+%:- mode expression(+, -, -, -, -, ?).
+expression(X1+X2,Y,In,Out) --> true |
+    (X1 =:=  1 -> {{ Y= increment(Y1,Y2), In=[X2,Y1], Out=Y2 }};
+     X1 =:= -1 -> {{ Y= decrement(Y1,Y2), In=[X2,Y1], Out=Y2 }};
+     X2 =:=  1 -> {{ Y= increment(Y1,Y2), In=[X1,Y1], Out=Y2 }};
+     X2 =:= -1 -> {{ Y= decrement(Y1,Y2), In=[X1,Y1], Out=Y2 }};
+     otherwise;
+     true      -> {{ Y= add(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }} ).
+expression(X1-X2,Y,In,Out) --> true |
+    (X2 =:=  1 -> {{ Y= decrement(Y1,Y2), In=[X1,Y1], Out=Y2 }};
+     X2 =:= -1 -> {{ Y= increment(Y1,Y2), In=[X1,Y1], Out=Y2 }};
+     otherwise;
+     true      -> {{ Y= subtract(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }} ).
+expression(X1*X2,Y,In,Out) --> true |
+ {{ Y= multiply(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(X1/X2,Y,In,Out) --> true |
+ {{ Y= divide(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(X1 mod X2,Y,In,Out) --> true |
+ {{ Y= modulo(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(-X1,Y,In,Out) --> true |
+ {{ Y= minus(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+expression(abs(X1),Y,In,Out) --> true |
+ {{ Y= abs(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+expression(min(X1,X2),Y,In,Out) --> true |
+ {{ Y= min(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(max(X1,X2),Y,In,Out) --> true |
+ {{ Y= max(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(X1/\X2,Y,In,Out) --> true |
+ {{ Y= and(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(X1\/X2,Y,In,Out) --> true |
+ {{ Y= or(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(X1 xor X2,Y,In,Out) --> true |			% 881227
+ {{ Y= exclusive_or(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.	% SSL:Nishizaki
+expression(\(X1),Y,In,Out) --> true |				% 890605
+ {{ Y= complement(Y1,Y2), In=[X1,Y1], Out=Y2 }}.		% SSL:Nishizaki
+expression(X1 << X2,Y,In,Out) --> true |
+ {{ Y= shift_left(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(X1 >> X2,Y,In,Out) --> true |
+ {{ Y= shift_right(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+expression(int(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_to_integer(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+otherwise.
+expression(X,Y,In,Out) --> true |
+ {{ Y=true, In=[], Out=_ }},
+  &io<<=[error_message(string#"Undefined expression, replaced by VOID.",[X])].
+
+%%%%%%%%%%%%%%%%%%%%%%%%  Floating Point Expressions  %%%%%%%%%%%%%%%%%%%%%%%%%
+
+% These are the valid expressions in '$:=' and arithmetic relations.
+:- local_implicit io:oldnew.
+%:- mode float_expression(+, -, -, -, -, ?).
+float_expression(X1+X2,Y,In,Out) --> true |
+ {{ Y= floating_point_add(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(X1-X2,Y,In,Out) --> true |
+ {{ Y= floating_point_subtract(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(X1*X2,Y,In,Out) --> true |
+ {{ Y= floating_point_multiply(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(X1/X2,Y,In,Out) --> true |
+ {{ Y= floating_point_divide(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(-X1,Y,In,Out) --> true |
+ {{ Y= floating_point_minus(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(abs(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_abs(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(min(X1,X2),Y,In,Out) --> true |
+ {{ Y= floating_point_min(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(max(X1,X2),Y,In,Out) --> true |
+ {{ Y= floating_point_max(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(floor(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_floor(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(sqrt(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_sqrt(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(ln(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_ln(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(log(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_log(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(exp(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_exp(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression((X1**X2),Y,In,Out) --> true |
+ {{ Y= floating_point_pow(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(sin(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_sin(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(cos(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_cos(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(tan(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_tan(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(asin(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_asin(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(acos(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_acos(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(atan(X1/X2),Y,In,Out) --> true |
+ {{ Y= floating_point_atan(Y1,Y2,Y3), In=[X1,Y1,X2,Y2], Out=Y3 }}.
+float_expression(sinh(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_sinh(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(cosh(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_cosh(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(tanh(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_tanh(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+float_expression(float(X1),Y,In,Out) --> true |
+ {{ Y= integer_to_floating_point(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+otherwise.
+float_expression(atan(X1),Y,In,Out) --> true |
+ {{ Y= floating_point_atan(Y1,Y2), In=[X1,Y1], Out=Y2 }}.
+otherwise.
+float_expression(X,Y,In,Out) --> true |
+ {{ Y=true, In=[], Out=_ }},
+  &io<<=[error_message(
+         string#"Undefined floating point expression, replaced by VOID.",[X])].

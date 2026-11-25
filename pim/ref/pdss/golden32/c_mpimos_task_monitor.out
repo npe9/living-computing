@@ -1,0 +1,23 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/task_monitor.kl1" : Compiling ... create/12,monitor/10,code_table/2,deadlock_table/2,occured_table/2,construct_goal/3,copy_args/5,code_to_procedure/2,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     191843     50    416    10    1584000        0
+After:      35506     38    103     3     296860        0
+GCed :     156337     12    313     7    1287140        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+code_to_goal/3,put_procedures_list/2,put_procedures_list/3,wait_auto_load_env/15,wait_loaded_status/15,auto_load/12,wait_auto_load/13,member/3,request/14,valve/3,valve/4,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194737     48    203     3    1583972        0
+After:      51427     38    103     3     423972        0
+GCed :     143310     10    100     0    1160000        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+interrupt_handler/4,error_monitor/2,error_monitor/3,dummy/1,error_monitor/4,wait_flush_status/2,wait_done/3,unify_vector/7,wait_flush/3,wait_flush/11,wait_request/3,$Sho-en:create/8/8,END.
+
+[create/12,error_monitor/2,error_monitor/3]
+successdone
+
+exit 0
+asm 86ce5e20a08fb364dbfd23e0f68c8c295f5dd9ab58f65bd446c12f4b8edb9936
+sav none

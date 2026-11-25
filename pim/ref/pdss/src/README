@@ -1,0 +1,27 @@
+KL1 Programming Environment on UNIX --- PDSS
+
+PDSS --- PIMOS Development Support System is a KL1 system which was
+used to develop PIMOS.  PDSS is running on ordinary BSD-UNIX machines,
+and is widely compatible with the KL1 system found on Multi-PSI
+besides implementation details, execution speed, etc.  Moreover PDSS
+include GNU Emacs Lisp libraries to assist you in editing KL1 source
+programs and to realise interactive execution through multiple emacs
+buffers.  Therefore, pdss is very useful to develop KL1 programs.
+
+Configuration:
+ - KL1-B (byte code) interpreter written in C.
+ - KL1 to KL1-B compilers written in KL1 and SICStus Prolog.
+ - Runtime support routines (command interpreter and I/O) written in KL1.
+ - GNU Emacs Libraries --- KL1-mode to edit KL1 source programs and
+   PDSS-mode to run PDSS interactively through multiple emacs buffers.
+
+Installation Environment:
+ - PDSS require the UNIX system (only BSD version).
+   In ICOT, We are using PDSS on SUN-3, SUN-4 and Sequent Symmetry.
+ - You must provide 20MB of disk space to install the full PDSS syste.
+ - One of KL1 compiler is written in SICStus Prolog.
+   This is an optional tool.  However, this generate better code.
+ - PDSS should be used with GNU Emacs.  It is more user-friendly.
+
+(C) Copyright 1988--1992 Institute for New Generation Computer Technology.
+    Read "COPYRIGHT" file for detailed information.

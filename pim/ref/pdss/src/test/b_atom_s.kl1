@@ -1,0 +1,70 @@
+%%% KL1-B Test for B_Atom (Suspend) %%%
+% B_Intern_Atom %%%%%%%%% abc
+% B_Atom_Name %%%%%%%%%%% abc
+% B_Atom_Number %%%%%%%%% abc
+
+:- module b_atom_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Atom (Suspend) %%%"), put_console(key#lf) | iat.
+
+iat:- put_console(ascii#"% B_Intern_Atom %%%%%%%%% ") | iat00.
+
+iat00:- true | intern_atom(A,X), unify(X,ascii#"abc"), iat00(A).
+iat00(abc):- put_console(c#"a") | iat01.
+otherwise.
+iat00(_):- put_console(c#"*") | iat01.
+
+iat01:- true | intern_atom(A,X), unify(X,ascii#"ab""c"), iat01(A).
+iat01('ab"c'):- put_console(c#"b") | iat02.
+otherwise.
+iat01(_):- put_console(c#"*") | iat02.
+
+iat02:- true | intern_atom(A,X), unify(X,ascii#"ab'c"), iat02(A).
+iat02('ab''c'):- put_console(c#"c") | iat03.
+otherwise.
+iat02(_):- put_console(c#"*") | iat03.
+
+iat03:- put_console(key#lf) | ana.
+
+ana:- put_console(ascii#"% B_Atom_Name %%%%%%%%%%% ") | ana00.
+
+ana00:- true | atom_name(X,A), unify(X,abc), ana00(A).
+ana00(ascii#"abc"):- put_console(c#"a") | ana01.
+otherwise.
+ana00(_):- put_console(c#"*") | ana01.
+
+ana01:- true | atom_name(X,A), unify(X,'ab"c'), ana01(A).
+ana01(ascii#"ab""c"):- put_console(c#"b") | ana02.
+otherwise.
+ana01(_):- put_console(c#"*") | ana02.
+
+ana02:- true | atom_name(X,A), unify(X,'ab''c'), ana02(A).
+ana02(ascii#"ab'c"):- put_console(c#"c") | ana03.
+otherwise.
+ana02(_):- put_console(c#"*") | ana03.
+
+ana03:- put_console(key#lf) | anu.
+
+anu:- put_console(ascii#"% B_Atom_Number %%%%%%%%% ") | anu00.
+
+anu00:- true | atom_number(X,A), unify(X,abc), anu00(A).
+anu00(N):- integer(N), put_console(c#"a") | anu01.
+otherwise.
+anu00(_):- put_console(c#"*") | anu01.
+
+anu01:- true | atom_number(X,A), unify(X,'ab"c'), anu01(A).
+anu01(N):- integer(N), put_console(c#"b") | anu02.
+otherwise.
+anu01(_):- put_console(c#"*") | anu02.
+
+anu02:- true | atom_number(X,A), unify(X,'ab''c'), anu02(A).
+anu02(N):- integer(N), put_console(c#"c") | anu03.
+otherwise.
+anu02(_):- put_console(c#"*") | anu03.
+
+anu03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,A):- true | X=A.

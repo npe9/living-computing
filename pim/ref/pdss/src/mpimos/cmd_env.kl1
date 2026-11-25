@@ -1,0 +1,149 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_cmd_environment.
+:- public is_command/2,do_command/2,help/2.
+:- with_macro pdss.
+
+is_command(setenv(_,_), X):- true| X = yes.
+is_command(getenv(_,_), X):- true| X = yes.
+is_command(printenv(_), X):- true| X = yes.
+is_command(printenv,  	X):- true| X = yes.
+is_command(resetenv,    X):- true| X = yes.
+otherwise.
+is_command(_,  		X):- true| X = no.
+
+
+
+%% do_commnd(CM, SS).
+%%     CM : Command from user
+%%     SS : ShellStream to shell
+
+do_command(setenv(Name,Value), SS):-
+    atom(Name) |
+    SS = [getenv(Names)|SS1],
+    member(Name, Names, St),
+    is_setenv_member(SS1, Value, Name, St).
+do_command(getenv(Name,Value), SS):-
+    atom(Name) |
+    SS = [getenv(Names)|SS1],
+    member(Name, Names, St),
+    is_getenv_member(SS1, Value, Name, St).
+do_command(printenv(Name), SS):-
+    atom(Name), Name \= [] |
+    SS = [getenv(Names)|SS1],
+    member(Name, Names, St),
+    is_print_member(SS1, Name, St).
+do_command(printenv(NameL), SS):-
+    list(NameL) |
+    mpimos_cmd_utl:apply_action(printenv,NameL,SS).
+do_command(printenv([]), SS):-
+    true |
+	SS = [].
+do_command(printenv, SS):-
+    true |
+    SS = [getenv(Names)|SS1],
+    print_env(SS1, Names).
+do_command(resetenv, SS):-
+    true|
+    SS = [directory([pathname(DD)])|SS1],
+    mpimos_command_interpreter:initenv(SS1,[initenv],DD).
+otherwise.
+do_command(Com,SS):-
+    true|
+    mpimos_utility:freeze(Com,FCom),
+    mpimos_cmd_utl:send_shell(window(
+	            [putb(string#"ArgumentError detected in "),
+                     putt(FCom),nl]),SS,[window([flush(EF)])]),
+    fail_action(EF).
+
+
+member(Name, [Name|_], St):-
+    true |
+    St = true.
+member(Name, [N|Names], St):-
+    Name \= N |
+    member(Name, Names, St).
+member(_, [], St):-
+    true |
+    St = false.
+
+
+is_setenv_member(SS, Value, Name, true):-
+    wait(Value),
+    wait(Name) |
+    mpimos_cmd_utl:send_shell(setenv(Name,Value),SS,[initenv]).
+is_setenv_member(SS, _, Name, false):-
+    wait(Name) |
+    SS = [window([putb(string#"Illegal environment variable ::: "),
+          putt(Name),nl,flush(WSt)])],
+    raise_fail(_,WSt).
+
+
+is_getenv_member(SS, Value, Name, true):-
+    wait(Name)|
+    SS = [getenv(Name,V)],
+    mpimos_cmd_utl:protect(V,Value).
+is_getenv_member(SS, _, Name, false):-
+    wait(Name)|
+    SS = [window([putb(string#"Illegal environment variable ::: "),
+          putt(Name),nl,flush(F)])],
+    wait(F).
+
+
+
+is_print_member(SS, Name, true):-
+    true |
+    print_env(SS, [Name]).
+is_print_member(SS, Name, false):-
+    wait(Name)|
+    SS = [window([putb(string#"Illegal environment variable ::: "),
+          putt(Name),nl,flush(WSt)])],
+    raise_fail(_,WSt).
+
+
+print_env(SS, [Env|Names]):-
+    atom(Env)|
+    SS = [getenv(Env,Value)|SS1],
+    print_env0(SS1,Value,Env,Names).
+print_env(SS, []):-
+    true |
+    SS = [window([flush(F)])],
+    wait(F).
+
+print_env0(SS,Value,Env,Names):-
+     wait(Value)|
+     SS = [window([putt(Env),putb(string#" = "),putt(Value),nl])|SS1],
+     print_env(SS1,Names).
+
+
+wait(F) :- wait(F) | true.
+
+raise_fail(ST, done):-
+    true |
+    raise(shoen_tag#mpimos_unit,shell(fail),ST).
+
+
+fail_action(F):-
+    wait(F)|
+    raise(shoen_tag#mpimos_unit,shell(fail),_).
+
+
+help(menu,MSG):-
+    true|
+    MSG = string#"setenv,getenv,printenv,resetenv,etc.".
+help(item,MSG):-
+    true|
+    MSG = env.
+help(message,MSG):-
+    true|
+    MSG = [string#"There are following environment commands.",
+   string#"setenv(NAME,VALUE) --- Set VALUE to environment variable NAME.",
+   string#"getenv(NAME,VALUE) --- Get VALUE of environment variable NAME.",
+   string#"printenv(NAME)     --- Print value of environment variable NAME.",
+   string#"printenv           --- Print values of all environment variables.",
+   string#"resetenv           --- Reset values of all environment variables."].

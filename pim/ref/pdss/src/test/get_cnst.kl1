@@ -1,0 +1,110 @@
+%%% KL1-B Test for Get_Constant %%%
+% Get_Atom %%%%%%%%%%%%%% ab
+% Get_Nil %%%%%%%%%%%%%%% ab
+% Get_Integer %%%%%%%%%%% ab
+% Get_Float %%%%%%%%%%%%% ab
+% Get_List_Value %%%%%%%% ab
+% Get_Vect_Value %%%%%%%% ab
+
+:- module get_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Get_Constant %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Get_Atom %%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00get(X), atm00(X).
+atm00get(X):- true | X=atom.
+atm00(atom):- put_console(c#"a") | atm01.
+otherwise.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01(X), atm01get(X).
+atm01get(X):- true | X=atom.
+atm01(atom):- put_console(c#"b") | atm02.
+otherwise.
+atm01(_):- put_console(c#"*") | atm02.
+
+atm02:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Get_Nil %%%%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | nil00get(X), nil00(X).
+nil00get(X):- true | X=[].
+nil00([]):- put_console(c#"a") | nil01.
+otherwise.
+nil00(_):- put_console(c#"*") | nil01.
+
+nil01:- true | nil01(X), nil01get(X).
+nil01get(X):- true | X=[].
+nil01([]):- put_console(c#"b") | nil02.
+otherwise.
+nil01(_):- put_console(c#"*") | nil02.
+
+nil02:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Get_Integer %%%%%%%%%%% ") | int00.
+
+int00:- true | int00get(X), int00(X).
+int00get(X):- true | X=1234.
+int00(1234):- put_console(c#"a") | int01.
+otherwise.
+int00(_):- put_console(c#"*") | int01.
+
+int01:- true | int01(X), int01get(X).
+int01get(X):- true | X=1234.
+int01(1234):- put_console(c#"b") | int02.
+otherwise.
+int01(_):- put_console(c#"*") | int02.
+
+int02:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Get_Float %%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00get(X), flt00(X).
+flt00get(X):- true | X=12.34.
+flt00(12.34):- put_console(c#"a") | flt01.
+otherwise.
+flt00(_):- put_console(c#"*") | flt01.
+
+flt01:- true | flt01(X), flt01get(X).
+flt01get(X):- true | X=12.34.
+flt01(12.34):- put_console(c#"b") | flt02.
+otherwise.
+flt01(_):- put_console(c#"*") | flt02.
+
+flt02:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% Get_List_Value %%%%%%%% ") | lst00.
+
+lst00:- true | lst00get(X), lst00(X).
+lst00get(X):- true | X=[list|V], V=[].
+lst00([_|_]):- put_console(c#"a") | lst01.
+otherwise.
+lst00(_):- put_console(c#"*") | lst01.
+
+lst01:- true | lst01(X), lst01get(X).
+lst01get(X):- true | X=[list|V], V=[].
+lst01([_|_]):- put_console(c#"b") | lst02.
+otherwise.
+lst01(_):- put_console(c#"*") | lst02.
+
+lst02:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% Get_Vect_Value %%%%%%%% ") | vec00.
+
+vec00:- true | vec00get(X), vec00(X).
+vec00get(X):- true | X={0,V}, V=1.
+vec00({_,_}):- put_console(c#"a") | vec01.
+otherwise.
+vec00(_):- put_console(c#"*") | vec01.
+
+vec01:- true | vec01(X), vec01get(X).
+vec01get(X):- true | X={0,V}, V=1.
+vec01({_,_}):- put_console(c#"b") | vec02.
+otherwise.
+vec01(_):- put_console(c#"*") | vec02.
+
+vec02:- put_console(key#lf) | done.
+
+done:- true | true.
