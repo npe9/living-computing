@@ -18,6 +18,15 @@
 # run_pimm_shell.sh's (build_shell/); the work directory is removed at
 # the end (KEEP=1 keeps it).  Ends with `pimm lockstep apps: PASS` or
 # FAIL and the names that failed.
+#
+# The RESTORE injections (bsv/README.md, "Which RESTOREs the commands
+# check"; lockstep_shell.py DROPPED): with INJECT=1, after the
+# compares, each RESTORE of DROPPED is dropped in turn from its
+# command's script (lockstep_shell.py drop) and the command compared
+# again; each must fail at the pinned line, or pass where DROPPED says
+# None.  `run_pimm_apps.sh --inject WORK` runs only these, on a work
+# directory kept by an earlier KEEP=1 run.  Ends `pimm lockstep apps
+# injections: PASS` or FAIL and the pairs that did otherwise.
 set -eu
 cd "$(dirname "$0")"
 BSC=${BSC_BIN:-$(ls -d /opt/homebrew/Cellar/bsc/*/bin/bsc 2>/dev/null | sort | tail -1)}
@@ -26,6 +35,40 @@ export BLUESPECDIR
 PATH=$(dirname "$BSC"):$PATH
 export PATH
 REF=$(cd ../ref/pimm && pwd)
+
+inject() {
+  # inject WORK: the pairs of DROPPED whose command is in WORK
+  bad=""
+  python3 "$REF/lockstep_shell.py" drops > "$1/drops.txt"
+  while read -r name which; do
+    [ -d "$1/$name/checkpoint" ] || continue
+    d="$1/$name/inj_$which"
+    rm -rf "$d"
+    mkdir -p "$d/checkpoint"
+    ln -s ../generated "$d/generated"
+    for f in heap.hex trace want.json; do
+      ln -s "../../checkpoint/$f" "$d/checkpoint/$f"
+    done
+    python3 "$REF/lockstep_shell.py" drop "$which" "$1/$name/checkpoint/script.hex" "$d/checkpoint/script.hex"
+    want=$(python3 "$REF/lockstep_shell.py" dropped "$name" "$which")
+    got=$(cd "$d" && ../../sim_pimm_shell | python3 "$REF/lockstep_shell.py" compare checkpoint | head -1) || true
+    printf 'RESTORE %s dropped, %s: %s\n' "$which" "$name" "$got" | cut -c1-200
+    case "$got" in
+      *": $want"*) ;;
+      *) bad="$bad $name/$which" ;;
+    esac
+  done < "$1/drops.txt"
+  if [ -n "$bad" ]; then
+    echo "pimm lockstep apps injections: FAIL:$bad"
+    return 1
+  fi
+  echo "pimm lockstep apps injections: PASS"
+}
+
+if [ "${1:-}" = --inject ]; then
+  inject "$2"
+  exit $?
+fi
 PKL=$1
 shift
 
@@ -58,3 +101,6 @@ if [ -n "$failed" ]; then
   exit 1
 fi
 echo "pimm lockstep apps: PASS"
+if [ "${INJECT:-}" = 1 ]; then
+  inject "$WORK"
+fi

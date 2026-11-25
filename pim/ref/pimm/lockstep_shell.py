@@ -85,7 +85,8 @@ same SLOT 15 in place of the RESTORE word):
   compile_missing, 3  PASS, as predicted: the checkpoint is 236
     instructions past a tick, and the one system_timer read falls 357
     after a tick, so the core's late tick has come by then
-(bsv/README.md, "Which RESTOREs the commands check".)
+(bsv/README.md, "Which RESTOREs the commands check"; pinned in DROPPED
+below, run by run_pimm_apps.sh INJECT=1 or --inject WORK.)
 """
 import json
 import os
@@ -452,6 +453,50 @@ def splices(argv):
     return 0
 
 
+# The RESTORE injections on the commands past the shell (bsv/README.md,
+# "Which RESTOREs the commands check"): (APPS name, RESTORE number) ->
+# the trace line the compare fails at with that RESTORE dropped, or
+# None for a PASS (not caught; compile_missing's 3 is the control the
+# clock's phase predicts).  run_pimm_apps.sh with INJECT=1 runs them
+DROPPED = {
+    ('echo_new_atom', 1): 25012, ('echo_new_atom', 2): None, ('echo_new_atom', 3): None,
+    ('compile_exit', 1): None, ('compile_exit', 2): 828137, ('compile_exit', 3): 828137,
+    ('compile_missing', 2): 1484817, ('compile_missing', 3): None,
+}
+
+
+def drop(argv):
+    """drop WHICH SRC DST: SRC's first RESTORE of register WHICH (the
+    script word 10WW...) replaced by a silent SLOT 15 of the same
+    length, so the tape's offset holds"""
+    which, src, dst = int(argv[2]), argv[3], argv[4]
+    with open(src) as f:
+        lines = f.read().split('\n')
+    hit = [i for i, w in enumerate(lines) if w.startswith('10%02x' % which)]
+    if not hit:
+        print('drop: no RESTORE %d in %s' % (which, src))
+        return 1
+    lines[hit[0]] = '0c0f000000000000'
+    with open(dst, 'w') as f:
+        f.write('\n'.join(lines))
+    return 0
+
+
+def dropped(argv):
+    """dropped NAME WHICH: the start of what the compare must print"""
+    want = DROPPED[(argv[2], int(argv[3]))]
+    print('PASS' if want is None else 'FAIL at line %d of the trace' % want)
+    return 0
+
+
+def drops(argv):
+    """drops [NAME ...]: the pairs of DROPPED, 'NAME WHICH' a line"""
+    for (name, which) in DROPPED:
+        if len(argv) <= 2 or name in argv[2:]:
+            print(name, which)
+    return 0
+
+
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else ''
     if cmd == 'make':
@@ -462,5 +507,7 @@ if __name__ == '__main__':
         sys.exit(splices(sys.argv))
     if cmd == 'apps':
         sys.exit(apps(sys.argv))
+    if cmd in ('drop', 'dropped', 'drops'):
+        sys.exit(globals()[cmd](sys.argv))
     print(__doc__)
     sys.exit(2)

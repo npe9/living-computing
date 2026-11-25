@@ -366,7 +366,10 @@ instructions), every line identical:
 Which RESTOREs the commands check (2026-11-24, the kept work directory
 of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT
 of the same length, as in the table above, and the command compared
-again. The prediction came first, from the reference: `echo(zorkqx)`
+again (`INJECT=1`, or `run_pimm_apps.sh --inject WORK` on a kept
+directory; the pinned lines are `DROPPED` in `lockstep_shell.py`;
+the table below re-run that way 2026-11-25). The prediction came first,
+from the reference, by a scratch probe not kept: `echo(zorkqx)`
 makes one `new_atom` (counter 75,569 to 75,570); each compile reads
 `system_timer` once. The checkpoint's clock is 204,335,039 steps, 236
 past a tick (the timer is `(steps-1)//423`); with RESTORE 3 dropped the
