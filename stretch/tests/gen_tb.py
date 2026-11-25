@@ -90,7 +90,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     why this reuses that pattern instead of real file I/O).
 
     console_checks: optional list of (label:str, device_index:int,
-    expected:int) -- the same against core.io.readConsoleWord, for what
+    expected:int) -- the same against core.io.readConsoleReq/Resp, for what
     a program WROTE TO THE OPERATOR'S CONSOLE (StretchIO.chanConsole).
 
     printer_checks: optional list of (label:str, device_index:int,
@@ -512,13 +512,24 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("")
 
     # CONSOLE CHECKS -- what MCP printed.  Same shape as the printer's
-    # above, against core.io.readConsoleWord, because the console's
-    # paper is a device image and not a word of storage.
+    # above, against the console's own paper, because the paper is a
+    # device image and not a word of storage.
+    #
+    # TWO PHASES PER WORD SINCE 2026-11-25: the paper is a BRAM
+    # (StretchIO.bsv consoleImg), so readConsoleReq in one phase is
+    # answered by readConsoleResp in the next.  These phases run after
+    # stopRun, so the extra clocks are the testbench's and no CYCLES
+    # pin or step count sees them.
     ccheck_phase0 = pcheck_phase0 + len(printer_checks)
     for i, (label, dev_idx, expected) in enumerate(console_checks):
-        lines.append(f"  rule ccheck{i} (phase == {ccheck_phase0 + i});")
-        lines.append(f'    check("{label}", core.io.readConsoleWord({dev_idx}), 64\'h{expected & ((1<<64)-1):016x});')
-        lines.append(f"    phase <= {ccheck_phase0 + i + 1};")
+        rq = ccheck_phase0 + 2 * i
+        lines.append(f"  rule ccheckReq{i} (phase == {rq});")
+        lines.append(f"    core.io.readConsoleReq({dev_idx});")
+        lines.append(f"    phase <= {rq + 1};")
+        lines.append("  endrule")
+        lines.append(f"  rule ccheck{i} (phase == {rq + 1});")
+        lines.append(f'    check("{label}", core.io.readConsoleResp(), 64\'h{expected & ((1<<64)-1):016x});')
+        lines.append(f"    phase <= {rq + 2};")
         lines.append("  endrule")
         lines.append("")
 
@@ -526,16 +537,22 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     # paper, DISPLAYED and not checked, as "CONSOLE <i> <hex>" lines.
     # For a run whose console text is checked by a separate reader of
     # the log (tests/check_console_text.py), which can look for a
-    # message wherever MCP happened to type it.
-    cdump_phase0 = ccheck_phase0 + len(console_checks)
+    # message wherever MCP happened to type it.  Two phases per word,
+    # as the checks above.
+    cdump_phase0 = ccheck_phase0 + 2 * len(console_checks)
     for i in range(console_dump):
-        lines.append(f"  rule cdump{i} (phase == {cdump_phase0 + i});")
-        lines.append(f'    $display("CONSOLE {i} %016h", core.io.readConsoleWord({i}));')
-        lines.append(f"    phase <= {cdump_phase0 + i + 1};")
+        rq = cdump_phase0 + 2 * i
+        lines.append(f"  rule cdumpReq{i} (phase == {rq});")
+        lines.append(f"    core.io.readConsoleReq({i});")
+        lines.append(f"    phase <= {rq + 1};")
+        lines.append("  endrule")
+        lines.append(f"  rule cdump{i} (phase == {rq + 1});")
+        lines.append(f'    $display("CONSOLE {i} %016h", core.io.readConsoleResp());')
+        lines.append(f"    phase <= {rq + 2};")
         lines.append("  endrule")
         lines.append("")
 
-    tcheck_phase0 = cdump_phase0 + console_dump
+    tcheck_phase0 = cdump_phase0 + 2 * console_dump
     for i, (label, tape_idx, expected) in enumerate(tape_checks):
         lines.append(f"  rule tcheck{i} (phase == {tcheck_phase0 + i});")
         lines.append(f'    check("{label}", core.io.readTapeWord({tape_idx}), 64\'h{expected & ((1<<64)-1):016x});')

@@ -50,15 +50,50 @@
 //
 // A Vector of Regs has no guard to lift and no rule to schedule:
 // mkReg(0) initialises it at elaboration and that is the end of it.
-// The cost is 1024 x 64 flip-flops, which Bluesim does not care
-// about and a bitstream would -- but a bitstream will mount an SD
-// card through this same interface and never elaborate this module,
-// exactly as it will never elaborate mkTapeSourceVector.
+// The cost was 1024 x 64 flip-flops, which Bluesim does not care about
+// and a bitstream does: fpga_feasibility.md §11 measured 65,536 of the
+// whole core's 102,219 TRELLIS_FF in `ioDev_disk_img_*`, and a Vector
+// of Reg can never become block RAM.
+//
+// SO THE PLATTER IS NOW A BRAMCore, AND POWER-ON ZERO IS A BITMASK
+// (2026-11-25, fidelity_plan.md F0/F2).  Three properties carry over
+// from the Vector, and each is why this shape and not another:
+//
+//   1. NO GUARD.  mkBRAMCore2's put and read have no implicit
+//      condition (unlike BRAM.bsv's server wrappers, whose FIFOs would
+//      lift into rl_io exactly as the init sweep did), and the written
+//      mask is a plain register.  rl_io's predicate is unchanged; the
+//      schedule file is the check.
+//   2. ONE CLOCK OF LATENCY, THE SAME ONE.  A BRAM read put in clock N
+//      is on its output in N+1, and the CReg already made respReady
+//      true in N+1.  So the response arrives in the same clock it did
+//      from the registers and no cycle count moves.  The CReg stays, as
+//      the pending flag.
+//   3. ZERO UNTIL WRITTEN.  A BRAM's power-on contents are not zero
+//      (bsc's BRAM2.v initialises to 'hAAAA..., and Bluesim has its own
+//      pattern), and a sweep is the trap above.  So one bit per word
+//      says "written", latched beside the read request and ANDed onto
+//      the data.  1,024 flip-flops instead of 65,536, and no rule.
+//
+// Port a reads, port b writes, so a write can never disturb a read's
+// held output.  The transfer FSM never reads and writes the disk in
+// one clock (a transfer is one direction), so the same-address
+// collision BRAMs leave undefined cannot arise.
+//
+// `peek` IS GONE from the interface.  A BRAM cannot answer
+// combinationally, and nothing called it: every disk test reads the
+// platter back through the machine (tests/gen_disk_tb.py's header says
+// why that is the stronger check) or through the host image file.
+//
+// A bitstream will still mount SDRAM through this same interface
+// (the disk plan's D3, mkDiskSourceSdram) for the full 2^21 words; this
+// module is the two-arc unit-test platter, now in four DP16KD.
 
 package StretchDiskSource;
 
 import StretchTypes::*;
 import Vector::*;
+import BRAMCore::*;
 
 // A word index into one disk unit: 2^21 words (printed p.157).
 typedef Bit#(21) DiskIndex;
@@ -94,9 +129,6 @@ interface DiskSource;
   method Bool canWrite();
   method Action write(DiskIndex i, Word64 v);
 
-  // Testbench only.
-  method Word64 peek(DiskIndex i);
-
   // How many words this source holds.  The transfer FSM tests devIdx
   // against it, so it has to come from the implementation.  A DiskPos,
   // one bit wider than an index, because a full 353 holds 2^21 words
@@ -105,15 +137,23 @@ interface DiskSource;
 endinterface
 
 module mkDiskSourceSmall(DiskSource);
-  Vector#(DiskWordsSmall, Reg#(Word64)) img <- replicateM(mkReg(0));
+  // The platter: port a reads, port b writes.  No output register, so
+  // a read put in clock N is on `a.read` in N+1 -- the latency the
+  // CReg below already gave.  See the header.
+  BRAM_DUAL_PORT#(Bit#(TLog#(DiskWordsSmall)), Word64) img
+      <- mkBRAMCore2(valueOf(DiskWordsSmall), False);
+  // One bit per word: has it been written since power-on?
+  Reg#(Bit#(DiskWordsSmall)) written <- mkReg(0);
 
   // THE SAME CReg AS THE TAPE, AND FOR THE SAME REASON.  Port 0 is
   // ordered before port 1 within a clock, so readResp and readReq are
   // both callable from one rule with no conflict and there is no rule
   // of our own to order against the caller.  StretchTapeSource.bsv's
   // header records the three designs that failed before this one; all
-  // three would fail here identically.
-  Reg#(Maybe#(Word64)) resp[2] <- mkCReg(2, tagged Invalid);
+  // three would fail here identically.  It now holds only whether a
+  // response is pending and whether it is real data (False: out of
+  // range or never written, which reads zero).
+  Reg#(Maybe#(Bool)) resp[2] <- mkCReg(2, tagged Invalid);
 
 `ifdef DISK_WRITE_STALL
   // A TEST MODE, for tests/run_disk_stall_test.sh: the source accepts a
@@ -130,20 +170,21 @@ module mkDiskSourceSmall(DiskSource);
 
   // POWER-ON CONTENTS ARE ZERO, which is this model's choice and not
   // the manual's: printed p.157 says nothing about what an unwritten
-  // arc reads back.  mkReg(0) is also what makes the choice free --
-  // no rule, no guard, nothing for bsc to lift.
+  // arc reads back.  `written` is what makes the choice free -- no
+  // rule, no guard, nothing for bsc to lift.
   method Action readReq(DiskIndex i);
     Bit#(TLog#(DiskWordsSmall)) idx = truncate(i);
     Bool inRange = (i < fromInteger(valueOf(DiskWordsSmall)));
-    resp[1] <= tagged Valid (inRange ? img[idx] : 64'd0);
+    img.a.put(False, idx, ?);
+    resp[1] <= tagged Valid (inRange && written[idx] == 1);
   endmethod
 
   method Bool respReady() = isValid(resp[0]);
 
   method ActionValue#(Word64) readResp();
-    let v = validValue(resp[0]);
+    Bool isData = validValue(resp[0]);
     resp[0] <= tagged Invalid;
-    return v;
+    return isData ? img.a.read : 64'd0;
   endmethod
 
 
@@ -153,12 +194,10 @@ module mkDiskSourceSmall(DiskSource);
     Bit#(TLog#(DiskWordsSmall)) idx = truncate(i);
     if (!ok)
       $display("StretchDiskSource: WRITE LOST at disk word %0d (canWrite was False)", i);
-    else if (i < fromInteger(valueOf(DiskWordsSmall))) img[idx] <= v;
-  endmethod
-
-  method Word64 peek(DiskIndex i);
-    Bit#(TLog#(DiskWordsSmall)) idx = truncate(i);
-    return (i < fromInteger(valueOf(DiskWordsSmall))) ? img[idx] : 64'd0;
+    else if (i < fromInteger(valueOf(DiskWordsSmall))) begin
+      img.b.put(True, idx, v);
+      written[idx] <= 1;
+    end
   endmethod
 
   method DiskPos capacity() = fromInteger(valueOf(DiskWordsSmall));

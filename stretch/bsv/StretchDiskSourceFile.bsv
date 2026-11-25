@@ -65,8 +65,6 @@ module mkDiskSourceFile(DiskSource);
     host_disk_write_word(zeroExtend(i), v);
   endmethod
 
-  method Word64 peek(DiskIndex i) = host_disk_read_word(zeroExtend(i));
-
   // 2^21 words, printed p.157: every DiskIndex is in range.
   method DiskPos capacity() = fromInteger(2097152);
 endmodule
