@@ -141,6 +141,10 @@ class Atom:
 
 
 NIL = Atom('[]')
+# step 3j: the dispatcher's names
+PROCESS = 'simpos##process'
+ATOM_READY = Atom('ready')
+ATOM_SUSPENDED = Atom('suspended')
 
 
 class Functor:
@@ -479,6 +483,8 @@ class Machine:
         # this set raises CreatorStopped instead of being dispatched
         self.stop_before = None
         self.sender = None
+        # step 3j: the registers of each process not running (dispatcher, OURS)
+        self.saved = {}
 
     # -- code --------------------------------------------------------------
     def code(self, cid):
@@ -831,6 +837,16 @@ class Machine:
         if k == 'halt':
             self.pc = ('halt',)
             return
+        if k == 'yield':
+            # step 3j: after the printed suspend/2, the dispatcher (OURS)
+            self.pc = (code, off + 1)
+            run = self.running_process()
+            if isinstance(run, Instance) and self.get_slot(run, 'status') == ATOM_SUSPENDED:
+                self.yield_processor(run, False)
+            return
+        if k == 'exit':
+            # step 3j: a dispatched process's program has ended
+            return self.yield_processor(self.running_process(), True)
         if k == 'return':
             env = self.env
             self.env = env.prev
@@ -944,19 +960,120 @@ class Machine:
         the census process is a boot_process, which inherits this model
         (dispatch looks the model up along the inheritance order)."""
         reason = resolve(self.x[0])
-        raise Refusal('would suspend', 'process suspend/2 on %r: one process, no scheduler' % (reason,))
+        proc = deref(self.x[1])
+        st = self.get_slot(proc, 'status') if isinstance(proc, Instance) else None
+        if st not in (ATOM_READY, ATOM_SUSPENDED):
+            # step 3j: kept for a process the supervisor does not know (the
+            # census's: the boot process, `active`, before its own
+            # :create and :activate).  The printed body would fail for it.
+            raise Refusal('would suspend', 'process suspend/2 on %r: the process is not under the '
+                          'supervisor (status %r), so nothing can resume it' % (reason, st))
+        # step 3j: a process under the supervisor runs the printed body, and
+        # then the dispatcher (OURS) gives the processor to the next ready
+        # process if the running one is no longer ready
+        co = self.lib.build(PROCESS)
+        m = self.lib.send(co, 'instance', 'suspend', 2)
+        cid, p = [(c, q) for c, q in m.primaries if c == PROCESS][0]
+        self.pc = (Syn('%s:suspend/2 + dispatcher' % PROCESS,
+                       [('save', 2), ('restore', 2), ('call', cid, p.offset), ('yield',), ('return',)]), 0)
+
+    # -- the dispatcher (step 3j, OURS) -------------------------------------
+    # TR-055 PDF p5 (folio 2): "Interrupts and traps cause direct context
+    # switching at the hardware level, but process dispatching must be
+    # controlled by software."  TR-056 PDF p18 (folio 16): "A ready process
+    # is in a ready queue waiting to be run by the dispatcher"; p21 (folio
+    # 19): an ordinary process, when activated, "is placed in the ready
+    # queue by the supervisor", and resume "calls the software scheduler".
+    # The dispatcher and the scheduler are not printed (TM-100 Fig. 3.4
+    # elides `%RELEASE PROCESSOR ...` and `%ALLOCATE PROCESSOR ...`).  This
+    # one is OURS:
+    #   - each process's registers (pc, argument registers, environment,
+    #     continuation, choice points, trail) are its context's hardware
+    #     state; a process not running keeps them in self.saved;
+    #   - the running process gives up the processor only when it is no
+    #     longer ready: after the printed suspend/2 has made it suspended
+    #     (the `yield` step after the body), or when its program has ended
+    #     (the `exit` step under its first goal).  No preemption, no time
+    #     slice, priority ignored;
+    #   - the next process is the first in the ready queue (the printed
+    #     class slot process!ready_queue, a list since step 3j) that is
+    #     ready and not the one leaving.  A process run for the first time
+    #     starts at its context's entry, {Program, invoke}
+    #     (as_program:entry_of_invoke/2), as :invoke(Program);
+    #   - the running process is kept in process's class slot `current`,
+    #     which self/2 reads;
+    #   - if no process is ready, every process waits: refused, cause
+    #     'would suspend'.
+    def get_slot(self, obj, name):
+        co, sec, k = self.slot_index(obj, name)
+        return deref(self.slot_store(obj, co, sec)[k])
+
+    def set_slot(self, obj, name, value):
+        co, sec, k = self.slot_index(obj, name)
+        self.slot_store(obj, co, sec)[k] = value
+
+    def running_process(self):
+        return self.get_slot(ClassRef(PROCESS), 'current')
+
+    def registers(self):
+        return (self.pc, self.x, self.env, self.cont, self.b0, self.stack, self.trail, self.S, self.sender)
+
+    def set_registers(self, r):
+        (self.pc, self.x, self.env, self.cont, self.b0, self.stack, self.trail, self.S, self.sender) = r
+
+    def ready_processes(self):
+        q = self.get_slot(ClassRef(PROCESS), 'ready_queue')
+        if not isinstance(q, Instance):
+            raise Refusal('would suspend', 'no ready queue (%r): the supervisor is not started' % (q,))
+        out, t = [], self.get_slot(q, 'elements')
+        while isinstance(t, Cons):
+            out.append(deref(t.args[0]))
+            t = deref(t.args[1])
+        return out
+
+    def yield_processor(self, leaving, ended):
+        """LEAVING (the running process) gives up the processor; ENDED: its
+        program has ended and its registers are dropped."""
+        nxt = [p for p in self.ready_processes()
+               if p is not leaving and isinstance(p, Instance) and self.get_slot(p, 'status') == ATOM_READY]
+        if not nxt:
+            raise Refusal('would suspend', 'no process is ready: %r %s' % (
+                leaving, 'has ended' if ended else 'is %r' % (self.get_slot(leaving, 'status'),)))
+        nxt = nxt[0]
+        if ended:
+            self.saved.pop(id(leaving), None)
+        else:
+            self.saved[id(leaving)] = (leaving, self.registers())
+        self.set_slot(ClassRef(PROCESS), 'current', nxt)
+        r = self.saved.pop(id(nxt), None)
+        if r is not None:
+            self.set_registers(r[1])
+            return
+        ctx = self.get_slot(nxt, 'context')
+        if not isinstance(ctx, Instance) or self.get_slot(ctx, 'state') != Atom('active'):
+            raise Refusal('simpos', 'dispatch %r: its context %r is not active' % (nxt, ctx))
+        entry = self.get_slot(ctx, 'entry')
+        if not (isinstance(entry, Vec) and len(entry.args) == 2 and deref(entry.args[1]) == Atom('invoke')):
+            raise Refusal('simpos', 'dispatch %r: entry %r' % (nxt, entry))
+        self.x, self.env, self.trail, self.S, self.sender = collections.defaultdict(Var), None, [], None, None
+        self.b0, self.stack = 0, []
+        end = Syn('%r ends' % (nxt,), [('exit',)])
+        self.cont = (end, 0, None, 0)
+        self.stack.append(Choice((end, 0), self))   # a failed program ends the process too
+        self.x[0] = deref(entry.args[0])
+        self.dispatch(self.x[0], 'invoke', 1)
 
     def boot_process_override(self):
-        """boot_process's own :create and :activate, refused (step 3i).
-        PRINTED that they exist: TM-100 PDF p13 ("class 'boot_process'
-        inherits class 'process' and overrides the predicates, :create and
+        """boot_process's own create/3, refused (step 3i; step 3j stood in
+        create/2 and activate/2, boot_process.esp).  PRINTED that the
+        overrides exist: TM-100 PDF p13 ("class 'boot_process' inherits
+        class 'process' and overrides the predicates, :create and
         :activate") and TR-056 PDF p21 (the boot process calls them itself
-        to come under the supervisor).  Their bodies are not printed, and
-        the arities are not given (process has create/2, printed, and
-        create/3, interpolated; both are refused).  Without this, kl0
-        would run the inherited process versions in their place."""
+        to come under the supervisor).  The arity is not given; create/3
+        is itself INTERPOLATED (process.esp), and run on the boot process's
+        class it would make a second boot process."""
         raise Refusal('simpos', 'boot_process overrides :create and :activate '
-                      '(TM-100 p13, TR-056 p21); the bodies are not printed')
+                      '(TM-100 p13, TR-056 p21); create/3 is not stood in')
 
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
@@ -2263,9 +2380,9 @@ SIMPOS_MODELS = {
     # TR-056 p21); the overriding bodies are not printed, and the
     # inherited process versions would run in their place, so they are
     # refused here (standin/boot_process.esp)
-    ('simpos##boot_process', 'class', 'create', 2): Machine.boot_process_override,
+    # step 3j: create/2 and activate/2 are stood in (INTERPOLATED,
+    # boot_process.esp); create/3 is not
     ('simpos##boot_process', 'class', 'create', 3): Machine.boot_process_override,
-    ('simpos##boot_process', 'instance', 'activate', 2): Machine.boot_process_override,
 }
 
 
@@ -2617,6 +2734,7 @@ def census_of(m, classes, recipes=None, reverse=False):
                  for (name, n) in table]
         for section, name, n in (calls[::-1] if reverse else calls):
             m.class_slots = {}
+            m.saved = {}
             rows.append(census_row(m, cid, section, name, n, recipes))
     return rows
 

@@ -35,9 +35,10 @@
 %     sets, `active`, is the parenthesised value of the printed status
 %     slot (TM-100 Fig. 3.1, PDF p8: "nil(=dead), dormant, suspended,
 %     ready, (active)").
-% Not stood in, so refused loudly (kl0 SIMPOS_MODELS): the overriding
-% class create/2 and instance activate/2 (bodies not printed; the
-% inherited process versions would be wrong, TR-056 p21), and
+%   - step 3j: the overriding class create/2 and instance activate/2,
+%     INTERPOLATED (labelled at the end of the class).
+% Not stood in, so refused loudly: create/3 (kl0 SIMPOS_MODELS: the
+% inherited process version would make a second boot process), and
 % request/3 (no source says what a request does).
 
 class boot_process has
@@ -63,5 +64,58 @@ class boot_process has
         :new(Class, Boot),
         Class!instance := Boot,
         Boot!status := active ;
+
+    % ---- step 3j, route step B3: the overrides.  TM-100 p13 and TR-056
+    % PDF p21 (folio 19) say only that boot_process overrides :create and
+    % :activate, "so that the boot process comes under control of the
+    % supervisor after the system has started, by the boot process itself
+    % calling these operations"; TM-100 p13: "After initiation, this boot
+    % process goes under control of the supervisor, and acts exactly as an
+    % ordinary process."  The bodies are INTERPOLATED: each is the printed
+    % process method (TM-100 Fig. 3.1) with what does not apply to a
+    % process the hardware already runs taken out.  create/3 stays
+    % refused (kl0 SIMPOS_MODELS): process:create/3 is itself
+    % INTERPOLATED, and nothing says the boot process overrides it.
+
+    % INTERPOLATED (step 3j; see above).
+    % :create(#boot_process, Boot) -- the boot process gets what the
+    % printed create/2 and create_core/3 give a new process: a context (its
+    % number 0 when it is the first), priorities 0, status dormant.  Not
+    % :new (the boot process exists: "sole instance", TM-100 p13), no
+    % parent (it is "not [created] by another process", TM-100 p6), and no
+    % instance_array entry (the printed class slot has no initial value
+    % and nothing on the route reads it).  The supervisor's ready queue,
+    % the printed class slot ready_queue (Fig. 3.1, PDF p7), is made here
+    % as a list (OURS: the slot has no printed initial value; with_link
+    % "is inherited to put the process into the ready queue", PDF p10, so
+    % the real queue chains processes; a list holds them in order here).
+    :create(Class, Boot) :- !,
+        :self(#process, _Running),
+        Boot = Class!instance, Boot \== 0,
+        :create(#context, Context_number, Stack_number, Context),
+        Boot!context := Context,
+        Boot!priority := 0,
+        Boot!sub_priority := 0,
+        Boot!status := dormant,
+        :create(#list, Queue),
+        #process!ready_queue := Queue, ! ;
+
+    instance
+
+    % INTERPOLATED (step 3j; see above).
+    % :activate(Boot, Program) -- the printed activate/2 without
+    % :entry_of_invoke and :set_entry_point: the boot process is already
+    % running Program (the boot program it was given at bootstrap), so no
+    % entry is set.  It becomes ready and joins the ready queue, as the
+    % printed one makes any process.  Program is not used (OURS).
+    :activate(Boot, Program) :-
+        :status(Boot, dormant, on_activate), !,
+        :activate(Boot!context),
+        :set_priority(Boot!context, 0),
+        :clear_masks(Boot),
+        :inhibit_interrupt(#process),
+        Boot!status := ready,
+        :add(#process!ready_queue, Boot),
+        :allow_interrupt(#process), ! ;
 
 end.

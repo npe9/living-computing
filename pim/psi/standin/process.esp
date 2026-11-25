@@ -14,8 +14,9 @@
 % kept as printed: create/2 calls `:create_core(PROCESS, ...)` with
 % PROCESS in capitals, a fresh variable (tm0100_p08.esp transcriber's
 % note: probably a typo for Class).  So the printed create/2 cannot make
-% a process even with a `context` class (none is held or stood in:
-% kl0 refuses at simpos##context:create/4).
+% a process: since step 3j it has a `context` class (the INTERPOLATED
+% stand-in context.esp), and it stops at `create_core/3` sent to the
+% unbound PROCESS.  Not corrected.
 %
 % The printed instance slots are initialised by code (five
 % `:create(#list, L)` / `:create(#process_clock, C)` predicates).  kl0's
@@ -27,12 +28,15 @@
 %
 % Added (INTERPOLATED, labelled below): the class slot `current`,
 % self/2, inhibit_interrupt/1, allow_interrupt/1, tag_catch/5, /6, /9,
-% create/3, allow_forced_event/1 and inhibit_forced_event/1.
-% Model (INTERPOLATED): one running process (the machine runs one), made
-% on first use and kept in a class slot.  Since step 3i that process is
-% the boot process, an instance of the stand-in boot_process.esp.  create/3 makes further process
-% objects, dormant; nothing runs them (kl0 runs one goal at a time), so
-% activating one stops at the printed activate/2's lost `context` calls.
+% create/3, allow_forced_event/1 and inhibit_forced_event/1; step 3j:
+% status/3 and clear_masks/1, and create/3 now makes a context.
+% Model (INTERPOLATED): the running process is kept in the class slot
+% `current`, made on first use.  Since step 3i it is the boot process,
+% an instance of the stand-in boot_process.esp.  create/3 makes further
+% process objects, dormant.  Since step 3j the printed activate/2 makes
+% one ready, and kl0's dispatcher (OURS, psi/README.md "Step 3j") runs it
+% when the running process suspends or ends; that needs the boot process
+% to have come under the supervisor (its own create/2 and activate/2).
 
     class  process  has
 
@@ -46,7 +50,7 @@
                 instance_array ;
                 % Relates a process to its context_number.
 
-    % INTERPOLATED: holds the one process; not a printed slot.
+    % INTERPOLATED: holds the running process; not a printed slot.
     attribute   current := 0 ;
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8 (PROCESS in capitals as printed)
@@ -120,8 +124,15 @@
     % `:set_area_limit_execution(Pr,free,free,free,free,nil,nil)`), and
     % TR-079 PDF p9 (Fig. 2, folio 8) draws four stacks: control, global,
     % local and trail.
+    % Step 3j: the hardware context is made as the printed create/2 makes
+    % it, `:create(#context, Context_number, Stack_number, Context)`, and
+    % stored in the printed slot (create_core/3's `Process!context :=
+    % Context`); context.esp is INTERPOLATED.  So the 64th process is not
+    % made (create fails, as create/2's comment says).
     :create(Class, Process, Areas) :-
+        :create(#context, Context_number, Stack_number, Context),
         :new(Class, Process),
+        Process!context := Context,
         :self(#process, Self_process),
         Process!priority := 0,
         Process!sub_priority := 0,
@@ -239,6 +250,45 @@
     :tag_catch(Process, Name, Object, Method, Args,
                Abort_object, Abort_method, Abort_args, Tag) :-
         :refute(Object, Method, Args);
+
+    % :status(Process, Old, New) -- if Process's status is Old, it becomes
+    % New; otherwise fail.  Step 3j.
+    % INTERPOLATED from its five call sites, none with a body:
+    %   - PRINTED: activate/2 below, `:status(Process, dormant,
+    %     on_activate), !` (TM-100 Fig. 3.1, PDF p8), followed later by
+    %     `Process!status := ready`;
+    %   - HELD, pimmcsp##pseudo_pe_process release/1 @17a-17e:
+    %     `:status(Self, dormant, on_release)`, then the boot process is
+    %     asked to release Self; release/1 is sent by terminate/1 @1ca
+    %     after terminate_core/1;
+    %   - HELD, the same class's $or$5/2 @3a9-3bc (reached from
+    %     terminate_core/1 through $or$4/2 @37d): clause 1
+    %     `:status(P, suspended, dormant)`; clause 2 (the try_me_else
+    %     alternative) `:status(P, ready, dormant)`, then a removal
+    %     (remove_only/2, $or$6/2).  A terminated process becomes dormant
+    %     (TR-056 PDF p18, folio 16: dormant "when it has just been created
+    %     or terminated").
+    % So the second argument is the status expected and the third the one
+    % it becomes (INFERENCE from $or$5/2, whose third argument is a status,
+    % `dormant`); on_activate and on_release are transient statuses, the
+    % "and some others" of the printed slot comment (Fig. 3.1, PDF p8).  A
+    % mismatch fails: $or$5/2's second clause is reached only when
+    % clause 1's status/3 fails.  The interrupt bracket is OURS (a test and
+    % a set, made one step as the printed suspend/2 and resume/2 bracket
+    % theirs).
+    :status(Process, Old, New) :-
+        :inhibit_interrupt(#process),
+        (   Process!status == Old, !,
+            Process!status := New,
+            :allow_interrupt(#process)
+        ;   :allow_interrupt(#process), !,
+            fail ) ;
+
+    % :clear_masks(Process) -- no interrupt mask is in force.  Step 3j.
+    % INTERPOLATED from: its one call, in the printed activate/2 below
+    % (TM-100 Fig. 3.1, PDF p9), and the printed slot mask_count := 0,
+    % "The number of interrupt mask nestings" (PDF p8).
+    :clear_masks(Process) :- Process!mask_count := 0 ;
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8-9
     :activate(Process, Program) :-
