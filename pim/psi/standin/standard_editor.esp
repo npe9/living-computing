@@ -12,11 +12,13 @@
 % simpos##as_program, is reached through as_pimos_device).
 %
 % Model (OURS): the editor's window in one slot.  In SIMPOS the window
-% and its editor are made together by `:create(#pmacs_window, Opts, _, W)`
-% and `:get_editor(W, E)` (window.md §2.11, from disc/exshow.esp:23-35);
-% class pmacs_window is not stood in, so no window is ever made and the
-% slot keeps its constant 0.  kl0 then refuses the next send, to the
-% window, as "receiver not an object".
+% and its editor are made together (window.md §2.11: disc/exshow.esp:24
+% sends create/3, then `:get_editor(W, E)` at :28; corrected 2026-11-24,
+% docs/simpos/source_check_2026-11-24.md row SA42).  The pmacs_window
+% stand-in (pmacs_window.esp) makes one with its editor and sets this
+% slot; an editor made any other way (as the census makes receivers,
+% with new/2) keeps the constant 0, and kl0 refuses the next send, to
+% the window, as "receiver a slot constant".
 
 class standard_editor has
 

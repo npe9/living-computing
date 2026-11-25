@@ -303,4 +303,39 @@
             fail ),
         ! ;
 
+    % :add_program(Process, Program) -- push Program onto the process's
+    % invocation stack.
+    % INTERPOLATED (step 3e) from: the printed as_program:assign/1 (TM-100
+    % Fig. 3.3, PDF p11: "Push Program into 'invocation_stack'"), its only
+    % caller; the printed slot invocation_stack, a list (Fig. 3.1, PDF
+    % p8); TM-100's prose (PDF p11) "the program is pushed onto the
+    % invocation stack of the process".  The top is the list's first
+    % element (OURS).
+    :add_program(Process, Program) :-
+        :add_first(Process!invocation_stack, Program) ;
+
+    % :remove_program(Process, Program) -- pop the top program.
+    % INTERPOLATED (step 3e) from: the printed as_program:resign/1 and
+    % resign_core/1 ("Pop Program from 'invocation_stack'"), which pass an
+    % unbound Any_program; TM-100 PDF p11 "the program is popped".  Fails
+    % on an empty stack (OURS).
+    :remove_program(Process, Program) :-
+        :remove_first(Process!invocation_stack, Program) ;
+
+    % :no_program(Process) -- the invocation stack is empty.
+    % INTERPOLATED (step 3e) from: the printed as_program:resign/1
+    % (`:no_program(Process), !, :die(Process)`, "If it is the root
+    % program, then the process dies") and TM-100 PDF p11 "If the stack
+    % becomes empty, the process terminates".
+    :no_program(Process) :-
+        :empty(Process!invocation_stack) ;
+
+    % :die(Process) -- the process terminates.
+    % INTERPOLATED (step 3e) from: the printed as_program:resign/1 (above)
+    % and the printed status slot's comment "nil(=dead)" (Fig. 3.1, PDF
+    % p8).  Only the status is set: no context, children or resources are
+    % released (none is modelled).
+    :die(Process) :-
+        Process!status := nil ;
+
     end.

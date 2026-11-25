@@ -373,6 +373,41 @@ and stand-in `simpos##` classes. In order:
      - The next blockers: pmi ca 23, pmi c6 18, blt 9a 12, blt 54 12;
        `undefined_method:raise/2` 16, `library:assign/1` 9,
        `network_node_name` 10.
+   - *2026-11-24, step 3e* (`../../psi/README.md`, the "Step 3e" sections):
+     - Opcode rows: pmi ca (a first-clause guard), blt f2 (`==`, read
+       as f0), blt 9a/9b (interrupt brackets, no-ops here), pmi b1, b5,
+       b6, b7 (vectors of 1, 5, 6 and n elements), blt 50, 51, 54, 55
+       (`and`, `or`, `shift_left`, `shift_right`; the 32-bit word's
+       edges refuse), and R != A for blt 40 and 49. Each row is
+       witnessed by held cells beside their held source.
+     - A PRINTED stand-in: `as_program`, TM-100 Fig. 3.3 verbatim,
+       with `process`'s program stack INTERPOLATED. kl0 keeps a missing
+       primary under a stand-in ancestor as SIMPOS.
+     - The census: a send to an integer still holding its slot's
+       template constant is refused as `receiver a slot constant` (139
+       FEP methods). It is the census's own doing, since receivers are
+       made with new/2, not through their creators.
+       `:raise(#undefined_method, ...)` ends in a new outcome,
+       `exception`: uncaught, since no handler is modelled (TM-388
+       p.59; 16 methods).
+     - INTERPOLATED stand-ins: `network_node_name` (one node name;
+       its value "psi" is OURS), and `pmacs_window`'s `{editor, Class}`
+       option and `activity` slot, from the held cells of `pimos_window`.
+     - Census: 1,403 methods (138 inherited from `as_program`), 787
+       succeed, 123 fail, 16 raise, 477 refuse. No method moved out of
+       success at any step.
+     - Not added: blt 6f `list_to_vector` (its third argument is
+       unsettled) and pmi c6 (a multi-way switch with packed words; it
+       needs ce and ff, which have no rows).
+     - The next blockers: the slot constants (139, by making receivers
+       through their creators), pmi c6 21, `library:assign/1` 12,
+       `process:status/3` 11, blt 0d 10.
+     - 2026-11-25: three witness citations were corrected after a re-read
+       against held kappa2 (CONVERTER.ESP for `get_integer/4`, KP_MDMSCT.ESP
+       for b6, blt 49's offset). After merging master (296806e2, then
+       710f3933), the census is identical row by row. Against step 3d,
+       row by row, the only method out of success is the blt f2 census
+       order effect (`psi/README.md`).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
