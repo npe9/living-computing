@@ -10,9 +10,7 @@
 #include "io.h"
 #include "klb.h"
 
-main(argc, argv_)
-    int	 argc;
-    char **argv_;
+int main(int argc, char **argv_)
 {
     CHAR **argv = (CHAR **)argv_;  /* PORT */
     CHAR file_name[256];
@@ -54,8 +52,7 @@ main(argc, argv_)
     exit_pdss(0);
 }
 
-exit_pdss(code)
-    int code;
+int exit_pdss(int code)
 {
     exit(code);
 }
@@ -66,6 +63,9 @@ int current_window;
 int gc_counter;
 int gc_panic_flag;
 int iflag;
-dcode_function_to_mod_pred_arity() { exit_pdss(1); }
-load_and_link_native_code_module() { exit_pdss(1); }
-CHAR *expand_path_name()	   { exit_pdss(1); }
+int dcode_function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity)
+    { exit_pdss(1); return(0); }
+int load_and_link_native_code_module(CHAR *fname, MODULE_ENTRY **mod_table)
+    { exit_pdss(1); return(0); }
+CHAR *expand_path_name(CHAR *name, CHAR *buffer)
+    { exit_pdss(1); return(NULL); }

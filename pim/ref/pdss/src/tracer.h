@@ -18,8 +18,6 @@
 #define NEXT_SPIED_GOAL	      9
 extern int trace_status;
 extern int trace_intr_flag;
-extern set_trace_status();
-extern trace_interrupt();
 
 /*** Goal Status ***/
 #define GATE_MASK 0x1F
@@ -31,14 +29,8 @@ extern trace_interrupt();
 #define GATE_RESU 0x04
 #define GATE_SWAP 0x08
 #define GATE_FAIL 0x10
-extern trace_call_switch();
-extern trace_susp_switch();
-extern trace_resu_switch();
-extern trace_fail_switch();
-extern trace_swap_switch();
 
 /*** Trace Macros ***/
-extern trace();
 #define TraceCheck(STATUS)\
     (trace_intr_flag || (trace_status != NO_TRACE && !(STATUS&NO_TRACE_GOAL)))
 #define TraceExecuteGoal(PC)\

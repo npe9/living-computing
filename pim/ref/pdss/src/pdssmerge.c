@@ -16,9 +16,7 @@
 int level;
 int scnst = 0;
 
-main(argc, argv)
-    int argc; 
-    char **argv;
+int main(int argc, char **argv)
 {
     FILE *fi_org, *fi_new, *fi_mod;
     char fn_org[256], fn_mod[256];
@@ -246,9 +244,7 @@ struct{
 } procedure_table[1000];
 int  number_of_procedure = 0;
 
-enter_procedure(name, to, argn)
-    char *name, *to;
-    int	 argn;
+int enter_procedure(char *name, char *to, int argn)
 {
     register char *p;
     if(number_of_procedure < 1000){
@@ -259,9 +255,7 @@ enter_procedure(name, to, argn)
     }
 }
 
-check_procedure(name, to, argn)
-    char *name, *to;
-    int	 argn;
+int check_procedure(char *name, char *to, int argn)
 {
     register char *p, *q;
     register int  i;
@@ -277,9 +271,7 @@ check_procedure(name, to, argn)
 
 /****************************************************************************/
 /****************************************************************************/
-is_label_line(buffer, from, to)
-    register char *buffer;
-    char **from, **to;
+int is_label_line(register char *buffer, char **from, char **to)
 {
     if(buffer[0] == ' ' && buffer[1] == '\''){
 	buffer++;
@@ -302,9 +294,7 @@ is_label_line(buffer, from, to)
 }
 
 /****************************************************************************/
-is_module_line(buffer, from, to)
-    register char *buffer;
-    char **from, **to;
+int is_module_line(register char *buffer, char **from, char **to)
 {
     while(isspace(*buffer)) buffer++;
     if(!(buffer[0] == 'm' && buffer[1] == 'o' && buffer[2] == 'd' &&
@@ -332,10 +322,7 @@ is_module_line(buffer, from, to)
 }
 
 /****************************************************************************/
-is_entry_line(buffer, from, to, argn)
-    register char *buffer;
-    char **from, **to;
-    int	 *argn;
+int is_entry_line(register char *buffer, char **from, char **to, int *argn)
 {
     int	 x;
 
@@ -370,8 +357,7 @@ is_entry_line(buffer, from, to, argn)
 }
 
 /****************************************************************************/
-is_module_entry_line(buffer)
-    register char *buffer;
+int is_module_entry_line(register char *buffer)
 {
     while(isspace(*buffer)) buffer++;
     return(buffer[0] == 'm' && buffer[1] == 'o' && buffer[2] == 'd' &&
@@ -382,10 +368,7 @@ is_module_entry_line(buffer)
 }
 
 /****************************************************************************/
-is_predicate_line(buffer, from, to, argn)
-    register char *buffer;
-    char **from, **to;
-    int	 *argn;
+int is_predicate_line(register char *buffer, char **from, char **to, int *argn)
 {
     int	 x;
 
@@ -422,8 +405,7 @@ is_predicate_line(buffer, from, to, argn)
 }
 
 /****************************************************************************/
-is_begin_const_section_line(buffer)
-    register char *buffer;
+int is_begin_const_section_line(register char *buffer)
 {
     while(isspace(*buffer)) buffer++;
     return(buffer[0] == 'b' && buffer[1] == 'e' && buffer[2] == 'g' &&
@@ -438,8 +420,7 @@ is_begin_const_section_line(buffer)
 
 /****************************************************************************/
 /****************************************************************************/
-rename_sc_label(buf)
-    register char *buf;
+int rename_sc_label(register char *buf)
 {
     while(*buf){
 	/** rename label: $SCNST_ --> $SC$NN_ **/
@@ -456,9 +437,7 @@ rename_sc_label(buf)
 }
 
 /****************************************************************************/
-read_line(file, buffer)
-    register FILE *file;
-    char *buffer;
+int read_line(register FILE *file, char *buffer)
 {
     register int ch, len;
     register char *bp;
@@ -475,9 +454,7 @@ read_line(file, buffer)
     return(ch != EOF);
 }
 
-write_line(file, buffer)
-    register FILE *file;
-    register char *buffer;
+int write_line(register FILE *file, register char *buffer)
 {
     while(*buffer){
 	putc(*buffer++, file);
@@ -493,8 +470,7 @@ char *getwd();
 char *getenv();
 char *mktemp();
 
-expand_path_name(name, buffer)
-    char  *name, *buffer;
+int expand_path_name(char *name, char *buffer)
 {
     register struct passwd  *pw;
     register char  *p;

@@ -12,10 +12,8 @@
 *   General Unification.  X=Y.						 *
 *************************************************************************/
 
-int passive_unify(x, mrbx, y, mrby, depth)
-    register CELL *x, *y;
-    MRB	 mrbx, mrby;	/** Used for Eager Deadlock Detection **/
-    int	 depth;
+int passive_unify(register CELL *x, MRB mrbx, register CELL *y, MRB mrby, int depth)
+    /** Used for Eager Deadlock Detection **/
 {
     register int len;
   loop:
@@ -90,10 +88,8 @@ int passive_unify(x, mrbx, y, mrby, depth)
 *   Ground Check.							 *
 *************************************************************************/
 
-int is_ground(x, mrb, depth)
-    register CELL *x;
-    MRB	 mrb;		/** Used for Eager Deadlock Detection **/
-    int	 depth;
+int is_ground(register CELL *x, MRB mrb, int depth)
+    /** Used for Eager Deadlock Detection **/
 {
     register int len;
   loop:

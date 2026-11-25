@@ -11,9 +11,7 @@
 
 #if INSTRUCTION_TRACE
 
-inverse_assemble_one(p, top, s)
-    OBJ *p, *top;
-    CHAR *s;
+int inverse_assemble_one(OBJ *p, OBJ *top, CHAR *s)
 {
     register struct instr_rec *op;
     register OBJ *tmp_obj;

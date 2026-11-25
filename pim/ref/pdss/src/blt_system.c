@@ -19,8 +19,7 @@
 *   display_console(Rdata)						 *
 *************************************************************************/
 
-blt_display_console(x)
-    CELL *x;
+int blt_display_console(CELL *x)
 {
     SelectWindow(CONSOLE);
     print_term(x, PRINT_LENGTH, PRINT_DEPTH);
@@ -32,8 +31,7 @@ blt_display_console(x)
 *   put_console(Rdata)							 *
 *************************************************************************/
 
-blt_put_console(x)
-    CELL *x;
+int blt_put_console(CELL *x)
 {
     SelectWindow(CONSOLE);
     Dereference(x);
@@ -49,8 +47,7 @@ blt_put_console(x)
 *   read_console(^Rdata)						 *
 *************************************************************************/
 
-blt_read_console(x)
-    CELL *x;
+int blt_read_console(CELL *x)
 {
     CHAR buffer[16];
     int work;
@@ -72,15 +69,14 @@ blt_read_console(x)
 *   apply(Rcode,Rargv)							 *
 *************************************************************************/
 
-DCODE dc_apply()
+DCODE dc_apply(void)
 {
     blt_b_apply(&R0, &R1);
     CountDcodeReduction();
     return(NC_PROCEED);
 }
 
-blt_b_apply(code, argv)
-    CELL *code, *argv;
+int blt_b_apply(CELL *code, CELL *argv)
 {
     register CELL *x, *y;
     register MRB mrb;
@@ -181,15 +177,14 @@ blt_b_apply(code, argv)
 *   raise(Rtag,Rkey,Rinfo)						 *
 *************************************************************************/
 
-DCODE dc_raise()
+DCODE dc_raise(void)
 {
     blt_b_raise(&R0, &R1, &R2);
     CountDcodeReduction();
     return(NC_PROCEED);
 }
 
-blt_b_raise(tag, key, info)
-    CELL *tag, *key, *info;
+int blt_b_raise(CELL *tag, CELL *key, CELL *info)
 {
     ClearSuspensionStack();
     Dereference(tag);
@@ -231,7 +226,7 @@ blt_b_raise(tag, key, info)
 	}
 	return;
     }
-    raise(Valueof(tag), key, info);
+    pdss_raise(Valueof(tag), key, info);
 }
 
 
@@ -239,8 +234,7 @@ blt_b_raise(tag, key, info)
 *   merge(^Rin,^Rout)							 *
 *************************************************************************/
 
-blt_b_merge(in, out)
-    CELL *in, *out;
+int blt_b_merge(CELL *in, CELL *out)
 {
     register MERGER_RECORD *merger;
     register CELL *mghok, *undef;
@@ -263,8 +257,7 @@ blt_b_merge(in, out)
 *   current_node(^Rcurrent,^Rtotal)					 *
 *************************************************************************/
 
-blt_b_current_node(cp, tp)
-    CELL *cp, *tp;
+int blt_b_current_node(CELL *cp, CELL *tp)
 {
     SetAll(cp, INT, 0, MRBOFF);
     SetAll(tp, INT, 1, MRBOFF);
@@ -275,8 +268,7 @@ blt_b_current_node(cp, tp)
 *   current_processor(^Rcurrent,^Rx,^Ry)				 *
 *************************************************************************/
 
-blt_b_current_processor(cp, sx, sy)
-    CELL *cp, *sx, *sy;
+int blt_b_current_processor(CELL *cp, CELL *sx, CELL *sy)
 {
     SetAll(cp, INT, 0, MRBOFF);
     SetAll(sx, INT, 1, MRBOFF);
@@ -288,8 +280,7 @@ blt_b_current_processor(cp, sx, sy)
 *   current_priority(^Rcurrent,^Rmin,^Rmax)				 *
 *************************************************************************/
 
-blt_b_current_priority(cp, min, max)
-    CELL *cp, *min, *max;
+int blt_b_current_priority(CELL *cp, CELL *min, CELL *max)
 {
     SetAll(cp, INT, logical_priority, MRBOFF);
     SetAll(min, INT, parent->priority_min, MRBOFF);
@@ -301,7 +292,7 @@ blt_b_current_priority(cp, min, max)
 *   rate(Rin,^Rout)							 *
 *************************************************************************/
 
-DCODE dc_rate()
+DCODE dc_rate(void)
 {
     blt_b_rate(&R0, &R2);
     active_unify(&R1, &R2);
@@ -309,8 +300,7 @@ DCODE dc_rate()
     return(NC_PROCEED);
 }
 
-blt_b_rate(rate, prio)
-    CELL *rate, *prio;
+int blt_b_rate(CELL *rate, CELL *prio)
 {
     Dereference(rate);
     if(Typeof(rate) != INT){
@@ -343,7 +333,7 @@ blt_b_rate(rate, prio)
 *   rltv(Rin,^Rout)							 *
 *************************************************************************/
 
-DCODE dc_rltv()
+DCODE dc_rltv(void)
 {
     blt_b_rltv(&R0, &R2);
     active_unify(&R1, &R2);
@@ -351,8 +341,7 @@ DCODE dc_rltv()
     return(NC_PROCEED);
 }
 
-blt_b_rltv(rate, prio)
-    CELL *rate, *prio;
+int blt_b_rltv(CELL *rate, CELL *prio)
 {
     Dereference(rate);
     if(Typeof(rate) != INT){
@@ -391,7 +380,7 @@ blt_b_rltv(rate, prio)
 *   hash(Rx,^Rhash,^Rnewx)						 *
 *************************************************************************/
 
-DCODE dc_hash()
+DCODE dc_hash(void)
 {
     blt_b_hash(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -400,8 +389,7 @@ DCODE dc_hash()
     return(NC_PROCEED);
 }
 
-blt_b_hash(x, hv, newx)
-    CELL *x, *hv, *newx;
+int blt_b_hash(CELL *x, CELL *hv, CELL *newx)
 {
     Dereference(x);
     if(IsRef(x)){
@@ -445,8 +433,7 @@ blt_b_hash(x, hv, newx)
 *   unbound(Rx,^Rpe,^Raddr,^Rnewx)  ...  old fashion.			 *
 *************************************************************************/
 
-blt_b_unbound(x, pe, addr, newx)
-    CELL *x, *pe, *addr, *newx;
+int blt_b_unbound(CELL *x, CELL *pe, CELL *addr, CELL *newx)
 {
     Dereference(x);
     if(IsRef(x)){
@@ -465,8 +452,7 @@ blt_b_unbound(x, pe, addr, newx)
 *   unbound(Rx,^Rresult)						 *
 *************************************************************************/
 
-blt_b_unbound2(x, result)
-    CELL *x, *result;
+int blt_b_unbound2(CELL *x, CELL *result)
 {
     register CELL *r;
     Dereference(x);
@@ -488,7 +474,7 @@ blt_b_unbound2(x, result)
 *   get_print_image(Rx,Rmode,Rleft,^Rstr,^Rlength,^Rtail)		 *
 *************************************************************************/
 
-DCODE dc_get_print_image()
+DCODE dc_get_print_image(void)
 {
     blt_b_get_print_image(&R0, &R1, &R2, &R6, &R7, &R8);
     active_unify(&R3, &R6);
@@ -498,8 +484,7 @@ DCODE dc_get_print_image()
     return(NC_PROCEED);
 }
 
-blt_b_get_print_image(atomic, mode, left, string, len, tail)
-    CELL *atomic, *mode, *left, *string, *len, *tail;
+int blt_b_get_print_image(CELL *atomic, CELL *mode, CELL *left, CELL *string, CELL *len, CELL *tail)
 {
     register CELL *x;
     x = atomic;
@@ -551,8 +536,7 @@ blt_b_get_print_image(atomic, mode, left, string, len, tail)
 *   statistics(^Rcpu,^Rhsize,^Rhused,^Rcsize,^Rcused,^Rsystem)		 *
 *************************************************************************/
 
-blt_statistics(ct, hs, hu, cs, cu, sy)
-    CELL *ct, *hs, *hu, *cs, *cu, *sy;
+int blt_statistics(CELL *ct, CELL *hs, CELL *hu, CELL *cs, CELL *cu, CELL *sy)
 {
     long uspent;
     struct rusage usage;
@@ -572,8 +556,7 @@ blt_statistics(ct, hs, hu, cs, cu, sy)
 *   get_cpu_time(^Rcpu)							 *
 *************************************************************************/
 
-blt_get_cpu_time(cpu)
-    CELL *cpu;
+int blt_get_cpu_time(CELL *cpu)
 {
     long uspent;
     struct rusage usage;
@@ -588,8 +571,7 @@ blt_get_cpu_time(cpu)
 *   get_current_time(^Ryear,^Rmonth,^Rday,^Rhour,^Rminute,^Rsecond)	 *
 *************************************************************************/
 
-blt_get_current_time(year, month, day, hour, minute, second)
-    CELL *year, *month, *day, *hour, *minute, *second;
+int blt_get_current_time(CELL *year, CELL *month, CELL *day, CELL *hour, CELL *minute, CELL *second)
 {
     time_t clock;
     struct tm *tm;
@@ -608,8 +590,7 @@ blt_get_current_time(year, month, day, hour, minute, second)
 *   tag_and_value(Rdata,^Rtag,^Rvalue)					 *
 *************************************************************************/
 
-int blt_g_tag_and_value(data,tag,value)
-    CELL *data, *tag, *value;
+int blt_g_tag_and_value(CELL *data, CELL *tag, CELL *value)
 {
     int t, v;
     Dereference(data);
@@ -629,8 +610,7 @@ int blt_g_tag_and_value(data,tag,value)
 *   register_tag_and_value(Rdata,^Rtag,^Rvalue)				 *
 *************************************************************************/
 
-int blt_g_register_tag_and_value(data,tag,value)
-    CELL *data, *tag, *value;
+int blt_g_register_tag_and_value(CELL *data, CELL *tag, CELL *value)
 {
     int t, v;
     t = Typeof(data);
@@ -645,8 +625,7 @@ int blt_g_register_tag_and_value(data,tag,value)
 *   word(Raddress,^Rtag,^Rvalue)					 *
 *************************************************************************/
 
-int blt_g_word(addr,tag,value)
-    CELL *addr, *tag, *value;
+int blt_g_word(CELL *addr, CELL *tag, CELL *value)
 {
     int t, v;
     Dereference(addr);
@@ -667,8 +646,7 @@ int blt_g_word(addr,tag,value)
 *   set_tag_and_value(^Rdata,Rtag,Rvalue)				 *
 *************************************************************************/
 
-int blt_g_set_tag_and_value(data,tag,value)
-    CELL *data, *tag, *value;
+int blt_g_set_tag_and_value(CELL *data, CELL *tag, CELL *value)
 {
     int t, v;
     t = Valueof(tag);
@@ -682,8 +660,7 @@ int blt_g_set_tag_and_value(data,tag,value)
 *   halt(Rexitcode)							 *
 *************************************************************************/
 
-int blt_g_halt(code)
-    CELL *code;
+int blt_g_halt(CELL *code)
 {
     Dereference(code);
     if(Typeof(code) == INT){
@@ -700,8 +677,7 @@ int blt_g_halt(code)
 *   request_gc(Rflag)							 *
 *************************************************************************/
 
-int blt_g_request_gc(flag)
-    CELL *flag;
+int blt_g_request_gc(CELL *flag)
 {
     Dereference(flag);
     if(Typeof(flag) != INT){
@@ -721,8 +697,7 @@ int blt_g_request_gc(flag)
 *   set_scheduling_switch(Rflag)					 *
 *************************************************************************/
 
-int blt_g_set_scheduling_switch(flag)
-    CELL *flag;
+int blt_g_set_scheduling_switch(CELL *flag)
 {
     Dereference(flag);
     if(Typeof(flag) != INT){
@@ -744,8 +719,7 @@ int blt_g_set_scheduling_switch(flag)
 *   set_trace_switch(Rflag)						 *
 *************************************************************************/
 
-int blt_g_set_trace_switch(flag)
-    CELL *flag;
+int blt_g_set_trace_switch(CELL *flag)
 {
     Dereference(flag);
     if(Typeof(flag) != INT){
@@ -765,8 +739,7 @@ int blt_g_set_trace_switch(flag)
 *   set_backtrace_switch(Rflag)						 *
 *************************************************************************/
 
-int blt_g_set_backtrace_switch(flag)
-    CELL *flag;
+int blt_g_set_backtrace_switch(CELL *flag)
 {
     Dereference(flag);
     if(Typeof(flag) != INT){
@@ -786,15 +759,14 @@ int blt_g_set_backtrace_switch(flag)
 *   get_all_atom_name(^Rlist)						 *
 *************************************************************************/
 
-DCODE dc_get_all_atom_name()
+DCODE dc_get_all_atom_name(void)
 {
     blt_b_get_all_atom_name(&R0);
     CountDcodeReduction();
     return(NC_PROCEED);
 }
 
-blt_b_get_all_atom_name(list)
-    CELL *list;
+int blt_b_get_all_atom_name(CELL *list)
 {
     register CELL *cons, *vect, *p;
     register unsigned int atom;
@@ -822,7 +794,7 @@ blt_b_get_all_atom_name(list)
 *   unix(Rcommand,Rflag,^Rstatus)					 *
 *************************************************************************/
 
-DCODE dc_unix()
+DCODE dc_unix(void)
 {
     blt_b_unix(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -830,8 +802,7 @@ DCODE dc_unix()
     return(NC_PROCEED);
 }
 
-blt_b_unix(command, flag, status)
-    CELL *command, *flag, *status;
+int blt_b_unix(CELL *command, CELL *flag, CELL *status)
 {
     register CELL *x;
     register int len, id;
@@ -896,8 +867,7 @@ blt_b_unix(command, flag, status)
 *   b_get_library_directory(^Rname)					 *
 *************************************************************************/
 
-blt_b_get_library_directory(name)
-    CELL *name;
+int blt_b_get_library_directory(CELL *name)
 {
     SetAll(name, STRING, convert_to_kl1_string(PDSS_LIBDIR), MRBOFF);
 }

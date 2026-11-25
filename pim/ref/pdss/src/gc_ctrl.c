@@ -15,7 +15,7 @@
 *   GC Ready Goal Pool.							 *
 *************************************************************************/
 
-gc_ready_queue()
+int gc_ready_queue(void)
 {
     register READY_QUEUE_BACKET *p;
     register GOAL_RECORD *old, *new, *next;
@@ -79,8 +79,7 @@ gc_ready_queue()
 *   GC Goal Record.							 *
 *************************************************************************/
 
-gc_goal_record(old, new)
-    register GOAL_RECORD *old, *new;
+int gc_goal_record(register GOAL_RECORD *old, register GOAL_RECORD *new)
 {
     register CELL *oldarg, *newarg;
     register int  argn;
@@ -115,8 +114,7 @@ gc_goal_record(old, new)
 *   GC Shoen Record.							 *
 *************************************************************************/
 
-gc_parent_record(old, new)
-    register PARENT_RECORD *old, *new;
+int gc_parent_record(register PARENT_RECORD *old, register PARENT_RECORD *new)
 {
     register PARENT_RECORD *parent, *old_son, *new_son;
 
@@ -190,8 +188,7 @@ gc_parent_record(old, new)
 *   GC Suspension Queue.						 *
 *************************************************************************/
 
-gc_suspension_queue(oldhook, newhook)
-    register CELL *oldhook, *newhook;
+int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 {
     register CELL *backhook;
     union {
@@ -291,8 +288,7 @@ gc_suspension_queue(oldhook, newhook)
 *   GC Suspension Record.						 *
 *************************************************************************/
 
-gc_suspension_record(old, new)
-    register SUSPENSION_RECORD *old, *new;
+int gc_suspension_record(register SUSPENSION_RECORD *old, register SUSPENSION_RECORD *new)
 {
     register SUSPENSION_RECORD *p1, *p2;
 
@@ -320,7 +316,7 @@ gc_suspension_record(old, new)
 *   GC Window I/O Table.						 *
 *************************************************************************/
 
-gc_io_table()
+int gc_io_table(void)
 {
     CELL *old;
     int	 i;
@@ -344,7 +340,7 @@ gc_io_table()
 *   GC Timer Table.							 *
 *************************************************************************/
 
-gc_timer_table()
+int gc_timer_table(void)
 {
     CELL *old;
 

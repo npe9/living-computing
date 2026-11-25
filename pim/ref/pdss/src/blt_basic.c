@@ -81,7 +81,7 @@ static CELL const_int0 = {INT, MRBOFF, 0};
 *   b_add(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_add()
+DCODE dc_add(void)
 {
     blt_b_add(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -89,8 +89,7 @@ DCODE dc_add()
     return(NC_PROCEED);
 }
 
-blt_b_add(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_add(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_ADD, dc_add, in1, in2, out);
 #if IGNORE_INTEGER_OVERFLOW
@@ -114,7 +113,7 @@ blt_b_add(in1, in2, out)
 *   b_subtract(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_subtract()
+DCODE dc_subtract(void)
 {
     blt_b_subtract(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -122,8 +121,7 @@ DCODE dc_subtract()
     return(NC_PROCEED);
 }
 
-blt_b_subtract(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_subtract(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_SUBTRACT, dc_subtract, in1, in2, out);
 #if IGNORE_INTEGER_OVERFLOW
@@ -147,7 +145,7 @@ blt_b_subtract(in1, in2, out)
 *   b_multiply(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_multiply()
+DCODE dc_multiply(void)
 {
     blt_b_multiply(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -155,8 +153,7 @@ DCODE dc_multiply()
     return(NC_PROCEED);
 }
 
-blt_b_multiply(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_multiply(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_MULTIPLY, dc_multiply, in1, in2, out);
 #if IGNORE_INTEGER_OVERFLOW
@@ -180,7 +177,7 @@ blt_b_multiply(in1, in2, out)
 *   b_divide(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_divide()
+DCODE dc_divide(void)
 {
     blt_b_divide(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -188,8 +185,7 @@ DCODE dc_divide()
     return(NC_PROCEED);
 }
 
-blt_b_divide(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_divide(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_DIVIDE, dc_divide, in1, in2, out);
     if(Valueof(in2) == 0){
@@ -214,7 +210,7 @@ blt_b_divide(in1, in2, out)
 *   b_modulo(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_modulo()
+DCODE dc_modulo(void)
 {
     blt_b_modulo(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -222,8 +218,7 @@ DCODE dc_modulo()
     return(NC_PROCEED);
 }
 
-blt_b_modulo(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_modulo(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_MODULO, dc_modulo, in1, in2, out);
     if(Valueof(in2) == 0){
@@ -243,7 +238,7 @@ blt_b_modulo(in1, in2, out)
 *   b_minus(Rin,&Rout)							 *
 *************************************************************************/
 
-DCODE dc_minus()
+DCODE dc_minus(void)
 {
     blt_b_minus(&R0, &R2);
     active_unify(&R1, &R2);
@@ -251,8 +246,7 @@ DCODE dc_minus()
     return(NC_PROCEED);
 }
 
-blt_b_minus(in1, out)
-    CELL *in1, *out;
+int blt_b_minus(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_MINUS, dc_minus, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
@@ -269,7 +263,7 @@ blt_b_minus(in1, out)
 *   b_increment(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_increment()
+DCODE dc_increment(void)
 {
     blt_b_increment(&R0, &R2);
     active_unify(&R1, &R2);
@@ -277,8 +271,7 @@ DCODE dc_increment()
     return(NC_PROCEED);
 }
 
-blt_b_increment(in1, out)
-    CELL *in1, *out;
+int blt_b_increment(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_INCREMENT, dc_increment, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
@@ -296,7 +289,7 @@ blt_b_increment(in1, out)
 *   b_decrement(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_decrement()
+DCODE dc_decrement(void)
 {
     blt_b_decrement(&R0, &R2);
     active_unify(&R1, &R2);
@@ -304,8 +297,7 @@ DCODE dc_decrement()
     return(NC_PROCEED);
 }
 
-blt_b_decrement(in1, out)
-    CELL *in1, *out;
+int blt_b_decrement(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_DECREMENT, dc_decrement, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
@@ -323,7 +315,7 @@ blt_b_decrement(in1, out)
 *   b_abs(Rin,^Rout)							 *
 *************************************************************************/
 
-DCODE dc_abs()
+DCODE dc_abs(void)
 {
     blt_b_abs(&R0, &R2);
     active_unify(&R1, &R2);
@@ -331,8 +323,7 @@ DCODE dc_abs()
     return(NC_PROCEED);
 }
 
-blt_b_abs(in1, out)
-    CELL *in1, *out;
+int blt_b_abs(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_ABS, dc_abs, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
@@ -349,7 +340,7 @@ blt_b_abs(in1, out)
 *   b_min(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_min()
+DCODE dc_min(void)
 {
     blt_b_min(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -357,8 +348,7 @@ DCODE dc_min()
     return(NC_PROCEED);
 }
 
-blt_b_min(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_min(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_MIN, dc_min, in1, in2, out);
     SetAll(out, INT, Valueof(in1)<Valueof(in2)?Valueof(in1)
@@ -370,7 +360,7 @@ blt_b_min(in1, in2, out)
 *   b_max(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_max()
+DCODE dc_max(void)
 {
     blt_b_max(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -378,8 +368,7 @@ DCODE dc_max()
     return(NC_PROCEED);
 }
 
-blt_b_max(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_max(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_MAX, dc_max, in1, in2, out);
     SetAll(out, INT, Valueof(in1)>Valueof(in2)?Valueof(in1)
@@ -391,7 +380,7 @@ blt_b_max(in1, in2, out)
 *   b_and(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_and()
+DCODE dc_and(void)
 {
     blt_b_and(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -399,8 +388,7 @@ DCODE dc_and()
     return(NC_PROCEED);
 }
 
-blt_b_and(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_and(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_AND, dc_and, in1, in2, out);
     SetAll(out, INT, Valueof(in1)&Valueof(in2), MRBOFF);
@@ -411,7 +399,7 @@ blt_b_and(in1, in2, out)
 *   b_or(Rin1,Rin2,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_or()
+DCODE dc_or(void)
 {
     blt_b_or(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -419,8 +407,7 @@ DCODE dc_or()
     return(NC_PROCEED);
 }
 
-blt_b_or(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_or(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_OR, dc_or, in1, in2, out);
     SetAll(out, INT, Valueof(in1)|Valueof(in2), MRBOFF);
@@ -431,7 +418,7 @@ blt_b_or(in1, in2, out)
 *   b_exclusive_or(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_exclusive_or()
+DCODE dc_exclusive_or(void)
 {
     blt_b_exclusive_or(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -439,8 +426,7 @@ DCODE dc_exclusive_or()
     return(NC_PROCEED);
 }
 
-blt_b_exclusive_or(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_exclusive_or(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_EXCLUSIVE_OR, dc_exclusive_or, in1, in2, out);
     SetAll(out, INT, Valueof(in1)^Valueof(in2), MRBOFF);
@@ -451,7 +437,7 @@ blt_b_exclusive_or(in1, in2, out)
 *   b_complement(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_complement()
+DCODE dc_complement(void)
 {
     blt_b_complement(&R0, &R2);
     active_unify(&R1, &R2);
@@ -459,8 +445,7 @@ DCODE dc_complement()
     return(NC_PROCEED);
 }
 
-blt_b_complement(in1, out)
-    CELL *in1, *out;
+int blt_b_complement(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_COMPLEMENT, dc_complement, in1, out);
     SetAll(out, INT, ~Valueof(in1), MRBOFF);
@@ -471,7 +456,7 @@ blt_b_complement(in1, out)
 *   b_shift_left(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_shift_left()
+DCODE dc_shift_left(void)
 {
     blt_b_shift_left(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -479,8 +464,7 @@ DCODE dc_shift_left()
     return(NC_PROCEED);
 }
 
-blt_b_shift_left(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_shift_left(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_SHIFT_LEFT, dc_shift_left, in1, in2, out);
     if((unsigned int)Valueof(in2) >= 32){
@@ -497,7 +481,7 @@ blt_b_shift_left(in1, in2, out)
 *   b_shift_right(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_shift_right()
+DCODE dc_shift_right(void)
 {
     blt_b_shift_right(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -505,8 +489,7 @@ DCODE dc_shift_right()
     return(NC_PROCEED);
 }
 
-blt_b_shift_right(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_shift_right(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_SHIFT_RIGHT, dc_shift_right, in1, in2, out);
     if((unsigned int)Valueof(in2) >= 32){
@@ -523,7 +506,7 @@ blt_b_shift_right(in1, in2, out)
 *   b_vector(Rvect,^Rsize,^Rnewvect)					 *
 *************************************************************************/
 
-DCODE dc_vector()
+DCODE dc_vector(void)
 {
     blt_b_vector(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -532,8 +515,7 @@ DCODE dc_vector()
     return(NC_PROCEED);
 }
 
-blt_b_vector(vect, size, newvect)
-    CELL *vect, *size, *newvect;
+int blt_b_vector(CELL *vect, CELL *size, CELL *newvect)
 {
     register CELL *x;
     x = vect;
@@ -575,7 +557,7 @@ blt_b_vector(vect, size, newvect)
 *   b_new_vector(^Rvect,Rsize)						 *
 *************************************************************************/
 
-DCODE dc_new_vector()
+DCODE dc_new_vector(void)
 {
     blt_b_new_vector(&R2, &R1);
     active_unify(&R0, &R2);
@@ -583,8 +565,7 @@ DCODE dc_new_vector()
     return(NC_PROCEED);
 }
 
-blt_b_new_vector(vect, size)
-    CELL *vect, *size;
+int blt_b_new_vector(CELL *vect, CELL *size)
 {
     register CELL *x;
     x = size;
@@ -637,7 +618,7 @@ blt_b_new_vector(vect, size)
 *   b_vector_element(Rvect,Rindex,^Relem,^Rnewvect)			 *
 *************************************************************************/
 
-DCODE dc_vector_element()
+DCODE dc_vector_element(void)
 {
     blt_b_vector_element(&R0, &R1, &R4, &R5);
     active_unify(&R2, &R4);
@@ -646,8 +627,7 @@ DCODE dc_vector_element()
     return(NC_PROCEED);
 }
 
-blt_b_vector_element(vect, pos, elem, newvect)
-    CELL *vect, *pos, *elem, *newvect;
+int blt_b_vector_element(CELL *vect, CELL *pos, CELL *elem, CELL *newvect)
 {
     register CELL *x;
     x = vect;
@@ -705,7 +685,7 @@ blt_b_vector_element(vect, pos, elem, newvect)
 *   b_set_vector_element(Rvect,Rindex,^Roldelem,Relem,^Rnewvect)	 *
 *************************************************************************/
 
-DCODE dc_set_vector_element()
+DCODE dc_set_vector_element(void)
 {
     blt_b_set_vector_element(&R0, &R1, &R5, &R3, &R6);
     active_unify(&R2, &R5);
@@ -714,8 +694,7 @@ DCODE dc_set_vector_element()
     return(NC_PROCEED);
 }
 
-blt_b_set_vector_element(vect, pos, oldelem, elem, newvect)
-    CELL *vect, *pos, *oldelem, *elem, *newvect;
+int blt_b_set_vector_element(CELL *vect, CELL *pos, CELL *oldelem, CELL *elem, CELL *newvect)
 {
     register CELL *x;
     x = vect;
@@ -803,7 +782,7 @@ blt_b_set_vector_element(vect, pos, oldelem, elem, newvect)
 *   b_string(Rstr,^Rlength,^Rwidth,^Rnewstr)				 *
 *************************************************************************/
 
-DCODE dc_string()
+DCODE dc_string(void)
 {
     blt_b_string(&R0, &R4, &R5, &R6);
     active_unify(&R1, &R4);
@@ -813,8 +792,7 @@ DCODE dc_string()
     return(NC_PROCEED);
 }
 
-blt_b_string(str, len, width, newstr)
-    CELL *str, *len, *width, *newstr;
+int blt_b_string(CELL *str, CELL *len, CELL *width, CELL *newstr)
 {
     register CELL *x;
     x = str;
@@ -863,7 +841,7 @@ blt_b_string(str, len, width, newstr)
 *   b_new_string(^Rstr,Rlength,Rwidth)					 *
 *************************************************************************/
 
-DCODE dc_new_string()
+DCODE dc_new_string(void)
 {
     blt_b_new_string(&R3, &R1, &R2);
     active_unify(&R0, &R3);
@@ -871,8 +849,7 @@ DCODE dc_new_string()
     return(NC_PROCEED);
 }
 
-blt_b_new_string(str, len, width)
-    CELL *str, *len, *width;
+int blt_b_new_string(CELL *str, CELL *len, CELL *width)
 {
     register CELL *x;
     x = len;
@@ -927,7 +904,7 @@ blt_b_new_string(str, len, width)
 *   b_string_element(Rstr,Rindex,^Relem,^Rnewstr)			 *
 *************************************************************************/
 
-DCODE dc_string_element()
+DCODE dc_string_element(void)
 {
     blt_b_string_element(&R0, &R1, &R4, &R5);
     active_unify(&R2, &R4);
@@ -936,8 +913,7 @@ DCODE dc_string_element()
     return(NC_PROCEED);
 }
 
-blt_b_string_element(str, pos, elem, newstr)
-    CELL *str, *pos, *elem, *newstr;
+int blt_b_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 {
     register CELL *x;
     x = str;
@@ -996,7 +972,7 @@ blt_b_string_element(str, pos, elem, newstr)
 *   b_set_string_element(Rstr,Rindex,Relem,^Rnewstr)			 *
 *************************************************************************/
 
-DCODE dc_set_string_element()
+DCODE dc_set_string_element(void)
 {
     blt_b_set_string_element(&R0, &R1, &R2, &R4);
     active_unify(&R3, &R4);
@@ -1004,8 +980,7 @@ DCODE dc_set_string_element()
     return(NC_PROCEED);
 }
 
-blt_b_set_string_element(str, pos, elem, newstr)
-    CELL *str, *pos, *elem, *newstr;
+int blt_b_set_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 {
     register CELL *x;
     x = str;
@@ -1081,7 +1056,7 @@ blt_b_set_string_element(str, pos, elem, newstr)
 *   b_substring(Rstr,Rindex,Rlength,^Rsubs,^Rnewstr)			 *
 *************************************************************************/
 
-DCODE dc_substring()
+DCODE dc_substring(void)
 {
     blt_b_substring(&R0, &R1, &R2, &R5, &R6);
     active_unify(&R3, &R5);
@@ -1090,8 +1065,7 @@ DCODE dc_substring()
     return(NC_PROCEED);
 }
 
-blt_b_substring(str, pos, len, substr, newstr)
-    CELL *str, *pos, *len, *substr, *newstr;
+int blt_b_substring(CELL *str, CELL *pos, CELL *len, CELL *substr, CELL *newstr)
 {
     register CELL *x;
     x = str;
@@ -1160,7 +1134,7 @@ blt_b_substring(str, pos, len, substr, newstr)
 *   b_set_substring(Rstr,Rindex,Rsubs,^Rnewstr)				 *
 *************************************************************************/
 
-DCODE dc_set_substring()
+DCODE dc_set_substring(void)
 {
     blt_b_set_substring(&R0, &R1, &R2, &R4);
     active_unify(&R3, &R4);
@@ -1168,8 +1142,7 @@ DCODE dc_set_substring()
     return(NC_PROCEED);
 }
 
-blt_b_set_substring(str, pos, substr, newstr)
-    CELL *str, *pos, *substr, *newstr;
+int blt_b_set_substring(CELL *str, CELL *pos, CELL *substr, CELL *newstr)
 {
     register CELL *x;
     x = str;
@@ -1250,7 +1223,7 @@ blt_b_set_substring(str, pos, substr, newstr)
 *   b_append_string(Rstr1,Rstr2,^Rnewstr)				 *
 *************************************************************************/
 
-DCODE dc_append_string()
+DCODE dc_append_string(void)
 {
     blt_b_append_string(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -1258,8 +1231,7 @@ DCODE dc_append_string()
     return(NC_PROCEED);
 }
 
-blt_b_append_string(str1, str2, newstr)
-    CELL *str1, *str2, *newstr;
+int blt_b_append_string(CELL *str1, CELL *str2, CELL *newstr)
 {
     register CELL *x;
     x = str1;
@@ -1322,7 +1294,7 @@ blt_b_append_string(str1, str2, newstr)
 *   b_string_and(Rstr1,Rstr2,^Rnewstr,^Rnewstr2)			 *
 *************************************************************************/
 
-DCODE dc_string_and()
+DCODE dc_string_and(void)
 {
     blt_b_string_and(&R0, &R1, &R4, &R5);
     active_unify(&R2, &R4);
@@ -1331,8 +1303,7 @@ DCODE dc_string_and()
     return(NC_PROCEED);
 }
 
-blt_b_string_and(str1, str2, newstr, newstr2)
-    CELL *str1, *str2, *newstr, *newstr2;
+int blt_b_string_and(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 {
     register CELL *x;
     x = str1;
@@ -1391,7 +1362,7 @@ blt_b_string_and(str1, str2, newstr, newstr2)
 *   b_string_or(Rstr1,Rstr2,^Rnewstr,^Rnewstr2)				 *
 *************************************************************************/
 
-DCODE dc_string_or()
+DCODE dc_string_or(void)
 {
     blt_b_string_or(&R0, &R1, &R4, &R5);
     active_unify(&R2, &R4);
@@ -1400,8 +1371,7 @@ DCODE dc_string_or()
     return(NC_PROCEED);
 }
 
-blt_b_string_or(str1, str2, newstr, newstr2)
-    CELL *str1, *str2, *newstr, *newstr2;
+int blt_b_string_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 {
     register CELL *x;
     x = str1;
@@ -1460,7 +1430,7 @@ blt_b_string_or(str1, str2, newstr, newstr2)
 *   b_string_exclusive_or(Rstr1,Rstr2,^Rnewstr,^Rnewstr2)		 *
 *************************************************************************/
 
-DCODE dc_string_exclusive_or()
+DCODE dc_string_exclusive_or(void)
 {
     blt_b_string_exclusive_or(&R0, &R1, &R4, &R5);
     active_unify(&R2, &R4);
@@ -1469,8 +1439,7 @@ DCODE dc_string_exclusive_or()
     return(NC_PROCEED);
 }
 
-blt_b_string_exclusive_or(str1, str2, newstr, newstr2)
-    CELL *str1, *str2, *newstr, *newstr2;
+int blt_b_string_exclusive_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 {
     register CELL *x;
     x = str1;
@@ -1530,7 +1499,7 @@ blt_b_string_exclusive_or(str1, str2, newstr, newstr2)
 *   b_string_complement(Rstr,^Rnewstr)					 *
 *************************************************************************/
 
-DCODE dc_string_complement()
+DCODE dc_string_complement(void)
 {
     blt_b_string_complement(&R0, &R2);
     active_unify(&R1, &R2);
@@ -1538,8 +1507,7 @@ DCODE dc_string_complement()
     return(NC_PROCEED);
 }
 
-blt_b_string_complement(str, newstr)
-    CELL *str, *newstr;
+int blt_b_string_complement(CELL *str, CELL *newstr)
 {
     register CELL *x;
     x = str;
@@ -1583,8 +1551,7 @@ blt_b_string_complement(str, newstr)
 *   b_new_atom(^Ratom)							 *
 *************************************************************************/
 
-blt_b_new_atom(atom)
-    CELL *atom;
+int blt_b_new_atom(CELL *atom)
 {
     SetAll(atom, ATOM, new_atom(), MRBOFF);
 }
@@ -1594,7 +1561,7 @@ blt_b_new_atom(atom)
 *   b_intern_atom(^Ratom,Rstr)						 *
 *************************************************************************/
 
-DCODE dc_intern_atom()
+DCODE dc_intern_atom(void)
 {
     blt_b_intern_atom(&R2, &R1);
     active_unify(&R0, &R2);
@@ -1602,8 +1569,7 @@ DCODE dc_intern_atom()
     return(NC_PROCEED);
 }
 
-blt_b_intern_atom(atom, name)
-    CELL *atom, *name;
+int blt_b_intern_atom(CELL *atom, CELL *name)
 {
     register CELL *x;
     x = name;
@@ -1649,7 +1615,7 @@ blt_b_intern_atom(atom, name)
 *   b_atom_name(Ratom,^Rstr)						 *
 *************************************************************************/
 
-DCODE dc_atom_name()
+DCODE dc_atom_name(void)
 {
     blt_b_atom_name(&R0, &R2);
     active_unify(&R1, &R2);
@@ -1657,8 +1623,7 @@ DCODE dc_atom_name()
     return(NC_PROCEED);
 }
 
-blt_b_atom_name(atom, name)
-    CELL *atom, *name;
+int blt_b_atom_name(CELL *atom, CELL *name)
 {
     register CELL *x;
     x = atom;
@@ -1699,7 +1664,7 @@ blt_b_atom_name(atom, name)
 *   b_atom_number(Ratom,^Rnumber)					 *
 *************************************************************************/
 
-DCODE dc_atom_number()
+DCODE dc_atom_number(void)
 {
     blt_b_atom_number(&R0, &R2);
     active_unify(&R1, &R2);
@@ -1707,8 +1672,7 @@ DCODE dc_atom_number()
     return(NC_PROCEED);
 }
 
-blt_b_atom_number(atom, number)
-    CELL *atom, *number;
+int blt_b_atom_number(CELL *atom, CELL *number)
 {
     register CELL *x;
     x = atom;

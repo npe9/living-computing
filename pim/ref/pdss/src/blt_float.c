@@ -15,8 +15,7 @@
 *   g_float_add(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_add(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_add(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     if(float_add(&Valueof(in1), &Valueof(in2), &z)){
@@ -32,8 +31,7 @@ int blt_g_float_add(in1, in2, out)
 *   g_float_subtract(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_subtract(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_subtract(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     if(float_subtract(&Valueof(in1), &Valueof(in2), &z)){
@@ -49,8 +47,7 @@ int blt_g_float_subtract(in1, in2, out)
 *   g_float_multiply(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_multiply(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_multiply(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     if(float_multiply(&Valueof(in1), &Valueof(in2), &z)){
@@ -66,8 +63,7 @@ int blt_g_float_multiply(in1, in2, out)
 *   g_float_divide(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_divide(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_divide(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     if(float_divide(&Valueof(in1), &Valueof(in2), &z)){
@@ -83,8 +79,7 @@ int blt_g_float_divide(in1, in2, out)
 *   g_float_minus(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_minus(in, out)
-    CELL *in, *out;
+int blt_g_float_minus(CELL *in, CELL *out)
 {
     int z;
     if(float_minus(&Valueof(in), &z)){
@@ -100,8 +95,7 @@ int blt_g_float_minus(in, out)
 *   g_float_abs(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_abs(in, out)
-    CELL *in, *out;
+int blt_g_float_abs(CELL *in, CELL *out)
 {
     int z;
     float_abs(&Valueof(in), &z);
@@ -114,8 +108,7 @@ int blt_g_float_abs(in, out)
 *   g_float_min(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_min(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_min(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     float_min(&Valueof(in1), &Valueof(in2), &z);
@@ -128,8 +121,7 @@ int blt_g_float_min(in1, in2, out)
 *   g_float_max(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_max(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_max(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     float_max(&Valueof(in1), &Valueof(in2), &z);
@@ -142,8 +134,7 @@ int blt_g_float_max(in1, in2, out)
 *   g_float_floor(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_floor(in, out)
-    CELL *in, *out;
+int blt_g_float_floor(CELL *in, CELL *out)
 {
     int z;
     if(float_floor(&Valueof(in), &z)){
@@ -159,8 +150,7 @@ int blt_g_float_floor(in, out)
 *   g_float_sqrt(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_sqrt(in, out)
-    CELL *in, *out;
+int blt_g_float_sqrt(CELL *in, CELL *out)
 {
     int z;
     if(float_sqrt(&Valueof(in), &z)){
@@ -176,8 +166,7 @@ int blt_g_float_sqrt(in, out)
 *   g_float_ln(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_ln(in, out)
-    CELL *in, *out;
+int blt_g_float_ln(CELL *in, CELL *out)
 {
     int z;
     if(float_ln(&Valueof(in), &z)){
@@ -193,8 +182,7 @@ int blt_g_float_ln(in, out)
 *   g_float_log(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_log(in, out)
-    CELL *in, *out;
+int blt_g_float_log(CELL *in, CELL *out)
 {
     int z;
     if(float_log(&Valueof(in), &z)){
@@ -210,8 +198,7 @@ int blt_g_float_log(in, out)
 *   g_float_exp(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_exp(in, out)
-    CELL *in, *out;
+int blt_g_float_exp(CELL *in, CELL *out)
 {
     int z;
     if(float_exp(&Valueof(in), &z)){
@@ -227,8 +214,7 @@ int blt_g_float_exp(in, out)
 *   g_float_pow(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_pow(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_pow(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     if(float_pow(&Valueof(in1), &Valueof(in2), &z)){
@@ -244,8 +230,7 @@ int blt_g_float_pow(in1, in2, out)
 *   g_float_sin(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_sin(in, out)
-    CELL *in, *out;
+int blt_g_float_sin(CELL *in, CELL *out)
 {
     int z;
     if(float_sin(&Valueof(in), &z)){
@@ -261,8 +246,7 @@ int blt_g_float_sin(in, out)
 *   g_float_cos(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_cos(in, out)
-    CELL *in, *out;
+int blt_g_float_cos(CELL *in, CELL *out)
 {
     int z;
     if(float_cos(&Valueof(in), &z)){
@@ -278,8 +262,7 @@ int blt_g_float_cos(in, out)
 *   g_float_tan(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_tan(in, out)
-    CELL *in, *out;
+int blt_g_float_tan(CELL *in, CELL *out)
 {
     int z;
     if(float_tan(&Valueof(in), &z)){
@@ -295,8 +278,7 @@ int blt_g_float_tan(in, out)
 *   g_float_asin(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_asin(in, out)
-    CELL *in, *out;
+int blt_g_float_asin(CELL *in, CELL *out)
 {
     int z;
     if(float_asin(&Valueof(in), &z)){
@@ -312,8 +294,7 @@ int blt_g_float_asin(in, out)
 *   g_float_acos(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_acos(in, out)
-    CELL *in, *out;
+int blt_g_float_acos(CELL *in, CELL *out)
 {
     int z;
     if(float_acos(&Valueof(in), &z)){
@@ -329,8 +310,7 @@ int blt_g_float_acos(in, out)
 *   g_float_atan(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_atan(in, out)
-    CELL *in, *out;
+int blt_g_float_atan(CELL *in, CELL *out)
 {
     int z;
     if(float_atan(&Valueof(in), &z)){
@@ -346,8 +326,7 @@ int blt_g_float_atan(in, out)
 *   g_float_atan2(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_atan2(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_g_float_atan2(CELL *in1, CELL *in2, CELL *out)
 {
     int z;
     if(float_atan2(&Valueof(in1), &Valueof(in2), &z)){
@@ -363,8 +342,7 @@ int blt_g_float_atan2(in1, in2, out)
 *   g_float_sinh(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_sinh(in, out)
-    CELL *in, *out;
+int blt_g_float_sinh(CELL *in, CELL *out)
 {
     int z;
     if(float_sinh(&Valueof(in), &z)){
@@ -380,8 +358,7 @@ int blt_g_float_sinh(in, out)
 *   g_float_cosh(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_cosh(in, out)
-    CELL *in, *out;
+int blt_g_float_cosh(CELL *in, CELL *out)
 {
     int z;
     if(float_cosh(&Valueof(in), &z)){
@@ -397,8 +374,7 @@ int blt_g_float_cosh(in, out)
 *   g_float_tanh(Rin,^Rout)						 *
 *************************************************************************/
 
-int blt_g_float_tanh(in, out)
-    CELL *in, *out;
+int blt_g_float_tanh(CELL *in, CELL *out)
 {
     int z;
     if(float_tanh(&Valueof(in), &z)){
@@ -414,8 +390,7 @@ int blt_g_float_tanh(in, out)
 *   g_float_to_integer(Rin,^Rout)					 *
 *************************************************************************/
 
-int blt_g_float_to_integer(in, out)
-    CELL *in, *out;
+int blt_g_float_to_integer(CELL *in, CELL *out)
 {
     int z;
     if(float_to_integer(&Valueof(in), &z)){
@@ -432,8 +407,7 @@ int blt_g_float_to_integer(in, out)
 *   g_integer_to_float(Rin,^Rout)					 *
 *************************************************************************/
 
-int blt_g_integer_to_float(in, out)
-    CELL *in, *out;
+int blt_g_integer_to_float(CELL *in, CELL *out)
 {
     int z;
     integer_to_float(&Valueof(in), &z);
@@ -545,13 +519,12 @@ int blt_g_integer_to_float(in, out)
 *   b_float_add(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_add()
+DCODE dc_float_add(void)
 {
     DEF3D(blt_b_float_add);
 }
 
-blt_b_float_add(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_add(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_add, in1, in2, out, dc_float_add, KL1B_B_FLOAT_ADD);
 }
@@ -561,13 +534,12 @@ blt_b_float_add(in1, in2, out)
 *   b_float_subtract(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_subtract()
+DCODE dc_float_subtract(void)
 {
     DEF3D(blt_b_float_subtract);
 }
 
-blt_b_float_subtract(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_subtract(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_subtract,in1,in2,out, dc_float_subtract,KL1B_B_FLOAT_SUBTRACT);
 }
@@ -577,13 +549,12 @@ blt_b_float_subtract(in1, in2, out)
 *   b_float_multiply(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_multiply()
+DCODE dc_float_multiply(void)
 {
     DEF3D(blt_b_float_multiply);
 }
 
-blt_b_float_multiply(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_multiply(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_multiply,in1,in2,out, dc_float_multiply,KL1B_B_FLOAT_MULTIPLY);
 }
@@ -593,13 +564,12 @@ blt_b_float_multiply(in1, in2, out)
 *   b_float_divide(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_divide()
+DCODE dc_float_divide(void)
 {
     DEF3D(blt_b_float_divide);
 }
 
-blt_b_float_divide(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_divide(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_divide, in1, in2, out, dc_float_divide, KL1B_B_FLOAT_DIVIDE);
 }
@@ -609,14 +579,12 @@ blt_b_float_divide(in1, in2, out)
 *   b_float_minus(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_minus()
+DCODE dc_float_minus(void)
 {
     DEF2D(blt_b_float_minus);
 }
 
-blt_b_float_minus(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_minus(register CELL *in, CELL *out)
 {
     DEF2BN(float_minus, in, out, dc_float_minus, KL1B_B_FLOAT_MINUS);
 }
@@ -626,14 +594,12 @@ blt_b_float_minus(in, out)
 *   b_float_abs(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_abs()
+DCODE dc_float_abs(void)
 {
     DEF2D(blt_b_float_abs);
 }
 
-blt_b_float_abs(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_abs(register CELL *in, CELL *out)
 {
     DEF2BN(float_abs, in, out, dc_float_abs, KL1B_B_FLOAT_ABS);
 }
@@ -643,13 +609,12 @@ blt_b_float_abs(in, out)
 *   b_float_min(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_min()
+DCODE dc_float_min(void)
 {
     DEF3D(blt_b_float_min);
 }
 
-blt_b_float_min(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_min(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3BN(float_min, in1, in2, out, dc_float_min, KL1B_B_FLOAT_MIN);
 }
@@ -659,13 +624,12 @@ blt_b_float_min(in1, in2, out)
 *   b_float_max(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_max()
+DCODE dc_float_max(void)
 {
     DEF3D(blt_b_float_max);
 }
 
-blt_b_float_max(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_max(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3BN(float_max, in1, in2, out, dc_float_max, KL1B_B_FLOAT_MAX);
 }
@@ -675,14 +639,12 @@ blt_b_float_max(in1, in2, out)
 *   b_float_floor(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_floor()
+DCODE dc_float_floor(void)
 {
     DEF2D(blt_b_float_floor);
 }
 
-blt_b_float_floor(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_floor(register CELL *in, CELL *out)
 {
     DEF2B(float_floor, in, out, dc_float_floor, KL1B_B_FLOAT_FLOOR);
 }
@@ -692,14 +654,12 @@ blt_b_float_floor(in, out)
 *   b_float_sqrt(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_sqrt()
+DCODE dc_float_sqrt(void)
 {
     DEF2D(blt_b_float_sqrt);
 }
 
-blt_b_float_sqrt(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_sqrt(register CELL *in, CELL *out)
 {
     DEF2B(float_sqrt, in, out, dc_float_sqrt, KL1B_B_FLOAT_SQRT);
 }
@@ -709,14 +669,12 @@ blt_b_float_sqrt(in, out)
 *   b_float_ln(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_ln()
+DCODE dc_float_ln(void)
 {
     DEF2D(blt_b_float_ln);
 }
 
-blt_b_float_ln(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_ln(register CELL *in, CELL *out)
 {
     DEF2B(float_ln, in, out, dc_float_ln, KL1B_B_FLOAT_LN);
 }
@@ -726,14 +684,12 @@ blt_b_float_ln(in, out)
 *   b_float_log(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_log()
+DCODE dc_float_log(void)
 {
     DEF2D(blt_b_float_log);
 }
 
-blt_b_float_log(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_log(register CELL *in, CELL *out)
 {
     DEF2B(float_log, in, out, dc_float_log, KL1B_B_FLOAT_LOG);
 }
@@ -743,14 +699,12 @@ blt_b_float_log(in, out)
 *   b_float_exp(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_exp()
+DCODE dc_float_exp(void)
 {
     DEF2D(blt_b_float_exp);
 }
 
-blt_b_float_exp(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_exp(register CELL *in, CELL *out)
 {
     DEF2B(float_exp, in, out, dc_float_exp, KL1B_B_FLOAT_EXP);
 }
@@ -760,13 +714,12 @@ blt_b_float_exp(in, out)
 *   b_float_pow(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_pow()
+DCODE dc_float_pow(void)
 {
     DEF3D(blt_b_float_pow);
 }
 
-blt_b_float_pow(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_pow(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_pow, in1, in2, out, dc_float_pow, KL1B_B_FLOAT_POW);
 }
@@ -776,14 +729,12 @@ blt_b_float_pow(in1, in2, out)
 *   b_float_sin(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_sin()
+DCODE dc_float_sin(void)
 {
     DEF2D(blt_b_float_sin);
 }
 
-blt_b_float_sin(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_sin(register CELL *in, CELL *out)
 {
     DEF2B(float_sin, in, out, dc_float_sin, KL1B_B_FLOAT_SIN);
 }
@@ -793,14 +744,12 @@ blt_b_float_sin(in, out)
 *   b_float_cos(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_cos()
+DCODE dc_float_cos(void)
 {
     DEF2D(blt_b_float_cos);
 }
 
-blt_b_float_cos(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_cos(register CELL *in, CELL *out)
 {
     DEF2B(float_cos, in, out, dc_float_cos, KL1B_B_FLOAT_COS);
 }
@@ -810,14 +759,12 @@ blt_b_float_cos(in, out)
 *   b_float_tan(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_tan()
+DCODE dc_float_tan(void)
 {
     DEF2D(blt_b_float_tan);
 }
 
-blt_b_float_tan(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_tan(register CELL *in, CELL *out)
 {
     DEF2B(float_tan, in, out, dc_float_tan, KL1B_B_FLOAT_TAN);
 }
@@ -827,14 +774,12 @@ blt_b_float_tan(in, out)
 *   b_float_asin(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_asin()
+DCODE dc_float_asin(void)
 {
     DEF2D(blt_b_float_asin);
 }
 
-blt_b_float_asin(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_asin(register CELL *in, CELL *out)
 {
     DEF2B(float_asin, in, out, dc_float_asin, KL1B_B_FLOAT_ASIN);
 }
@@ -844,14 +789,12 @@ blt_b_float_asin(in, out)
 *   b_float_acos(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_acos()
+DCODE dc_float_acos(void)
 {
     DEF2D(blt_b_float_acos);
 }
 
-blt_b_float_acos(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_acos(register CELL *in, CELL *out)
 {
     DEF2B(float_acos, in, out, dc_float_acos, KL1B_B_FLOAT_ACOS);
 }
@@ -861,14 +804,12 @@ blt_b_float_acos(in, out)
 *   b_float_atan(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_atan()
+DCODE dc_float_atan(void)
 {
     DEF2D(blt_b_float_atan);
 }
 
-blt_b_float_atan(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_atan(register CELL *in, CELL *out)
 {
     DEF2B(float_atan, in, out, dc_float_atan, KL1B_B_FLOAT_ATAN);
 }
@@ -878,13 +819,12 @@ blt_b_float_atan(in, out)
 *   b_float_atan2(Rin1,Rin2,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_atan2()
+DCODE dc_float_atan2(void)
 {
     DEF3D(blt_b_float_atan2);
 }
 
-blt_b_float_atan2(in1, in2, out)
-    CELL *in1, *in2, *out;
+int blt_b_float_atan2(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_atan2, in1, in2, out, dc_float_atan2, KL1B_B_FLOAT_ATAN2);
 }
@@ -894,14 +834,12 @@ blt_b_float_atan2(in1, in2, out)
 *   b_float_sinh(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_sinh()
+DCODE dc_float_sinh(void)
 {
     DEF2D(blt_b_float_sinh);
 }
 
-blt_b_float_sinh(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_sinh(register CELL *in, CELL *out)
 {
     DEF2B(float_sinh, in, out, dc_float_sinh, KL1B_B_FLOAT_SINH);
 }
@@ -911,14 +849,12 @@ blt_b_float_sinh(in, out)
 *   b_float_cosh(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_cosh()
+DCODE dc_float_cosh(void)
 {
     DEF2D(blt_b_float_cosh);
 }
 
-blt_b_float_cosh(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_cosh(register CELL *in, CELL *out)
 {
     DEF2B(float_cosh, in, out, dc_float_cosh, KL1B_B_FLOAT_COSH);
 }
@@ -928,14 +864,12 @@ blt_b_float_cosh(in, out)
 *   b_float_tanh(Rin,^Rout)						 *
 *************************************************************************/
 
-DCODE dc_float_tanh()
+DCODE dc_float_tanh(void)
 {
     DEF2D(blt_b_float_tanh);
 }
 
-blt_b_float_tanh(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_tanh(register CELL *in, CELL *out)
 {
     DEF2B(float_tanh, in, out, dc_float_tanh, KL1B_B_FLOAT_TANH);
 }
@@ -945,7 +879,7 @@ blt_b_float_tanh(in, out)
 *   b_float_to_integer(Rin,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_float_to_integer()
+DCODE dc_float_to_integer(void)
 {
     blt_b_float_to_integer(&R0, &R2);
     active_unify(&R1, &R2);
@@ -953,9 +887,7 @@ DCODE dc_float_to_integer()
     return(NC_PROCEED);
 }
 
-blt_b_float_to_integer(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_float_to_integer(register CELL *in, CELL *out)
 {
     Dereference(in);
     if(Typeof(in) != FLOAT){
@@ -981,7 +913,7 @@ blt_b_float_to_integer(in, out)
 *   b_integer_to_float(Rin,^Rout)					 *
 *************************************************************************/
 
-DCODE dc_integer_to_float()
+DCODE dc_integer_to_float(void)
 {
     blt_b_integer_to_float(&R0, &R2);
     active_unify(&R1, &R2);
@@ -989,9 +921,7 @@ DCODE dc_integer_to_float()
     return(NC_PROCEED);
 }
 
-blt_b_integer_to_float(in, out)
-    register CELL *in;
-    CELL *out;
+int blt_b_integer_to_float(register CELL *in, CELL *out)
 {
     Dereference(in);
     if(Typeof(in) != INT){

@@ -15,7 +15,7 @@
 *   b_create_shoen(Rcode,Rargv,Rpmin,Rpmax,Rtag,^Rshoen,^Rreport)	 *
 *************************************************************************/
 
-DCODE dc_create_shoen()
+DCODE dc_create_shoen(void)
 {
     blt_b_create_shoen(&R0, &R1, &R2, &R3, &R4, &R7, &R8);
     active_unify(&R5, &R7);
@@ -24,8 +24,7 @@ DCODE dc_create_shoen()
     return(NC_PROCEED);
 }
 
-blt_b_create_shoen(code, argv, pmin, pmax, tag, shoen, report)
-    CELL *code, *argv, *pmin, *pmax, *tag, *shoen, *report;
+int blt_b_create_shoen(CELL *code, CELL *argv, CELL *pmin, CELL *pmax, CELL *tag, CELL *shoen, CELL *report)
 {
     register CELL *x;
     CELL rep;
@@ -79,7 +78,7 @@ blt_b_create_shoen(code, argv, pmin, pmax, tag, shoen, report)
 *   b_start_shoen(Rshoen,^Rnewshoen)					 *
 *************************************************************************/
 
-DCODE dc_start_shoen()
+DCODE dc_start_shoen(void)
 {
     blt_b_start_shoen(&R0, &R2);
     active_unify(&R1, &R2);
@@ -87,8 +86,7 @@ DCODE dc_start_shoen()
     return(NC_PROCEED);
 }
 
-blt_b_start_shoen(shoen, newshoen)
-    CELL *shoen, *newshoen;
+int blt_b_start_shoen(CELL *shoen, CELL *newshoen)
 {
     register CELL *x;
     x = shoen;
@@ -111,7 +109,7 @@ blt_b_start_shoen(shoen, newshoen)
 *   b_stop_shoen(Rshoen,^Rnewshoen)					 *
 *************************************************************************/
 
-DCODE dc_stop_shoen()
+DCODE dc_stop_shoen(void)
 {
     blt_b_stop_shoen(&R0, &R2);
     active_unify(&R1, &R2);
@@ -119,8 +117,7 @@ DCODE dc_stop_shoen()
     return(NC_PROCEED);
 }
 
-blt_b_stop_shoen(shoen, newshoen)
-    CELL *shoen, *newshoen;
+int blt_b_stop_shoen(CELL *shoen, CELL *newshoen)
 {
     register CELL *x;
     x = shoen;
@@ -143,7 +140,7 @@ blt_b_stop_shoen(shoen, newshoen)
 *   b_abort_shoen(Rshoen,^Rnewshoen)					 *
 *************************************************************************/
 
-DCODE dc_abort_shoen()
+DCODE dc_abort_shoen(void)
 {
     blt_b_abort_shoen(&R0, &R2);
     active_unify(&R1, &R2);
@@ -151,8 +148,7 @@ DCODE dc_abort_shoen()
     return(NC_PROCEED);
 }
 
-blt_b_abort_shoen(shoen, newshoen)
-    CELL *shoen, *newshoen;
+int blt_b_abort_shoen(CELL *shoen, CELL *newshoen)
 {
     register CELL *x;
     x = shoen;
@@ -175,15 +171,14 @@ blt_b_abort_shoen(shoen, newshoen)
 *   b_remove_shoen(Rshoen)						 *
 *************************************************************************/
 
-DCODE dc_remove_shoen()
+DCODE dc_remove_shoen(void)
 {
     blt_b_remove_shoen(&R0);
     CountDcodeReduction();
     return(NC_PROCEED);
 }
 
-blt_b_remove_shoen(shoen)
-    CELL *shoen;
+int blt_b_remove_shoen(CELL *shoen)
 {
     register CELL *x;
     x = shoen;
@@ -205,7 +200,7 @@ blt_b_remove_shoen(shoen)
 *   b_shoen_statistics(Rshoen,^Rreduction,^Rnewshoen)			 *
 *************************************************************************/
 
-DCODE dc_shoen_statistics()
+DCODE dc_shoen_statistics(void)
 {
     blt_b_shoen_statistics(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -214,8 +209,7 @@ DCODE dc_shoen_statistics()
     return(NC_PROCEED);
 }
 
-blt_b_shoen_statistics(shoen, red, newshoen)
-    CELL *shoen, *red, *newshoen;
+int blt_b_shoen_statistics(CELL *shoen, CELL *red, CELL *newshoen)
 {
     register CELL *x;
     x = shoen;
@@ -242,7 +236,7 @@ blt_b_shoen_statistics(shoen, red, newshoen)
 *   b_shoen_add_resource(Rshoen,Rreduction,^Rnewshoen)			 *
 *************************************************************************/
 
-DCODE dc_shoen_add_resource()
+DCODE dc_shoen_add_resource(void)
 {
     blt_b_shoen_add_resource(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -250,8 +244,7 @@ DCODE dc_shoen_add_resource()
     return(NC_PROCEED);
 }
 
-blt_b_shoen_add_resource(shoen, red, newshoen)
-    CELL *shoen, *red, *newshoen;
+int blt_b_shoen_add_resource(CELL *shoen, CELL *red, CELL *newshoen)
 {
     register CELL *x;
     x = shoen;
@@ -286,7 +279,7 @@ blt_b_shoen_add_resource(shoen, red, newshoen)
 *   b_consume_resource(Rreduction)					 *
 *************************************************************************/
 
-DCODE dc_consume_resource()
+DCODE dc_consume_resource(void)
 {
     blt_b_consume_resource(&R0);
     reduction_left--;
@@ -296,8 +289,7 @@ DCODE dc_consume_resource()
     return(NC_PROCEED);
 }
 
-blt_b_consume_resource(red)
-    CELL *red;
+int blt_b_consume_resource(CELL *red)
 {
     register CELL *x;
     int reduction;

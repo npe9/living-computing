@@ -9,15 +9,8 @@
 #include "pdss.h"
 #include "io.h"
 
-extern struct passwd *getpwent();
-extern struct passwd *getpwuid();
-extern struct passwd *getpwnam();
-extern CHAR *getwd();
-extern CHAR *getenv();
-extern CHAR *mktemp();
 
-CHAR *expand_path_name(name, buffer)
-    CHAR  *name, *buffer;
+CHAR *expand_path_name(CHAR *name, CHAR *buffer)
 {
     register struct passwd  *pw;
     register CHAR  *p;

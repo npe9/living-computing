@@ -18,7 +18,7 @@ static PREDICATE_ENTRY *func_pred_hash[PREDICATE_TABLE_SIZE];
     n++;\
 }
 
-initialize_dcode_table()
+int initialize_dcode_table(void)
 {
     int m, n;
     MODULE_ENTRY *mod_table;
@@ -159,9 +159,7 @@ initialize_dcode_table()
     mod_table->func_pid_hash_tbl = func_pred_hash;
 }
 
-dcode_function_to_mod_pred_arity(func, mod, pred, arity)
-    int (* func)();
-    unsigned int *mod, *pred, *arity;
+int dcode_function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity)
 {
     register PREDICATE_ENTRY *p;
     p = func_pred_hash[HashFuncAddr(func)];

@@ -11,9 +11,7 @@
 #include "klb.h"
 #include "instr.h"
 
-main(argc, argv_)
-    int	 argc;
-    char **argv_;
+int main(int argc, char **argv_)
 {
     CHAR **argv = (CHAR **)argv_;  /* PORT */
     CHAR file_name[256];
@@ -49,10 +47,8 @@ main(argc, argv_)
 }
 
 
-OBJ *invasm_predicate();
 
-invasm_module(cp)
-    OBJ	 *cp;
+int invasm_module(OBJ *cp)
 {
     OBJ	 *module_bottom, *program_bottom, *top;
     unsigned int table_num, code_size, i;
@@ -85,8 +81,7 @@ invasm_module(cp)
     if(cp < module_bottom) invasm_constant(cp, module_bottom, top);
 }
 
-OBJ *invasm_predicate(cp, top)
-    OBJ	 *cp, *top;
+OBJ *invasm_predicate(OBJ *cp, OBJ *top)
 {
     OBJ	 *op_bottom;
     unsigned int code_size, pre_name, op_code, size, mask, i;
@@ -224,8 +219,7 @@ OBJ *invasm_predicate(cp, top)
     return(op_bottom);
 }
 
-invasm_constant(p, bottom, top)
-    CELL *p, *bottom, *top;
+int invasm_constant(CELL *p, CELL *bottom, CELL *top)
 {
     int fw;
     while(p < bottom){
@@ -267,8 +261,7 @@ invasm_constant(p, bottom, top)
     }
 }
 
-exit_pdss(code)
-    int code;
+int exit_pdss(int code)
 {
     exit(code);
 }

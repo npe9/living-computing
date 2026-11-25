@@ -13,7 +13,7 @@
 
 static float_error() { errno = -1; }
 
-initialize_float_calculator()
+int initialize_float_calculator(void)
 {
     signal(SIGFPE, float_error);
 }
@@ -37,49 +37,51 @@ initialize_float_calculator()
 *   Compare Floating Point Number.					 *
 *************************************************************************/
 
-int float_equal(x, y)	       float *x, *y;  { return(*x == *y); }
-int float_not_equal(x, y)      float *x, *y;  { return(*x != *y); }
-int float_less_than(x, y)      float *x, *y;  { return(*x <  *y); }
-int float_not_less_than(x, y)  float *x, *y;  { return(*x >= *y); }
+int float_equal(float *x, float *y)  { return(*x == *y); }
+int float_not_equal(float *x, float *y)  { return(*x != *y); }
+int float_less_than(float *x, float *y)  { return(*x <  *y); }
+int float_not_less_than(float *x, float *y)  { return(*x >= *y); }
 
 
 /*************************************************************************
 *   Calculate Floating Point Number.					 *
 *************************************************************************/
 
-int float_add(x, y, z)	     float *x, *y, *z;	{ CALC(*x + *y);	    }
-int float_subtract(x, y, z)  float *x, *y, *z;	{ CALC(*x - *y);	    }
-int float_multiply(x, y, z)  float *x, *y, *z;	{ CALC(*x * *y);	    }
-int float_divide(x, y, z)    float *x, *y, *z;	{ CALC(*x / *y);	    }
-    float_minus(x, z)	     float *x, *z;	{ *z = -(*x);		    }
-    float_abs(x, z)	     float *x, *z;	{ *z = *x < 0 ? -(*x) : *x; }
-    float_min(x, y, z)	     float *x, *y, *z;	{ *z = *x < *y ? *x : *y;   }
-    float_max(x, y, z)	     float *x, *y, *z;	{ *z = *x > *y ? *x : *y;   }
-int float_floor(x, z)	     float *x, *z;	{ CALC(floor(*x));	    }
-int float_sqrt(x, z)	     float *x, *z;	{ CALC(sqrt(*x));	    }
-int float_ln(x, z)	     float *x, *z;	{ CALC(log(*x));	    }
-int float_log(x, z)	     float *x, *z;	{ CALC(log10(*x));	    }
-int float_exp(x, z)	     float *x, *z;	{ CALC(exp(*x));	    }
-int float_pow(x, y, z)	     float *x, *y, *z;	{ CALC(pow(*x, *y));	    }
-int float_sin(x, z)	     float *x, *z;	{ CALC(sin(*x));	    }
-int float_cos(x, z)	     float *x, *z;	{ CALC(cos(*x));	    }
-int float_tan(x, z)	     float *x, *z;	{ CALC(tan(*x));	    }
-int float_asin(x, z)	     float *x, *z;	{ CALC(asin(*x));	    }
-int float_acos(x, z)	     float *x, *z;	{ CALC(acos(*x));	    }
-int float_atan(x, z)	     float *x, *z;	{ CALC(atan(*x));	    }
-int float_atan2(x, y, z)     float *x, *y, *z;	{ CALC(atan2(*x, *y));	    }
-int float_sinh(x, z)	     float *x, *z;	{ CALC(sinh(*x));	    }
-int float_cosh(x, z)	     float *x, *z;	{ CALC(cosh(*x));	    }
-int float_tanh(x, z)	     float *x, *z;	{ CALC(tanh(*x));	    }
+/* MODERN: float_minus/abs/min/max had no return statement, and their
+   callers test the result, which was whatever the register held (YES in
+   practice: test/b_f_func*.kl1 pass).  They now return YES. */
+
+int float_add(float *x, float *y, float *z)	{ CALC(*x + *y);	    }
+int float_subtract(float *x, float *y, float *z)	{ CALC(*x - *y);	    }
+int float_multiply(float *x, float *y, float *z)	{ CALC(*x * *y);	    }
+int float_divide(float *x, float *y, float *z)	{ CALC(*x / *y);	    }
+int float_minus(float *x, float *z)	{ *z = -(*x); return(YES); }
+int float_abs(float *x, float *z)	{ *z = *x < 0 ? -(*x) : *x; return(YES); }
+int float_min(float *x, float *y, float *z)	{ *z = *x < *y ? *x : *y; return(YES); }
+int float_max(float *x, float *y, float *z)	{ *z = *x > *y ? *x : *y; return(YES); }
+int float_floor(float *x, float *z)	{ CALC(floor(*x));	    }
+int float_sqrt(float *x, float *z)	{ CALC(sqrt(*x));	    }
+int float_ln(float *x, float *z)	{ CALC(log(*x));	    }
+int float_log(float *x, float *z)	{ CALC(log10(*x));	    }
+int float_exp(float *x, float *z)	{ CALC(exp(*x));	    }
+int float_pow(float *x, float *y, float *z)	{ CALC(pow(*x, *y));	    }
+int float_sin(float *x, float *z)	{ CALC(sin(*x));	    }
+int float_cos(float *x, float *z)	{ CALC(cos(*x));	    }
+int float_tan(float *x, float *z)	{ CALC(tan(*x));	    }
+int float_asin(float *x, float *z)	{ CALC(asin(*x));	    }
+int float_acos(float *x, float *z)	{ CALC(acos(*x));	    }
+int float_atan(float *x, float *z)	{ CALC(atan(*x));	    }
+int float_atan2(float *x, float *y, float *z)	{ CALC(atan2(*x, *y));	    }
+int float_sinh(float *x, float *z)	{ CALC(sinh(*x));	    }
+int float_cosh(float *x, float *z)	{ CALC(cosh(*x));	    }
+int float_tanh(float *x, float *z)	{ CALC(tanh(*x));	    }
 
 
 /*************************************************************************
 *   Convert Floating Point <-> Integer.					 *
 *************************************************************************/
 
-int float_to_integer(x, y)
-    float *x;
-    int *y;
+int float_to_integer(float *x, int *y)
 {
 #if !IGNORE_INTEGER_OVERFLOW
     if(IntOverflow(*x)) return(NO);
@@ -88,9 +90,7 @@ int float_to_integer(x, y)
     return(YES);
 }
 
-integer_to_float(x, y)
-    float *y;
-    int *x;
+int integer_to_float(int *x, float *y)
 {
     *y = *x;
 }
@@ -100,8 +100,7 @@ integer_to_float(x, y)
 *   Convert Floating to String.						 *
 *************************************************************************/
 
-CHAR *float_to_string(x)
-    float *x;
+CHAR *float_to_string(float *x)
 {
     register CHAR *p, *q, *b;
     static CHAR buf[32];
@@ -133,9 +132,7 @@ CHAR *float_to_string(x)
 *   Convert String to Floating.						 *
 *************************************************************************/
 
-int string_to_float(s, z)
-    register CHAR *s;
-    float *z;
+int string_to_float(register CHAR *s, float *z)
 {
     double work;
     errno = 0;

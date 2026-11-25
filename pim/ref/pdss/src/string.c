@@ -26,9 +26,7 @@ static CELL const_int0 = {INT, MRBOFF, 0};
 *   Get String Type (Length & Element Size).				 *
 *************************************************************************/
 
-int get_string_type(string, length, width)
-    CELL *string;
-    int *length, *width;
+int get_string_type(CELL *string, int *length, int *width)
 {
     register int leng, type, widt, rest;
     leng = StringLengthof(string);
@@ -45,9 +43,7 @@ int get_string_type(string, length, width)
 *   Create New String.							 *
 *************************************************************************/
 
-int new_string(length, width, string)
-    int length, width;
-    CELL *string;
+int new_string(int length, int width, CELL *string)
 {
     register CELL *p;
     register int leng, elms, rest, desc;
@@ -90,8 +86,7 @@ int new_string(length, width, string)
 *   Copy String.							 *
 *************************************************************************/
 
-int copy_string(string, newstr)
-    CELL *string, *newstr;
+int copy_string(CELL *string, CELL *newstr)
 {
     register CELL *p, *q;
     register int leng;
@@ -110,9 +105,7 @@ int copy_string(string, newstr)
 *   Get/Set String Element.						 *
 *************************************************************************/
 
-int get_string_element(string, position, element)
-    CELL *string;
-    int position, *element;
+int get_string_element(CELL *string, int position, int *element)
 {
     CELL *p;
     register int leng, type, width, mask, elms, rest;
@@ -138,9 +131,7 @@ int get_string_element(string, position, element)
     return(STRUTL_SUCCESS);
 }
 
-int set_string_element(string, position, element)
-    CELL *string;
-    int position, element;
+int set_string_element(CELL *string, int position, int element)
 {
     CELL *p;
     register int leng, type, width, mask, elms, rest, x;
@@ -173,9 +164,7 @@ int set_string_element(string, position, element)
 *   Get/Set Sub String.							 *
 *************************************************************************/
 
-int get_substring(string, position, length, substr)
-    CELL *string, *substr;
-    int position, length;
+int get_substring(CELL *string, int position, int length, CELL *substr)
 {
     register CELL *p, *q;
     int leng, leng2, width, elms;
@@ -236,9 +225,7 @@ int get_substring(string, position, length, substr)
     return(STRUTL_SUCCESS);
 }    
 
-int set_substring(string, position, substr)
-    CELL *string, *substr;
-    int position;
+int set_substring(CELL *string, int position, CELL *substr)
 {
     register CELL *p, *q;
     int length, leng, leng2, width, elms;
@@ -319,8 +306,7 @@ int set_substring(string, position, substr)
 *   Append 2 Strings.							 *
 *************************************************************************/
 
-int append_string(string1, string2, newstr)
-    CELL *string1, *string2, *newstr;
+int append_string(CELL *string1, CELL *string2, CELL *newstr)
 {
     register CELL *p, *q;
     int length1, length2, leng1, leng2, width, elms;
@@ -399,8 +385,7 @@ int append_string(string1, string2, newstr)
 *   String AND.								 *
 *************************************************************************/
 
-int string_and(string1, string2, newstr, newstr2)
-    CELL *string1, *string2, *newstr, *newstr2;
+int string_and(CELL *string1, CELL *string2, CELL *newstr, CELL *newstr2)
 {
     register CELL *p, *q, *r;
     int length;
@@ -429,8 +414,7 @@ int string_and(string1, string2, newstr, newstr2)
 *   String OR.								 *
 *************************************************************************/
 
-int string_or(string1, string2, newstr, newstr2)
-    CELL *string1, *string2, *newstr, *newstr2;
+int string_or(CELL *string1, CELL *string2, CELL *newstr, CELL *newstr2)
 {
     register CELL *p, *q, *r;
     int length;
@@ -459,8 +443,7 @@ int string_or(string1, string2, newstr, newstr2)
 *   String Exclusive_OR.						 *
 *************************************************************************/
 
-int string_exclusive_or(string1, string2, newstr, newstr2)
-    CELL *string1, *string2, *newstr, *newstr2;
+int string_exclusive_or(CELL *string1, CELL *string2, CELL *newstr, CELL *newstr2)
 {
     register CELL *p, *q, *r;
     int length;
@@ -489,8 +472,7 @@ int string_exclusive_or(string1, string2, newstr, newstr2)
 *   String Complement.							 *
 *************************************************************************/
 
-int string_complement(string, newstr)
-    CELL *string, *newstr;
+int string_complement(CELL *string, CELL *newstr)
 {
     register CELL *p, *q;
     int length;
@@ -516,9 +498,7 @@ int string_complement(string, newstr)
 *   Convert Atom <--> String.						 *
 *************************************************************************/
 
-int atom_to_string(atom, string)
-    unsigned int atom;
-    CELL *string;
+int atom_to_string(unsigned int atom, CELL *string)
 {
     register CELL *p;
     register CHAR *str;
@@ -557,9 +537,7 @@ int atom_to_string(atom, string)
     return(STRUTL_SUCCESS);
 }
 
-int string_to_atom(string, atom)
-    CELL  *string;
-    unsigned int  *atom;
+int string_to_atom(CELL *string, unsigned int *atom)
 {
     register CELL *p;
     register CHAR *s;
@@ -603,13 +581,13 @@ int string_to_atom(string, atom)
 *   Make Print Image String.						 *
 *************************************************************************/
 
-int get_print_image(atomic, mode, left, string, sleng, tail)
-    CELL *atomic;	/* in:	atomic data */
-    int	 mode;		/* in:	print mode: 0 -> write, 1 -> writeq */
-    int	 left;		/* in:	left character of atomic */
-    CELL *string;	/* out: print image "string" (8bits) */
-    int	 *sleng;	/* out: length if "string" */
-    int	 *tail;		/* out: tail character of "string" */
+int get_print_image(CELL *atomic, int mode, int left, CELL *string, int *sleng, int *tail)
+    /* in:	atomic data */
+    /* in:	print mode: 0 -> write, 1 -> writeq */
+    /* in:	left character of atomic */
+    /* out: print image "string" (8bits) */
+    /* out: length if "string" */
+    /* out: tail character of "string" */
 {
     register CELL *p;
     register CHAR *s1, *s2, *str;
@@ -789,8 +767,7 @@ int get_print_image(atomic, mode, left, string, sleng, tail)
 *   Convert KL1-String <--> C-String.					 *
 *************************************************************************/
 
-CELL *convert_to_kl1_string(string)
-    register CHAR *string;
+CELL *convert_to_kl1_string(register CHAR *string)
 {
     register CELL *kl1str, *v;
     register int len, n, rest, desc;
@@ -818,9 +795,7 @@ CELL *convert_to_kl1_string(string)
     return(kl1str);
 }
 
-CELL *convert_to_kl1_string2(string, len)
-    register CHAR *string;
-    register int len;
+CELL *convert_to_kl1_string2(register CHAR *string, register int len)
 {
     register CELL *kl1str, *v;
     register int n, rest, desc;
@@ -847,10 +822,7 @@ CELL *convert_to_kl1_string2(string, len)
     return(kl1str);
 }
 
-CHAR *convert_to_c_string(string, buffer, maxlen)
-    CELL *string;
-    CHAR *buffer;
-    int maxlen;
+CHAR *convert_to_c_string(CELL *string, CHAR *buffer, int maxlen)
 {
     register CELL *p;
     register CHAR *s;

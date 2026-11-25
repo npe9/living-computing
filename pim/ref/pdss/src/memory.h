@@ -19,18 +19,7 @@ extern CHAR *mesg_heap_area_overflow;
 extern CHAR *mesg_code_area_overflow;
 
 #if MRBGC_SWITCH
-extern CELL *alloc_cells_to_free_list();
 #endif
-extern alloc_suspension_record();
-extern alloc_goal_record8();
-extern alloc_goal_record16();
-extern alloc_goal_record32();
-extern alloc_parent_record();
-extern unsigned int count_suspension_record_in_free_list();
-extern unsigned int count_goal_record8_in_free_list();
-extern unsigned int count_goal_record16_in_free_list();
-extern unsigned int count_goal_record32_in_free_list();
-extern unsigned int count_parent_record_in_free_list();
 
 
 /*************************************************************************
@@ -542,15 +531,8 @@ extern int  mst_merge;
 #define mrbgc_statistics_deref()		mst_deref++
 #define mrbgc_statistics_collect_list()		mst_cslst++
 #define mrbgc_statistics_collect_list_fail()	mst_cflst++
-extern	mrbgc_statistics_collect_vector();
-extern	mrbgc_statistics_collect_vector_fail();
-extern	mrbgc_statistics_collect_value();
-extern	mrbgc_statistics_collect_in_builtin();
 #define mrbgc_statistics_reuse_list()		{mst_rslst++; f02total++;}
 #define mrbgc_statistics_reuse_list_fail()	mst_rflst++
-extern	mrbgc_statistics_reuse_vector();
-extern	mrbgc_statistics_reuse_vector_fail();
-extern	mrbgc_statistics_reuse_in_builtin();
 #define mrbgc_statistics_reuse_in_merger()	{mst_merge++; f02total++;}
 #else
 #define mrbgc_statistics_deref()

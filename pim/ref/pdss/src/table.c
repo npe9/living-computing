@@ -99,7 +99,7 @@ struct TABLE_NAME{
     while(*p) value = HASH_MASK(HASH_COEFFICIENT * value + *p++);\
 }
 
-INIT_ROUTINE_NAME()
+int INIT_ROUTINE_NAME(void)
 {
     register struct ENTRY_TYPE_NAME **p = TABLE_NAME.table;
     while(p != &TABLE_NAME.table[TABLE_SIZE]) *p++ = 0;
@@ -114,9 +114,7 @@ INIT_ROUTINE_NAME()
 #endif
 }
 
-unsigned int LOOKUP_ROUTINE_NAME(key, value)
-    unsigned char *key;
-    DATA_TYPE *value;
+unsigned int LOOKUP_ROUTINE_NAME(unsigned char *key, DATA_TYPE *value)
 {
     register unsigned int hv;
     register struct ENTRY_TYPE_NAME *p;
@@ -132,9 +130,7 @@ unsigned int LOOKUP_ROUTINE_NAME(key, value)
     return 1;	   /** Not Found **/
 }
 
-unsigned int ENTRY_ROUTINE_NAME(key, value)
-    unsigned char *key;
-    DATA_TYPE *value;
+unsigned int ENTRY_ROUTINE_NAME(unsigned char *key, DATA_TYPE *value)
 {
     register unsigned int hv;
     register struct ENTRY_TYPE_NAME *p;
@@ -171,8 +167,7 @@ unsigned int ENTRY_ROUTINE_NAME(key, value)
 }
 
 #ifdef DELETION_ROUTINE_NAME
-unsigned int DELETION_ROUTINE_NAME(key)
-    unsigned char *key;
+unsigned int DELETION_ROUTINE_NAME(unsigned char *key)
 {
     register unsigned int hv;
     register struct ENTRY_TYPE_NAME **pp;
@@ -194,9 +189,7 @@ unsigned int DELETION_ROUTINE_NAME(key)
 #endif
 
 #ifdef UPDATE_ROUTINE_NAME
-unsigned int UPDATE_ROUTINE_NAME(key, value)
-    unsigned char *key;
-    DATA_TYPE *value;
+unsigned int UPDATE_ROUTINE_NAME(unsigned char *key, DATA_TYPE *value)
 {
     register unsigned int hv;
     register struct ENTRY_TYPE_NAME *p;

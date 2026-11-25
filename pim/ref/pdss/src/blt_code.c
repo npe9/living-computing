@@ -15,7 +15,7 @@
 *   b_predicate_to_code(Rmodule,Rpred,Raarity,^Rcode)			 *
 *************************************************************************/
 
-DCODE dc_predicate_to_code()
+DCODE dc_predicate_to_code(void)
 {
     blt_b_predicate_to_code(&R0, &R1, &R2, &R4);
     active_unify(&R3, &R4);
@@ -23,8 +23,7 @@ DCODE dc_predicate_to_code()
     return(NC_PROCEED);
 }
 
-blt_b_predicate_to_code(mod, pred, arity, code)
-    CELL *mod, *pred, *arity, *code;
+int blt_b_predicate_to_code(CELL *mod, CELL *pred, CELL *arity, CELL *code)
 {
     register CELL *x;
     MODULE_ENTRY *m;
@@ -67,7 +66,7 @@ blt_b_predicate_to_code(mod, pred, arity, code)
 *   b_code_to_predicate(Rcode,^Rmodule,^Rpred,^Rarity,^Rinfo)		 *
 *************************************************************************/
 
-DCODE dc_code_to_predicate()
+DCODE dc_code_to_predicate(void)
 {
     blt_b_code_to_predicate(&R0, &R5, &R6, &R7, &R8);
     active_unify(&R1, &R5);
@@ -78,8 +77,7 @@ DCODE dc_code_to_predicate()
     return(NC_PROCEED);
 }
 
-blt_b_code_to_predicate(code, mod, pred, arity, info)
-    CELL *code, *mod, *pred, *arity, *info;
+int blt_b_code_to_predicate(CELL *code, CELL *mod, CELL *pred, CELL *arity, CELL *info)
 {
     register CELL *x;
     register MRB mrb;
@@ -151,7 +149,7 @@ blt_b_code_to_predicate(code, mod, pred, arity, info)
 *   b_save_module(Rmodule,Rfname,^Rstt)					 *
 *************************************************************************/
 
-DCODE dc_save_module()
+DCODE dc_save_module(void)
 {
     blt_b_save_module(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -159,8 +157,7 @@ DCODE dc_save_module()
     return(NC_PROCEED);
 }
 
-blt_b_save_module(mod, file, status)
-    CELL *mod, *file, *status;
+int blt_b_save_module(CELL *mod, CELL *file, CELL *status)
 {
     register CELL *x;
     MODULE_ENTRY *mtbl;
@@ -207,7 +204,7 @@ blt_b_save_module(mod, file, status)
 *   b_load_module(^Rmodule,Rfname,^Rstt)				 *
 *************************************************************************/
 
-DCODE dc_load_module()
+DCODE dc_load_module(void)
 {
     blt_b_load_module(&R3, &R1, &R4);
     active_unify(&R0, &R3);
@@ -216,8 +213,7 @@ DCODE dc_load_module()
     return(NC_PROCEED);
 }
 
-blt_b_load_module(mod, file, status)
-    CELL *mod, *file, *status;
+int blt_b_load_module(CELL *mod, CELL *file, CELL *status)
 {
     register CELL *x;
     MODULE_ENTRY *mtbl;
@@ -269,7 +265,7 @@ blt_b_load_module(mod, file, status)
 *   b_assemble_module(^Rmodule,Rfname,^Rstt)				 *
 *************************************************************************/
 
-DCODE dc_assemble_module()
+DCODE dc_assemble_module(void)
 {
     blt_b_assemble_module(&R3, &R1, &R4);
     active_unify(&R0, &R3);
@@ -278,8 +274,7 @@ DCODE dc_assemble_module()
     return(NC_PROCEED);
 }
 
-blt_b_assemble_module(mod, file, status)
-    CELL *mod, *file, *status;
+int blt_b_assemble_module(CELL *mod, CELL *file, CELL *status)
 {
     register CELL *x;
     MODULE_ENTRY *mtbl;
@@ -331,7 +326,7 @@ blt_b_assemble_module(mod, file, status)
 *   b_remove_module(Rmodule,^Rstt)					 *
 *************************************************************************/
 
-DCODE dc_remove_module()
+DCODE dc_remove_module(void)
 {
     blt_b_remove_module(&R0, &R2);
     active_unify(&R1, &R2);
@@ -339,8 +334,7 @@ DCODE dc_remove_module()
     return(NC_PROCEED);
 }
 
-blt_b_remove_module(mod, status)
-    CELL *mod, *status;
+int blt_b_remove_module(CELL *mod, CELL *status)
 {
     register CELL *x;
     x = mod;
@@ -372,7 +366,7 @@ blt_b_remove_module(mod, status)
 *   b_get_public_predicates(Rmodule,^Rlist,^Rstt)			 *
 *************************************************************************/
 
-DCODE dc_get_public_predicates()
+DCODE dc_get_public_predicates(void)
 {
     blt_b_get_public_predicates(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -381,8 +375,7 @@ DCODE dc_get_public_predicates()
     return(NC_PROCEED);
 }
 
-blt_b_get_public_predicates(mod, list, status)
-    CELL *mod, *list, *status;
+int blt_b_get_public_predicates(CELL *mod, CELL *list, CELL *status)
 {
     register CELL *x;
     x = mod;
@@ -421,7 +414,7 @@ blt_b_get_public_predicates(mod, list, status)
 *   b_trace_module(Rmodule,Rflag,^Rstt)					 *
 *************************************************************************/
 
-DCODE dc_trace_module()
+DCODE dc_trace_module(void)
 {
     blt_b_trace_module(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -429,8 +422,7 @@ DCODE dc_trace_module()
     return(NC_PROCEED);
 }
 
-blt_b_trace_module(mod, flag, status)
-    CELL *mod, *flag, *status;
+int blt_b_trace_module(CELL *mod, CELL *flag, CELL *status)
 {
     register CELL *x;
     x = mod;
@@ -466,7 +458,7 @@ blt_b_trace_module(mod, flag, status)
 *   b_get_module_status(Rmodule,^Rflag,^Rstt)				 *
 *************************************************************************/
 
-DCODE dc_get_module_status()
+DCODE dc_get_module_status(void)
 {
     blt_b_get_module_status(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -475,8 +467,7 @@ DCODE dc_get_module_status()
     return(NC_PROCEED);
 }
 
-blt_b_get_module_status(mod, flag, status)
-    CELL *mod, *flag, *status;
+int blt_b_get_module_status(CELL *mod, CELL *flag, CELL *status)
 {
     register CELL *x;
     x = mod;
@@ -514,7 +505,7 @@ blt_b_get_module_status(mod, flag, status)
 *   b_spy_predicate(Rcode,Rflag,^Rstt)					 *
 *************************************************************************/
 
-DCODE dc_spy_predicate()
+DCODE dc_spy_predicate(void)
 {
     blt_b_spy_predicate(&R0, &R1, &R3);
     active_unify(&R2, &R3);
@@ -522,8 +513,7 @@ DCODE dc_spy_predicate()
     return(NC_PROCEED);
 }
 
-blt_b_spy_predicate(code, flag, status)
-    CELL *code, *flag, *status;
+int blt_b_spy_predicate(CELL *code, CELL *flag, CELL *status)
 {
     register CELL *x;
     register MRB mrb;
@@ -584,7 +574,7 @@ blt_b_spy_predicate(code, flag, status)
 *   b_get_spied_predicates(Rmodule,^Rlist,^Rstt)			 *
 *************************************************************************/
 
-DCODE dc_get_spied_predicates()
+DCODE dc_get_spied_predicates(void)
 {
     blt_b_get_spied_predicates(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -593,8 +583,7 @@ DCODE dc_get_spied_predicates()
     return(NC_PROCEED);
 }
 
-blt_b_get_spied_predicates(mod, list, status)
-    CELL *mod, *list, *status;
+int blt_b_get_spied_predicates(CELL *mod, CELL *list, CELL *status)
 {
     register CELL *x;
     x = mod;
@@ -637,7 +626,7 @@ blt_b_get_spied_predicates(mod, list, status)
 *   b_reset_profile_info(Rmodule,^Rstt)					 *
 *************************************************************************/
 
-DCODE dc_reset_profile_info()
+DCODE dc_reset_profile_info(void)
 {
     blt_b_reset_profile_info(&R0, &R2);
     active_unify(&R1, &R2);
@@ -645,8 +634,7 @@ DCODE dc_reset_profile_info()
     return(NC_PROCEED);
 }
 
-blt_b_reset_profile_info(mod, status)
-    CELL *mod, *status;
+int blt_b_reset_profile_info(CELL *mod, CELL *status)
 {
     register CELL *x;
     x = mod;
@@ -678,7 +666,7 @@ blt_b_reset_profile_info(mod, status)
 *   b_get_profile_info(Rmodule,^Rlist,^Rstt)				 *
 *************************************************************************/
 
-DCODE dc_get_profile_info()
+DCODE dc_get_profile_info(void)
 {
     blt_b_get_profile_info(&R0, &R3, &R4);
     active_unify(&R1, &R3);
@@ -687,8 +675,7 @@ DCODE dc_get_profile_info()
     return(NC_PROCEED);
 }
 
-blt_b_get_profile_info(mod, list, status)
-    CELL *mod, *list, *status;
+int blt_b_get_profile_info(CELL *mod, CELL *list, CELL *status)
 {
     register CELL *x;
     x = mod;

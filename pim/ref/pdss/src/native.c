@@ -13,9 +13,7 @@
 #include "memory.h"
 #include "io.h"
 
-int load_and_link_native_code_module(fname, mod_table)
-    CHAR *fname;
-    MODULE_ENTRY **mod_table;
+int load_and_link_native_code_module(CHAR *fname, MODULE_ENTRY **mod_table)
 {
     struct exec header;
     int	 file;

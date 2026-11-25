@@ -16,7 +16,7 @@
 *   GC KL1-B Code Area.							 *
 *************************************************************************/
 
-gc_code_area()
+int gc_code_area(void)
 {
     register int  i;
     register MODULE_ENTRY  *p;
@@ -34,8 +34,7 @@ gc_code_area()
 *   GC Predicate.							 *
 *************************************************************************/
 
-OBJ *gc_predicate(old)
-    OBJ	 *old;
+OBJ *gc_predicate(OBJ *old)
 {
     OBJ	 *oldtop;
     if(InUserCode(old)){
@@ -51,8 +50,7 @@ OBJ *gc_predicate(old)
 *   GC KL1-B Program Module.						 *
 *************************************************************************/
 
-OBJ *gc_code_module(old)
-    OBJ	 *old;
+OBJ *gc_code_module(OBJ *old)
 {
     register OBJ  *new, *from, *to;
     register OBJ  *module_bottom, *program_bottom;
@@ -91,8 +89,7 @@ OBJ *gc_code_module(old)
 *   GC Structured Constant.						 *
 *************************************************************************/
 
-gc_constant_section(from, to, bottom)
-    CELL *from, *to, *bottom;
+int gc_constant_section(CELL *from, CELL *to, CELL *bottom)
 {
     int offs = (int)to-(int)from;
     while(from < bottom){
@@ -114,8 +111,7 @@ gc_constant_section(from, to, bottom)
     }
 }
 
-CELL *gc_cell_in_constant_section(old)
-    CELL *old;
+CELL *gc_cell_in_constant_section(CELL *old)
 {
     CELL *p;
     OBJ *oldtop, *newtop;

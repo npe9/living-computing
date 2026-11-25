@@ -112,8 +112,7 @@ int prec_peek;
 int prec_total, prec_used;
 #endif
 
-initialize_heap(size)
-    unsigned int size;
+int initialize_heap(unsigned int size)
 {
     heap_size = size;
     if(heap1 == NULL) heap1 = (CELL *)malloc(sizeof(CELL) * size);
@@ -215,7 +214,7 @@ initialize_heap(size)
     gc_panic_flag = 0;
 }
 
-switch_heap()
+int switch_heap(void)
 {
     CELL *work;
 
@@ -313,8 +312,7 @@ switch_heap()
 
 #if MRBGC_SWITCH
 
-CELL *alloc_cells_to_free_list(size, num)
-    register unsigned int size, num;
+CELL *alloc_cells_to_free_list(register unsigned int size, register unsigned int num)
 {
     register CELL *p;
     /* PORT: HeapRest() is a pointer difference, int on the 32-bit
@@ -336,8 +334,7 @@ CELL *alloc_cells_to_free_list(size, num)
 
 #if MRBGC_STATISTICS == 2
 
-mrbgc_statistics_collect_vector(n)
-    int n;
+int mrbgc_statistics_collect_vector(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -377,8 +374,7 @@ mrbgc_statistics_collect_vector(n)
 #endif
 }
 
-mrbgc_statistics_collect_vector_fail(n)
-    int n;
+int mrbgc_statistics_collect_vector_fail(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -418,8 +414,7 @@ mrbgc_statistics_collect_vector_fail(n)
 #endif
 }
 
-mrbgc_statistics_collect_value(n)
-    int n;
+int mrbgc_statistics_collect_value(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -459,8 +454,7 @@ mrbgc_statistics_collect_value(n)
 #endif
 }
 
-mrbgc_statistics_collect_in_builtin(n)
-    int n;
+int mrbgc_statistics_collect_in_builtin(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -500,8 +494,7 @@ mrbgc_statistics_collect_in_builtin(n)
 #endif
 }
 
-mrbgc_statistics_reuse_vector(n)
-    int n;
+int mrbgc_statistics_reuse_vector(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -548,8 +541,7 @@ mrbgc_statistics_reuse_vector(n)
 #endif
 }
 
-mrbgc_statistics_reuse_vector_fail(n)
-    int n;
+int mrbgc_statistics_reuse_vector_fail(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -591,8 +583,7 @@ mrbgc_statistics_reuse_vector_fail(n)
 #endif
 }
 
-mrbgc_statistics_reuse_in_builtin(n)
-    int n;
+int mrbgc_statistics_reuse_in_builtin(int n)
 {
 #if MRBGC_FREE_LIST_TYPE == 0
     switch(n){
@@ -646,8 +637,7 @@ mrbgc_statistics_reuse_in_builtin(n)
 *   Heap Area Management -- Record.					 *
 *************************************************************************/
 
-alloc_suspension_record(num)
-    register unsigned int num;
+int alloc_suspension_record(register unsigned int num)
 {
     register SUSPENSION_RECORD *p;
     if(num*sizeof(SUSPENSION_RECORD) > HeapRest()*sizeof(CELL))
@@ -664,8 +654,7 @@ alloc_suspension_record(num)
     CheckHeap();
 }
 
-alloc_goal_record8(num)
-    register unsigned int num;
+int alloc_goal_record8(register unsigned int num)
 {
     register GOAL_RECORD *p1, *p2;
     if(num*sizeof(GOAL_RECORD) > HeapRest()*sizeof(CELL))
@@ -688,8 +677,7 @@ alloc_goal_record8(num)
     CheckHeap();
 }
 
-alloc_goal_record16(num)
-    register unsigned int num;
+int alloc_goal_record16(register unsigned int num)
 {
     register GOAL_RECORD16 *p1, *p2;
     if(num*sizeof(GOAL_RECORD16) > HeapRest()*sizeof(CELL))
@@ -712,8 +700,7 @@ alloc_goal_record16(num)
     CheckHeap();
 }
 
-alloc_goal_record32(num)
-    register unsigned int num;
+int alloc_goal_record32(register unsigned int num)
 {
     register GOAL_RECORD32 *p1, *p2;
     if(num*sizeof(GOAL_RECORD32) > HeapRest()*sizeof(CELL))
@@ -736,8 +723,7 @@ alloc_goal_record32(num)
     CheckHeap();
 }
 
-alloc_parent_record(num)
-    register unsigned int num;
+int alloc_parent_record(register unsigned int num)
 {
     register PARENT_RECORD *p;
     if(num*sizeof(PARENT_RECORD) > HeapRest()*sizeof(CELL))
@@ -754,7 +740,7 @@ alloc_parent_record(num)
     CheckHeap();
 }
 
-unsigned int count_suspension_record_in_free_list()
+unsigned int count_suspension_record_in_free_list(void)
 {
     register SUSPENSION_RECORD *p;
     register unsigned int n = 0;
@@ -762,7 +748,7 @@ unsigned int count_suspension_record_in_free_list()
     return(n);
 }
 
-unsigned int count_goal_record8_in_free_list()
+unsigned int count_goal_record8_in_free_list(void)
 {
     register GOAL_RECORD *p;
     register unsigned int n = 0;
@@ -770,7 +756,7 @@ unsigned int count_goal_record8_in_free_list()
     return(n);
 }
 
-unsigned int count_goal_record16_in_free_list()
+unsigned int count_goal_record16_in_free_list(void)
 {
     register GOAL_RECORD16 *p;
     register unsigned int n = 0;
@@ -778,7 +764,7 @@ unsigned int count_goal_record16_in_free_list()
     return(n);
 }
 
-unsigned int count_goal_record32_in_free_list()
+unsigned int count_goal_record32_in_free_list(void)
 {
     register GOAL_RECORD32 *p;
     register unsigned int n = 0;
@@ -786,7 +772,7 @@ unsigned int count_goal_record32_in_free_list()
     return(n);
 }
 
-unsigned int count_parent_record_in_free_list()
+unsigned int count_parent_record_in_free_list(void)
 {
     register PARENT_RECORD *p;
     register unsigned int n = 0;
@@ -806,8 +792,7 @@ OBJ *C, *code_base, *user_code, *user_code_limit;
 OBJ *code1, *code1_warn, *code1_limit;	/* Current Set */
 OBJ *code2, *code2_warn, *code2_limit;	/* Another Set */
 
-initialize_code(size)
-    unsigned int size;
+int initialize_code(unsigned int size)
 {
     size = (size+7)&0xFFFFFFF8;
     code_size_all = size;
@@ -830,7 +815,7 @@ initialize_code(size)
     t2_free();
 }
 
-initialize_code2()
+int initialize_code2(void)
 {
     unsigned int size;
     C = (OBJ *)(((unsigned int)C+7)&0xFFFFFFF8);
@@ -848,7 +833,7 @@ initialize_code2()
     t2_free();
 }
 
-switch_code()
+int switch_code(void)
 {
     OBJ *work;
 
@@ -870,20 +855,18 @@ static unsigned char *temp2_top;
 static unsigned char *temp3_top;
 static unsigned char *temp4_top;
 
-unsigned char *t1_alloc(size)
-    unsigned int size;
+unsigned char *t1_alloc(unsigned int size)
 {
     size = (size+3)&0xFFFFFFFC;
     return(temp1_top -= size);
 }
 
-t1_free()
+int t1_free(void)
 {
     temp1_top = (unsigned char *)code2_limit;
 }
 
-unsigned char *t2_alloc(size)
-    unsigned int size;
+unsigned char *t2_alloc(unsigned int size)
 {
     unsigned char *p;
     size = (size+3)&0xFFFFFFFC;
@@ -892,25 +875,23 @@ unsigned char *t2_alloc(size)
     return(p);
 }
 
-t2_free()
+int t2_free(void)
 {
     temp2_top = (unsigned char *)code2;
 }
 
-unsigned char *t3_alloc(size)
-    unsigned int size;
+unsigned char *t3_alloc(unsigned int size)
 {
     size = (size+3)&0xFFFFFFFC;
     return(temp3_top -= size);
 }
 
-t3_free()
+int t3_free(void)
 {
     temp3_top = (unsigned char *)heap2_limit;
 }
 
-unsigned char *t4_alloc(size)
-    unsigned int size;
+unsigned char *t4_alloc(unsigned int size)
 {
     unsigned char *p;
     size = (size+3)&0xFFFFFFFC;
@@ -919,7 +900,7 @@ unsigned char *t4_alloc(size)
     return(p);
 }
 
-t4_free()
+int t4_free(void)
 {
     temp4_top = (unsigned char *)heap2;
 }

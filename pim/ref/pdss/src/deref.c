@@ -9,8 +9,7 @@
 #include "memory.h"
 
 #if MRBGC_SWITCH
-CELL *dereference(reg)
-    CELL *reg;
+CELL *dereference(CELL *reg)
 {
     register CELL *var;
     if(Mrbof(reg) == MRBON){
@@ -73,8 +72,7 @@ CELL *dereference(reg)
     }
 }
 #else
-CELL *dereference(reg)
-    CELL *reg;
+CELL *dereference(CELL *reg)
 {
     register CELL *var = reg;
     do{
