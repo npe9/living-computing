@@ -481,6 +481,14 @@ and stand-in `simpos##` classes. In order:
        real success was checked alone on a fresh machine; the two
        `resign_core/1` successes are order effects (both fail alone).
        The six-package census is identical to master.
+   - *2026-11-25, step 3g* (`../../psi/README.md`, the "Step 3g"
+     sections):
+     - `stream` `see/2`, `try_to_see/2` and `try_to_get/2` stood in
+       (INTERPOLATED from their pimfep, pimmcsp, fuzclust and icotext
+       callers; no printed or held definition found). kl0 refuses
+       `process:suspend/2` as `would suspend` (one process, no
+       scheduler). The 17 recipe rows that stopped at `see/2` now wait
+       there on an empty input stream; the totals are unchanged.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

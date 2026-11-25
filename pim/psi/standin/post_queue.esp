@@ -33,6 +33,13 @@ attribute objects := [];
 % takes the oldest object, and fails when the queue is empty.
 :remove_object(Queue, Object) :-
         [Object|E] = Queue!objects, Queue!objects := E;
+% INTERPOLATED (step 3g) from: the stream:see/2 and try_to_see/2
+% stand-ins (stream.esp), which need the oldest object without taking it
+% out.  The name `see_object/2` is OURS: no post_queue method is printed
+% or used by a held caller.  Fails when the queue is empty, as
+% remove_object/2 does.
+:see_object(Queue, Object) :-
+        [Object|_] = Queue!objects;
 
 local
 append([], L, L);

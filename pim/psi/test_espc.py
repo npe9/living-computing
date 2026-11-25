@@ -114,6 +114,22 @@
    same; activate/1 failing, fails test_fep_census,
    test_step3d_window_and_timer, test_step3f_census_recipes and
    test_step3f_window_protocol.  test_kl0.py passes each time.
+13. Step 3g (2026-11-25, test_step3g_stream_see): stream see/2,
+   try_to_see/2 and try_to_get/2 (INTERPOLATED, standin/stream.esp) and
+   kl0's 'would suspend' refusal of process:suspend/2 (one process, no
+   scheduler); a timer's loop_main/1 with one message on its input
+   stream sees it, gets it and stops at blt 6f in disassemble/3.  The
+   17 recipe-census rows that stopped at stream:see/2 now refuse 'would
+   suspend' (test_step3f_census_recipes); the totals are unchanged.
+   Injected from a backup copy, restored by cp, cmp-checked, observed
+   (test_kl0.py passing each time): see/2 taking the object out
+   (remove_object for see_object), fails only test_step3g_stream_see;
+   try_to_see/2 waiting as see/2 does, errors only
+   test_step3g_stream_see; try_to_get/2 leaving the object
+   (see_object for remove_object), fails only test_step3g_stream_see;
+   kl0's suspend/2 model removed (the printed body runs and fails),
+   fails test_step3f_census_recipes, test_step3g_stream_see and
+   test_stream_runs.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -717,9 +733,11 @@ class Standins(unittest.TestCase):
         m.reset()
         regs = [K.Var(), K.ClassRef(cid)]
         self.assertTrue(any(True for _ in m.solve_send(K.ClassRef(cid), 'stream', regs)))
-        # the printed put/2 and get/2: first in, first out; get on an empty
-        # stream fails (the printed suspend/2 fails for a process whose
-        # status is nil: the stand-in's one process is never activated)
+        # the printed put/2 and get/2: first in, first out.  get on an
+        # empty stream reaches process:suspend/2, which kl0 refuses since
+        # step 3g ('would suspend': one process, no scheduler); before, the
+        # printed suspend/2 failed for the census's process (status nil)
+        # and the wait showed as a clean failure
         (s,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
         st = s[0]
         self.assertEqual([x.cid for x in st.slots], ['simpos##post_queue', 'simpos##waiting_queue'])
@@ -731,7 +749,9 @@ class Standins(unittest.TestCase):
         self.assertEqual(len(send('put', 7)), 1)
         self.assertEqual(repr(send('get', K.Var())), '[[a]]')
         self.assertEqual(repr(send('get', K.Var())), '[[7]]')
-        self.assertEqual(send('get', K.Var()), [])
+        with self.assertRaises(K.Refusal) as cm:
+            send('get', K.Var())
+        self.assertEqual(cm.exception.cause, 'would suspend')
 
     def test_printed_process_slots(self):
         # :self(#process,P) makes the process with :new, which runs the
@@ -1195,15 +1215,21 @@ end.''', 'simpos')
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 86)
         # the four string-I/O programs, made by create_string_io/10
+        # step 3g: a device's loop_main/1 waits in stream see/2 on its
+        # empty input stream ('would suspend'), as do the 17 goal/1,
+        # loop_main/1 and invoke/1 rows that stopped at see/2 before
         for c in K.STRING_IO_PROGRAMS:
-            self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2], ('refused', 'simpos'), c)
+            self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2],
+                             ('refused', 'would suspend'), c)
         self.assertEqual(by[('as_pimos_string_io_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
-        # a device with a recipe goes on to the stream stand-in's missing
-        # see/2; the abstract as_pimos_device (no creator) still refuses
+        # a device with a recipe goes on to the wait in see/2; the
+        # abstract as_pimos_device (no creator) still refuses
         self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
-                         ('refused', 'simpos'))
-        self.assertIn('simpos##stream:see/2', by[('pimos_timer', 'instance', 'loop_main/1')][2])
+                         ('refused', 'would suspend'))
+        self.assertIn('stream', by[('pimos_timer', 'instance', 'loop_main/1')][2])
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 17)
+        self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
         # pimos_file: initiate/1 runs its open on the unbound pathname and
@@ -1221,6 +1247,54 @@ end.''', 'simpos')
                          ('refused', 'unbound argument'))
         self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
+
+    def test_step3g_stream_see(self):
+        # stream see/2, try_to_see/2, try_to_get/2 (step 3g, INTERPOLATED
+        # from their held callers; standin/stream.esp)
+        m = self.m
+        m.reset()
+        (s,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
+        st = s[0]
+
+        def send(name, *args):
+            m.reset()
+            regs = list(args) + [st]
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(st, name, regs)]
+        # empty: try_to_see and try_to_get fail at once; see/2 would wait
+        self.assertEqual(send('try_to_see', K.Var()), [])
+        self.assertEqual(send('try_to_get', K.Var()), [])
+        with self.assertRaises(K.Refusal) as cm:
+            send('see', K.Var())
+        self.assertEqual(cm.exception.cause, 'would suspend')
+        send('put', K.Atom('a'))
+        send('put', K.Atom('b'))
+        # see/2 and try_to_see/2 give the oldest object and leave it
+        self.assertEqual(repr(send('see', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('try_to_see', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('see', K.Var())), '[[a]]')
+        # try_to_get/2 takes it out; then see/2 gives the next
+        self.assertEqual(repr(send('try_to_get', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('see', K.Var())), '[[b]]')
+        self.assertEqual(repr(send('get', K.Var())), '[[b]]')
+        self.assertEqual(send('try_to_see', K.Var()), [])
+        # a timer made by its creator, with one message on its input
+        # stream: loop_main/1 sees it, gets it (the stream is empty after)
+        # and goes on to its local refute/3, which stops at
+        # fep_message_assembler disassemble/3's unwitnessed blt 6f
+        dev = K.RECIPES['pimfep##pimos_timer'](m)
+        co = m.lib.build(dev.cid)
+        sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        inp = sl['input_stream']
+        msg = K.Str('', 32)
+        msg.set_codes([16, 0, 60, 0])
+        m.reset()
+        self.assertEqual(len(list(m.solve_send(inp, 'put', [msg, inp]))), 1)
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(dev, 'loop_main', [dev]))
+        self.assertEqual(cm.exception.cause, 'opcode')
+        self.assertIn('blt 6f', cm.exception.detail)
+        self.assertEqual(repr(K.resolve(inp.slots[0].slots[0])), '[]')
 
     def test_step3f_window_protocol(self):
         # pmacs_window's geometry, title and display methods (step 3f,

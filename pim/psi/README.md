@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -2045,6 +2045,119 @@ constant). Made by `make_instance` instead, both are 0 (MEASURED), so
 both assertions fail under the step 3f "executor made by
 `make_instance`" injection.
 
+### Step 3g: `stream:see/2`, `try_to_see/2`, `try_to_get/2` (2026-11-25)
+
+**The search.** No printed or held source defines `see/2` on a stream.
+Searched (2026-11-25):
+
+- the page images of TM-100 PDF p13-15 (Fig. 3.6 prints `create/2`,
+  `put/2`, `get/2`; the prose names no other method) and TR-056 PDF
+  p12-13 (folio 10-11: "Two major operations on a stream", `:put` and
+  `:get`; a stream "looks like a tap on a pool");
+- TM-009 p5-6 (OCR: a stream's operations are put and get);
+- the held ESP source: the 24 IFS SIMPOS/CESP archives, kappa2, the ESP
+  manuals, and `pimos`, `psdpim`, `pimosman`, `pimosobj`, `vpim`,
+  `pkl1` and the other IFS and `icot-other` archives (grep `:see(`,
+  `try_to_see`, `see_with_key`);
+- every predicate of the eleven held packages (`see/2` and
+  `try_to_see/2` sends).
+
+What the search found:
+
+- `see/2` sends: two, both in pimfep, whose source is not held.
+  - `as_pimos_device` `$or$1/3` @215-22b, the body of every device's
+    `loop_main/1`: `:see(S, _)`, with a fresh variable (@21b) never read
+    again; `inhibit_forced_event/1` (@21f); `:get(S, M)` on the same
+    stream (@223); the local `refute/3` on M (@227).
+  - `pimos_tcpip_socket` `do_getb/3` @3b0-3c3: `allow_forced_event/1`
+    (@3b9), `:see(S, _)` (@3bd, result unused), `inhibit_forced_event/1`
+    (@3bf), `:get(S, M)` (@3c3).
+- `try_to_see/2` sends: two, source not held, and here the result is
+  used.
+  - pimfep `pimos_tcpip_socket abort_loop/1` @30e-324: `:try_to_see(S,
+    M)`, `fep_message_assembler get_command/3` on M, `== 210`, cut, then
+    `:get(S, _)`.
+  - pimmcsp `csp_stream_interface` `$or$2/1` @281-28e: `:try_to_see(S,
+    X)`, `string(X,_,_)`, cut, `:get(S, _)`.
+- `try_to_get/2` on a `:create(#stream, S)` stream, HELD-SOURCE: fuzclust
+  `src/cliant.grape`:212-215 (`try_get(Stream,Mes) :- :try_to_get(Stream,
+  Mes),!; try_get(Stream,Mes) :- Mes=none,!;`, polled in a `repeat` loop
+  at 203-206; the stream made at 358-360) and icotext
+  `src/bunkatu_io.esp`:24. Also kappa2 `kernel/svm/SVMSG.ESP`:132 (a
+  `channel_set`) and pimfep `pimfep_message_sender`
+  `clear_from_fep_stream/5` @2c3-2c4.
+- In other classes, `see` looks without taking. This is ANALOGY only.
+  kwic-esp `doc/classSpec.doc` (ISO-2022-JP):
+  - its taps' `see_with_key/3` and `see_key/2` are "the same as the
+    simpos pool tap's";
+  - its own `see/4` reads the current position, "the current position
+    is not changed", beside a `get/4` that advances it.
+
+  The `:see(B, Char)` sends to text buffers (cil `ds_fep.esp`:1842-1908)
+  and kappa2's `:see(Buffer,Size,MDU)` are the same idea, in buffer
+  classes.
+
+**The stand-ins (INTERPOLATED, `standin/stream.esp`).** Each copies the
+printed `get/2`. The post queue's oldest object is looked at, by a new
+`post_queue see_object/2` (name OURS), instead of taken out.
+
+- `see/2` waits as `get/2` does (hook, then suspend) and removes
+  nothing. That it waits and removes nothing is INTERPOLATED from the
+  `see/2` call sites: forced events are allowed around it, and the
+  `get/2` after it takes the object. What its second argument receives
+  (the oldest object) is INFERENCE, from `try_to_see/2`, whose result is
+  read.
+- `try_to_see/2` is the same, and fails at once on an empty stream.
+  Failing is INFERENCE from the `try_to_` prefix.
+- `try_to_get/2` is `get/2` that fails at once on an empty stream: from
+  the fuzclust polling loop.
+- Not modelled: `put/2` resumes one waiting process. A process waiting
+  in `see/2` and another in `get/2` on one stream are not distinguished.
+
+**`process:suspend/2` refuses (OURS, kl0 `SIMPOS_MODELS`).** kl0 runs one
+process and no scheduler. A process that suspends here waits for a put
+or resume that nothing can make. Run, the printed body (TM-100 Fig. 3.1)
+fails for the census's process: `:self(#process, P)` makes it with
+new/2, its status is nil, and nothing makes it ready. So the wait would
+show as a clean failure. kl0 now refuses there, with cause `would
+suspend`. Before this step no census row reached `suspend/2` (MEASURED:
+a dispatch probe, plain and recipes). So the only earlier behaviour that
+changes is the test of `get/2` on an empty stream (`test_stream_runs`).
+
+Effect, row by row against HEAD before the step (MEASURED 2026-11-25):
+
+- Plain `census --fep`: identical (807 / 154 / 442 / 16 / 1).
+- With recipes: totals unchanged (809 / 154 / 440 / 16 / 1). The 17 rows
+  that stopped at `simpos##stream:see/2` move from `simpos` to `would
+  suspend`:
+  - `goal/1`, `loop_main/1` and `invoke/1` of `pimos_timer`,
+    `simpos_user_device`, `pimos_remote_login_server`,
+    `pimos_remote_login_replier` and `pimos_standard_io_window` (15);
+  - `loop_main/1` of `pimos_file` and `pimos_directory` (2).
+
+  Each waits in `see/2` on its device's empty input stream. That is
+  what a device with no request does. It is not progress, but the gap
+  is now the missing request, not a missing method.
+  `pimos_window_process:see/2` (a different receiver, the window process
+  itself) is still refused.
+- With one message on its input stream (`test_step3g_stream_see`), a
+  timer's `loop_main/1` sees it, gets it (the stream is empty after),
+  and its local `refute/3` stops at `fep_message_assembler
+  disassemble/3`'s blt 6f (`list_to_vector`, unwitnessed).
+
+Test (`test_espc.py` `test_step3g_stream_see`): the empty-stream cases;
+`see/2` and `try_to_see/2` leave the oldest object; `try_to_get/2` takes
+it; the timer loop. `test_step3f_census_recipes` pins the 17 `would
+suspend` rows. Injected from a backup, restored by cp, cmp-checked.
+Observed, with `test_kl0.py` passing each time:
+
+- `see/2` taking the object out: only `test_step3g_stream_see` fails.
+- `try_to_see/2` waiting: only `test_step3g_stream_see` errors.
+- `try_to_get/2` leaving the object: only `test_step3g_stream_see`
+  fails.
+- kl0's suspend/2 model removed: `test_step3f_census_recipes`,
+  `test_step3g_stream_see` and `test_stream_runs` fail.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -2096,7 +2209,10 @@ both assertions fail under the step 3f "executor made by
   - pmi b7 with A != 0: DONE in step 3f (the section above).
   - Revealed by the step 3f recipes:
     - `stream:see/2`, the commonest stop (every device `loop_main/1`).
-      No source: TM-100 Fig. 3.6 prints create/put/get only.
+      No source: TM-100 Fig. 3.6 prints create/put/get only. Step 3g:
+      INTERPOLATED from its call sites (with `try_to_see/2` and
+      `try_to_get/2`); the 17 rows now wait in it (`would suspend`).
+      Next: a request on the input stream, which stops at blt 6f.
     - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
       callback (`pmacs_window`, not stood in).
     - The census's unbound request arguments: device replies refuse at

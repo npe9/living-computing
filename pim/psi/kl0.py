@@ -873,6 +873,18 @@ class Machine:
                           'symbolizer enter_atom/3 on %r' % (s,))
         return self.proceed() if self.unify(self.x[0], Atom(s.text)) else self.fail()
 
+    def process_suspend(self):
+        """:suspend(Process, Reason), refused (step 3g, OURS).  The printed
+        body (TM-100 Fig. 3.1, standin/process.esp) is not run: kl0 runs
+        one process and has no scheduler, so a process that suspends here
+        (stream get/2 or see/2 on an empty stream) waits for a put or a
+        resume that nothing can make.  Run, the printed body would fail
+        for the census's process (status nil: `:self(#process, P)` makes
+        it with new/2 and nothing activates it), and the wait would show
+        as a clean failure.  So it refuses, cause 'would suspend'."""
+        reason = resolve(self.x[0])
+        raise Refusal('would suspend', 'process suspend/2 on %r: one process, no scheduler' % (reason,))
+
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
         instance, with constant and `is Class` slot values and the values of
@@ -1923,6 +1935,7 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'check_info', 3): Machine.library_check_info,
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
+    ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
 }
 
 

@@ -14,8 +14,10 @@
 %   3. `:empty(Stream!waiting_queue), !,` has a comma between the cut and
 %      the `;` (tm0100_p14.esp line 44, as printed; not noted there).
 % The three changes are marked `% [correction N]`; layout as printed.
-% Every method and slot below is PRINTED (each labelled); nothing here
-% is INTERPOLATED.  What the figure leaves out is stood in elsewhere:
+% Every method and slot of the figure is PRINTED (each labelled).  Step
+% 3g adds three methods the figure does not print, see/2, try_to_see/2
+% and try_to_get/2, each INTERPOLATED and labelled below (after get/2).
+% What the figure leaves out is stood in elsewhere:
 % the classes waiting_queue (with hook/2, unhook/2, empty/1) and
 % post_queue (INTERPOLATED, waiting_queue.esp, post_queue.esp), and
 % process's self/2, inhibit_interrupt/1, allow_interrupt/1, resume/2
@@ -54,5 +56,73 @@
                 :remove_object(Stream!post_queue, Object) ),
             % [correction 2] comma removed before the `)` above
             :allow_interrupt(#process);
+
+    % ---- step 3g: not in the figure.  No printed or held source
+    % defines these three; each is INTERPOLATED from its held callers.
+    % The bodies copy the printed get/2 above, with the post queue's
+    % oldest object looked at (post_queue see_object/2, OURS) instead of
+    % taken out.
+
+    % INTERPOLATED (step 3g) :see(Stream, Object): wait until the stream
+    % holds an object; Object is the oldest one, left in the stream.
+    % From the call sites, both pimfep, source not held:
+    %   - as_pimos_device $or$1/3 @215-22b, the body of every device's
+    %     loop_main/1: `:see(S, _)` with a fresh variable never read
+    %     again, then inhibit_forced_event/1 (@21f), then `:get(S, M)` on
+    %     the same stream (@223) and the local refute/3 (@227);
+    %   - pimos_tcpip_socket do_getb/3 @3b0-3c3: allow_forced_event/1
+    %     (@3b9), `:see(S, _)` (@3bd, result unused), inhibit_forced_event/1
+    %     (@3bf), `:get(S, M)` (@3c3).
+    % So see/2 waits with forced events allowed and removes nothing: the
+    % get/2 after it takes the object.  That the waiting is get/2's (hook
+    % and suspend) is INTERPOLATED.  What the second argument receives is
+    % INFERENCE, from try_to_see/2 below, whose result is used.
+    % ANALOGY only (another class): TR-056 PDF p12 (folio 10) "It looks
+    % like a tap on a pool", and the taps' see/get pairs: kwic-esp
+    % doc/classSpec.doc (its taps' see_with_key/3, see_key/2 "the same as
+    % the simpos pool tap's", and its own see/4 "reads ... the current
+    % position is not changed" beside get/4 which advances).
+    :see(Stream, Object):-
+            :inhibit_interrupt(#process),
+            (   :see_object(Stream!post_queue, Object), !
+            ;   :self(#process, Process),
+                :hook(Stream!waiting_queue, Process),
+                :suspend(Process, stream(Stream)),
+                :see_object(Stream!post_queue, Object) ),
+            :allow_interrupt(#process);
+
+    % INTERPOLATED (step 3g) :try_to_see(Stream, Object): the oldest
+    % object, left in the stream; fails at once on an empty stream.
+    % From the call sites, both source not held:
+    %   - pimfep pimos_tcpip_socket abort_loop/1 @30e-324: input_stream/2,
+    %     `:try_to_see(S, M)` (@315), get_command/3 of
+    %     fep_message_assembler on M (@31b), `== 210` (@31d-31e), cut,
+    %     then `:get(S, _)` (@324): M is read, then taken out by get/2;
+    %   - pimmcsp csp_stream_interface $or$2/1 @281-28e: `:try_to_see(S,
+    %     X)`, string(X,_,_), cut, then `:get(S, _)`.
+    % Failing on an empty stream is INFERENCE from the `try_to_` prefix
+    % of try_to_get/2 below.
+    :try_to_see(Stream, Object):-
+            :inhibit_interrupt(#process),
+            (   :see_object(Stream!post_queue, Object), !,
+                :allow_interrupt(#process)
+            ;   :allow_interrupt(#process), !,
+                fail );
+
+    % INTERPOLATED (step 3g) :try_to_get(Stream, Object): get/2 that
+    % fails at once on an empty stream instead of waiting.
+    % HELD-SOURCE callers on a `:create(#stream, S)` stream: fuzclust
+    % src/cliant.grape:212-215 (`try_get(Stream,Mes) :- :try_to_get(
+    % Stream,Mes),!; try_get(Stream,Mes) :- Mes=none,!;`, polled in a
+    % `repeat` loop at 203-206; the stream made at 358-360) and icotext
+    % src/bunkatu_io.esp:24.  Also kappa2 kernel/svm/SVMSG.ESP:132 on a
+    % channel_set, and pimfep pimfep_message_sender
+    % clear_from_fep_stream/5 @2c3-2c4 (source not held).
+    :try_to_get(Stream, Object):-
+            :inhibit_interrupt(#process),
+            (   :remove_object(Stream!post_queue, Object), !,
+                :allow_interrupt(#process)
+            ;   :allow_interrupt(#process), !,
+                fail );
 
     end.

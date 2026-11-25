@@ -242,7 +242,7 @@ has a printed or held definition, so none is stood in.
 
 | unknown | rows stopped (`census --fep --recipes`) | known | what would settle it |
 |---|---|---|---|
-| `stream:see/2`: what a device's `loop_main/1` waits on | 17 `goal`/`invoke`/`loop_main` rows, the commonest stop | TM-100 Fig. 3.6 prints `stream` create/put/get only | the I/O manual (not held); a held caller's source |
+| `stream:see/2`: what a device's `loop_main/1` waits on | 17 `goal`/`invoke`/`loop_main` rows, the commonest stop; since step 3g stood in (INTERPOLATED) and the 17 rows wait in it (`would suspend`) | TM-100 Fig. 3.6 prints `stream` create/put/get only; two `see/2` call sites (result unused, then `get/2`) and two `try_to_see/2` (result read, then `get/2`) in pimfep/pimmcsp (`psi/README.md`, step 3g) | the I/O manual (not held); a held caller's source (none found in the held archives, 2026-11-25) |
 | `get_interpreter/2` on a `pimos_window` (owner and answer) | 5 (3 editor, 2 window-process) | name and arity from the held `.ptf` | window manual; TM-125 lists no owner |
 | `has_been_reshaped/1`, the reshape callback | 4 editor rows | called after `set_size/3`, `reshape/7`, `set_inside_size/5`, `reshape_by_mouse/3` | window manual (G11 is the related reshape question) |
 | `process:invocation_stack/2` | the tcpip `create_socket` creator (so tcpip has no census recipe) | name and arity only | TM-100 (prints `process`'s body without it) |
