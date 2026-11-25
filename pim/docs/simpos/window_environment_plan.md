@@ -95,9 +95,9 @@ legal value (W§2.13).
 | **MELCOM PSI (Mitsubishi product, 1986)** | **1,280×960 dots**, multiwindow; bitmap display, keyboard, mouse and printer as standard | PROSE, page image read 2026-11-25 (the text layer garbles it to "に80×960") | Mitsubishi Denki Giho 60(9) 1986, PDF p13, folio 7 (599), and Fig. 2 (`nonlocal/lit/journals/mitsubishi_giho/8609.pdf`) **NEW** |
 | SIMPOS 5.0 (1989) | default drawing size = "the screen size" = 1280/944 | PROSE | TM-785 p9, p10, p23 (W§4.2) |
 | PIMOS front ends, 1992 | a full-screen window `size(1280,944)` | USAGE | kl1graph `screen.esp:25,30` (W§2.13) |
-| Oki PSI-II ("O-PSI") | 1600 wide; a full-width pane `position(0,904), size(1600,216)` | USAGE | disc `exdisp.esp:35-37` (W§2.13) |
-| PSI-UX and "M-PSI" | 1280 wide; panes ending at y = 965 and 944 | USAGE | disc `exdisp.esp:47-49` (W§2.13) |
-| **PSI/UX (1991)** | Unix side: 1,280×1,024, 256 colours. The SIMPOS screen is one X window, "equivalent to the PSI-II display screen", inside that | PRINTED table + PROSE, page images read 2026-11-25 | Giho 65(6) 1991, PDF p88 Table 1 (82 (602)); PDF p86 §(3), Fig. 7 (`9106.pdf`) **NEW** |
+| Oki PSI-II ("O-PSI") | 1600 wide; a full-width pane `position(0,904), size(1600,216)` | USAGE | disc `exdisp.esp:35-37, 47-49` (W§2.13; which range holds which variant was not re-checked) |
+| PSI-UX and "M-PSI" | 1280 wide; panes ending at y = 965 and 944 | USAGE | disc `exdisp.esp:35-37, 47-49` (W§2.13) |
+| **PSI/UX (1991)** | Unix side: 1,280×1,024, 256 colours. The SIMPOS screen is one X window, "equivalent to the PSI-II display screen", inside that | PRINTED table + PROSE, page images read 2026-11-25 | Giho 65(6) 1991, PDF p88 Table 1 (82 (602)); PDF p86 (folio 80 (600)) §(3), Fig. 7 (`9106.pdf`) **NEW** |
 | Depth | 1 plane = monochrome; `bmm_size` 16#07FF mono, 16#0FFF colour; on PSI/UX `get_plane_count` 1/3/4/6/8 | USAGE | paragraph `p_MAIN.esp:183-185`, `p_ux_patch.esp` (W§2.13) |
 | Colour (PSI-II, 1989) | a window palette of colour pairs; one pair = a monochrome window | PROSE | Giho 8907 p34-35 (W§3.7) |
 | Frame memory vs bitmap memory | the frame memory is shown; each hidden window has a save area in bitmap memory "several to several tens of times" the frame memory; restacking copies between them | PROSE (TRANSLATION) | TM-225 p10 (`subsystems/listings/TM-225_p08-11_window.txt`) |
@@ -227,11 +227,11 @@ These are the window-system stops (the "simpos## calls" list):
 | `pimfep##pimos_window:get_interpreter/2` | — | 5 | pmacs_window | USAGE (W§2.11) |
 | `pimfep##pimos_window:has_been_reshaped/1` | — | 4 | pmacs_window / reshape_notifier | USAGE (demons, W§2.12) |
 | `simpos##pmacs_window:putl/2` | 3 | 3 | pmacs_window, the §2.4 protocol | PRINTED Giho 8609 p20 (putl/2); USAGE |
-| `pimfep##as_pimos_login_requester:read/4` | 2 | — | standard_io_window `read/2`, `getl/2`, `inhibit_echo/1` | USAGE |
-| `pimfep##pimos_window_editor:carriage_return/1` | 1 | — | standard_editor (demons prove the primary) | USAGE (W§2.12) |
+| `pimfep##as_pimos_login_requester:read/4` | 2 | 2 | standard_io_window `read/2`, `getl/2`, `inhibit_echo/1` | USAGE |
+| `pimfep##pimos_window_editor:carriage_return/1` | 1 | 1 | standard_editor (demons prove the primary) | USAGE (W§2.12) |
 | `simpos##standard_temporary_menu:create/3` | 1 | — | menus | PRINTED-INTERFACE TM-125 p13-14 |
-| `simpos##editor_text_buffer:get_buffer_instance/3` | 1 | — | editor buffer pool | USAGE |
-| `simpos##messenger:show/2`, `ascii_coder:to_kanji/3`, `telnet_terminal:create/2` | 1 each | — | shell and network side | `shell.md` |
+| `simpos##editor_text_buffer:get_buffer_instance/3` | 1 | 1 | editor buffer pool | USAGE |
+| `simpos##messenger:show/2`, `ascii_coder:to_kanji/3`, `telnet_terminal:create/2` | 1 each | 1 each | shell and network side | `shell.md` |
 
 The whole window surface `pimfep` references is in `subsystems/notes/ptf.tsv`, the rows citing
 pimfep (read 2026-11-25). It is small:
@@ -464,7 +464,7 @@ Sizes are rough, counted in lines of ESP stand-in plus Python, and include the t
 
 | # | milestone | test, and what it proves | discriminating injection | size |
 |---|---|---|---|---|
-| M0 | **Fonts placed and read.** `simpos_fs.py` places the 7 FONT.DIR files; `font:create/3` loads metrics through `font_load` | `test_win_m0_font`: `test_11`'s header (128 glyphs, 11×14), the 'A' bitmap's 48 set dots at 16#2341 (MEASURED with the §1.4 recipe); a missing font fails `create/3` as the held fallbacks expect | swap the record's x and y fields: the A test fails | ~120 |
+| M0 | **Fonts placed and read.** `simpos_fs.py` places the 7 FONT.DIR files; `font:create/3` loads metrics through `font_load` | `test_win_m0_font`: `test_11`'s header (128 glyphs, 11×14), the 'A' bitmap's 48 set dots at 16#2341 (MEASURED with the §1.4 recipe); a missing font fails `create/3` (INFERENCE: the held fallback-on-failure evidence is for `standard_input_file`, not `font`) | swap the record's x and y fields: the A test fails | ~120 |
 | M1 | **Keyboard into Login PIMOS.** Event pump, the handler process, the coordinator's pass-through, `standard_io_window` `getl/2`, `inhibit_echo/1`, `permit_echo/1`, character read to code 13 | `test_win_m1_login_keys`: the scripted lines `local`, a user, a password take the held requester past its three prompts; the transcript shows the prompts, the echoed name and **no** echoed password; `exit` ends it | make `inhibit_echo/1` a no-op: only the password-echo check fails | ~250 |
 | M2 | **The login menus.** `standard_temporary_menu` create/read with items_list, `abort`, the JIS-space trigger | `test_win_m2_feps_menu`: a 16#2121 first character opens `PIMOS FEPs`; a scripted click on `local` returns it; leaving the menu returns `abort` | return the item label instead of its Value: the selection check fails | ~200 |
 | M3 | **pmacs_window's text protocol** (the census stops of §2.1): putl, putb, getl, flash, beep, set/get_title, set_font, reshape/5, set/get_text_size, get_interpreter, has_been_reshaped, editor_text_buffer get_buffer_instance | `test_win_m3_pmacs`: the recipe census moves the 5 + 4 `pimos_window` rows and the 3 `putl/2` rows from refused (MEASURED baseline 829/235/385) and none moves backwards; a window made by the held `create_pimos_window/3` shows a putl'd line and returns a getl'd one | have `get_interpreter/2` answer the editor, not the interpreter: the get_interpreter rows refuse again | ~400 |
@@ -530,10 +530,11 @@ manifest changes):
   It is noted here so that nobody cites it as PSI-II.
 - `cil/src/cil_kl0.esp` (held IFS) and `required/builtins.tsv`: no bitmap built-in (§1.5).
 
-**Web** (WebSearch, three queries, 2026-11-25):
+**Web** (WebSearch, four queries, 2026-11-25):
 - PSI-II display resolution in Japanese (逐次型推論マシン, ビットマップディスプレイ, 解像度);
 - SIMPOS window-system papers (SIMPOS ウィンドウシステム);
-- MELCOM PSI keyboard and display specifications in English.
+- MELCOM PSI keyboard and display specifications in English;
+- ICOT PSI-II workstation display resolution in English.
 
 The only relevant hit was IPSJ 36239, already held. A Giho 1989-03 issue
 (`giho.mitsubishielectric.co.jp/giho/pdf/1989/8903.pdf`) was listed for the display query. It is
