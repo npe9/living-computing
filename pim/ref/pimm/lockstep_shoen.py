@@ -212,7 +212,7 @@ import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=11, lines=4511)
+PINNED = dict(parts=11, lines=5534)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 TEXT = 'abc'
 ABC = (8, [ord(c) for c in TEXT])
@@ -235,33 +235,39 @@ def stream(*msgs, closed=False):
 # every shoen made so far as (count, status, parent: its number among
 # the shoen, None for the root).
 DONE3 = [(0, 'terminated', None)] * 3
+# R8 (2026-11-25): a shoen has no resource until it is given some, so
+# its first goal parks and resource_low is reported; the bench answers
+# as PIMOS's task manager does (driver.Script.fund_parked), and the goal
+# is released after resource_added
+FUNDED = ('started', 'resource_low', 'resource_added')
 EXPECT = [
-    ('run', [ABC, stream('started', 'terminated')],
+    ('run', [ABC, stream(*FUNDED, 'terminated')],
      [(0, 'terminated', None)]),
     ('dormant', [None, None],
      [(0, 'terminated', None), (1, 'dormant', None)]),
-    ('late start', [ABC, stream('started', 'terminated')],
+    ('late start', [ABC, stream(*FUNDED, 'terminated')],
      [(0, 'terminated', None), (0, 'terminated', None)]),
-    ('suspended', [None, stream('started')],
+    ('suspended', [None, stream(*FUNDED)],
      [(0, 'terminated', None), (0, 'terminated', None), (1, 'started', None)]),
-    ('woken', [7, -7, stream('started', 'terminated')],
+    ('woken', [7, -7, stream(*FUNDED, 'terminated')],
      [(0, 'terminated', None), (0, 'terminated', None), (0, 'terminated', None)]),
-    ('nested', [ABC, stream('started', 'terminated'), stream('started')],
+    ('nested', [ABC, stream(*FUNDED, 'terminated'), stream(*FUNDED)],
      [(0, 'terminated', None), (0, 'terminated', None), (0, 'terminated', None),
       (2, 'started', None), (0, 'terminated', 3)]),
-    ('nested: the inner report closed', [stream('started', 'terminated', closed=True),
-                                         stream('started')],
+    ('nested: the inner report closed', [stream(*FUNDED, 'terminated', closed=True),
+                                         stream(*FUNDED)],
      [(0, 'terminated', None), (0, 'terminated', None), (0, 'terminated', None),
       (1, 'started', None), (0, 'terminated', 3)]),
-    ('waiting', [ABC, stream(L.REPORT_STARTED, L.REPORT_TERMINATED)],
+    ('waiting', [ABC, stream(L.REPORT_STARTED, L.REPORT_RESOURCE_LOW, L.REPORT_RESOURCE_ADDED,
+                           L.REPORT_TERMINATED)],
      DONE3 + [(1, 'started', None), (0, 'terminated', 3), (0, 'terminated', None)]),
-    ('code unbound', [None, stream('started')],
+    ('code unbound', [None, stream(*FUNDED)],
      DONE3 + [(1, 'started', None), (0, 'terminated', 3), (0, 'terminated', None),
               (1, 'started', None)]),
-    ('code bound', [ABC, stream('started', 'terminated')],
+    ('code bound', [ABC, stream(*FUNDED, 'terminated')],
      DONE3 + [(1, 'started', None), (0, 'terminated', 3), (0, 'terminated', None),
               (0, 'terminated', None)]),
-    ('unified inside', [2, stream('started', 'terminated')],
+    ('unified inside', [2, stream(*FUNDED, 'terminated')],
      DONE3 + [(1, 'started', None), (0, 'terminated', 3), (0, 'terminated', None),
               (0, 'terminated', None), (0, 'terminated', None)]),
 ]
@@ -336,6 +342,7 @@ def script():
     s.newvar(8)
     execute(0, 2, 3, 8)
     s.run()
+    s.fund_parked(9)                               # R8: resource_low answered
     s.out(5)
     s.out(8)
 
@@ -352,6 +359,7 @@ def script():
     s.cons(9, 6, A('start'), None)
     s.unify(3, 9)
     s.run()
+    s.fund_parked(10)
     s.out(5)
     s.out(8)
 
@@ -364,6 +372,7 @@ def script():
     s.newvar(8)
     execute(0, 2, 3, 8)
     s.run()
+    s.fund_parked(10)
     s.out(5)
     s.out(8)
     s.label('woken')
@@ -386,6 +395,7 @@ def script():
     s.newvar(13)                                   # the outer Report
     execute(9, 10, 1, 13)
     s.run()
+    s.fund_parked(14)                              # the outer, then the inner
     s.out(5)
     s.out(8)
     s.out(13)
@@ -394,7 +404,9 @@ def script():
     # it itself: the unbound tail is in the inner's shoen record.
     s.label('nested: the inner report closed')
     m = s.live()
-    inner = m.load + handles(m.tr, m.load)[-1]
+    # the newest shoen record (R8: the live trace since the funding no
+    # longer holds the inner's handle)
+    inner = max({c[1] for c in m.mem.values() if c[0] == pimm.SHREC})
     s.setslot(14, m.mem[inner + L.SH_REPORT])
     s.unifyc(14, pimm.NIL)
     s.run()
@@ -426,6 +438,7 @@ def script():
     s.run()
     s.unifyc(9, I(-1))
     s.run()
+    s.fund_parked(12)
     s.out(5)
     s.out(8)
 
@@ -441,6 +454,7 @@ def script():
     s.newvar(8)
     execute(0, 2, 3, 8)
     s.run()
+    s.fund_parked(10)
     s.out(5)
     s.out(8)
     s.label('code bound')
@@ -461,6 +475,7 @@ def script():
     s.newvar(15)
     execute(0, 2, 12, 15)
     s.run()
+    s.fund_parked(14)
     s.out(11)
     s.out(15)
     return s

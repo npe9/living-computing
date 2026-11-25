@@ -195,11 +195,20 @@ APPS = {
          '"work:: sample1" Loaded\n',
          'Total Number of Warning : 1\n',
          'COMPILE> ', 'Shell>> ')),
-    # `ts` (2026-11-25): past add_bignum, now on both models, it stops
-    # refused at set_timer to a time still to come (an alarm neither
-    # model keeps: pimm.py i_set_timer, PimmStages.bsv op_set_timer),
-    # before writing anything, so its window is empty
-    'ts': (('ts',), ()),
+    # `ts` (2026-11-25): past add_bignum, then (R8) past set_timer to a
+    # time still to come, the alarm (pimm.py i_set_timer, fire_alarm;
+    # bsv/PimmTBox.bsv): the task table after on_after(10000)
+    # (kernel/task/int_hdl.kl1:39-88), then its `OK? `, answered by
+    # the empty line typed
+    'ts': (('ts', ''),
+        ('+------+--------+------+--------+-----------+\n|TaskID|TaskName|Status|RscLimit|ConsumedRsc|\n+------+--------+------+--------+-----------+\n10 , "shell:shell" , running,2000000000,14668\n   28 , "Job_1" , running,1000000000,1720\n      9 , "ts:go" , running,2000000000,2324\n',
+         'OK? ', 'Shell>> ')),
+    # R8 (2026-11-25): the Listener, and in it the primer's goal
+    # sample1:sieve([1,2,3],E,O) (primer25.tex:1343-1349), compiled into
+    # work as compile_work, the Listener told so by its own
+    # default_package(work). (pimosman e-listener.tex:2508-2522)
+    'listener_sieve': (('compile', '!package work', 'sample1', '!exit', 'listener',
+                        'default_package(work).', 'sample1:sieve([1,2,3],E,O).'), None),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
@@ -272,6 +281,10 @@ def restore_ops(m):
     """The RESTORE operations for what of m is not in its memory."""
     assert m.rq == 0 and m.mq == 0 and m.mwh == 0 and m.mwt == 0 and m.shoen == 0, \
         'the saved machine is not between runs'
+    # R8: no RESTORE carries an alarm (pimm.py alarm_var) or a moved
+    # clock; until R8 set_timer to a time still to come was refused, so
+    # no saved machine has one
+    assert m.alarm_var is None and m.tick_skip == 0, 'the saved machine has an alarm armed'
     ops = []
 
     def R(which, cell):
@@ -339,6 +352,7 @@ def play(m, loaded, kind, lines, sink, stats=None):
         dev.script = [('getl', line) for line in lines]
     events = []
     stop = None
+    skips = 0
     try:
         while True:
             ops.append((driver.RUN, 0, 0, (0, 0)))
@@ -348,7 +362,21 @@ def play(m, loaded, kind, lines, sink, stats=None):
                 pass
             ops.append((driver.POLL, 0, 0, (0, 0)))
             if m.scsi_poll():
+                skips = 0
                 continue
+            # R8: an alarm armed, the clock moved on to it (driver
+            # ALARM) before a typed line is given: the SCSI device
+            # first, then time, then the keyboard.  An alarm armed again
+            # and again with nothing else happening would starve the
+            # keyboard: refused after 100
+            if m.alarm_var is not None:
+                skips += 1
+                if skips > 100:
+                    raise pimm.Unimplemented('100 alarms in a row with nothing else to do')
+                ops.append((driver.ALARM, 0, 0, (0, 0)))
+                m.alarm_skip()
+                continue
+            skips = 0
             if not dev.idle():
                 break
             events.append(sink.instructions)

@@ -90,6 +90,8 @@ from pimm_layout import (SH_MASK, STOPPED, REPORT_ABORTED,  # noqa: E402
                          REPORT_EXCEPTION, REPORT_STOPPED,
                          EXC_REDUCTION_FAILURE, EXC_RAISED, REPORT_RESOURCE_ADDED,
                          REPORT_RESOURCE_REPORT_ALLOWED)
+from pimm_layout import (SH_RSC_HI, SH_RSC_LO, SH_RSC_FLAGS,  # noqa: E402
+                         RSC_REPORT_DISALLOWED, REPORT_RESOURCE_LOW)
 
 
 class Unimplemented(Exception):
@@ -511,13 +513,18 @@ class Machine:
         self.report(sh, None, car=(VECT0 + 6, v))
 
     def remove(self, sh):
-        """A terminated shoen is removed: {14, 0, 0} (return_resource:
-        no resource is modelled, so nothing is left to return, OURS),
-        then the report stream is closed (its tail unified with []) and
-        the record marked REMOVED.  VPIM's order (f_shoen_control.psl.c:
-        547-575, f_shoen_with_fp.psl.c:69-71: return_resource, close,
-        reclaim), not PIM/m-sourced."""
-        self.report3(sh, REPORT_RETURN_RESOURCE, 0, 0)
+        """A terminated shoen is removed: {14, H, L}, return_resource
+        with the resource left (R8, 2026-11-25: "The remaining amount
+        of the resource when the shoen execution terminated is reported
+        with this message", manual e-shoen.tex:246; a shoen that went
+        past its bound has none left, 0), then the report stream is
+        closed (its tail unified with []) and the record marked
+        REMOVED.  VPIM's order (f_shoen_control.psl.c:547-575,
+        f_shoen_with_fp.psl.c:69-71: return_resource, close, reclaim),
+        not PIM/m-sourced.  (Until R8 this was {14, 0, 0}, no resource
+        being modelled.)"""
+        left = max(self.rsc_left(sh), 0)
+        self.report3(sh, REPORT_RETURN_RESOURCE, left >> 32, left)
         tail = self.deref(self.mem[sh + SH_REPORT])
         if not self.unbound(tail):
             raise Unimplemented('the report stream of a shoen is bound to %r' % (tail,))
@@ -551,7 +558,22 @@ class Machine:
         parent's count, the report, recursing) and VPIM (functions/
         f_shoen_with_fp.psl.c:86: `terminated` alone while the control
         stream is open); not PIM/m-sourced.  The code 12 is
-        (asm/pimm_layout.py)."""
+        (asm/pimm_layout.py).
+
+        Before that (R8, 2026-11-25), the resource: 2 for each of the
+        run's reductions ("1 for goal creation and 1 for termination of
+        the reduction, thus 2 is taken for each reduction", manual
+        e-shoen.tex:42) is taken from the resource left of the goal's
+        shoen and of every shoen above it, innermost first (a shoen's
+        consumption includes its descendants', e-shoen.tex:234; VPIM
+        supplies a child shoen's resource from its parent's foster
+        parent, f_shoen_with_fp.psl.c f_CheckShoenResourceLeftMargin).
+        Taking it once per run, at its end, without VPIM's supply
+        units, is OURS.  Nothing for the root, nor for a run of no
+        reduction."""
+        if self.chain:
+            for sh in self.chain_of(self.shoen):
+                self.set_rsc_left(sh, self.rsc_left(sh) - 2 * self.chain)
         self.ended(self.shoen, self.chain)
 
     def ended(self, sh, red):
@@ -628,26 +650,67 @@ class Machine:
         self.mem[m + 4] = na
         self.report(target, None, car=(VECT0 + 10, m))
 
+    def rsc_left(self, sh):
+        """The resource left of shoen sh, a signed 64-bit integer from
+        its two cells (asm/pimm_layout.py SH_RSC_HI, SH_RSC_LO)."""
+        v = self.mem[sh + SH_RSC_HI][1] << 32 | self.mem[sh + SH_RSC_LO][1]
+        return v - (1 << 64) if v >> 63 else v
+
+    def set_rsc_left(self, sh, v):
+        """Write the resource left of shoen sh, high cell first."""
+        if not -(1 << 63) <= v < 1 << 63:
+            raise Unimplemented('the resource left of a shoen past 64 bits: %d' % v)
+        v &= (1 << 64) - 1
+        self.mem[sh + SH_RSC_HI] = (INT, v >> 32)
+        self.mem[sh + SH_RSC_LO] = (INT, v & M32)
+
     def taken_check(self, g):
         """A goal of a shoen taken from the ready queue (after its
         arguments are loaded): 'run', or 'aborted' if a shoen at or above
         its own is TERMINATED or REMOVED (only an abort leaves a goal
         there: a shoen that ends by itself has none), or 'park' if one is
-        STOPPED.  A parked goal is SUSPENDED and put on the parked list
-        of the innermost stopped shoen, whose start_shoen releases it.
+        STOPPED or EXHAUSTED.  A parked goal is SUSPENDED and put on the
+        parked list of the innermost such shoen; start_shoen releases a
+        stopped one's, add_shoen_resource an exhausted one's.
         Carried over from PDSS (emulator/goal.c:302-335: at dequeue, a
         goal whose shoen is aborted is freed, one whose shoen is
         suspended is hooked on the shoen's queue); where the check is
-        made and the list are OURS."""
+        made and the list are OURS.
+
+        Exhausted (R8, 2026-11-25): no resource left, the shoen's
+        consumption at or past its bound.  "When resource consumption
+        actually exceeds the upper bound, execution is suspended.  ...
+        If the upper bound value is increased when execution is
+        suspended due to trespassing the upper bound, shoen execution
+        resumes" (manual e-shoen.tex:31).  If the innermost shoen that
+        stops the goal is an exhausted one (not a stopped one) and its
+        reports are allowed, resource_low (6) is reported to it and its
+        reports are disallowed (e-shoen.tex:179, 218-224; VPIM
+        f_ReplicateSupplyResourceDestinations, f_shoen_with_fp.psl.c:
+        560-590: _RESOURCE_LIMIT_OVER reports _RSC_LOW_REP when the
+        disallowed flag is off and sets it).  "How close the resource
+        consumption has come to the upper bound when this report is
+        made depends on the processing system" (e-shoen.tex:224): here
+        it is made when none is left, OURS (VPIM: when the bound less
+        what was supplied is under one supply unit, 2^24).  A task
+        that PIMOS starts with no resource parameter has a bound of 0
+        (kernel/task/int_hdl.kl1:191 {0,0}, zero_check 560-566 sends
+        `start` alone), so its first goal reports resource_low: the
+        Listener's task monitor waits for exactly that
+        (debugger/listener/task_mon.kl1:13)."""
         park = 0
         for sh in self.chain_of(self.shoen):
             st = self.mem[sh + SH_STATUS][1]
             if st in (TERMINATED, REMOVED):
                 return 'aborted'
-            if st == STOPPED and not park:
+            if not park and (st == STOPPED or self.rsc_left(sh) <= 0):
                 park = sh
         if not park:
             return 'run'
+        if self.mem[park + SH_STATUS][1] != STOPPED \
+                and not self.mem[park + SH_RSC_FLAGS][1] & RSC_REPORT_DISALLOWED:
+            self.mem[park + SH_RSC_FLAGS] = (INT, self.mem[park + SH_RSC_FLAGS][1] | RSC_REPORT_DISALLOWED)
+            self.report(park, REPORT_RESOURCE_LOW)
         st = self.mem[g + G_STATUS][1]
         self.mem[g + G_STATUS] = (INT, st & ~3 | SUSPENDED)
         self.mem[g + G_LINK] = self.mem[park + SH_GOAL]
@@ -679,6 +742,8 @@ class Machine:
             self.spawn(pc, args)
         before = self.steps
         while True:
+            if self.alarm_var is not None and self.alarm_due():
+                self.fire_alarm()       # R8: before the next goal is taken
             g = self.pick()
             if not g:
                 break
@@ -1427,6 +1492,33 @@ class Machine:
             return self.guard_fail()
         raise Unimplemented('extended_floating_point of an extended float')
 
+    def ext_float_compare(self, y, z):
+        """The guards extended_floating_point_less_than (function 2 of
+        23:6E f_r_r) and extended_floating_point_not_less_than (3),
+        registers y and z (assembler/inst_tab.kl1:98-99; compiler/
+        blt.kl1:417-424, both inputs waited for, class user): the
+        compiler's `$$<` and `$$>=` in a guard (macro/pimos/pimos/
+        pimos.smac:390-405).  Neither the PIMOS manual nor VPIM nor PDSS
+        has them.  Two arguments that are not both extended floats
+        (tag 3Fh) fail the guard: the held sorter relies on it, its
+        comparator trying the integer, float and extended-float
+        comparisons, then atoms, then strings, then `otherwise` for
+        anything else (utility/sorter/sorter.kl1:51-71), as the float
+        comparison fails on anything but two floats (PDSS manual,
+        i_floating_point_not_less_than).  Two extended floats are
+        refused: none can be made here (R8, 2026-11-25: met in the
+        Listener, the sort of the goal's variables)."""
+        a, b = self.g_word(y), self.g_word(z)
+        if a is None or b is None or a[0] != EXFLT or b[0] != EXFLT:
+            return self.guard_fail()
+        raise Unimplemented('extended floating point comparison')
+
+    def i_extended_floating_point_less_than(self, pc, x, y, z, c16):
+        return self.ext_float_compare(y, z)
+
+    def i_extended_floating_point_not_less_than(self, pc, x, y, z, c16):
+        return self.ext_float_compare(y, z)
+
     def i_floating_point(self, pc, x, y, z, c16):
         # guard floating_point(X): "If X is a floating point, this
         # predicate succeeds, otherwise it fails" (PDSS manual); an
@@ -1805,8 +1897,56 @@ class Machine:
     def timer(self):
         """The system timer, in 1/16 msec: the instructions executed
         before this one, INSTRUCTIONS_PER_TICK to a tick (OURS rate,
-        above), 48 bits."""
-        return ((self.steps - 1) // INSTRUCTIONS_PER_TICK) & 0xffffffffffff
+        above), 48 bits; plus the ticks the clock was moved on while the
+        machine waited for an alarm (tick_skip, R8)."""
+        return ((self.steps - 1) // INSTRUCTIONS_PER_TICK + self.tick_skip) & 0xffffffffffff
+
+    # The alarm (R8, 2026-11-25): set_timer's request still to come, one
+    # for the processor (VPIM klb_pimos.psl.c kblt_b_set_timer: the PE's
+    # AlarmTimerVar and _SetAlarmTimer).  Class attributes, so that a
+    # machine pickled before R8 has none.
+    alarm_time = None       # the time asked for, 32 bits
+    alarm_var = None        # the Wakeup variable it binds
+    tick_skip = 0           # ticks the clock was moved on, idle (alarm_skip)
+
+    @staticmethod
+    def reached(t, now):
+        """A time t is reached at now (both 32 bits): "T2 is after T1 :-
+        T2 &- T1 < 2^(W-1)" (VPIM klb_pimos.psl.c, before
+        kblt_system_timer; &- unsigned, mod 2^W, W = 32)."""
+        return (now - t) & 0xffffffff < 1 << 31
+
+    def alarm_due(self):
+        return self.alarm_var is not None and self.reached(self.alarm_time, self.timer() & 0xffffffff)
+
+    def alarm_bind(self, value):
+        """The armed alarm's Wakeup bound to value, waking its goals,
+        and the alarm cleared.  A Wakeup that someone else has bound is
+        refused (VPIM unifies it, i_KlbUnifyBound: not modelled)."""
+        v = self.deref(self.alarm_var)
+        self.alarm_var = self.alarm_time = None
+        if not self.unbound(v):
+            raise Unimplemented('the Wakeup of set_timer is bound to %r' % (v,))
+        self.unify(v, value)
+
+    def fire_alarm(self):
+        """The alarm's time has come: Wakeup = the timer's low 32 bits
+        now (VPIM functions/f_event_external_int.psl.c
+        f_WakeupGoalByAlarmClock: b_GetCurrentTime, then the unify and
+        the wake).  Checked when the next goal is to be taken (run: VPIM
+        takes its event flags between reductions; at the goal switch is
+        OURS)."""
+        self.alarm_bind((INT, self.timer() & 0xffffffff))
+
+    def alarm_skip(self):
+        """The machine has nothing to run and the device nothing to
+        give (lockstep_shell.py play, the driver's ALARM): the clock is
+        moved on to the alarm's time, whole ticks, so the next run's
+        first goal switch fires it.  Time passing while the machine
+        waits is what a real machine does; that it passes at once is
+        OURS (the model's clock counts instructions)."""
+        now = self.timer() & 0xffffffff
+        self.tick_skip += (self.alarm_time - now) & 0xffffffff
 
     def i_set_timer(self, pc, x, y, z, c16):
         # set_timer(Time, ^Wakeup), 22:FF r_r (blt.kl1:702-704: input
@@ -1816,17 +1956,26 @@ class Machine:
         # values) has already come, Wakeup is unified at once with the
         # system timer's value", else at the earliest time after; "T2
         # is after T1 :- T2 &- T1 < 2^(W-1)" (&- unsigned, mod 2^W).
-        # With this model's clock at 0 (system_timer, OURS) a time
-        # reached gives Wakeup = 0; a time still to come would never
-        # come, and is refused rather than left waiting silently.
         # The clock is self.timer() (2026-11-24; it stood at 0): a time
-        # reached gives Wakeup = the timer's low 32 bits, now
+        # reached gives Wakeup = the timer's low 32 bits, now.  R8
+        # (2026-11-25), as VPIM's kblt_b_set_timer (klb_pimos.psl.c,
+        # after the time is read): an alarm already armed is cancelled
+        # first, its Wakeup bound to [] ("the cancelling of the earlier
+        # request is shown by []"); then a time reached gives Wakeup =
+        # now, and one still to come arms the alarm with a fresh
+        # variable as Wakeup, bound when the time comes (fire_alarm).
+        # Time's high half is not an operand of this two-argument form
+        # (VPIM warns "TimeHigh not ZERO ignored")
         def f(t):
-            t = self.need_int(t)
+            t = self.need_int(t) & 0xffffffff
+            if self.alarm_var is not None:
+                self.alarm_bind(NIL)
             now = self.timer() & 0xffffffff
-            if (now - t) & 0xffffffff >= 1 << 31:
-                raise Unimplemented('set_timer to a time still to come (%d, now %d)' % (t, now))
-            return [(INT, now)]
+            if self.reached(t, now):
+                return [(INT, now)]
+            self.alarm_var = self.new_var()
+            self.alarm_time = t
+            return [self.alarm_var]
         self.builtin('set_timer', [x, y], f)
 
     def i_current_node(self, pc, x, y, z, c16):
@@ -2266,6 +2415,59 @@ class Machine:
 
     def i_bignum_not_less_than(self, pc, x, y, z, c16):
         o = self.bignum_order(x, y)
+        if o is None or o < 0:
+            return self.guard_fail()
+
+    def string_order(self, x, y):
+        """string_less_than and string_not_less_than's order of the
+        strings in r[x], r[y]: -1, 0 or 1; None if the guard fails (an
+        unbound argument noted, so the goal suspends, or one that is not
+        a string).  The PIMOS manual: "If the bit widths of the elements
+        differ, the string with the wider elements is `larger'.
+        Otherwise the strings are compared element by element starting
+        at the first character. During the comparison, if it is found
+        that one string is longer than the other, the longer string is
+        `larger'" (e-builtin.tex:813, string comparison; Suspend if
+        either is uninstantiated, Fail if either is not a string,
+        816-837).  As VPIM computes it (structures/str_string.psl.c
+        s_WhichIsLessString, called by f_StringLessThan_Sub,
+        functions/f_reduce_string_ope.psl.c:251): the element sizes,
+        then the words from the first, compared as unsigned (its
+        sign-split compare, :1855-1960), a string whose words run out
+        first being the smaller, and two of the same words ordered by
+        their element counts.  With the elements packed from the top
+        and the pad zero that is the manual's order (R8, 2026-11-25:
+        met in the Listener, the goal typed at its prompt)."""
+        a, b = self.g_word(x), self.g_word(y)
+        if a is None or b is None:
+            return None
+        if a[0] & ~1 != STRG or b[0] & ~1 != STRG:
+            return None
+        da, db = self.mem[a[1]][1], self.mem[b[1]][1]
+        ta, tb = (da >> 24) & 7, (db >> 24) & 7
+        if ta != tb:
+            return -1 if ta < tb else 1
+        na, nb = da & 0xffffff, db & 0xffffff
+        for i in range(min(na, nb)):
+            wa, wb = self.mem[a[1] + 1 + i][1], self.mem[b[1] + 1 + i][1]
+            if wa != wb:
+                return -1 if wa < wb else 1
+        if na != nb:
+            return -1 if na < nb else 1
+        la, lb = len(self.string(a)[1]), len(self.string(b)[1])
+        return (la > lb) - (la < lb)
+
+    def i_string_less_than(self, pc, x, y, z, c16):
+        # guard string_less_than(S1, S2), 23:FE r_r (inst_tab.kl1:227;
+        # blt.kl1:392-394, both inputs waited for, class user)
+        o = self.string_order(x, y)
+        if o is None or o >= 0:
+            return self.guard_fail()
+
+    def i_string_not_less_than(self, pc, x, y, z, c16):
+        # guard string_not_less_than(S1, S2), 23:FF r_r (inst_tab.kl1:229;
+        # blt.kl1:395-397)
+        o = self.string_order(x, y)
         if o is None or o < 0:
             return self.guard_fail()
 
@@ -2780,6 +2982,9 @@ class Machine:
             self.mem[sh + SH_REDUCTIONS] = (INT, 0)
             self.mem[sh + SH_REMOVE] = (INT, 0)
             self.mem[sh + SH_MASK] = (INT, mask[1])   # stage 3: kept, for exceptions
+            self.mem[sh + SH_RSC_HI] = (INT, 0)       # R8: no resource yet,
+            self.mem[sh + SH_RSC_LO] = (INT, 0)       # reports allowed
+            self.mem[sh + SH_RSC_FLAGS] = (INT, 0)
             self.counted()                # the child is one of its parent's
             self.nsusp += 1
             return [var, (SHREC, sh)]
@@ -2811,19 +3016,26 @@ class Machine:
                 raise Unimplemented('start_shoen of a shoen that is not dormant or stopped')
             self.report(sh, REPORT_STARTED)
             self.mem[sh + SH_STATUS] = (INT, STARTED)
-            g = self.mem[sh + SH_GOAL][1]
-            while g:
-                nxt = self.mem[g + G_LINK][1]
-                st = self.mem[g + G_STATUS][1]
-                self.event('W %d' % (g - self.load))
-                self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
-                self.mem[g + G_LINK] = (INT, self.rq)
-                self.rq = g
-                self.nsusp -= 1
-                g = nxt
-            self.mem[sh + SH_GOAL] = (INT, 0)
+            self.release(sh)
             return [h]
         self.builtin('start_shoen', [x, y], f)
+
+    def release(self, sh):
+        """Every goal on shoen sh's parked list goes on the ready queue
+        as a woken goal does, in the list's order, then the list is
+        emptied (SH_GOAL := 0): start_shoen's, and add_shoen_resource's
+        (R8)."""
+        g = self.mem[sh + SH_GOAL][1]
+        while g:
+            nxt = self.mem[g + G_LINK][1]
+            st = self.mem[g + G_STATUS][1]
+            self.event('W %d' % (g - self.load))
+            self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
+            self.mem[g + G_LINK] = (INT, self.rq)
+            self.rq = g
+            self.nsusp -= 1
+            g = nxt
+        self.mem[sh + SH_GOAL] = (INT, 0)
 
     def i_stop_shoen(self, pc, x, y, z, c16):
         # stop_shoen(Shoen, ^NewShoen), 22:E2, r_r (inst_tab.kl1:334,
@@ -2963,18 +3175,35 @@ class Machine:
         # (pimos.vmac).  VPIM (f_shoen_control.psl.c
         # f_AddShoenResource_Sub) reports 5 first, then adds, and
         # reports return_resource only when the bound passes 2^63;
-        # NewShoen is the handle.  No resource is counted here (as at
-        # create_shoen, OURS): the amount is checked and not kept, so
-        # nothing is returned.  Refused: anything but a handle, High or
-        # Low not an integer (the exception); a closed report stream
+        # NewShoen is the handle.  R8 (2026-11-25): the amount, High
+        # and Low as two 32-bit halves, is added to the resource left
+        # (asm/pimm_layout.py SH_RSC_HI, SH_RSC_LO) after the report
+        # (VPIM's order); a sum of 2^63 or more is refused (VPIM and the
+        # manual, e-shoen.tex:246, then report return_resource: not
+        # modelled).  If the shoen is STARTED and now has resource left,
+        # the goals parked on it are released, in the list's order, as
+        # start_shoen releases them ("If the upper bound value is
+        # increased when execution is suspended due to trespassing the
+        # upper bound, shoen execution resumes", e-shoen.tex:31); a
+        # dormant shoen's parked list is its first goal, kept for
+        # start_shoen, and a stopped one's waits for start_shoen too.
+        # Refused: anything but a handle, High or Low not an integer
+        # (the exception); a closed report stream
         w4 = self.cells[pc + 1][1] >> 24
 
         def f(h, hi, lo):
             if h[0] != SHREC:
                 raise Unimplemented('add_shoen_resource(%r)' % (h,))
-            self.need_int(hi)
-            self.need_int(lo)
-            self.report(h[1], REPORT_RESOURCE_ADDED)
+            hi = self.need_int(hi) & M32
+            lo = self.need_int(lo) & M32
+            sh = h[1]
+            self.report(sh, REPORT_RESOURCE_ADDED)
+            left = self.rsc_left(sh) + (hi << 32 | lo)
+            if left >= 1 << 63:
+                raise Unimplemented('add_shoen_resource past 2^63 (return_resource)')
+            self.set_rsc_left(sh, left)
+            if left > 0 and self.mem[sh + SH_STATUS][1] == STARTED:
+                self.release(sh)
             return [h]
         self.builtin('add_shoen_resource', [x, y, z, w4], f)
         return pc + 2
@@ -2988,15 +3217,19 @@ class Machine:
         # by resource_report_allowed (manual e-shoen.tex:174-180,
         # 254-262), 7 (pimos.vmac).  VPIM (f_shoen_control.psl.c
         # f_AllowShoenResourceReport_Sub) reports it, then clears the
-        # shoen's report-disallowed flag; NewShoen is the handle.  No
-        # resource is counted here (OURS, as add_shoen_resource), so
-        # there is no flag and resource_low is never reported.
-        # Refused: anything but a handle (the exception); a closed
-        # report stream.  2026-11-24, met in pim:go/4 after the login
+        # shoen's report-disallowed flag (R8, 2026-11-25:
+        # asm/pimm_layout.py SH_RSC_FLAGS; until then no flag was
+        # kept); NewShoen is the handle.  VPIM then supplies any foster
+        # parent still asking; here a goal parked on an exhausted shoen
+        # stays parked until add_shoen_resource (OURS).  Refused:
+        # anything but a handle (the exception); a closed report
+        # stream.  2026-11-24, met in pim:go/4 after the login
         def f(h):
             if h[0] != SHREC:
                 raise Unimplemented('allow_shoen_resource_report(%r)' % (h,))
-            self.report(h[1], REPORT_RESOURCE_REPORT_ALLOWED)
+            sh = h[1]
+            self.report(sh, REPORT_RESOURCE_REPORT_ALLOWED)
+            self.mem[sh + SH_RSC_FLAGS] = (INT, self.mem[sh + SH_RSC_FLAGS][1] & ~RSC_REPORT_DISALLOWED)
             return [h]
         self.builtin('allow_shoen_resource_report', [x, y], f)
 

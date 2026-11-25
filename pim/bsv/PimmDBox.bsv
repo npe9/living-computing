@@ -12,7 +12,8 @@
 //                six), or two vectors of seven or more (their sizes are
 //                compared in the goal, 2026-11-24), answer UGoal: they
 //                are not unified here, a goal of the stub unify_step
-//                does it (asm/pimm_stubs.py).
+//                does it (asm/pimm_stubs.py).  A string against the
+//                same string object is UOk (R8).
 //                Anything else is UUnimp.
 //   step(a, b, i)  that goal's step: unify element i of a and of b,
 //                each taken with its MRB on if its structure's is.
@@ -166,6 +167,10 @@ module mkPimmDBox#(MemPort mem)(PimmDBox);
       end
       else if ((a.tag | 1) != (b.tag | 1)) r = tagged UFail;
       else if (isInt(a) || isAtom(a)) r = (a.val == b.val) ? tagged UOk : tagged UFail;
+      // R8 (2026-11-25): the same string object, as pimm.py unify; two
+      // string objects are refused (comparing contents is not modelled).
+      // Met in the Listener, a unify_step of a vector with itself
+      else if (isStrg(a)) r = (a.val == b.val) ? tagged UOk : tagged UUnimp;
       else if ((a.tag & 8'hfe) == tag_LISTo
                || ((a.tag & 8'hfe) >= tag_VECT0o + 2 && (a.tag & 8'hfe) <= tag_VECT0o + 14))
         r = tagged UGoal { a: a, b: b };

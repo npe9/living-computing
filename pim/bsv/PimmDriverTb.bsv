@@ -24,7 +24,7 @@ import PimmCore::*;
 import PimmScsiBox::*;
 
 typedef enum { End, NewVar, Arg, ArgC, Spawn, Run, Out, Unify, UnifyC,
-               NewStr, SetEl, Ptr, Slot, SetW, Poll, Tape, Restore } Kind deriving (Bits, Eq);
+               NewStr, SetEl, Ptr, Slot, SetW, Poll, Tape, Restore, Alarm } Kind deriving (Bits, Eq);
 
 // the device: idle, printing a command's CDB, printing a SEND's bytes,
 // giving an answer's bytes
@@ -92,6 +92,8 @@ module mkPimmDriver#(String scriptFile, String heap)(Empty);
       Tape:   begin hasTape <= True; tp <= truncate(cell_.val); end
       // a checkpoint's state, given to the core silently (PimmCore.restore)
       Restore: core.restore(a, cell_);
+      // R8: idle, an alarm armed: the clock moved on to it (driver.py ALARM)
+      Alarm:  core.skipToAlarm;
       default: fatal("driver: operation not implemented");
     endcase
     if (answer) awaited <= True;

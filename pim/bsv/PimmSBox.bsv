@@ -13,6 +13,14 @@
 //   show(s)            the string's descriptor and words as `S` trace lines
 //   hashStr(s)         a = the hash code of the string (PDSS's function)
 //   equal(s1, s2)      ok is whether the strings are the same, word for word
+//   compare(s1, s2)    a = {INT, -1, 0 or 1}, s1's order against s2's for
+//                      string_less_than and string_not_less_than (R8,
+//                      2026-11-25; ref/pimm/pimm.py string_order, after
+//                      VPIM s_WhichIsLessString and the PIMOS manual
+//                      e-builtin.tex:813): the element sizes, then the
+//                      words from the first as unsigned, then the word
+//                      counts, then the element counts.  One word of
+//                      each read per step
 //   tryElement(s, i)   the same for a guard: ok is False when i is
 //                      out of range
 //   changeSize(s,bits) a = s with elements of `bits` bits (8, 16, 32;
@@ -63,19 +71,21 @@ interface PimmSBox;
   method Action stringOp(Bit#(4) op, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2);
   method Action hashStr(Cell s);
   method Action equal(Cell s1, Cell s2);
+  method Action compare(Cell s1, Cell s2);
   method Action show(Cell s);
   method Action poke(Cell s, Bit#(32) i, Bit#(32) w);
   method Action search(Cell s, Bit#(32) i, Bit#(32) e, Bit#(32) c);
   method ActionValue#(SResult) result;
 endinterface
 
-typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow, KPoke, KSrch } SKind deriving (Bits, Eq);
+typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow, KPoke, KSrch, KCmp } SKind deriving (Bits, Eq);
 
 typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; Cell s2; Bit#(32) p2; Bit#(4) op; }
   SReq deriving (Bits);
 
 typedef enum { SIdle, SDesc, SDesc2, SElem, SAlloc, SWrDesc, SFill, SCopyRd, SCopyWr,
-               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3, SShow1, SShow2, SSrch }
+               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3, SShow1, SShow2, SSrch,
+               SCmp0, SCmp1, SCmp2, SCmp3 }
   SState deriving (Bits, Eq);
 
 module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
@@ -225,10 +235,10 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
         st <= SHash1;
       end
     end
-    else if (rq.k == KEq) begin
+    else if (rq.k == KEq || rq.k == KCmp) begin
       if (!inMemory(rq.s2.val)) fatal("string pointer outside memory");
       mem.read(cellAddr(rq.s2));
-      st <= SEq0;
+      st <= rq.k == KEq ? SEq0 : SCmp0;
     end
     else if (rq.k == KOp) begin
       if (!inMemory(rq.s2.val)) fatal("string pointer outside memory");
@@ -356,6 +366,54 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     end
   endrule
 
+  // compare (R8): s2's descriptor in e2, then the words up to the shorter
+  function Action order(Bool less, Bool more);
+    action
+      answer(intC(less ? 32'hffffffff : (more ? 1 : 0)), ?);
+    endaction
+  endfunction
+
+  // when the words agree: the word counts, then the element counts
+  function Action orderByCounts(Bit#(32) d2);
+    action
+      if (wordsOf(desc) != wordsOf(d2)) order(wordsOf(desc) < wordsOf(d2), True);
+      else order(lengthOf(desc) < lengthOf(d2), lengthOf(desc) > lengthOf(d2));
+    endaction
+  endfunction
+
+  rule cmp0 (st == SCmp0);
+    let c <- mem.data;
+    let d2 = c.val;
+    if (c.tag != tag_CDESC) fatal("string without a descriptor");
+    e2 <= d2;
+    k <= 0;
+    if (lgOf(desc) != lgOf(d2)) order(lgOf(desc) < lgOf(d2), True);
+    else if (wordsOf(desc) == 0 || wordsOf(d2) == 0) orderByCounts(d2);
+    else st <= SCmp1;
+  endrule
+
+  rule cmp1 (st == SCmp1);
+    mem.read(src + 1 + toAddr(k));
+    st <= SCmp2;
+  endrule
+
+  rule cmp2 (st == SCmp2);
+    let c <- mem.data;
+    j <= c.val;
+    mem.read(cellAddr(rq.s2) + 1 + toAddr(k));
+    st <= SCmp3;
+  endrule
+
+  rule cmp3 (st == SCmp3);
+    let c <- mem.data;
+    if (j != c.val) order(j < c.val, True);
+    else if (k + 1 == wordsOf(desc) || k + 1 == wordsOf(e2)) orderByCounts(e2);
+    else begin
+      k <= k + 1;
+      st <= SCmp1;
+    end
+  endrule
+
   // search: element j in hand
   rule srch (st == SSrch);
     let c <- mem.data;
@@ -437,6 +495,8 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     reqQ.enq(SReq { k: KSrch, s: s, i: i, e: e, s2: ?, p2: c, op: ? });
   method Action equal(Cell s1, Cell s2) =
     reqQ.enq(SReq { k: KEq, s: s1, i: ?, e: ?, s2: s2, p2: ?, op: ? });
+  method Action compare(Cell s1, Cell s2) =
+    reqQ.enq(SReq { k: KCmp, s: s1, i: ?, e: ?, s2: s2, p2: ?, op: ? });
   method ActionValue#(SResult) result;
     resQ.deq;
     return resQ.first;
