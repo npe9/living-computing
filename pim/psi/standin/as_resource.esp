@@ -1,0 +1,69 @@
+% SCAFFOLDING stand-in for SIMPOS's class `as_resource`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost, and no body of it is printed.  Step 3j.  Every method is
+% INTERPOLATED.
+%
+% What is PRINTED:
+%   - TM-065 p13: `file` has the natures as_resource and with_lock (name
+%     only; docs/simpos/printed/NAMED_NOT_DEFINED.md);
+%   - TM-100 Fig. 3.1 (PDF p8): the process instance slot `resources`, a
+%     list (`( resources := List :- :create(#list, List) )`);
+%   - TR-285 PDF p11 (folio 8), page image read 2026-11-25: "closing open
+%     files and releasing locked semaphores on unexpected process
+%     termination are effected by the same invocation of the same method,
+%     in the process management module, of different objects."  So a
+%     process holds its resource objects, and they are cleaned up with it
+%     (the method is not named; not stood in).
+% What is HELD:
+%   - pimscsi##pseudo_scsi (natures keyed_message, as_resource,
+%     as_class_with_lock; compiled, source not held): create/4 sends
+%     `:assign(Obj)` to the new object (@71); close/1 (@150-16d) is
+%     `( :assigned(Self), !, ..., Self!status := closed, :resign(Self)
+%     ; error(soft, not_assigned, ...) )`, and aborted/1 (@26c) and
+%     $or$3/1 (@5bf) test `:assigned(Self)` the same way; the pool string
+%     "SCSI is not assigned to process" (pool[2b], used at @56b).  (The
+%     pimscsi pools are not relied on in general, psi/fepread/ptfread.py;
+%     this string is read as text only.)
+%   - HELD-SOURCE, kappa2 tool/kappa_pool/KP_POOL.ESP (nature
+%     as_resource): create/4, make/4 and load/4 end with `:assign(Obj)`;
+%     terminate/1 and kill/1 end with `:resign(Obj)`; and its local
+%     check_resource (:285-290) reads what assign/1 did:
+%     `:self(#process,Process), Resource = Process!resources,
+%     :get_contents(Resource,R_list)`, then looks in R_list for a
+%     kappaITR_application_interface, a class with nature as_resource
+%     whose creation sends `:assign(Obj)` (kernel/itr/ITRAPP.ESP:28-33,
+%     :106).  Also kernel/dbo/KP_DBOBF.ESP:61-87 (assign, lock, ...,
+%     unlock, resign).
+% So: assign/1 puts the object in the calling process's `resources`
+% list, resign/1 takes it out, assigned/1 succeeds while it is there.
+% INTERPOLATED from the above; that `assigned` asks about the CALLING
+% process is INFERENCE (the string says only "to process"); appending at
+% the end is OURS.  Termination cleanup is not stood in.
+
+class as_resource has
+
+    instance
+
+    % INTERPOLATED: see the header.
+    :assign(Resource) :-
+        :self(#process, Process),
+        :add_last(Process!resources, Resource) ;
+
+    % INTERPOLATED: see the header.  Fails when Resource is not held.
+    :assigned(Resource) :-
+        :self(#process, Process),
+        :get_contents(Process!resources, List),
+        held(List, Resource) ;
+
+    % INTERPOLATED: see the header.  Fails when Resource is not held
+    % (the list stand-in's remove/2 fails then).
+    :resign(Resource) :-
+        :self(#process, Process),
+        :remove(Process!resources, Resource) ;
+
+    local
+
+    held([R|_], R) :- ! ;
+    held([_|L], R) :- held(L, R) ;
+
+end.

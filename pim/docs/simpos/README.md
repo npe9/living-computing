@@ -552,6 +552,21 @@ and stand-in `simpos##` classes. In order:
        first clause, or a template slot constant), not progress; the new
        real stop is `as_resource assigned/1`. A fault in pmi c9 was found
        and fixed: its first target is `[]` only (cts_post.esp:18-21).
+   - *2026-11-25, step 3j* (`../../psi/README.md`, "Step 3j"):
+     - `boot_route.md` B3 is done as a stand-in. The boot process comes
+       under the supervisor, and a second process runs and hands back a
+       stream message. The stand-ins are `process:status/3`,
+       `clear_masks/1`, `entry_of_invoke/2`, class `context`, and the
+       boot process's `create/2` and `activate/2` (INTERPOLATED, basis
+       table in the psi README). The dispatcher is OURS.
+     - `as_resource` `assign/1`, `assigned/1` and `resign/1` are
+       INTERPOLATED from held pseudo_scsi call sites, with kappa2 as
+       ANALOGY.
+     - Under the supervisor, the held `pimos_timer create_timer/9` runs
+       to its end. A request to its device process stops at blt 6f.
+     - Plain FEP has 1,466 rows (46 added, all stand-in): 801 / 233 /
+       415. With recipes, 826 / 234 / 389. No held row changed outcome.
+       Six packages are unchanged.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

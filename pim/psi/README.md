@@ -3107,6 +3107,202 @@ high-half guard removed: only `test_switch_on_vector_else` fails. The
 e0 second-byte and 1a third-byte guards were not injected; no held use
 reaches either.
 
+### Step 3j: the supervisor, route step B3 (2026-11-25)
+
+`../docs/simpos/boot_route.md` B3: the boot process comes under the
+supervisor, and a second process runs. Step 3i left four gates, none
+with a printed or held body: `process:status/3`, `entry_of_invoke/2`,
+class `context`, and the dispatcher. Step 3j stands each in, as
+INTERPOLATED or (where marked) OURS. It adds three more that the printed
+`activate/2` and the boot process's overrides need: `clear_masks/1`,
+and `boot_process` `create/2` and `activate/2`.
+
+**Bases gathered first.**
+- Page images re-read on 2026-11-25:
+  - TM-100 PDF p5-p13 (§2.1, Fig. 3.1 to 3.4, the boot process).
+  - TR-056 PDF p18-p21 (folios 16-19). This gives the four states;
+    "the dispatcher and the scheduler"; the limit of 63 processes;
+    activation, which places an ordinary process "in the ready queue by
+    the supervisor"; resume, which "calls the software scheduler"; and
+    the boot process.
+  - TR-055 PDF p5 (folio 2): 63 contexts, four stacks, "process
+    dispatching must be controlled by software".
+  - TR-285 PDF p11 (folio 8): resources are released on termination by
+    one method.
+- A sweep of the compiled cells of all eleven held packages.
+  - Selectors swept: `status/3`, `entry_of_invoke/2`,
+    `set_entry_point/2`, `clear_masks/1`, `set_status/2`,
+    `get_process/3`, `alive/1`, `add_child/2`, `context/2`,
+    `get_number/2,3`, `request/3`, `get_instance/2`, `assigned/1`,
+    `assign/1`, `resign/1`, `terminate_core/1`, `create_core/4`. Classes
+    swept: `#simpos##context` and `#simpos##boot_process`. The script is
+    not kept.
+  - New: two more `status/3` sends, in `pimmcsp##pseudo_pe_process`
+    `$or$5/2` @3a9-3bc (reached from `terminate_core/1`). Step 3h's
+    source-text search could not see them.
+  - There is no `entry_of_invoke/2`, `set_entry_point/2` or
+    `clear_masks/1` send outside the printed `activate/2`.
+- Held source, as ANALOGY for what a SIMPOS caller expects, not as
+  SIMPOS:
+  - kappa2 `kernel/itr/ITRSES.ESP`:111-116, and
+    `utility/mop/MOPMANAGER.ESP`:162-168 with `MOPKAPPA.ESP` `goal/1`.
+    A parent makes a stream and a process, activates it and `:get`s;
+    the child's goal `:put`s.
+  - `utility/tool/LOADER.ESP`:53-68, `kernel/svm/SVCTL.ESP`:271-276,
+    Tour `MAN.esp`:69-71.
+- USAGE: the KL0 built-ins `create_process/3`, `initialize_process/2`,
+  `change_process/1` and `kill_process/1`, and the zero-argument
+  `inhibit_interrupt` and `allow_interrupt` (cil
+  `src/cil_kl0.esp`:87-158, names only).
+
+**The stand-ins, method by method.**
+
+| method | file | basis | label |
+|---|---|---|---|
+| `process:status(P, Old, New)` | `standin/process.esp` | printed call in `activate/2`, `(dormant, on_activate)` (TM-100 Fig. 3.1, PDF p8); held `pseudo_pe_process release/1` @17a-17e, `(dormant, on_release)`; held `$or$5/2` @3af `(suspended, dormant)` and @3b8 `(ready, dormant)`, two clauses of a try_me_else, so a mismatch fails; TR-056 PDF p18 (dormant "when it has just been created or terminated") | INTERPOLATED; the interrupt bracket OURS |
+| `process:clear_masks/1` | `standin/process.esp` | its one call in the printed `activate/2`; the printed slot `mask_count := 0`, "The number of interrupt mask nestings" | INTERPOLATED |
+| `process:create/3` (now makes a context) | `standin/process.esp` | the printed `create/2`'s `:create(#context, N, S, Ctx)` and `create_core/3`'s `Process!context := Context` | INTERPOLATED (step 3c's method, extended) |
+| `as_program:entry_of_invoke/2` | `standin/as_program.esp` | its one call in the printed `activate/2`; TM-100 PDF p6 (the program must be pushed on the NEW process's stack, which the printed `invoke/1` does when the new process runs it) | INTERPOLATED; the entry's form `{Program, invoke}` OURS |
+| `context:create/4` | `standin/context.esp` | the printed call in `create/2` and its comment ("If hardware processes are exhausted, then fail"); TR-055 PDF p5 and TR-056 PDF p19 (63) | INTERPOLATED; numbering from 0 and never reusing a number, OURS |
+| `context:get_number/2` | `standin/context.esp` | the printed `create_core/3`; held `pseudo_pe_process terminate_core/1` @1e0, `$or$2/1` @347 | INTERPOLATED |
+| `context:set_entry_point/2`, `activate/1`, `set_priority/2` | `standin/context.esp` | their calls in the printed `activate/2`; the slot comment "Hardware PC" | INTERPOLATED; the slot names OURS |
+| `boot_process:create/2` | `standin/boot_process.esp` | TM-100 PDF p13 and TR-056 PDF p21 (it overrides `:create`; the boot process calls it itself); the printed `create/2` and `create_core/3` without `:new` and without a parent (TM-100 p6) | INTERPOLATED; making the ready queue here, as a list, OURS |
+| `boot_process:activate/2` | `standin/boot_process.esp` | the same prose; the printed `activate/2` without the entry point (the boot program is already running) | INTERPOLATED; Program unused, OURS |
+| the dispatcher (`kl0.py` `Machine.yield_processor`, the `suspend/2` model, the `yield` and `exit` steps) | `kl0.py` | TR-055 PDF p5; TR-056 PDF p18, p21; the printed `suspend/2` (takes the running process out of the ready queue) and `get/2` (reads the stream right after `suspend/2`) | OURS |
+| `as_resource:assign/1`, `assigned/1`, `resign/1` | `standin/as_resource.esp` | held `pseudo_scsi` `create/4` @71, `close/1` @150-16d, `aborted/1` @26c, `$or$3/1` @5bf and its string "SCSI is not assigned to process"; held source kappa2 `KP_POOL.ESP` (`:assign(Obj)` in its creators, `:resign(Obj)` in `terminate/1` and `kill/1`, `check_resource` reading `Process!resources`, :285-290) and `ITRAPP.ESP`:28-33, :106; the printed slot `resources` (TM-100 Fig. 3.1); TR-285 PDF p11 | INTERPOLATED; that `assigned` asks about the calling process is INFERENCE; appending OURS |
+
+**The dispatcher (OURS).**
+- Each process that is not running keeps its registers in
+  `Machine.saved`: pc, argument registers, environment, continuation,
+  choice points and trail.
+- The running process gives up the processor when it is no longer
+  ready:
+  - after the printed `suspend/2` has made it suspended (a `yield` step
+    after the printed body);
+  - when its program has ended (an `exit` step under its first goal).
+    A choice point at its base means a program that fails also ends the
+    process.
+- The next process is the first ready one in the ready queue, other
+  than the one leaving. A process started for the first time begins at
+  its context's entry, as `:invoke(Program)`.
+- The running process is kept in the class slot `current`, which
+  `self/2` reads.
+- If no process is ready, the dispatcher refuses `would suspend` ("no
+  process is ready").
+- There is no preemption and no time slice, and priority is ignored.
+- A process the supervisor does not know still refuses `would suspend`
+  at once, as before. Such a process has a status that is neither
+  `ready` nor `suspended`; the census's process (the boot process before
+  its own `create` and `activate`) is one.
+- The census drops `Machine.saved`, along with the class slots, before
+  every row.
+
+**Tests** (`test_espc.py`):
+- `test_step3j_supervisor`. A probe boot program (OURS), shaped like
+  the kappa2 handshake above, comes under the supervisor. It makes a
+  stream, a child program and a process, activates the process and
+  `:get`s. It checks:
+  - in the child, `:self(#process, P)` is the child's process, its
+    program is on top of that process's stack, and its parent is the
+    boot process;
+  - the boot process gets `created`, and is `ready` afterwards;
+  - the child has died (`nil`, stack empty);
+  - the contexts are numbered 0 and 1, and the child's is `active`
+    with entry `{Program, invoke}`;
+  - `status/3` sets on a match and fails on a mismatch, so a second
+    `activate/2` fails;
+  - the held `pseudo_pe_process release/1`, on a dormant PE process,
+    passes `status/3` and stops at `boot_process:request/3`. With
+    status `nil` it fails;
+  - a boot program that waits on an empty stream, with nothing ready,
+    is refused `would suspend`;
+  - the 64th context is not made.
+- `test_step3j_fep_device`. The held `pimos_timer create_timer/9` runs
+  to its end under the supervisor:
+  - it activates the device process, the device process runs its held
+    `goal/1` and puts `normal`, and the creator replies `{16, 1}`;
+  - the device process then waits in `see/2` on its input stream,
+    suspended, with the device on top of its stack;
+  - a request (OURS: close, code 60, a 32-bit string) is taken by the
+    device process and stops at blt 6f in `fep_message_assembler
+    disassemble/3` @a9.
+
+  `b4_timer` is an OURS subclass of the held class. Its `create/2` also
+  records the device, so the probe can reach the device's input stream.
+- `test_step3j_as_resource`. Before `assign/1`, the held `pseudo_scsi
+  close/1` takes its `not_assigned` path. After it, `close/1` takes the
+  held path: status `closed`, then `resign/1`, which leaves the
+  process's `resources` empty again.
+- `test_step3i_boot`, re-pinned. Only `create/3` refuses as an
+  override. A plain process's `activate/2` now stops at the ready
+  queue, which is missing because the boot process has not come under
+  the supervisor.
+
+**Injections, observed** (2026-11-25). Each was injected from a backup
+copy, then `test_espc.py` and `test_kl0.py` were run, and the file was
+restored by copy and checked clean with cmp. `test_kl0.py` stayed OK in
+every one.
+- J1 `status/3` does not set the new status: `test_step3j_supervisor`
+  FAIL, nothing else.
+- J2 `status/3` succeeds on a mismatch: `test_step3j_supervisor` FAIL,
+  nothing else.
+- J3 the `yield` step does not switch processes (`kl0.py`):
+  `test_step3j_supervisor` and `test_step3j_fep_device` ERROR.
+- J4 the entry is `{Program, goal}`: `test_step3j_supervisor` and
+  `test_step3j_fep_device` ERROR.
+- J5 the boot process's `activate/2` does not join the ready queue: the
+  same two ERROR.
+- J6 `assigned/1` always succeeds: `test_step3j_as_resource`,
+  `test_fep_census` and `test_step3f_census_recipes` FAIL, nothing
+  else.
+- J7 the dispatcher does not update `current` (`kl0.py`): the same two
+  as J3 ERROR.
+- J8 no limit of 63 contexts: `test_step3j_supervisor` FAIL, nothing
+  else.
+- J9 the `boot_process` `create/3` refusal row deleted from
+  SIMPOS_MODELS: `test_step3i_boot` FAIL, nothing
+  else.
+
+**Census, recomputed row by row** (MEASURED 2026-11-25; since step 3i,
+every row is run alone on fresh class objects).
+- Six packages: identical, row by row (317 / 12 / 200 / 1).
+- Plain FEP: 1,420 rows become 1,466. The 46 new rows are inherited
+  stand-in methods, not held ones:
+  - `entry_of_invoke/2` in the 28 `as_program` classes, all success;
+  - `as_resource` `assign/1`, `assigned/1` and `resign/1` in 6 classes:
+    6 success, 12 failure.
+
+  Of the 1,420 held rows, 16 change. None changes outcome (767 / 221 /
+  415, as before):
+  - The `activate/2` of each of the 11 device creators passes
+    `status/3`, `entry_of_invoke/2` and the context. It then stops at
+    `:add(#process!ready_queue, Process)` on the slot's template
+    constant (`receiver a slot constant`). The creators are
+    `pimos_timer create_timer/9`, `remote_pimfep_executor go/1` and
+    `execute/3`, `pimos_file`'s four opens, `pimos_directory`'s two and
+    `pimos_window_process`'s two. The census's process has not come
+    under the supervisor, so there is no ready queue.
+    `test_step3j_fep_device` shows the same creator running to its end
+    once the boot process has come under the supervisor.
+  - The 5 `pseudo_scsi` rows that stopped at `assigned/1` find nothing
+    assigned and take the `not_assigned` path. They are `close/1`,
+    `send_data/4`, `receive_data/4`, `aborted/1` and
+    `receive_command/3`. The path stops at `class_object` of 1900544, a
+    pimscsi pool term (the pimscsi pools are not relied on). This is
+    not progress.
+
+  Totals: **801 / 233 / 415** (exception 16, step limit 1). Slot
+  constants go from 143 to 154. `process:status/3` is no longer a stop.
+- With recipes: the same 46 rows and the same 16 changes. Totals are
+  **826 / 234 / 389**, and slot constants go from 94 to 105. The 18
+  `would suspend` rows stay; their detail now says the process is not
+  under the supervisor.
+
+No held row moved to success, and none is claimed as progress. The
+progress is what the census cannot show: two processes running, and a
+held creator completing its handshake with the device process it made
+(`test_step3j_fep_device`).
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -3183,6 +3379,13 @@ reaches either.
       definition. Step 3h searched every held archive again and found
       none. A stand-in would only move the rows to `entry_of_invoke/2`
       (also not printed) and then to the hardware `context`. Not added.
+      Step 3j: all three are stood in (INTERPOLATED), with the boot
+      process's overrides and an OURS dispatcher ("Step 3j"). The rows
+      now stop at the ready queue, which the census's process lacks.
+      Open from step 3j: blt 6f (every device request);
+      `boot_process:request/3` (`pseudo_pe_process release/1`); the
+      PROCESS typo in the printed `create/2` (`create_core/3` is sent to
+      an unbound receiver; not corrected).
     - `process:children/2`: stood in by step 3h (INTERPOLATED).
       `add_child/2` is not, so the list is always empty.
     - Step 3h's leads, not taken:
@@ -3219,7 +3422,8 @@ reaches either.
         mnemonic_to_integer/3 and is_cdesc/2, all enter a c7
         switch_on_constant: @23, @ba, @2ac) and with a [] target that
         is another switch (15); `as_resource assigned/1` (3 pseudo_scsi
-        rows), not printed.
+        rows), not printed. (Step 3j: stood in, INTERPOLATED; the 5
+        rows now take the held `not_assigned` path.)
     - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
       set_default_node/2` @29-34, which stores the answer in the class
       slot `default_spawn_node`). No held or printed source gives the

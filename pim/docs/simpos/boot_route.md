@@ -10,8 +10,8 @@ a top level. This page gives:
 - what the console and the FEP must answer;
 - which of these exist today, and what blocks each.
 
-It then names the first step that is unblocked. Step 3i took it
-(§4).
+It then names the first step that is unblocked. Step 3i took B2 and
+step 3j B3 (§4).
 
 Labels, as elsewhere in `docs/simpos/`:
 
@@ -54,12 +54,12 @@ from it.
 | B0 | The console processor loads the microcode and starts the IPL | PRINTED prose: TM-112 p7 (1.00 cold boot); TR-087 p11 §5.3; HELD: psdpim `INSTALL` (the `sys*` trio to `/usr/psi/simpos/csp`) | `syspsi`, `sysinit`, `sysidat` are held; the microword is decoded (`../psi_microword.md`) | Not on the route for now. `kl0.py` (OURS) stands in for the KL0 firmware (README §5 step 4). |
 | B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles 36 stand-ins | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
-| B3 | The boot process brings itself under the supervisor, and the multiple-process environment starts on it | PRINTED prose: TR-056 p21; TM-100 p6; PRINTED code: `process:activate/2` (TM-100 Fig. 3.1) | `process:create/3` (INTERPOLATED) makes a second process, dormant | **BLOCKED**: `process:status/3`, `entry_of_invoke/2`, class `context` and the dispatcher are not printed; `boot_process`'s own `create` and `activate` are not printed; `kl0.py` runs one process. |
-| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | nothing | BLOCKED on B3. The handler classes and the device list are lost. |
+| **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
+| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor (§4) | **BLOCKED**: the handler classes and the device list are lost, and `interrupt_process` is printed only in part (its dispatch is elided). |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE | BLOCKED in part: no `directory`, `user`, `world` or file system stand-in. |
-| B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal | BLOCKED on B3: the coordinator is a process of its own. The window bodies are lost (`subsystems/window.md`). |
+| B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal | BLOCKED: the coordinator is a process of its own, which B3 now allows; but its class and the window bodies are lost (`subsystems/window.md`). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors | BLOCKED: `user` and `world` are known by USAGE only; reading `login.com` needs B5's file system. |
-| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | — | BLOCKED on B3 (`activate/2`) and B6. |
+| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j | BLOCKED on B6. Also the printed `create/2` (TM-100 Fig. 3.1) now stops at its own `create_core(PROCESS, ...)`: `PROCESS`, in capitals as printed, is unbound (§4). |
 
 ### B0. The console processor (PRINTED prose, HELD files)
 
@@ -132,54 +132,127 @@ from it.
 - No held class inherits `as_boot_program`
   (`subsystems/notes/ifs_libshell.md` §1.4). The boot program is lost.
 
-### B3. Under the supervisor (BLOCKED)
+### B3. Under the supervisor (DONE as a stand-in, step 3j)
 
 The boot process must call its own `create` and `activate`, and other
-processes must be activated. The printed `process:activate/2` (TM-100
-Fig. 3.1, PDF p8-p9; `psi/standin/process.esp`) sends:
+processes must be activated and run. The printed `process:activate/2`
+(TM-100 Fig. 3.1, PDF p8-p9; `psi/standin/process.esp`) sends:
 
 1. `:status(Process, dormant, on_activate)`;
 2. `:entry_of_invoke(Program, Entry)`;
-3. `:set_entry_point(Process!context, Entry)` and `:activate(
-   Process!context)`, which are hardware.
+3. `:set_entry_point(Process!context, Entry)`, `:activate(
+   Process!context)` and `:set_priority(Process!context, 0)`, which are
+   hardware;
+4. `:clear_masks(Process)`;
+5. `:add(#process!ready_queue, Process)`, on a class slot with no
+   printed initial value.
 
-None of these is printed. What is held:
+None of these is printed. Until step 3j each was refused. The sources
+that step 3j wrote them from:
 
-- **`status/3`** has two call sites:
-  - the printed `activate/2` (TM-100 Fig. 3.1), with `dormant,
-    on_activate`;
-  - `pseudo_pe_process release/1` @17a-17e (HELD, pimmcsp, found in
-    step 3i), with `dormant, on_release`.
+- **`status/3`** has five call sites, none with a body:
+  - the printed `activate/2`: `(dormant, on_activate)`;
+  - held `pseudo_pe_process release/1` @17a-17e: `(dormant,
+    on_release)`;
+  - held `pseudo_pe_process $or$5/2` @3a9-3bc, reached from
+    `terminate_core/1`, found in step 3j by a sweep of the compiled
+    cells of all eleven packages: clause 1 `(suspended, dormant)`,
+    clause 2 `(ready, dormant)` and then a removal from a queue.
 
-  So the third argument names the event (INFERENCE). Step 3h searched
-  the held archives' source text only and found no definition. The
-  compiled packages hold none for a process either (MEASURED
-  2026-11-25 over the eleven packages): the only held `status/3`
-  definitions are on pimscsi's own SCSI objects (`pseudo_scsi`,
-  `scsi_communicator`), which do not inherit `process`.
-- **`context`**: `simpos##context` is in pseudo_pe_process's pool (cell
-  21). Its local `$or$1/3` (@31e-336) sends
-  `create_for_pseudo_pe_process/7` to `#context` with the area atoms
-  `default`, `query`, `middle`, and then `create_core/4`. Those are a
-  context's creation, USAGE only.
-- **The dispatcher**: TM-100 Fig. 3.4 elides it (`%RELEASE PROCESSOR
-  ...`, `%ALLOCATE PROCESSOR ...`).
-- **`kl0.py`** runs one goal at a time. A second process can be made
-  (`process:create/3`, INTERPOLATED) but not run.
+  In `$or$5/2` the third argument is a status (`dormant`), and the
+  second clause is reached only when the first clause's `status/3`
+  fails. So `:status(P, Old, New)` makes P's status New if it is Old, and
+  fails otherwise (INTERPOLATED). `on_activate` and `on_release` are
+  transient statuses, the "and some others" of the printed slot comment.
+  Step 3h's search of source text could not find this; the cells could.
+- **`entry_of_invoke/2`** is sent to the program. TM-100 p6: "when a new
+  process is activated, the activate predicate is called with a program
+  as an argument, because the program instance should be pushed into the
+  invocation stack of the new process". The printed `invoke/1` does that
+  push. So the entry is the program's `invoke/1` (INTERPOLATED); its form
+  `{Program, invoke}` is OURS.
+- **`context`**: TR-055 p5 (63 contexts, four stacks each; "process
+  dispatching must be controlled by software"), TR-056 p19 (a register
+  set, a stack group and heap memory per process; at most 63), and the
+  calls of Fig. 3.1. Held: `pseudo_pe_process` reads `context` and sends
+  `get_number/2`. Stood in as an object with a number, an entry, a
+  priority and a state (INTERPOLATED).
+- **The dispatcher and the scheduler**: TR-056 p16 ("A ready process is
+  in a ready queue waiting to be run by the dispatcher"), p21 (an
+  ordinary process, when activated, "is placed in the ready queue by the
+  supervisor"; resume "calls the software scheduler"). Neither is
+  printed. The printed `suspend/2` takes the running process out of the
+  ready queue, and the printed `get/2` reads the stream right after it,
+  so the processor must change hands in between. The dispatcher in
+  `kl0.py` is OURS: it switches after the printed `suspend/2` has made
+  the running process suspended, and when a process's program has ended.
+  It takes the first ready process in the queue. No preemption; priority
+  is ignored.
+- **`boot_process` `create/2` and `activate/2`** (INTERPOLATED, from
+  TM-100 p13 and TR-056 p21): the printed process methods without what
+  does not apply to a process the hardware already runs. `create/2`
+  gives the boot process a context (number 0), and makes the ready
+  queue, a list (OURS). `activate/2` sets no entry point (the boot
+  program is already running), makes the boot process ready and queues
+  it.
 
-What would unblock it: a printed or held body of `status/3` and of
-`context`; or a stand-in for both, INTERPOLATED, that gives up the
-hardware context (OURS: a Python scheduler in `kl0.py`, running each
-process's goal as a coroutine). The second is the most work and the most
-OURS. It is the gate for every later step.
+What runs now (`psi/test_espc.py` `test_step3j_supervisor`): a probe
+boot program, in the shape of held kappa2 `ITRSES.ESP`:111-116 and
+`MOPMANAGER.ESP`:162-168 with `MOPKAPPA.ESP` `goal/1`, does:
 
-### B4-B6. Devices, services, coordinator (BLOCKED on B3)
+1. `:create(#boot_process, B)` and `:activate(B, Prog)`;
+2. makes a stream, a child program holding it, and a process
+   (`create/3`, `[free,free,free,free]`);
+3. `:activate(P, Child)`, then `:get(S, X)`.
+
+The boot process suspends, and the dispatcher starts the child process
+at its entry. In it, `:self(#process, P)` is the child process, the child
+program is on top of its stack, and its parent is the boot process. The
+child `:put`s `created`, which resumes the boot process. The child's
+program ends, and it dies (status `nil`). The boot process gets
+`created`.
+
+The held `pseudo_pe_process release/1` now passes `status/3` (`dormant`
+becomes `on_release`) and stops at the boot process's `request/3`, which
+is not stood in. With status `nil` it fails at `status/3`.
+
+What stays open, labelled in the stand-ins:
+
+- `instance_array` (printed class slot) is not filled, and `add_child/2`
+  is not stood in, so `children/2` stays empty.
+- A dead process is not taken out of the ready queue (`die/1` does not
+  do it); the dispatcher skips it.
+- The printed `create/2` now reaches its `:create_core(PROCESS, ...)`.
+  `PROCESS`, in capitals as printed, is a fresh variable, so it stops
+  there (`unbound receiver`). No correction was made: `create/3` is the
+  form the held callers on the route use.
+- In the census the process is the boot process before its own `create`
+  and `activate`. So the 11 device creators' `activate/2` now stop at
+  the missing ready queue, not at `status/3`.
+
+### B4-B6. Devices, services, coordinator (BLOCKED)
 
 - TR-059 p30 (folio 28), page image read 2026-11-25: "A device handler is
   instantiated and activated during a system boot-up procedure." A
   handler is an interrupt process, dispatched by hardware. The devices
   are disk, floppy disk, magnetic tape, printer and bitmap display
   (`overview-e.tex`, the kernel table), with keyboard and mouse.
+  `interrupt_process` is printed in part (TM-100 Fig. 3.4): its
+  `%TRAP TO PROCESS`, `%RELEASE PROCESSOR` and `%ALLOCATE PROCESSOR`
+  steps are elided. No handler class is held. B4 stays BLOCKED.
+- Step 3j ran PIM/m's FEP devices, which are ordinary processes, not
+  SIMPOS handlers (`psi/test_espc.py` `test_step3j_fep_device`). Under
+  the supervisor, the held `pimos_timer` `create_timer/9` runs to its
+  end:
+  1. it activates the device's process (@48);
+  2. it waits on the creation-status stream (@4c);
+  3. the device process runs its held `goal/1` and puts `normal`;
+  4. the creator puts the creation reply `{16, 1}`.
+
+  The device process then waits in `see/2` on its input stream. Given a
+  request, it takes it in its own process and stops at blt 6f
+  (`list_to_vector`, unwitnessed) in `fep_message_assembler
+  disassemble/3` @a9. That is the next stop for every FEP device.
 - TR-056 p22-p25: the root directory is kept in a class slot of
   `directory` (`:root(#directory, Root)`). Pathnames are retrieved with
   `:retrieve`, and a process's world with `:world(#process, World)`.
@@ -188,7 +261,8 @@ OURS. It is the gate for every later step.
   Pathname, FullPathname)`.
 - The coordinator is the background process that owns the system menu,
   the key table, the whiteboard and the abort handler (`shell.md` §1.1,
-  §2.5). It needs a process of its own (B3).
+  §2.5). It needs a process of its own, which B3 now provides. Its class
+  is lost.
 
 ### B7. Login (BLOCKED)
 
@@ -218,7 +292,9 @@ The 1.0 debugger dialogue (TM-134 p71, PRINTED) starts a program in a
 new process: `:create(#c,O).`, `:create(#process,P).`,
 `:activate(P,O).` A system-menu item does the same (TM-786 p5, TM-785
 p6). Every way to start a program in its own process goes through
-`activate/2`, which is B3.
+`activate/2`, which runs since step 3j (B3). The printed `create/2`,
+which the dialogue uses, stops at its own `create_core(PROCESS, ...)`
+(§B3). The kappa2 and Tour callers use `create/3`.
 
 ## 3. What the console and the FEP must answer
 
@@ -233,11 +309,14 @@ p6). Every way to start a program in its own process goes through
   top level, `Login PIMOS` (`pimfep##pimos_login_requester`) and the
   `pimfep` and `pimscsi` programs answer PIMOS's FEP commands
   (`../fep_services.md` §6). Their own SIMPOS needs are what the
-  censuses measure: `process:status/3` (B3), `directory:retrieve/3,4`
-  (B5), the `pmacs_window` protocol (B6), `stream:see/2` with a second
-  process to put into it (B3).
+  censuses measure: `directory:retrieve/3,4` (B5), the `pmacs_window`
+  protocol (B6), and blt 6f in every device's request path. Step 3j
+  settled `process:status/3` and the second process that `stream:see/2`
+  needed (B3).
 
-## 4. The step taken: B2 (step 3i)
+## 4. The steps taken
+
+### 4.1 B2 (step 3i)
 
 B0 and B1 are substituted. B2 is the first step whose inputs exist:
 
@@ -246,7 +325,7 @@ B0 and B1 are substituted. B2 is the first step whose inputs exist:
 - the printed `as_program` `invoke/1`, which runs a program in the
   calling process.
 
-B3 onward are blocked (§2).
+B3 onward were blocked then (step 3j took B3, §4.2).
 
 **What was built** (`psi/standin/`, labelled in each file):
 
@@ -286,7 +365,7 @@ After `invoke/1`:
 - P's status is `nil`: the printed `resign/1` lets a process whose
   stack empties die (TM-100 p11).
 
-The test also pins the B3 blockers:
+The test also pinned the B3 blockers, as they were before step 3j:
 
 - `:activate(Boot, Program)` and `:create(#boot_process, X)` refuse with
   the override message.
@@ -298,25 +377,46 @@ The test also pins the B3 blockers:
 The census effect and the fault injections are in `../../psi/README.md`
 ("Step 3i: the boot process").
 
+### 4.2 B3 (step 3j)
+
+The four gates of §B3 are stood in, each from its call sites and the
+printed prose, each method labelled in its file (the basis table is
+`../../psi/README.md`, "Step 3j"):
+
+- `process.esp`: `status/3` and `clear_masks/1` (INTERPOLATED);
+  `create/3` now makes a context as the printed `create/2` does;
+- `as_program.esp`: `entry_of_invoke/2` (INTERPOLATED, the file's only
+  method that is not PRINTED);
+- `context.esp`: new (INTERPOLATED);
+- `boot_process.esp`: `create/2` and `activate/2` (INTERPOLATED);
+  `create/3` stays refused;
+- `kl0.py`: the dispatcher (OURS). The `suspend/2` model runs the
+  printed body for a process under the supervisor and then dispatches.
+  For any other process it still refuses `would suspend`.
+
+Also `as_resource.esp` (INTERPOLATED, from `pseudo_scsi` and kappa2
+`KP_POOL.ESP`): `assign/1`, `assigned/1` and `resign/1`, membership in
+the printed process slot `resources`. It is not on the route.
+
+**Where the boot route stops now.** B3 runs as a stand-in. B4 is still
+blocked: the SIMPOS handlers are lost. The FEP devices go one step
+further and stop at blt 6f. B5 to B8 are blocked as before (§2).
+
 ## 5. Next
 
-B3 is the gate. In order of preference:
+B3 is done as a stand-in. The next unblocked work, in order:
 
-1. Find a body of `status/3`, `entry_of_invoke/2` or `context`. TM-100
-   pp7-10 print none. The search should go on to the compiled pimmcsp
-   process subclasses, which call these (`pseudo_pe_process`
-   `activate/1` @18e-1b0: `get_number/3`, `set_start_code/2`,
-   `add_program/2`, `create_name/1`, `set_status/2`, `set_pe_status/2`,
-   `suspend/2`), and to the TR/TM pages on the supervisor (TR-056,
-   TR-059, TM-100 §2.1).
-2. Failing that, a scheduler in `kl0.py` (OURS), with `status/3` and
-   `entry_of_invoke/2` INTERPOLATED from their two call sites and
-   TM-100 p6 ("the entry of the main program is defined as an instance
-   predicate of the program", i.e. `goal/1`).
-
-Then B7's `user` and `world` (USAGE) and B5's `directory`. Then a
-coordinator process with a system menu that has the two PIM/m items of
-§1.
+1. **blt 6f** (`list_to_vector`). Every FEP device's request now
+   reaches it in its own process (`fep_message_assembler disassemble/3`
+   @a9: `blt 6f 00 00 01`). Step 3g left it unwitnessed: its third
+   argument is not settled. A held source with a `list_to_vector/3` call
+   whose compiled cells can be paired would unblock the whole request
+   path.
+2. The boot process's `request/3` (held `pseudo_pe_process release/1`).
+   No source says what a request does.
+3. B7's `user` and `world` (USAGE) and B5's `directory`. Then a
+   coordinator process with a system menu that has the two PIM/m items
+   of §1.
 
 **B5's `directory`, examined in step 3i (PARTIAL).** The interface is
 printed (TR-056 p22-p24; TR-524 p36-p37), and the held callers settle
