@@ -464,3 +464,40 @@ fact.
   - No manual of any version is held by any library found, except JAIST's five 1985 manuals.
 - Unreachable sources, the places not searched, and the ranked institutional routes are listed in
   the record (§3-§4). The first route is JAIST, then NDL, then Mitsubishi Electric's IT group.
+
+## 15. Preserved machines, catalogues and listings (2026-11-24, b)
+
+Record: `simpos/subsystems/search_machines_2026-11-24b.md`. It searched the places that
+`fixpoint_2026-11-24.md` §3 listed as not searched: museums and machine registries, reminiscence
+posts, Mitsubishi and Oki journals, theses (CiNii Research, J-STAGE), the JAIST, Kyoto, Keio,
+Waseda and Kanagawa (Kawasaki) catalogues, Yahoo! auction closed listings (120 days, record only),
+and patents (top results only). The Tokyo and Tokyo Tech catalogues, IRDB and the CHM catalogue
+were unreachable.
+
+**Still no SIMPOS or CESP code, binary, disk or tape. No source mentions disks or media for any
+surviving PSI.** What it adds:
+- **CESP application source in print**: a 1994 筑波大学 thesis (前田恭伸, 甲第1300号) prints the
+  CESP source of its RARCOM system (Appendix B, 31 pp.) and a CESP syntax summary (Appendix A).
+  Its library calls (`list_index`, `utility`, `symbolizer`, `library`, `:fprintf`) are all already
+  in the SIMPOS census: corroboration that CESP kept those interfaces (USAGE, not system code).
+- **A PSI site, 1986-87**: 溝口文雄's ESP review (コンピュータソフトウェア 5(1), 1988) reports a PSI
+  at the author's 東京理科大学 "バイオシステム研究所", and its use of the pool's list bucket and
+  index and of SIMPOS windows (PROSE, OCR).
+- **Preserved hardware**: JAIST keeps a PSI with "related manuals and materials" (IPSJ satellite
+  page); the 国立科学博物館 store keeps ICOT PIM/m and PIM/p (IPSJ location table). Nothing
+  found lists a PSI elsewhere, in any museum.
+- **ICOT Journal holdings**: seven libraries (CiNii Books AN10155113); Kanagawa's Kawasaki
+  library holds issues 21-37 (1990-95).
+
+**Who to ask, updated** (institutional published channels only; nobody contacted):
+1. **JAIST 記号処理計算機コレクション**: which PSI model, whether its disk or cartridges survive,
+   whether it boots, and the list of related materials. The IPSJ page prints JAIST's public
+   relations office (広報係) as the contact. JAIST Library (C42.4) remains the route for the
+   five 1985 manuals.
+2. **国立科学博物館** (産業技術史資料情報センター): whether the PIM/m's front-end PSI-III, its
+   console or its disk came with the cabinets. INFERENCE: such a disk would hold a SIMPOS 7.x
+   system with `pimfep`.
+3. **筑波大学** (社会工学系): CESP media or manuals left from 1993-96.
+4. **東京理科大学**: the fate of the 1986 PSI.
+5. Then, unchanged: NDL, Mitsubishi Electric's IT group, AIST, Oki, the other CESP universities,
+   ASTEM, Argonne and Lawrence Berkeley (§9), booksellers.
