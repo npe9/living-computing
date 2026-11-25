@@ -28,6 +28,57 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
 - I/O window accepts a store on any lane: test_wrong_lane_stops.
 - Keyboard controller self test answers 0x54: test_kb_init.
 - A read of the IIR does not clear the THRE interrupt: test_thre_interrupt.
+- Display card (TridentVga), each failing only the named tests:
+  3DA read not resetting the attribute flip-flop: test_attribute_flip_flop;
+  the DAC index not advancing after blue: test_dac_write_auto_increments;
+  engine registers read big-endian: test_fill, test_overlapping_blit_down,
+  test_overlapping_blit_right (errors: the linear/x-y check stops);
+  an upward blit copied top row first: test_overlapping_blit_down;
+  reading index 0Bh not selecting the new-mode registers:
+  test_old_and_new_mode_registers; the board ignoring the read lanes
+  (every port of the word read): test_port_is_the_byte,
+  test_old_and_new_mode_registers, test_attribute_flip_flop (errors: the
+  unmodelled neighbour port stops); the DAC read as 6-bit (x4):
+  test_screen_png, test_screen_paging_mode_doubles_the_pitch; paging
+  mode ignored: test_screen_paging_mode_doubles_the_pitch.
+- Processor reset register accepting bit 7 as well as the DSP bits, or
+  not logging a DSP's release: test_dsp_reset_bits_are_kept only.
+- DSP emulation hooks (CHOICES['dsp'] emulated, DspEmulationTest with
+  FakeDsp), each failing only the named tests: the shadow RAM not aliased
+  to RAM: test_shadow_ram_is_low_ram (error); little-endian lanes on the
+  DSP bus: test_shadow_ram_is_low_ram, test_dsp_reaches_the_board_
+  registers; no on-chip check: test_off_window_stops_name_the_dsp; the
+  interrupt bits not forwarded: test_interrupt_is_a_level; one DSP clock
+  per cycle: test_release_starts_at_the_cpu_time, test_two_dsp_clocks_
+  per_cpu_cycle; no idle-skip guard: test_no_idle_skip_while_a_dsp_runs;
+  release() or hold() not called: test_release_and_hold; an emulator
+  exception not wrapped: test_emulator_error_is_a_dsp_stop (error); a
+  release starting at clock 0: test_release_starts_at_the_cpu_time; Who
+  Am I giving the CPU number to a DSP: test_dsp_reaches_the_board_
+  registers; inert mode creating DSPs: test_inert_creates_nothing; an
+  idle DSP stepped: test_idle_dsp_jumps_to_the_cpu_time; idle DSPs
+  counted busy: that test and test_no_idle_skip_while_a_dsp_runs; the
+  outside-window log dropped: test_dsp_reaches_the_board_registers; a
+  stop without the access: test_off_window_stops_name_the_dsp.  A DSP in
+  waiti not skipped to its timer, or its tick not a timed event:
+  test_waiting_dsp_skips_to_its_timer; the skip rounded down to whole
+  cycles below the CPUs' time (so a spinning DSP is stepped whenever
+  fewer than 4 clocks are due, as the first emulated boot did):
+  test_waiting_dsp_skips_to_its_timer; a watched store not reported, a
+  DSP's own store reported, a watch accepted on a device register, or a
+  DSP's old watch kept: test_watched_words_report_other_writes.  BIO
+  pins stopping like unknown pins: test_bio_pins_are_latched (error); a
+  BIO level not kept: test_bio_pins_are_latched; an unknown pin latched:
+  test_off_window_stops_name_the_dsp.  The codec attached to the first
+  DSP instead of DSP 3: test_codec_on_dsp3_only; --resume not filling a
+  missing emulator field: test_resume_fills_fields_a_newer_emulator_added
+  (error); or overwriting fields the snapshot has: the same test.
+- Typing (CHOICES['typing']): no break code: test_scan_codes,
+  test_keys_are_paced_and_bound_the_idle_skip; no pacing, or keys not
+  timed events: test_keys_are_paced_and_bound_the_idle_skip.
+- Disk overlay (2026-11-25): a SCSI write in flight held as a closure
+  again: test_write_in_flight_pickles_and_reads_back (error, pickling);
+  DiskReader reading the image file under the overlay: the same test.
 - With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
   MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
@@ -107,6 +158,18 @@ class BoardTest(unittest.TestCase):
             with self.assertRaises(beboot.Stop) as cm:
                 self.board.read(pa)
             self.assertIn(region, str(cm.exception))
+
+    def test_dsp_reset_bits_are_kept(self):
+        # Page 2: reset register bits 6..4 = DSP3..1 (vcas_server's
+        # _veDspStart ORs 0x10 in for DSP1).  CHOICES['dsp']: kept, logged,
+        # nothing runs.  A bit the page does not name stops.
+        self.board.write(0x00800018, 0x00000012, 0x1)
+        self.assertEqual(self.regs.reset, 0x12)
+        self.assertEqual(self.regs.dsp_log, [(1, True)])
+        self.board.write(0x00800018, 0x00000002, 0x1)
+        self.assertEqual(self.regs.dsp_log, [(1, True), (1, False)])
+        with self.assertRaises(beboot.Stop):
+            self.board.write(0x00800018, 0x00000082, 0x1)
 
     def test_ram(self):
         self.board.write(0x08000048, 0x01000000, 0xF)
@@ -271,6 +334,337 @@ MOUNT = (SCAN + b" 4096K bytes\n\rRecal floppy drive 1, attempt 1\n\r"
            b"/dev/scsi_disk_driver_000")
 
 
+class FakeElf:
+    """Just enough of a kernel ELF for a Machine with no code in RAM."""
+    blob = b""
+    entry = 0x08001000
+    sections = {".text": (0, 0, 0, 0x08001000, 0, 0x10)}
+
+    def words(self):
+        return {}
+
+    def func(self, pc):
+        return "fake", 0
+
+    def where(self, pc):
+        return "fake+0x%x" % pc
+
+
+class FakeDsp:
+    """A stand-in for tools/dsp3210.py's Dsp3210: each step runs the next
+    scripted bus operation and takes `clocks` DSP clocks."""
+
+    def __init__(self, n, bus):
+        self.n, self.bus = n, bus
+        self.pc = 0x60000000
+        self.log = []
+        self.irq = None
+        self.ops = []
+        self.steps = 0
+        self.clocks = 1
+        self.idle = False
+        self.notified = []
+
+    def notify_write(self, addr, size=4):
+        self.notified.append((addr, size))
+
+    def attach_codec(self, codec):
+        self.codec = codec
+
+    def release(self):
+        self.log.append("release")
+
+    def hold(self):
+        self.log.append("hold")
+
+    def set_interrupt(self, level):
+        self.irq = level
+
+    def step(self):
+        if self.ops:
+            self.ops.pop(0)(self.bus)
+        self.steps += 1
+        return self.clocks
+
+
+class DiskOverlayTest(unittest.TestCase):
+    """CHOICES['disk-writes']: the overlay, as a write in flight survives
+    --save and as --extract reads it."""
+
+    def test_write_in_flight_pickles_and_reads_back(self):
+        import pickle
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "four-blocks.img")
+            image = bytes(range(256)) * 8
+            with open(path, "wb") as f:
+                f.write(image)
+            d = beboot.ScsiDisk(path, "test")
+            st, _, need, store = d.execute(
+                bytes([0x2A, 0, 0, 0, 0, 1, 0, 0, 1, 0]))   # WRITE(10) LBA 1
+            self.assertEqual((st, need), (0, 512))
+            store = pickle.loads(pickle.dumps(store))       # rebinds a copy
+            store(b"\xAA" * 512)
+            self.assertEqual(store.func.__self__.overlay[1], b"\xAA" * 512)
+            d.store(1, 1, b"\xAA" * 512)
+            r = d.reader()
+            self.assertEqual(r.seek(0, 2), 2048)
+            r.seek(500)
+            self.assertEqual(r.read(600), image[500:512] + b"\xAA" * 512
+                             + image[1024:1100])
+            r.seek(2040)
+            self.assertEqual(r.read(100), image[2040:])
+            d.f.close()
+            store.func.__self__.f.close()
+
+
+class TypingTest(unittest.TestCase):
+    """CHOICES['typing']: --type presses set-2 keys, one every 50 ms."""
+
+    def test_scan_codes(self):
+        self.assertEqual(beboot.scan_codes("a"), [0x1C, 0xF0, 0x1C])
+        self.assertEqual(beboot.scan_codes("\n"), [0x5A, 0xF0, 0x5A])
+        self.assertEqual(beboot.scan_codes("S"),
+                         [0x12, 0x1B, 0xF0, 0x1B, 0xF0, 0x12])
+        self.assertEqual(beboot.scan_codes("_"),
+                         [0x12, 0x4E, 0xF0, 0x4E, 0xF0, 0x12])
+        with self.assertRaises(SystemExit):
+            beboot.scan_codes("\t")
+
+    def test_keys_are_paced_and_bound_the_idle_skip(self):
+        m = beboot.Machine(FakeElf())
+        m.type_text("ls", 100)
+        gap = int(beboot.KEY_INTERVAL * beboot.CPU_HZ)
+        self.assertEqual(m.next_event(), 100)
+        m.cpus[0].cycles = 99
+        m.press_due_keys()
+        self.assertFalse(m.kbc.out)
+        m.cpus[0].cycles = 100
+        m.press_due_keys()
+        self.assertEqual([b for b, _ in m.kbc.out], [0x4B, 0xF0, 0x4B])
+        self.assertEqual(m.next_event(), 100 + gap)
+        m.cpus[0].cycles = 100 + gap
+        m.press_due_keys()
+        self.assertEqual([b for b, _ in m.kbc.out][3:], [0x1B, 0xF0, 0x1B])
+        self.assertIsNone(m.next_event())
+
+
+class DspEmulationTest(unittest.TestCase):
+    """CHOICES['dsp'] emulated, with FakeDsp: the board side only."""
+
+    RESET, INTERNAL = 0x00800018, 0x0080001C    # words of 0x80001B, 0x80001F
+
+    def setUp(self):
+        self.m = beboot.Machine(FakeElf())
+        self.m.dsp_mode = "emulated"
+        self.m.dsp_class = FakeDsp
+
+    def reset(self, value):
+        self.m.board.write(self.RESET, value, 0x1)
+
+    def internal(self, value):
+        self.m.board.write(self.INTERNAL, value, 0x1)
+
+    def test_release_and_hold(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        self.assertEqual((d.n, d.log), (1, ["release"]))
+        self.assertEqual(self.m.dsps_running(), [1])
+        self.reset(0x00)
+        self.assertEqual(d.log, ["release", "hold"])
+        self.assertEqual(self.m.dsps_running(), [])
+        self.reset(0x50)                        # DSP1 again, and DSP3
+        self.assertIs(self.m.dsps[1], d)
+        self.assertEqual(d.log, ["release", "hold", "release"])
+        self.assertEqual(self.m.dsps_running(), [1, 3])
+
+    def test_codec_on_dsp3_only(self):
+        codec = self.m.audio_codec = object()
+        self.reset(0x30)
+        self.assertFalse(hasattr(self.m.dsps[1], "codec"))
+        self.assertFalse(hasattr(self.m.dsps[2], "codec"))
+        self.reset(0x70)
+        self.assertIs(self.m.dsps[3].codec, codec)
+
+    def test_resume_fills_fields_a_newer_emulator_added(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        d.steps = 7
+        del d.notified, d.clocks              # "added after the snapshot"
+        self.m.upgrade_dsps()
+        self.assertEqual((d.notified, d.clocks, d.steps), ([], 1, 7))
+
+    def test_inert_creates_nothing(self):
+        self.m.dsp_mode = "inert"
+        self.reset(0x70)
+        self.assertEqual(self.m.dsps, {})
+        self.assertEqual(self.m.regs.reset, 0x70)
+
+    def test_shadow_ram_is_low_ram(self):
+        self.reset(0x10)
+        bus = self.m.dsps[1].bus
+        bus.write(0x60000010, 0xDEADBEEF, 4)
+        self.assertEqual(self.m.board.ram[0x08000010], 0xDEADBEEF)
+        bus.write(0x60000013, 0x55, 1)          # big-endian: bits 7:0
+        bus.write(0x60000010, 0x1234, 2)        # bits 31:16
+        self.assertEqual(self.m.board.ram[0x08000010], 0x1234BE55)
+        self.assertEqual(bus.read(0x60000010, 1), 0x12)
+        self.assertEqual(bus.read(0x60000012, 2), 0xBE55)
+        bus.write(0x601FFFFC, 7, 4)
+        self.assertEqual(self.m.board.ram[0x081FFFFC], 7)
+        with self.assertRaises(beboot.DspStop):
+            bus.read(0x60200000, 4)             # past the 2 MB
+
+    def test_off_window_stops_name_the_dsp(self):
+        self.reset(0x20)
+        bus = self.m.dsps[2].bus
+        for f, says in (
+                (lambda: bus.read(0x0000E000, 4), "on-chip"),
+                (lambda: bus.write(0x50000000, 0x1234, 2),
+                 "write of size 2 value 0x1234 at 0x50000000: nothing "
+                 "modelled"),
+                (lambda: bus.write(0x60000001, 0, 2), "aligned"),
+                (lambda: bus.pins("iack0", 1), "iack0")):
+            with self.assertRaises(beboot.DspStop) as cm:
+                f()
+            self.assertEqual(cm.exception.n, 2)
+            self.assertIn("DSP2 at pc 60000000", str(cm.exception))
+            self.assertIn(says, str(cm.exception))
+        self.assertIsNone(self.m.board.dsp_master)
+
+    def test_bio_pins_are_latched(self):
+        self.reset(0x40)
+        bus = self.m.dsps[3].bus
+        bus.pins("bio0", 1)
+        bus.pins("bio7", 0)
+        self.assertEqual(bus.bio, {"bio0": 1, "bio7": 0})
+        self.assertIn("DSP3 bio0 = 1", self.m.events[-2][1])
+
+    def test_interrupt_is_a_level(self):
+        self.internal(0x10)                     # before release
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        self.assertIs(d.irq, True)
+        self.internal(0x30)
+        self.assertIs(d.irq, True)
+        self.internal(0x00)
+        self.assertIs(d.irq, False)
+        self.assertEqual(self.m.regs.internal, 0)
+
+    def test_dsp_reaches_the_board_registers(self):
+        # Appendix A page 4: from 0x10000 up is Be machine memory, so the
+        # internal interrupt register is at its own address.
+        self.reset(0x40)
+        bus = self.m.dsps[3].bus
+        self.assertEqual(bus.read(0x00800DC3, 1) & 15, 3)    # Who Am I
+        bus.write(0x0080001F, 0x01, 1)                       # Hobbit A
+        self.assertEqual(self.m.regs.internal, 0x01)
+        self.assertEqual(dict(bus.outside), {("read", 1, 0x00800DC3): 1,
+                                             ("write", 1, 0x0080001F): 1})
+
+    def test_two_dsp_clocks_per_cpu_cycle(self):
+        self.reset(0x30)
+        self.m.dsps[2].clocks = 3
+        self.m.cpus[0].cycles = 10
+        self.m.step_dsps()
+        self.assertEqual((self.m.dsps[1].steps, self.m.dsp_clock[1]), (20, 20))
+        self.assertEqual((self.m.dsps[2].steps, self.m.dsp_clock[2]), (7, 21))
+        self.reset(0x10)                        # DSP2 held: it stops
+        self.m.cpus[0].cycles = 20
+        self.m.step_dsps()
+        self.assertEqual(self.m.dsp_clock[1], 40)
+        self.assertEqual(self.m.dsp_clock[2], 21)
+
+    def test_idle_dsp_jumps_to_the_cpu_time(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        d.idle = True
+        self.m.cpus[0].cycles = 1000
+        self.m.step_dsps()
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (0, 2000))
+        self.assertEqual(self.m.dsp_idle_clocks[1], 2000)
+        self.assertEqual(self.m.dsps_busy(), [])
+        d.idle = False
+        self.assertEqual(self.m.dsps_busy(), [1])
+
+    def test_waiting_dsp_skips_to_its_timer(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        skipped = []
+        d.wait = 12                             # clocks to its next tick
+        d.clocks_until_event = lambda: d.wait
+        d.skip = lambda k: (skipped.append(k), setattr(d, "wait", d.wait - k))
+        self.assertEqual(self.m.next_event(), 6)    # 12 clocks = 6 cycles
+        self.m.cpus[0].cycles = 3               # 6 clocks: two whole
+        self.m.step_dsps()                      # cycles skipped, not stepped
+        self.assertEqual(skipped, [8])
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (0, 8))
+        self.m.cpus[0].cycles = 7               # 14 clocks: up to the tick
+        self.m.step_dsps()                      # (12), then a step
+        self.assertEqual(skipped, [8, 4])
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (2, 14))
+        self.assertEqual(self.m.dsp_idle_clocks[1], 12)
+        d.wait = 0
+        self.assertEqual(self.m.dsps_busy(), [1])
+
+    def test_watched_words_report_other_writes(self):
+        self.reset(0x30)
+        d1, d2 = self.m.dsps[1], self.m.dsps[2]
+        self.assertFalse(d1.bus.watch([(0x60000100, 4), (0x0080001C, 4)]))
+        self.assertTrue(d1.bus.watch([(0x60000100, 4), (0x60000106, 2)]))
+        self.m.board.write(0x08000100, 1, 0xF)          # a CPU's store
+        self.m.board.write(0x08000104, 2, 0x1)
+        self.m.board.write(0x08000108, 3, 0xF)          # not watched
+        d1.bus.write(0x60000100, 4, 4)                  # its own store
+        d2.bus.write(0x60000104, 5, 4)                  # another DSP's
+        self.assertEqual(d1.notified, [(0x60000100, 4), (0x60000104, 4),
+                                       (0x60000104, 4)])
+        self.assertTrue(d1.bus.watch([(0x60000200, 4)]))  # a new spin
+        self.m.board.write(0x08000100, 1, 0xF)
+        self.assertEqual(len(d1.notified), 3)
+        self.assertEqual(sorted(self.m.board.watch), [0x08000200])
+
+    def test_release_starts_at_the_cpu_time(self):
+        self.m.cpus[0].cycles = 100
+        self.reset(0x10)
+        self.assertEqual(self.m.dsp_clock[1], 200)
+
+    def test_emulator_error_is_a_dsp_stop(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+
+        def bad(bus):
+            raise RuntimeError("opcode 0x12345678 not implemented")
+        d.ops.append(bad)
+        self.m.cpus[0].cycles = 1
+        with self.assertRaises(beboot.DspStop) as cm:
+            self.m.step_dsps()
+        self.assertEqual(cm.exception.n, 1)
+        self.assertIn("RuntimeError: opcode", str(cm.exception))
+
+    def test_no_idle_skip_while_a_dsp_runs(self):
+        cpu = self.m.cpus[0]
+        called = []
+
+        def next_event():
+            called.append(1)
+            return None
+        self.m.next_event = next_event
+        for running, idle in ((False, False), (True, False), (True, True)):
+            self.reset(0x10 if running else 0x00)
+            if running:
+                self.m.dsps[1].idle = idle
+            running = running and not idle
+            here = (cpu.steps, cpu.cycles, cpu.sysm.timer1, cpu.sysm.timer2)
+            lap = (5, 10, 10, 10)
+            cpu.idle_last = (tuple(h - d for h, d in zip(here, lap)), lap,
+                             True)
+            del called[:]
+            self.assertEqual(self.m.try_idle_skip(cpu, 1000), 0)
+            # A steady lap reaches the event horizon unless a DSP runs.
+            self.assertEqual(called, [] if running else [1])
+
+
 def boot_machine(skip=True):
     import befs1
     import beelf
@@ -355,6 +749,209 @@ class KeyboardControllerTest(unittest.TestCase):
     def test_unmodelled_stops(self):
         with self.assertRaises(beboot.Stop):
             self.kbc.write(4, 0xC0)             # read input port
+
+
+class TridentVgaTest(unittest.TestCase):
+    """The display card's register file (VGADOC TRIDENT.TXT for the
+    Trident registers, the IBM VGA layout for the rest) and the old
+    graphics engine as app_server's driver programs it (XFree86
+    trident_regs.h for the register names; docs/bebox_hobbit.md "The
+    display card")."""
+
+    REGS = 0xD1000000
+
+    def setUp(self):
+        self.board = beboot.Board(8 << 20)
+        self.clock = Clock()
+        self.vga = self.board.vga = beboot.TridentVga(self.clock)
+
+    def out(self, port, value):
+        """A byte store to VGA port ``port``, as app_server's _t_* helpers
+        do it: the byte at 0xD1000000 + port."""
+        lane = port & 3
+        self.board.write(self.REGS + port, value << (8 * (3 - lane)),
+                         beboot.lane_mask(lane))
+
+    def inp(self, port):
+        lane = port & 3
+        self.board.read_mask = beboot.lane_mask(lane)
+        try:
+            return (self.board.read(self.REGS + port) >> (8 * (3 - lane))) & 0xFF
+        finally:
+            self.board.read_mask = 0xF
+
+    def ge(self, index, value):
+        """_write_long: the index byte to 0xD100217A, then the value with
+        its bytes reversed as one word to 0xD100217C, so the card's
+        little-endian register gets its low byte first."""
+        self.out(0x217A, index)
+        self.board.write(self.REGS + 0x217C,
+                         int.from_bytes(value.to_bytes(4, "little"), "big"),
+                         0xF)
+
+    def test_port_is_the_byte(self):
+        self.out(0x3C3, 1)
+        self.assertEqual(self.vga.enable, 1)
+        self.out(0x3D4, 0x13)
+        self.out(0x3D5, 0x64)
+        self.assertEqual(self.vga.crtc[0x13], 0x64)
+        self.assertEqual(self.inp(0x3D5), 0x64)
+        self.assertEqual(self.inp(0x3D4), 0x13)
+
+    def test_old_and_new_mode_registers(self):
+        # VGADOC: writing index 0Bh selects the old mode registers,
+        # reading it selects the new ones and returns the chip version.
+        self.out(0x3C4, 0x0B)
+        self.out(0x3C5, 0)
+        self.out(0x3C4, 0x0D)
+        self.out(0x3C5, 0x38)
+        self.assertEqual(self.vga.old_mode[0x0D], 0x38)
+        self.assertEqual(self.vga.seq[0x0D], 0)
+        self.out(0x3C4, 0x0B)
+        self.assertEqual(self.inp(0x3C5), beboot.TRIDENT_ID)
+        self.out(0x3C4, 0x0D)
+        self.out(0x3C5, 0x01)
+        self.assertEqual(self.vga.seq[0x0D], 0x01)
+        self.assertEqual(self.vga.old_mode[0x0D], 0x38)
+
+    def test_attribute_flip_flop(self):
+        self.out(0x3D4, 0x00)
+        self.out(0x3D5, 0x7E)
+        self.out(0x3D4, 0x06)
+        self.out(0x3D5, 0x99)
+        self.inp(0x3DA)                 # resets the flip-flop
+        self.out(0x3C0, 0x10)
+        self.out(0x3C0, 0x41)
+        self.out(0x3C0, 0x11)
+        self.out(0x3C0, 0x00)
+        self.assertEqual(self.vga.attr[0x10], 0x41)
+        self.out(0x3C0, 0x20)           # index with palette access off
+        self.assertEqual(self.vga.attr_index, 0x20)
+        self.inp(0x3DA)
+        self.assertFalse(self.vga.attr_flip)
+
+    def test_dac_write_auto_increments(self):
+        self.out(0x3C8, 254)
+        for v in (1, 2, 3, 4, 5, 6):
+            self.out(0x3C9, v)
+        self.assertEqual(self.vga.dac[254], [1, 2, 3])
+        self.assertEqual(self.vga.dac[255], [4, 5, 6])
+
+    def setup_engine(self):
+        self.ge(0xB8, (599 << 16) | 799)    # MWIDTH: pitch 800
+        self.ge(0xBC, 3)
+        self.ge(0x98, (599 << 16) | 799)
+        self.ge(0x9C, 3)
+
+    def test_fill(self):
+        self.setup_engine()
+        self.ge(0xF8, (2 << 16) | 5)        # x 5, y 2
+        self.ge(0xE4, 2 * 800 + 5)
+        self.ge(0xE0, (1 << 16) | 3)        # 4 wide, 2 high
+        self.ge(0xC8, 0x303)
+        self.ge(0xD8, 0x2A)
+        self.ge(0xDC, 0x2A)
+        self.ge(0xC4, 0xFFFF)
+        self.ge(0xFC, 0x0A000000)
+        fb = self.vga.fb
+        self.assertEqual(fb[2 * 800 + 4:2 * 800 + 10], b"\0" + b"\x2a" * 4 + b"\0")
+        self.assertEqual(fb[3 * 800 + 5:3 * 800 + 9], b"\x2a" * 4)
+        self.assertEqual(fb[4 * 800 + 5], 0)
+        self.assertEqual(fb[1 * 800 + 5], 0)
+        # Status (index 0x90) reads idle: _wait_graphic_engine's word
+        # read of 0xD100217C, bit 31.
+        self.out(0x217A, 0x90)
+        self.assertEqual(self.board.read(self.REGS + 0x217C) & 0x80000000, 0)
+
+    def blit(self, sx, sy, dx, dy, w, h, d, src=None, dest=None):
+        """As _tri_blit1 programs it: direction d, start corners."""
+        xneg, yneg = d in (4, 7), d in (2, 7)
+        corner = lambda x, y: ((y + (h - 1 if yneg else 0)) * 800 +
+                               x + (w - 1 if xneg else 0))
+        self.ge(0xF0, (sy << 16) | sx)
+        self.ge(0xE8, corner(sx, sy) if src is None else src)
+        self.ge(0xF8, (dy << 16) | dx)
+        self.ge(0xE4, corner(dx, dy) if dest is None else dest)
+        self.ge(0xE0, ((h - 1) << 16) | (w - 1))
+        self.ge(0xC8, 3)
+        self.ge(0xFC, 0xA8000000 | d)
+
+    def test_overlapping_blit_down(self):
+        # Rows 0-2 copied one row down, bottom row first (direction 2),
+        # as copy_to_hidden moves the screen: an overlapping copy that
+        # must read each source row before it is overwritten.
+        self.setup_engine()
+        fb = self.vga.fb
+        for y in range(3):
+            fb[y * 800:y * 800 + 4] = bytes([y + 1]) * 4
+        self.blit(0, 0, 0, 1, 4, 3, 2)
+        self.assertEqual([fb[y * 800] for y in range(4)], [1, 1, 2, 3])
+
+    def test_overlapping_blit_right(self):
+        self.setup_engine()
+        fb = self.vga.fb
+        fb[0:4] = b"\x01\x02\x03\x04"
+        self.blit(0, 0, 2, 0, 4, 1, 4)
+        self.assertEqual(fb[0:6], b"\x01\x02\x01\x02\x03\x04")
+
+    def test_blit_with_inconsistent_addresses_stops(self):
+        self.setup_engine()
+        with self.assertRaises(beboot.Stop):
+            self.blit(0, 0, 0, 1, 4, 3, 2, src=0)     # top corner, not bottom
+
+    def test_unmodelled_stops(self):
+        for action in (lambda: self.out(0x3D7, 1),           # enhancement
+                       lambda: self.out(0x3B4, 1),           # mono CRTC
+                       lambda: self.ge(0x80, 1),             # unnamed index
+                       lambda: self.ge(0xFC, 0x12345678)):   # other command
+            with self.assertRaises(beboot.Stop):
+                self.setup_engine()
+                action()
+        self.out(0x217A, 0x94)
+        with self.assertRaises(beboot.Stop):
+            self.board.read(self.REGS + 0x217C)
+        with self.assertRaises(beboot.Stop):
+            self.board.read(0xD0100000)                  # past 1 MB
+
+    def test_screen_png(self):
+        import zlib
+        for i, v in ((0x01, 1), (0x07, 0), (0x12, 1), (0x13, 2),
+                     (0x14, 0x40), (0x0C, 0), (0x0D, 0)):
+            self.out(0x3D4, i)
+            self.out(0x3D5, v)
+        self.out(0x3C8, 7)
+        for v in (255, 0, 0xDD):
+            self.out(0x3C9, v)
+        self.board.write(0xD0000000, 0x07000000, 0xF)    # pixel (0,0) = 7
+        png = self.vga.png()
+        self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+        self.assertEqual(png[16:24], (16).to_bytes(4, "big") +
+                         (2).to_bytes(4, "big"))
+        n = int.from_bytes(png[33:37], "big")
+        raw = zlib.decompress(png[41:41 + n])
+        self.assertEqual(len(raw), 2 * (1 + 16 * 3))
+        self.assertEqual(raw[:7], b"\0" + bytes([255, 0, 0xDD]) + b"\0\0\0")
+
+    def test_screen_paging_mode_doubles_the_pitch(self):
+        # VGADOC, old mode control 2 bit 4: the CRTC offset counts double.
+        # app_server sets it (old 0Dh = 0x38) with CR13 = 50 for 800 bytes.
+        import zlib
+        self.out(0x3C4, 0x0B)
+        self.out(0x3C5, 0)
+        self.out(0x3C4, 0x0D)
+        self.out(0x3C5, 0x10)
+        for i, v in ((0x01, 1), (0x07, 0), (0x12, 1), (0x13, 1),
+                     (0x14, 0x40)):
+            self.out(0x3D4, i)
+            self.out(0x3D5, v)
+        self.out(0x3C8, 5)
+        for v in (1, 2, 3):
+            self.out(0x3C9, v)
+        self.vga.fb[16] = 5                  # row 1, pitch 16 not 8
+        png = self.vga.png()
+        n = int.from_bytes(png[33:37], "big")
+        raw = zlib.decompress(png[41:41 + n])
+        self.assertEqual(raw[49:53], b"\0\x01\x02\x03")
 
 
 class ScsiDiskLunTest(unittest.TestCase):

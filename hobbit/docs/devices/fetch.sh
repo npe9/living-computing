@@ -55,6 +55,12 @@ if [ "${1:-}" != "--check" ]; then
     # NCR 53C94/95/96 data sheet, February 1990 (image-only scan; not on bitsavers)
     fetch_pdf "https://cdn.hackaday.io/files/18974811783616/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf" \
       NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf
+    # VGADOC 4b, Trident chapter (plain text; the display card, 2026-11-24)
+    if [ ! -f VGADOC_TRIDENT.TXT ]; then
+        curl --fail --location --proto '=https' --retry 3 --output VGADOC_TRIDENT.TXT.part \
+          "https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT"
+        mv VGADOC_TRIDENT.TXT.part VGADOC_TRIDENT.TXT
+    fi
 fi
 
 shasum -a 256 -c SHA256SUMS
