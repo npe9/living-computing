@@ -2973,6 +2973,69 @@ passed in each). Observed:
   `test_step3g_stream_see` and `test_stream_runs` fail (the `suspend/2`
   model no longer reaches the boot process); `test_step3i_boot` passes.
 
+### Step 3i: pmi 3b, 6c, c8 and blt 00, e0 (2026-11-25)
+
+Five rows, each KNOWN-PLAINTEXT on held source (`kl0_opcodes.tsv` has
+the cells; `test_kl0.py` `Step3iRows` runs each beside its source):
+
+- **pmi 3b `get_val_var_list` A, H, T**: as 2b, but the car is unified
+  with X_H before X_T := cdr. Witness: kappa2 `utility/tool/LOADER.ESP`
+  :118-126 `append/3` (kappa_loader local @90), clauses 2 and 3.
+- **pmi 6c `execute_local_switch`**: a last call to a local predicate
+  whose first instruction is a switch, with the switch's four targets
+  carried in two words after the call, relative to cell + 3. The
+  dispatch follows the entry switch's rule. Witnesses: `append/3`'s two
+  recursive calls (a c9 entry), RDMSOPE.ESP:285-291
+  `get_BFS_list_only/2` @6cd (a c6 entry), BCMGETREC.ESP:124-160 @54,
+  @5d (c8 entries). MEASURED over the held corpus: 1,556 uses; 1,133
+  enter a c9, c6 00 00 00 or c8 with R 0 and the same targets as the
+  entry, and are run. 423 refuse: 183 whose const target is one cell
+  before their c9's (what that cell does for a constant is not
+  settled), and 240 with another entry (c7, ...).
+- **pmi c8 `switch_on_vector_else`**: unbound -> cell + 2 + W, a vector
+  -> cell + 2, anything else -> cell + 3 + s16. Witness:
+  HLCSESITTK.ESP:408-424 `optimum_set_left_set/7` @234 (clause 1
+  `@anb`, clause 2 `_`); also BCMGETREC.ESP. That a list takes the else
+  target is an INFERENCE, from the 57 held 6c calls into a c8: each
+  carries c8's else target as its list target.
+- **blt 00 `atom` X** and **blt e0 `if_atom`**, the plain and
+  test-and-branch forms (as 01 and e1). Witnesses: g_window.esp:146-149
+  @709, bar2_h.esp:135 @574 (X = 2), as_pred.esp:419 and :421-422.
+  `[]` counts as an atom: INFERENCE.
+
+The step 3h leads are settled: pmi 6c on `append/3` as predicted, blt e0
+on as_pred.esp (not g_window.esp:148, which is blt 00), and pmi c8 on a
+held kappa2 source (step 3h had looked only in paragraph).
+
+Effect, row by row (MEASURED 2026-11-25, recomputed after each row):
+
+- Six packages: 311 / 12 / 206 / 1 becomes **317 / 12 / 200 / 1**. The
+  five 6c rows (mpsicsp `csp_csbreak_address_table`, `kl1_tag`) enter
+  another switch and still refuse, now as `operand`. Of the 8 c8 rows, 6 succeed (`csp_user_command`
+  `create/5` and `set_command_name/2`, `rasm_one_word/3`,
+  `graphics_item` `set_item/2` and `get_item/2`). Each meets the c8 only
+  with the census's unbound argument (traced), which takes the try chain
+  and is bound by the first clause: unbound probing, not progress.
+- Plain FEP: 757 / 219 / 427 becomes **763 / 221 / 419**:
+  - the five `pseudo_scsi` rows at 6c @13d go on into local `command/2`
+    (a c6 entry). `command/2` and `command_with_hook/2` succeed: the
+    unbound argument takes clause 1, `command([], _)` (@305-307). Not
+    progress. `send_data/4`, `receive_data/4` and `receive_command/3`
+    stop at `as_resource assigned/1`, which is not printed;
+  - `cmt` and `scsi` `transfer/6` fail at `scsi_communicator
+    include_item_1/3` @261-275: the unbound item is neither an integer
+    (e1) nor an atom (e0). Not progress;
+  - the four `expand/7` macro rows succeed on the unbound argument (c8's
+    try chain, the first clause's get_constant). Not progress.
+- With recipes: 782 / 220 / 401 becomes **788 / 222 / 393**, the same
+  rows.
+
+None of the successes is progress. The rows matter as opcodes no longer
+in the way: `assigned/1` is the new real stop.
+
+Injected into kl0.py from a backup, restored by cp, cmp-checked; the
+observed failure sets are in `test_kl0.py`'s header (eight injections).
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -3051,6 +3114,8 @@ passed in each). Observed:
     - `process:children/2`: stood in by step 3h (INTERPOLATED).
       `add_child/2` is not, so the list is always empty.
     - Step 3h's leads, not taken:
+      - Step 3i settled pmi c8, pmi 6c (with 3b) and blt e0 / 00 (the
+        "Step 3i: pmi 3b, 6c, c8" section). What step 3h wrote of them:
       - pmi c8 (4 recipe rows, 8 six-package rows): one word follows.
         In `runtime_monitor` local `set_attr/2` @655 (`c8 00 00 58`,
         word 0x12), cell + 2 + word lands on @669, an `e4`
@@ -3073,7 +3138,11 @@ passed in each). Observed:
         machine, `dump_log/1` goes on to `pmacs_window:putl/2` (not
         stood in) and `dump_log/2` succeeds. It is a census order
         effect: an earlier row leaves the class slot `log_table` holding
-        a table.
+        a table. (Step 3i: settled; the census drops class slots per
+        row.)
+      - Left by step 3i: pmi 6c into a c7 (and other entries, 240 held
+        uses) and with a const target one cell before its c9's (183);
+        `as_resource assigned/1` (3 pseudo_scsi rows), not printed.
     - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
       set_default_node/2` @29-34, which stores the answer in the class
       slot `default_spawn_node`). No held or printed source gives the

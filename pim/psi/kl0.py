@@ -1186,7 +1186,82 @@ class Machine:
         self.stack.pop()
         self.pc = (code, off + 2 + s16(v))
 
+    def op_execute_local_switch(self, code, off, a, b, c, v):
+        """pmi 6c (step 3i): a last call to a local predicate whose first
+        instruction is a switch on A_R, with the switch's four targets
+        carried in the call itself (relative to cell + 3) so the callee's
+        switch is skipped.  Witnesses, both on held source:
+        - a `c9` switch_on_list entry: kappa##kappa_loader local
+          append/3 @90 (LOADER.ESP:118-126), both uses (@94, @a3);
+        - a `c6 00 00 00` switch_on_term entry: kappaRDM_manager
+          get_BFS_list_only/2 @6b7 (RDMSOPE.ESP:285-291), the use @6cd;
+        - a `c8` entry: kappaBCM_get_primitive_record get_attr_value/6
+          @133 and get_table_value/6 @19c (BCMGETREC.ESP:124-160), the
+          uses @5d and @54: other is c8's vector path, const and list
+          both its else target.
+        The dispatch follows the entry's own rule (op_switch_on_list,
+        op_switch_on_term, op_switch_on_vector_else).  Only those entries,
+        R = 0, and targets equal to the entry switch's are run; any other
+        refuses (MEASURED over the held corpus in kl0_opcodes.tsv's row)."""
+        w1, w2 = self.operand(code, off)[3], code.cells[off + 2][3]
+        entry = off + 2 + s16(w1 >> 16)
+        e = code.cells.get(entry)
+        base = off + 3
+        const, other, unb, lst = base + s16(v), base + s16(w1), base + s16(w2 >> 16), base + s16(w2)
+        op = e[3] >> 24 if e is not None and e[1] == 0x20 else None
+        if a != 0 or op not in (0xc9, 0xc6, 0xc8) or (e[3] >> 16) & 255 != a or (op == 0xc6 and e[3] & 0xffff):
+            raise Refusal('operand', '%s @%x: pmi 6c to @%x: only a c9, c8 or c6 00 00 00 entry with R = 0 '
+                          'is witnessed' % (code.id, off, entry))
+        if op == 0xc9:
+            ew = code.cells[entry + 1][3]
+            theirs = (entry + 2 + s16(e[3]), entry + 2 + s16(ew >> 16), entry + 2 + s16(ew), entry + 2)
+        elif op == 0xc8:
+            els = entry + 3 + s16(e[3])
+            theirs = (els, entry + 2, entry + 2 + s16(self._word(code, entry + 1)), els)
+        else:
+            eb, x1, x2 = entry + 3, self._word(code, entry + 1), self._word(code, entry + 2)
+            theirs = (eb, eb + x1, eb + (x2 >> 16), eb + (x2 & 0xffff))
+        if (const, other, unb, lst) != theirs:
+            raise Refusal('operand', '%s @%x: pmi 6c targets differ from the %02x at @%x' % (code.id, off, op, entry))
+        self.call_local(code, off, entry, last=True)
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, unb)
+        elif isinstance(t, Cons):
+            self.pc = (code, lst)
+        elif op == 0xc9:
+            self.pc = (code, const if is_atomic(t) else other)
+        elif op == 0xc8:
+            self.pc = (code, other if isinstance(t, Vec) else const)
+        elif isinstance(t, Atom):
+            self.pc = (code, const)
+        elif isinstance(t, Vec):
+            self.pc = (code, other)
+        else:
+            raise Refusal('operand', '%s @%x: pmi 6c to a c6 on %s: only unbound, atom, list and vector are '
+                          'witnessed' % (code.id, off, type(t).__name__))
+
     # indexing
+    def op_switch_on_vector_else(self, code, off, a, b, c, v):
+        """pmi c8 (step 3i): R; next word W.  A_R unbound -> cell + 2 + W
+        (the try chain over every clause), a vector -> cell + 2 (a `ce`
+        or the vector clauses' chain), anything else -> cell + 3 + s16 (the
+        clauses whose first argument is not a vector, or `fe`).  Witness:
+        kappaHLC_SIT_taker optimum_set_left_set/7 @234 (HLCSESITTK.ESP:
+        408-424, clause 1 `@anb`, clause 2 `_`): c8 00 00 19, W 7.  A list
+        takes the else target: INFERENCE, from the 57 held 6c calls into a
+        c8, whose list and const targets are all c8's else target.  Only
+        R = 0 is witnessed (all 328 held uses)."""
+        if a != 0:
+            raise Refusal('operand', '%s @%x: pmi c8 %02x: only R = 0 is witnessed' % (code.id, off, a))
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, off + 2 + s16(self._word(code, off + 1)))
+        elif isinstance(t, Vec):
+            self.pc = (code, off + 2)
+        else:
+            self.pc = (code, off + 3 + s16(v))
+
     def op_switch_on_list(self, code, off, a, b, c, v):
         t = deref(self.x[a])
         w = self.operand(code, off)[3]
@@ -1374,6 +1449,17 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    def op_if_atom(self, code, off, a, b, c, v):
+        # blt e0 (step 3i): as e1 with atom/1's test (paragraph as_pred.esp
+        # :419 and :421); [] counts as an atom (NIL is an Atom: INFERENCE)
+        if b:
+            raise Refusal('operand', '%s @%x: blt e0 %02x %02x %02x: only a zero second byte is witnessed'
+                          % (code.id, off, a, b, c))
+        if isinstance(deref(self.x[a]), Atom):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):
@@ -1437,6 +1523,17 @@ class Machine:
             return self.fail()
         el = self.S[0]
         self.x[b], self.x[c] = el[0], el[1]
+        self.nxt(code, off)
+
+    def op_get_val_var_list(self, code, off, a, b, c, v):
+        # pmi 3b (step 3i): as 2b, but the car is unified with X_H (a value)
+        # before X_T := cdr; H may equal T (kappa_loader append/3 @9f)
+        if not self.get_struct(a, 'list', 2):
+            return self.fail()
+        el = self.S[0]
+        if not self.unify(el[0], self.x[b]):
+            return self.fail()
+        self.x[c] = el[1]
         self.nxt(code, off)
 
     def op_get_vector_2(self, code, off, a, b, c, v):
@@ -1706,6 +1803,10 @@ class Machine:
     def op_integer(self, code, off, a, b, c, v):
         t = deref(self.x[a])
         self.nxt(code, off) if isinstance(t, int) and not isinstance(t, bool) else self.fail()
+
+    def op_atom(self, code, off, a, b, c, v):
+        # blt 00 (step 3i): g_window.esp:148 @709 (A0), bar2_h.esp:135 @574 (A2)
+        self.nxt(code, off) if isinstance(deref(self.x[a]), Atom) else self.fail()
 
     def op_unbound(self, code, off, a, b, c, v):
         self.nxt(code, off) if isinstance(deref(self.x[a]), Var) else self.fail()

@@ -1233,7 +1233,26 @@ end.''', 'simpos')
         # remote_login_replier rows refuse; create_socket/9 fails (no
         # program on its process's stack); four pimfep_message_log rows
         # succeed on the empty log (`none`), not progress
-        self.assertEqual((len(rows), out), (1420, {'success': 757, 'failure': 219, 'refused': 427, 'exception': 16,
+        # step 3i: pmi 3b and 6c witnessed (LOADER.ESP:118-126,
+        # RDMSOPE.ESP:285-291): 757 / 219 / 427 -> 759 / 219 / 425.  The
+        # five pseudo_scsi rows that stopped at 6c @13d run into local
+        # command/2 (a c6 entry): command/2 and command_with_hook/2 succeed
+        # (the census's unbound first argument takes clause 1,
+        # `command([], _)`; unbound probing, not progress); send_data/4,
+        # receive_data/4 and receive_command/3 stop at the unprinted
+        # as_resource assigned/1
+        # step 3i: blt 00 and e0 witnessed (g_window.esp:148, bar2_h.esp:135,
+        # as_pred.esp:419-422): 759 / 219 / 425 -> 759 / 221 / 423.  cmt
+        # and scsi transfer/6 go from blt e0 (scsi_communicator
+        # include_item_1/3 @26b) to failure: the census's unbound item is
+        # neither an integer nor an atom (unbound probing, not progress)
+        # step 3i: pmi c8 witnessed (HLCSESITTK.ESP:408-424): 759 / 221 / 423
+        # -> 763 / 221 / 419.  The four expand/7 (scsi_fep_macro,
+        # scsi_macro, pseudo_scsi_macro, scsi_macro_core) succeed: the
+        # census's unbound first argument takes c8's try chain and the
+        # first clause's get_constant binds it (unbound probing, not
+        # progress)
+        self.assertEqual((len(rows), out), (1420, {'success': 763, 'failure': 221, 'refused': 419, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1303,7 +1322,11 @@ end.''', 'simpos')
         # plain census (55 resign rows here, two remote_login_replier);
         # slot constants 93 -> 94 (pseudo_scsi_handler send_to_PE/2, which
         # met an earlier row's unbound value before)
-        self.assertEqual((len(rows), out), (1420, {'success': 782, 'failure': 220, 'refused': 401,
+        # step 3i: pmi 3b and 6c: the same five pseudo_scsi rows, 784 / 220
+        # / 399 (two successes on an unbound argument, not progress); blt 00
+        # and e0: the same two transfer/6 rows fail, 784 / 222 / 397; pmi
+        # c8: the same four expand/7 succeed, 788 / 222 / 393
+        self.assertEqual((len(rows), out), (1420, {'success': 788, 'failure': 222, 'refused': 393,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 94)
@@ -1691,10 +1714,13 @@ end.''', 'simpos')
             for sel in ('low_if/2', 'send_request/5', 'receive_request/5'):
                 self.assertEqual(run(cid, sel, None), ('failure',) + sw, (cid, sel))
                 # an initiator (lun := initiator by the held set_lun/2) gets
-                # past `initiator`: low_if/2 to an opcode (blt e0, past the
-                # blt e1 of include_item_1/3 since step 3h), the others to
-                # the unit check on the census's unbound unit
-                want = 'opcode' if sel == 'low_if/2' else 'unbound argument'
+                # past `initiator`: low_if/2 to include_item_1/3 (@261), the
+                # others to the unit check on the census's unbound unit.
+                # Step 3h stopped low_if/2 at blt e0 @26b; since step 3i
+                # (blt e0 witnessed) the unbound item is neither an integer
+                # nor an atom, e1 and e0 both jump, and it fails: unbound
+                # probing, not progress
+                want = 'failure' if sel == 'low_if/2' else 'unbound argument'
                 self.assertEqual(run(cid, sel, K.Atom('initiator'))[0], want, (cid, sel))
             # a target method: on lun 0 it reaches the unbound unit; on an
             # initiator it fails at `target` (@c3, integer(lun))
