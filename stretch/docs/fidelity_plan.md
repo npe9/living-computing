@@ -285,6 +285,108 @@ DONE 2026-11-25, six commits, one per family, on the batch51 base
 - Exit: the VFL pages, PDF 116-189, meet the "done" rule. Only the
   pages PDF 41 disowns are excepted.
 
+HALF (a) DONE 2026-11-25 (`bsv/StretchSAU.bsv`; `mkEBox`'s three dispatch
+sites in `StretchExecute.bsv`; the box testbenches; these docs):
+- `mkSAU`: one `(* synthesize *)` module, `request(SauReq)` /
+  `responseReady` / `response`, CRegs with the rules on port 0 and the
+  methods on port 1 (mkDivBox's discipline), no implicit conditions.
+  `SauReq` is a tagged union of the old requests (`DecReq`, `VflReq`,
+  `CvtReq`), so the twelve `needsBox` sites in the VFL family functions are
+  untouched. `boxKindOf` still numbers the classes 1 (adder), 2
+  (converter), 3 (multiplier): StretchCore's `boxReleases` releases the
+  level for 1 and 3, not 2, and needed no edit.
+- Shared: one state machine, one operand register (`rg_a`: the augend, the
+  converter's source, the multiplicand), one result register (`rg_r`: the
+  sum, the conversion, the product register), the carry and one counter;
+  the add and the recomplement pass through ONE digit-step chain (mkDecBox
+  had two). Only one class is ever in flight (mkEBox holds one instruction,
+  and an I-box instruction beside it is refused if it would ask a box).
+- Rates unchanged, so clocks unchanged: add 8 digits a clock (4, or 8 to
+  recomplement), multiply 12 bits (4), convert 16 bits to decimal (6) and 8
+  digits to binary (4).
+- The old `StretchDecBox.bsv`, `StretchVflBox.bsv`, `StretchCvtBox.bsv` are
+  marked SUPERSEDED and are no longer imported or built. They are not
+  deleted: AGENTS.md asks first for deleting files not created in the
+  session. Removing them is one `git rm` of the three paths.
+- Tests: the three box sections of `run_tests.sh` now build `mkSauAddTb`,
+  `mkSauCvtTb` and `mkSauMulTb` (the old vectors, literal answers and clock
+  counts) on `mkSAU`; a fourth, `mkSauMixTb` (`run_saumix_test.sh`), issues
+  the classes back to back to catch state one class leaves for the next.
+  Injections, each in a scratch copy, observed sets in the file header:
+  sauComp always nines' (add 11-13, the old set); the recomplement pass
+  not complementing (add 1, 7, 12 and mix 0); the multiplier's group top
+  bit dropped (mul 2, 4-8 and mix 2); dabble at six (cvt 0, 3, 4 and mix
+  1); the converter's request not clearing `rg_r` (cvt 1-7 and mix 1, not
+  mix 4). The recomplement pass adding the addend is an equivalent mutant:
+  the addend has left the register by then.
+- Verified, each run in a frozen copy of the tree beside a frozen copy of
+  the base (aa415e55), on a private STRETCH_TAPE, with STRETCH_HALT_REPORT=1:
+  - The atlas TSVs (`atlas_oracle.py --tsv`) are byte-identical (`cmp`) to
+    the base's: VFL pages PDF 102-189, 18,238 cases; FP pages PDF 64-101,
+    6,592 cases.
+  - The full suite: 15,155 PASS against the base's 15,146; the only FAIL
+    lines are the two `UNREPRODUCED, expected` p359 lines, twice each, in
+    both. The sorted PASS/FAIL lines differ only by the box testbenches'
+    renamed lines (32 old box lines, 32 SAU lines, plus mkSauMixTb's 7),
+    temp-directory names, Python's set order in two assembler messages,
+    and two `check_schedule.py` lines that the smoke section's `tail -20`
+    window shows in one log and not the other (the schedule check passes
+    all 16 in direct compiles of both trees).
+  - All 384 HALTREPORT lines (every program's halt clock and read count,
+    pinned or not) are identical, in order.
+  - bsc's `mkStretchCore.sched`, with signal numbers normalised, differs
+    from the base only where the canResume predicates name `sau` for
+    `decBox` / `cvtBox` / `vflBox`; the rule order lines are identical.
+    `check_schedule.py` passes.
+- F1 area (`fpga/synth_core.sh OUT TOP hier`, yosys `-noabc9`, each box
+  and the unit measured in the same session, 2026-11-25):
+
+  | module | LUT4 | CCU2C | TRELLIS_FF | MULT18X18D |
+  |---|---|---|---|---|
+  | mkDecBox | 1,099 | 84 | 401 | 0 |
+  | mkVflBox | 404 | 30 | 149 | 3 |
+  | mkCvtBox | 6,003 | 504 | 269 | 0 |
+  | sum | 7,506 | 618 | 819 | 3 |
+  | **mkSAU** | **7,001** | **574** | **406** | 3 |
+
+  −505 LUT4 (−7%), −413 FF (−50%). (§11's figures, 1,098 and 5,987, were
+  another run of the same script; abc's mapping varies by a few LUTs.)
+  F1's rule is NOT met by (a): the converter's 16-bit double dabble and
+  8-digit Horner chains are about 6,000 of the LUT4, and the multiplier is
+  a 48 x 12 array. Both go when (b) steps them a bit or a digit a pass.
+
+WHERE (b) STARTS: the eboxClocks terms the unit now owns. Each class below
+reaches `mkSAU`; for each, `StretchTiming.bsv`'s `eboxClocks` VflInt arm
+charges the whole E-box time and StretchCore's `rl_exec_resume` subtracts
+`boxClocks` (the unit's own 4-8 clocks) from it. (b) replaces, per class,
+the arm's term by the unit's stepping and deletes that subtraction for the
+SAU kinds:
+- adder (boxKind 1), the `x/y + z` and recomplement terms (Table 3, Fig.
+  3.11.9 / 3.11.11 / 3.11.12):
+  - `+`, `+MG`, binary and decimal (`vflLoadAddFamily`): eboxClocks'
+    `000001, 100001` row, `12 + 2b`;
+  - `L`, `LWF`, DECIMAL only (an add to zero): the same row;
+  - `M+`, `M+1`, `M+MG`, decimal (`vflMemAddFamily`): the `001001, 101001`
+    row and M+1's flat 21/22;
+  - `SRD`, decimal, at a nonzero digit offset only (the round's add of
+    five; `vflStoreFamily`): the `001101, 101101` row and `srdRound`;
+  - `K`, `KE`, `KR`, `KF...`, decimal (`vflCompareFamily`): the `10 + 2b`
+    and `8 + 2b` rows, and the immediate compares' adjustment.
+- converter (boxKind 2), Table 3's `x + u/8`, `t/4`, `s` terms (Figs
+  3.11.4-3.11.7, 3.11.13-14): `LCV` (`vflConvertFamily`), `CV`, `LTRCV`
+  and `DCV` (`vflConvertTransitFamily`): the `000011`, `100011`, `011011`
+  and `111011` rows.
+- multiplier (boxKind 3): `*` and `*+` binary (`vflMulDivFamily`): the
+  `011001` and `111001` rows. These move to A4's `mkPAU` with the
+  multiplier, and the SAU keeps the byte-assembly loop (MPY 1, Fig.
+  3.11.1) and, for `*+`, the add of the product into AB (Fig. 3.11.10).
+- NOT reaching the unit, so (b) cannot yet delete their terms: binary `L`,
+  `LWF`, `M+` family and K family, `ST` and every `SRD` but the decimal
+  round (computed inline in the
+  family functions); `LFT`, `LTRS` and decimal `*`/`*+`/`/` (the LTRS
+  action); `/` (mkDivBox, the PAU's); the connectives (`connectiveOp`).
+  Each must first send its byte loop through the adder.
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).
