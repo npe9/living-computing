@@ -447,7 +447,10 @@ softresets back to `>>>`.
 incon method and the run stops at `inconpoll` reading the incon's csr
 (IOACK+0x4), which the harness does not model (`p9boot` models the
 incon as a write-only latch; there is no Datakit here).  This is the
-only boot method booting(8) says Hobbit boards used.
+only boot method booting(8) says Hobbit boards used.  The same `fs`
+reaches the loaded kernel as well: a kernel that `b` loads over IL
+takes its own root from `fs` and stops at the same place (section 5,
+"second run").
 
 ### `b -s il /hobbit/s9term`: over the network from the 1e file server
 
@@ -546,11 +549,15 @@ On the wire (`tests/net/rom_join.pcap`, sha256 `f74abe00...dd62bd0e`):
 - Frames 397 on are s9term's own boot: a second BOOTP, IL, the attach
   as `none`, the time, `/hobbit/init`, termrc, rc.
 
-From s9term's start to rc took 88.8 s of model time; p9join's own boot
-of s9term reached rc in about 18 s.  The server's replies fall on 50 ms
-boundaries of model time (for example 76.95, 77.15, 77.35 s), so
-QEMU's lockstep quantum appears to pace the exchange.  This was not
-investigated.
+From s9term's start to rc's `% ` took 1,775,055,084 instructions (about
+88.8 s of model time).  In the p9join recording that
+`tests/test_p9boot.py` `JoinReplayTest` replays, s9term loaded by p9boot
+reaches the same `% ` at instruction 711,874,390, about 36 s, so this
+is about 2.5 times slower.  It is not more traffic: 629 frames here
+from s9term's BOOTP on, against 615 in that whole recording (through
+`echo hello`).  The server's replies fall on 50 ms boundaries of model
+time (for example 76.95, 77.15, 77.35 s), so QEMU's lockstep quantum
+appears to pace the exchange; this was not investigated.
 
 The run is a live one (QEMU, the wall clock).  Its replay is in the
 suite (section 8).
@@ -620,9 +627,14 @@ hundred bytes in BRAM at physical 0:
    struct's real offsets): memsize at 0x80 (a multiple of 1 MB),
    fpi at 0x74 (`raml.s:85-86` copies it into two vectors: point it
    at an `fprt0` in the ROM -- `tools/p9kbuild/fpi.rom`, 6,328 bytes of
-   text, `docs/p9boot.md` -- or at a trap), argc = 0 at 0x100 (or
-   arguments in argbuf), and an Env at 0x200 (nentry = 0, or sysname /
-   station / fs);
+   text, `docs/p9boot.md` -- or at a trap), argc at 0x100 with argv
+   pointing into argbuf, and an Env at 0x200 (sysname / station / fs).
+   These choose s9term's root.  `arginit` gives /boot the ROM's argv
+   plus `fs` (`rammain.c:82-84`), and /boot prompts `root is from` only
+   when that makes argc <= 1 (`boot/boot.c:47-48`).  So argc = 0 with
+   nentry = 0 gives the prompt (p9boot's hand-off).  argc >= 1 with
+   `fs=il` boots over IL without asking, as the real ROM does after `e
+   fs il` (section 5);
 4. jump as `gotopc` does (`roml.s:173-186`): PSW = 0, VB = 0, the
    entry.
 
@@ -683,9 +695,10 @@ failures observed are in the test's header.
   corresponds to), how RAM above the fitted size decoded (the ROM
   assumes it aliases), and the incon/Datakit interface, which no model
   here implements.
-* Why the file-server exchange after the hand-off runs about 5 times
-  slower in model time than p9join's (section 5).  The 50 ms spacing
-  of the server's replies suggests the lockstep quantum.
+* Why s9term's boot after the hand-off takes about 2.5 times the model
+  time p9join's recording does, with about the same number of frames
+  (section 5).  The 50 ms spacing of the server's replies suggests the
+  lockstep quantum.
 * Found here, not fixed here: `roml.s`'s
   softreset saves PSW/CONFIG/R0 inside `argbuf` (section 4), which
   clobbers the arguments if a crash comes back to the ROM; and `_copy`

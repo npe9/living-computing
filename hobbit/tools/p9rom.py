@@ -22,9 +22,11 @@ latch) with three differences, each a choice in ROM_CHOICES:
     up 1 MB, 2 MB, ... above it.
 
 Console output is Quart channel 0 (rommain.c:40-41: eiaspecial(0,
-&printq, &kbdq, 19200)).  `--type 'WAIT=REPLY'` types REPLY on channel 0
-once channel 0's output (after the previous match) contains WAIT;
-`--until TEXT` stops once it contains TEXT.
+&printq, &kbdq, 19200)).  `--type 'WAIT=REPLY'` types REPLY once channel
+0's output (after the previous match) contains WAIT: on channel 0 to the
+ROM, and after the hand-off to s9term's keyboard (channel 2, scan codes;
+ROM_CHOICES['console-input']).  `--until TEXT` stops once channel 0's
+output contains TEXT.
 
     python3 tools/p9rom.py tools/p9kbuild/9rom --until '>>>'
 """
