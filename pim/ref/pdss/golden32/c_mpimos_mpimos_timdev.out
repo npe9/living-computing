@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/mpimos_timdev.kl1" : Compiling ... timer/1,timer_request/3,wait_get_count/4,wait_on_at/4,wait_on_after/4,wait_now/2,timer_error/3,raise_error/2,message/2,END.
+
+[timer/1,timer_request/3]
+successdone
+
+exit 0
+asm dc858f0a6b7c65c4be396204a687915548c48ceb5ec4963a2c945ce76f93550d
+sav none

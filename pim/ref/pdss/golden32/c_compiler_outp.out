@@ -1,0 +1,94 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/outp.kl1" : Compiling ... write_vector/3,write_vect/3,convert_vector_to_string/2,string_append/2,convert_integer_to_string/2,convert_one_integer_to_string/3,erace_or_convert_instruction/8,erace_or_convert_gc_instruction/12,erace_or_convert_one_instruction/12,set_type_for_wait_variable/4,obtain_type_info/3,obtain_builtin_info/3,convert_variable/5,convert_args/6,convert_one_arg/6,write_object_code/3,write_one_object_code/3,write_args/5,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194459     50    208    10    1584000        0
+After:      12343     38    129     3     114516        0
+GCed :     182116     12     79     7    1469484        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+write_one_arg/3,write_otherwise/3,write_alternatively/2,convert_code_for_PDSS/3,convert_code_for_PDSS/5,write_label/3,write_code_header/4,write_code_end/3,write_rkp_information/6,write_public/5,write_module/6,write_messages/3,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     148272     48   3756     3    1584260        0
+After:      51260     40   3753     3     807084        0
+GCed :      97012      8      3     0     777176        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     100636     50   6986     3    1584260        0
+After:      60770     50   6985     3    1265036        0
+GCed :      39866      0      1     0     319224        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      69618     50   9019     3    1584156        0
+After:      66931     50   9019     3    1562660        0
+GCed :       2687      0      0     0      21496        0
+             word    rec    rec   rec       byte     byte
+GC gain is less than 5%. Swap goals in queue.
+GC Time: N msec
+
+GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      69333     90   9029     3    1584004        0
+After:      62885     74   8917     3    1520004        0
+GCed :       6448     16    112     0      64000        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-6     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      68617    104   9066     3    1583996        0
+After:      62704     50   8731     3    1496524        0
+GCed :       5913     54    335     0      87472        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-7     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      71819    100   8844     3    1583996        0
+After:      60765     84   8273     3    1431636        0
+GCed :      11054     16    571     0     152360        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-8     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      72403    134   8808     3    1584012        0
+After:      62079     82   8326     3    1444604        0
+GCed :      10324     52    482     0     139408        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-9     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      77787    122   8434     3    1583996        0
+After:      57466     50   7241     3    1283596        0
+GCed :      20321     72   1193     0     300400        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-10    KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :      94777     90   7246     3    1584012        0
+After:      56805     42   4496     3     974140        0
+GCed :      37972     48   2750     0     609872        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-11    KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     129895     92   4701     3    1584004        0
+After:      60275     42   2602     3     770556        0
+GCed :      69620     50   2099     0     813448        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+tbl/5,$tbl/5_0/4,$tbl/5_1/5,$tbl/5_2/5,$tbl/5_3/5,$tbl/5_4/4,$tbl/5_5/5,$tbl/5_6/5,$tbl/5_7/5,$tbl/5_8/4,$tbl/5_9/5,$tbl/5_10/5,set_vector_element/4,
+GC-12    KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     160755     92   2676     3    1583996        0
+After:      31122     42    113     3     262796        0
+GCed :     129633     50   2563     0    1321200        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+ref_vector_element/4,output_const_code/3,output_const_code_/3,write_string/5,output_const_arg/5,output_one_arg/3,optimize/2,$optimize/2_11/5,END.
+
+[write_code_end/3,write_code_header/4,write_label/3,erace_or_convert_instruction/8,write_vector/3,write_rkp_information/6,write_messages/3,convert_code_for_PDSS/3,write_object_code/3,write_otherwise/3,...]
+successdone
+
+exit 0
+asm 28c1ca61c078a2766536564825c53b4306e75426ce3384d3ab3623ff4fe4aee9
+sav none

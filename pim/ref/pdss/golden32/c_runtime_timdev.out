@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../runtime/timdev.kl1" : Compiling ... timer/1,timer2/1,wait_get_count/4,wait_on_at/4,wait_on_after/4,wait_now/2,END.
+
+[timer/1]
+successdone
+
+exit 0
+asm 52e45ae9f9ed61509e2aa7f2d6ba11bc819e92eb866b9cb8feaccdc4d3b7b989
+sav none

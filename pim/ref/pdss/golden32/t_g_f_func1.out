@@ -1,0 +1,35 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/g_f_func1" : Compiling ... go/0,abs/0,abs00/0,abs00/1,abs00ans/1,abs01/0,abs01/1,abs01ans/1,abs02/0,abs02/1,abs02ans/1,abs03/0,flr/0,flr00/0,flr00/1,flr00ans/1,flr01/0,flr01/1,flr01ans/1,flr02/0,flr02/1,flr02ans/1,flr03/0,flr03/1,flr03ans/1,flr04/0,flr04/1,flr04ans/1,flr05/0,srt/0,srt00/0,srt00/1,srt00ans/1,srt01/0,srt01/1,srt01ans/1,srt02/0,srt02/1,srt03/0,ln/0,ln00/0,ln00/1,ln00ans/1,ln01/0,ln01/1,ln02/0,ln02/1,ln03/0,log/0,log00/0,log00/1,log00ans/1,log01/0,log01/1,log02/0,log02/1,log03/0,exp/0,exp00/0,exp00/1,exp01/0,exp01/1,exp01ans/1,exp02/0,exp02/1,exp02ans/1,exp03/0,exp03/1,exp03ans/1,exp04/0,itf/0,itf00/0,itf00/1,itf00ans/1,itf01/0,itf01/1,itf01ans/1,itf02/0,itf02/1,itf02ans/1,itf03/0,fti/0,fti00/0,fti00/1,fti00ans/1,fti01/0,fti01/1,fti01ans/1,fti02/0,fti02/1,fti02ans/1,fti03/0,fti03/1,fti04/0,fti04/1,fti05/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : g_f_func1
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for G_Float_Function_1_Arg %%%
+% G_Float_Abs %%%%%%%%%%% abc
+% G_Float_Floor %%%%%%%%% abcde
+% G_Float_Sqrt %%%%%%%%%% abc
+% G_Float_Ln %%%%%%%%%%%% abc
+% G_Float_Log %%%%%%%%%%% abc
+% G_Float_Exp %%%%%%%%%%% abcd
+% G_Integer_To_Float %%%% abc
+% G_Float_To_Integer %%%% abcde
+Total of 101 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 3703024d32e730e80b1e3654d5d1938addf011c0b990e93bea8f3ffc39f25131
+sav 8d4557ffc3696beeb8a71ec6b0edc99717881c8b6f37e729979c49340201ad26

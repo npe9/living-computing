@@ -542,22 +542,30 @@ packages name the shoen, foster-parent and suspension record fields.
 The microprogram proper is still unread. See
 `pseudo_pimm_firmware.md`.*
 
-## PDSS runs (2026-11-20)
+## PDSS runs (2026-11-20; portable since 2026-11-25)
 
-`ref/pdss/` builds PDSS V2.52.20 from `nonlocal/pdss.tar.Z` on the
-development machine and `ref/pdss/test.sh` (in `run_tests.sh`) runs a
-KL1 program on it end to end: PDSS's own KL1 compiler, running on the
-port, compiles N-queens; the result prints 2, 4 and 92 solutions for 4,
+`ref/pdss/src/` holds PDSS V2.52.20, imported unedited from
+`nonlocal/pdss.tar.Z` and made portable C in ordinary commits on top
+(`git log -- ref/pdss/src`). `ref/pdss/test.sh` (in `run_tests.sh`)
+builds it and runs it end to end: PDSS's own KL1 compiler, running on
+it, compiles N-queens; the result prints 2, 4 and 92 solutions for 4,
 6 and 8 queens, and again through four garbage collections with a
-small heap.
+small heap; then all 186 conformance jobs (PDSS's own `test/`, the
+samples, the KL1 compiler on every library source) match their golden
+transcripts byte for byte, GC reports included.
 
-The port is a 683-line patch and a shim, not a 64-bit rewrite: PDSS
-keeps pointers in `int`, so it is built x86_64 with code, heap and
-stack all placed below 2 GB (macOS on Apple Silicon therefore needs
-Rosetta; the Linux `-m32` recipe is written but untested). The one real
-64-bit bug was `long` used as a 32-bit code word in `klb.h`. Details,
-what is unverified (PDSS's own `test/` directory has not been run), and
-the observed fault injections are in `ref/pdss/README.md`.
+The 2026-11-20 port kept pointers in `int` and ran only x86_64 below
+2 GB. The source now keeps 32-bit references (arena offsets and a
+table for outside addresses) where it kept pointers, so cells stay 8
+bytes as in 1992, and it makes no word-size, byte-order, alignment or
+`char`-signedness assumption. It builds with clang and GCC 15, natively
+on arm64 and under Rosetta on x86_64, with ASan and UBSan silent, and
+every ISO C file compiles for 32-bit ARM; all of these give
+byte-identical transcripts and save files, and the 1992 save files,
+written big-endian on a SPARC, load. With the reference port's record
+sizes it reproduces that port's transcripts exactly. Targets, the two
+goldens, the remaining leads (Linux, big-endian, Windows) and the
+observed fault injections are in `ref/pdss/README.md`.
 
 **Roadmap decision 3 can now be taken on evidence:** an executable
 KL1-B runtime by the PIMOS group exists to read and experiment

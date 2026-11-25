@@ -1,0 +1,32 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/wait_cnst_s" : Compiling ... go/0,atm/0,atm00/0,atm00/1,atm01/0,atm01/1,atm02/0,atm02/1,atm03/0,atm03/1,atm04/0,atm04/1,atm05/0,atm05/1,atm06/0,atm06/1,atm07/0,nil/0,nil00/0,nil00/1,nil01/0,nil01/1,nil02/0,nil02/1,nil03/0,nil03/1,nil04/0,nil04/1,nil05/0,nil05/1,nil06/0,nil06/1,nil07/0,int/0,int00/0,int00/1,int01/0,int01/1,int02/0,int02/1,int03/0,int03/1,int04/0,int04/1,int05/0,int05/1,int06/0,int06/1,int07/0,flt/0,flt00/0,flt00/1,flt01/0,flt01/1,flt02/0,flt02/1,flt03/0,flt03/1,flt04/0,flt04/1,flt05/0,flt05/1,flt06/0,flt06/1,flt07/0,vec/0,vec00/0,vec00/1,vec01/0,vec01/1,vec02/0,vec02/1,vec03/0,vec03/1,vec04/0,vec04/1,vec05/0,vec05/1,vec06/0,vec06/1,vec07/0,done/0,unify/2,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : wait_cnst_s
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Wait_Constant (Suspend) %%%
+% Wait_Atom %%%%%%%%%%%%% abcdefg
+% Wait_Nil %%%%%%%%%%%%%% abcdefg
+% Wait_Integer %%%%%%%%%% abcdefg
+% Wait_Float %%%%%%%%%%%% abcdefg
+% Wait_Vector %%%%%%%%%%% abcdefg
+Total of 121 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm c7924a8cd770fc89ef7000be62a783b1a11fbfb1d0ed5dc5859fc812a50f0b5f
+sav bbd7daa9c9b89e6f4ef06cc36d3a28532dd0527396301077aaf97697a64d6ec4

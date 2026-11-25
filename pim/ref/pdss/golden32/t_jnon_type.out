@@ -1,0 +1,33 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/jnon_type" : Compiling ... go/0,atm/0,atm00/0,atm00/1,atm01/0,atm01/1,atm02/0,atm02/1,atm03/0,atm03/1,atm04/0,atm04/1,atm05/0,atm05/1,atm06/0,atm06/1,atm07/0,int/0,int00/0,int00/1,int01/0,int01/1,int02/0,int02/1,int03/0,int03/1,int04/0,int04/1,int05/0,int05/1,int06/0,int06/1,int07/0,lst/0,lst00/0,lst00/1,lst01/0,lst01/1,lst02/0,lst02/1,lst03/0,lst03/1,lst04/0,lst04/1,lst05/0,lst05/1,lst06/0,lst06/1,lst07/0,vec/0,vec00/0,vec00/1,vec01/0,vec01/1,vec02/0,vec02/1,vec03/0,vec03/1,vec04/0,vec04/1,vec05/0,vec05/1,vec06/0,vec06/1,vec07/0,str/0,str00/0,str00/1,str01/0,str01/1,str02/0,str02/1,str03/0,str03/1,str04/0,str04/1,str05/0,str05/1,str06/0,str06/1,str07/0,flt/0,flt00/0,flt00/1,flt01/0,flt01/1,flt02/0,flt02/1,flt03/0,flt03/1,flt04/0,flt04/1,flt05/0,flt05/1,flt06/0,flt06/1,flt07/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : jnon_type
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Jump_On_Non_Type %%%
+% Jump_On_Non_Atm %%%%%%% abcdefg
+% Jump_On_Non_Integer %%% abcdefg
+% Jump_On_Non_List %%%%%% abcdefg
+% Jump_On_Non_Vector %%%% abcdefg
+% Jump_On_Non_String %%%% abcdefg
+% Jump_On_Non_Float %%%%% abcdefg
+Total of 102 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 99d9a91d8bd6b0e127b6720e89724ac6f08a89e4c17b404283b839c48f33411e
+sav 6e003554765db2ae7e04946942178dee2310aaea4e61ceeec4675b7f0a34fff4

@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/pool.kl1" : Compiling ... bag/1,stack/1,queue/1,sorted_bag/1,sorted_bag/2,keyed_bag/1,keyed_bag/2,keyed_bag/3,keyed_set/1,keyed_set/2,keyed_set/3,keyed_sorted_bag/1,keyed_sorted_bag/2,keyed_sorted_set/1,keyed_sorted_set/2,multiply_keyed_bag/2,multiply_keyed_bag/3,END.
+
+[bag/1,stack/1,queue/1,sorted_bag/1,sorted_bag/2,keyed_bag/1,keyed_bag/2,keyed_bag/3,keyed_set/1,keyed_set/2,...]
+successdone
+
+exit 0
+asm 7287e73913f56b620961212fa6942eb8edebda5b90a920cc4df226da9a0b23db
+sav none

@@ -1,0 +1,11 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/sorter.kl1" : Compiling ... sort/2,key_sort/2,Warning:This predicate overlapped with builtin macro
+	merge/3
+merge/3,merge/4,key_merge/3,key_merge/4,sort/3,cut_and_sort_respectively/5,cut/6,merge_sort/3,do_merge_sort/3,key_sort/3,kcut_and_sort_respectively/5,kcut/6,kmerge_sort/3,do_kmerge_sort/3,END.
+
+[sort/2,sort/3,key_sort/2,key_sort/3,merge/3,merge/4,key_merge/3,key_merge/4]
+successdone
+
+exit 0
+asm 7ce1807eeabe1b954e654e54fd7cbd3e07e7920fc2c0e33793ce8fab1ba1da38
+sav none

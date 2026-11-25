@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/mpimos_fildev.kl1" : Compiling ... files/1,file_request/4,file_wait_created/6,rfile_wait_reset/3,rfile_not_reset/4,rfile/5,rfile_com/5,rfile_wait_status/7,rfile_wait_buffer/9,rfile_wait_pathname/9,rfile_wait_aborted/7,wfile_wait_reset/3,wfile_not_reset/4,wfile/5,wfile_com/5,wfile_wait_status/7,wfile_wait_pathname/9,directory_wait_created/5,directory/3,directory_wait_pathname/7,directory_wait_listing/7,listing/3,listing_wait_name/7,directory_wait_delete/5,wait_close/2,file_error/3,file_error/5,directory_error/5,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194968     50    183    10    1584000        0
+After:      11417     36    106     3     104284        0
+GCed :     183551     14     77     7    1479716        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+raise_error/2,message/2,END.
+
+[files/1,file_request/4]
+successdone
+
+exit 0
+asm d59315883814fe063ad4d68263af9fb5dc6d64d0b3401b5f23fbc62ccb848b5f
+sav none

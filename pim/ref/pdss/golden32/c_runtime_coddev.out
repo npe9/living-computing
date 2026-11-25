@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../runtime/coddev.kl1" : Compiling ... do/1,do/2,wait_assemble_module/5,wait_assemble_module2/4,wait_load_module/5,wait_load_module2/4,do_debug/2,do_backtrace/2,do_trace_module/3,do_spy_predicate/5,status/2,mode/2,END.
+
+[do/1]
+successdone
+
+exit 0
+asm b969b838d0ad5cb6c6e14682c7f60c78745ca42535db5334cd62b7a6a0a8dfd3
+sav none

@@ -4,32 +4,29 @@ PDSS V2.52.20 (ICOT, 1992) is a complete KL1-B abstract machine in C:
 interpreter, scheduler, suspension, copying and MRB garbage collection,
 shoen, exceptions, built-ins, with its own KL1 compiler (written in
 KL1) and Micro PIMOS. It is the nearest surviving *source* to the
-firmware that ran PIMOS (`docs/pimos_boot_requirements.md` §0.1), and
-this directory makes it run.
+firmware that ran PIMOS (`docs/pimos_boot_requirements.md` §0.1). This
+directory holds it, made portable C, and the tests that show it still
+behaves as the 1992 program did.
 
-    ./test.sh        # build, then compile and run a KL1 program on it
-
-The source is not copied here. `build.sh` unpacks
-`docs/nonlocal/pdss.tar.Z` into `build/` (untracked), applies
-`port.diff`, adds `port_low.c`, compiles, and reassembles the KL1
-libraries from their `.asm` files.
+    ./test.sh        # build src/, run a KL1 program, conformance (~30 s)
+    ./test_slow.sh   # every target this host can build (several minutes)
+    ./modern.sh T    # build target T into build-T/ (see "Targets")
 
 ## The source in tree: `src/`
 
 `src/` is the PDSS V2.52.20 distribution, `docs/nonlocal/pdss.tar.Z`
 (SHA-256 `3da79c34abf3bcd5f30d0b178b869ee25b4cc544de82713552721da94888c13c`),
-imported unedited with the tarball's own layout: `emulator/` (the C
-program), `runtime/`, `mpimos/`, `compiler/`, `debug_utl/`,
-`pimos_utl/` (KL1 sources and their `.asm`), `compiler_pl/` (the
-Prolog-hosted bootstrap compiler), `test/`, `sample/`, `macro/`,
-`emacs/`, `doc.e/`, `doc.j/`, and the top-level `README`, `INSTALL`,
-`CONTENTS`, `COPYRIGHT` and `LOG.*` files. Of the archive's 412 files,
-342 are imported. The 70 left out are build products, listed in
-`pristine.excluded`: the 68 `*.sav` save files, which `pdssasm` rebuilds
-from the `*.asm`, and the two `*.dvi` files, which TeX builds from the
-`.tex`. `./pristine.sh DIR` re-extracts the archive and checks it
-against `pristine.sha256`, which holds the sums of the 342 imported
-files.
+imported with the tarball's own layout: `emulator/` (the C program),
+`runtime/`, `mpimos/`, `compiler/`, `debug_utl/`, `pimos_utl/` (KL1
+sources and their `.asm`), `compiler_pl/` (the Prolog-hosted bootstrap
+compiler), `test/`, `sample/`, `macro/`, `emacs/`, `doc.e/`, `doc.j/`,
+and the top-level `README`, `INSTALL`, `CONTENTS`, `COPYRIGHT` and
+`LOG.*` files. Of the archive's 412 files, 342 are imported. The 70
+left out are build products, listed in `pristine.excluded`: the 68
+`*.sav` save files, which `pdssasm` rebuilds from the `*.asm`, and the
+two `*.dvi` files, which TeX builds from the `.tex`. `./pristine.sh
+DIR` re-extracts the archive and checks it against `pristine.sha256`,
+which holds the sums of the 342 imported files.
 
 The import is two commits. "pristine import of the PDSS V2.52.20
 emulator sources" brought in `emulator/` and `COPYRIGHT`, with the
@@ -38,78 +35,235 @@ emulator then at `src/` itself; a pure rename later moved it to
 everything else. Every later change is an ordinary commit on top, so
 `git log -- src` and `git diff <import> -- src` (or
 `./pristine.sh /tmp/o && diff -ru /tmp/o src`) record every change made
-to ICOT's code.
+to ICOT's code. Only `src/emulator/` has been changed.
 
-## What the port changes
+Build outputs never enter `src/`: `modern.sh T` copies `src/` to
+`build-T/` (gitignored), builds `pdss` and `pdssasm` from
+`src/emulator/` with objects in `build-T/emulator/`, and reassembles
+the 52 library modules there from their `.asm` (the tarball's `make
+reassm`).
 
-PDSS assumes a 32-bit machine in three ways. The port keeps the source
-32-bit-minded and fixes the environment, so the diff stays small (683
-lines over 27 files, most of it mechanical):
+### Retired: the reference port
 
-| Assumption | Where | What the port does |
+Until 2026-11-25 the source was not kept here. `build.sh` unpacked the
+tarball into `build/`, applied `port.diff` (683 lines) and added
+`port_low.c`, a shim that placed heap, code and stack below 2 GB so
+that PDSS's pointers-in-`int` held; it built x86_64 only (Rosetta on
+Apple Silicon). That build recorded `golden/` (below). The in-tree
+source supersedes it: the reference port's changes are in `src/`'s
+history (commit "src/ starts from the reference port"), and with the
+reference port's record sizes the modern source reproduces `golden/`
+byte for byte on every target. `build.sh`, `port.diff` and
+`port_low.c` were deleted; they remain in git history.
+
+## What the modernisation changes
+
+The 1992 source assumed a 32-bit big-endian-or-little-endian machine
+with K&R C: a pointer fits in an `int` (a cell's value field holds
+pointers; records hold pointers; native predicates are function
+pointers stored in code), `long` is 32 bits, plain `char` is signed or
+unsigned at the compiler's whim, and BSD system calls. The changes, in
+commit order (`git log -- src/emulator`):
+
+- **ANSI C.** K&R definitions to prototypes, `<varargs.h>` to
+  `<stdarg.h>`, every function declared, every non-`void` function
+  returns a value (324 had fallen off the end), `exit_pdss` is
+  `_Noreturn`.
+- **32-bit references, not pointers** (`port.h`, `arena.c`). A cell
+  stays 8 bytes (`uint16 type, uint16 mrb, int32 value`), as in 1992.
+  What used to be a pointer in a cell or a record is a `PREF`, a
+  32-bit reference: 0 is NULL; 1..0x7FFFFFFF is a byte offset into the
+  *arena*, one block from which every PDSS allocation comes (`malloc`
+  and friends are `pdss_malloc` etc. in `pdss.h`); `0x80000000|i` is
+  entry `i` of the *foreign table*, for the few addresses outside the
+  arena (static tables, C functions of the native predicates, `argv`
+  strings). `Ref(p)` makes a reference; `CellOf`, `CodeOf`, `GrecOf`,
+  `SrecOf`, `PrecOf`, `MrecOf` read one back typed. `CodeOfFunction` /
+  `FunctionOfCode` carry native predicates (a C function's address
+  where a code address goes, as in 1992; converting function to object
+  pointers is not ISO C but POSIX requires it, and these two macros
+  are the only place it happens). The arena is
+  `PDSS_ARENA_MB` megabytes (default 1024, untouched pages cost
+  nothing on demand-paged systems).
+- **No type punning, no unaligned access.** KL1-B code words are read
+  and written with `memcpy` (`pdss_get32` etc. in `port.h`); floats
+  live in an `int32_t` and are converted with `memcpy`; the
+  assembler's and the reader's temporary areas align blocks for the
+  structs they hold (they were 4-byte aligned, enough when a pointer
+  was 4 bytes).
+- **No implementation-defined integer behaviour.** Values that must
+  wrap as 32-bit two's complement are computed unsigned and converted
+  with `pdss_s32` (by arithmetic, not a cast); priorities, string
+  descriptors and string elements no longer shift into the sign bit
+  of an `int`; integer literals at `INT32_MIN` no longer overflow.
+- **Save files** (`saveload.c`): big-endian bytes, as written by the
+  1992 SPARC build, read and written by arithmetic on `uint32_t`; the
+  magic numbers `0xA5C3`-`0xA5C9` and the format are unchanged. The
+  1992 `.sav` files load (see "Targets").
+- **Operating system** (`sysdep.h`, `sysdep.c`): everything beyond ISO
+  C comes from POSIX through these two files: BSD `re_comp`/`re_exec`
+  over `<regex.h>`; `getwd` over `getcwd`; BSD `sigblock`/`sigsetmask`
+  over `sigprocmask`; job-control stop; the `PDSS_WORLD` test hook.
+  Directory listing (`blt_iodev.c`, `<dirent.h>`), `getrusage`,
+  `getpwnam`, `alarm` and `signal` are used directly and are POSIX.
+- **Bugs of the 1992 source fixed on the way**: `atom.c` modified a
+  variable twice without a sequence point; `read_line`/`read_buffer`
+  returned an uninitialised character after a GC restart or for a
+  zero-length read; the tracer printed an `int` with `%s`; four
+  `sprintf`s of a path (two of a start-up file name into 256 bytes,
+  two of a directory entry, up to 1024 bytes on macOS, into 512) are
+  bounded;
+  `blt_code.c` passed an atom where a module entry was expected.
+
+Not built and not modernised: `pdssinv.c` (an inverse assembler, not
+in the Makefile), `table.c` (a template included by other files),
+`pdssmerge.c`; `native.c`'s `a.out` native-code loader is compiled out
+and reports a link error, as the reference port did.
+
+### Record sizes
+
+The garbage collector's schedule depends on how many bytes the goal,
+suspension, shoen and merger records take, and the KL1 compiler's
+register allocation depends on the collector's schedule (it reuses
+variables freed by MRB). So the record layout is visible in output.
+The default layout is 1992's: a reference is 4 bytes (goal record 104
+bytes, suspension 24, shoen 76, merger 32). The reference port, built
+LP64, had 8-byte pointer fields in records. `-DPDSS_LP64_RECORDS`
+(`PREF_PAD` in `record.h` and `cell.h`) pads each reference field of a
+record to 8 bytes and reproduces those sizes; the `-lp64rec` targets
+use it. It is a layout check, not a separate program: the same code
+runs, only the padding differs.
+
+With the default layout, 140 of the 186 conformance transcripts are
+byte-identical to the reference port's and 182 are identical with the
+GC reports removed (`gcblind.py golden build-native/conf`). The other
+four are KL1 compiler outputs whose register allocation moved with
+the GC schedule: `c_compiler_outp`, `c_mpimos_cmd_code`,
+`c_mpimos_shell`, `c_pimos_utl_multiply_keyed_bag`. Moving the
+schedule another way, with the lp64rec build and a different heap size
+(`PDSS_ARGS=-h250000 ./conformance.sh build-lp64rec`), changes the
+same jobs' `.asm` sums to the default build's. In the reference
+port, `c_compiler_outp` ends in heap exhaustion (`golden/`); with a
+heap of 230,000 cells, or with the default layout, it compiles.
+
+So there are two goldens:
+
+- `golden/`, recorded from the reference port. Every `-lp64rec`
+  target must match it byte for byte.
+- `golden32/`, recorded from `build-native` (default layout,
+  arm64, clang) on 2026-11-25, after the default layout gave
+  byte-identical transcripts on all the targets listed below. Every
+  default-layout target must match it byte for byte.
+
+The default could be the other way round (pad records by default and
+keep one golden); 1992's sizes were chosen because they are the
+program's own and give a smaller heap footprint.
+
+## Targets
+
+`modern.sh T` builds one target; `test_slow.sh` builds them all and
+runs the conformance jobs on each. On this host (macOS 27, Apple
+Silicon), 2026-11-25:
+
+| Target | Compiler, flags | Result |
 |---|---|---|
-| A pointer fits in an `int` (`cell.h`: `int value` holds pointers; K&R functions returning pointers are implicitly `int`) | everywhere | Nothing in the source. The program is built x86_64, linked non-PIE at 1 MB with a 64 KB page zero, and `port_low.c` gives it a heap (`malloc` family) and a stack below 2 GB, so every pointer PDSS can see does fit. |
-| `long` is 32 bits | `klb.h` code-word macros (`GetInt`, `GetRelAddr`, `RADDR`, ...) | `long` becomes `int` there. This was the one real crash (the assembler walked a label chain 8 bytes at a time). |
-| K&R C as 1992 compilers took it | 22 files | forward declarations for `static` functions used before their definition; `<varargs.h>` in `goal.c`/`exception.c` replaced by eight fixed pointer arguments; `main`'s `CHAR **argv`; `static FILE *file = stdout`; `a.out.h` native-code loading compiled out; BSD `re_comp`/`re_exec` supplied over POSIX regex; `config.h` paths made relative. |
+| `native` | clang, arm64, `-O2` | matches `golden32/` |
+| `gcc` | GCC 15.2 (Homebrew), arm64 | matches `golden32/` |
+| `x86_64` | clang `-arch x86_64`, run under Rosetta | matches `golden32/` |
+| `uchar`, `schar` | `-funsigned-char`, `-fsigned-char` | match `golden32/` |
+| `asan` | `-fsanitize=address,undefined`, no recovery | matches `golden32/`, no report |
+| each `-lp64rec` | the above with `-DPDSS_LP64_RECORDS` | match `golden/` |
+| 1992 save files | `build-lp64rec` with the shipped `.sav` (big-endian, written on a SPARC) in place of the reassembled ones | load and run; transcripts match `golden/` with GC reports removed, except `c_compiler_outp` (GC-schedule dependent: the shipped files order atoms differently) |
+| 32-bit | `arm-none-eabi-gcc` 14.3 (newlib, where `int32_t` is `long`), compile only, `-Werror=format -Werror=incompatible-pointer-types` | every ISO C source compiles; `blt_iodev.c`, `pdss.c` and `sysdep.c` need POSIX headers newlib lacks |
 
-Consequences:
+The 32-bit compile found real faults the 64-bit builds could not: 29
+places passing an `int *` where an `int32_t *` is wanted (the float
+built-ins, the assembler's and the reader's float scanners), 21
+`int32_t` values printed with `%d` or `%x`, and a static prototype
+that disagreed with its definition (`get4c` in `saveload.c`).
 
-- **macOS on Apple Silicon needs Rosetta.** arm64 does not allow the
-  small page zero. `build.sh` exits 77 and `test.sh` reports SKIP where
-  x86_64 cannot run.
-- **Linux is untested.** The recipe is `-m32`, which needs none of the
-  low-memory shim; it is written in `build.sh` and has never been run.
-- **This is not a 64-bit port.** A real one widens the cell and removes
-  the implicit-`int` pointer returns. It is not needed to use PDSS as a
-  reference, and this build is the oracle such a port would be checked
-  against.
+Save files are byte-identical across all default-layout targets (each
+transcript carries the `.asm` and `.sav` sums, and `libsav` the sums of
+all 52 reassembled libraries), so a `.sav` written by one target is
+the file any other writes. 16 of the 52 reassembled libraries are
+byte-identical to the shipped SPARC files; the other 36 differ only in
+the order of their atom tables, and the shipped ones load (above).
 
-## What has been verified
+AddressSanitizer inside the arena: under `-fsanitize=address`,
+`arena.c` poisons each block's header, the slack between the size asked
+for and the size class, and freed blocks (but the free-list link), so
+ASan sees overflows and uses after free in PDSS's own memory. Checked
+by a two-line program that writes one byte past a 10-byte block (ASan
+reports it) and one that writes into a freed block (ASan reports
+use-after-poison). Not covered: the KL1 heap and code areas are each
+one large block, so an access within them is not checked.
 
-`test.sh`, from a clean unpack:
+The foreign table grows by one entry per distinct outside address and
+never shrinks. `PDSS_FOREIGN_TRACE=1` prints each new entry. Measured:
+9 entries for one 4-queens run, still 9 for three 8-queens runs with a
+12,000-cell heap (6 collections); 14 for the KL1 compiler on
+`queens.kl1`, 16 on `compiler/comp.kl1`. The count follows the static
+tables and native predicates a run touches, not the work done.
 
-1. `pdssasm` reassembles all 52 library modules (runtime 5, Micro PIMOS
-   35, compiler 12). The shipped `.sav` files were assembled on a SPARC
-   and are not used. A reassembled file is the same size as the shipped
-   one and differs in the order of its atom table; they have not been
-   compared beyond that.
-2. PDSS boots Micro PIMOS to its `| ?-` prompt.
-3. PDSS's KL1 compiler, running on the port, compiles `queens.kl1`
-   (the tape's `sample/queen.kl1` plus counting and printing
-   predicates).
-4. The result, loaded and run, prints the two 4-queens solutions and
-   the counts 2, 4 and 92 for 4, 6 and 8 queens (38,979 reductions for
-   8).
-5. 8 queens twice with a 12,000-cell heap: four copying collections,
-   same answers.
+Leads (not tested here; exact commands):
 
-Observed fault injections (2026-11-20; `PDSS_INJECT` in `build.sh`):
+- Linux x86_64 or arm64, gcc or clang: `./test.sh && ./test_slow.sh`
+  (the `x86_64` target is macOS-only; on Linux use `native`). Docker is
+  installed on this host but its daemon was not running:
+  `docker run --rm -v "$PWD":/w -w /w/pim/ref/pdss gcc:14 sh -c './test.sh'`.
+- Big-endian: no big-endian toolchain with a C library is installed
+  (`m68k-elf-gcc` has no libc; `qemu-system-ppc`/`-s390x` are
+  installed without a guest). On a big-endian Linux (s390x, ppc64):
+  `./test.sh && ./test_slow.sh`. The save-file code is byte-order free
+  by construction and the 1992 SPARC files load on little-endian.
+- 32-bit with a C library: `CC="gcc -m32" ./modern.sh native` on an
+  x86_64 Linux with multilib, then `./conformance.sh build-native`
+  against `golden32/`.
+- Windows: replace `sysdep.c` (regex, signals, `getcwd`) and the
+  direct POSIX uses listed above; the rest is ISO C.
 
-- `RADDR` back to `long`: `pdssasm` fails on the first library module;
-  build FAIL.
-- integer `=\=` computing `<` (`COMPARE_INT(!=)` to `COMPARE_INT(<)` in
-  `emulate.c`): the libraries still build, the queens run prints a GC
-  report instead of solutions and dies with a bus error; FAIL. (The
-  crash under a runaway computation is itself unexplained.)
-- Both restored with `PDSS_REBUILD=1`; PASS.
+Remaining compiler warnings with `-Wall -Wextra` (Apple clang 21,
+arm64): 674 `-Wpointer-sign` (`CHAR` is `unsigned char` and is passed
+to the `str*` functions; same representation), 8 `-Wsign-compare`
+(unsigned loop bounds against `int` counts), and 18 unused variables,
+parameters, a label and two functions. GCC 15 adds 13
+`-Wimplicit-fallthrough` (the 1992 code's deliberate fall-throughs;
+the two in `iosub.c` were read: the inner switch returns or continues
+on every value it can take), 2 `-Wformat-truncation` (the bounded
+path `snprintf`s, intended), and 6 `-Wmaybe-uninitialized`:
 
-Not verified: PDSS's own `test/` directory (551 KB of KL1 tests) has
-not been run; the tracer, the Emacs window interface, file and timer
-devices, floating point, and MRB-GC specifically are unexercised.
+- `gc_dead.c` `func2`: used only when `argn != 0`, where it is set.
+  False positive.
+- `string.c` `get_print_image` `str`, `length`: set in each of the
+  four cases of a switch on the argument's type; its caller
+  `blt_b_get_print_image` checks the *dereferenced* type but passes
+  the undereferenced cell, so a reference argument would reach the
+  switch with none of its cases. Lead (a possible 1992 bug, not
+  reached by any conformance job).
+- `goal.c` `popup_suspension_stack` `srec`: in the `MHOOK` case, when
+  the goal already hangs on the merger variable, no record is taken
+  and the code after the switch writes `srec->other` with the previous
+  iteration's record (or, on the first, an unset pointer). Lead
+  (possible 1992 bug, not reached by any conformance job; left as it
+  was).
+- `goal.c` `move_suspension_queue` `tmp_grec` and `emulate.c`
+  `new_grec`: set on the paths the callers take (a non-empty queue; a
+  goal-creating instruction before use), not proved. Not changed.
 
-## Conformance baseline (2026-11-25)
+## Conformance
 
-`conformance.sh ROOT` runs 185 jobs from `jobs.txt` on a PDSS tree and
-compares each normalised transcript with `golden/` (plus the
-reassembled libraries' `.sav` sums, `golden/libsav.out`): every one of
-the 80 programs in PDSS's `test/` under `stat/1`, every `sample/`
-program (the deadlock samples case by case), `emulator/sample.kl1`,
-and the KL1 compiler on all 68 KL1 sources of `runtime/`, `mpimos/`,
-`compiler/`, `debug_utl/` and `pimos_utl/`. A transcript includes the
-console output, the reduction counts, the GC reports (only the msec
-fields are removed), the emulator's exit status, and the sha256 of the
-`.asm` and `.sav` the job wrote. Two recordings are byte-identical.
-The whole run takes about 20 s.
+`conformance.sh ROOT` runs 186 jobs from `jobs.txt` on a PDSS tree and
+compares each normalised transcript with a golden directory
+(`PDSS_GOLDEN`, default `golden/`): every one of the 80 programs in
+PDSS's `test/` under `stat/1`, every `sample/` program (the deadlock
+samples case by case), `emulator/sample.kl1`, the KL1 compiler on all
+68 KL1 sources of `runtime/`, `mpimos/`, `compiler/`, `debug_utl/` and
+`pimos_utl/`, and the reassembled libraries' `.sav` sums (`libsav`). A
+transcript includes the console output, the reduction counts, the GC
+reports (only the msec fields are removed), the emulator's exit
+status, and the sha256 of the `.asm` and `.sav` the job wrote. The
+whole run takes about 20 s. `PDSS_JOBS` (a regular expression) runs a
+subset; `PDSS_ARGS` adds emulator arguments, e.g. a heap size.
 
 `check_headers.py` compares each `test/` program's output with its own
 header comment, which is ICOT's expected output: 73 of 80 match, and
@@ -118,23 +272,34 @@ the 7 that do not are listed with their causes in
 where IEEE libm returns 1.0, a substring bound, and
 `code_to_predicate` on a built-in module).
 
-Building the baseline found three port bugs, now fixed in `port.diff`:
+Building the baseline found three port bugs: `float.c` called `atof`
+undeclared; `alloc_cells_to_free_list` compared a pointer difference
+with an `unsigned`, which overran the heap under LP64; and `blt_code.c`
+passed a module-name atom to `find_predicate` (a bug in the 1992
+source).
 
-- `float.c` called `atof` undeclared, so it returned an `int`: every
-  float constant was garbage and 13 float tests printed `*`.
-- `alloc_cells_to_free_list` (`memory.c`) compared `HeapRest()`, a
-  pointer difference that was 32-bit `int` on the original, with an
-  `unsigned`. Under LP64 the comparison is signed, and past the GC
-  warning line the free list overran the heap: segmentation faults
-  compiling `compiler/outp.kl1`, `debug_utl/mpimos_xref.kl1` and others,
-  depending on file-name length.
-- `blt_code.c` passed a module-name atom to `find_predicate`, which
-  takes a module entry, and dereferenced address 1 (`test/b_code_e.kl1`).
-  This is a bug in the 1992 source.
+## Fault injections
 
-Observed injections: removing the `atof` fix fails 56 jobs; removing
-the `HeapRest` fix fails 3 (`c_mpimos_file`, `c_compiler_blt`,
-`c_compiler_outp`).
+Each injected into `src/emulator/` from a backup copy, `./test.sh` run,
+and reverted from the backup (2026-11-25). Observed:
+
+- **Truncated pointer** (`port.h` `pdss_ref` returns an outside address
+  cut to 32 bits instead of a foreign-table entry, what a naive 64-bit
+  port does): the libraries still reassemble; the KL1 compiler dies
+  with a bus error; `pdss: FAIL (KL1 compile)`.
+- **Wrong tag shift** (`cell.h` `StringTypeof` shifts the string
+  descriptor by 23 instead of 24): `pdss: FAIL (KL1 compile)`.
+- **Dropped GC root** (`gc.c` no longer calls `gc_io_table`): queens
+  and its 12,000-cell-heap run still pass; conformance fails 46 of 186
+  jobs, exactly those that collect, on the live-cell counts of the GC
+  report; with the GC reports removed (`gcblind.py`) all 186 match.
+  Only the byte-exact transcript catches it, which is why the GC
+  reports stay in.
+
+The 2026-11-20 injections into the reference port (`RADDR` back to
+`long`; `=\=` computing `<`) and the baseline's (`atof` undeclared:
+56 jobs fail; the `HeapRest` comparison: 3) are in git history with
+the port they were made on.
 
 ## What it is for
 

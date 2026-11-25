@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/mpimos_windev.kl1" : Compiling ... windows/1,window_request/3,window_wait_created/5,window_wait_reset/3,window_not_reset/4,window/7,window_com/7,window_wait_status/9,window_wait_line/11,window_wait_aborted/7,wait_close/2,window_error/3,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194108     50    251    10    1584000        0
+After:       8190     38    102     3      77780        0
+GCed :     185918     12    149     7    1506220        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+window_error/5,raise_error/2,message/2,END.
+
+[windows/1,window_request/3]
+successdone
+
+exit 0
+asm 9eea305d28689651557e9064582692274a822d7aa70910b918805a3b0220deb1
+sav none

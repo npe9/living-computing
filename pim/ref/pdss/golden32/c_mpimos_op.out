@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/op.kl1" : Compiling ... create/1,make_op_table/1,set_empty/4,op_table/2,list_op/4,attach_op_type/3,search_op_table/4,search_table/4,add_operator/6,search_table_and_add/6,check_op_defs/5,replace_op_defs/7,remove_operator/6,search_table_and_remove/6,remove_result/5,check_op_defs_and_remove/5,remove_operator_all/4,search_table_and_remove_all/4,replace_operator_pool/3,add_operator_defs/4,coexist/3,init_op_table/2,END.
+
+[create/1]
+successdone
+
+exit 0
+asm 5468d266e9097b511618ca3b7705b13abf1e0f7012aada7ff2a7cda4b2bf9e86
+sav none

@@ -166,8 +166,10 @@ line 1389: "resolved, not read (titles read)"; all on disk in
 
 What PDSS, VPIM and `psdpim` are, stated once: **PDSS** V2.52.20 is a
 KL1-B interpreter in C by the PIMOS group, a sibling dialect (save magic
-`0xA5C3`-`0xA5C9`, other opcode numbers) that builds and runs here
-(`pimos_boot_requirements.md` §0.1, "PDSS runs"). **VPIM** is the
+`0xA5C3`-`0xA5C9`, other opcode numbers), held in tree as
+`ref/pdss/src/` and made portable C that behaves as the 1992 program
+did, on any word size and byte order (`pimos_boot_requirements.md`
+§0.1, "PDSS runs"; `ref/pdss/README.md`). **VPIM** is the
 runtime of every PIM except PIM/m, in PSL, read-only, with no
 translator (`nonlocal/MANIFEST.md` §1a). **`psdpim`** is the Pseudo
 PIM/m: PIM/m's KL1 firmware rebuilt as PSI-III microcode
@@ -279,7 +281,7 @@ clear, init, `impl` (load microcode `/usr/psi/pimos/kl1/pimm.MEkbn`),
 | `kbn` image builder (`library/kbn`, 5 files) | rebuild of an IPL image | source | `pimos_boot_requirements.md` §0.3 | HELD-SOURCE | `asm/kbn.py` reads | the held image's module-reference form differs from what the 1992 `kbn.kl1` writes (§0.3, "06 and 07 cells") |
 | Macro expander, preprocessor | R8 | source and object | `e-preproc.tex` | HELD-SOURCE | none | |
 | Rebuilding the object set from source | fidelity check | — | — | NOT-SEARCHED (no attempt on record) | none | needs either PIMOS running (R7) or the compiler run on a host KL1 system; PDSS's compiler is a different dialect (`pimos_boot_requirements.md` §0.5a). Clause-level identity of any `.sav` module with source is not established (`binary_reverse_engineering.md` §7) |
-| PDSS's own compiler, Micro PIMOS (`mpimos/`) | oracle only | `nonlocal/pdss.tar.Z` | PDSS manual `doc.e/pdss.tex` | HELD-SOURCE | `ref/pdss/` builds and runs N-queens | PDSS's own `test/` directory never run (`gap_analysis.md` §E) |
+| PDSS's own compiler, Micro PIMOS (`mpimos/`) | oracle only | `nonlocal/pdss.tar.Z`, in tree as `ref/pdss/src/` | PDSS manual `doc.e/pdss.tex` | HELD-SOURCE | `ref/pdss/` builds it portably and runs N-queens, PDSS's own `test/` (73 of 80 match their headers, the 7 explained), the samples and the compiler on all 68 library sources against golden transcripts (`ref/pdss/README.md`) | |
 | KLIC 2.002 (and 1.500, 2.000, 2.001, 3.001) | R8 answer oracle | `nonlocal/klic-2.002.tgz`; `nonlocal/ifs/symbolic-proc/klic-system/`, `KLIC-New/` | in archives | HELD-SOURCE | not built here (on record) | |
 | pkl1 samples (`fact`, `nrev`, `qsort`, `kkqueen`, ...) | R8 | `nonlocal/pkl1.tar.Z` | — | HELD-SOURCE | none | |
 | CAL cross system (built `.kbn` up to PIMOS 2.5; a SIMPOS program) | history only | no | Japanese PIMOS 3.0 manual §6.1 (SECONDARY in the survey) | LOST (`icot_software_survey.md` §4) | — | |
@@ -456,7 +458,7 @@ Other application holdings:
 | `asm/psdpim.py`, `mekbn.py` | `psdpim.tar.Z`, the decode table, the microprogram | `pseudo_pimm_firmware.md`, `pseudo_pimm_microcode.md` |
 | `asm/ptfdump.py` | compiled ESP `.ptf` packages | `binary_reverse_engineering.md` §4 |
 | `asm/gen_pimm_bsv.py`, `sav2hex.py` | generate tables and memory images for Bluespec | `bsv/README.md` |
-| `ref/pdss/` | PDSS port (x86_64, below 2 GB) | `ref/pdss/README.md` |
+| `ref/pdss/` | PDSS V2.52.20 in tree (`src/`), portable C: any word size and byte order; tested arm64, x86_64, gcc, clang, ASan/UBSan, 32-bit compile | `ref/pdss/README.md` |
 
 ### G. The PSI (console and front-end processor): hardware, KL0, ESP, SIMPOS, CSP, FEP
 

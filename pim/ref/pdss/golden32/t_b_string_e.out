@@ -1,0 +1,41 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_string_e" : Compiling ... go/0,str/0,str00/0,str00/1,str01/0,str01/1,str02/0,str02/1,str03/0,str03/1,str04/0,str04/1,str05/0,str05/1,str06/0,nst/0,nst00/0,nst00/1,nst01/0,nst01/1,nst02/0,nst02/1,nst03/0,nst03/1,nst04/0,nst04/1,nst05/0,nst05/1,nst06/0,nst06/1,nst07/0,nst07/1,nst08/0,nst08/1,nst09/0,nst09/1,nst10/0,nst10/1,nst11/0,nst11/1,nst12/0,nst12/1,nst13/0,nst13/1,nst14/0,nst14/1,nst15/0,ste/0,ste00/0,ste00/1,ste01/0,ste01/1,ste02/0,ste02/1,ste03/0,ste03/1,ste04/0,ste04/1,ste05/0,ste05/1,ste06/0,ste06/1,ste07/0,ste07/1,ste08/0,ste08/1,ste09/0,ste09/1,ste10/0,ste10/1,ste11/0,ste11/1,ste12/0,ste12/1,ste13/0,ste13/1,ste14/0,sse/0,sse00/0,sse00/1,sse01/0,sse01/1,sse02/0,sse02/1,sse03/0,sse03/1,sse04/0,sse04/1,sse05/0,sse05/1,sse06/0,sse06/1,sse07/0,sse07/1,sse08/0,sse08/1,sse09/0,sse09/1,sse10/0,sse10/1,sse11/0,sse11/1,sse12/0,sse12/1,sse13/0,sse13/1,sse14/0,sse14/1,sse15/0,sse15/1,sse16/0,sse16/1,sse17/0,sse17/1,sse18/0,sse18/1,sse19/0,sse19/1,sse20/0,sse20/1,sse21/0,sst/0,sst00/0,sst00/1,sst01/0,sst01/1,sst02/0,sst02/1,sst03/0,sst03/1,sst04/0,sst04/1,sst05/0,sst05/1,sst06/0,sst06/1,sst07/0,sst07/1,sst08/0,sst08/1,sst09/0,sst09/1,sst10/0,sst10/1,sst11/0,sst11/1,sst12/0,sst12/1,sst13/0,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195176     50    167    10    1584000        0
+After:      39763     38    107     3     331396        0
+GCed :     155413     12     60     7    1252604        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+sst13/1,sst14/0,sst14/1,sst15/0,sst15/1,sst16/0,sst16/1,sst17/0,sst17/1,sst18/0,sst18/1,sst19/0,sst19/1,sst20/0,sst20/1,sst21/0,sss/0,sss00/0,sss00/1,sss01/0,sss01/1,sss02/0,sss02/1,sss03/0,sss03/1,sss04/0,sss04/1,sss05/0,sss05/1,sss06/0,sss06/1,sss07/0,sss07/1,sss08/0,sss08/1,sss09/0,sss09/1,sss10/0,sss10/1,sss11/0,sss11/1,sss12/0,sss12/1,sss13/0,sss13/1,sss14/0,sss14/1,sss15/0,sss15/1,sss16/0,sss16/1,sss17/0,sss17/1,sss18/0,sss18/1,sss19/0,sss19/1,sss20/0,sss20/1,sss21/0,sss21/1,sss22/0,ast/0,ast00/0,ast00/1,ast01/0,ast01/1,ast02/0,ast02/1,ast03/0,ast03/1,ast04/0,ast04/1,ast05/0,ast05/1,ast06/0,ast06/1,ast07/0,ast07/1,ast08/0,ast08/1,ast09/0,ast09/1,ast10/0,ast10/1,ast11/0,ast11/1,ast12/0,ast12/1,ast13/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_string/1,do_new_string/2,do_string_element/2,do_set_string_element/3,do_substring/3,do_set_substring/3,do_append_string/2,END.
+
+[go/0,do_string/1,do_new_string/2,do_string_element/2,do_set_string_element/3,do_substring/3,do_set_substring/3,do_append_string/2]
+successdone
+Loading ... done
+Module name : b_string_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_String (Exception) %%%
+% B_String %%%%%%%%%%%%%% abcdef
+% B_New_String %%%%%%%%%% abcdefghijklmno
+% B_String_Element %%%%%% abcdefghijklmn
+% B_Set_String_Element %% abcdefghijklmnopqrstu
+% B_Substring %%%%%%%%%%% ab**efghijklmnopqrstu
+% B_Set_Substring %%%%%%% ab**efghijklmnopqrstuv
+% B_Append_String %%%%%%% abcdefghijklm
+Total of 2200 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 72c56f0bcc7c93fb2f8dbb5953e65430d2a26c35a88bb5e3f31a7b11eb277f76
+sav 4b85fc10d78b35740905f5ee6dd324565c405ff2658ca73ec0049747f57d878d

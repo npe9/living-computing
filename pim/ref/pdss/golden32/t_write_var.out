@@ -1,0 +1,40 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/write_var" : Compiling ... go/0,car/0,car00/0,car00/2,car00/1,car01/0,car01/2,car01/1,car02/0,car02/2,car02/1,car03/0,car03/2,car03/1,car04/0,car04/2,car04/1,car05/0,car05/2,car05/1,car06/0,cdr/0,cdr00/0,cdr00/2,cdr00/1,cdr01/0,cdr01/2,cdr01/1,cdr02/0,cdr02/2,cdr02/1,cdr03/0,cdr03/2,cdr03/1,cdr04/0,cdr04/2,cdr04/1,cdr05/0,cdr05/2,cdr05/1,cdr06/0,elm/0,elm00/0,elm00/2,elm00/1,elm01/0,elm01/2,elm01/1,elm02/0,elm02/2,elm02/1,elm03/0,elm03/2,elm03/1,elm04/0,elm04/2,elm04/1,elm05/0,elm05/2,elm05/1,elm06/0,cak/0,cak00/0,cak00/3,cak00/1,cak01/0,cak01/3,cak01/1,cak02/0,cak02/3,cak02/1,cak03/0,cak03/3,cak03/1,cak04/0,cak04/3,cak04/1,cak05/0,cak05/3,cak05/1,cak06/0,cdk/0,cdk00/0,cdk00/3,cdk00/1,cdk01/0,cdk01/3,cdk01/1,cdk02/0,cdk02/3,cdk02/1,cdk03/0,cdk03/3,cdk03/1,cdk04/0,cdk04/3,cdk04/1,cdk05/0,cdk05/3,cdk05/1,cdk06/0,elk/0,elk00/0,elk00/3,elk00/1,elk01/0,elk01/3,elk01/1,elk02/0,elk02/3,elk02/1,elk03/0,elk03/3,elk03/1,elk04/0,elk04/3,elk04/1,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195462     50    153    10    1584000        0
+After:      13191     38    110     3     119004        0
+GCed :     182271     12     43     7    1464996        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+elk05/0,elk05/3,elk05/1,elk06/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : write_var
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Write_Variable %%%
+% Write_Car_Variable %%%% abcdef
+% Write_Cdr_Variable %%%% abcdef
+% Write_Elm_Variable %%%% abcdef
+% Write_Car_Mk_Variable % abcdef
+% Write_Cdr_Mk_Variable % abcdef
+% Write_Elm_Mk_Variable % abcdef
+Total of 126 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 331a1af3a220d6691c2ebbe756711222a5fd07192a5e28b23bfd47a3de5ddae2
+sav 22da24522aebdfcab30a83c5a9f9a6c7e83e66b9b263374a7d08baece4e7283d
