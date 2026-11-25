@@ -322,8 +322,9 @@ class Table(unittest.TestCase):
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
         # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1,
         # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a, 05,
-        # 142 before step 3k's blt 6f, 94 and 90
-        self.assertEqual(len(rows), 145)
+        # 142 before step 3k's blt 6f, 94 and 90, 145 before step 3m's
+        # blt 42 and 43
+        self.assertEqual(len(rows), 147)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run

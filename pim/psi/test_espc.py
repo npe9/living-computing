@@ -2444,6 +2444,98 @@ end.'''
         self.assertEqual(K.deref(K.deref(opts[1]).args[1]), K.Atom('manipulator'))
         self.assertEqual(m.get_slot(p, 'status'), K.Atom('suspended'))
 
+    @staticmethod
+    def keys(*lines):
+        # step 3m: the coordinator events for LINES typed, each ended by
+        # RETURN (13).  The codes are those of the model's 16-bit strings
+        # (kl0 Str.codes, the inverse of ptfdump.ch): JIS X 0208, as the
+        # held pool strings "local", "exit", "close" are stored.
+        ev = []
+        for line in lines:
+            for c in K.Str(line).codes() + [13]:
+                ev.append(K.Vec([K.Atom('key'), c]))
+        return ev
+
+    def login_dialogue(self, *lines):
+        # step 3m: boot to the system menu, start Login PIMOS, type LINES.
+        # -> (machine, refusal, requester process, requester, window,
+        #     dialogue) where the dialogue is the window's history (OURS)
+        # as ('put', text), ('typed', text) and ('event', beep), in order
+        login = self.jstr('Login PIMOS')
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), login])]
+                                + self.keys(*lines))
+        C = K.ClassRef('simpos##coordinator')
+        (p,) = self._walk(m.get_slot(C, 'started'))
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        w = m.get_slot(top, 'window')
+        out, typed = [], []
+        for e in reversed(self._walk(m.get_slot(w, 'history'))):
+            if isinstance(e, K.Str):
+                out.append(('put', e.text))
+            elif isinstance(e, int) and e == 13:
+                t = K.Str('')
+                t.set_codes(typed)
+                out.append(('typed', t.text))
+                typed = []
+            elif isinstance(e, int):
+                typed.append(e)
+            else:
+                out.append(('event', e))
+        return m, r, p, top, w, out
+
+    def test_step3m_keyboard(self):
+        # step 3m, docs/simpos/boot_route.md §4.5: keyboard input to a window
+        # (OURS path, standard_io_window.esp, coordinator.esp: the
+        # coordinator's keyboard stream read by the selected window; read/2
+        # a character code, input_data/2, getl/2 to RETURN, echo inhibited
+        # around the password) takes the held pimfep##pimos_login_requester
+        # through its three prompts (read/4 @dc-12c, check_code/4,
+        # read_password/3) and on into as_pimos_login_requester
+        # login_request/4: get_fep_address/4 takes "local" as a local login,
+        # create_message/3 builds the record (blt 42, 43: kl0_opcodes.tsv),
+        # and get_socket/3 stops at :create(#simpos##port, P) (@4b9).
+        # Injections, observed (2026-11-25; each from a backup copy, restored
+        # by copy, cmp clean):
+        #   K1 input_data/2 keeps nothing (standard_io_window.esp): this test
+        #      FAIL (the line is "ocal": "Unknown FEP node name." and two
+        #      beeps), nothing else.
+        #   K2 the keyboard read before the window's own queue: this test
+        #      FAIL (the same: the code given back comes last), nothing else.
+        #   K3 inhibit_echo/1 a no-op: this test FAIL (the password is
+        #      echoed, ('typed', 'secret')), nothing else.
+        #   K4 getl/2 keeps the RETURN: this test FAIL ("local" + 13 is not
+        #      "local": Unknown FEP node name.), nothing else.
+        #   K5 show/1 does not select the window: this test FAIL (the first
+        #      read waits for ever: only the first prompt), nothing else.
+        #   test_kl0.py stayed OK in K1-K5.
+        m, r, p, req, w, d = self.login_dialogue('local', 'pimos', 'secret')
+        self.assertEqual(d, [('put', 'Enter FEP node name--------->'), ('typed', 'local'),
+                             ('put', 'Enter your PIMOS user name-->'), ('typed', 'pimos'),
+                             ('put', 'Enter your PIMOS password--->')])
+        # the password went to the requester's buffer, not to the history:
+        # read_password's loop ($or$0/4 @32a-34c) stores each code, RETURN
+        # too, and counts it, then stops at 13
+        self.assertEqual(m.get_slot(req, 'password_counter'), 7)
+        buf = K.deref(m.get_slot(req, 'string_buffer')).codes()
+        self.assertEqual(buf[:7], K.Str('secret').codes() + [13])
+        self.assertIs(m.get_slot(K.ClassRef('simpos##coordinator'), 'selected'), w)
+        self.assertEqual(m.get_slot(w, 'echo'), K.Atom('on'))
+        self.assertEqual(m.get_slot(w, 'transcript'), K.NIL)
+        # the furthest point: the local login's first SIMPOS port
+        self.assertEqual((r.cause, r.detail), ('simpos', 'send simpos##port:create/2 (class class not loaded)'))
+        self.assertEqual(m.get_slot(req, 'socket'), K.Atom('none'))
+        # a node that is neither "local" nor known: get_fep_address/4's last
+        # clause (@6e9-6ef) writes the error, and wait/1 (@15d-16e) beeps
+        # twice, discards pending input and waits for a key (every process
+        # waits)
+        m, r, p, req, w, d = self.login_dialogue('nowhere', 'pimos', '')
+        self.assertEqual(d[-4:], [('put', 'Enter your PIMOS password--->'), ('put', 'Unknown FEP node name.'),
+                                  ('event', K.Atom('beep')), ('event', K.Atom('beep'))])
+        self.assertEqual(d[1], ('typed', 'nowhere'))
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertEqual(m.get_slot(w, 'beeps'), 2)
+        self.assertEqual(m.get_slot(p, 'status'), K.Atom('suspended'))
+
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:
         # pseudo_scsi create/4 @71, close/1 @150-16d; kappa2 KP_POOL.ESP

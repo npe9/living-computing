@@ -2044,6 +2044,21 @@ class Machine:
         self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract'),
                     'subtract')
 
+    def op_multiply(self, code, off, a, b, c, v):
+        # step 3m: blt 42 (paragraph h.esp:21, kl0_opcodes.tsv); R != A
+        # witnessed (h.esp:25 @8d, on floats); floats are not modelled
+        self.x[c] = self._int(self.x[a], 'multiply') * self._int(self.x[b], 'multiply')
+        self.nxt(code, off)
+
+    def op_divide(self, code, off, a, b, c, v):
+        # step 3m: blt 43 (paragraph h.esp:25 @8e, on floats); on integers
+        # INFERENCE (truncation of non-negative operands, as divide_constant)
+        x, y = self._int(self.x[a], 'divide'), self._int(self.x[b], 'divide')
+        if x < 0 or y <= 0:
+            raise Refusal('operand', 'divide %d / %d: a negative or zero operand is unwitnessed' % (x, y))
+        self.x[c] = x // y
+        self.nxt(code, off)
+
     def op_add_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
         self.x[c] = self._int(self.x[a], 'add') + b

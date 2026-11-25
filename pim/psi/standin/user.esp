@@ -62,6 +62,14 @@ attribute name := 0, password := 0, initial_mode := 0;
 % SVCTL.ESP:1704 (a string, given to enter_atom).
 :local_name(U, Name) :- Name = U!name;
 
+% :user_password(U, P) -- step 3m, INTERPOLATED from its one held send,
+% pimfep##as_pimos_login_requester create_message/3 @419, beside
+% :local_name/2 @415: the two go into the login record as RN and RP, the
+% SIMPOS user and password that PIMOS later confirms through
+% simpos_user_device's identify/4 (docs/fep_services.md §6.4, §6.5).  That
+% it is the login password is INFERENCE from that use.
+:user_password(U, P) :- P = U!password;
+
 % :initial_mode(U, Mode) -- INTERPOLATED from simpos_user setup_process/2
 % @f2-f5 and SVCTL.ESP:1706; the value (`general`) is OURS.
 :initial_mode(U, Mode) :- Mode = U!initial_mode;
