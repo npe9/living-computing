@@ -1,12 +1,12 @@
 #!/bin/sh
-# Build the modernised PDSS (src/) for one target into its own tree,
+# Build the modernised PDSS (src/emulator/) for one target into its own tree,
 # build-<target>/, and reassemble the KL1 libraries with it.
 #
 #   ./modern.sh [target]       target: native (default), gcc, x86_64,
 #                              asan, low (see README.md "Targets")
 #
 # A tree is the tarball unpacked (KL1 libraries, test/, sample/) with
-# emulator/pdss and emulator/pdssasm built from src/.  Prints the tree's
+# emulator/pdss and emulator/pdssasm built from src/emulator/.  Prints the tree's
 # path on success.  Exit 77 = this host cannot build or run the target.
 # PDSS_RUN in the environment is the prefix that runs the target's
 # binaries (set by this script for x86_64; read it back from
@@ -45,9 +45,9 @@ if [ ! -d "$B/runtime" ]; then
 fi
 SHIM=
 if [ "$T" = low ]; then
-  cc -arch x86_64 -O1 -c "$HERE/src/port_low.c" -o "$B/emulator/port_low.o"; SHIM="$B/emulator/port_low.o"
+  cc -arch x86_64 -O1 -c "$HERE/src/emulator/port_low.c" -o "$B/emulator/port_low.o"; SHIM="$B/emulator/port_low.o"
 fi
-make -s -C "$HERE/src" CC="$CC" CFLAGS="$CF" LDFLAGS="${LDF:-}" SHIM="$SHIM" O="$B/emulator" >"$B/make.log" 2>&1 \
+make -s -C "$HERE/src/emulator" CC="$CC" CFLAGS="$CF" LDFLAGS="${LDF:-}" SHIM="$SHIM" O="$B/emulator" >"$B/make.log" 2>&1 \
   || { cat "$B/make.log"; echo "modern($T): FAIL (build)"; exit 1; }
 echo "$RUN" > "$B/RUN"
 # Reassemble every library from its .asm (the tarball's "make reassm").
