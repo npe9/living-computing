@@ -3922,248 +3922,35 @@ function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
                     vflWriteArmHandled: vflWriteArmHandled, commit: vc };
 endfunction
 
-function ActionValue#(VflOutcome)
-    vflIntOp(StretchStorage st, VflInstr vi,
-             Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
-             Maybe#(BoxRsp) boxResult);
-  actionvalue
-    Maybe#(WordAddr) needsRead = tagged Invalid;
-    Maybe#(BoxReq) needsBox = tagged Invalid;
-    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
-    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
-    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
-    VflCommit vc = vflNoCommit;   // the families' writes (VflCommit)
-    Word64 ind = ind0;
-
-      Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
-      // THE DECIMAL BIT DOES NOT MEAN THE SAME THING FOR A RADIX
-      // CONVERSION, and this guard used to refuse LCV because of it.
-      // Reference Manual printed p.71, "Radix Conversion Operations",
-      // under Format: "In this case, **bit 53, the radix modifier,
-      // describes the format of the ORIGINAL field** and also
-      // determines the type of conversion, binary to decimal or
-      // decimal to binary."  p.72 says it again: "If this bit is
-      // zero, the original field is binary; if this bit is one, the
-      // original field is decimal."
-      //
-      // So for LCV the bit is not "do decimal arithmetic" -- it is
-      // which way to convert, and a decimal-to-binary LOAD CONVERTED
-      // is the ONLY thing it can mean.  Refusing it was refusing the
-      // operation's normal case.
-      //
-      // Decimal ARITHMETIC is still unimplemented and still refused;
-      // only code 000011, LCV, is let past here.
-      // LCV, CV and LTRCV are the radix conversion operations:
-      // the decimal modifier SELECTS A DIRECTION for them rather
-      // than asking for decimal arithmetic, so the blanket refusal
-      // below must let all three past.  (DCV, code 59, the fourth, is
-      // built since 2026-11-16; the refusal itself is gone, below.)
-      Bool radixConv = (vi.code == 6'b000011)     // LCV
-                    || (vi.code == 6'b011011)     // CV
-                    || (vi.code == 6'b100011);    // LTRCV
-      // A DECIMAL UNSIGNED STORE WAS BUILT on 2026-11-08, because MCP's
-      // $TIME needs it (printed p.300 line 33, "ST(DU,63,8),0.0($1)",
-      // reached from the CLOCK command).
-      //
-      // >>> DECIMAL ADDITION, LOAD AND STORE ARE BUILT SINCE 2026-11-16
-      // (G2.3 stage 1). <<<  The list of what this gate lets past is
-      // StretchVFL's vflDecimalBuilt, which the I-box's prepareExec asks
-      // too; `radixConv` above is kept for the arms that test it.  The
-      // decimal sums go through mkDecBox (StretchDecBox.bsv) by the
-      // NeedBox bail; see each arm's DECIMAL note.
-      //
-      // >>> AND THE GATE IS GONE, 2026-11-16: with decimal LFT and DCV
-      // built, every one of the twenty-four VFL integer codes executes
-      // in both radices, so `vflDecimalBuilt` was true of every code
-      // StretchDecode admits and the refusal it guarded could not fire.
-      // It was removed here and in the I-box's prepareExec in one
-      // change (decks/vfl_decimal_refused.strap now pins decimal LFT
-      // executing, where it pinned the refusal). <<<
-      // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
-      // not inferred -- cited 2026-10-29, having been an uncited
-      // refusal in both VFL arms until then. <<<  Reference Manual
-      // printed p.21 (PDF 24), read at the ink:
-      //
-      //   "In progressive indexing, the value field, bits 0-24 of the
-      //   index specified by I, is used as the effective address.  IF
-      //   PROGRESSIVE INDEXING WITH INDEX REGISTER X0 IS SPECIFIED,
-      //   INDICATOR OP (OPERATION CODE INVALID) IS SET."
-      //
-      // Index field 0 means "no indexing" for ordinary addressing --
-      // see effAddr24's `if (idx == 0) return raw` -- and progressive
-      // indexing has no register to advance, so the machine refuses it.
-      // Pinned by decks/vfl_progressive_index0.strap.
-      if (isProgressive && vi.a.i1 == 0)
-        ind = setOpInvalid(ind);
-      else begin
-        Bit#(7) len_ = effLength(vi.a.length);
-        Bit#(4) bsz  = effByteSize(vi.a.bs);
-        Bool immediate = (vi.a.p == 4);
-        IndexWord xIdx = st.readIndex(vi.a.i1);
-        BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, vi.a.addr, vi.a.i1);
-        Bit#(8) offSh = zeroExtend(vi.a.offset);
-        Bool vflOk = True; // p.21: a suppressed VFL op (ST/M+
-                            // immediate-or-crossing) skips the
-                            // progressive increment too.
-        Bit#(2) vflReadsUsed = 0; // how many prefetch slots THIS
-                            // arm's own (non-immediate) read already
-                            // consumed once it completes -- the
-                            // progressive-indexing block below reads
-                            // this to pick up at the next free slot
-                            // for its own refill read, instead of
-                            // colliding with (and silently reading
-                            // stale data from) whatever slot this
-                            // arm already used. Found via xw_refill's
-                            // regression failure: ST's RMW read and
-                            // the refill read both defaulted to
-                            // prefetch[0]/prefetchCount>=1, so the
-                            // refill read was never actually issued.
-        Bool vflWriteArmHandled = False; // ST/M+ set this when THEY
-                            // resolve their own progressive update
-                            // inline (see their arms below) instead
-                            // of via the shared trailing block --
-                            // required because st.writeWord and a
-                            // refill's readWordReq both route through
-                            // storage's single BRAM port's
-                            // request.put, and bsc (correctly)
-                            // refuses two request.put call sites in
-                            // one execute() invocation (G0004) even
-                            // when they're on provably-exclusive
-                            // paths across different case arms --
-                            // found when this fix's first version hit
-                            // exactly that conflict in RL_stepRnx.
-
-        // Progressive-index bookkeeping, computed up front from
-        // Reg-only state (xIdx, the instruction's own fields) -- no
-        // BRAM dependency at all. Arms that also write to storage
-        // (ST/M+) need to know BEFORE they act whether a refill read
-        // will also be required, so they can defer their write until
-        // both reads are in hand rather than writing immediately and
-        // then also trying to issue a refill request in the same
-        // execute() call.
-        Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(vi.a, xIdx);
-        IndexWord vflPx1 = tpl_1(vflPx);
-        Bool vflNeedsRefill = tpl_2(vflPx);
-
-        // DF, p.32 class 1: "the effective address of all fetch-type
-        // operations with a direct address".  L, + (and - , which is
-        // + with invert) and K read their field and leave it alone;
-        // ST and M+ write it back, so their read belongs to a STORE
-        // and signals DS at the write below.  That distinction is why
-        // this is gated by opcode instead of sitting at the one
-        // readWordReq all of them funnel through.
-        //
-        // IMMEDIATE ADDRESSING HAS NO STORAGE OPERAND -- p.32 says
-        // "with a direct address" -- so it is excluded rather than
-        // monitored against the instruction's own address field.
-        //
-        // BOTH WORDS OF A CROSSING FIELD.  p.31: "an instruction or
-        // data field which straddles a boundary always gives an
-        // address monitoring signal."  This model compares one word
-        // address at a time, so a crossing field asks twice, which is
-        // that rule for the two-word case.
-        //
-        // RUN ON EVERY CALL, including the one that bails out for the
-        // operand read: that call's `ind` is discarded (execute()
-        // returns entry values when needsRead is Valid), and the
-        // resuming call reaches this line again with the same `ea`.
-        //
-        // >>> WHICH CODES: vflRef, SHARED WITH StretchIBox.prepareExec,
-        // 2026-11-18. <<<  This was a seven-code list (L, LWF, +, K, LFT,
-        // LTRS, *+) that left out +MG, KF, KE, KFE, KR, KFR, *, /, LCV and
-        // LTRCV, every one of them fetch-type by p.32's definition; see
-        // vflRef's note for the pages.  decks/cwf_df_fetch_type.strap.
-        Bool dfApplies = vflDfApplies(vflRef(vi.code) == VflRefFetch, immediate);
-        Bool dfSupp = False;
-        if (dfApplies) begin
-          ind = fieldDfSignal(st, ea, len_, ind);
-          dfSupp = fieldDfSuppresses(st, ea, len_);
-        end
-
-        // DF'S MASK-DEPENDENT HALF, p.45 item 20: "If the
-        // corresponding mask bit was one, the fetch did not take
-        // place, and the entire operation was suppressed."  ENTIRE,
-        // so the guard goes round the opcode dispatch AND round the
-        // shared progressive-index block below it, not just round the
-        // read: no readWordReq is issued, no accumulator write, no
-        // result indicators, no progressive update and no class-3
-        // refill signal, because none of those addresses is then
-        // "actually used" (p.32).  `next` is untouched, which is
-        // p.52's item 3 -- the instruction counter still steps.
-        //
-        // WHICH RULE THIS IS, since two of them reach this arm.  The
-        // alert here arises on the operand FETCH, so it is p.32 class
-        // 1 and Figure 11's Class S -- full suppression.  It is NOT
-        // p.53's "an alert of Class S during progressive indexing
-        // suppresses only the indexing portion", which is a different
-        // (and unimplemented) rule for an alert raised on the REFILL
-        // address further down.  A progressive L whose data address is
-        // protected loses its indexing too, because the whole
-        // operation goes, not because of that sentence.
-        //
-        // >>> ADDRESS INVALID, 2026-11-18: the same "nothing at all". <<<
-        // Reference Manual printed p.21 (PDF 24): "When an effective word
-        // address is obtained which does not correspond to a core storage
-        // location that is physically available in a particular
-        // installation, indicator AD, address invalid, is turned on.  An
-        // instruction with an invalid data address is executed as a NO
-        // OPERATION instruction."  printed p.45 item 16 (PDF 48) says it
-        // of "the effective operand address of the instruction just
-        // attempted".  Only the Fp arm asked installed() before this; a
-        // VFL L at (8)400000.0 read zero (StretchMemory's answer past
-        // installed core) and never set AD, and a progressive store there
-        // still advanced its index (decks/cwf_address_invalid.strap), while
-        // the I-box's prepareExec already called it "completes without
-        // fetch".
-        // Immediate addressing names no storage word, and CV's operand is
-        // the accumulator (fetchesOperand's note), so neither is asked.
-        // The FIRST word only: a crossing field whose second word alone is
-        // uninstalled is not handled here (CHOSEN, no deck reaches it).
-        // (CV and DCV: vflRef's VflRefNone -- DCV, printed p.74, has no
-        // storage operand either, and was asked until 2026-11-18.)
-        Bool adSupp = !immediate && vflRef(vi.code) != VflRefNone
-                   && !installed(baWord(ea));
-        if (adSupp) ind = setBit(ind, ind_AD, 1);
-        if (dfSupp || adSupp) begin
-          // suppressed: deliberately nothing at all
-        end else begin
-        // DECIMAL *, *+ AND / ARE LOAD TRANSIT AND SET (printed p.68:
-        // "If decimal is specified, this operation has the same action
-        // as LOAD TRANSIT AND SET, except that the two high-order bits
-        // of the left zeros counter are set to zeros"; p.69 *+ "10";
-        // p.70 DIVIDE "01"), so they are dispatched to LTRS's arm, which
-        // reads vi.code for those two bits.
-        Bool ltrsAction = (vi.code == 6'b111101)
-                       || (vi.m.decimal == 1 && (vi.code == 6'b011001     // *
-                                              || vi.code == 6'b111001     // *+
-                                              || vi.code == 6'b011101));  // /
-        // What the family functions take (VflCtx, VflArm): the values
-        // above, and this call's running state as it stands here.
-        VflCtx cx = VflCtx { opKey: ltrsAction ? 6'b111101 : vi.code,
-                             vi: vi, prefetch: prefetch,
-                             prefetchCount: prefetchCount,
-                             boxResult: boxResult, radixConv: radixConv,
-                             isProgressive: isProgressive, len_: len_,
-                             bsz: bsz, immediate: immediate, xIdx: xIdx,
-                             ea: ea, offSh: offSh, vflPx1: vflPx1,
-                             vflNeedsRefill: vflNeedsRefill };
-        VflArm armIn = VflArm { needsRead: needsRead, needsBox: needsBox,
-                                vflPending: vflPending,
-                                connCounts: connCounts,
-                                tailWrite: tailWrite, ind: ind,
-                                vflOk: vflOk, vflReadsUsed: vflReadsUsed,
-                                vflWriteArmHandled: vflWriteArmHandled,
-                                commit: vc };
+// THE STORE FAMILY (A2), part 1: ST and SRD, moved verbatim from vflIntOp.
+// Writes: the field store (VflCommit's store and storeTail).
+function VflArm vflStoreFamily(StretchStorage st, VflCtx cx, VflArm a0);
+    VflInstr vi = cx.vi;
+    Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
+    Bit#(2) prefetchCount = cx.prefetchCount;
+    Maybe#(BoxRsp) boxResult = cx.boxResult;
+    Bool radixConv = cx.radixConv;
+    Bool isProgressive = cx.isProgressive;
+    Bit#(7) len_ = cx.len_;
+    Bit#(4) bsz = cx.bsz;
+    Bool immediate = cx.immediate;
+    IndexWord xIdx = cx.xIdx;
+    BitAddr ea = cx.ea;
+    Bit#(8) offSh = cx.offSh;
+    IndexWord vflPx1 = cx.vflPx1;
+    Bool vflNeedsRefill = cx.vflNeedsRefill;
+    Maybe#(WordAddr) needsRead = a0.needsRead;
+    Maybe#(BoxReq) needsBox = a0.needsBox;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = a0.vflPending;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = a0.connCounts;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = a0.tailWrite;
+    Word64 ind = a0.ind;
+    Bool vflOk = a0.vflOk;
+    Bit#(2) vflReadsUsed = a0.vflReadsUsed;
+    Bool vflWriteArmHandled = a0.vflWriteArmHandled;
+    VflCommit vc = a0.commit;
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
         case (cx.opKey)
-          6'b000101, 6'b100101,
-          6'b000001, 6'b100001: begin // vflLoadAddFamily
-            VflArm fr = vflLoadAddFamily(st, cx, armIn);
-            needsRead = fr.needsRead;   needsBox = fr.needsBox;
-            vflPending = fr.vflPending; connCounts = fr.connCounts;
-            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
-            vflReadsUsed = fr.vflReadsUsed;
-            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
-          end
           6'b001101, 6'b101101: begin // ST (Store) and SRD (Store
             // Rounded) -- prefetch/bail-out shape,
             // inlining writeField's own internal RMW read rather
@@ -4418,9 +4205,9 @@ function ActionValue#(VflOutcome)
                     Tuple2#(Word64, Word64) np =
                       insertFieldBitsPair(prefetch[0], prefetch[1], off,
                                           len_, packedField);
-                    st.writeWord(w0, tpl_1(np));
+                    vc.store = tagged Valid tuple2(w0, tpl_1(np));
                     if ((w0 + 1) < 32) tailWrite = tagged Valid tuple2(w0 + 1, tpl_2(np));
-                    else st.writeWordTail(w0 + 1, tpl_2(np));
+                    else vc.storeTail = tagged Valid tuple2(w0 + 1, tpl_2(np));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 2;
@@ -4442,7 +4229,7 @@ function ActionValue#(VflOutcome)
                     ind = setBit(ind, ind_DS, 1);
                     vflOk = False;   // p.22: an exception in the VFL part suppresses the entire operation
                   end else begin
-                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                    vc.store = tagged Valid tuple2(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 1;
@@ -4463,7 +4250,7 @@ function ActionValue#(VflOutcome)
                 end else if (prefetchCount >= 2) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);   // p.22: an exception in the VFL part suppresses the entire operation
                   else begin
-                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                    vc.store = tagged Valid tuple2(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                     vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
@@ -4474,6 +4261,584 @@ function ActionValue#(VflOutcome)
                                                           zeroExtend(vflPx1.refill));
               end
             end
+          end
+          default: begin end   // vflIntOp dispatches only this family's codes here
+        endcase
+    return VflArm { needsRead: needsRead, needsBox: needsBox,
+                    vflPending: vflPending, connCounts: connCounts,
+                    tailWrite: tailWrite, ind: ind, vflOk: vflOk,
+                    vflReadsUsed: vflReadsUsed,
+                    vflWriteArmHandled: vflWriteArmHandled, commit: vc };
+endfunction
+
+// THE STORE FAMILY (A2), part 2: M+, M+1 and M+MG (add to memory), moved
+// verbatim from vflIntOp.  Writes: the field store, through
+// vflFieldStorePlan (VflCommit's store and storeTail).
+function VflArm vflMemAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
+    VflInstr vi = cx.vi;
+    Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
+    Bit#(2) prefetchCount = cx.prefetchCount;
+    Maybe#(BoxRsp) boxResult = cx.boxResult;
+    Bool radixConv = cx.radixConv;
+    Bool isProgressive = cx.isProgressive;
+    Bit#(7) len_ = cx.len_;
+    Bit#(4) bsz = cx.bsz;
+    Bool immediate = cx.immediate;
+    IndexWord xIdx = cx.xIdx;
+    BitAddr ea = cx.ea;
+    Bit#(8) offSh = cx.offSh;
+    IndexWord vflPx1 = cx.vflPx1;
+    Bool vflNeedsRefill = cx.vflNeedsRefill;
+    Maybe#(WordAddr) needsRead = a0.needsRead;
+    Maybe#(BoxReq) needsBox = a0.needsBox;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = a0.vflPending;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = a0.connCounts;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = a0.tailWrite;
+    Word64 ind = a0.ind;
+    Bool vflOk = a0.vflOk;
+    Bit#(2) vflReadsUsed = a0.vflReadsUsed;
+    Bool vflWriteArmHandled = a0.vflWriteArmHandled;
+    VflCommit vc = a0.commit;
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
+        case (cx.opKey)
+          6'b001001, 6'b101011, 6'b101001: begin // M+, M+1, M+MG
+            // (Add One to Memory) -- prefetch/bail-out shape,
+            // inlining readFieldWithHi/writeFieldWithHi's own logic
+            // rather than calling them: guaranteed non-crossing
+            // (checked just above), exactly 1 read.
+            //
+            // M+1 SHARES THIS ARM BECAUSE IT IS M+ WITH ONE OPERAND
+            // REPLACED.  X22-6533 (docs/X22-6533_7030_PocketCard.pdf)
+            // gives "M+  Add to Memory  abc001001" and "M+1  Add One
+            // to Memory  abc101011" adjacently; the difference is the
+            // addend, not the addressing, the field handling, the
+            // refill path, the DF class-3 signal or the protection
+            // check.  Duplicating fifty lines to change one term
+            // would have been the larger risk.
+            //
+            // "ONE" IS ONE UNIT OF THE FIELD.  fieldToSM returns the
+            // field right-justified in `mag` (unsigned: mag = raw;
+            // signed: mag = raw >> byteSize, sign byte stripped), so
+            // the addend is SM128{sign:0, mag:1} and takes no offset
+            // shift -- offSh exists to align the ACCUMULATOR, and M+1
+            // has no accumulator operand.
+            //
+            // ARRIVED VIA MCP.  decks/mcp_bootstrap_p2.strap line
+            // 34 is the fourth instruction of IBM's operating system
+            // and the model used to set Operation Code Invalid on it
+            // (docs/NEXT.md 6a).
+            Bool addOne = (vi.code == 6'b101011);
+            // ADD MAGNITUDE TO MEMORY, Reference Manual printed p.62,
+            // and the whole operation is two sentences there:
+            //
+            //   "The magnitude of the accumulator field as specified
+            //   by the offset is algebraically added to the addressed
+            //   operand.  **A positive sign is assumed for the
+            //   accumulator field** before the negative sign modifier
+            //   is applied.  The actual accumulator sign is not used
+            //   or changed by the operation.  **If the sum has the
+            //   same sign as the sign of the storage operand, it
+            //   replaces that operand in storage.  If the sum is of
+            //   opposite sign, ZERO BYTES replace the numeric part of
+            //   the storage field.**  In either case the sign byte,
+            //   if any, of the storage operand is not changed."
+            //
+            // Figure 13 on the same page, "Sign Condition Results",
+            // tabulates it for every combination and the two rules
+            // reproduce the whole "Add Magnitude to Memory" block:
+            // storage 3- with accumulator 5+ gives 0-, storage 5-
+            // with 3+ gives 2-, and every unsigned row is a plain
+            // magnitude sum with the storage sign kept.
+            //
+            // FOR MCP'S OWN USE IT IS SIMPLER THAN THAT.  printed
+            // p.5 lines 15 and 17 are "M+MG(BU,48,8)" and
+            // "M+MG(BU,8,8)" -- BINARY UNSIGNED -- and p.62 says
+            // "unsigned storage fields are considered positive", so
+            // both operands are positive, the sum agrees in sign, and
+            // the operation is a plain add.  The opposite-sign rule
+            // is still implemented because the manual states it and
+            // Figure 13 pins it.
+            //
+            // ARRIVED VIA MCP, like M+1 before it: the ERROR ROUTINE
+            // uses these two adds to write the failing address into
+            // its console message, and with the operation refused the
+            // message printed its own placeholder, "000000.0".
+            Bool magnitude = (vi.code == 6'b101001);
+            // >>> A CROSSING FIELD IS NOT REFUSED, 2026-11-17. <<<  This
+            // was `immediate || fieldCrosses(ea, len_)`, a model limit
+            // (one write per rule) and never a documented one: printed
+            // p.56 brings "the storage word or word pair which contains
+            // the addressed memory field" from storage, and "In integer
+            // arithmetic operations that affect storage, such as STORE
+            // and ADD TO MEMORY, the result replaces the storage operand
+            // in the bit positions specified by the address and field
+            // length."  The pair is read and written as ST's crossing
+            // store does it (mCross below).
+            if (immediate) begin
+              ind = setOpInvalid(ind);
+              vflOk = False;
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              Bool mCross = fieldCrosses(ea, len_);
+              SM128 acc = readAcc(st);
+              // M+1's addend is +1 or -1: Reference Manual printed
+              // p.62-63, read in the ink, "A plus or minus one is
+              // algebraically added to the addressed storage field",
+              // and the negative sign modifier "specifies the sign of
+              // the one to be added ... if it is one, a minus one is
+              // added".  STRAP spells that M-1.  This was {sign: 0}
+              // until 2026-11-07, so MCP's p.198 line 25
+              // "M-1(BU,18),S Q K($9) -REDUCE Q K" ADDED one, and the
+              // interrupt queue count rose on every unstack until
+              // K UNSTC waited forever on an empty queue
+              // (docs/boot_plan.md, "M-1 ADDED ONE").
+              SM128 accSh = addOne
+                ? SM128 { sign: vi.m.invert, mag: 1 }             // M+1 / M-1
+                : magnitude
+                ? SM128 { sign: vi.m.invert, mag: acc.mag >> offSh } // M+MG
+                : SM128 { sign: acc.sign ^ vi.m.invert,            // M+
+                          mag: acc.mag >> offSh };
+              // WHERE THE NEGATIVE SIGN MODIFIER LANDS, and the
+              // manual answers it for the whole class rather than
+              // for one operation.  Reference Manual printed p.57,
+              // "Sign Control": "bit 52 designates whether the sign
+              // of the UNREPLACED operand is taken as-is or inverted
+              // ...  if the result is placed in the accumulator, bit
+              // 52 determines the use of the sign of the operand
+              // from storage; IF THE RESULT IS PLACED IN STORAGE,
+              // BIT 52 DETERMINES THE USE OF THE ACCUMULATOR SIGN."
+              // The table beneath it spells out all four cases under
+              // "TO-MEMORY OPERATION": 01 and 11 invert the
+              // ACCUMULATOR sign and leave the storage field's
+              // alone, while 10 and 11 (bit 51, the unsigned
+              // modifier) are what make the storage field unsigned.
+              //
+              // SO THE STORAGE OPERAND IS READ WITHOUT THE INVERT
+              // for every operation in this arm -- M+ as much as
+              // M+MG -- and the bit goes on the accumulator instead.
+              // p.62 says the same thing again for M+MG alone: "the
+              // accumulator sign is considered positive when the
+              // negative sign modifier is zero and negative when the
+              // modifier is one", on top of the assumed-positive
+              // rule, which is why M+MG's arm starts from 0 and M+'s
+              // from the real sign.
+              //
+              // NOTHING IN THE SUITE EXERCISES THIS, and it cannot:
+              // the VFL path of strap_asm.py has no spelling for the
+              // negative sign modifier at all (C22-6531 Appendix A
+              // footnote 4's N suffix is unimplemented, and the
+              // written-minus "M-"/"M-MG" forms are recognised only
+              // for the floating-point operations).  So the change
+              // is inert today and rests entirely on p.57.  It is
+              // still worth making: the previous code would have
+              // silently subtracted the wrong operand's sign the
+              // moment a spelling arrived.  docs/NEXT.md carries the
+              // spelling as its own item.
+              //
+              // M+1'S ADDEND TAKES THE MODIFIER: its own definition
+              // (printed p.63, "Negative Sign. This modifier specifies
+              // the sign of the one to be added") was read on
+              // 2026-11-07 and settles what this comment used to leave
+              // open.  The STORAGE operand follows the class rule below,
+              // as for every to-memory operation.
+              Bit#(1) opndInvert = 0;
+              // >>> DECIMAL M+, M+1 AND M+MG, 2026-11-16. <<<  Computed
+              // here once, for both write sites below (each uses
+              // prefetch[0] as the field's word).  Reference Manual
+              // printed p.61, ADD TO MEMORY, Radix: "In a decimal
+              // operation, the field is processed in four-bit bytes.  If
+              // the byte size ... is greater than four, only the four
+              // low-order bits of each byte participate ... The
+              // high-order bits of each byte are not changed by the
+              // operation" (decMergeField).  Indicators, printed p.62:
+              // "Lost Carry (LC).  This indicator is actuated by a carry
+              // beyond the leftmost digit, either binary or decimal, of
+              // the addressed field.  This indicator is also turned on if
+              // the result of an unsigned operation is negative.  In such
+              // a case, the magnitude of the result is stored in storage.
+              // Partial Field (PF).  This indicator is turned on if there
+              // are non-zero digits ... in the accumulator to the left of
+              // the highest order digit that is participating"; and the
+              // Programming Note: "the length of the accumulator field
+              // between the specified offset and the left end of the
+              // accumulator can be less than the number of bits from the
+              // storage operand ... the accumulator operand is lengthened
+              // ... by the addition of high-order zeros."  Printed p.59
+              // adds, for a short high-order byte, that LC comes on "only
+              // if the corresponding result byte from the processing unit
+              // is greater than nine" -- the carry out of the top DIGIT,
+              // which is what dCarryOut tests.  M+1 has no accumulator
+              // operand and "the partial field indicator is not affected"
+              // (printed p.63).
+              //
+              // The sum is mkDecBox's, asked for at the write site below
+              // -- after every read, the refill included -- so nothing
+              // is written on the run that bails.
+              Bit#(64) mRaw = extractFieldBits(prefetch[0], mCross ? prefetch[1] : 0, off, len_);
+              SM128 dOpnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
+              Bit#(7) dNumBits = (vi.m.unsign == 1) ? len_
+                               : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(128) dMask = decDigitMask(decDigitCount(dNumBits, bsz));
+              Bool dWide = (decDigitCount(dNumBits, bsz) >= 32);
+              match {.mDig, .mHi} = decCompact(dOpnd.mag[63:0], bsz);
+              Bit#(128) dAccF = acc.mag >> (offSh & 8'hFC);
+              SM128 dAccSh = addOne
+                ? SM128 { sign: vi.m.invert, mag: 1 }
+                : magnitude
+                ? SM128 { sign: vi.m.invert, mag: dAccF & dMask }
+                : SM128 { sign: acc.sign ^ vi.m.invert, mag: dAccF & dMask };
+              Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
+              Bool dSub = (dOpnd.sign != dAccSh.sign);
+              Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False });
+              Bool dDec = (vi.m.decimal == 1);
+              Bool dAsk = dDec && !isValid(decOf(boxResult));
+              DecRsp dr = validValue(decOf(boxResult));
+              SM128 dSum = SM128 { sign: (!dSub || dr.carry) ? dOpnd.sign : dAccSh.sign,
+                                   mag: dr.r & dMask };
+              Bool dCarryOut = !dSub && (dWide ? dr.carry : ((dr.r & ~dMask) != 0));
+              SM128 dStored = magToMemory(magnitude, dSum, dOpnd);
+              Bool dLc = dCarryOut || (vi.m.unsign == 1 && dStored.sign == 1);
+              Bit#(64) dOldNum = (vi.m.unsign == 1) ? mRaw : (mRaw >> bsz);
+              Bit#(64) dNewNum = decMergeField(dStored.mag, dOldNum, bsz);
+              Bit#(64) dField = (vi.m.unsign == 1) ? dNewNum
+                : smToField(SM128 { sign: dStored.sign, mag: zeroExtend(dNewNum) },
+                            len_, bsz, 0, mRaw);
+              function Word64 decMInd(Word64 i0);
+                Word64 i1 = setDataFlagsF(i0, fieldFlags(mRaw, bsz, vi.m.unsign));
+                Word64 i2 = setBit(i1, ind_MOP, 1);
+                // "set according to the algebraic sum" (M+, p.62) / "the
+                // final result stored" (M+MG, p.62): dStored is both.
+                Word64 i3 = setResultIndicatorsF(i2, dStored);
+                Word64 i4 = dLc ? setBit(i3, ind_LC, 1) : i3;
+                return dPf ? setBit(i4, ind_PF, 1) : i4;
+              endfunction
+              // THE READS, THE BOX AND THE WRITE, for a field in one word
+              // or two, with or without a refill (2026-11-17; it was one
+              // word only).  The words come in order -- the field's
+              // first word, its second if it crosses, then the refill
+              // word -- and the write waits for all of them, so no run
+              // of execute() both writes and asks for a read
+              // (vflWriteArmHandled's reason).  The decimal sum is
+              // mkDecBox's, asked for after the last read.
+              Bit#(2) mReads = mCross ? 2 : 1;
+              Bit#(2) mNeed  = vflRmwNeed(mCross, vflNeedsRefill);
+              // DF, p.32 class 3: raised below with the refill, and only
+              // when the store was not suppressed (refillDfNote).
+              if (vflNeedsRefill) vflWriteArmHandled = True;
+              if (prefetchCount < mNeed) begin
+                needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, mCross,
+                                                        zeroExtend(vflPx1.refill));
+              end else if (dAsk) begin
+                needsBox  = dReq;
+                needsRead = tagged Valid 0;
+              end else begin
+                Bit#(64) mField = dField;
+                Bool bLc = False;
+                Bool bPf = False;
+                SM128 bStored = dStored;
+                if (!dDec) begin
+                  SM128 opnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
+                  // binMemAdd (StretchALU.bsv): the p.59/p.62 LC and PF.
+                  BinMemAdd bm = binMemAdd(magnitude, addOne, vi.m.unsign,
+                                           opnd, accSh, dNumBits);
+                  bStored = bm.stored;
+                  bLc = bm.lc;
+                  bPf = bm.pf;
+                  mField = smToField(bm.stored, len_, bsz, vi.m.unsign, mRaw);
+                end
+                // Both words compared when the field crosses, p.31's
+                // straddling rule (vflFieldStore).  On DS the store is
+                // suppressed and, as in ST's arm, the result indicators
+                // are not set -- p.32, "the operation is always
+                // terminated" (2026-11-17; until then M+ set MOP, LC, PF
+                // and the result indicators over a suppressed store).
+                match {.mDs, .mTail, .mDsVc} = vflFieldStorePlan(st, vc, ea, len_, mField,
+                                                      prefetch[0], prefetch[1]);
+                vc = mDsVc;
+                tailWrite = mTail;
+                if (mDs) begin
+                  ind = setBit(ind, ind_DS, 1);
+                  vflOk = False;            // p.22: an exception in the VFL part suppresses the entire operation
+                end else if (dDec) ind = decMInd(ind);
+                else begin
+                  ind = setDataFlagsF(ind, fieldFlags(mRaw, bsz, vi.m.unsign));
+                  ind = setBit(ind, ind_MOP, 1);
+                  if (bLc) ind = setBit(ind, ind_LC, 1);
+                  if (bPf) ind = setBit(ind, ind_PF, 1);
+                  // "set according to the FINAL RESULT STORED"
+                  // (p.62's Arithmetic Result line), which for M+MG
+                  // is not always the sum.
+                  ind = setResultIndicatorsF(ind, bStored);
+                end
+                vflReadsUsed = mReads;
+                if (vflNeedsRefill && !mDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
+                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[mReads]));
+                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                  ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
+                end
+              end
+            end
+          end
+          default: begin end   // vflIntOp dispatches only this family's codes here
+        endcase
+    return VflArm { needsRead: needsRead, needsBox: needsBox,
+                    vflPending: vflPending, connCounts: connCounts,
+                    tailWrite: tailWrite, ind: ind, vflOk: vflOk,
+                    vflReadsUsed: vflReadsUsed,
+                    vflWriteArmHandled: vflWriteArmHandled, commit: vc };
+endfunction
+
+function ActionValue#(VflOutcome)
+    vflIntOp(StretchStorage st, VflInstr vi,
+             Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+             Maybe#(BoxRsp) boxResult);
+  actionvalue
+    Maybe#(WordAddr) needsRead = tagged Invalid;
+    Maybe#(BoxReq) needsBox = tagged Invalid;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
+    VflCommit vc = vflNoCommit;   // the families' writes (VflCommit)
+    Word64 ind = ind0;
+
+      Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
+      // THE DECIMAL BIT DOES NOT MEAN THE SAME THING FOR A RADIX
+      // CONVERSION, and this guard used to refuse LCV because of it.
+      // Reference Manual printed p.71, "Radix Conversion Operations",
+      // under Format: "In this case, **bit 53, the radix modifier,
+      // describes the format of the ORIGINAL field** and also
+      // determines the type of conversion, binary to decimal or
+      // decimal to binary."  p.72 says it again: "If this bit is
+      // zero, the original field is binary; if this bit is one, the
+      // original field is decimal."
+      //
+      // So for LCV the bit is not "do decimal arithmetic" -- it is
+      // which way to convert, and a decimal-to-binary LOAD CONVERTED
+      // is the ONLY thing it can mean.  Refusing it was refusing the
+      // operation's normal case.
+      //
+      // Decimal ARITHMETIC is still unimplemented and still refused;
+      // only code 000011, LCV, is let past here.
+      // LCV, CV and LTRCV are the radix conversion operations:
+      // the decimal modifier SELECTS A DIRECTION for them rather
+      // than asking for decimal arithmetic, so the blanket refusal
+      // below must let all three past.  (DCV, code 59, the fourth, is
+      // built since 2026-11-16; the refusal itself is gone, below.)
+      Bool radixConv = (vi.code == 6'b000011)     // LCV
+                    || (vi.code == 6'b011011)     // CV
+                    || (vi.code == 6'b100011);    // LTRCV
+      // A DECIMAL UNSIGNED STORE WAS BUILT on 2026-11-08, because MCP's
+      // $TIME needs it (printed p.300 line 33, "ST(DU,63,8),0.0($1)",
+      // reached from the CLOCK command).
+      //
+      // >>> DECIMAL ADDITION, LOAD AND STORE ARE BUILT SINCE 2026-11-16
+      // (G2.3 stage 1). <<<  The list of what this gate lets past is
+      // StretchVFL's vflDecimalBuilt, which the I-box's prepareExec asks
+      // too; `radixConv` above is kept for the arms that test it.  The
+      // decimal sums go through mkDecBox (StretchDecBox.bsv) by the
+      // NeedBox bail; see each arm's DECIMAL note.
+      //
+      // >>> AND THE GATE IS GONE, 2026-11-16: with decimal LFT and DCV
+      // built, every one of the twenty-four VFL integer codes executes
+      // in both radices, so `vflDecimalBuilt` was true of every code
+      // StretchDecode admits and the refusal it guarded could not fire.
+      // It was removed here and in the I-box's prepareExec in one
+      // change (decks/vfl_decimal_refused.strap now pins decimal LFT
+      // executing, where it pinned the refusal). <<<
+      // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
+      // not inferred -- cited 2026-10-29, having been an uncited
+      // refusal in both VFL arms until then. <<<  Reference Manual
+      // printed p.21 (PDF 24), read at the ink:
+      //
+      //   "In progressive indexing, the value field, bits 0-24 of the
+      //   index specified by I, is used as the effective address.  IF
+      //   PROGRESSIVE INDEXING WITH INDEX REGISTER X0 IS SPECIFIED,
+      //   INDICATOR OP (OPERATION CODE INVALID) IS SET."
+      //
+      // Index field 0 means "no indexing" for ordinary addressing --
+      // see effAddr24's `if (idx == 0) return raw` -- and progressive
+      // indexing has no register to advance, so the machine refuses it.
+      // Pinned by decks/vfl_progressive_index0.strap.
+      if (isProgressive && vi.a.i1 == 0)
+        ind = setOpInvalid(ind);
+      else begin
+        Bit#(7) len_ = effLength(vi.a.length);
+        Bit#(4) bsz  = effByteSize(vi.a.bs);
+        Bool immediate = (vi.a.p == 4);
+        IndexWord xIdx = st.readIndex(vi.a.i1);
+        BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, vi.a.addr, vi.a.i1);
+        Bit#(8) offSh = zeroExtend(vi.a.offset);
+        Bool vflOk = True; // p.21: a suppressed VFL op (ST/M+
+                            // immediate-or-crossing) skips the
+                            // progressive increment too.
+        Bit#(2) vflReadsUsed = 0; // how many prefetch slots THIS
+                            // arm's own (non-immediate) read already
+                            // consumed once it completes -- the
+                            // progressive-indexing block below reads
+                            // this to pick up at the next free slot
+                            // for its own refill read, instead of
+                            // colliding with (and silently reading
+                            // stale data from) whatever slot this
+                            // arm already used. Found via xw_refill's
+                            // regression failure: ST's RMW read and
+                            // the refill read both defaulted to
+                            // prefetch[0]/prefetchCount>=1, so the
+                            // refill read was never actually issued.
+        Bool vflWriteArmHandled = False; // ST/M+ set this when THEY
+                            // resolve their own progressive update
+                            // inline (see their arms below) instead
+                            // of via the shared trailing block --
+                            // required because st.writeWord and a
+                            // refill's readWordReq both route through
+                            // storage's single BRAM port's
+                            // request.put, and bsc (correctly)
+                            // refuses two request.put call sites in
+                            // one execute() invocation (G0004) even
+                            // when they're on provably-exclusive
+                            // paths across different case arms --
+                            // found when this fix's first version hit
+                            // exactly that conflict in RL_stepRnx.
+
+        // Progressive-index bookkeeping, computed up front from
+        // Reg-only state (xIdx, the instruction's own fields) -- no
+        // BRAM dependency at all. Arms that also write to storage
+        // (ST/M+) need to know BEFORE they act whether a refill read
+        // will also be required, so they can defer their write until
+        // both reads are in hand rather than writing immediately and
+        // then also trying to issue a refill request in the same
+        // execute() call.
+        Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(vi.a, xIdx);
+        IndexWord vflPx1 = tpl_1(vflPx);
+        Bool vflNeedsRefill = tpl_2(vflPx);
+
+        // DF, p.32 class 1: "the effective address of all fetch-type
+        // operations with a direct address".  L, + (and - , which is
+        // + with invert) and K read their field and leave it alone;
+        // ST and M+ write it back, so their read belongs to a STORE
+        // and signals DS at the write below.  That distinction is why
+        // this is gated by opcode instead of sitting at the one
+        // readWordReq all of them funnel through.
+        //
+        // IMMEDIATE ADDRESSING HAS NO STORAGE OPERAND -- p.32 says
+        // "with a direct address" -- so it is excluded rather than
+        // monitored against the instruction's own address field.
+        //
+        // BOTH WORDS OF A CROSSING FIELD.  p.31: "an instruction or
+        // data field which straddles a boundary always gives an
+        // address monitoring signal."  This model compares one word
+        // address at a time, so a crossing field asks twice, which is
+        // that rule for the two-word case.
+        //
+        // RUN ON EVERY CALL, including the one that bails out for the
+        // operand read: that call's `ind` is discarded (execute()
+        // returns entry values when needsRead is Valid), and the
+        // resuming call reaches this line again with the same `ea`.
+        //
+        // >>> WHICH CODES: vflRef, SHARED WITH StretchIBox.prepareExec,
+        // 2026-11-18. <<<  This was a seven-code list (L, LWF, +, K, LFT,
+        // LTRS, *+) that left out +MG, KF, KE, KFE, KR, KFR, *, /, LCV and
+        // LTRCV, every one of them fetch-type by p.32's definition; see
+        // vflRef's note for the pages.  decks/cwf_df_fetch_type.strap.
+        Bool dfApplies = vflDfApplies(vflRef(vi.code) == VflRefFetch, immediate);
+        Bool dfSupp = False;
+        if (dfApplies) begin
+          ind = fieldDfSignal(st, ea, len_, ind);
+          dfSupp = fieldDfSuppresses(st, ea, len_);
+        end
+
+        // DF'S MASK-DEPENDENT HALF, p.45 item 20: "If the
+        // corresponding mask bit was one, the fetch did not take
+        // place, and the entire operation was suppressed."  ENTIRE,
+        // so the guard goes round the opcode dispatch AND round the
+        // shared progressive-index block below it, not just round the
+        // read: no readWordReq is issued, no accumulator write, no
+        // result indicators, no progressive update and no class-3
+        // refill signal, because none of those addresses is then
+        // "actually used" (p.32).  `next` is untouched, which is
+        // p.52's item 3 -- the instruction counter still steps.
+        //
+        // WHICH RULE THIS IS, since two of them reach this arm.  The
+        // alert here arises on the operand FETCH, so it is p.32 class
+        // 1 and Figure 11's Class S -- full suppression.  It is NOT
+        // p.53's "an alert of Class S during progressive indexing
+        // suppresses only the indexing portion", which is a different
+        // (and unimplemented) rule for an alert raised on the REFILL
+        // address further down.  A progressive L whose data address is
+        // protected loses its indexing too, because the whole
+        // operation goes, not because of that sentence.
+        //
+        // >>> ADDRESS INVALID, 2026-11-18: the same "nothing at all". <<<
+        // Reference Manual printed p.21 (PDF 24): "When an effective word
+        // address is obtained which does not correspond to a core storage
+        // location that is physically available in a particular
+        // installation, indicator AD, address invalid, is turned on.  An
+        // instruction with an invalid data address is executed as a NO
+        // OPERATION instruction."  printed p.45 item 16 (PDF 48) says it
+        // of "the effective operand address of the instruction just
+        // attempted".  Only the Fp arm asked installed() before this; a
+        // VFL L at (8)400000.0 read zero (StretchMemory's answer past
+        // installed core) and never set AD, and a progressive store there
+        // still advanced its index (decks/cwf_address_invalid.strap), while
+        // the I-box's prepareExec already called it "completes without
+        // fetch".
+        // Immediate addressing names no storage word, and CV's operand is
+        // the accumulator (fetchesOperand's note), so neither is asked.
+        // The FIRST word only: a crossing field whose second word alone is
+        // uninstalled is not handled here (CHOSEN, no deck reaches it).
+        // (CV and DCV: vflRef's VflRefNone -- DCV, printed p.74, has no
+        // storage operand either, and was asked until 2026-11-18.)
+        Bool adSupp = !immediate && vflRef(vi.code) != VflRefNone
+                   && !installed(baWord(ea));
+        if (adSupp) ind = setBit(ind, ind_AD, 1);
+        if (dfSupp || adSupp) begin
+          // suppressed: deliberately nothing at all
+        end else begin
+        // DECIMAL *, *+ AND / ARE LOAD TRANSIT AND SET (printed p.68:
+        // "If decimal is specified, this operation has the same action
+        // as LOAD TRANSIT AND SET, except that the two high-order bits
+        // of the left zeros counter are set to zeros"; p.69 *+ "10";
+        // p.70 DIVIDE "01"), so they are dispatched to LTRS's arm, which
+        // reads vi.code for those two bits.
+        Bool ltrsAction = (vi.code == 6'b111101)
+                       || (vi.m.decimal == 1 && (vi.code == 6'b011001     // *
+                                              || vi.code == 6'b111001     // *+
+                                              || vi.code == 6'b011101));  // /
+        // What the family functions take (VflCtx, VflArm): the values
+        // above, and this call's running state as it stands here.
+        VflCtx cx = VflCtx { opKey: ltrsAction ? 6'b111101 : vi.code,
+                             vi: vi, prefetch: prefetch,
+                             prefetchCount: prefetchCount,
+                             boxResult: boxResult, radixConv: radixConv,
+                             isProgressive: isProgressive, len_: len_,
+                             bsz: bsz, immediate: immediate, xIdx: xIdx,
+                             ea: ea, offSh: offSh, vflPx1: vflPx1,
+                             vflNeedsRefill: vflNeedsRefill };
+        VflArm armIn = VflArm { needsRead: needsRead, needsBox: needsBox,
+                                vflPending: vflPending,
+                                connCounts: connCounts,
+                                tailWrite: tailWrite, ind: ind,
+                                vflOk: vflOk, vflReadsUsed: vflReadsUsed,
+                                vflWriteArmHandled: vflWriteArmHandled,
+                                commit: vc };
+        case (cx.opKey)
+          6'b000101, 6'b100101,
+          6'b000001, 6'b100001: begin // vflLoadAddFamily
+            VflArm fr = vflLoadAddFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
+          end
+          6'b001101, 6'b101101: begin // vflStoreFamily
+            VflArm fr = vflStoreFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
           6'b011001: begin // * (Multiply)
             // MULTIPLY, Reference Manual printed p.68, and the
@@ -4831,284 +5196,13 @@ function ActionValue#(VflOutcome)
               end
             end
           end
-          6'b001001, 6'b101011, 6'b101001: begin // M+, M+1, M+MG
-            // (Add One to Memory) -- prefetch/bail-out shape,
-            // inlining readFieldWithHi/writeFieldWithHi's own logic
-            // rather than calling them: guaranteed non-crossing
-            // (checked just above), exactly 1 read.
-            //
-            // M+1 SHARES THIS ARM BECAUSE IT IS M+ WITH ONE OPERAND
-            // REPLACED.  X22-6533 (docs/X22-6533_7030_PocketCard.pdf)
-            // gives "M+  Add to Memory  abc001001" and "M+1  Add One
-            // to Memory  abc101011" adjacently; the difference is the
-            // addend, not the addressing, the field handling, the
-            // refill path, the DF class-3 signal or the protection
-            // check.  Duplicating fifty lines to change one term
-            // would have been the larger risk.
-            //
-            // "ONE" IS ONE UNIT OF THE FIELD.  fieldToSM returns the
-            // field right-justified in `mag` (unsigned: mag = raw;
-            // signed: mag = raw >> byteSize, sign byte stripped), so
-            // the addend is SM128{sign:0, mag:1} and takes no offset
-            // shift -- offSh exists to align the ACCUMULATOR, and M+1
-            // has no accumulator operand.
-            //
-            // ARRIVED VIA MCP.  decks/mcp_bootstrap_p2.strap line
-            // 34 is the fourth instruction of IBM's operating system
-            // and the model used to set Operation Code Invalid on it
-            // (docs/NEXT.md 6a).
-            Bool addOne = (vi.code == 6'b101011);
-            // ADD MAGNITUDE TO MEMORY, Reference Manual printed p.62,
-            // and the whole operation is two sentences there:
-            //
-            //   "The magnitude of the accumulator field as specified
-            //   by the offset is algebraically added to the addressed
-            //   operand.  **A positive sign is assumed for the
-            //   accumulator field** before the negative sign modifier
-            //   is applied.  The actual accumulator sign is not used
-            //   or changed by the operation.  **If the sum has the
-            //   same sign as the sign of the storage operand, it
-            //   replaces that operand in storage.  If the sum is of
-            //   opposite sign, ZERO BYTES replace the numeric part of
-            //   the storage field.**  In either case the sign byte,
-            //   if any, of the storage operand is not changed."
-            //
-            // Figure 13 on the same page, "Sign Condition Results",
-            // tabulates it for every combination and the two rules
-            // reproduce the whole "Add Magnitude to Memory" block:
-            // storage 3- with accumulator 5+ gives 0-, storage 5-
-            // with 3+ gives 2-, and every unsigned row is a plain
-            // magnitude sum with the storage sign kept.
-            //
-            // FOR MCP'S OWN USE IT IS SIMPLER THAN THAT.  printed
-            // p.5 lines 15 and 17 are "M+MG(BU,48,8)" and
-            // "M+MG(BU,8,8)" -- BINARY UNSIGNED -- and p.62 says
-            // "unsigned storage fields are considered positive", so
-            // both operands are positive, the sum agrees in sign, and
-            // the operation is a plain add.  The opposite-sign rule
-            // is still implemented because the manual states it and
-            // Figure 13 pins it.
-            //
-            // ARRIVED VIA MCP, like M+1 before it: the ERROR ROUTINE
-            // uses these two adds to write the failing address into
-            // its console message, and with the operation refused the
-            // message printed its own placeholder, "000000.0".
-            Bool magnitude = (vi.code == 6'b101001);
-            // >>> A CROSSING FIELD IS NOT REFUSED, 2026-11-17. <<<  This
-            // was `immediate || fieldCrosses(ea, len_)`, a model limit
-            // (one write per rule) and never a documented one: printed
-            // p.56 brings "the storage word or word pair which contains
-            // the addressed memory field" from storage, and "In integer
-            // arithmetic operations that affect storage, such as STORE
-            // and ADD TO MEMORY, the result replaces the storage operand
-            // in the bit positions specified by the address and field
-            // length."  The pair is read and written as ST's crossing
-            // store does it (mCross below).
-            if (immediate) begin
-              ind = setOpInvalid(ind);
-              vflOk = False;
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              Bool mCross = fieldCrosses(ea, len_);
-              SM128 acc = readAcc(st);
-              // M+1's addend is +1 or -1: Reference Manual printed
-              // p.62-63, read in the ink, "A plus or minus one is
-              // algebraically added to the addressed storage field",
-              // and the negative sign modifier "specifies the sign of
-              // the one to be added ... if it is one, a minus one is
-              // added".  STRAP spells that M-1.  This was {sign: 0}
-              // until 2026-11-07, so MCP's p.198 line 25
-              // "M-1(BU,18),S Q K($9) -REDUCE Q K" ADDED one, and the
-              // interrupt queue count rose on every unstack until
-              // K UNSTC waited forever on an empty queue
-              // (docs/boot_plan.md, "M-1 ADDED ONE").
-              SM128 accSh = addOne
-                ? SM128 { sign: vi.m.invert, mag: 1 }             // M+1 / M-1
-                : magnitude
-                ? SM128 { sign: vi.m.invert, mag: acc.mag >> offSh } // M+MG
-                : SM128 { sign: acc.sign ^ vi.m.invert,            // M+
-                          mag: acc.mag >> offSh };
-              // WHERE THE NEGATIVE SIGN MODIFIER LANDS, and the
-              // manual answers it for the whole class rather than
-              // for one operation.  Reference Manual printed p.57,
-              // "Sign Control": "bit 52 designates whether the sign
-              // of the UNREPLACED operand is taken as-is or inverted
-              // ...  if the result is placed in the accumulator, bit
-              // 52 determines the use of the sign of the operand
-              // from storage; IF THE RESULT IS PLACED IN STORAGE,
-              // BIT 52 DETERMINES THE USE OF THE ACCUMULATOR SIGN."
-              // The table beneath it spells out all four cases under
-              // "TO-MEMORY OPERATION": 01 and 11 invert the
-              // ACCUMULATOR sign and leave the storage field's
-              // alone, while 10 and 11 (bit 51, the unsigned
-              // modifier) are what make the storage field unsigned.
-              //
-              // SO THE STORAGE OPERAND IS READ WITHOUT THE INVERT
-              // for every operation in this arm -- M+ as much as
-              // M+MG -- and the bit goes on the accumulator instead.
-              // p.62 says the same thing again for M+MG alone: "the
-              // accumulator sign is considered positive when the
-              // negative sign modifier is zero and negative when the
-              // modifier is one", on top of the assumed-positive
-              // rule, which is why M+MG's arm starts from 0 and M+'s
-              // from the real sign.
-              //
-              // NOTHING IN THE SUITE EXERCISES THIS, and it cannot:
-              // the VFL path of strap_asm.py has no spelling for the
-              // negative sign modifier at all (C22-6531 Appendix A
-              // footnote 4's N suffix is unimplemented, and the
-              // written-minus "M-"/"M-MG" forms are recognised only
-              // for the floating-point operations).  So the change
-              // is inert today and rests entirely on p.57.  It is
-              // still worth making: the previous code would have
-              // silently subtracted the wrong operand's sign the
-              // moment a spelling arrived.  docs/NEXT.md carries the
-              // spelling as its own item.
-              //
-              // M+1'S ADDEND TAKES THE MODIFIER: its own definition
-              // (printed p.63, "Negative Sign. This modifier specifies
-              // the sign of the one to be added") was read on
-              // 2026-11-07 and settles what this comment used to leave
-              // open.  The STORAGE operand follows the class rule below,
-              // as for every to-memory operation.
-              Bit#(1) opndInvert = 0;
-              // >>> DECIMAL M+, M+1 AND M+MG, 2026-11-16. <<<  Computed
-              // here once, for both write sites below (each uses
-              // prefetch[0] as the field's word).  Reference Manual
-              // printed p.61, ADD TO MEMORY, Radix: "In a decimal
-              // operation, the field is processed in four-bit bytes.  If
-              // the byte size ... is greater than four, only the four
-              // low-order bits of each byte participate ... The
-              // high-order bits of each byte are not changed by the
-              // operation" (decMergeField).  Indicators, printed p.62:
-              // "Lost Carry (LC).  This indicator is actuated by a carry
-              // beyond the leftmost digit, either binary or decimal, of
-              // the addressed field.  This indicator is also turned on if
-              // the result of an unsigned operation is negative.  In such
-              // a case, the magnitude of the result is stored in storage.
-              // Partial Field (PF).  This indicator is turned on if there
-              // are non-zero digits ... in the accumulator to the left of
-              // the highest order digit that is participating"; and the
-              // Programming Note: "the length of the accumulator field
-              // between the specified offset and the left end of the
-              // accumulator can be less than the number of bits from the
-              // storage operand ... the accumulator operand is lengthened
-              // ... by the addition of high-order zeros."  Printed p.59
-              // adds, for a short high-order byte, that LC comes on "only
-              // if the corresponding result byte from the processing unit
-              // is greater than nine" -- the carry out of the top DIGIT,
-              // which is what dCarryOut tests.  M+1 has no accumulator
-              // operand and "the partial field indicator is not affected"
-              // (printed p.63).
-              //
-              // The sum is mkDecBox's, asked for at the write site below
-              // -- after every read, the refill included -- so nothing
-              // is written on the run that bails.
-              Bit#(64) mRaw = extractFieldBits(prefetch[0], mCross ? prefetch[1] : 0, off, len_);
-              SM128 dOpnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
-              Bit#(7) dNumBits = (vi.m.unsign == 1) ? len_
-                               : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
-              Bit#(128) dMask = decDigitMask(decDigitCount(dNumBits, bsz));
-              Bool dWide = (decDigitCount(dNumBits, bsz) >= 32);
-              match {.mDig, .mHi} = decCompact(dOpnd.mag[63:0], bsz);
-              Bit#(128) dAccF = acc.mag >> (offSh & 8'hFC);
-              SM128 dAccSh = addOne
-                ? SM128 { sign: vi.m.invert, mag: 1 }
-                : magnitude
-                ? SM128 { sign: vi.m.invert, mag: dAccF & dMask }
-                : SM128 { sign: acc.sign ^ vi.m.invert, mag: dAccF & dMask };
-              Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
-              Bool dSub = (dOpnd.sign != dAccSh.sign);
-              Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
-                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False });
-              Bool dDec = (vi.m.decimal == 1);
-              Bool dAsk = dDec && !isValid(decOf(boxResult));
-              DecRsp dr = validValue(decOf(boxResult));
-              SM128 dSum = SM128 { sign: (!dSub || dr.carry) ? dOpnd.sign : dAccSh.sign,
-                                   mag: dr.r & dMask };
-              Bool dCarryOut = !dSub && (dWide ? dr.carry : ((dr.r & ~dMask) != 0));
-              SM128 dStored = magToMemory(magnitude, dSum, dOpnd);
-              Bool dLc = dCarryOut || (vi.m.unsign == 1 && dStored.sign == 1);
-              Bit#(64) dOldNum = (vi.m.unsign == 1) ? mRaw : (mRaw >> bsz);
-              Bit#(64) dNewNum = decMergeField(dStored.mag, dOldNum, bsz);
-              Bit#(64) dField = (vi.m.unsign == 1) ? dNewNum
-                : smToField(SM128 { sign: dStored.sign, mag: zeroExtend(dNewNum) },
-                            len_, bsz, 0, mRaw);
-              function Word64 decMInd(Word64 i0);
-                Word64 i1 = setDataFlagsF(i0, fieldFlags(mRaw, bsz, vi.m.unsign));
-                Word64 i2 = setBit(i1, ind_MOP, 1);
-                // "set according to the algebraic sum" (M+, p.62) / "the
-                // final result stored" (M+MG, p.62): dStored is both.
-                Word64 i3 = setResultIndicatorsF(i2, dStored);
-                Word64 i4 = dLc ? setBit(i3, ind_LC, 1) : i3;
-                return dPf ? setBit(i4, ind_PF, 1) : i4;
-              endfunction
-              // THE READS, THE BOX AND THE WRITE, for a field in one word
-              // or two, with or without a refill (2026-11-17; it was one
-              // word only).  The words come in order -- the field's
-              // first word, its second if it crosses, then the refill
-              // word -- and the write waits for all of them, so no run
-              // of execute() both writes and asks for a read
-              // (vflWriteArmHandled's reason).  The decimal sum is
-              // mkDecBox's, asked for after the last read.
-              Bit#(2) mReads = mCross ? 2 : 1;
-              Bit#(2) mNeed  = vflRmwNeed(mCross, vflNeedsRefill);
-              // DF, p.32 class 3: raised below with the refill, and only
-              // when the store was not suppressed (refillDfNote).
-              if (vflNeedsRefill) vflWriteArmHandled = True;
-              if (prefetchCount < mNeed) begin
-                needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, mCross,
-                                                        zeroExtend(vflPx1.refill));
-              end else if (dAsk) begin
-                needsBox  = dReq;
-                needsRead = tagged Valid 0;
-              end else begin
-                Bit#(64) mField = dField;
-                Bool bLc = False;
-                Bool bPf = False;
-                SM128 bStored = dStored;
-                if (!dDec) begin
-                  SM128 opnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
-                  // binMemAdd (StretchALU.bsv): the p.59/p.62 LC and PF.
-                  BinMemAdd bm = binMemAdd(magnitude, addOne, vi.m.unsign,
-                                           opnd, accSh, dNumBits);
-                  bStored = bm.stored;
-                  bLc = bm.lc;
-                  bPf = bm.pf;
-                  mField = smToField(bm.stored, len_, bsz, vi.m.unsign, mRaw);
-                end
-                // Both words compared when the field crosses, p.31's
-                // straddling rule (vflFieldStore).  On DS the store is
-                // suppressed and, as in ST's arm, the result indicators
-                // are not set -- p.32, "the operation is always
-                // terminated" (2026-11-17; until then M+ set MOP, LC, PF
-                // and the result indicators over a suppressed store).
-                match {.mDs, .mTail} <- vflFieldStore(st, ea, len_, mField,
-                                                      prefetch[0], prefetch[1]);
-                tailWrite = mTail;
-                if (mDs) begin
-                  ind = setBit(ind, ind_DS, 1);
-                  vflOk = False;            // p.22: an exception in the VFL part suppresses the entire operation
-                end else if (dDec) ind = decMInd(ind);
-                else begin
-                  ind = setDataFlagsF(ind, fieldFlags(mRaw, bsz, vi.m.unsign));
-                  ind = setBit(ind, ind_MOP, 1);
-                  if (bLc) ind = setBit(ind, ind_LC, 1);
-                  if (bPf) ind = setBit(ind, ind_PF, 1);
-                  // "set according to the FINAL RESULT STORED"
-                  // (p.62's Arithmetic Result line), which for M+MG
-                  // is not always the sum.
-                  ind = setResultIndicatorsF(ind, bStored);
-                end
-                vflReadsUsed = mReads;
-                if (vflNeedsRefill && !mDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
-                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[mReads]));
-                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-                  ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
-                end
-              end
-            end
+          6'b001001, 6'b101011, 6'b101001: begin // vflMemAddFamily
+            VflArm fr = vflMemAddFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
           6'b010001, 6'b110001, 6'b010011, 6'b110011, 6'b010101, 6'b110101: begin // vflCompareFamily
             VflArm fr = vflCompareFamily(st, cx, armIn);
