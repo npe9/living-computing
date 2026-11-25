@@ -478,12 +478,13 @@ were unreachable.
 surviving PSI.** What it adds:
 - **CESP application source in print**: a 1994 筑波大学 thesis (前田恭伸, 甲第1300号) prints the
   CESP source of its RARCOM system (Appendix B, 31 pp.) and a CESP syntax summary (Appendix A).
-  Its library calls (`list_index`, `utility`, `symbolizer`, `library`, `:fprintf`) are all already
-  in the SIMPOS census: corroboration that CESP kept those interfaces (USAGE, not system code).
+  Of its 14 library-call keys, 7 are in the SIMPOS census (`list_index`, `symbolizer`, `library`,
+  `class_object`); the class `utility`, `fprintf/4` and a dialog-box class are not (CESP
+  additions or uncensused SIMPOS classes, not decided). USAGE, not system code.
 - **A PSI site, 1986-87**: 溝口文雄's ESP review (コンピュータソフトウェア 5(1), 1988) reports a PSI
-  at the author's 東京理科大学 "バイオシステム研究所", and its use of the pool's list bucket and
+  at the author's "バイオシステム研究所" (東京理科大学 by INFERENCE from his affiliation), and its use of the pool's list bucket and
   index and of SIMPOS windows (PROSE, OCR).
-- **Preserved hardware**: JAIST keeps a PSI with "related manuals and materials" (IPSJ satellite
+- **Preserved hardware**: JAIST is listed as keeping a PSI with "related manuals and materials" (IPSJ satellite
   page); the 国立科学博物館 store keeps ICOT PIM/m and PIM/p (IPSJ location table). Nothing
   found lists a PSI elsewhere, in any museum.
 - **ICOT Journal holdings**: seven libraries (CiNii Books AN10155113); Kanagawa's Kawasaki
