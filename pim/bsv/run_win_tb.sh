@@ -95,6 +95,53 @@ for name in $(python3 -I "$WINFB" streams | awk '{print $1}'); do
     status=1
   fi
 done
+
+# ---- H2: the scan-out (WinScanOut.bsv) against psi/winscan.py, wintmds.py
+echo "== psi/test_winscan.py (the TMDS and scan-out references' unit tests)"
+python3 -I ../psi/test_winscan.py 2> "$B/test_winscan.log" || { cat "$B/test_winscan.log"; exit 1; }
+tail -1 "$B/test_winscan.log"
+WINSCAN=../psi/winscan.py
+for tb in mkWinTmdsEncTb:WinTmdsEncTb.bsv:sim_enc mkWinTmdsSerTb:WinTmdsSerTb.bsv:sim_ser mkWinScanOutTb:WinScanOutTb.bsv:sim_scan; do
+  top=${tb%%:*}; rest=${tb#*:}; src=${rest%%:*}; exe=${rest#*:}
+  echo "== bsc: $top"
+  "$BSC" -sim -u -g "$top" $FLAGS "$src" > "$B/bsc_$exe.log" 2>&1 || { cat "$B/bsc_$exe.log"; exit 1; }
+  (cd "$B" && "$BSC" -sim -e "$top" -bdir . -simdir . -o "$exe" > "link_$exe.log" 2>&1) || { cat "$B/link_$exe.log"; exit 1; }
+done
+
+mkdir -p "$B/enc" "$B/ser"
+python3 -I "$WINSCAN" encvec 1 > "$B/enc/win_tmds_in.hex"
+(cd "$B/enc" && ./../sim_enc > sim.log 2>&1) || { cat "$B/enc/sim.log"; status=1; }
+if r=$(python3 -I "$WINSCAN" enccheck "$B/enc/win_tmds_in.hex" "$B/enc/win_tmds_out.hex"); then
+  echo "   same  tmds encoder: $r"
+else
+  echo "   DIFFERS tmds encoder: $r"; status=1
+fi
+(cd "$B/ser" && ./../sim_ser > sim.log 2>&1) || { cat "$B/ser/sim.log"; status=1; }
+if r=$(python3 -I "$WINSCAN" sercheck "$B/ser/win_ser_px.hex" "$B/ser/win_ser.bin"); then
+  echo "   same  serializer: $r"
+else
+  echo "   DIFFERS serializer: $r"; status=1
+fi
+
+for name in $(python3 -I "$WINSCAN" cases); do
+  python3 -I "$WINSCAN" stream "$name" > "$B/scan_$name.hex"
+  python3 -I "$WINFB" run "$B/scan_$name.hex" "$B/scan_$name.py.pbm" "$B/scan_$name.py.status"
+  cp "$B/scan_$name.hex" "$B/run/win_stream.hex"
+  python3 -I "$WINSCAN" config "$name" > "$B/run/win_scan.hex"
+  rm -f "$B/run/win_frame.pbm" "$B/run/win_frame2.pbm" "$B/run/win_tmds.bin"
+  (cd "$B/run" && ./../sim_scan > sim_scan.log 2>&1) || { cat "$B/run/sim_scan.log"; status=1; continue; }
+  if ! cmp -s "$B/scan_$name.py.pbm" "$B/run/win_frame.pbm" || \
+     ! cmp -s "$B/scan_$name.py.pbm" "$B/run/win_frame2.pbm"; then
+    echo "   DIFFERS scan $name: the frame before or after the scan is not the Python layer's"
+    status=1; continue
+  fi
+  if r=$(python3 -I "$WINSCAN" check "$name" "$B/scan_$name.py.pbm" "$B/run/win_tmds.bin"); then
+    echo "   same  scan $r"
+  else
+    echo "   DIFFERS scan $name: $r"; status=1
+  fi
+done
+
 if [ $status -ne 0 ]; then
   echo "run_win_tb: FAIL"
   exit 1
