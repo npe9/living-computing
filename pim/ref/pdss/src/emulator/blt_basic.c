@@ -106,6 +106,7 @@ int blt_b_add(CELL *in1, CELL *in2, CELL *out)
 	}
     }
 #endif
+    return 0;
 }
 
 
@@ -138,6 +139,7 @@ int blt_b_subtract(CELL *in1, CELL *in2, CELL *out)
 	}
     }
 #endif
+    return 0;
 }
 
 
@@ -170,6 +172,7 @@ int blt_b_multiply(CELL *in1, CELL *in2, CELL *out)
 	}
     }
 #endif
+    return 0;
 }
 
 
@@ -192,7 +195,7 @@ int blt_b_divide(CELL *in1, CELL *in2, CELL *out)
 	body_builtin_exception(RANGE_OVERFLOW, 2,
 			       KL1B_B_DIVIDE, IIO, in1, in2, out);
     }else{
-	if(Valueof(in1) == 0x80000000 && Valueof(in2) == -1){
+	if(Valueof(in1) == INT32_MIN && Valueof(in2) == -1){
 #if IGNORE_INTEGER_OVERFLOW
 	    SetAll(out, INT, 0x80000000, MRBOFF);
 #else
@@ -203,6 +206,7 @@ int blt_b_divide(CELL *in1, CELL *in2, CELL *out)
 	    SetAll(out, INT, Valueof(in1)/Valueof(in2), MRBOFF);
 	}
     }
+    return 0;
 }
 
 
@@ -225,12 +229,13 @@ int blt_b_modulo(CELL *in1, CELL *in2, CELL *out)
 	body_builtin_exception(RANGE_OVERFLOW, 2,
 			       KL1B_B_MODULO, IIO, in1, in2, out);
     }else{
-	if(Valueof(in1) == 0x80000000 && Valueof(in2) == -1){
+	if(Valueof(in1) == INT32_MIN && Valueof(in2) == -1){
 	    SetAll(out, INT, 0, MRBOFF);
 	}else{
 	    SetAll(out, INT, Valueof(in1)%Valueof(in2), MRBOFF);
 	}
     }
+    return 0;
 }
 
 
@@ -250,12 +255,13 @@ int blt_b_minus(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_MINUS, dc_minus, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
-    if(Valueof(in1) == 0x80000000){
+    if(Valueof(in1) == INT32_MIN){
 	body_builtin_exception(INTEGER_OVERFLOW, 0, KL1B_B_MINUS, IO, in1,out);
 	return 0;
     }
 #endif
     SetAll(out, INT, -Valueof(in1), MRBOFF);
+    return 0;
 }
 
 
@@ -282,6 +288,7 @@ int blt_b_increment(CELL *in1, CELL *out)
     }
 #endif
     SetAll(out, INT, Valueof(in1)+1, MRBOFF);
+    return 0;
 }
 
 
@@ -301,13 +308,14 @@ int blt_b_decrement(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_DECREMENT, dc_decrement, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
-    if(Valueof(in1) == 0x80000000){
+    if(Valueof(in1) == INT32_MIN){
 	body_builtin_exception(INTEGER_OVERFLOW, 0,
 			       KL1B_B_DECREMENT, IO, in1, out);
 	return 0;
     }
 #endif
     SetAll(out, INT, Valueof(in1)-1, MRBOFF);
+    return 0;
 }
 
 
@@ -327,12 +335,13 @@ int blt_b_abs(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_ABS, dc_abs, in1, out);
 #if !IGNORE_INTEGER_OVERFLOW
-    if(Valueof(in1) == 0x80000000){
+    if(Valueof(in1) == INT32_MIN){
 	body_builtin_exception(INTEGER_OVERFLOW, 0, KL1B_B_ABS, IO, in1, out);
 	return 0;
     }
 #endif
     SetAll(out, INT, Valueof(in1)<0?(-Valueof(in1)):Valueof(in1), MRBOFF);
+    return 0;
 }
 
 
@@ -353,6 +362,7 @@ int blt_b_min(CELL *in1, CELL *in2, CELL *out)
     CheckArguments3(KL1B_B_MIN, dc_min, in1, in2, out);
     SetAll(out, INT, Valueof(in1)<Valueof(in2)?Valueof(in1)
 					      :Valueof(in2), MRBOFF);
+    return 0;
 }
 
 
@@ -373,6 +383,7 @@ int blt_b_max(CELL *in1, CELL *in2, CELL *out)
     CheckArguments3(KL1B_B_MAX, dc_max, in1, in2, out);
     SetAll(out, INT, Valueof(in1)>Valueof(in2)?Valueof(in1)
 					      :Valueof(in2), MRBOFF);
+    return 0;
 }
 
 
@@ -392,6 +403,7 @@ int blt_b_and(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_AND, dc_and, in1, in2, out);
     SetAll(out, INT, Valueof(in1)&Valueof(in2), MRBOFF);
+    return 0;
 }
 
 
@@ -411,6 +423,7 @@ int blt_b_or(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_OR, dc_or, in1, in2, out);
     SetAll(out, INT, Valueof(in1)|Valueof(in2), MRBOFF);
+    return 0;
 }
 
 
@@ -430,6 +443,7 @@ int blt_b_exclusive_or(CELL *in1, CELL *in2, CELL *out)
 {
     CheckArguments3(KL1B_B_EXCLUSIVE_OR, dc_exclusive_or, in1, in2, out);
     SetAll(out, INT, Valueof(in1)^Valueof(in2), MRBOFF);
+    return 0;
 }
 
 
@@ -449,6 +463,7 @@ int blt_b_complement(CELL *in1, CELL *out)
 {
     CheckArguments2(KL1B_B_COMPLEMENT, dc_complement, in1, out);
     SetAll(out, INT, ~Valueof(in1), MRBOFF);
+    return 0;
 }
 
 
@@ -474,6 +489,7 @@ int blt_b_shift_left(CELL *in1, CELL *in2, CELL *out)
 	SetAll(out, INT, (unsigned int)Valueof(in1)
 		       <<(unsigned int)Valueof(in2), MRBOFF);
     }
+    return 0;
 }
 
 
@@ -499,6 +515,7 @@ int blt_b_shift_right(CELL *in1, CELL *in2, CELL *out)
 	SetAll(out, INT, (unsigned int)Valueof(in1)
 		       >>(unsigned int)Valueof(in2), MRBOFF);
     }
+    return 0;
 }
 
 
@@ -550,6 +567,7 @@ int blt_b_vector(CELL *vect, CELL *size, CELL *newvect)
 	*newvect = *vect;
 	SetAll(size, INT, l, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -611,6 +629,7 @@ int blt_b_new_vector(CELL *vect, CELL *size)
 	    *++x = const_int0;
 	}
     }
+    return 0;
 }
 
 
@@ -678,6 +697,7 @@ int blt_b_vector_element(CELL *vect, CELL *pos, CELL *elem, CELL *newvect)
 	*newvect = *vect;
 	*elem = *x;
     }
+    return 0;
 }
 
 
@@ -775,6 +795,7 @@ int blt_b_set_vector_element(CELL *vect, CELL *pos, CELL *oldelem, CELL *elem, C
 	    }
 	}
     }
+    return 0;
 }
 
 
@@ -834,6 +855,7 @@ int blt_b_string(CELL *str, CELL *len, CELL *width, CELL *newstr)
 	SetAll(len, INT, l, MRBOFF);
 	SetAll(width, INT, w, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -897,6 +919,7 @@ int blt_b_new_string(CELL *str, CELL *len, CELL *width)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -965,6 +988,7 @@ int blt_b_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	*newstr = *str;
 	SetAll(elem, INT, element, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -1049,6 +1073,7 @@ int blt_b_set_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	}
 	*newstr = *str;
     }
+    return 0;
 }
 
 
@@ -1127,6 +1152,7 @@ int blt_b_substring(CELL *str, CELL *pos, CELL *len, CELL *substr, CELL *newstr)
 	*newstr = *str;
 	*substr = new;
     }
+    return 0;
 }
 
 
@@ -1216,6 +1242,7 @@ int blt_b_set_substring(CELL *str, CELL *pos, CELL *substr, CELL *newstr)
 	}
 	*newstr = *str;
     }
+    return 0;
 }
 
 
@@ -1287,6 +1314,7 @@ int blt_b_append_string(CELL *str1, CELL *str2, CELL *newstr)
 	}
 	*newstr = new;
     }
+    return 0;
 }
 
 
@@ -1355,6 +1383,7 @@ int blt_b_string_and(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	*newstr = new;
 	*newstr2 = new2;
     }
+    return 0;
 }
 
 
@@ -1423,6 +1452,7 @@ int blt_b_string_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	*newstr = new;
 	*newstr2 = new2;
     }
+    return 0;
 }
 
 
@@ -1492,6 +1522,7 @@ int blt_b_string_exclusive_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr
 	*newstr = new;
 	*newstr2 = new2;
     }
+    return 0;
 }
 
 
@@ -1544,6 +1575,7 @@ int blt_b_string_complement(CELL *str, CELL *newstr)
 	}
 	*newstr = new;
     }
+    return 0;
 }
 
 
@@ -1554,6 +1586,7 @@ int blt_b_string_complement(CELL *str, CELL *newstr)
 int blt_b_new_atom(CELL *atom)
 {
     SetAll(atom, ATOM, new_atom(), MRBOFF);
+    return 0;
 }
 
 
@@ -1608,6 +1641,7 @@ int blt_b_intern_atom(CELL *atom, CELL *name)
 	}
 	SetAll(atom, ATOM, at, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -1657,6 +1691,7 @@ int blt_b_atom_name(CELL *atom, CELL *name)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -1702,4 +1737,5 @@ int blt_b_atom_number(CELL *atom, CELL *number)
     }else{
 	SetAll(number, INT, Valueof(atom), MRBOFF);
     }
+    return 0;
 }

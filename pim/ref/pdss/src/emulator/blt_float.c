@@ -527,6 +527,7 @@ DCODE dc_float_add(void)
 int blt_b_float_add(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_add, in1, in2, out, dc_float_add, KL1B_B_FLOAT_ADD);
+    return 0;
 }
 
 
@@ -542,6 +543,7 @@ DCODE dc_float_subtract(void)
 int blt_b_float_subtract(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_subtract,in1,in2,out, dc_float_subtract,KL1B_B_FLOAT_SUBTRACT);
+    return 0;
 }
 
 
@@ -557,6 +559,7 @@ DCODE dc_float_multiply(void)
 int blt_b_float_multiply(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_multiply,in1,in2,out, dc_float_multiply,KL1B_B_FLOAT_MULTIPLY);
+    return 0;
 }
 
 
@@ -572,6 +575,7 @@ DCODE dc_float_divide(void)
 int blt_b_float_divide(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_divide, in1, in2, out, dc_float_divide, KL1B_B_FLOAT_DIVIDE);
+    return 0;
 }
 
 
@@ -587,6 +591,7 @@ DCODE dc_float_minus(void)
 int blt_b_float_minus(register CELL *in, CELL *out)
 {
     DEF2BN(float_minus, in, out, dc_float_minus, KL1B_B_FLOAT_MINUS);
+    return 0;
 }
 
 
@@ -602,6 +607,7 @@ DCODE dc_float_abs(void)
 int blt_b_float_abs(register CELL *in, CELL *out)
 {
     DEF2BN(float_abs, in, out, dc_float_abs, KL1B_B_FLOAT_ABS);
+    return 0;
 }
 
 
@@ -617,6 +623,7 @@ DCODE dc_float_min(void)
 int blt_b_float_min(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3BN(float_min, in1, in2, out, dc_float_min, KL1B_B_FLOAT_MIN);
+    return 0;
 }
 
 
@@ -632,6 +639,7 @@ DCODE dc_float_max(void)
 int blt_b_float_max(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3BN(float_max, in1, in2, out, dc_float_max, KL1B_B_FLOAT_MAX);
+    return 0;
 }
 
 
@@ -647,6 +655,7 @@ DCODE dc_float_floor(void)
 int blt_b_float_floor(register CELL *in, CELL *out)
 {
     DEF2B(float_floor, in, out, dc_float_floor, KL1B_B_FLOAT_FLOOR);
+    return 0;
 }
 
 
@@ -662,6 +671,7 @@ DCODE dc_float_sqrt(void)
 int blt_b_float_sqrt(register CELL *in, CELL *out)
 {
     DEF2B(float_sqrt, in, out, dc_float_sqrt, KL1B_B_FLOAT_SQRT);
+    return 0;
 }
 
 
@@ -677,6 +687,7 @@ DCODE dc_float_ln(void)
 int blt_b_float_ln(register CELL *in, CELL *out)
 {
     DEF2B(float_ln, in, out, dc_float_ln, KL1B_B_FLOAT_LN);
+    return 0;
 }
 
 
@@ -692,6 +703,7 @@ DCODE dc_float_log(void)
 int blt_b_float_log(register CELL *in, CELL *out)
 {
     DEF2B(float_log, in, out, dc_float_log, KL1B_B_FLOAT_LOG);
+    return 0;
 }
 
 
@@ -707,6 +719,7 @@ DCODE dc_float_exp(void)
 int blt_b_float_exp(register CELL *in, CELL *out)
 {
     DEF2B(float_exp, in, out, dc_float_exp, KL1B_B_FLOAT_EXP);
+    return 0;
 }
 
 
@@ -722,6 +735,7 @@ DCODE dc_float_pow(void)
 int blt_b_float_pow(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_pow, in1, in2, out, dc_float_pow, KL1B_B_FLOAT_POW);
+    return 0;
 }
 
 
@@ -737,6 +751,7 @@ DCODE dc_float_sin(void)
 int blt_b_float_sin(register CELL *in, CELL *out)
 {
     DEF2B(float_sin, in, out, dc_float_sin, KL1B_B_FLOAT_SIN);
+    return 0;
 }
 
 
@@ -752,6 +767,7 @@ DCODE dc_float_cos(void)
 int blt_b_float_cos(register CELL *in, CELL *out)
 {
     DEF2B(float_cos, in, out, dc_float_cos, KL1B_B_FLOAT_COS);
+    return 0;
 }
 
 
@@ -767,6 +783,7 @@ DCODE dc_float_tan(void)
 int blt_b_float_tan(register CELL *in, CELL *out)
 {
     DEF2B(float_tan, in, out, dc_float_tan, KL1B_B_FLOAT_TAN);
+    return 0;
 }
 
 
@@ -782,6 +799,7 @@ DCODE dc_float_asin(void)
 int blt_b_float_asin(register CELL *in, CELL *out)
 {
     DEF2B(float_asin, in, out, dc_float_asin, KL1B_B_FLOAT_ASIN);
+    return 0;
 }
 
 
@@ -797,6 +815,7 @@ DCODE dc_float_acos(void)
 int blt_b_float_acos(register CELL *in, CELL *out)
 {
     DEF2B(float_acos, in, out, dc_float_acos, KL1B_B_FLOAT_ACOS);
+    return 0;
 }
 
 
@@ -812,6 +831,7 @@ DCODE dc_float_atan(void)
 int blt_b_float_atan(register CELL *in, CELL *out)
 {
     DEF2B(float_atan, in, out, dc_float_atan, KL1B_B_FLOAT_ATAN);
+    return 0;
 }
 
 
@@ -827,6 +847,7 @@ DCODE dc_float_atan2(void)
 int blt_b_float_atan2(CELL *in1, CELL *in2, CELL *out)
 {
     DEF3B(float_atan2, in1, in2, out, dc_float_atan2, KL1B_B_FLOAT_ATAN2);
+    return 0;
 }
 
 
@@ -842,6 +863,7 @@ DCODE dc_float_sinh(void)
 int blt_b_float_sinh(register CELL *in, CELL *out)
 {
     DEF2B(float_sinh, in, out, dc_float_sinh, KL1B_B_FLOAT_SINH);
+    return 0;
 }
 
 
@@ -857,6 +879,7 @@ DCODE dc_float_cosh(void)
 int blt_b_float_cosh(register CELL *in, CELL *out)
 {
     DEF2B(float_cosh, in, out, dc_float_cosh, KL1B_B_FLOAT_COSH);
+    return 0;
 }
 
 
@@ -872,6 +895,7 @@ DCODE dc_float_tanh(void)
 int blt_b_float_tanh(register CELL *in, CELL *out)
 {
     DEF2B(float_tanh, in, out, dc_float_tanh, KL1B_B_FLOAT_TANH);
+    return 0;
 }
 
 
@@ -906,6 +930,7 @@ int blt_b_float_to_integer(register CELL *in, CELL *out)
 				   KL1B_B_FLOAT_TO_INTEGER, IO, in, out);
 	}
     }
+    return 0;
 }
 
 
@@ -936,4 +961,5 @@ int blt_b_integer_to_float(register CELL *in, CELL *out)
 	integer_to_float(&Valueof(in), &z);
 	SetAll(out, FLOAT, z, MRBOFF);
     }
+    return 0;
 }

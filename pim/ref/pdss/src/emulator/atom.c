@@ -43,7 +43,7 @@ CHAR *atom_name(unsigned int atom)
     }else{
 	static CHAR buf[4][16];
 	static int i;
-	i = (++i)&3;
+	i = (i+1)&3;
 	sprintf(buf[i], "$$$%d", 0xFFFFFFFF-atom);
 	return(buf[i]);
     }
@@ -138,6 +138,7 @@ int initialize_atom_table(void)
     intern_atom3("$VAR");
     intern_atom3("$SHOEN");
     intern_atom3("$NUE");
+    return 0;
 }
 
 CELL const_nil			= {ATOM, MRBOFF, NIL};

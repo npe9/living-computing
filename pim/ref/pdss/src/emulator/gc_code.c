@@ -27,6 +27,7 @@ int gc_code_area(void)
 	    }
 	}
     }
+    return 0;
 }
 
 
@@ -109,6 +110,7 @@ int gc_constant_section(CELL *from, CELL *to, CELL *bottom)
 	}
 	from++; to++;
     }
+    return 0;
 }
 
 CELL *gc_cell_in_constant_section(CELL *old)

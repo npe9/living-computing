@@ -34,6 +34,7 @@ int collect_value(CELL *c, int d)
 {
     initialize_print_routine();
     collect_value_sub(c, d);
+    return 0;
 }
 
 static int collect_value_sub(CELL *c, int d)
@@ -294,6 +295,7 @@ int detect_deadlock_in_suspension(int type, GOAL_RECORD *goal, CELL *c)
 	report_deadlock_suspended_goal(type, goal, ptop);
 	report_deadlock_suspended_goals(type, c, ptop);
     }
+    return 0;
 }
 
 #endif
@@ -347,6 +349,7 @@ int detect_deadlock_in_unification1(CELL *x)
 	report_deadlock_suspended_goals(UNIFY_VOID_HOOK, x, ptop);
 	return 0;
     }
+    return 0;
 }
 
 int detect_deadlock_in_unification2(CELL *x, CELL *y)
@@ -421,6 +424,7 @@ int detect_deadlock_in_unification2(CELL *x, CELL *y)
 	report_deadlock_suspended_goals(UNIFY_MGHK_MGHK, y, ptop);
 	return 0;
     }
+    return 0;
 }
 
 #endif
@@ -503,11 +507,13 @@ static int display_deadlock_suspended_goals(CELL *c)
 	    }
 	}
     }
+    return 0;
 }
 
 static int display_deadlock_suspended_goal(GOAL_RECORD *goal)
 {
     write_goal_record(goal);
+    return 0;
 }
 
 static int report_deadlock_suspended_goals(int type, CELL *c, OBJ *ptop)
@@ -541,6 +547,7 @@ static int report_deadlock_suspended_goals(int type, CELL *c, OBJ *ptop)
 	    }
 	}
     }
+    return 0;
 }
 
 static int report_deadlock_suspended_goal(int type, GOAL_RECORD *grec, OBJ *ptop)
@@ -603,6 +610,7 @@ static int report_deadlock_suspended_goal(int type, GOAL_RECORD *grec, OBJ *ptop
 	goal->pcode = 0;
 	enqueue_with_priority(goal);
     }
+    return 0;
 }
 
 static int report_deadlock_suspended_merger(int type, MERGER_RECORD *mg, OBJ *ptop)
@@ -668,6 +676,7 @@ static int report_deadlock_suspended_merger(int type, MERGER_RECORD *mg, OBJ *pt
 	goal->pcode = 0;
 	enqueue_with_priority(goal);
     }
+    return 0;
 }
 
 #endif

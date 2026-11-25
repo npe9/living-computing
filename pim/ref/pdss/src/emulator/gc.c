@@ -82,7 +82,8 @@ CheckHeap();
     getrusage(RUSAGE_SELF, &usage_after);
     uspent = (usage_after.ru_utime.tv_sec-usage_before.ru_utime.tv_sec)*1000
 	   + (usage_after.ru_utime.tv_usec-usage_before.ru_utime.tv_usec)/1000;
-    PrintCons1F("GC Time: %d msec\n", uspent);
+    PrintCons1F("GC Time: %d msec\n", (int)uspent);
+    return 0;
 }
 
 
@@ -592,6 +593,7 @@ Used :	123456789 123456 123456 12345 1234567890 12345678
 	break;
     }
     fflush(stdout);
+    return 0;
 }
 
 #endif

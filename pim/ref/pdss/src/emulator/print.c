@@ -57,11 +57,13 @@ static int  length;
 int initialize_print_routine(void)
 {
     initializr_var_table();
+    return 0;
 }
 
 int set_print_file(FILE *ff)
 {
     file = ff;
+    return 0;
 }
 
 /*
@@ -71,6 +73,7 @@ PRINT_VAR_MODE_ADR = 1 -> Use variable address.
 int set_print_var_mode(int mode)
 {
     var_mode = mode;
+    return 0;
 }
 
 int get_print_var_mode(void)
@@ -85,6 +88,7 @@ NO  -> Mode for normal message.
 int set_print_deadlock(int f)
 {
     deadlock = f;
+    return 0;
 }
 
 
@@ -104,6 +108,7 @@ int print_term(CELL *cc, int len, int depth)
     if(print_sub(c, r, mrb, depth) && mrb==MRBON && !deadlock){
 	putc('x', file);
     }
+    return 0;
 }
 
 int print_term2(CELL *cc, int len, int depth)
@@ -117,6 +122,7 @@ int print_term2(CELL *cc, int len, int depth)
     if(print_sub(c, r, mrb, depth) && mrb==MRBON && !deadlock){
 	putc('x', file);
     }
+    return 0;
 }
 
 int fprint_term(FILE *ff, CELL *cc, int len, int depth)
@@ -131,6 +137,7 @@ int fprint_term(FILE *ff, CELL *cc, int len, int depth)
     if(print_sub(c, r, mrb, depth) && mrb==MRBON && !deadlock){
 	putc('x', file);
     }
+    return 0;
 }
 
 
@@ -249,6 +256,7 @@ static int print_list(CELL *c, int depth, int mrb1)
 	}
     }
     putc(']', file);
+    return 0;
 }
 
 
@@ -372,6 +380,7 @@ static int print_nbit_string(CELL *c)
     }
   exit_string:
     putc('}', file);
+    return 0;
 }
 
 
@@ -382,6 +391,7 @@ static int print_nbit_string(CELL *c)
 int print_string(CELL *c)
 {
     fprint_string(stdout, c);
+    return 0;
 }
 
 int fprint_string(register FILE *f, register CELL *c)
@@ -411,6 +421,7 @@ int fprint_string(register FILE *f, register CELL *c)
 	    }
 	}
     }
+    return 0;
 }
 
 #define PUtC(c, f){\
@@ -458,6 +469,7 @@ static int fprint_string2(register FILE *f, register CELL *c)
 	}
     }
     PUtC(-1, f);
+    return 0;
 }
 
 static int putc2(int c, FILE *f)
@@ -471,6 +483,7 @@ static int putc2(int c, FILE *f)
     }else{
 	putc(c, f);
     }
+    return 0;
 }
 
 
@@ -538,6 +551,7 @@ static int initializr_var_table(void)
 	var_number_table[i]=NULL;
     }
     t1_free();
+    return 0;
 }
 
 static CHAR *lookup_var_name(register CELL *c, register CELL *r)

@@ -196,7 +196,7 @@ execute_next_predicate:
 *************************************************************************/
 
 next_native_predicate:
-    switch( (* ((int (*) ())PCR) )() ){	 /** Call(PCR) **/
+    switch( FunctionOfCode(PCR)() ){	 /** Call(PCR) **/
       case NC_PROCEED:
 	if(--number_of_children == 0){
 	    terminate_shoen();
@@ -2454,7 +2454,7 @@ case KL1B_G_DIVIDE:{
     v2 = Valueof(GetRi(PCR+RE2_of_REGS3));
     out = GetRi(PCR+RE3_of_REGS3);
     if(v2 == 0) NextAlternative;	/* Illegal Input */
-    if(v1 == 0x80000000 && v2 == -1){
+    if(v1 == INT32_MIN && v2 == -1){
 #if IGNORE_INTEGER_OVERFLOW
 	SetAll(out, INT, 0x80000000, MRBOFF);
 #else
@@ -2473,7 +2473,7 @@ case KL1B_G_MODULO:{
     v2 = Valueof(GetRi(PCR+RE2_of_REGS3));
     out = GetRi(PCR+RE3_of_REGS3);
     if(v2 == 0) NextAlternative;	/* Illegal Input */
-    if(v1 == 0x80000000 && v2 == -1){
+    if(v1 == INT32_MIN && v2 == -1){
 	SetAll(out, INT, 0, MRBOFF);
     }else{
 	SetAll(out, INT, v1%v2, MRBOFF);
@@ -2487,7 +2487,7 @@ case KL1B_G_MINUS:{
     v = Valueof(GetRi(PCR+RE1_of_REGS2));
     out = GetRi(PCR+RE2_of_REGS2);
 #if !IGNORE_INTEGER_OVERFLOW
-    if(v == 0x80000000) NextAlternative;
+    if(v == INT32_MIN) NextAlternative;
 #endif
     SetAll(out, INT, -v, MRBOFF);
     NextInstr(LEN_of_REGS2);
@@ -2511,7 +2511,7 @@ case KL1B_G_DECREMENT:{
     v = Valueof(GetRi(PCR+RE1_of_REGS2));
     out = GetRi(PCR+RE2_of_REGS2);
 #if !IGNORE_INTEGER_OVERFLOW
-    if(v == 0x80000000) NextAlternative;
+    if(v == INT32_MIN) NextAlternative;
 #endif
     SetAll(out, INT, v-1, MRBOFF);
     NextInstr(LEN_of_REGS2);
@@ -2523,7 +2523,7 @@ case KL1B_G_ABS:{
     v = Valueof(GetRi(PCR+RE1_of_REGS2));
     out = GetRi(PCR+RE2_of_REGS2);
 #if !IGNORE_INTEGER_OVERFLOW
-    if(v == 0x80000000) NextAlternative;
+    if(v == INT32_MIN) NextAlternative;
 #endif
     SetAll(out, INT, (v<0)?(-v):v, MRBOFF);
     NextInstr(LEN_of_REGS2);
@@ -2770,7 +2770,7 @@ case KL1B_B_DIVIDE:{
     in2 = GetRi(PCR+RE2_of_REGS3);
     out = GetRi(PCR+RE3_of_REGS3);
     if(Typeof(in1) == INT && Typeof(in2) == INT && Valueof(in2) != 0 &&
-       !(Valueof(in1) == 0x80000000 && Valueof(in2) == -1)){
+       !(Valueof(in1) == INT32_MIN && Valueof(in2) == -1)){
 	SetAll(out, INT, Valueof(in1)/Valueof(in2), MRBOFF);
 	NextInstr(LEN_of_REGS3);
     }
@@ -2784,7 +2784,7 @@ case KL1B_B_MODULO:{
     in2 = GetRi(PCR+RE2_of_REGS3);
     out = GetRi(PCR+RE3_of_REGS3);
     if(Typeof(in1) == INT && Typeof(in2) == INT && Valueof(in2) != 0 &&
-       !(Valueof(in1) == 0x80000000 && Valueof(in2) == -1)){
+       !(Valueof(in1) == INT32_MIN && Valueof(in2) == -1)){
 	SetAll(out, INT, Valueof(in1)%Valueof(in2), MRBOFF);
 	NextInstr(LEN_of_REGS3);
     }
@@ -2796,7 +2796,7 @@ case KL1B_B_MINUS:{
     register CELL *in, *out;
     in	= GetRi(PCR+RE1_of_REGS2);
     out = GetRi(PCR+RE2_of_REGS2);
-    if(Typeof(in) == INT && Valueof(in) != 0x80000000){
+    if(Typeof(in) == INT && Valueof(in) != INT32_MIN){
 	SetAll(out, INT, -Valueof(in), MRBOFF);
 	NextInstr(LEN_of_REGS2);
     }
@@ -2820,7 +2820,7 @@ case KL1B_B_DECREMENT:{
     register CELL *in, *out;
     in	= GetRi(PCR+RE1_of_REGS2);
     out = GetRi(PCR+RE2_of_REGS2);
-    if(Typeof(in) == INT && Valueof(in) != 0x80000000){
+    if(Typeof(in) == INT && Valueof(in) != INT32_MIN){
 	SetAll(out, INT, Valueof(in)-1, MRBOFF);
 	NextInstr(LEN_of_REGS2);
     }
@@ -2832,7 +2832,7 @@ case KL1B_B_ABS:{
     register CELL *in, *out;
     in	= GetRi(PCR+RE1_of_REGS2);
     out = GetRi(PCR+RE2_of_REGS2);
-    if(Typeof(in) == INT && Valueof(in) != 0x80000000){
+    if(Typeof(in) == INT && Valueof(in) != INT32_MIN){
 	SetAll(out, INT, Valueof(in)<0?(-Valueof(in)):Valueof(in), MRBOFF);
 	NextInstr(LEN_of_REGS2);
     }
@@ -3053,7 +3053,7 @@ case SPECIAL_FUNCTION_SHIFT:
     break;
 DEFAULT:
     Error("Unknown opcode occurred.");
-    PrintCons2F("   0x%x: 0x%x\n", PCR, GetOpCode(PCR));
+    PrintCons2F("   0x%x: 0x%x\n", (unsigned)Ref(PCR), GetOpCode(PCR));
     exit_pdss(1);
 }
 
@@ -3507,7 +3507,7 @@ case KL1B_B_STRING_COMPLEMENT:	 BLT2(blt_b_string_complement);
 
 DEFAULT:
     Error("Unknown opcode occurred.");
-    PrintCons2F("   0x%x: 0x%x\n", PCR-1, 0x100|GetOpCode(PCR));
+    PrintCons2F("   0x%x: 0x%x\n", (unsigned)Ref(PCR-1), 0x100|GetOpCode(PCR));
     exit_pdss(1);
 }
 }
@@ -3528,6 +3528,7 @@ static int do_interrupt(void)
     if(KeyboardFlag_ON() || KeyIntFlag_ON()) do_keyboard_interrupt();
     if(AlarmIntFlag_ON()) timer_wakeup_goal();
     ResetIflag();
+    return 0;
 }
 
 static int idle(void)
@@ -3545,6 +3546,7 @@ static int idle(void)
     execute_counter = execute_limit;
 #endif
     SpecialFunctionToWindow(0);	 /* Idle end */
+    return 0;
 }
 
 static int idle2(void)

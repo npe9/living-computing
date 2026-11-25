@@ -154,13 +154,13 @@ int open_file(int ioid, CELL *name, int mode)
     if(expand_path_name(buf1, buf2) != NULL){
 	switch(mode){
 	  case 0:
-	    if(it->in = fopen(buf2, "r")) it->status |= IO_READ;
+	    if((it->in = fopen(buf2, "r"))) it->status |= IO_READ;
 	    break;
 	  case 1:
-	    if(it->out = fopen(buf2, "w")) it->status |= IO_WRITE;
+	    if((it->out = fopen(buf2, "w"))) it->status |= IO_WRITE;
 	    break;
 	  case 2:
-	    if(it->out = fopen(buf2, "a")) it->status |= IO_WRITE;
+	    if((it->out = fopen(buf2, "a"))) it->status |= IO_WRITE;
 	    break;
 	}
     }
@@ -323,6 +323,7 @@ static int remove_suspended_goals(CELL *cc)
 	    c = &(srec->forward);
 	}
     }while(Typeof(c) != UNDEF);
+    return 0;
 }
 
 
@@ -355,7 +356,7 @@ int read_line(int ioid, CELL *line)
     /* - line (STRING) */
 {
     register IO_BACKET *it;
-    register int ch;
+    register int ch = 0;	/* MODERN: was read uninitialised on a resume */
     it = &io_table[ioid];
     if(it->ts_stt != TS_LINE){
 	if(IsWindow(it) && use_windows){
@@ -943,6 +944,7 @@ static int scan_variable(register int chr, register IO_BACKET *it)
     while(IsAlNum(chr)){ PutTSB(chr, it); chr = GetC(it); }
     UnGetC(chr, it);
     PutTSB(0, it);
+    return 0;
 }
 
 static int scan_alpha_atom(register int chr, register IO_BACKET *it)
@@ -953,6 +955,7 @@ static int scan_alpha_atom(register int chr, register IO_BACKET *it)
     while(IsAlNum(chr)){ PutTSB(chr, it); chr = GetC(it); }
     UnGetC(chr, it);
     PutTSB(0, it);
+    return 0;
 }
 
 static int scan_symbol_atom(register int chr, register IO_BACKET *it)
@@ -963,6 +966,7 @@ static int scan_symbol_atom(register int chr, register IO_BACKET *it)
     while(IsSymbol(chr)){ PutTSB(chr, it); chr = GetC(it); }
     UnGetC(chr, it);
     PutTSB(0, it);
+    return 0;
 }
 
 
@@ -1066,6 +1070,7 @@ static int expand_ts_buffer(register IO_BACKET *it)
 	}
     }
     it->ts_ptr = new+(it->ts_ptr-old);
+    return 0;
 }
 
 

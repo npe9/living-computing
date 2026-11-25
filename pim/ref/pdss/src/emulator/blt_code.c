@@ -59,6 +59,7 @@ int blt_b_predicate_to_code(CELL *mod, CELL *pred, CELL *arity, CELL *code)
 	    *code = const_nil;
 	}
     }
+    return 0;
 }
 
 
@@ -142,6 +143,7 @@ int blt_b_code_to_predicate(CELL *code, CELL *mod, CELL *pred, CELL *arity, CELL
 	    break;
 	}
     }
+    return 0;
 }
 
 
@@ -197,6 +199,7 @@ int blt_b_save_module(CELL *mod, CELL *file, CELL *status)
 	}
 	SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -258,6 +261,7 @@ int blt_b_load_module(CELL *mod, CELL *file, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -319,6 +323,7 @@ int blt_b_assemble_module(CELL *mod, CELL *file, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -359,6 +364,7 @@ int blt_b_remove_module(CELL *mod, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -407,6 +413,7 @@ int blt_b_get_public_predicates(CELL *mod, CELL *list, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -451,6 +458,7 @@ int blt_b_trace_module(CELL *mod, CELL *flag, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -498,6 +506,7 @@ int blt_b_get_module_status(CELL *mod, CELL *flag, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -567,6 +576,7 @@ int blt_b_spy_predicate(CELL *code, CELL *flag, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -619,6 +629,7 @@ int blt_b_get_spied_predicates(CELL *mod, CELL *list, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -659,6 +670,7 @@ int blt_b_reset_profile_info(CELL *mod, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -710,4 +722,5 @@ int blt_b_get_profile_info(CELL *mod, CELL *list, CELL *status)
 	    return 0;
 	}
     }
+    return 0;
 }

@@ -24,6 +24,7 @@ int blt_display_console(CELL *x)
     SelectWindow(CONSOLE);
     print_term(x, PRINT_LENGTH, PRINT_DEPTH);
     putchar('\n'); Flush();
+    return 0;
 }
 
 
@@ -40,6 +41,7 @@ int blt_put_console(CELL *x)
       case STRING: print_string(x);	break;
     }
     Flush();
+    return 0;
 }
 
 
@@ -62,6 +64,7 @@ int blt_read_console(CELL *x)
 	if(read_console("           :: ", buffer, 16) < 0) goto exit_by_eof;
     }
     SetAll(x, INT, work, MRBOFF);
+    return 0;
 }
 
 
@@ -227,6 +230,7 @@ int blt_b_raise(CELL *tag, CELL *key, CELL *info)
 	return 0;
     }
     pdss_raise(Valueof(tag), key, info);
+    return 0;
 }
 
 
@@ -250,6 +254,7 @@ int blt_b_merge(CELL *in, CELL *out)
     merger->parent   = Ref(parent);
     merger->pcode    = Ref(current_predicate);
     number_of_children++;
+    return 0;
 }
 
 
@@ -261,6 +266,7 @@ int blt_b_current_node(CELL *cp, CELL *tp)
 {
     SetAll(cp, INT, 0, MRBOFF);
     SetAll(tp, INT, 1, MRBOFF);
+    return 0;
 }
 
 
@@ -273,6 +279,7 @@ int blt_b_current_processor(CELL *cp, CELL *sx, CELL *sy)
     SetAll(cp, INT, 0, MRBOFF);
     SetAll(sx, INT, 1, MRBOFF);
     SetAll(sy, INT, 1, MRBOFF);
+    return 0;
 }
 
 
@@ -285,6 +292,7 @@ int blt_b_current_priority(CELL *cp, CELL *min, CELL *max)
     SetAll(cp, INT, logical_priority, MRBOFF);
     SetAll(min, INT, parent->priority_min, MRBOFF);
     SetAll(max, INT, parent->priority_max, MRBOFF);
+    return 0;
 }
 
 
@@ -326,6 +334,7 @@ int blt_b_rate(CELL *rate, CELL *prio)
 	}
 	SetAll(prio, INT, p1, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -373,6 +382,7 @@ int blt_b_rltv(CELL *rate, CELL *prio)
 	}
 	SetAll(prio, INT, p1, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -426,6 +436,7 @@ int blt_b_hash(CELL *x, CELL *hv, CELL *newx)
 	*newx = *x;
 	SetAll(hv, INT, h, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -445,6 +456,7 @@ int blt_b_unbound(CELL *x, CELL *pe, CELL *addr, CELL *newx)
 	*addr = const_nil;
 	*pe = const_nil;
     }
+    return 0;
 }
 
 
@@ -467,6 +479,7 @@ int blt_b_unbound2(CELL *x, CELL *result)
 	r[1] = *x;
 	SetAll(result, VECTOR, r, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -529,6 +542,7 @@ int blt_b_get_print_image(CELL *atomic, CELL *mode, CELL *left, CELL *string, CE
 	SetAll(len, INT, l, MRBOFF);
 	SetAll(tail, INT, t, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -549,6 +563,7 @@ int blt_statistics(CELL *ct, CELL *hs, CELL *hu, CELL *cs, CELL *cu, CELL *sy)
     SetAll(cs, INT, CodeSize(),	      MRBOFF);
     SetAll(cu, INT, CodeUsed(),	      MRBOFF);
     SetAll(sy, INT, SystemCodeSize(), MRBOFF);
+    return 0;
 }
 
 
@@ -564,6 +579,7 @@ int blt_get_cpu_time(CELL *cpu)
     uspent = usage.ru_utime.tv_sec*1000
 	   + usage.ru_utime.tv_usec/1000;
     SetAll(cpu, INT, uspent, MRBOFF);
+    return 0;
 }
 
 
@@ -583,6 +599,7 @@ int blt_get_current_time(CELL *year, CELL *month, CELL *day, CELL *hour, CELL *m
     SetAll(hour,   INT, tm->tm_hour,	  MRBOFF);
     SetAll(minute, INT, tm->tm_min,	  MRBOFF);
     SetAll(second, INT, tm->tm_sec,	  MRBOFF);
+    return 0;
 }
 
 
@@ -787,6 +804,7 @@ int blt_b_get_all_atom_name(CELL *list)
     }
     *p = const_nil;
     *list = root;
+    return 0;
 }
 
 
@@ -860,6 +878,7 @@ int blt_b_unix(CELL *command, CELL *flag, CELL *status)
 	break;
     }
     SetAll(status, INT, system(buffer), MRBOFF);
+    return 0;
 }
 
 
@@ -870,4 +889,5 @@ int blt_b_unix(CELL *command, CELL *flag, CELL *status)
 int blt_b_get_library_directory(CELL *name)
 {
     SetAll(name, STRING, convert_to_kl1_string(PDSS_LIBDIR), MRBOFF);
+    return 0;
 }

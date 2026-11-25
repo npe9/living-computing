@@ -63,6 +63,8 @@ def main():
         name = fn[:-4]
         g = os.path.join(gdir, "t_%s.out" % name)
         if not os.path.exists(g):
+            g = os.path.join(gdir, "t_%s.got" % name)
+        if not os.path.exists(g):
             continue
         n += 1
         want = header(os.path.join(tdir, fn))

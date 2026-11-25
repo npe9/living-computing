@@ -36,6 +36,7 @@ int initialize_exception_tag_table(void)
     exception_tag_table[INCORRECT_PRIORITY]   = INCORRECT_PRIORITY_TAG;
     exception_tag_table[MODULE_NOT_FOUND]     = MODULE_NOT_FOUND_TAG;
     exception_tag_table[PREDICATE_NOT_FOUND]  = PREDICATE_NOT_FOUND_TAG;
+    return 0;
 }
 
 
@@ -58,6 +59,7 @@ int pdss_raise(unsigned int tag, CELL *type, CELL *info)
     SetAll(v, REF, argv, MRBOFF);
     create_goal_and_wait_new_code(code, argv);
     unify_exception_with_report_stream(parent, &mesg, tag);
+    return 0;
 }
 
 
@@ -89,6 +91,7 @@ int body_goal_exception(unsigned int excp_code, unsigned int mod, unsigned int p
     create_goal_and_wait_new_code(code, argv);
     unify_exception_with_report_stream(parent, &mesg,
 				       exception_tag_table[excp_code]);
+    return 0;
 }
 
 int body_goal_exception2(int excp_code, CELL *cd, CELL *av)
@@ -109,6 +112,7 @@ int body_goal_exception2(int excp_code, CELL *cd, CELL *av)
     create_goal_and_wait_new_code(code, argv);
     unify_exception_with_report_stream(parent, &mesg,
 				       exception_tag_table[excp_code]);
+    return 0;
 }
 
 
@@ -148,6 +152,7 @@ int exception_active_unify_fail(CELL *x, CELL *y)
     create_goal_and_wait_new_code(code, argv);
     unify_exception_with_report_stream(parent, &mesg,
 				       exception_tag_table[UNIFY_FAILED]);
+    return 0;
 }
 
 
@@ -201,6 +206,7 @@ int exception_illegal_merger_input(CELL *x, CELL *strm)
     create_goal_and_wait_new_code(code, argv);
     unify_exception_with_report_stream(PrecOf(Mergerof(Objectof(strm))->parent), &mesg,
 				    exception_tag_table[ILLEGAL_MERGER_INPUT]);
+    return 0;
 }
 
 
@@ -268,6 +274,7 @@ int body_builtin_exception(unsigned int excp_code, unsigned int where, unsigned 
     create_goal_and_wait_new_code(code, argv);
     unify_exception_with_report_stream(parent, &mesg,
 				       exception_tag_table[excp_code]);
+    return 0;
 }
 
 
@@ -289,4 +296,5 @@ static int create_goal_and_wait_new_code(CELL *code, CELL *argv)
     grec->pcode = Ref(current_predicate2);
     number_of_children += 1;
     single_wait_suspend(grec, &(grec->args[0]));
+    return 0;
 }

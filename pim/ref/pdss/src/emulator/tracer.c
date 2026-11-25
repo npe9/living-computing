@@ -85,6 +85,7 @@ int initialize_tracer(void)
     trace_status = STEP_TRACE;
     trace_count = 0;
     set_print_var_mode(option_print_var_mode);
+    return 0;
 }
 
 
@@ -119,6 +120,7 @@ static int display_command_help(struct tracer_command_table *table)
     for(i = 0; i < table->size; i++){
 	if(table->help[i]) printf("  %s\n", table->help[i]);
     }
+    return 0;
 }
 
 /**** Top Level Command ***/
@@ -242,6 +244,7 @@ static int initialize_tracer_command_table(void)
        "ABORT .................. Abort Task");
     DC(TC_EXIT_PDSS,		"EXIT",
        "EXIT ................... Exit PDSS");
+    return 0;
 };
 
 /**** Inspect Variable Command ****/
@@ -290,6 +293,7 @@ static int initialize_tracer_command_table2(void)
        "w  {n|t|s} ............. Switch for swap gate");
     DV(TV_GATE_FAIL,		"fail",
        "f  {n|t|s} ............. Switch for fail gate");
+    return 0;
 };
 
 /**** Stream Monitor Command ****/
@@ -332,6 +336,7 @@ static int initialize_tracer_command_table3(void)
        "iv ..................... Inspect Variable");
     DM(MC_INSPECT_SHOEN_TREE,	"ishoen",
        "is ..................... Inspect Shoen tree");
+    return 0;
 };
 
 
@@ -443,36 +448,43 @@ int set_trace_status(int status)
     trace_status = status;
     trace_count	 = 0;
     trace_last_priority = -1;
+    return 0;
 }
 
 int trace_call_switch(int status)
 {
     trace_call = status;
+    return 0;
 }
 
 int trace_susp_switch(int status)
 {
     trace_susp = status;
+    return 0;
 }
 
 int trace_resu_switch(int status)
 {
     trace_resu = status;
+    return 0;
 }
 
 int trace_fail_switch(int status)
 {
     trace_fail = status;
+    return 0;
 }
 
 int trace_swap_switch(int status)
 {
     trace_swap = status;
+    return 0;
 }
 
 int trace_interrupt(void)
 {
     trace_intr_flag = YES;
+    return 0;
 }
 
 
@@ -756,7 +768,7 @@ static int trace_depth_first(int argn, CHAR **argv)
     breadth_first_flag = NO;
     random_enqueue_flag = NO;
     printf(">>> depth first scheduling.");
-    if(execute_limit) printf(" (execute depth: %s)", execute_limit);
+    if(execute_limit) printf(" (execute depth: %d)", execute_limit);
     putchar('\n');
     return(YES);
 }
@@ -774,7 +786,7 @@ static int trace_breadth_first(int argn, CHAR **argv)
     breadth_first_flag = YES;
     random_enqueue_flag = NO;
     printf(">>> breadth first scheduling.");
-    if(execute_limit) printf(" (execute depth: %s)", execute_limit);
+    if(execute_limit) printf(" (execute depth: %d)", execute_limit);
     putchar('\n');
     return(YES);
 }
@@ -805,7 +817,7 @@ static int trace_random_enqueue(int argn, CHAR **argv)
     }
     random_enqueue_flag = YES;
     printf(">>> random enqueue scheduling.");
-    if(execute_limit) printf(" (execute depth: %s)", execute_limit);
+    if(execute_limit) printf(" (execute depth: %d)", execute_limit);
     putchar('\n');
     return(YES);
 }
@@ -825,6 +837,7 @@ static int trace_set_rewrite_status(int argn, CHAR **argv)
 	    }
 	}
     }
+    return 0;
 }
 
 static int trace_set_debug_flag(int argn, CHAR **argv, int flag)
@@ -841,6 +854,7 @@ static int trace_set_debug_flag(int argn, CHAR **argv, int flag)
 	    continue;
 	}
     }
+    return 0;
 }
 
 static int trace_set_predicate_spy(int argn, CHAR **argv, int flag)
@@ -864,6 +878,7 @@ static int trace_set_predicate_spy(int argn, CHAR **argv, int flag)
 	    continue;
 	}
     }
+    return 0;
 }
 
 static int trace_set_goal_spy(int mode, GOAL_RECORD *grec, int flag)
@@ -882,6 +897,7 @@ static int trace_set_goal_spy(int mode, GOAL_RECORD *grec, int flag)
 	}
     }
     printf(">>> this goal is %s\n", flag ? "spied" : "not spied");
+    return 0;
 }
 
 static int trace_where_called_from(int argn, CHAR **argv)
@@ -897,6 +913,7 @@ static int trace_where_called_from(int argn, CHAR **argv)
 	       atom_name(GetPredicateName(tracer_pcode)),
 	       GetPredicateArity(tracer_pcode));
     }
+    return 0;
 }
 
 static int trace_inspect_ready_queue(int argn, CHAR **argv)
@@ -1101,6 +1118,7 @@ static int trace_set_gate_switch(int chr, int *flag)
       default:
 	printf("!!! unknown flag %c.\n", chr);
     }
+    return 0;
 }
 
 
@@ -1305,6 +1323,7 @@ int blt_b_debug_monitor_stream(CELL *x, CELL *name, CELL *count)
 	    mrbgc_statistics_collect_in_builtin(StringLengthof(name)+1);
 	}
     }
+    return 0;
 }
 
 
@@ -1388,6 +1407,7 @@ static int write_priority(void)
 	printf(">>>>> Priority: %d <<<<<\n", priority);
 	trace_last_priority = priority;
     }
+    return 0;
 }
 
 static int write_mode(int mode, OBJ *code, GOAL_RECORD *grec)
@@ -1419,6 +1439,7 @@ static int write_mode(int mode, OBJ *code, GOAL_RECORD *grec)
 	putchar(' ');
     }
     printf(": ");
+    return 0;
 }
 
 int write_goal_record(GOAL_RECORD *goal)
@@ -1426,6 +1447,7 @@ int write_goal_record(GOAL_RECORD *goal)
     write_goal(CodeOf(goal->code), goal->argn, goal->args, PrecOf(goal->parent),
 	       PRINT_LENGTH, PRINT_DEPTH);
     putchar('\n');
+    return 0;
 }
 
 int write_goal(OBJ *code, int an, CELL *as, PARENT_RECORD *prec, int pl, int pd)
@@ -1449,6 +1471,7 @@ int write_goal(OBJ *code, int an, CELL *as, PARENT_RECORD *prec, int pl, int pd)
     if(an != 0) putchar(')');
     putchar('.');
     fflush(stdout);
+    return 0;
 }
 
 
@@ -1536,6 +1559,7 @@ static int display_merge_tree(CELL *mmm)
 	Dereference2(out, mmm);
 	if(Typeof(mmm) != MGHOK) break;
     }
+    return 0;
 }
 
 static int display_queue_more(int count)

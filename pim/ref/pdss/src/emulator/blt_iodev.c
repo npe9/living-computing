@@ -59,6 +59,7 @@ int blt_b_create_window(CELL *name, CELL *status, CELL *intrup, CELL *ioid)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -90,6 +91,7 @@ int blt_b_remove_window(CELL *ioid, CELL *status)
 	remove_window(Valueof(ioid));
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -123,6 +125,7 @@ int blt_b_show_window(CELL *ioid, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -156,6 +159,7 @@ int blt_b_hide_window(CELL *ioid, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -175,6 +179,7 @@ int blt_b_create_file(CELL *status, CELL *ioid)
 	SetTypeof(ioid, INT); SetMrbof(ioid, MRBOFF);
 	return 0;
     }
+    return 0;
 }
 
 
@@ -206,6 +211,7 @@ int blt_b_remove_file(CELL *ioid, CELL *status)
 	remove_file(Valueof(ioid));
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -256,6 +262,7 @@ int blt_b_open_file(CELL *ioid, CELL *name, CELL *mode, CELL *status, CELL *newi
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -289,6 +296,7 @@ int blt_b_close_file(CELL *ioid, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -328,6 +336,7 @@ int blt_b_write_char(CELL *ioid, CELL *chr, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -371,6 +380,7 @@ int blt_b_write_line(CELL *ioid, CELL *line, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -414,6 +424,7 @@ int blt_b_write_buffer(CELL *ioid, CELL *buffer, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -457,6 +468,7 @@ int blt_b_write_term(CELL *ioid, CELL *term, CELL *len, CELL *dep, CELL *status,
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -508,6 +520,7 @@ int blt_b_read_char(CELL *ioid, CELL *chr, CELL *status, CELL *newio)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -564,6 +577,7 @@ int blt_b_read_line(CELL *ioid, CELL *line, CELL *status, CELL *newio)
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -624,6 +638,7 @@ int blt_b_read_buffer(CELL *ioid, CELL *len, CELL *buffer, CELL *status, CELL *n
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -692,6 +707,7 @@ int blt_b_read_token(CELL *ioid, CELL *token, CELL *varnum, CELL *status, CELL *
 	    return 0;
 	}
     }
+    return 0;
 }
 
 
@@ -727,6 +743,7 @@ int blt_b_abort_read_command(CELL *ioid, CELL *status, CELL *newio)
 	*newio = *ioid;
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -769,6 +786,7 @@ int blt_b_test_directory(CELL *name, CELL *status)
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	}
     }
+    return 0;
 }
 
 
@@ -818,6 +836,7 @@ int blt_b_directory_pathname(CELL *name, CELL *exname, CELL *status)
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	}
     }
+    return 0;
 }
 
 
@@ -856,7 +875,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 	register CELL *p, *q;
 	CHAR *dn, bufn[256], bufw[256], ex[512];
 	DIR *dirp;
-	struct direct *dp, *readdir();
+	struct direct *dp;
 	int st;
 	convert_to_c_string(name, bufn, 250);
 	convert_to_c_string(wild, bufw, 250);
@@ -879,7 +898,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 		    if(!strcmp(bufn, "/")) *bufn = 0;
 		    p = list;
 		    st = IOSUB_SUCCESS;
-		    while(dp = readdir(dirp)){
+		    while((dp = readdir(dirp))){
 			dn = (CHAR *)dp->d_name;
 			if(!(*bufw != '.' && *dn == '.') && re_exec(dn)){
 			    sprintf(ex, "%s/%s", bufn, dn);
@@ -916,6 +935,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 	}
 	SetAll(status, INT, st, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -952,7 +972,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
     }else{
 	CHAR *dn, bufn[256], bufw[256], ex[512];
 	DIR *dirp, *dirp2;
-	struct direct *dp, *readdir();
+	struct direct *dp;
 	int st;
 	convert_to_c_string(name, bufn, 250);
 	convert_to_c_string(wild, bufw, 250);
@@ -973,11 +993,11 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 		    st = IOSUB_CANNOT_OPEN_FILE;
 		}else{
 		    st = IOSUB_CANNOT_OPEN_FILE;
-		    while(dp = readdir(dirp)){
+		    while((dp = readdir(dirp))){
 			dn = (CHAR *)dp->d_name;
 			if(!(*bufw != '.' && *dn == '.') && re_exec(dn)){
 			    sprintf(ex, "%s/%s", bufn, dn);
-			    if(dirp2 = opendir(ex)){
+			    if((dirp2 = opendir(ex))){
 				closedir(dirp2);
 			    }else{
 				if(!unlink(ex)) st = IOSUB_SUCCESS;
@@ -992,6 +1012,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 	}
 	SetAll(status, INT, st, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -1006,7 +1027,7 @@ static CHAR *wildcard_to_regular_expression(CHAR *wildcard, CHAR *regex)
 
     e = regex;
     *e++ = '^';
-    while(c = *wildcard++){
+    while((c = *wildcard++)){
 	switch(c){
 	  case '*':
 	    *e++ = '.'; *e++ = '*'; break;
@@ -1041,6 +1062,7 @@ int blt_b_get_time_count(CELL *time, CELL *status)
 {
     SetAll(time, INT, get_time_count(), MRBOFF);
     SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
+    return 0;
 }
 
 
@@ -1081,6 +1103,7 @@ int blt_b_on_at(CELL *time, CELL *done, CELL *status)
 	    set_timer_on_at(c, done);
 	}
     }
+    return 0;
 }
 
 
@@ -1121,4 +1144,5 @@ int blt_b_on_after(CELL *time, CELL *done, CELL *status)
 	    set_timer_on_after(c, done);
 	}
     }
+    return 0;
 }

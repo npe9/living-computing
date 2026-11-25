@@ -212,6 +212,7 @@ int initialize_heap(unsigned int size)
     t4_free();
     gc_counter = 0;
     gc_panic_flag = 0;
+    return 0;
 }
 
 int switch_heap(void)
@@ -308,6 +309,7 @@ int switch_heap(void)
     merger_rec_list = NULL;
     t3_free();
     t4_free();
+    return 0;
 }
 
 #if MRBGC_SWITCH
@@ -652,6 +654,7 @@ int alloc_suspension_record(register unsigned int num)
     H = (CELL *)(p+1);
     srec_pool_top = p;
     CheckHeap();
+    return 0;
 }
 
 int alloc_goal_record8(register unsigned int num)
@@ -675,6 +678,7 @@ int alloc_goal_record8(register unsigned int num)
     grec08_pool_top = p2;
     goal_rec_list = p2;
     CheckHeap();
+    return 0;
 }
 
 int alloc_goal_record16(register unsigned int num)
@@ -698,6 +702,7 @@ int alloc_goal_record16(register unsigned int num)
     grec16_pool_top = p2;
     goal_rec_list = (GOAL_RECORD *)p2;
     CheckHeap();
+    return 0;
 }
 
 int alloc_goal_record32(register unsigned int num)
@@ -721,6 +726,7 @@ int alloc_goal_record32(register unsigned int num)
     grec32_pool_top = p2;
     goal_rec_list = (GOAL_RECORD *)p2;
     CheckHeap();
+    return 0;
 }
 
 int alloc_parent_record(register unsigned int num)
@@ -738,6 +744,7 @@ int alloc_parent_record(register unsigned int num)
     H = (CELL *)(p+1);
     prec_pool_top = p;
     CheckHeap();
+    return 0;
 }
 
 unsigned int count_suspension_record_in_free_list(void)
@@ -813,6 +820,7 @@ int initialize_code(unsigned int size)
     C = code1;
     t1_free();
     t2_free();
+    return 0;
 }
 
 int initialize_code2(void)
@@ -831,6 +839,7 @@ int initialize_code2(void)
     user_code_limit = code2_limit;
     t1_free();
     t2_free();
+    return 0;
 }
 
 int switch_code(void)
@@ -843,6 +852,7 @@ int switch_code(void)
     C = code1;
     t1_free();
     t2_free();
+    return 0;
 }
 
 
@@ -864,6 +874,7 @@ unsigned char *t1_alloc(unsigned int size)
 int t1_free(void)
 {
     temp1_top = (unsigned char *)code2_limit;
+    return 0;
 }
 
 unsigned char *t2_alloc(unsigned int size)
@@ -878,6 +889,7 @@ unsigned char *t2_alloc(unsigned int size)
 int t2_free(void)
 {
     temp2_top = (unsigned char *)code2;
+    return 0;
 }
 
 unsigned char *t3_alloc(unsigned int size)
@@ -889,6 +901,7 @@ unsigned char *t3_alloc(unsigned int size)
 int t3_free(void)
 {
     temp3_top = (unsigned char *)heap2_limit;
+    return 0;
 }
 
 unsigned char *t4_alloc(unsigned int size)
@@ -903,4 +916,5 @@ unsigned char *t4_alloc(unsigned int size)
 int t4_free(void)
 {
     temp4_top = (unsigned char *)heap2;
+    return 0;
 }

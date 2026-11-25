@@ -110,6 +110,7 @@ int initialize_shoen_tree(OBJ *boot_code)
     boot_goal->debug = 0;
     boot_goal->pcode = 0;
     enqueue_with_priority(boot_goal);
+    return 0;
 }
 
 
@@ -212,6 +213,7 @@ int start_shoen(PARENT_RECORD *shoen, int kind)
 	}
     }
 /** DumpTree("*** start shoen [%c%04d] - end.\n", shoen); **/
+    return 0;
 }
 
 
@@ -230,6 +232,7 @@ int stop_shoen(PARENT_RECORD *shoen, int kind)
 	son = PrecOf(son->right_brother);
     }
 /** DumpTree("*** stop shoen [%c%04d] - end.\n", shoen); **/
+    return 0;
 }
 
 
@@ -266,6 +269,7 @@ int abort_shoen(PARENT_RECORD *shoen)
     delete_from_and_tree(shoen);
     CacheParent(prec);
     DumpTree("*** abort shoen [%c%04d] - end.\n", shoen);
+    return 0;
 }
 
 int remove_shoen(PARENT_RECORD *shoen)
@@ -307,6 +311,7 @@ int terminate_shoen(void)
 	terminate_shoen();
     }
     DumpTree("*** terminate shoen [%c%04d] - end.\n", current_shoen);
+    return 0;
 }
 
 static int delete_from_and_tree(PARENT_RECORD *shoen)
@@ -321,6 +326,7 @@ static int delete_from_and_tree(PARENT_RECORD *shoen)
     }else{
 	PrecOf(shoen->right_brother)->left_brother = shoen->left_brother;
     }
+    return 0;
 }
 
 
@@ -361,6 +367,7 @@ int shoen_add_resource(PARENT_RECORD *shoen, int more)
 	}
     }
     CacheParent(current_shoen);
+    return 0;
 }
 
 
@@ -502,6 +509,7 @@ static int divide_resource(PARENT_RECORD *from, PARENT_RECORD *to)
 	    from->reduction_left = 0;
 	}
     }
+    return 0;
 }
 
 
@@ -517,6 +525,7 @@ PARENT_RECORD *search_parent_tag(PARENT_RECORD *prec, unsigned int tag)
     }
     Error1F("Illegal exception tag was occurred: %d\n", tag);
     exit_pdss(1);
+    return(NULL);
 }
 
 int report_raise_flag = NO;
@@ -550,6 +559,7 @@ int unify_exception_with_report_stream(PARENT_RECORD *prec, CELL *mesg, unsigned
 	shoen_active_unify_with_list(&report, &list);
 	CacheParent2(current_parent);
     }
+    return 0;
 }
 
 int unify_exception_with_parent_report_stream(PARENT_RECORD *prec, CELL *mesg)
@@ -571,6 +581,7 @@ int unify_exception_with_parent_report_stream(PARENT_RECORD *prec, CELL *mesg)
 	shoen_active_unify_with_list(&report, &list);
 	CacheParent2(current_parent);
     }
+    return 0;
 }
 
 int unify_message_with_parent_report_stream(PARENT_RECORD *prec, CELL *mesg)
@@ -589,6 +600,7 @@ int unify_message_with_parent_report_stream(PARENT_RECORD *prec, CELL *mesg)
     SetAll(&list, LIST, cons, MRBOFF);
     shoen_active_unify_with_list(&report, &list);
     CacheParent2(current_parent);
+    return 0;
 }
 
 static int shoen_active_unify_with_list(CELL *report, CELL *list)
@@ -602,6 +614,7 @@ static int shoen_active_unify_with_list(CELL *report, CELL *list)
     active_unify_with_list(report, list);
     current_predicate = current_predicate_save;
     current_predicate2 = current_predicate_save2;
+    return 0;
 }
 
 
@@ -613,6 +626,7 @@ int inspect_shoen_tree(void)
 {
     PrintCons("Shoen tree:\n");
     dump_shoen_tree(grand_mother, 0);
+    return 0;
 }
 
 static int dump_shoen_tree(PARENT_RECORD *root, int level)
@@ -638,6 +652,7 @@ static int dump_shoen_tree(PARENT_RECORD *root, int level)
     }else{
 	printf("\n");
     }
+    return 0;
 }
 
 static int dump_shoen_tree_sub(PARENT_RECORD *prec, int level)
@@ -652,4 +667,5 @@ static int dump_shoen_tree_sub(PARENT_RECORD *prec, int level)
     }else{
 	printf("     ");
     }
+    return 0;
 }

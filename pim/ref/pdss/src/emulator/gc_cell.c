@@ -295,7 +295,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		return 0;
 	    }
 	  DEFAULT:
-	    Error2F("Unknown Data Type (%02x  AD:%08x)\n", Typeof(old), old);
+	    Error2F("Unknown Data Type (%02x  AD:%08x)\n", Typeof(old), (unsigned)Ref(old));
 	    new = old;
 	    return 0;
 	}
@@ -339,4 +339,5 @@ static int gc_stream_merger(CELL *old, CELL *new)
 	    SetAll(new, MGHOK, newmg, MRBON);
 	}
     }
+    return 0;
 }

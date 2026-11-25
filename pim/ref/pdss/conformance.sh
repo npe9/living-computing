@@ -24,6 +24,9 @@
 # The job list is jobs.txt: "name|file|goal. goal. ..." per line; a
 # leading "slow " marks jobs run only in slow/all mode.  PDSS_RUN
 # prefixes the emulator command (e.g. "arch -x86_64").
+# PDSS_JOBS (an extended regular expression) runs only the matching jobs;
+# PDSS_ARGS is put before the emulator's other arguments (e.g. -h250000,
+# a heap size, to move the GC schedule).
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$1; MODE=${2:-fast}; REC=$3
 [ -x "$ROOT/emulator/pdss" ] || { echo "conformance: no $ROOT/emulator/pdss"; exit 2; }
@@ -57,6 +60,9 @@ while IFS= read -r line; do
   [ "$MODE" = fast ] && [ $slow = 1 ] && continue
   [ "$MODE" = slow ] && [ $slow = 0 ] && continue
   name=${line%%|*}; rest=${line#*|}; file=${rest%%|*}; goals=${rest#*|}
+  if [ -n "${PDSS_JOBS:-}" ]; then
+    echo "$name" | grep -Eq "^(${PDSS_JOBS})\$" || continue
+  fi
   case "$name" in
     c_*)
       # The KL1 compiler alone (emulator/KL1CMP, as pdsscmp runs it) on
@@ -64,11 +70,11 @@ while IFS= read -r line; do
       file=$name
       rm -f "$W/$file.asm" "$W/$file.sav"
       printf "no.\n3.\n'../%s.kl1'.\n'../conf/%s.asm'.\n" "$goals" "$file" > "$W/$name.in"
-      args="KL1CMP +t" ;;
+      args="${PDSS_ARGS:+$PDSS_ARGS }KL1CMP +t" ;;
     *)
       rm -f "$W/$file.asm" "$W/$file.sav"
       printf "compile('../conf/%s').\n%s\nhalt.\n" "$file" "$goals" > "$W/$name.in"
-      args= ;;
+      args=${PDSS_ARGS:-} ;;
   esac
   (cd "$ROOT/emulator" && ${T:+$T 600} $RUN ./pdss $args < "$W/$name.in" > "$W/$name.raw" 2>&1; echo "exit $?" >> "$W/$name.raw")
   {

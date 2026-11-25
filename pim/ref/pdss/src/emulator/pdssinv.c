@@ -261,7 +261,7 @@ int invasm_constant(CELL *p, CELL *bottom, CELL *top)
     }
 }
 
-int exit_pdss(int code)
+_Noreturn int exit_pdss(int code)
 {
     exit(code);
 }

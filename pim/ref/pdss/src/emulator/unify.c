@@ -67,6 +67,7 @@ int active_unify(CELL *regX, CELL *regY)
 	illegal_data_type_in_active_unify(varY);
 	exception_active_unify_fail(regX, regY);
     }
+    return 0;
 }
 
 
@@ -103,6 +104,7 @@ int active_unify_with_atom(CELL *reg, unsigned int atom)
 	SetAll(&work, ATOM, atom, MRBOFF);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 int active_unify_with_nil(CELL *reg)
@@ -129,6 +131,7 @@ int active_unify_with_nil(CELL *reg)
       unify_fail:
 	exception_active_unify_fail(reg, &const_nil);
     }
+    return 0;
 }
 
 int active_unify_with_integer(CELL *reg, int inte)
@@ -156,6 +159,7 @@ int active_unify_with_integer(CELL *reg, int inte)
 	SetAll(&work, INT, inte, MRBOFF);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 int active_unify_with_float(CELL *reg, int flot)
@@ -183,6 +187,7 @@ int active_unify_with_float(CELL *reg, int flot)
 	SetAll(&work, FLOAT, flot, MRBOFF);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 int active_unify_with_list(CELL *reg, CELL *list)
@@ -210,6 +215,7 @@ int active_unify_with_list(CELL *reg, CELL *list)
       unify_fail:
 	exception_active_unify_fail(reg, list);
     }
+    return 0;
 }
 
 int active_unify_with_vector(CELL *reg, CELL *vct)
@@ -239,6 +245,7 @@ int active_unify_with_vector(CELL *reg, CELL *vct)
       unify_fail:
 	exception_active_unify_fail(reg, vct);
     }
+    return 0;
 }
 
 int active_unify_with_string(CELL *reg, register CELL *str)
@@ -275,6 +282,7 @@ int active_unify_with_string(CELL *reg, register CELL *str)
       unify_fail:
 	exception_active_unify_fail(reg, str);
     }
+    return 0;
 }
 
 int active_unify_with_nue(CELL *reg, CELL *nue)
@@ -301,6 +309,7 @@ int active_unify_with_nue(CELL *reg, CELL *nue)
       unify_fail:
 	exception_active_unify_fail(reg, nue);
     }
+    return 0;
 }
 
 int active_unify_with_shoen(CELL *reg, PARENT_RECORD *shoen)
@@ -328,6 +337,7 @@ int active_unify_with_shoen(CELL *reg, PARENT_RECORD *shoen)
 	SetAll(&work, SHOEN, shoen, MRBOFF);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 
@@ -365,6 +375,7 @@ int active_unify_with_undef(CELL *reg, CELL *undef, MRB mrb)
 	SetAll(&work, REF, undef, mrb);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 int active_unify_with_hook(CELL *reg, CELL *hook, MRB mrb)
@@ -398,6 +409,7 @@ int active_unify_with_hook(CELL *reg, CELL *hook, MRB mrb)
 	SetAll(&work, REF, hook, mrb);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 int active_unify_with_mhook(CELL *reg, CELL *mhook, MRB mrb)
@@ -428,6 +440,7 @@ int active_unify_with_mhook(CELL *reg, CELL *mhook, MRB mrb)
 	SetAll(&work, REF, mhook, mrb);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 int active_unify_with_stream(CELL *reg, CELL *stream, MRB mrb)
@@ -481,6 +494,7 @@ int active_unify_with_stream(CELL *reg, CELL *stream, MRB mrb)
 	SetAll(&work, REF, stream, mrb);
 	exception_active_unify_fail(reg, &work);
     }
+    return 0;
 }
 
 
@@ -507,6 +521,7 @@ int active_unify_stream_atom(CELL *strm, MRB mrb, int atom)
     SetAll(&x, ATOM, atom, MRBOFF);
     Error("Stream = Atom(=\\= [])");
     exception_illegal_merger_input(&x, &y);
+    return 0;
 }
 
 int active_unify_stream_nil(CELL *strm, MRB mrb)
@@ -542,6 +557,7 @@ int active_unify_stream_nil(CELL *strm, MRB mrb)
     }else{
 	SetAll(strm, ATOM, NIL, MRBON);
     }
+    return 0;
 }
 
 int active_unify_stream_integer(CELL *strm, MRB mrb, int inte)
@@ -562,6 +578,7 @@ int active_unify_stream_integer(CELL *strm, MRB mrb, int inte)
     SetAll(&x, INT, inte, MRBOFF);
     Error("Stream = Integer");
     exception_illegal_merger_input(&x, &y);
+    return 0;
 }
 
 int active_unify_stream_float(CELL *strm, MRB mrb, int flot)
@@ -582,6 +599,7 @@ int active_unify_stream_float(CELL *strm, MRB mrb, int flot)
     SetAll(&x, FLOAT, flot, MRBOFF);
     Error("Stream = Floating Point");
     exception_illegal_merger_input(&x, &y);
+    return 0;
 }
 
 int active_unify_stream_list(CELL *strm, MRB mrb, CELL *list)
@@ -704,6 +722,7 @@ int active_unify_stream_list(CELL *strm, MRB mrb, CELL *list)
 	make_unify_goal_and_enqueue_for_merger(
 	  Typeof(incdr),Objectof(incdr),Mrbof(incdr), REF,strm,MRBOFF, merger);
     }
+    return 0;
 }
 
 int active_unify_stream_vector(CELL *strm, MRB mrb, CELL *vct)
@@ -773,6 +792,7 @@ int active_unify_stream_vector(CELL *strm, MRB mrb, CELL *vct)
 	    SetAll(strm, VECTOR, vp, MRBON);
 	}
     }
+    return 0;
 }
 
 int active_unify_stream_string(CELL *strm, MRB mrb, CELL *str)
@@ -793,6 +813,7 @@ int active_unify_stream_string(CELL *strm, MRB mrb, CELL *str)
     }
     Error("Stream = String");
     exception_illegal_merger_input(str, &x);
+    return 0;
 }
 
 int active_unify_stream_nue(CELL *strm, MRB mrb, CELL *nue)
@@ -813,6 +834,7 @@ int active_unify_stream_nue(CELL *strm, MRB mrb, CELL *nue)
     }
     Error("Stream = Nue");
     exception_illegal_merger_input(nue, &x);
+    return 0;
 }
 
 int active_unify_stream_shoen(CELL *strm, MRB mrb, PARENT_RECORD *shoen)
@@ -833,6 +855,7 @@ int active_unify_stream_shoen(CELL *strm, MRB mrb, PARENT_RECORD *shoen)
     SetAll(&x, SHOEN, shoen, MRBOFF);
     Error("Stream = Shoen");
     exception_illegal_merger_input(&x, &y);
+    return 0;
 }
 
 int active_unify_stream_hook(CELL *strm, MRB mrbst, CELL *hook, MRB mrbhk)
@@ -857,6 +880,7 @@ int active_unify_stream_hook(CELL *strm, MRB mrbst, CELL *hook, MRB mrbhk)
 	SetSuspRecBackward(Suspof(hook), HOOK, grec);
     }
     SetTypeof(hook, HOOK); SetGoalof(hook, grec);
+    return 0;
 }
 
 int active_unify_stream_stream(CELL *st1, CELL *st2)
@@ -884,6 +908,7 @@ int active_unify_stream_stream(CELL *st1, CELL *st2)
     SetTypeof(st2, HOOK); SetGoalof(st2, grec1);
     SetGoalQueuePt(grec1, HOOK, grec2);
     SetGoalQueuePt(grec2, UNDEF, NULL);
+    return 0;
 }
 
 static int terminate_merger(MERGER_RECORD *merger)
@@ -896,6 +921,7 @@ static int terminate_merger(MERGER_RECORD *merger)
 	parent = NULL;
     }
     CacheParent2(current_shoen);
+    return 0;
 }
 
 
@@ -943,6 +969,7 @@ static int make_unify_goal_and_enqueue_for_merger(TYPE type1, CELL *val1, MRB mr
     grec->pcode = merger->pcode;
     enqueue_with_priority(grec);
     CacheParent2(current_shoen);
+    return 0;
 }
 
 int make_unify_list_list_goal_and_enqueue(CELL *x, CELL *y)
@@ -959,6 +986,7 @@ int make_unify_list_list_goal_and_enqueue(CELL *x, CELL *y)
     grec->debug = NO_TRACE_GOAL;
     grec->pcode = Ref(current_predicate2 ? current_predicate2 : current_predicate);
     enqueue(grec);
+    return 0;
 }
 
 int make_unify_vector_vector_goal_and_enqueue(CELL *x, CELL *y)
@@ -976,6 +1004,7 @@ int make_unify_vector_vector_goal_and_enqueue(CELL *x, CELL *y)
     grec->debug = NO_TRACE_GOAL;
     grec->pcode = Ref(current_predicate2 ? current_predicate2 : current_predicate);
     enqueue(grec);
+    return 0;
 }
 
 
@@ -1137,4 +1166,5 @@ DCODE dc_unify_vector_vector2(void)
 int illegal_data_type_in_active_unify(CELL *x)
 {
     Error1F("Illegal type (%d) data is found in active unify!!", Typeof(x));
+    return 0;
 }

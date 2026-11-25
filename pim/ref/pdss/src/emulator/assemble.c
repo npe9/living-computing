@@ -102,6 +102,7 @@ static int clear_label_table(void)
 {
     t1_free();
     clear_label_table2();
+    return 0;
 }
 
 static int enter_label_table(CHAR *name, OBJ *pc)
@@ -167,6 +168,7 @@ static int define_label(CHAR *name, OBJ *pc)
 	lab->defined = YES;
 	lab->addr = LabOffset(pc);
     }
+    return 0;
 }
 
 static int check_undefined_label(void)
@@ -188,6 +190,7 @@ static int check_undefined_label(void)
 	Error("");
 	longjmp(assemble_env, 1);  /** Error Return **/
     }
+    return 0;
 }
 
 
@@ -1351,6 +1354,7 @@ static int make_jump_on_xxx_table(register int size, OBJ **pcp, FILE *file)
     }
     AdjustPCunlessPackedCode(pc);
     *pcp = pc;
+    return 0;
 }
 
 static int make_branch_on_int_table(register int size, OBJ **pcp, FILE *file)
@@ -1369,6 +1373,7 @@ static int make_branch_on_int_table(register int size, OBJ **pcp, FILE *file)
 	pc += ELEN_of_BRANCH_ON_I;
     }
     *pcp = pc;
+    return 0;
 }
 
 static int make_branch_on_atom_table(register int size, OBJ **pcp, FILE *file)
@@ -1387,6 +1392,7 @@ static int make_branch_on_atom_table(register int size, OBJ **pcp, FILE *file)
 	pc += ELEN_of_BRANCH_ON_A;
     }
     *pcp = pc;
+    return 0;
 }
 
 static int make_hash_mask(register unsigned int size)
@@ -1460,6 +1466,7 @@ static int make_hash_on_int_table(int size, int mask, OBJ **pcp, FILE *file)
     }
     Debug(PrintCons(". "));
     *pcp = pc;
+    return 0;
 }
 
 static int make_hash_on_atom_table(register int size, register int mask, OBJ **pcp, FILE *file)
@@ -1525,4 +1532,5 @@ static int make_hash_on_atom_table(register int size, register int mask, OBJ **p
     }
     Debug(PrintCons(". "));
     *pcp = pc;
+    return 0;
 }

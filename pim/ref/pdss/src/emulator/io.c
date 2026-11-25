@@ -137,6 +137,7 @@ int initialize_io(void)
 	signal(SIGTERM, sig_abort_pdss);
 	signal(SIGTSTP, sig_stop_pdss);
     }
+    return 0;
 }
 
 
@@ -150,6 +151,7 @@ int io_ctrl_when_exit(void)
     signal(SIGQUIT, SIG_IGN);
     signal(SIGTERM, SIG_IGN);
     signal(SIGTSTP, SIG_IGN);
+    return 0;
 }
 
 int io_ctrl_when_stop(void)
@@ -160,6 +162,7 @@ int io_ctrl_when_stop(void)
 int io_ctrl_when_resume(void)
 {
     signal(SIGTSTP, sig_stop_pdss);
+    return 0;
 }
 
 
@@ -238,6 +241,7 @@ int ungetc_window(register int chr, register IO_BACKET *it)
     }else{
 	it->buf_cc = chr;
     }
+    return 0;
 }
 
 int request_keyboard(register IO_BACKET *it)
@@ -266,6 +270,7 @@ int request_console(void)
 	io_table[0].kb_req++;
 	while(io_table[0].kb_req > 0) pause();
     }
+    return 0;
 }
 
 static int keyboard_to_buffer(register IO_BACKET *it)
@@ -282,6 +287,7 @@ static int keyboard_to_buffer(register IO_BACKET *it)
 	}
     } while(chr != '\n');
     it->buf_lc++;
+    return 0;
 }
 
 static int keyboard_eof_to_buffer(register IO_BACKET *it)
@@ -291,6 +297,7 @@ static int keyboard_eof_to_buffer(register IO_BACKET *it)
 	it->buf_p1 = &(it->buffer[0]);
     it->buf_cc++;
     it->buf_lc++;
+    return 0;
 }
 
 
@@ -346,6 +353,7 @@ static int keyboard_interrupt(void)
 	return 0;
     }
     while(getchar() != '\n');
+    return 0;
 }
 
 int do_keyboard_interrupt(void)
@@ -382,6 +390,7 @@ int do_keyboard_interrupt(void)
 	    }
 	}
     }
+    return 0;
 }
 
 static int keyboard_interrupt_without_emacs(void)

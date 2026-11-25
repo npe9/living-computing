@@ -65,6 +65,7 @@ int initialize_priority_queue(void)
     random_rate = option_random_rate;
     random_seed = option_random_seed;
 #endif
+    return 0;
 }
 
 
@@ -95,6 +96,7 @@ int enqueue(GOAL_RECORD *grec)
     SetGoalQueuePt2(grec, current_queue->head);
     current_queue->head = grec;
 #endif
+    return 0;
 }
 
 #if TWO_WAY_READY_GOAL_POOL
@@ -103,6 +105,7 @@ int enqueue_head(GOAL_RECORD *grec)
     SetGoalQueuePt2(grec, current_queue->head);
     if(current_queue->head == NULL) current_queue->tail = grec;
     current_queue->head = grec;
+    return 0;
 }
 
 int enqueue_tail(GOAL_RECORD *grec)
@@ -114,6 +117,7 @@ int enqueue_tail(GOAL_RECORD *grec)
 	SetGoalQueuePt2(current_queue->tail, grec);
     }
     current_queue->tail = grec;
+    return 0;
 }
 #endif
 
@@ -133,6 +137,7 @@ int enqueue_with_priority(GOAL_RECORD *grec)
 	enqueue_head_with_priority(grec);
     }
     enqueue_special_flag = 0;
+    return 0;
 }
 
 int enqueue_head_with_priority(GOAL_RECORD *grec)
@@ -189,6 +194,7 @@ int enqueue_head_with_priority(GOAL_RECORD *grec)
 	    backet->upper->lower = backet;
 	}
     }
+    return 0;
 }
 
 #if TWO_WAY_READY_GOAL_POOL
@@ -244,6 +250,7 @@ int enqueue_tail_with_priority(GOAL_RECORD *grec)
 	    backet->upper->lower = backet;
 	}
     }
+    return 0;
 }
 #endif
 
@@ -397,7 +404,7 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 	      default:
 		Error("Illegal data type is found in suspension stack.");
 		PrintCons2F("TAG : %x, Value : %x", Typeof(c), Valueof(c));
-		PrintCons1F("SSP : %x", (SSP - suspension_stack));
+		PrintCons1F("SSP : %x", (unsigned)(SSP - suspension_stack));
 		return 0;
 	    }
 	    srec->other = Ref(last);
@@ -446,9 +453,10 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 	  default:
 	    Error("Illegal data type is found in suspension stack.");
 	    PrintCons2F("TAG : %x, Value : %x", Typeof(c), Valueof(c));
-	    PrintCons1F("SSP : %x", (SSP - suspension_stack));
+	    PrintCons1F("SSP : %x", (unsigned)(SSP - suspension_stack));
 	}
     }
+    return 0;
 }
 
 static int other_var_exist(register CELL *c)
@@ -517,6 +525,7 @@ int single_wait_suspend(GOAL_RECORD *goal, CELL *ref)
 	Error("Illegal data type is found in single_wait_suspend().");
 	PrintCons2F("Tag : %x, Value : %x", Typeof(var), Valueof(var));
     }
+    return 0;
 }
 
 
@@ -563,6 +572,7 @@ int body_builtin_suspend(OBJ *code, CELL *waitref, unsigned int argio, ...)
 	    *ap[i] = *y;
 	}
     }
+    return 0;
 }
 
 
@@ -609,6 +619,7 @@ int body_builtin_swap(OBJ *code, unsigned int argio, ...)
     grec->pcode = Ref(current_predicate2);
     number_of_children += 1;
     enqueue(grec);
+    return 0;
 }
 
 
@@ -669,6 +680,7 @@ int wakeup_goals_v(CELL *cc, int type, int32_t value, MRB mrb)
 	    c = &tmpc;
 	}
     } while(Typeof(c) != UNDEF);  /* UNDEF: end of suspension queue */
+    return 0;
 }
 
 

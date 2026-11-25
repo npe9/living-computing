@@ -52,7 +52,7 @@ int main(int argc, char **argv_)
     exit_pdss(0);
 }
 
-int exit_pdss(int code)
+_Noreturn int exit_pdss(int code)
 {
     exit(code);
 }

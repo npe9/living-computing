@@ -71,6 +71,7 @@ int blt_b_create_shoen(CELL *code, CELL *argv, CELL *pmin, CELL *pmax, CELL *tag
 	    *report = rep;
 	}
     }
+    return 0;
 }
 
 
@@ -102,6 +103,7 @@ int blt_b_start_shoen(CELL *shoen, CELL *newshoen)
 	start_shoen(Shoenof(shoen), SUSP_D);
 	*newshoen = *shoen;
     }
+    return 0;
 }
 
 
@@ -133,6 +135,7 @@ int blt_b_stop_shoen(CELL *shoen, CELL *newshoen)
 	stop_shoen(Shoenof(shoen), SUSP_D);
 	*newshoen = *shoen;
     }
+    return 0;
 }
 
 
@@ -164,6 +167,7 @@ int blt_b_abort_shoen(CELL *shoen, CELL *newshoen)
 	abort_shoen(Shoenof(shoen));
 	*newshoen = *shoen;
     }
+    return 0;
 }
 
 
@@ -193,6 +197,7 @@ int blt_b_remove_shoen(CELL *shoen)
     }else{
 	remove_shoen(Shoenof(shoen));
     }
+    return 0;
 }
 
 
@@ -229,6 +234,7 @@ int blt_b_shoen_statistics(CELL *shoen, CELL *red, CELL *newshoen)
 	*newshoen = *shoen;
 	SetAll(red, INT, s, MRBOFF);
     }
+    return 0;
 }
 
 
@@ -272,6 +278,7 @@ int blt_b_shoen_add_resource(CELL *shoen, CELL *red, CELL *newshoen)
 	    *newshoen = *shoen;
 	}
     }
+    return 0;
 }
 
 
@@ -329,4 +336,5 @@ int blt_b_consume_resource(CELL *red)
 	    }
 	}
     }
+    return 0;
 }

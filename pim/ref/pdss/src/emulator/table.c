@@ -112,6 +112,7 @@ int INIT_ROUTINE_NAME(void)
 #ifdef DELETION_ROUTINE_NAME
     TABLE_NAME.entry_list = NULL;
 #endif
+    return 0;
 }
 
 unsigned int LOOKUP_ROUTINE_NAME(unsigned char *key, DATA_TYPE *value)

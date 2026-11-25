@@ -101,6 +101,7 @@ int save_module(FILE *file, MODULE_ENTRY *module)
     make_atom_table(cp);
     write_atom_table(file);
     write_code_body(cp, file);
+    return 0;
 }
 
 
@@ -148,6 +149,7 @@ static int make_atom_table(OBJ *cp)
     if(cp < module_bottom){
 	enter_atoms_in_constant_section((CELL *)cp, (CELL *)module_bottom);
     }
+    return 0;
 }
 
 static OBJ *enter_atoms_in_predicate(OBJ *cp)
@@ -271,7 +273,7 @@ static OBJ *enter_atoms_in_predicate(OBJ *cp)
 	    break;
 	  default:
 	    Error("Unknown opcode occurred.");
-	    PrintCons2F("   0x%x: 0x%x\n", cp, op_code);
+	    PrintCons2F("   0x%x: 0x%x\n", (unsigned)Ref(cp), op_code);
 	    exit_pdss(1);
 	}
     }
@@ -286,6 +288,7 @@ static int enter_atoms_in_constant_section(CELL *p, CELL *bottom)
 	}
 	p++;
     }
+    return 0;
 }
 
 static int enter_atom(unsigned int atom)
@@ -295,6 +298,7 @@ static int enter_atom(unsigned int atom)
 	if(atom == atom_id_table[i]) return 0;
     }
     atom_id_table[i] = atom;
+    return 0;
 }
 
 static int write_atom_table(FILE *fp)
@@ -308,6 +312,7 @@ static int write_atom_table(FILE *fp)
 	for(j=0; j<length; j++) WriteChar(name[j], fp);
     }
     WriteShort(0xFFFF, fp);  /* end of atom table */
+    return 0;
 }
     
 static unsigned int convert_atom_id(unsigned int atom)
@@ -372,6 +377,7 @@ static int write_code_body(OBJ *cp, FILE *fp)
     if(cp < module_bottom){
 	write_constant_section((CELL *)cp, (CELL *)module_bottom, fp);
     }
+    return 0;
 }
 
 static OBJ *write_predicate(OBJ *cp, FILE *fp)
@@ -754,6 +760,7 @@ static int write_constant_section(CELL *p, CELL *bottom, FILE *fp)
 	}
 	p++;
     }
+    return 0;
 }
 
 
@@ -892,6 +899,7 @@ static int read_atom_table(FILE *fp)
 	atom_id_table[i] = intern_atom(name);
 	i++;
     }
+    return 0;
 }
 
 static int read_code_body(OBJ *cp, FILE *fp)

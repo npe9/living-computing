@@ -35,7 +35,7 @@ CELL *timer_table;
 int initialize_timer(void)
 {
     time_t clock;
-    struct tm *tm, *localtime();
+    struct tm *tm;
     time(&clock);
     tm = localtime(&clock);
     startup_day = tm->tm_wday;
@@ -45,12 +45,13 @@ int initialize_timer(void)
     SetAll(timer_table, ATOM, NIL, MRBOFF);
     signal(SIGALRM, sig_alarm_clock_int);
     if(option_alarm_clock_sw) alarm(1);
+    return 0;
 }
 
 static int alarm_clock_int(void)
 {
     time_t clock;
-    struct tm *tm, *localtime();
+    struct tm *tm;
     int now;
     if(option_alarm_clock_sw) alarm(1);
     time(&clock);
@@ -63,6 +64,7 @@ static int alarm_clock_int(void)
 #ifdef STATISTICS_SECOND
     STATISTICS_SECOND;
 #endif
+    return 0;
 }
 
 int timer_wakeup_goal(void)
@@ -84,6 +86,7 @@ int timer_wakeup_goal(void)
 	}
     }
     sigsetmask(mask);
+    return 0;
 }
 
 int is_there_goal_waiting_for_timer(void)
@@ -99,16 +102,18 @@ int is_there_goal_waiting_for_timer(void)
 int set_timer_on_after(int count, CELL *var)
 {
     time_t clock;
-    struct tm *tm, *localtime();
+    struct tm *tm;
     time(&clock);
     tm = localtime(&clock);
     set_timer(COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec)+count, var);
+    return 0;
 }
 
 int set_timer_on_at(int count, CELL *var)
 {
     while(count <= timer_last_count) count += 24*36*36;
     set_timer(count, var);
+    return 0;
 }
 
 static int set_timer(int count, CELL *var)
@@ -127,12 +132,13 @@ static int set_timer(int count, CELL *var)
 	if(count < timer_next_count) timer_next_count = count;
     }
     sigsetmask(mask);
+    return 0;
 }
 
 int get_time_count(void)
 {
     time_t clock;
-    struct tm *tm, *localtime();
+    struct tm *tm;
     time(&clock);
     tm = localtime(&clock);
     return(COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec));

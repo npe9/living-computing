@@ -46,7 +46,7 @@ int main(int argc, char **argv_)
     initialize_io();
     PrintCons2F("***** PDSS-KL1 %s (%s) *****\n", version, makedate);
     sprintf(motd, "%s/MESSAGE", PDSS_LIBDIR);
-    if(fp = fopen(motd, "r")){
+    if((fp = fopen(motd, "r"))){
 	while((c = getc(fp)) != EOF) putchar(c);
     }
     initialize_instruction_table();
@@ -90,6 +90,7 @@ int stop_pdss(void)
     sigblock(sigmask(SIGTSTP));	 /** Stop here **/
     signal(SIGTSTP, SIG_IGN);
     io_ctrl_when_resume();
+    return 0;
 }
 
 int abort_pdss(int sig)
@@ -97,7 +98,7 @@ int abort_pdss(int sig)
     exit_pdss((sig == 0) ? 0 : 1);
 }
 
-int exit_pdss(int code)
+_Noreturn int exit_pdss(int code)
 {
     putchar('\n');
     io_ctrl_when_exit();
@@ -160,6 +161,7 @@ static int load_kl1b_file(void)
 	    }
 	}
     }
+    return 0;
 }
 
 static int load_kl1b_file_and_enter_module(CHAR *file)
@@ -189,6 +191,7 @@ static int load_kl1b_file_and_enter_module(CHAR *file)
     }
     if(protect) mod_table->protect = YES;
     if(option_startup_flag == 2) PrintCons("OK.\n");
+    return 0;
 }
 
 
@@ -306,6 +309,7 @@ static int write_result(void)
 	if(option_instruction_count) print_instr_counter();
 #endif
     }
+    return 0;
 }
 
 #if INSTRUCTION_COUNT
@@ -349,5 +353,6 @@ int timeit(int (* routine)())
 	   + (usage_after.ru_utime.tv_usec-usage_before.ru_utime.tv_usec)/1000;
     sspent = (usage_after.ru_stime.tv_sec-usage_before.ru_stime.tv_sec)*1000
 	   + (usage_after.ru_stime.tv_usec-usage_before.ru_stime.tv_usec)/1000;
-    PrintCons2F("\nSystem: %8d msec\nUser: %10d msec\n", sspent, uspent);
+    PrintCons2F("\nSystem: %8d msec\nUser: %10d msec\n", (int)sspent, (int)uspent);
+    return 0;
 }

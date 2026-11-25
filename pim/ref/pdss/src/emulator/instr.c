@@ -428,6 +428,7 @@ int initialize_instruction_table(void)
     op(KL1B_DEFINE_LIST,	    "define_list",	      ASSM_CONSTANT);
     op(KL1B_DEFINE_VECTOR,	    "define_vector",	      ASSM_CONSTANT);
     op(KL1B_DEFINE_STRING,	    "define_string",	      ASSM_CONSTANT);
+    return 0;
 }
 
 
@@ -462,6 +463,7 @@ static int reset_instruction_table(void)
 	instruction_table[i].type = INVALID;
     }
     clear_mnemonic_table();
+    return 0;
 }
 
 static int op(unsigned int opcode, CHAR *mnem, unsigned int type)
@@ -474,4 +476,5 @@ static int op(unsigned int opcode, CHAR *mnem, unsigned int type)
 	Error1F("\n>>> PDSS: Double Defined Mnemonic: %s.", mnem);
 	exit_pdss(1);
     }
+    return 0;
 }

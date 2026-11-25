@@ -157,6 +157,7 @@ int initialize_dcode_table(void)
     mod_table->predicate_tbl = dcode_table;
     mod_table->pid_func_hash_tbl = pred_func_hash;
     mod_table->func_pid_hash_tbl = func_pred_hash;
+    return 0;
 }
 
 int dcode_function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred, unsigned int *arity)
@@ -176,4 +177,5 @@ int dcode_function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int 
     *mod = ATOM_DDD_SYSTEM;
     *pred = ATOM_DDD_SYSTEM;
     *arity = 0;
+    return 0;
 }

@@ -79,6 +79,14 @@ int load_and_link_native_code_module(CHAR *fname, MODULE_ENTRY **mod_table)
 
 #else
 
-int load_and_link_native_code_module(){};
+#include "pdss.h"
+#include "memory.h"
+
+/* MODERN: native-code (a.out) modules are not supported: say so. */
+int load_and_link_native_code_module(CHAR *fname, MODULE_ENTRY **mod_table)
+{
+    (void)fname; (void)mod_table;
+    return(NLOAD_LINK_ERROR);
+}
 
 #endif

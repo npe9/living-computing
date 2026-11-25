@@ -224,6 +224,7 @@ int deadlock_check_and_report(void)
 	    enqueue_with_priority(goal);
 	}
     }
+    return 0;
 }
 
 
@@ -435,6 +436,7 @@ static int deadlock_report_goal(GOAL_RECORD *goal, int f)
 	    }
 	}
     }
+    return 0;
 }
 
 static int deadlock_report_merger(MERGER_RECORD *merger, int f)
@@ -490,6 +492,7 @@ static int deadlock_report_merger(MERGER_RECORD *merger, int f)
 	    }
 	}
     }
+    return 0;
 }
 
 
@@ -757,7 +760,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 	    SetAll(next+2, INT, Shoenof(old)->id, MRBOFF);
 	    return 0;
 	  DEFAULT:
-	    Error2F("Unknown Data Type (%02x  AD:%08x)\n", Typeof(old), old);
+	    Error2F("Unknown Data Type (%02x  AD:%08x)\n", Typeof(old), (unsigned)Ref(old));
 	    new = old;
 	    return 0;
 	}
@@ -788,6 +791,7 @@ static int dead_cp_stream_merger(register MERGER_RECORD *oldmg, CELL *newref)
 	    SetAll(new, UNDEF, UNDEF, MRBOFF);
 	}
     }
+    return 0;
 }
 
 
@@ -802,6 +806,7 @@ int terminate_shoen_by_gc(void)
 	next = PrecOf(prec->right_brother);
 	terminate_shoen_without_child(prec);
     }
+    return 0;
 }
 
 static int terminate_shoen_without_child(PARENT_RECORD *prec)
@@ -819,4 +824,5 @@ static int terminate_shoen_without_child(PARENT_RECORD *prec)
 	    terminate_shoen_without_child(son);
 	}
     }
+    return 0;
 }

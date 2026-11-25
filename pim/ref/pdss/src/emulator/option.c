@@ -47,6 +47,7 @@ int read_option(int argc, CHAR **argv)
     for(i = 1; i < argc; i++){
 	read_option_sub(argv[i]);
     }
+    return 0;
 }
 
 static int read_option_sub(CHAR *s)

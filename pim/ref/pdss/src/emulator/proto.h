@@ -518,7 +518,7 @@ extern CHAR *expand_path_name(CHAR *name, CHAR *buffer);
 /* pdss.c */
 extern int stop_pdss(void);
 extern int abort_pdss(int sig);
-extern int exit_pdss(int code);
+extern _Noreturn int exit_pdss(int code);
 extern int print_instr_counter(void);
 extern int timeit(int (* routine)());
 

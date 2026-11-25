@@ -178,6 +178,7 @@ int function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred,
 	}
     }
     dcode_function_to_mod_pred_arity(code, mod, pred, arity);
+    return 0;
 }
 
 int rehash_predicate_table(PREDICATE_ENTRY *pt, PREDICATE_ENTRY **pft, PREDICATE_ENTRY **fpt, int pn, int ppn)
@@ -196,6 +197,7 @@ int rehash_predicate_table(PREDICATE_ENTRY *pt, PREDICATE_ENTRY **pft, PREDICATE
 	pt[i].p1 = pft[x];
 	pft[x] = &pt[i];
     }
+    return 0;
 }
 
 int renumber_atoms_in_pred_and_const_table(PREDICATE_ENTRY *pt, register unsigned int pn, register CELL *ct, register unsigned int cn, unsigned short *at)
@@ -210,6 +212,7 @@ int renumber_atoms_in_pred_and_const_table(PREDICATE_ENTRY *pt, register unsigne
 	}
 	ct++;
     }
+    return 0;
 }
 
 
@@ -223,7 +226,7 @@ int set_module_trace_flag(unsigned int module, int flag)
 {
     MODULE_ENTRY *mte;
     int f;
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     if(IsNativeCode(mte->addr)) return(MODMAN_NATIVE_CODE_MODULE);
     if(flag){
 	GetModuleDebug(mte->addr) |= MODULE_DEBUG_ON;
@@ -239,7 +242,7 @@ int get_module_trace_flag(unsigned int module, int *flag)
 {
     MODULE_ENTRY *mte;
     int f;
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     if(IsNativeCode(mte->addr)) return(MODMAN_NATIVE_CODE_MODULE);
     if(GetModuleDebug(mte->addr) == MODULE_DEBUG_ON){
 	*flag = YES;
@@ -260,7 +263,7 @@ int set_predicate_spy_flag(unsigned int module, unsigned int predicate, int arit
     unsigned int predicate0, table_size, code_size;
     int arity0, cnst_offs, f;
 
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     p = mte->addr;
     if(IsNativeCode(p)) return(MODMAN_NATIVE_CODE_MODULE);
     code_size = GetModuleSize(p);
@@ -322,7 +325,7 @@ int get_predicate_spy_flag(unsigned int module, unsigned int predicate, int arit
     unsigned int predicate0, table_size, code_size;
     int arity0, cnst_offs, f;
 
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     p = mte->addr;
     if(IsNativeCode(p)) return(MODMAN_NATIVE_CODE_MODULE);
     code_size = GetModuleSize(p);
@@ -365,7 +368,7 @@ int get_public_predicates(unsigned int module, CELL *predicates)
     register CELL *cdr, *cons, *pred;
     int f;
 
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     cdr = predicates;
     if(IsNativeCode(mte->addr)){
 	register PREDICATE_ENTRY *p;
@@ -419,7 +422,7 @@ int get_spied_predicates(unsigned int module, CELL *predicates)
     unsigned int predicate, arity, table_size, code_size;
     int cnst_offs, f;
 
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     p = mte->addr;
     if(IsNativeCode(p)) return(MODMAN_NATIVE_CODE_MODULE);
     code_size = GetModuleSize(p);
@@ -465,7 +468,7 @@ int reset_module_profile_info(unsigned int module)
     unsigned int table_size, code_size;
     int cnst_offs, f;
 
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     p = mte->addr;
     if(IsNativeCode(p)) return(MODMAN_NATIVE_CODE_MODULE);
     code_size = GetModuleSize(p);
@@ -494,7 +497,7 @@ int get_module_profile_info(int module, register CELL *info)
     unsigned int predicate, arity, redc, susc, table_size, code_size;
     int cnst_offs, f;
 
-    if(f = lookup_module(module, &mte)) return(f);
+    if((f = lookup_module(module, &mte))) return(f);
     p = mte->addr;
     if(IsNativeCode(p)) return(MODMAN_NATIVE_CODE_MODULE);
     code_size = GetModuleSize(p);
@@ -614,6 +617,7 @@ int load_from_sav_or_asm_file(CHAR *name, MODULE_ENTRY **mod_table)
 	    return(MODMAN_CANNOT_OPEN_FILE);
 	}
     }
+    return 0;
 }
 
 int load_from_asm_file(CHAR *name, MODULE_ENTRY **mod_table)

@@ -72,6 +72,7 @@ int gc_ready_queue(void)
     priority = highest->priority;
     current_queue = highest;
     higher_priority_flag = NO;
+    return 0;
 }
 
 
@@ -107,6 +108,7 @@ int gc_goal_record(register GOAL_RECORD *old, register GOAL_RECORD *new)
     new->pcode = Ref(GcProcedure(CodeOf(old->pcode)));
     new->debug = old->debug;
     SetGrecGCflag(old);
+    return 0;
 }
 
 
@@ -181,6 +183,7 @@ int gc_parent_record(register PARENT_RECORD *old, register PARENT_RECORD *new)
     if(Typeof(&(new->report)) == REF)
 	SetMrbof(Objectof(&(new->report)), MRBON);
     old->number_of_children = 0;	  /** Used by Deadlock Check **/
+    return 0;
 }
 
 
@@ -233,7 +236,7 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	    return 0;
 	  default:
 	    Error2F("Not Hook Cell(%02x) in Susp-Queue (AD:%08x)\n",
-					   Typeof(oldhook), oldhook);
+					   Typeof(oldhook), (unsigned)Ref(oldhook));
 	    SetAll(newhook, UNDEF, NULL, MRBOFF);
 	    return 0;
 	}
@@ -276,7 +279,7 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	    return 0;
 	  default:
 	    Error2F("Not Hook Cell(%02x) in Susp-Queue (AD:%08x)\n",
-					    Typeof(oldhook), oldhook);
+					    Typeof(oldhook), (unsigned)Ref(oldhook));
 	    SetAll(newhook, UNDEF, NULL, MRBOFF);
 	    return 0;
 	}
@@ -333,6 +336,7 @@ int gc_io_table(void)
 	    SetMrbof(Objectof(io_table[i].int_hook), MRBON);
 	}
     }
+    return 0;
 }
 
 
@@ -347,4 +351,5 @@ int gc_timer_table(void)
     old = timer_table;
     GcAlloc1Word(timer_table);
     gc_cell(old, timer_table);
+    return 0;
 }
