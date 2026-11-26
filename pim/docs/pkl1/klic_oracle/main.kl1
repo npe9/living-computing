@@ -1,0 +1,18 @@
+% [oracle] KLIC entry point; make_list/2 copied verbatim from nrev.kl1's module top.
+:- module main.
+main :-
+	fact:fact(10, F10),
+	fact:fact(12, F12),
+	nrev:nrev([1,2,3,4,5,6,7,8], NR),
+	qsort:qsort([27,74,17,33,94,18,46,83,65,2], QS),
+	kkqueen:go(6, Q6),
+	kkqueen:go(8, Q8),
+	make_list(30, L),
+	nrev:nrev(L, R),
+	io:outstream([print(F10), nl, print(F12), nl, print(NR), nl,
+		      print(QS), nl, print(Q6), nl, print(Q8), nl,
+		      print(L), nl, print(R), nl]).
+
+make_list(0, L) :- L = [].
+otherwise.
+make_list(K, L) :- K1 := K-1 | L = [K|T], make_list(K1, T).

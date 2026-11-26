@@ -8,8 +8,9 @@ files the FEP serves, in a format of OURS.
         other file of the held object/ directory as pimos:NAME (the
         kernel's files, as ref/pimm/longrun_ipl.kernel_file serves them:
         pimos.conf, pimos.logins, pimos.groups, ...), and the home
-        directory's (longrun_ipl.HOME_FILES, the primer's sample1.kl1,
-        with its pathname and attributes)
+        directory's (longrun_ipl.HOME_FILES: the primer's sample1.kl1
+        and, since R8, four pkl1 samples and their NAME_r8.kl1
+        adaptations; each with its pathname and attributes)
     python3 tools/mkfepcard.py OUT.img --made-up NAME [NAME ...]
         ref/pimm/ref_scsi.py's made-up pimos.ipl listing these .sav files,
         and the files (what ref_scsi.py's parts use)
@@ -170,7 +171,8 @@ def objects():
 
 def homes():
     """[(path bytes, fep.FileData)]: the home directory's files
-    (longrun_ipl.HOME_FILES, the primer's sample1.kl1; 2026-11-25), as
+    (longrun_ipl.HOME_FILES: the primer's sample1.kl1, 2026-11-25; the
+    pkl1 samples and their adaptations, R8), as
     HOME>NAME, with what 221 and 222 answer for each."""
     import longrun_ipl as lr
     return [(jis_bytes(lr.HOME + '>' + n), lr.home_file(n)) for n in sorted(lr.HOME_FILES)]

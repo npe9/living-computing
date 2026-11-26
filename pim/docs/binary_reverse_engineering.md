@@ -966,6 +966,73 @@ the device are given it again whenever the machine runs dry.
     are OURS, so the order of entries under different keys is not
     evidence either way. The Listener's remember mode (`^X =[a,b]`) was
     also seen to work; it is not pinned.
+  - **R8, the pkl1 samples** (2026-11-25; APPS `pkl1_held`,
+    `pkl1_fact`, `pkl1_nrev`, `pkl1_qsort`, `pkl1_kkqueen`, in lockstep
+    on both models, every line identical; no model changed for it).
+    Four samples of `pkl1.tar.Z` (ICOT Free Software; `fact.kl1`,
+    `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` in `docs/pkl1/` with the
+    tar's `COPYRIGHT`, NO WARRANTY) are home files (`longrun_ipl.py`
+    `HOME_FILES`), served whole, a TAB as element 9 (INFERENCE: the
+    held text files have none; PIMOS's tokenizer reads 0..25 as
+    layout, `utility/ioutls/token.kl1`:735). PIMOS's own compiler
+    compiles each into the package `work` and the Listener runs one
+    goal, as listener_sieve does. *As distributed the held compiler
+    refuses them* (observed on the reference for all four, 2026-11-25;
+    pinned on both models for `nrev.kl1`, `pkl1_held`, 1,275,047
+    instructions): each module ends `Compile Aborted : []` with `!ERROR! public
+    declaration not found` (`library/compiler/isblt.kl1`:100-103,
+    `check_public_declarations`: the module has no `:- public`; pkl1 is
+    KLIC's predecessor, whose modules export every predicate, where
+    PIMOS's export only the declared ones, `e-listener.tex`:355-414),
+    and `top/0`'s `builtin:print(L)` is `undefined predicate found :
+    print/ 1` (`newnorm.kl1`:735-748: in PIMOS `builtin:` names the
+    compiler's own built-in predicates, `blt.kl1`, in which `grep -w`
+    finds none of `print`, `readint`, `start_measure`,
+    `report_measure`). A file with one aborted module is not loaded at
+    all: observed with only the `:- public` lines added, `Compile
+    Succeeded : fact` and then the Listener's ` Nonexistent module>>
+    fact`. Why, INFERENCE from the source read, not traced: the
+    loader goes on to link only on `normal(GoalModules)`
+    (`library/loader/dstrbt.kl1`:699-708 `relink`), and
+    `selfcal.kl1`:73-79 `watch_compile` makes a compile error
+    `abnormal`. PIMOS is not patched. Each sample is
+    served a second time as `NAME_r8.kl1` with the least change the
+    held compiler takes (OURS, `longrun_ipl.PKL1_ADAPT`): a `:- public`
+    line after the module line, and the `top` module dropped (for
+    `kkqueen.kl1`, whose `go/2` is in module `top`, only `top/0`,
+    lines 25-31). Then, against KLIC 2.002 on the same modules (our
+    build of the held `klic-2.002.tgz` in scratch, OURS: native arm64,
+    two source edits, the gcc-only `volatile` noreturn idiom and an
+    early `extern` of an incomplete array; its 21 bundled tests pass;
+    not in the suite; the recipe, the edits and the output in
+    `docs/pkl1/klic_oracle/`):
+
+    | Row | Goal typed | The Listener's answer | KLIC 2.002 | Instructions | Trace lines |
+    |---|---|---|---|---|---|
+    | pkl1_fact | `fact:fact(10,R).` | ` R = 3628800` | `3628800` | 1,335,291 | 6,328,026 |
+    | pkl1_nrev | `nrev:nrev([1,2,3,4,5,6,7,8],R).` | ` R =[8,7,6,5,4,3,2,1]` | `[8,7,6,5,4,3,2,1]` | 1,466,386 | 6,820,828 |
+    | pkl1_qsort | `qsort:qsort([27,74,17,33,94,18,46,83,65,2],R).` | ` R =[2,17,18,27,33,46,65,74,83,94]` | `[2,17,18,27,33,46,65,74,83,94]` | 1,852,929 | 8,142,420 |
+    | pkl1_kkqueen | `top:go(9,M).` | ` M = 352` | `352` | 5,419,133 | 17,463,720 |
+
+    Each compile prints `Compile Succeeded`, `"work:: NAME" Loaded`
+    and the one with_macro warning, as sample1's. `go(9)`'s 352 is
+    also what `kkqueen.kl1`'s own header prints ("for N = 9, should
+    print M = 352"); KLIC also gave `go(6)` 4, `go(8)` 92. The goals'
+    inputs are ours: the samples' `top` modules read their sizes with
+    `builtin:readint`, which PIMOS lacks. We chose lists of ten or
+    fewer so that the held Listener's default `print_length` of 10
+    prints them whole with nothing typed first; `qsort`'s own 50 and
+    `nrev`'s 30 would need `print_length` raised (as listener_pools
+    lowers it), not run here. The
+    module `top` of kkqueen is `work::top`, found before `pimos::top`
+    from the default package (`e-proginfo.tex`:397). Observed
+    injections (2026-11-25): `pimm.py` `i_b_multiply` giving 3628801
+    for 3628800 (a private copy, the reference alone): the run's
+    counts are pkl1_fact's pin exactly (1,335,291 instructions,
+    6,328,026 lines), so PINNED alone does not catch it; the window
+    check fails, ` R = 3628801`; the core's multiplier stopped after 3
+    of its 32 steps (`PimmMBox.bsv` `mLeft <= 3`, a private copy, on
+    pkl1_fact's kept checkpoint): see `bsv/README.md`, "R8".
   - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
     `add_bignum` in on both models (VPIM's edges, `pimm.py`
     `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs

@@ -1,0 +1,23 @@
+KLICINCLUDE = PREFIXDIR/prefix/include
+KLICLIB = PREFIXDIR/prefix/lib
+KLICBIN = PREFIXDIR/prefix/bin
+PVM_ROOT =
+PVM_ARCH =
+PVMLIB   =
+ARCHIVES = libklic.a libklict.a
+LN = ln -s
+KL1CMP = false
+CC = cc
+LD = cc
+OPTLEVEL = 2
+OPTFLAGS = -O2 -std=gnu89 -w -Wno-error -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types -Wno-return-type -Wno-implicit-int -fcommon
+KLICOPT = -O2 -g
+DEBUGFLAGS = -g
+UOPTFLAGS =
+LIBSWITCHES = -lm
+RANLIB = ranlib
+MAKE = make
+INSTALL = /bin/cp -p
+INSTDIR = /bin/mkdir -p
+INSTALLHDR = /bin/cp -p
+PARALLEL = 0

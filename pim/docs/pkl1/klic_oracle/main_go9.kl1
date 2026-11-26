@@ -1,0 +1,2 @@
+:- module main.
+main :- kkqueen:go(9, Q9), io:outstream([print(Q9), nl]).

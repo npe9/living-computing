@@ -496,6 +496,13 @@ Weaker than the source allows, or to check:
   owner `pmpsi`, 20-May-93 00:00:00, 1 link, FSize the bytes, RSize
   0). The FEP emulator serves the same from the card's directory
   entry (`tools/mkfepcard.py`, bytes 240-255).
+  (2026-11-25, R8) Eight more home files, the same way: four pkl1
+  samples (`docs/pkl1/`, read whole, a TAB as element 9, INFERENCE)
+  and each again as `NAME_r8.kl1` with `longrun_ipl.PKL1_ADAPT`'s
+  edits (OURS). The `ls` listing has nine names; the held card
+  (`mkfepcard.py --held`) 64 entries for 56, entries 0-53 unchanged
+  in name, length and sum, the new files 54-61, `sample1.kl1` 62 and
+  the directory 63 (its listing 244 bytes for 28).
 
 Missing, in the order the start will ask (section 3): 60 on a timer;
 240; a mapping of `pimos:NAME` to the held `object/` files in the

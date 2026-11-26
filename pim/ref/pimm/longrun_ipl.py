@@ -355,6 +355,57 @@ HOME = '>sys>user>' + fepm.LOGIN['rn']
 PRIMER = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'ifs', 'manuals', 'pimos',
                       'primer25.tex.Z')
 HOME_FILES = {'sample1.kl1': (PRIMER, 592, 605, ':- module sample1.', '%(1-6)')}
+# R8 (2026-11-25): four pkl1 samples (docs/pkl1/, ICOT Free Software
+# from pkl1.tar.Z, samples/; its COPYRIGHT, NO WARRANTY, beside them),
+# served whole as they are in the tar: the file's every line, each
+# ended by an LF.  A TAB is element 9 (INFERENCE: the held text files
+# have none; the PSI's control characters are one-byte elements, as
+# the LF is 10, and PIMOS's tokenizer reads 0..25 as layout,
+# utility/ioutls/token.kl1:735 ct/2)
+PKL1 = os.path.join(HERE, '..', '..', 'docs', 'pkl1')
+PKL1_HEAD = '/*-----------------------------------------------------------'
+for _n in ('fact.kl1', 'nrev.kl1', 'qsort.kl1', 'kkqueen.kl1'):
+    HOME_FILES[_n] = (os.path.join(PKL1, _n), None, None, PKL1_HEAD, None)
+# ... and each adapted for PIMOS, served as NAME_r8.kl1: OURS, the
+# least change the held compiler accepts.  As distributed the samples
+# are refused by it (APPS pkl1_held, nrev.kl1): every module ends
+# `Compile Aborted ... public declaration not found` (pkl1 is KLIC's
+# predecessor, whose modules export every predicate; PIMOS's export
+# only those of a `:- public`, e-listener.tex:355-414), and a `top`
+# module's builtin:print/readint/start_measure/report_measure are
+# `undefined predicate found` (in PIMOS `builtin:` names the compiler's
+# own built-in predicates, library/compiler/blt.kl1, which has none of
+# them).  The edits, (line number of the original, what): ('after', N,
+# TEXT) puts the line TEXT after line N; ('drop', A, B) drops lines A..B
+# A file with an aborted module is not loaded at all, its other modules
+# compiled ("Compile Succeeded : fact") but not registered (observed on
+# the reference, 2026-11-25, with only the public lines added: the
+# Listener then answers ` Nonexistent module>> fact`), so the `top`
+# module (lines 5 to the inner module's line) is dropped, as the KLIC
+# 2.002 oracle run (OURS) drops it too
+PKL1_ADAPT = {
+    'nrev.kl1': (('drop', 5, 16), ('after', 17, ':- public nrev/2.')),
+    'fact.kl1': (('drop', 5, 20), ('after', 21, ':- public fact/2.')),
+    'qsort.kl1': (('drop', 5, 24), ('after', 25, ':- public qsort/2.')),
+    # kkqueen's go/2 is in its module top, beside top/0, whose builtin:
+    # calls abort the whole module: top/0 (lines 25-31) is dropped, as
+    # the KLIC 2.002 oracle run drops it too
+    'kkqueen.kl1': (('after', 24, ':- public go/2.'), ('drop', 25, 31)),
+}
+for _n, _e in PKL1_ADAPT.items():
+    HOME_FILES[_n[:-4] + '_r8.kl1'] = (os.path.join(PKL1, _n), None, None, PKL1_HEAD, _e)
+
+
+def adapted(lines, edits):
+    """lines (of a pkl1 sample) with PKL1_ADAPT's edits made (OURS)"""
+    out = []
+    for i, x in enumerate(lines, 1):
+        if not any(e[0] == 'drop' and e[1] <= i <= e[2] for e in edits):
+            out.append(x)
+        out += [e[2] for e in edits if e[0] == 'after' and e[1] == i]
+    return out
+
+
 _home = {}
 
 
@@ -365,11 +416,22 @@ def home_file(name):
     if name not in _home:
         import subprocess
         src, first, last, head, tail = HOME_FILES[name]
-        text = subprocess.run(['uncompress', '-c', src], capture_output=True,
-                              check=True).stdout.decode('ascii').split('\n')
-        lines = text[first - 1:last]
-        assert head in lines[0] and lines[-1].rstrip().endswith(tail), (lines[0], lines[-1])
-        data = fepm.jis(''.join(x + '\n' for x in lines))
+        if first is None:
+            # a pkl1 sample (R8): the whole file
+            with open(src, 'rb') as f:
+                text = f.read().decode('ascii')
+            assert text.endswith('\n'), src
+            lines = text[:-1].split('\n')
+            assert lines[0].startswith(head), lines[0]
+            if tail:
+                lines = adapted(lines, tail)
+        else:
+            text = subprocess.run(['uncompress', '-c', src], capture_output=True,
+                                  check=True).stdout.decode('ascii').split('\n')
+            lines = text[first - 1:last]
+            assert head in lines[0] and lines[-1].rstrip().endswith(tail), (lines[0], lines[-1])
+        data = b''.join(b'\x00\x09' if ch == '\t' else fepm.jis(ch)
+                        for ch in ''.join(x + '\n' for x in lines))
         _home[name] = fepm.FileData(
             data, 'PSI::%s>%s.1' % (HOME, name),
             fepm.attribute_string('pmpsi', 'pmpsi', '20-May-93', '00:00:00', '20-May-93',
