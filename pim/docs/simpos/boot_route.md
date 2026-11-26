@@ -584,6 +584,41 @@ and waits for a key, and so does every other process. What is still
 missing is the wire: the real PIMOS on the far side of
 `fep_message_assembler`, in place of the probe (§6.4).
 
+### 4.6 The window drawn (window milestones M0, M3, M5; 2026-11-25)
+
+The same run now draws. The basis, the injections and the census are in
+`../../psi/README.md`, "Window M0, M3, M5"; the plan is
+`window_environment_plan.md` §5.
+
+- **The font is read** (M0). `font:test_11.font`, which the held
+  requester names (`initiate/1` @b9), is the HELD file from psdpim's
+  FONT.DIR, placed under `font:` (directory and alias OURS) and decoded
+  by the display device.
+- **The window is drawn** (M3's core, M5). `standard_io_window`'s
+  methods hand the drawing to a pane (`standin/window_pane.esp`, OURS),
+  which sends device primitives (`simpos##bitmap_display`,
+  `../../psi/windev.py`, OURS) that run as winfb commands. The held
+  requester's own sends draw everything: its `create/3` size option
+  makes a 40×7-cell window, `set_title/2` puts `Pimos remote login N` in
+  the label strip, `putl/2` writes the prompts and the replies, the
+  echo writes the typed name, and the password draws nothing.
+- **The screen at the password prompt**, read back from the frame
+  (`test_win_m5_login_screen`; `screens/login_pimos_password.png`):
+
+  ```
+  +- Pimos remote login 3 -------------------+
+  | Enter FEP node name--------->            |
+  | local                                    |
+  | Enter your PIMOS user name-->            |
+  | pimos                                    |
+  | Enter your PIMOS password--->            |
+  | #   (the block cursor; "sec" typed)      |
+  +------------------------------------------+
+  ```
+
+  After the local login the requester's `clear/1` (@12c) empties it and
+  the four replies follow (`screens/login_pimos_login.png`).
+
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
