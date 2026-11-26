@@ -653,11 +653,27 @@ HALF (b), STEP 3 DONE 2026-11-26: THE DECIMAL K FAMILY (K, KE, KR, KF, KFE, KFR)
   - Per instruction, all against batch55: K and KR 106 toward / 62 away
     each, KF and KFR 99 / 67 each. KE, KFE and the immediates do not
     move.
-  - **w** (relocation plus w together equal batch55's within-1 count).
-    - The term is KEPT on the source (Table 3's w/r), not on the count.
-    - Its away cases are mostly WB XOVR columns already off the page,
-      which are A6's: for example +5 -> +8. The rest are (D,8,4) ix_ext,
-      -1.05 -> -2.05.
+  - **The relocation and w, split by cell** (`tsvdiff.py --rows`; WBX =
+    the WB XOVR columns, which are A6's; INV = the INVERT SIGN block).
+    - The relocation's 492 away:
+      - 196 are non-WBX plain cells going from -0.0 to -2.0: K's extra
+        byte taken out, which w puts back;
+      - 252 are WBX;
+      - 44 are non-WBX INV.
+    - w's 340 away:
+      - 164 are non-WBX INV, already +2..+28 above the page. Their excess
+        is the early exit, which is off at that stage: with it on, those
+        rows land (below).
+      - 164 are WBX.
+      - Only 12 are non-WBX plain cells, each within 2.05 (for example
+        (D,8,4) ix_ext -1.05 -> -2.05).
+    - w's 268 toward include 184 non-WBX plain cells: the relocation's
+      -2s restored.
+    - All three terms against batch55, 258 away: 208 WBX, 34 non-WBX INV
+      (the early exit's ix_ext cells below) and 16 non-WBX plain cells,
+      every one within 2.05.
+    - w is KEPT: its source is Table 3's w/r, and its away cells are
+      attributed (the then-absent early exit, A6's WBX columns).
   - **The early exit.**
     - The decimal INVERT rows land on the page: for example K INVERT
       (DU,16,4) ni_ext goes from +5.97 to -0.02.
@@ -750,19 +766,28 @@ HALF (b), STEP 5 DONE 2026-11-26: THE CONVERTERS (LCV, LTRCV, CV, DCV)
     cause is MEASURED: `sauStepCvtAcc := False` gives 1027 again, with
     every value check passing.
   - `cwf_df_fetch_type.strap` CYCLES 6110 -> 6164, re-pinned after the
-    first full suite run caught it. Its CV(BU) and DCV(B) cases take
-    their s and u. The cause is MEASURED: `sauStepCvtAcc := False` gives
+    first full suite run caught it. The switch's terms reach only the CV
+    and DCV B-D requests (the only ones carrying `accS`), and the deck
+    has one CV(BU) and one DCV(B); which of the two takes how much was
+    not traced. The cause is MEASURED: `sauStepCvtAcc := False` gives
     6110 / 581 again, with every check passing.
   - `vfl_convert.strap` (CV and LTRCV, MCP's time conversion) has no
     cycle pin. It now reads 616 (598 at batch55) and passes.
 - `mkSauStepTb` vectors 23-27 (conversions, compared on r and clocks).
-  Injection observed: `sauStepCvtAcc := False` fails 24 (6 against 26),
-  25 (4 against 10) and 26 (4 against 6); nothing else fails. The unit
+  Injections observed:
+  - `sauStepCvtAcc := False` fails 24 (6 against 26), 25 (4 against 10)
+    and 26 (4 against 6);
+  - the field term ignored (`rg_cnp` set to 1 + s instead of `fixed` +
+    s) fails 26 (4 against 6) and 27 (6 against 22);
+  - nothing else fails.
+  - Vector 23 does not discriminate (the datapath floor).
+  - No check sees `vflCvtFieldPasses`' formula THROUGH THE CORE. The
+    atlas cancels it by construction, and no deck pin moves with it. The unit
   still supports a D-B `accS` (vector 26); only the core's DCV D-B
   request leaves it off.
 - MCP boot sections: every check passes. The halt clocks MOVE:
 
-  | section | batch55 | `sauStepCvtAcc` off | final |
+  | section | batch55 | `sauStepCvtAcc` off (measured before DCV D-B's `fixed` went 2 -> 3) | final |
   |---|---|---|---|
   | boot | 6,321,488 | 6,321,488 | 6,321,488 |
   | decode | 6,304,298 | 6,304,298 | 6,304,298 |
@@ -772,8 +797,23 @@ HALF (b), STEP 5 DONE 2026-11-26: THE CONVERTERS (LCV, LTRCV, CV, DCV)
 
   - Steps 2-4 leave every MCP halt clock unchanged, so the moves are the
     converters'.
-  - Of them, the field passes (switch off) account for past-move +6 and
-    p1deck -72, and the accumulator terms for the rest.
+  - The accumulator terms account for the difference between the switch-
+    off column and the final one: assign +20, past-move +20, p1deck +40.
+  - NOT ATTRIBUTED: the moves that remain with the switch off, past-move
+    +6 (memory reads -2) and p1deck -72.
+    - LCV and LTRCV cancel by construction at u = 2 x passes. So those
+      moves are not the field term as such, unless the datapath floor
+      (max(2 x passes, the box's clocks)) exceeds the passes there.
+    - MEASURED 2026-11-26, after the suite: with `boxOwnClocks` gated
+      back to `boxKind == 1` (converters stepped but not unit-owned;
+      reverted, no diff), assign 6,322,787 and p1deck 6,734,524 return
+      to batch55.
+      - So p1deck's -72 is the unit-owned charge route itself. A `sauOwn`
+        instruction is charged `sauRowWithUnit` instead of the level
+        path's budget against `boxK`, and drops `boxX`. This is a
+        mechanism, not a sourced time.
+    - Past-move stays at 6,339,195 (reads 599,502) with the gate back.
+      Its +6 / -2 is outside that route and is OPEN.
   - A trace of the assign section shows seven LCVs (9 field passes, no
     accumulator term) and three CV / DCV B-D. Two of the B-D convert 34:
     s = 6 bits, u/8 = 1, so 8 passes against the fitted 3, +10 clocks
@@ -793,6 +833,10 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
   - M+1's complement on PDF 153's internal columns (the CHOSEN operand);
   - the K ix_ext INVERT cells at -2 (the indexed path);
   - DCV D-B's s/4 against the CHOSEN field (step 5);
+  - MCP past-move's +6 clocks / -2 reads from the converter patch,
+    outside the unit-owned route (step 5);
+  - the unit-owned route's own effect on p1deck (-72), a mechanism with
+    no sourced time (step 5);
   - the WB XOVR columns, which are A6's.
 - NOT RE-MEASURED:
   - mkSAU's F1 area;

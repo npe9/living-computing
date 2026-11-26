@@ -192,7 +192,7 @@
 // Table 3's .6 a byte): the field's bytes and sign byte, Table 3's z,
 // and the recomplement (the switches sauStepZ / sauStepRecomp).
 // ownClocks() reports that count, and StretchCore charges the eboxClocks
-// row LESS its byte term (sauSteppedRowClocks) from the answer, taking
+// row LESS its byte term (sauRowWithUnit since step 2) from the answer, taking
 // nothing off.  So the row's byte term is deleted for these, and what the
 // row keeps is its fixed part.  WHAT THIS IS NOT: a byte-wide datapath.
 // The sum is still made 16 digits a clock inside the stepped time (the
@@ -288,7 +288,9 @@ Integer sauRndPasses = 2;
 // (SauCvtSteps).  Off: only the equations' constants.  The core asks DCV
 // decimal-to-binary without them (fidelity_plan.md A3 (b) step 5).
 // INJECTION OBSERVED 2026-11-26: False fails mkSauStepTb 24 (6 against
-// 26), 25 (4 against 10) and 26 (4 against 6); the rest pass.
+// 26), 25 (4 against 10) and 26 (4 against 6); the rest pass.  The field
+// term ignored (rg_cnp <= 1 + sp) fails 26 (4 against 6) and 27 (6
+// against 22); the rest pass.
 Bool sauStepCvtAcc = True;
 Bool sauStepMemRecomp = True;
 Bool sauStepOneCarry  = True;
