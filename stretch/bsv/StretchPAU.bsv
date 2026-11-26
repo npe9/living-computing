@@ -475,8 +475,14 @@ function Tuple2#(FpAddSum, Bool) fpBoxAddSumR(FpAddDp d);
   Bit#(97) t   = zeroExtend(d.fb) + zeroExtend(sub ? ~fsh : fsh);
   Bit#(97) sum;
   Bit#(1)  sign;
-  // Whether this add recomplemented (Table 2 note 1).
-  Bool     recomp = sub && t[96] == 0;
+  // Whether this add recomplemented (Table 2 note 1, printed p.3-6, PDF
+  // 24: "Recomplementing will only occur if the complemented (following
+  // pre-shift) fraction is larger in magnitude than unshifted fraction").
+  // EQUAL magnitudes (an exact cancellation) also leave no carry, but the
+  // complemented fraction is not LARGER, so they are not charged
+  // (2026-11-26, A4's open finding; mkPauStepTb vector 10).  The sum below
+  // is still ~t, which is zero either way.
+  Bool     recomp = sub && t[96] == 0 && d.fb != fsh;
   if (!sub) begin
     sum = t; sign = d.bigSign;
   end else if (t[96] == 1) begin
@@ -1934,7 +1940,8 @@ module mkPauMixTb(Empty);
 endmodule
 
 // ---------------------------------------------------------------------
-// mkPauStepTb (fidelity_plan.md A4 step 3, 2026-11-26): MULTIPLY AND ADD
+// mkPauStepTb (fidelity_plan.md A4 step 3, 2026-11-26; 11 vectors since the
+// exact-cancellation fix, same day): MULTIPLY AND ADD
 // (`*+`) as one chained request, and the time terms of its add.  Each
 // vector is an FpMulAdd request (the multiply as the `*+` arm asks it:
 // MULTIPLY DOUBLE, unnormalized, noisy off), checked three ways:
@@ -1968,6 +1975,12 @@ endmodule
 //   9  ADD TO MAGNITUDE (+MG), acc 1 + (-2): shift 1, no recomplement
 //      (the larger-exponent fraction is the minuend), and the negative sum
 //      is forced to zero (Ref. Manual p.83): terms 2
+//  10  EXACT CANCELLATION (A4's open finding, fixed 2026-11-26): acc
+//      -(.01 x 2^2) + 1 x 1, the product .01 x 2^2 exactly: the two
+//      fractions are EQUAL, so the complemented one is not "larger in
+//      magnitude than [the] unshifted fraction" and Table 2 Note 1
+//      (printed p.3-6, PDF 24) charges no recomplement: extra 0; the sum
+//      is zero (literal), and a zero sum normalizes 0 places.
 //   For 8 and 9 the terms are checked as pauAddTerms' literal value, and
 //   the unit's fpExtra as 0: pauAddStep is off, so the plain add is not
 //   charged (with it on, fpExtra is the terms, 3 and 2).
@@ -1984,11 +1997,17 @@ endmodule
 //   pauAddForcedZero step 9 (terms 0, want 2)
 // The other four were each set False.  Each injection fails
 // exactly those vectors; every other bench passes each time.
+// VECTOR 10, OBSERVED 2026-11-26: with the exact-cancellation test
+// removed from fpBoxAddSumR (`recomp = sub && t[96] == 0`, the form before
+// the fix), step 10 alone fails, "fpExtra = 2, want 0"; vectors 0-9 pass,
+// and mkPauFpTb, mkPauDivTb, mkFpDivSketchTb and mkPauMixTb all pass.  The
+// injection was reverted by the exact inverse edit (the diff afterwards
+// was byte-identical to the one before it).
 // (pauChainMulAdd is the E-box arm's choice, not this unit's: the atlas
 // run with every term off and the chain on matches the base on PDF 57/88
 // within 0.05 clock on all 320 rows, fidelity_plan.md A4.)
 // ---------------------------------------------------------------------
-typedef 10 NPauStepVec;
+typedef 11 NPauStepVec;
 
 (* synthesize *)
 module mkPauStepTb(Empty);
@@ -2012,6 +2031,7 @@ module mkPauStepTb(Empty);
       2: dd(0, 2, 0, 96'h200000000000_000000000000, 1);
       3, 4: dd(0, 2, 0, 96'h3FF000000000_000000000000, 1);
       5: dd(1, 1, 1, 96'h800000000000_000000000000, 0);
+      10: dd(0, 2, 0, 96'h400000000000_000000000000, 1);
       default: dd(0, 10, 1, 96'h800000000000_000000000000, 0);
     endcase;
   function Bool nrmOf(Bit#(4) i) = (i != 4);
@@ -2055,6 +2075,7 @@ module mkPauStepTb(Empty);
     Bool litOk = True;
     if (idx == 0) litOk = (g.res.frac == 96'h800000000000_000000000000 && g.res.em == 2 && g.res.sign == 0);
     if (idx == 2) litOk = (g.res.frac == 96'h800000000000_000000000000 && g.res.em == 0 && g.res.sign == 0);
+    if (idx == 10) litOk = (g.res.frac == 0);
     if (pack(got) != pack(want)) begin
       $display("FAIL pau step[%0d]: got ", idx, fshow(got));
       $display("               want ", fshow(want));

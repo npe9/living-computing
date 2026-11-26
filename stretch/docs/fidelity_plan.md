@@ -988,18 +988,27 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
       NEG `*+` cancels to a residue and each later add aligns it 62
       places and normalizes it back. With the three shipped terms the
       tail is +9 (65 against 56); it is not resolved.
-    - OPEN, found after the green run: the recomplement test on exact
-      cancellation.
+    - FIXED 2026-11-26 (it was OPEN, found after the green run): the
+      recomplement test on exact cancellation.
       - Table 2 Note 1 (printed p.3-6, PDF 24; `spec_timing.md`):
         "Recomplementing will only occur if the complemented (following
         pre-shift) fraction is larger in magnitude than unshifted
         fraction."
-      - `fpBoxAddSumR`'s `recomp = sub && t[96] == 0` is also true when
-        the two magnitudes are EQUAL, so an exact cancellation is
-        charged 2 clocks that the note excludes.
-      - On the atlas this happens about once in 10,000 adds (the first
-        NEG `*+`). The fix is `&& d.fb != fsh` plus a bench vector,
-        and it needs its own suite run.
+      - `fpBoxAddSumR`'s `recomp = sub && t[96] == 0` was also true when
+        the two magnitudes are EQUAL, so an exact cancellation was
+        charged 2 clocks that the note excludes. It is now
+        `recomp = sub && t[96] == 0 && d.fb != fsh`. The sum is unchanged
+        (~t, zero either way).
+      - Bench: `mkPauStepTb` vector 10, acc -(.01 x 2^2) + 1 x 1, extra
+        0, sum zero. With the old test, step 10 alone fails
+        ("fpExtra = 2, want 0") and the other four PAU benches pass;
+        reverted by the exact inverse edit.
+      - Decks: the six `*+` decks of the table below (F216B/C/D,
+        F219T-Y, Buchholz B.3, Problem 3.6) were run with and without
+        the fix under STRETCH_HALT_REPORT=1. No halt moves (790, 400,
+        836, 881, 986, 762 both ways), so no pin moves.
+      - Atlas: recorded in the docs commit after this one (the before/after
+        FP atlas was still running when this tree went to the suite).
   - **`*+` and the rule for done (item 2): HALF MET.**
     - Within 3 is met: 98.8%, against 88.8% before.
     - The median MISSES by 0.0014. It is -1.0014 before and after,
@@ -1056,7 +1065,8 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
     - Problem 3.6's +282: its accumulator holds 2^80, and each of its
       sixteen `*+` aligns a small product about 75 places, 18 Table 2
       cycles each.
-  - Unit bench `mkPauStepTb`, 10 vectors (`tests/run_paustep_test.sh`):
+  - Unit bench `mkPauStepTb`, 10 vectors (11 since the exact-cancellation
+    fix) (`tests/run_paustep_test.sh`):
     - literal clocks: 5 chained, 4 when the preparation answers, 1 for
       a plain add;
     - literal terms.
