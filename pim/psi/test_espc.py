@@ -3761,6 +3761,30 @@ class Window(unittest.TestCase):
                              for yy in range(y, y + 135)), 0)
 
 
+    def test_standin_refusals_loud(self):
+        # espc's refusals in a stand-in fail loud (espc.standins,
+        # check_standin_refusals, 2026-11-25): only the listed HELD-SOURCE
+        # bodies of KNOWN_STANDIN_REFUSALS are refused, every entry of the
+        # list is still refused (none stale), and a new refusal, here
+        # date_time's first get_value/8 (`/ 3600000`: no witnessed
+        # immediate above 255), is a CompileRefusal naming the predicate.
+        # Injection, OBSERVED (2026-11-25, from a backup copy, restored by
+        # copy, cmp clean): E1 check_standin_refusals a no-op: this test
+        # FAILS, nothing else in this file or test_kl0.py.
+        refused = {(t.id, k[0], k[1]) for t in self.ts for k, _w, _d in t.refusals}
+        self.assertEqual(refused, espc.KNOWN_STANDIN_REFUSALS)
+        text = """class probe_clock has
+:hour(Class, T, H) :- value(T / 3600000, H);
+local
+value(V, V);
+end.
+"""
+        ts, failed = espc.compile_text(text, 'simpos')
+        self.assertFalse(failed)
+        with self.assertRaises(espc.CompileRefusal) as e:
+            espc.check_standin_refusals(ts, 'probe_clock.esp')
+        self.assertIn('simpos##probe_clock refuses hour/3: arithmetic immediate', str(e.exception))
+
     def test_win_m6_date(self):
         # M6, the band's date source: date_time get_value/8 and set_count/3
         # (INTERPOLATED from cil/src/ms_ist.esp:735-742, HELD-SOURCE; the

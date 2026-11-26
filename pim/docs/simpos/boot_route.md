@@ -700,6 +700,18 @@ the mouse boxed, and selection by `mouse#l` are M6
 `screens/system_menu.png`). The basis, injections and census are in
 `../../psi/README.md`, "Window M4 and M6".
 
+Since then (the README's "Window M6's rest and M7's save areas"):
+- the band's right end shows the date, `20-May-93 Thursday 00:00:00`,
+  from the PSI's `date_time` (the same day as fep.py's clock gives PIMOS);
+- a pop-up or window saves the dots under it and restores them when it
+  goes (M7's save areas; `screens/menu_over_window.png`);
+- choosing Login PIMOS again while its window is shown offers `create`
+  and `kill`; `create` sweeps a rubber-band outline for the new
+  requester's window (`screens/create_kill_popup.png`,
+  `rubber_band.png`); `kill` exterminates it.
+`SWAPPED`/`spool` are not drawn: the sources show them but not what sets
+them.
+
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
@@ -707,8 +719,9 @@ login run (§4.5). Open, in order:
 
 1. DONE in step 3n (§4.6, §6.5): the wire from SIMPOS to PIMOS. The
    shell's window on the PSI: DONE in window M4 (§4.8), on stand-ins for
-   the lost PMACS editor's buffer and command loop. Open: lia / tcpip
-   logins.
+   the lost PMACS editor's buffer and command loop; the screen's chrome
+   (M6) and save areas (M7, part) since. Open: lia / tcpip logins; the
+   window manipulator (M7).
 2. The FEP census side items: blt 0d (DONE in step 3n as an INFERENCE,
    `object/3`, outputs unbound) and blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s
