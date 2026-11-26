@@ -53,7 +53,11 @@ routine's behaviour) carries one label, the strongest that holds:
 - **UNKNOWN**: no source and no fit; a run that needs it stops.
 
 Stand-ins for hardware or environment the held words do not give are
-**OURS**, whatever their label. Where two documents disagree, both stay
+**OURS**, whatever their label. The earlier label MEASURED (a count
+over the whole image, pinned by `mekbn --check` or `measure.py`) is
+still used in `pseudo_pimm_microcode.md` and `ref/pu/README.md`: read
+it as CORROBORATED when a document agrees and INFERRED when the count
+alone decides. Where two documents disagree, both stay
 as competing hypotheses until execution decides: TR-733 fig. 4 and
 Nakashima Fig. 3-25 differ in the microword's field layout
 (`pim_architecture.md`, the field table after line 200: TR-733 prints
@@ -124,8 +128,9 @@ window rungs):
 | Sub-rung | Milestone | In rung | State (2026-11-26) |
 |---|---|---|---|
 | U1a | straight-line held code executes | U1 | EXECUTED (one-word and multi-word routines) |
-| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED for JMPF 1/3/4/6/b/c/e and MCF EM1 `20`; JMPF 2/a, 8/9/d/f raise |
-| U1c | the free-list allocator `3320`-`3324` on memory | U1 | EXECUTED (4 words); its last-cell arm reads R05 (UNKNOWN) |
+| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. Never executed: JMPF 3. Raise: conditional b/c/e (polarity), JMPF 2/a, 8/9/d/f, JMPF 1 with EM bit 0 clear when conditional |
+| U1c | the free-list allocator `3320`-`3324` on memory | U1 | EXECUTED: called by a held call word (`scsi_init`'s `615e`) and returning to `615f`, W1c `{REF, cell}` as `pimm.py`'s `new_var`; its last-cell arm reads R05 (UNKNOWN) |
+| U1-dispatch | decode-table dispatch from the instruction cell | U1 | EXECUTED: `setup.dispatch` takes class from the tag, opcode from the top byte, the start from the held table; every compared case enters through it |
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
 | U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; reading not reached |
 | U2b | tag dispatch | U2 | UNKNOWN: the TGT RAM is not held; JMPF 1 with EM bit 2 raises |
@@ -282,8 +287,9 @@ differs from a PIM/m PE, and so what the simulator stands in:
 
 Honest, and in sessions of the length that reached U1.
 
-- **U2:** two to four sessions. In order: the refill (AS1F 3, the
-  counted loop, CCF as a coded field), the allocator for three cells
+- **U2:** two to four sessions. In order: the refill (AS1F 3 now
+  INFERRED; still the initial R1f and W0d, the counted loop, CCF as a
+  coded field), the allocator for three cells
   and more (the list-head table at R05, SC2F `b`), `execute`, `proceed`,
   `try_me_else`, then the `get_*`/`wait_*` tables, which need the
   tag-dispatch RAM (not in `pimm.MEkbn`; found in `sysinit` or inferred
@@ -329,7 +335,16 @@ Honest, and in sessions of the length that reached U1.
   `pimm.py`'s `new_var` gives, the link left in R19). AS1F 3 (constant
   EM2 on the first ALU input) INFERRED at the refill's `3378`. The
   refill now stops at `3378` reading R1f (HP), never set; with an HP
-  given (a probe, not in the check) it runs on to `3365` and stops
-  reading work register W0d. Both are boot-time state (`PIMM.PARAM`,
-  PIMOS boot): the refill waits on U3's initialisation, or on an OURS
-  value for each, labelled.
+  given (OURS, a case in the check) it runs on to `3365` and stops
+  reading work register W0d. Who sets them first is UNKNOWN. Image 2
+  has 17 words that write R1f (three at `0159`, `019a`, `029b`, below
+  the lowest decode entry `02d5`; the others after the entries of
+  `collect_garbage`, `new_module`, `execute_first_predicate`,
+  `switch_on_non_list`), 14 that write R05 and 4 that write W0d (after
+  the entries of `collect_garbage`, `proceed`, `merge`,
+  `enqueue_goal_with_priority`); `syspsi` has 159, 22 and 4. None of
+  these routines has been run. Also added: decode-table dispatch from
+  the instruction cell (`setup.dispatch`), a held call word (`615e`
+  into `3320`, return to `615f`), and a step-contract check (evaluate
+  twice gives equal records and leaves the state unchanged; commit
+  returns `next`). PASS, 31 cases, 80 held microinstructions.

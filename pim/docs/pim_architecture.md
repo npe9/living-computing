@@ -375,9 +375,11 @@ for the model:
 - Memory allocation is a firmware service, not a bump pointer: the
   one-cell allocator `3320` runs as a microsubroutine and matches
   `pimm.py`'s `new_var` (EXECUTED), and the refill needs HP (R1f) and
-  work register W0d, set by boot code not yet run. So the Bluespec PU
-  needs the boot-time register state (or the boot microcode) before any
-  long run, and its lockstep comparison reads the per-microcycle record
+  work register W0d, whose first writer among the held words is not yet
+  known (UNKNOWN; candidates in `pu_microcode_plan.md` Status). So the
+  Bluespec PU needs that initial register state, from the held routine
+  that sets it or as a labelled stand-in, before any long run, and its
+  lockstep comparison reads the per-microcycle record
   of `pu_microcode_plan.md` "The trace".
 
 ### Model-defined routing, packet format and arbitration

@@ -423,6 +423,7 @@ class PU:
             self.mstk.pop()
         self.trace.append((c['micro_pc'], c['microword']))
         self.cycles.append(c)
+        return c['next']
 
     def call(self, upc, limit=2000):
         """Run a microsubroutine from upc to its return, as a call word

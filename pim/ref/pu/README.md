@@ -22,7 +22,13 @@ terminal.
 
 **U1 reached; U2 not reached.**
 
-- 28 cases, all PASS (69 held microinstructions executed): 22 compared
+- 31 cases, all PASS (80 held microinstructions executed). Since the
+  first 28: a held call word (`scsi_init`'s `615e` calls `3320`; the
+  return lands on `615f`), the refill with an HP given (stops at `3365`
+  on W0d), and the step contract (evaluate twice gives equal records and
+  changes nothing; commit returns `next`). Every compared case enters
+  through decode-table dispatch from the instruction cell
+  (`setup.dispatch`). Of the first 28 (69 words): 22 compared
   against `pimm.py` (44 executed and matched: 33 in multi-word
   routines, 11 in one-word ones); 4 that take the last cell of a free
   list and must enter the refill (17 words executed up to the refill,
@@ -127,6 +133,9 @@ condition, not run.
   the firmware writes: cells `{VECT0x, next}`, the last `{ATOMo, 0}`.
 - Memory: a flat dict; the goal record being built at `f1000000`, the
   lists at `f2000000`/`f3000000`.
+- HP (R1f) = `{REF, f4000000}` in the allocator, held-call and
+  refill-with-hp cases: the allocator reads it at `3322`, the refill at
+  `3378`. No case checks what is done with it beyond that.
 - The Pseudo PIM/m environment is not needed for these routines: no
   routine run here touches I/O, the TLB or `syspsi`'s upper store.
 
@@ -138,9 +147,10 @@ condition, not run.
 | `w59_mdr1` (a bit-59 write stores MDR1) | `put_variable`, `put_marked_variable` FAIL (no cell with `UNDF`) |
 | `write_same_word` (a write stores the MDR as loaded in its own word) | `set_variable`, `write_variable` and their marked forms FAIL |
 | `opd_a_is_z` (select `a` = z) | `set_variable`, `put_variable` and their marked forms FAIL (wrong register written) |
-| `cnd_em_swapped` (CNDF 9 against EM2, b against EM1) | the four last-cell cases FAIL (the pop ends without entering the refill) and the allocator run FAILs (W1c `06:f2000000`); the 22 compared cases still pass, which is why the last-cell cases exist |
-| `odsf_swapped` (ODSF 0 = MAR1, 1 = MAR2) | 13 cases STOP (MAR2 / MAR1 never set): every pop |
-| `as1f3_off` (AS1F 3 unmodelled) | both allocator runs STOP at `3321`; nothing else (the refill cases stop on R1f before reaching AS1F 3) |
+| `cnd_em_swapped` (CNDF 9 against EM2, b against EM1) | the four last-cell cases FAIL (the pop ends without entering the refill) and the allocator run FAILs (W1c `06:f2000000`), as does the refill with an HP (6 in all); the 22 compared cases still pass, which is why the last-cell cases exist |
+| `odsf_swapped` (ODSF 0 = MAR1, 1 = MAR2) | 15 cases STOP (MAR2 / MAR1 never set): every pop, the refill with an HP, the step contract |
+| `as1f3_off` (AS1F 3 unmodelled) | both allocator runs, the held call and the refill with an HP STOP (4); the last-cell cases without an HP stop on R1f before reaching AS1F 3 and still pass |
+| impure `evaluate` (COND set before commit; a scratch monkeypatch, not an `--inject`) | the step contract FAILs; nothing else |
 
 ## First routine that would not run
 
@@ -149,9 +159,12 @@ list) or `337d` (two-cell list) when a pop takes the last cell. It
 stops at once on R1f (the heap pointer, `rassy`'s `hp`), which no case
 sets. Given one (a scratch probe, not in the check), AS1F 3 now runs
 (the rule above) and the routine stops at `3365` on a read of work
-register W0d, never set. R1f and W0d are boot-time state (`PIMM.PARAM`,
-PIMOS boot), so the refill waits on that initialisation or on an OURS
-value for each. Read, not run, it also needs: MCF with EM1 `10` and
+register W0d, never set (now a case in the check, "refill with hp").
+Who sets R1f and W0d first is UNKNOWN: image 2 has 17 words that write
+R1f (three below the lowest decode entry, at `0159`, `019a`, `029b`),
+14 that write R05 and 4 that write W0d (after the entries of
+`collect_garbage`, `proceed`, `merge`, `enqueue_goal_with_priority`),
+none of them run. Read, not run, it also needs: MCF with EM1 `10` and
 CNDF 6 (the counted loop `3367`, 13 or 5 iterations) and the write data
 of CCF `16`, which conflicts with the bit-59 rule above.
 
@@ -176,6 +189,7 @@ read) and the `pass_as2` addressing at `3343`.
     n = p.run(upc)             # to the routine's end; returns words executed
     n = p.call(upc)            # a microsubroutine, to its return
     setup.setup(p, name)       # OURS: the D/A/R/S stand-in; returns the start address
+    name, start = setup.dispatch(p)   # the held decode table from p.ir, then setup
 
 Each record (`rec`, also appended to `p.cycles`) has `cycle`, `micro_pc`,
 `microword`, `reg_reads`, `reg_writes`, `wr`, `mem_reads`, `mem_writes`,

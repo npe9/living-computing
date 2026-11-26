@@ -25,17 +25,21 @@ discriminates the condition rules.
 Prints one line per case and a total; exit status 1 on any FAIL.
   python3 ref/pu/check_pu.py [-v] [--inject NAME]
 
-Observed 2026-11-26: PASS, 28 cases, 69 held microinstructions (44 in
+Observed 2026-11-26: PASS, 31 cases, 80 held microinstructions (44 in
 the 22 compared cases; the three *_marked_variable cases held out; 17
-in the four last-cell cases; 8 in the two allocator 3320 runs).
+in the four last-cell cases; 8 in the two allocator 3320 runs; 5 in the
+held call 615e; 6 in the refill with an HP; the step contract).
 Injections (INJECT below; observed in full in ref/pu/README.md):
 tgif3_em1 FAILs write_nil only; w59_mdr1 put_variable and
 put_marked_variable; write_same_word set_/write_variable and their marked
 forms; opd_a_is_z set_/put_variable and their marked forms;
-cnd_em_swapped the four last-cell cases and the allocator run;
-odsf_swapped STOPs the 13 pop cases; as1f3_off STOPs both allocator runs
-(the rule is needed there; its value, EM2 = 13, is not compared with an
-oracle).
+cnd_em_swapped the four last-cell cases, the allocator run and the
+refill with an HP (6); odsf_swapped STOPs the 13 pop cases, the refill
+with an HP and the step contract (15); as1f3_off STOPs both allocator
+runs, the held call and the refill with an HP (4: the rule is needed
+there; its value, EM2 = 13, is not compared with an oracle). An impure
+evaluate (COND set early, a scratch monkeypatch) FAILs the step
+contract only.
 
 The firmware is read from docs/nonlocal/psdpim.tar.Z (not in git).
 """
@@ -191,7 +195,9 @@ def run_case(name, ops, regs_extra, declared, verbose=False):
     p.r[SU.R_SP] = (0, sp0)
     seed_lists(p, 1 if 'exhaust' in declared else NFREE)
     fresh = set(p.mem)
-    start = SU.setup(p, name)
+    got, start = SU.dispatch(p)          # the held decode table, from p.ir
+    if got != name:
+        raise PU.Unmodelled(-1, 'decode dispatch gave %s for %s' % (got, name))
     nwords = p.run(start)
     # --- compare
     rn = Rename()
@@ -346,6 +352,78 @@ def main(argv):
         else:
             bad += 1
             print('FAIL alloc 3320         %d words: W1c %s, writes %s' % (k, fmt(w1c), p.writes))
+    # A held call word: scsi_init's 615e calls 3320 (the micro stack
+    # pushes 615f), the allocator runs and its return lands on 615f.
+    total += 1
+    p = PU.PU(CTX['fw'])
+    seed_lists(p, NFREE)
+    p.r[0x1f] = (PU.REF, 0xf4000000)           # hp, OURS
+    upc, seen = 0x615e, []
+    try:
+        while not seen or not seen[-1]['pop']:
+            rec = p.evaluate(upc)
+            upc = p.commit(rec)
+            seen.append(rec)
+        good = (seen[0]['push'] == 0x615f and upc == 0x615f and not p.mstk
+                and [r['micro_pc'] for r in seen] == [0x615e, 0x3320, 0x3321, 0x3322, 0x3323]
+                and p.w.get(0x1c) == (pimm.REF, FREE1))
+        words += len(seen)
+        bad += not good
+        print('%s call 615e -> 3320  %d words: push 615f, return to 615f, W1c {REFo, cell}'
+              % ('ok  ' if good else 'FAIL', len(seen)))
+    except PU.Unmodelled as e:
+        bad += 1
+        print('STOP call 615e        at %s' % e)
+    # The refill with an HP given (OURS): AS1F 3 runs at 3378 and the
+    # refill stops at 3365 on work register W0d, which nothing here sets
+    # (the first routine that would not run).
+    total += 1
+    p = PU.PU(CTX['fw'])
+    p.ir = make_cell('set_variable', (2, 9, 0))
+    for i, w in initial_regs().items():
+        p.an[i] = w
+    p.r[SU.R_REC] = (0, REC)
+    seed_lists(p, 1)
+    p.r[0x1f] = (PU.REF, 0xf4000000)           # hp, OURS
+    try:
+        p.run(SU.dispatch(p)[1])
+        bad += 1
+        print('FAIL refill with hp     ran to an end')
+    except PU.Unmodelled as e:
+        good = e.upc == 0x3365 and 'W0d' in e.what
+        bad += not good
+        words += e.words
+        print('%s refill with hp     %d words, stops at %s'
+              % ('ok  ' if good else 'FAIL', e.words, e))
+    # The step contract: evaluate reads the old state and changes nothing;
+    # commit applies the record and returns its next.
+    total += 1
+    p = PU.PU(CTX['fw'])
+    p.ir = make_cell('put_list', (6, 0, 0))
+    for i, w in initial_regs().items():
+        p.an[i] = w
+    p.r[SU.R_REC] = (0, REC)
+    p.r[SU.R_SP] = (0, A0 + 0x100)
+    seed_lists(p, NFREE)
+    upc = SU.dispatch(p)[1]
+    keys = {'cycle', 'micro_pc', 'microword', 'reg_reads', 'wr', 'reg_writes',
+            'mem_reads', 'mem_writes', 'cond', 'push', 'pop', 'next'}
+    ok = True
+    try:
+        while upc is not None:
+            state = lambda: repr((p.wr, p.r, p.w, p.an, p.mem, p.mstk, p.cond, len(p.cycles)))
+            snap = state()
+            r1, r2 = p.evaluate(upc), p.evaluate(upc)
+            ok = ok and r1 == r2 and set(r1) == keys and snap == state()
+            nxt = p.commit(r1)
+            ok = ok and nxt == r1['next'] and p.cycles[-1] is r1
+            upc = nxt
+        bad += not ok
+        print('%s step contract        evaluate pure and repeatable, commit returns next'
+              % ('ok  ' if ok else 'FAIL'))
+    except PU.Unmodelled as e:
+        bad += 1
+        print('STOP step contract      at %s' % e)
     import measure
     pins = measure.check(quiet=True)
     print('measure.py pins (the counts behind the INFERRED rules): %s'

@@ -120,3 +120,22 @@ def setup(pu, name):
             raise KeyError('ODPF 1 with ODSF %d: not run here' % nc['ODSF'])
         pu.wr[reg] = (0, head[1])
     return start
+
+
+def dispatch(pu):
+    """Decode-table dispatch from the instruction cell pu.ir, as the D
+    stage does: the cell's tag picks the class (0x22 GMI = 2, 0x23 KLB = 3,
+    as asm/mekbn.py kl1_entries reads the table, MEASURED in
+    pseudo_pimm_microcode.md section 3), its top byte the
+    opcode, and the held decode table's entry (class << 8 | opcode) the
+    start address.  Returns (name, start) after the S-stage set-up.
+    An empty entry or another tag raises."""
+    t, v = pu.ir
+    cls = {0x22: 2, 0x23: 3}.get(t)
+    if cls is None:
+        raise KeyError('instruction tag %02x: no KL1 decode class' % t)
+    idx = cls << 8 | (v >> 24) & 255
+    names = [n for n, e in pu.fw.kl1_entries().items() if e[0] == idx]
+    if not names:
+        raise KeyError('decode entry %03x empty' % idx)
+    return names[0], setup(pu, names[0])
