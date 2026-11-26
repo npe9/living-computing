@@ -165,6 +165,9 @@ def mount(m):
         m.set_slot(f, 'version', 1)
         m.set_slot(f, 'size', size)
         m.set_slot(f, 'full_name', K.Str('%s.%d' % (path, 1)))
+        # window M10 (OURS): the file's directory, for a save's new version
+        # (kl0 Machine.file_new_version)
+        m.set_slot(f, 'directory', directory(d))
         if codes is not None:
             s = K.Str('')
             s.set_codes(codes)

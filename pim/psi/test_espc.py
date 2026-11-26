@@ -485,11 +485,23 @@ class Structure(unittest.TestCase):
         # 1234 / 256 before step 3d's rows (vector_to_list, set_subvector,
         # `{}` and four-element vectors): none lost.  1241 / 258 before
         # X*Y on two registers (blt 42, 2026-11-25): 39 refused predicates
-        # compile, none exact, no compared one changes its class
-        self.assertEqual((c['pred compared'], c['pred exact']), (1280, 258))
+        # compile, none exact, no compared one changes its class.  1280 /
+        # 258 before window M10's key macros (mouse#B, key#N, control#"c",
+        # pf#N: espc.py key_constant; row by row against the macros
+        # disabled, 2026-11-26): as_view_select_window read/2 (p_menu.esp)
+        # and time_graph_window read_com/2 compile (refused -> moves and
+        # environment), and read/2's $or$s are compared (4 other, 3 held
+        # only); none exact, no compared row changes its class.  But
+        # read/2 nests five deep, and the held compiler puts its three
+        # X-range disjunctions one level deeper than espc does
+        # (read/2.35#1#1#1#1#1-3 held, #1#1#1#3 and #1#1#2 ours): so two
+        # $or$s are paired with another arity and two are compiled only,
+        # the first such rows (OPEN: how the held compiler numbers that
+        # nest)
+        self.assertEqual((c['pred compared'], c['pred exact']), (1286, 258))
         self.assertEqual(c['key collisions'], 0)
-        self.assertEqual(c['$or$ paired with another arity'], 0)
-        self.assertEqual(c['pred compiled only'], 0)
+        self.assertEqual(c['$or$ paired with another arity'], 2)
+        self.assertEqual(c['pred compiled only'], 2)
 
     def test_aspect_differences(self):
         # paragraph_version: the version slot, "3200" in the source and
@@ -608,7 +620,24 @@ end.'''
         # with X*Y on two registers (blt 42, 2026-11-25): 12,871 compared,
         # 1,514 exact (with_kappaMDU_table_with_pp tab/3 newly exact; no
         # compared predicate changes its class)
-        self.assertEqual((c['pred compared'], c['pred exact']), (12871, 1514))
+        # with window M10's key macros (mouse#B, key#N, control#"c", pf#N;
+        # row by row against them disabled, 2026-11-26): 12,963 compared,
+        # 1,518 exact: kappaFMP_editor2 command/3, kappaFMP_kappa_file_
+        # manipulator describe/3 and kappaLUU_load get_new_table_name/4
+        # refused -> exact, kappaFMP_dump dumpLine/6.11#1 other -> exact;
+        # none lost; 10 compared rows other -> moves and environment and
+        # one other -> clause order, closer to the held cells
+        self.assertEqual((c['pred compared'], c['pred exact']), (12963, 1518))
+        # the held cells witness two of the key macros' values (espc.py
+        # key_constant): KMACS2.ESP `:command(Self,mouse#r,kappa_menu)` is
+        # exact only with mouse#r the atom named `mouse#r`, and DUMP.ESP
+        # dumpLine/6's `Char == key#lf` only with key#lf = 10.  Injected
+        # (scratch monkeypatch of key_constant, 2026-11-26): key#lf -> 11
+        # loses exactly dumpLine/6.11#1 (1,517 exact); mouse#r named
+        # `mouse#rx` loses exactly command/3 (1,517)
+        exact = {(x[0], x[1]) for x in r['rows'] if x[2] == 'exact'}
+        self.assertIn(('kappa##kappaFMP_editor2', 'command/3 35'), exact)
+        self.assertIn(('kappa##kappaFMP_dump', 'dumpLine/6.11#1 12'), exact)
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
         # internal: 2 before step 3c (the PCM add_to_ele_by_search/10
@@ -714,7 +743,11 @@ class Standins(unittest.TestCase):
             'simpos##menu_pane',
             'simpos##message', 'simpos##monogyny_list_index', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name', 'simpos##network_subsystem',
-            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_request', 'simpos##pmacs_window',
+            'simpos##password_list', 'simpos##pathname',
+            'simpos##pmacs_display',        # window M10 (2026-11-26)
+            'simpos##pmacs_request',
+            'simpos##pmacs_standard_editor',        # window M10
+            'simpos##pmacs_window',
             'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##save_memory', 'simpos##semaphore',
@@ -1456,7 +1489,20 @@ end.''', 'simpos')
         # refused -> success (its held create_error_mode_menu/1 reaches
         # the new standard_choice_window stand-in; before, the class was
         # missing); rows unchanged.  824 / 239 / 405
-        self.assertEqual((len(rows), out), (1485, {'success': 824, 'failure': 239, 'refused': 405, 'exception': 16,
+        # window M10 (row by row against f825683e's stand-ins, 2026-11-26):
+        # 1,485 -> 1,520 rows, all 35 new rows inherited from stand-ins, no
+        # row removed, no held row changes outcome.  pimos_window gets 8 of
+        # pmacs_window's new methods: clear_echo_area/1, echo/2, kill/1
+        # success; current_buffer/2, menu_chosen/2, refresh/1,
+        # right_click/3, set_input_buffer/2 refused at the census window's
+        # unset interpreter (slot constant).  pimos_window_editor gets 27 of
+        # standard_editor's: abort/1, control_x/3, exit/1, save_all_files/1,
+        # show_menu/1 success; read_file/4 refused (unbound pathname); the
+        # other 21 refused at the census editor's unset window (slot
+        # constant).  The held select_buffer/4 moves its stop from
+        # editor_text_buffer get_buffer_instance/3 (now stood in) to
+        # set_input_buffer/2 on that unset window.  832 / 239 / 432
+        self.assertEqual((len(rows), out), (1520, {'success': 832, 'failure': 239, 'refused': 432, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1470,8 +1516,9 @@ end.''', 'simpos')
         # 154 -> 158 in window M4: pimos_window input_data/2, typed/2,
         # putl/2 (new rows) and the editor's carriage_return/1 (was
         # 'simpos', now get_interpreter/2 to the census window's unset
-        # editor slot) stop at the census's slot constants
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 158)
+        # editor slot) stop at the census's slot constants; 158 -> 185 in
+        # window M10: the 26 new rows above and select_buffer/4
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 185)
         self.assertEqual(sorted(r[2] for r in rows if r[0] == 'pimfep##pimos_login_requester'
                                 and 'no file system is mounted' in r[5]),
                          ['goal/1', 'initiate/1', 'invoke/1'])
@@ -1584,7 +1631,20 @@ end.''', 'simpos')
         # window M7's rest: + set_permission/2, has_been_selected/1 in
         # pimos_window (success), as in test_fep_census.  Window M9:
         # error_mode_menu/2 refused -> success, as there.  855 / 241 / 372
-        self.assertEqual((len(rows), out), (1485, {'success': 855, 'failure': 241, 'refused': 372,
+        # window M10 (row by row against f825683e's stand-ins): the 35 new
+        # rows of test_fep_census, here (recipes: a window with an
+        # interpreter, an editor with a window) 25 success, 9 failure
+        # (backward_character/1, delete_backward_character/1,
+        # delete_character/1, forward_character/1, insert/2, kill_line/1,
+        # next_line/1, previous_line/1, select_buffer/1: the census
+        # window's empty buffer has no character to move over or delete and
+        # no other line, insert/2's unbound argument is not inserted, and
+        # no buffer is in the pool to select) and
+        # read_file/4 refused (unbound pathname); select_buffer/4 moves its
+        # stop from get_buffer_instance/3 to put/2 on the window's unset
+        # output stream (the step 3g artifact).  No held row changes
+        # outcome.  880 / 250 / 373
+        self.assertEqual((len(rows), out), (1520, {'success': 880, 'failure': 250, 'refused': 373,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -1593,8 +1653,9 @@ end.''', 'simpos')
         # buffer_name/3, clear/3, reshape/7, reshape_by_mouse/3,
         # set_inside_size/5, set_size/3 go from 'simpos' (an unstood
         # pmacs_window or editor method) to put/2 on the window's unset
-        # output stream (the step 3g artifact, as get_title/3)
-        self.assertEqual(slot_const, 114)
+        # output stream (the step 3g artifact, as get_title/3); window M10:
+        # 114 -> 115, select_buffer/4 (above)
+        self.assertEqual(slot_const, 115)
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -1813,7 +1874,7 @@ end.''', 'simpos')
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
             # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
             # M4/M6: 15 (test_fep_census)
-            self.assertEqual(len(fwd), 1485)    # window M7's rest: two inherited methods
+            self.assertEqual(len(fwd), 1520)    # window M10: 35 inherited methods (test_fep_census)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
