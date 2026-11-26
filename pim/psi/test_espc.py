@@ -4786,6 +4786,86 @@ end."""
             ((_o, w),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
             self.assertEqual(m.get_slot(w, 'permission'), K.Atom(want))
 
+    PROBE_WRITER = """
+class probe_writer has
+nature standard_io_window;
+instance
+attribute partner := 0;
+after:has_been_selected(W) :- P = W!partner, :putl(P, "selected");
+end."""
+
+    def test_win_m7_coordinator_writes(self):
+        # M7's rest, the coordinator's own process is never held back
+        # (coordinator.esp "OUTPUT PERMISSION", held_back/3's manager/1):
+        # a window's has_been_selected/1 runs in the coordinator's process
+        # (select_window/2, sent on a click), and here it writes into a
+        # covered window whose permission is wait.  The receiver is a test
+        # class whose after-demon on has_been_selected/1 puts a line on its
+        # partner (OURS harness, as test_win_m7_has_been_selected: kappa
+        # pbwin.esp:72 is the held after-demon on the selector; the
+        # commented-out kappa sheet_obj.esp:433-438 draws in another window
+        # from it).  The windows are made after the Login PIMOS run: A at
+        # (100, 100) with permission(wait), shown, B over part of it
+        # (activated, so A stays selected), the probe at
+        # (700, 100) with A its partner; the probe is shown (show/1 selects
+        # it) while `simpos##process`'s current process is the
+        # coordinator's (OURS: the direct send stands for the coordinator
+        # process's own event/2).  The line goes into A at once (B lifted
+        # and laid back, its dots unchanged; A's uncovered columns show
+        # it), with no waiter.  With the current process another one (any
+        # writer), the same line waits (a waiter on A, kind wait).
+        # Injection, OBSERVED: P13 in test_win_m8_markers's header.
+        import windev
+        A = K.Atom
+        ts, failed = espc.compile_text(self.PROBE_WRITER, 'simpos')
+        self.assertEqual(failed, {})
+        m, _fr, _ = self.later_run(self.manip_events()['login'])
+        for t in ts:
+            m.lib.add(t)
+        m.reset()
+        fr = windev.device(m).frame
+        C = K.ClassRef('simpos##coordinator')
+        PC = K.ClassRef('simpos##process')
+
+        def made(cid, x, y, *more):
+            opts = K.NIL
+            for o in reversed((K.Vec([A('position'), x, y]),) + more):
+                opts = K.Cons(o, opts)
+            ((_o, v),) = K.call_class_method(m, cid, 'create', [opts, K.Var()])
+            return v
+        a = made('simpos##standard_io_window', 100, 100, K.Vec([A('permission'), A('wait')]))
+        self.assertTrue(self.send(m, a, 'show'))
+        b = made('simpos##standard_io_window', 200, 130)
+        self.assertTrue(self.send(m, b, 'activate'))      # A stays selected
+        pb = m.get_slot(b, 'pane')
+        bx, by, bw, bh = (m.get_slot(pb, k) for k in ('x', 'y', 'w', 'h'))
+        under_b = self.block(fr, bx, by, bw, bh)
+        probe = made('simpos##probe_writer', 700, 100)
+        m.set_slot(probe, 'partner', a)
+        current = m.get_slot(PC, 'current')
+        m.set_slot(PC, 'current', m.get_slot(C, 'process'))
+        try:
+            self.assertTrue(self.send(m, probe, 'show'))
+        finally:
+            m.set_slot(PC, 'current', current)
+        self.assertIs(m.get_slot(C, 'selected'), probe)
+        self.assertEqual(self._walk(m.get_slot(C, 'waiters')), [])
+        self.assertEqual(''.join(chr(c & 0xff) for c in self._walk(m.get_slot(a, 'transcript'))[0].codes()),
+                         'selected')     # the ESP string's 16-bit codes, 16#"23xx"
+        self.assertEqual(self.block(fr, bx, by, bw, bh), under_b)
+        pa = m.get_slot(a, 'pane')
+        cw = m.get_slot(pa, 'cw')
+        seen = (bx - m.get_slot(pa, 'left')) // cw
+        self.assertEqual(windev.read_cells(fr, m.get_slot(pa, 'left'), m.get_slot(pa, 'top'), seen, 1),
+                         ['selected'[:seen]])
+        # another process's write to A waits
+        self.assertNotEqual(m.get_slot(PC, 'current'), m.get_slot(C, 'process'))
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, a, 'putl', K.Str('later'))
+        self.assertEqual(e.exception.cause, 'would suspend')
+        self.assertEqual([K.resolve(self._walk(v)[2]) for v in self._walk(m.get_slot(C, 'waiters'))],
+                         [A('wait')])
+
     # window M8, graphics (standard_io_window.esp and window_pane.esp
     # "Window M8"): a window of 40 x 20 cells made at (100, 100) after the
     # Login PIMOS run (OURS harness, as test_win_m7_has_been_selected),
@@ -5465,6 +5545,112 @@ end."""
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
 
+    def block(self, fr, x, y, w, h):
+        # the dots of the screen rectangle, row by row
+        return [(fr.rows[y + j] >> (1280 - x - w)) & ((1 << w) - 1) for j in range(h)]
+
+    def test_win_m8_copy(self):
+        # M8's rest, copy/9 between windows (window.md §2.5; USAGE icotext
+        # util_scroll.esp:211 `(W, Src, SX, SY, DX, DY, Width, Height, Op)`,
+        # the direction INFERENCE; window_pane.esp copy_in/9, OURS):
+        #   - a 60 x 40 block of the graphics window (a filled circle and a
+        #     line) copied into a second window at (20, 20) of its inside
+        #     (exclusive_or onto the empty block): the block's dots there,
+        #     the rest of both windows unchanged;
+        #   - copied again with exclusive_or: the second window's block
+        #     cleared (dots XOR themselves), the frame as before;
+        #   - with copy into the second window while a third covers part
+        #     of it: the third's dots unchanged, and once the second is
+        #     selected (raised) its block shows the source's dots;
+        #   - with exclusive_or while a fourth window covers part of the
+        #     source: the fourth's dots unchanged, the copy cleared;
+        #   - refused loudly, the frame unchanged: the other held form
+        #     (an integer second argument: util_scroll.esp:218's matrix
+        #     copy), a source not shown (util_scroll's hide_window), an
+        #     area leaving the inside, a colour (integer) op.
+        # paint/5 (USAGE kappa2 pdim.esp:606) is refused loudly too: a STOP
+        # (standard_io_window.esp "PAINT": a seed fill needs the frame's
+        # dots, which no frozen primitive gives the program).
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   C1 copy_in/9 does not draw the destination's own dots back (D)
+        #      before the copy goes on through Op: this test FAILS, nothing
+        #      else.  (First run, with the first copy `copy` onto the empty
+        #      block: NOTHING failed, since D does not matter to `copy`;
+        #      the first copy is exclusive_or since.)
+        #   C2 the copy drawn `copy` whatever Op: this test FAILS, nothing
+        #      else.
+        #   C3 the screen under the source's block (B) not drawn back: this
+        #      test FAILS, nothing else.
+        #   C4 the source saved without uncover/3 (its covers' dots
+        #      copied): this test FAILS, nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+
+        def made(x, y, cols, rows):
+            opts = K.Cons(K.Vec([A('position'), x, y]),
+                          K.Cons(K.Vec([A('size'), K.Vec([A('ch'), cols]), K.Vec([A('ch'), rows])]), K.NIL))
+            ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+            self.assertTrue(self.send(m, v, 'activate'))
+            return v
+        self.assertTrue(self.send(m, w, 'draw_filled_circle', 30, 20, 15, A('set')))
+        self.assertTrue(self.send(m, w, 'draw_line', 0, 0, 59, 39, 1, A('solid'), A('set')))
+        src = self.block(fr, X0 + 0, Y0 + 0, 60, 40)
+        self.assertGreater(sum(bin(r).count('1') for r in src), 700)
+        w2 = made(700, 100, 20, 10)
+        P2 = m.get_slot(w2, 'pane')
+        L2, T2 = m.get_slot(P2, 'left'), m.get_slot(P2, 'top')
+        before = list(fr.rows)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('exclusive_or')))
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), src)
+        want = winfb.Frame()
+        want.rows = list(before)
+        for j, r in enumerate(src):
+            y = T2 + 20 + j
+            want.rows[y] = want.rows[y] & ~(((1 << 60) - 1) << (1280 - L2 - 20 - 60)) | (r << (1280 - L2 - 20 - 60))
+        self.assertEqual(fr.rows, want.rows)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('exclusive_or')))
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), [0] * 40)
+        self.assertEqual(fr.rows, before)
+        # a third window over part of the second
+        w3 = made(760, 130, 10, 4)
+        P3 = m.get_slot(w3, 'pane')
+        x3, y3, wd3, ht3 = (m.get_slot(P3, k) for k in ('x', 'y', 'w', 'h'))
+        over = self.block(fr, x3, y3, wd3, ht3)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('copy')))
+        self.assertEqual(self.block(fr, x3, y3, wd3, ht3), over)
+        self.assertNotEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), src)
+        K.call_class_method(m, 'simpos##coordinator', 'select_window', [w2])
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), src)
+        # a fourth window over part of the source block: copied with
+        # exclusive_or onto its own copy, the second window's block clears,
+        # the fourth's dots unchanged
+        w4 = made(130, 125, 6, 2)
+        P4 = m.get_slot(w4, 'pane')
+        x4, y4, wd4, ht4 = (m.get_slot(P4, k) for k in ('x', 'y', 'w', 'h'))
+        over = self.block(fr, x4, y4, wd4, ht4)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('exclusive_or')))
+        self.assertEqual(self.block(fr, x4, y4, wd4, ht4), over)
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), [0] * 40)
+        rows = list(fr.rows)
+        (_o, hidden), = K.call_class_method(m, 'simpos##standard_io_window', 'create', [K.NIL, K.Var()])
+        for args in [('copy', 0, 0, w, 0, 0, 60, 40, K.Vec([2, 0, 0, 0, 2, 0])),
+                     ('copy', hidden, 0, 0, 20, 20, 60, 40, A('copy')),
+                     ('copy', w, 0, 0, 200, 20, 60, 40, A('copy')),
+                     ('copy', w, 0, 0, 20, 20, 60, 40, 1),
+                     ('paint', 1, 1, A('light_paint'), A('set'))]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w2, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
     def test_win_m8_markers(self):
         # M8, markers (window.md §2.6; standard_io_window.esp "MARKERS",
         # marker.esp): selectors PRINTED-INTERFACE TM-125 p17, bodies OURS.
@@ -5499,9 +5685,13 @@ end."""
         #   P12 create/3 ignores the permission(P) option:
         #      test_win_m7_permission_change FAILS, nothing else.
         #   P13 the coordinator's own process held back like a writer
-        #      (manager/1 bypass removed): NOTHING fails.  No run on the
-        #      route makes the coordinator redraw a covered window whose
-        #      permission is not out, so the bypass is UNPINNED.
+        #      (manager/1 bypass removed): first run (merge 20efface)
+        #      NOTHING failed, no run on the route making the coordinator
+        #      write into a covered window whose permission is not out.
+        #      Since test_win_m7_coordinator_writes (a has_been_selected/1
+        #      demon writing into a covered `wait` window from the
+        #      coordinator's process): that test ERRORS (would suspend),
+        #      nothing else.
         import windev
         import winfb
         X0, Y0 = self.GRAPHICS_AT

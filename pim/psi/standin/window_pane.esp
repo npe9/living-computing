@@ -466,6 +466,43 @@ attribute under := 0, image := 0;
         :unpeel(#coordinator, Lifted);
 :lines_in(Pane, _, _, _, _) :- :graphics_refused(Pane, line);
 
+% :copy_in(Pane, Src, SX, SY, DX, DY, Width, Height, Op) -- window M8's
+% rest (2026-11-26), INTERPOLATED (selector and body OURS) from window.md
+% §2.5 copy/9 (USAGE icotext util_scroll.esp:211 `:copy(W, W!hide_window,
+% W!posX, W!posY, 0, 0, SizeX, SizeY, copy)`: from the second window's
+% (SX, SY) to the first's (DX, DY), the direction INFERENCE): the block of
+% the source pane's inside drawn into this pane's inside through Op.  Both
+% areas must lie wholly inside, else the method refuses loudly before
+% anything is lifted.  With only the frozen device (screen copy, save and
+% restore): the source's dots are saved while it is uncovered (A); then,
+% with this pane uncovered, its block (D) and the screen under the
+% source's block (B) are saved, A is drawn back at the source's place, the
+% block copied to this pane `copy` and saved (E), B and D drawn back, and
+% E drawn through Op (save_memory.esp restore/3).  So neither window's
+% other dots change, whatever lies over or between them (OURS).
+:copy_in(Pane, Src, SX, SY, DX, DY, W, H, Op) :-
+        inside(Src, SX, SY, W, H), inside(Pane, DX, DY, W, H), !,
+        value(Src!left + SX, AX), value(Src!top + SY, AY),
+        value(Pane!left + DX, BX), value(Pane!top + DY, BY),
+        :uncover(#coordinator, Src, L1),
+        cursor_off(Src),
+        :save(#save_memory, AX, AY, W, H, A),
+        cursor_on(Src),
+        :unpeel(#coordinator, L1),
+        :uncover(#coordinator, Pane, L2),
+        cursor_off(Pane),
+        :save(#save_memory, BX, BY, W, H, D),
+        :save(#save_memory, AX, AY, W, H, B),
+        :restore(#save_memory, A),
+        :copy(#bitmap_display, AX, AY, W, H, BX, BY, copy),
+        :save(#save_memory, BX, BY, W, H, E),
+        :restore(#save_memory, B),
+        :restore(#save_memory, D),
+        :restore(#save_memory, E, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, L2);
+:copy_in(Pane, _, _, _, _, _, _, _, _) :- :graphics_refused(Pane, copy);
+
 local
 
 % window M8's rest, images (OURS, see image_in/6)

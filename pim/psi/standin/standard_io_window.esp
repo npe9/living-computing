@@ -393,6 +393,33 @@ attribute permission := out;
 % loudly: a style other than solid, a width under 1, an op that is not an
 % op name (TM-785 p40's integer ops are colours; the screen has none),
 % a negative angle, a pattern that is neither fix nor a pattern.
+% Window M8's rest, COPY: copy/9 `(W, Src, SX, SY, DX, DY, Width, Height,
+% Op)` (USAGE icotext util_scroll.esp:211: from Src's (SX, SY) to W's
+% (DX, DY), the direction INFERENCE, window.md §2.5) between two shown
+% windows (window_pane.esp copy_in/9).  Refused loudly: Src not a shown
+% window (util_scroll's own source is a 2000 x 2000 `hide_window` never
+% shown: an off-screen bitmap, which the frozen device lacks -- its save
+% memory is 65,536 words, a 2000 x 2000 image 250,000), the other held
+% form `(W, DX, DY, Src, SX, SY, Width, Height, Matrix)` (util_scroll.esp
+% :218, :222: a scaled copy, which no device primitive does), an op that
+% is not an op name.
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): copy.
+:copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- integer(Src), !, :graphics_refused(W, matrix_copy);
+:copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- op_name(Op), !,
+        pane_of(W, P), pane_of(Src, Q), :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
+:copy(W, _, _, _, _, _, _, _, Op) :- :graphics_refused(W, Op);
+% Window M8's rest, PAINT, A STOP: paint/5 `(W, X, Y, Pattern, Op)` (USAGE
+% kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1, 1, Pattern1, set)`)
+% fills the region around (X, Y) (a seed fill: INFERENCE from the name and
+% the one-dot seed).  Finding the region's edge needs the frame's dots, and
+% no frozen device primitive gives a dot's value to the program
+% (psi/winfb.py: fill, line, glyph and copy write; save and restore move
+% dots between the frame and save memory unseen), so paint/5 is refused
+% loudly here and not stood in (psi/README.md "Window M8's rest").
+% INTERPOLATED (selector: window.md section 2.5, cited above; body OURS):
+% paint, refused.
+:paint(W, _, _, _, _) :- :graphics_refused(W, paint);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_circle.
 :draw_circle(W, CX, CY, R, Wd, St, Op) :- outline(W, CX, CY, R, R, Wd, all, St, Op);

@@ -58,6 +58,16 @@ attribute used := [];
         without(Class!used, Id, Used),
         Class!used := Used;
 
+% :restore(#save_memory, Area, Op) -- window M8's rest (selector and body
+% OURS): as restore/2, the saved dots drawn through Op (the device's
+% restore takes an op, psi/winfb.py), the area freed.
+% INTERPOLATED (selector and body OURS): restore; basis above and in the
+% head comment.
+:restore(Class, [Id, Base, Size], Op) :-
+        :restore(#bitmap_display, Id, Op),
+        without(Class!used, Id, Used),
+        Class!used := Used;
+
 % :put_back(#save_memory, Area) -- window M7, OURS (selector and body):
 % the saved dots drawn back where they were (copy); the area stays in
 % use (window_pane.esp move_to/3 draws it back twice).
