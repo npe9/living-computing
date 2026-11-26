@@ -20,11 +20,11 @@ directory and decoded per ISO-2022-JP segment. Line numbers are the files' own.
 
 | # | form | finding | recommendation | grade of the fix |
 |---|---|---|---|---|
-| 1 | `paint/5` | TM-785 p20 prints its meaning: fill **the closed region containing the point** with the pattern. Connectivity is not printed. Held callers fill triangles bounded by 1-dot slanted lines, which only a 4-connected fill keeps inside | a span (scanline) seed fill, 4-connected, over the seed's region of equal value (every held seed is white inside black), the pattern anchored as `draw_filled_rectangle`'s. It needs dots read back (row 2) or a fill engine in the box | INFERENCE (rule), OURS (body) |
+| 1 | `paint/5` | TM-785 p20 (PROSE, a drawing-tool menu item) describes the operation: fill **the closed region containing the point** with the pattern. That `paint/5` is this operation is INFERENCE. Connectivity is not printed. Held callers fill triangles bounded by 1-dot slanted lines, which only a 4-connected fill keeps inside | a span (scanline) seed fill, 4-connected, over the seed's region of equal value (every held seed is white inside black), the pattern anchored as `draw_filled_rectangle`'s. It needs dots read back (row 2) or a fill engine in the box | INFERENCE (rule), OURS (body) |
 | 2 | `save_image/6` | `(W, String, X, Y, Width, Height)`. The caller allocates a 16-bit string of ceil(W/16) x H x planes words. `save_image` fills it, and the program then copies it and writes it out as an ESP class: **words read by the program**. Printed read-back exists since 1.0: TM-125 p17 `get_point_value/4` | one new primitive, **read a rectangle** (frame or bitmap memory → words). It also serves `get_point_value/4`, held `copy_to_string/11` and `paint/5` | the primitive OURS; the need PRINTED-INTERFACE + USAGE |
-| 3 | off-screen `hide_window` | TM-225 p10: hidden windows' images live in save areas in the **display's own bitmap memory**, "several to several tens of times" the frame memory, and output to a hidden window **writes its save area**. TM-125 (trtm_window W5): `bare_window` allocates the bitmap area at create time. Three held callers draw on windows never activated | **drawing surfaces**: every primitive takes a target, the frame or an area of bitmap memory. Bitmap memory moves to SDRAM (H8); 2000x2000 = 250,000 words does not fit block RAM | the split PROSE; the operand OURS |
+| 3 | off-screen `hide_window` | TM-225 p10: hidden windows' images live in save areas in the **display's own bitmap memory**, "several to several tens of times" the frame memory, and output to a hidden window **writes its save area**. TM-125 ch.4 (PROSE): `bare_window` "makes the object and allocates the bitmap area"; that this happens at create is INFERENCE. Three held callers draw on windows never activated | **drawing surfaces**: every primitive takes a target, the frame or an area of bitmap memory. Bitmap memory moves to SDRAM (H8); 2000x2000 = 250,000 words does not fit block RAM | the split PROSE; the operand OURS |
 | 4 | matrix `copy/9` | the held vectors `{2,0,0,0,2,0}` and `{Min/Max,0,0,0,Min/Max,0}` (and the commented `{0.8,...}`, `{1.5,...}`) fit only a **row-major 2x3 affine map, source to destination**: x' = a·x + b·y + c, y' = d·x + e·y + f. Width and Height are the **source** extent. TM-785 p20 says the window system provides `magnify` and `expand`, and euod calls `expand/9` with factors 2,2. Only `{2,0,0,0,2,0}` is reachable in the held caller | stand in the axis-aligned case (b = d = 0), nearest dot, done above the primitive line by read-rectangle + `restore_image`-style writes, or as an integer-magnify mode in the blitter. Rotation and shear stay refused | INFERENCE (layout), OURS (sampling) |
-| 5 | TM-785 p40 `{200, 0, 100, 1, dotted, set}` | the 600 dpi page image prints exactly six elements: not an OCR error. Every held call has the `{CX, CY, RX, RY, [Width,] Pattern, Op}` layout: icotext `/8` (6 sites + 2 forwarders), gog `/6` (3 sites). No held source has a `/7`. So the printed vector is **one element short**, and which element is lost cannot be recovered | keep refusing the six-element vector. **Add the held `/8` and `/6`**, which the stand-in lacks; its `/7` rests only on the defective vector | USAGE (the two held forms); the refusal OURS |
+| 5 | TM-785 p40 `{200, 0, 100, 1, dotted, set}` | the 600 dpi page image prints exactly six elements: not an OCR error. Every held call has the `{CX, CY, RX, RY, [Width,] Pattern, Op}` layout: icotext `/8` (6 sites + 2 forwarders), gog `/6` (2 sites). None of the 18 SIMPOS archives, cil, paragraph or the 5 CESP archives has a `/7`. So the printed vector is **one element short**, and which element is lost cannot be recovered | keep refusing the six-element vector. **Add the held `/8` and `/6`**, which the stand-in lacks; its `/7` rests only on the defective vector | USAGE (the two held forms); the refusal OURS |
 
 **The single most useful extension is drawing surfaces plus read-rectangle** (rows 2-3). Together
 they unlock items 1, 2, 3, 4 (axis-aligned) and the held `get_point_value/4`, `set_point_value/4`,
@@ -60,8 +60,11 @@ engine inside the box serves only `paint/5`.
 - TM-125 (`subsystems/notes/trtm_window.md` W5; PDF p17, printed "Page 16", read here) prints
   `:get_point_value(Window, X, Y, ^Value)` and `:set_point_value(...)`, "read/write the value
   (0/1) of the pixel". Reading a dot back is part of the **1985 user interface** (PRINTED-INTERFACE).
-  The same passage says `bare_window` "makes the object and allocates the bitmap area" (PROSE), so
-  a window has a bitmap area from `create`, before `activate`.
+- TM-125's class catalogue (ch.4, PDF p8-13; `subsystems/notes/trtm_window.md` W1) says the
+  mixin `bare_window` "makes the object and allocates the bitmap area" (PROSE). Its method list
+  (ch.5) has `deactivate/1`, which keeps the image, and `kill/1`, which releases the bitmap area
+  (`subsystems/window.md` `kill/1` row; trtm_window W5). INFERENCE: a window has a bitmap area
+  from `create`, before `activate`, because the mixin that makes the object allocates it.
 - No document held describes the display controller's commands, a rasterop microcode routine, or
   the bitmap memory's size in words. `../psi_microword.md` and `../psi_acquisition.md` have no
   display or rasterop entry; the PSI-III's I/O bus is outside the PU (thesis p.130, via
@@ -100,7 +103,7 @@ documented either way.
     (posX, posY) (`warp_screen`, `scroll_*`, :172-193).
 - **kappa2** `user_if/pb/pdim.esp:579-617`: an icon window (61x64) is created, then
   `:paint(OPicon1, 1, 1, Pattern1, set)` (:606) and `write_line`, and only then `:activate`
-  (:617). The same holds for the other eleven icons (:650-1063).
+  (:617). The same holds for the other ten painted icons (:650-1063; the eleventh, :982, is commented out).
 - **paragraph** `pimos/src_util/paragraph/p_imag.esp`, `go1`-`go6` (:165-425): the window is
   created, `%:activate(Win)` is **commented out** (:174, :213, :248, :296, :352, :390), the icon
   is drawn, then `save_image` reads it (item 2).
@@ -118,8 +121,11 @@ display's bitmap memory, and output to it writes there (TM-225 p10, the OUTPUT p
 1. Each primitive (`fill`, `line`, `glyph`, `copy`, styled `line`) gets a target operand: the
    frame, or a surface = (base, pitch, width, height) in bitmap memory. `save`/`restore` become
    copies between surfaces, as TM-225's restacking is.
-2. The stand-in gives every window a surface at `create` (`bare_window` allocates the area, TM-125
-   PROSE). A window not shown draws into its surface. Showing it copies the surface to the frame.
+2. The stand-in gives a window a surface when it first needs one while not shown (OURS: lazy,
+   where TM-125's `bare_window` allocates at creation, an INFERENCE from ch.4's PROSE). A window
+   that is created and shown at once needs none until it is covered. Lazy allocation keeps block
+   RAM usable before H8. One full-screen 1280x944 window is 75,520 words, more than today's 65,536
+   (computed), so eager allocation would need H8 first. A window not shown draws into its surface. Showing it copies the surface to the frame.
    This is the save area the M7 stand-in already keeps for covered windows, now kept for
    never-shown windows too.
 3. `copy/9` takes any two surfaces.
@@ -135,7 +141,7 @@ display's bitmap memory, and output to it writes there (TM-225 p10, the OUTPUT p
 
 - The RMW stage already chooses frame or bitmap RAM per command (`WinFbBox.bsv` `bDstSave`,
   rules `rReadSave`/`wSave`, :532-557), with a base and a pitch. Only the blit sets it; the line
-  engine forces the frame (:753). Targeting a surface means address generation by (base, pitch)
+  command's start sets it False, so a line always draws on the frame (:753, `mode <= MLine`). Targeting a surface means address generation by (base, pitch)
   in the line and glyph paths too. ESTIMATE: a few hundred LUT4 while bitmap memory stays in
   block RAM.
 - The real cost is **H8**, bitmap memory behind the SDRAM controller: a line buffer or small
@@ -166,7 +172,8 @@ shown". That is the PSI's own failure mode.
 - `set_substring(St, 0, H0, St1)` copies the first plane into another string (`p_imag.esp:199`,
   `p_v_imag.esp:240`).
 - The string is written as source text by `:write(_, S, F, Name)` (:38-50): a class whose `:get`
-  returns the string, through `make_image_class_file` / `make_icon` (:54-80).
+  returns the string, through `make_image_class_file` / `make_icon` (:54-80). `make/3` (:111-129) runs `go1`-`go6` and
+  writes each string with `:write`, so the strings from `save_image` become those class files.
 - **This is how the held `profiler_*_image` classes were made.** The light_paint derivation in M8's
   rest read those saved images.
 - So the result is **words the program reads and keeps**, not a bitmap object.
@@ -200,17 +207,17 @@ shown". That is the PSI's own failure mode.
 ## 4. Item 1: `paint/5`
 
 **Signature** (USAGE): `:paint(W, X, Y, Pattern, Op)`.
-- kappa2 `pdim.esp:606` and eleven more sites. Its patterns come from `get_paint_pattern/2`
+- kappa2 `pdim.esp:606` and ten more live sites, plus one commented out (:982). Its patterns come from `get_paint_pattern/2`
   (:1081-1101), which cycles through `right_hatch`, `left_hatch`, `small_mesh`, **`rough_dotted`**
   and `dotted`, and falls back to `fix`. `rough_dotted` is a pattern name the stand-in lacks
   (`window.md` §2.5 does not list it); kappa2 `IVTMNG.ESP:1865` (commented) uses it too.
 - gog-esp `DISPPBMS.esp:117-118`.
 - cil `src/es_gin.esp:1761-1762, :1824`.
 
-**Meaning, PRINTED.** TM-785 PDF p20 (folio 15, read on the page image): 閉領域塗り潰し "fills
+**Meaning, PROSE (TRANSLATION).** TM-785 PDF p20 (folio 15, read on the page image): 閉領域塗り潰し "fills
 the closed region that contains the clicked point with the fill pattern chosen in the
 drawing-attribute window". A left double click lets the user clip the fill to a given rectangle.
-This is the PSI drawing tool's menu item (Fig. 2-13, p19), not a method page. It fixes the meaning,
+This is the PSI drawing tool's menu item (Fig. 2-13, p19), not a method page. That `paint/5` is the method behind it is INFERENCE (the name and the one-dot seed). It gives the meaning,
 a fill of the **closed region containing the seed**, but not the connectivity rule.
 
 **What the callers constrain** (INFERENCE):
@@ -339,13 +346,13 @@ found on the dots **before** drawing, so `exclusive_or` or a sparse pattern does
   (`stack_vector(Args, Length)`, `copy_element(Length-1, ...)`). `refute/3` (p32) then sends a
   method of that arity.
 
-**Every held caller** (USAGE; a full count over the 18 extracted SIMPOS archives and paragraph):
+**Every held caller** (USAGE; a full count over the 18 SIMPOS archives, cil, paragraph and the 5 CESP archives, extracted):
 
 | form | sites |
 |---|---|
 | `/8` `(W, CX, CY, RX, RY, 0, fix, set\|reset)` | icotext `imi_draw_win.esp:252, :254, :266, :268, :281, :283` |
 | `/8` forwarded `(W, X, Y, RX, RY, L, T, O)` | icotext `util_scroll.esp:116-117, :315-316` |
-| `/6` `(W, X, Y, Rx, Ry, Op)` | gog-esp `CGS_DEMO.ESP:182, :416, :424` (to `Obj!io_window`, a `standard_io_window`, :488-495) |
+| `/6` `(W, X, Y, Rx, Ry, Op)` | gog-esp `CGS_DEMO.ESP:416, :424` (to `Obj!io_window`, a `standard_io_window`, :488-495); :182 sends to the demo object's own `/6` (:413), which forwards there |
 | `/7` | **none** |
 
 So the printed vector is **one element short** of the held `/8` layout `{CX, CY, RX, RY, 1,
@@ -370,8 +377,8 @@ as CY the shape is half above the window, so 0 is probably a corrupted value as 
 2. **`read` primitive** in `winfb.py` and `WinFbBox.bsv` together, in lockstep. Then the stand-in
    bodies `get_point_value/4`, `set_point_value/4`, `save_image/6` (paragraph `go1`-`go6` and the
    `p_v_imag` save path become runnable once item 3 lands), and `paint/5` by (a).
-3. **Drawing surfaces** (target operand), with bitmap memory in block RAM first: kappa2's
-   pre-activate paint and paragraph's never-activated windows fit in it. Then H8 moves bitmap
+3. **Drawing surfaces** (target operand), lazily allocated, with bitmap memory in block RAM first:
+   kappa2's 61x64 icons (256 words each) and paragraph's 500x400 window (12,800 words) fit in it. Then H8 moves bitmap
    memory to SDRAM, which icotext's 2000x2000 canvas needs.
 4. Axis-aligned matrix `copy/9` above the line. The blitter magnify mode is optional.
 
