@@ -169,6 +169,18 @@
 !
 ! RE-PINNED 2026-11-17: CYCLES 1246 -> 1290.  Cause, measured:
 ! the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 1246, injection C leaves 1290.
+!
+! RE-PINNED 2026-11-25: CYCLES 1290 -> 1294 (docs/fidelity_plan.md A3
+! half (b)).  ATTRIBUTED, mechanism NOT diagnosed: the decimal
+! L(DU,16,4) before case 9 is now a STEPPED add -- mkSAU holds its level
+! for the field's passes, 2 clocks each (8 clocks, against half (a)'s flat
+! 4), and the level retires at the answer.  The E-box total is the same
+! row by construction, so what waits on the later retirement is not
+! named here.  Attributed
+! in scratch copies by mkSAU's switches: relocation alone (sauStepZ and
+! sauStepRecomp off) 1294, z alone 1294, both 1294; the half (a) base
+! 1290.  The atlas's own L page (PDF 120, (DU,16,4)) does not move.  A
+! MODEL pin: no page measures this sequence.
 
         SLC, 1000.0
 ! -- 1. round up ---------------------------------------------------
