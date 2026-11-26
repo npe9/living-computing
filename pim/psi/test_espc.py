@@ -695,12 +695,18 @@ class IfThenElse(unittest.TestCase):
 :n(C, X, R) :- (X == a -> R = 1 ; X == b -> R = 2);
 :h(C, X, R) :- hh(X, R);
 :k(C, X, R) :- kk(X, R);
+:hg(C, X, R) :- hgg(X, R);
+:hi(C, X, R) :- hii(X, R);
 local
 gen(1); gen(2); gen(3);
 hh(X, R) :- (X == 0, !, relative_cut_and_fail(1) ; R = one);
 hh(_, two);
 kk(X, R) :- (X == 0, !, fail ; R = one);
 kk(_, two);
+hgg(X, R) :- gen(_), (X == 0, !, relative_cut_and_fail(1) ; R = one);
+hgg(_, two);
+hii(X, R) :- (X == 0, gen(_), relative_cut_and_fail(1) ; R = one);
+hii(_, two);
 end.'''
 
     @classmethod
@@ -755,6 +761,14 @@ end.'''
                          '[[], [[1, one], [1, two]]]')
         self.assertEqual(repr([self.run_('k', x) for x in (0, 1)]),
                          '[[[0, two]], [[1, one], [1, two]]]')
+        # The level is the $or$'s caller's even after a call returned
+        # before the $or$ (hgg: gen/1 leaves choice points) or inside the
+        # clause before db (hii; held add_record/5.35#2#1#1 @533-536 sends
+        # set_status/6 before its db): both fail at X=0
+        self.assertEqual(repr([self.run_('hg', x) for x in (0, 1)]),
+                         '[[], [[1, one], [1, one], [1, one], [1, two]]]')
+        self.assertEqual(repr([self.run_('hi', x) for x in (0, 1)]),
+                         '[[], [[1, one], [1, two]]]')
 
     def test_held_rows(self):
         lib, r = kappa2()
@@ -792,7 +806,9 @@ end.'''
     #   and test_shape FAIL, nothing else.
     # - C, kl0 op_relative_cut_and_fail cutting to self.b0 (the $or$'s
     #   own barrier, a plain `!, fail`): test_relative_cut_and_fail_on_kl0
-    #   FAIL (h(0) answers [0, two]), nothing else.
+    #   FAIL (h(0) answers [0, two]), nothing else.  Re-run after the hg/hi
+    #   cases were added, with the h assertion deleted from the copy:
+    #   the hg assertion FAILs (hg(0) answers [0, two]).
     # - D, peels_into_caller always False: test_held_rows ('moves and
     #   environment' != 'under an inlined ->') and MacroBank.test_kappa2
     #   (compared 13167 != 13133) FAIL, nothing else.
