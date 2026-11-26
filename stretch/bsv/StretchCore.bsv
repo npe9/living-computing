@@ -2038,14 +2038,20 @@ module mkStretchCore(StretchCore);
         // both radices) has spent the unit's passes, 2 clocks each with
         // Table 3's z and recomplement (mkSAU), in the box.  That IS the
         // row's byte term, so the row is charged without it
-        // (sauSteppedRowClocks) and NOTHING is taken off: what is left of
-        // the row -- its fixed part -- runs from the answer, as the
-        // termination does on the machine.  The unit's time is not
-        // bounded by the row, so there is no overrun to report.
+        // (sauRowWithUnit, the row with the unit's own clocks in place of
+        // the term it steps, less those clocks) and NOTHING is taken off:
+        // what is left of the row -- its fixed part -- runs from the
+        // answer, as the termination does on the machine.  Since step 2
+        // the decimal M+ family is stepped too (and, as they follow, the
+        // K family and SRD's round).  The unit's time is not bounded by
+        // the row, so there is no overrun to report.
         DecodedInstr hdi = la.headLevel().di;
         Bit#(16) ebudget = eboxClocks(hdi) + boxX;
         if (sauOwn matches tagged Valid .u)
-          ebn = eboxClocks(hdi) - sauSteppedRowClocks(hdi);
+        begin
+          Bit#(16) rw = sauRowWithUnit(hdi, u);
+          ebn = (rw > u) ? rw - u : 0;
+        end
         else begin
           if (boxK > ebudget)
             $display("StretchCore: A BOX OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
@@ -2069,7 +2075,7 @@ module mkStretchCore(StretchCore);
         // well (the note on the other branch); `elapsed` already holds it.
         Bit#(16) budget = budgetClocks(di, taken) + boxX;
         if (sauOwn matches tagged Valid .u)
-          budget = budgetClocks(di, taken) - sauSteppedRowClocks(di) + u;
+          budget = budgetClocks(di, taken) - eboxClocks(di) + sauRowWithUnit(di, u);
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
         done = isHalt(di, o.next, pc);
       end

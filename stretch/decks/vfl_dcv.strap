@@ -57,6 +57,16 @@
 ! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
 ! residuals" item 7).  With that mechanism removed the run is 1049 again;
 ! no value moved.
+! CYCLES 1027 -> 1440, 2026-11-26 (docs/fidelity_plan.md A3 half (b) step
+! 5): mkSAU steps CV / DCV's accumulator terms (DCV binary to decimal only:
+! DCV D-B keeps its fitted s/4 = 1, see the fidelity plan).  Perf. Char. Vol. 1 Table 3
+! (printed p.3-9, PDF 27, read in the image): B-D DCV .6(s + u/8 + 1), full
+! word 63.0 us; D-B DCV .6(s/4 + 2) -- s the accumulator's significant bits
+! (or digits), u the result.  The old charge was eboxClocks' flat 20 / 18,
+! fitted at the atlas's one accumulator (+1 at offset 20); this deck's
+! operands are up to 80 significant bits (10^24), so its B-D DCVs now take
+! their s and u.  Cause MEASURED: StretchSAU's sauStepCvtAcc := False gives 1027
+! again (the unstepped-converter count) with every check passing.
 
         SLC, 1000.0
 ! ---- F. Figure 19, the five statements as printed ------------------
