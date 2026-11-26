@@ -106,8 +106,9 @@ reaches its limit, not only when collect_garbage asks.  What is held:
   - VPIM (ANALOGY, src/basics/bsc_heap_page.psl.c): the heap's end is
     the end of the half in use (b_InitCurrentHeapEndPtr :340-345); an
     allocation past the end less _HEAP_END_INSURANCE_OFST, 4096 words
-    (:32), sets _PAGE_ALLOC_FAIL_EVENT (b_IfHeapLimitWarning, :86-90,
-    :197-200); between reductions the event handler then asks for the
+    (:32), sets _PAGE_ALLOC_FAIL_EVENT (b_IfHeapLimitWarning, :86-90;
+    an allocation of several pages past the end sets it too and fails
+    soft, returning EOL, :197-200); between reductions the event handler then asks for the
     collection (f_event_handler_main.psl.c f_SelfIntHandler :272-274,
     f_RequestLocalGC); one past the end itself is "PANIC Heap
     Overflow" (:73-74).
