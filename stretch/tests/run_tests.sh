@@ -2394,7 +2394,8 @@ run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator k
 # RE-PINNED 2026-11-17: CYCLES 1246 -> 1290.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 1246, injection C leaves 1290.
 # CYCLES 1290 -> 1294, 2026-11-25 (fidelity_plan.md A3 half (b)): the
 # decimal L before case 9 is a stepped add now; the deck's header has the
-# attribution (mkSAU's switches; relocation alone gives 1294).
+# attribution (mkSAU's switches; relocation alone gives 1294).  Mechanism
+# not diagnosed; no atlas case supports or contradicts the move.
 run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1294+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
@@ -2935,6 +2936,8 @@ run "BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program
 # clocks a pass (+(DU,16,4): 4 passes, 8 clocks, against half (a)'s flat 4)
 # and each retires at the answer.  Attributed by mkSAU's switches in
 # scratch copies: relocation alone 868, z alone 868, both 868; base 859.
+# ATTRIBUTED, mechanism not diagnosed (the E-box total is the same row by
+# construction); no atlas case supports or contradicts the move.
 # Every other pin of the deck (WHEREL, WHERES, STWS, OUTL, ZOUT, MEMREADS
 # 66, the trails) is unchanged.
 run "BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/dec_box_release.strap StretchDecBoxRelTb \

@@ -449,14 +449,23 @@ HALF (b), FIRST STEP DONE 2026-11-25: THE ADDER TERMS OF L, LWF, + AND +MG
     binary (B,n,1) 0 -> +0.53 and decimal (D,8,4) 0 -> +0.89: every one
     stays within 1 clock. No non-crossover case leaves the 1-clock band.
     KEPT, on that reading; the crossover excess is the store/fetch path's
-    (A6), not the adder's.
+    (A6), not the adder's. CHECKED on the TSVs: after z, `+` and `+MG`
+    sit in both WB XOVR columns at a median +4.99, the same constant as L
+    and LWF (+4.97, which have no z and did not move): z brings the adds
+    ONTO the crossover's constant, it does not overshoot it. This keeps a
+    term against the brief's per-column rule (0 toward, about 80 away in
+    each WB XOVR column), and is the owner's call; the alternative,
+    `sauStepZ := False`, leaves the 3,260 cases at 1,811 within 1 and
+    2,314 within 3.
   - The recomplement's 12 away are WB XOVR INVERT SIGN (`+MG` (BU,64,8)
     +3 -> +5). Its 40 toward are the same instruction's other columns
     (-2 -> 0).
 - MCP boot (the six `run_mcp_*` IPL / P1 sections, `STRETCH_HALT_REPORT`),
   after the relocation and after all three: every check passes both times.
   Halt clocks against the base: relocation -10, -10, -10, +8, +25; all
-  three -2, -2, -2, +16, +65 (boot, decode, assign, past-move, p1deck).
+  three -2, -2, -2, +16, +65 (boot, decode, assign, past-move, p1deck);
+  after the relocation and z alone (recomplement off, the final tree's
+  unstepped timing) -2, -2, -2, +16, +33, every check passing.
   No term broke the boot, so no budget term was found covering a memory
   access.
 - THE WHOLE VFL ATLAS (PDF 102-189, 18,238 cases) against the half (a)
@@ -488,6 +497,12 @@ HALF (b), FIRST STEP DONE 2026-11-25: THE ADDER TERMS OF L, LWF, + AND +MG
   vectors. Injections, each in a scratch copy: `sauStepZ` off fails 1, 2,
   3, 5 (the carry and borrow vectors); `sauStepRecomp` off fails 4 and 7
   (7 on `ownClocks`, since the datapath's recomplement still takes 4).
+- NOT RE-MEASURED: mkSAU's F1 area (the 7,001 LUT4 above is half (a)'s;
+  the 16-digit chain, the carry register and the request's 128-bit add are
+  new); the FP atlas pages (the FP halt lines are unchanged). No suite
+  check pins z or the recomplement THROUGH THE CORE: both moved pins come
+  from the relocation alone (candidates: the Figure 12 `+MG` and Figure 14
+  decks, whose unpinned halt clocks moved).
 - LEFT for (b): the M+ family (Table 3: .6(x/y), unlike AB > CD .6(x/y +
   1); M+1 .6(c + 1)), the K family (.6(x/y + w/r) and the early exit on an
   inverted sign, the +28), decimal SRD's round (no page at a nonzero

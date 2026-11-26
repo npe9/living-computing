@@ -1110,7 +1110,13 @@ endmodule
 //   8  signed binary, one data byte and the sign pass: 2 passes  4
 //   9  the unstepped control (sauNoSteps), 1 + 1: half (a)'s 4
 //      clocks (rl_add's note), ownClocks() Invalid               4
-// INJECTIONS: recorded in fidelity_plan.md A3 (b).
+// INJECTIONS, OBSERVED 2026-11-25 (each in a scratch copy of this file):
+//   * sauStepZ := False: vectors 1, 2, 3 and 5 FAIL on clocks (2, 2, 2, 4
+//     against 4, 8, 4, 6) -- the carry and borrow vectors -- and the rest
+//     pass.
+//   * sauStepRecomp := False: vector 4 FAILS on clocks (4 against 10) and
+//     vector 7 on ownClocks (the unit reports 2 while the datapath's
+//     recomplement takes 4); the rest pass.
 // ---------------------------------------------------------------------
 typedef 10 NStepVec;
 

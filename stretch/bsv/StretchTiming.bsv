@@ -525,7 +525,10 @@ function Bit#(16) eboxClocks(DecodedInstr d);
         // E-box's fixed part is 3.6 us, not 2.4.  (+'s unsigned decimal
         // rows sit about one clock higher and its binary rows from 8 bits
         // on about half a clock; the signed decimal rows are exact.  Not
-        // charged.)
+        // charged HERE: since fidelity_plan.md A3 (b), 2026-11-25, +, +MG
+        // and decimal L / LWF are charged this row LESS its 2 b by
+        // StretchCore, and mkSAU's stepping supplies the bytes plus Table
+        // 3's z, the carries those rows show, and the recomplement.)
         6'b000101, 6'b100101, 6'b000001, 6'b100001: e = 12 + 2 * b;
         // M+, M+MG, ST, SRD -- the STORING operations.  "All VFL stores
         // are fetch-and-stores" (Vol. 1 printed p.2-3, PDF 10, item 6).
