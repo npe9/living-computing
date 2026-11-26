@@ -37,6 +37,10 @@
 //                        cell, so the variable stays one variable,
 //                        and the elements are marked.
 //
+// markElement also takes a list cell, as a structure of two elements,
+// the car and the cdr (PIMOS's compiler emits mark_element on a list:
+// library/compiler/body.kl1:437-460).
+//
 // The caller checks that v is a vector of at least one element.  The
 // box checks i against the size: ok is False when it is out of range
 // (nothing is allocated then).
@@ -107,6 +111,15 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     h <= 0;
     if (q.k == VKNew || q.k == VKBuild) begin
       n <= q.i;
+      st <= VGo;
+    end
+    else if (q.k == VKMark && (q.v.tag & 8'hfe) == tag_LISTo) begin
+      // markElement on a list cell: its car (0) and cdr (1), at the
+      // list's address with no header, as a short vector's elements
+      // (PIMOS library/compiler/body.kl1:437-460 emits mark_element
+      // on a list for car and cdr; pimm.py i_mark_element)
+      src <= cellAddr(q.v);
+      n <= 2;
       st <= VGo;
     end
     else if (isLongVector(q.v)) begin

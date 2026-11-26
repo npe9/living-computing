@@ -1058,8 +1058,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_mark_element) begin
       // mark_element(Vector, Position): the element's MRB on, in the
-      // vector
-      if (!isVec(a) || !isInt(b)) stop(EndUnimp);
+      // vector; on a list, Position 0 is the car and 1 the cdr (the
+      // vector box)
+      if (!(isVec(a) || isList(a)) || !isInt(b)) stop(EndUnimp);
       else begin
         vbox.markElement(a, b.val);
         st <= XMkEl;

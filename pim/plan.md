@@ -344,11 +344,18 @@ test or an explicit label.
    `docs/binary_reverse_engineering.md` 1.4, "R8, the other four").
    The samples' `top` modules stay unrun by decision (they call
    `builtin:print`/`readint`, resolved inside the held compiler). R8
-   is done. *R9 started (2026-11-26):* MGTP/G (IFS No.22), whose
-   manual prints its procedure on PIMOS's own tools and its N-Queens
-   results; on the reference its two modules compile and load, and our
-   6-Queens axioms stop at `mark_element` on a list
-   (`docs/pimos_roadmap.md` R9 row).
+   is done. *R9 done (2026-11-26):* MGTP/G (IFS No.22), whose manual
+   prints its procedure on PIMOS's own tools and its N-Queens results,
+   runs by that procedure in lockstep on both models (APPS `mgtp_q6`,
+   `mgtp_q8`, `mgtp_pf6`): 4 models for 6-Queens and 92 for the
+   manual's 8-Queens, every solution once; it needed `mark_element` on
+   a list cell (PIMOS's compiler, `body.kl1`:437-460), now on both
+   models. The reduction counts (21,497 and 438,279 on MERC, 11,048 on
+   PF) differ from the manual's (18,759, 384,567, 10,949), partly by
+   our merger stub's runs, which count as reductions; the held PIMOS
+   refuses the manual's `relink(hyper_o)` for a package reason, and it
+   is not needed (`docs/pimos_roadmap.md` R9 row;
+   `docs/binary_reverse_engineering.md` 1.4, "R9, MGTP/G").
 
    **KL1-B execution design (milestone 2).** The model's current ISA is
    the diagnostic stand-in; KL1-B is a separate execution path. The
