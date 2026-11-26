@@ -71,6 +71,10 @@ attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
           boxed := none;
 % window M7, OURS: the save area holding the dots under the menu.
 attribute under := 0;
+% window M7, OURS: while the pop-up is lifted off the screen so that a
+% window under it can write (coordinator.esp uncover/3), the area holding
+% its own dots (0: on the screen).
+attribute image := 0;
 
 % :item_at(Menu, X, Y, Label, Value) -- OURS: the item under (X, Y), else
 % fail.
@@ -90,6 +94,26 @@ attribute under := 0;
         nth(Menu!columns, C, Column), nth(Column, R, _), !,
         rebox(Menu, {C, R});
 :box_at(Menu, _, _) :- rebox(Menu, none);
+
+% :lift(Menu) and :lay(Menu) -- window M7 (selectors and bodies OURS, as
+% window_pane.esp's): the pop-up's own dots saved and what was under it
+% drawn back; then what is under it saved and its dots drawn back.  A
+% window under an open pop-up writes between the two (coordinator.esp
+% uncover/3), so its output goes into the pop-up's save area (TM-125
+% p6-7, PROSE: a temporary window saves what it covers and is never
+% hidden by an ordinary window).
+% INTERPOLATED (selector and body OURS): lift; basis above.
+:lift(Menu) :-
+        :save(#save_memory, Menu!x, Menu!y, Menu!w, Menu!h, Image),
+        Menu!image := Image,
+        :restore(#save_memory, Menu!under),
+        Menu!under := 0;
+% INTERPOLATED (selector and body OURS): lay; basis above.
+:lay(Menu) :-
+        :save(#save_memory, Menu!x, Menu!y, Menu!w, Menu!h, Under),
+        Menu!under := Under,
+        :restore(#save_memory, Menu!image),
+        Menu!image := 0;
 
 % :erase(Menu) -- OURS (see the head comment): window M7, the dots under
 % the menu restored from its save area (the box goes with them).

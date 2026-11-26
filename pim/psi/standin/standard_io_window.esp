@@ -121,7 +121,9 @@ class standard_io_window has
         :new(Class, W),
         W!options := Options,
         :create(#stream, Input),
-        W!input := Input;
+        W!input := Input,
+        permission(Options, P),
+        W!permission := P;
 
 instance
 
@@ -135,6 +137,11 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 % window M7, OURS: the rectangle given by reshape/5 ([X, Y, Wd, Ht]; []
 % none).
 attribute place := [];
+% window M7, the output permission (out, wait, show or notify; window.md
+% §4.1, coordinator.esp "OUTPUT PERMISSION"): the held create option
+% `permission(P)` (USAGE: 63 `out`, 13 `show`) or set_permission/2; `out`
+% when neither is given (OURS: TM-225 p11 makes ① wait the default).
+attribute permission := out;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
 :set_font(W, F) :- W!font := F;
@@ -235,6 +242,22 @@ attribute place := [];
         reselect(W);
 :has_been_reshaped(_);
 
+% :set_permission(W, P) -- window M7, INTERPOLATED (body OURS) from
+% window.md §2.2 `set_permission/2 (W,out|show|...)` (USAGE gog-esp
+% DISPB3.ESP:377) and the four permissions of TM-125 p6 and the ATTRIBUTE
+% dialogue (out, wait, show, notify; TM-125 p7 Fig. 4): fails on any
+% other.
+:set_permission(W, P) :- permission_name(P), W!permission := P;
+
+% :has_been_selected(W) -- window M7, INTERPOLATED (body OURS): the
+% select notifier's callback (window.md §2.1, §2.12: kappa pbwin's
+% after-demon on it proves a SIMPOS primary; paragraph
+% profiler_view_window defines its own).  The coordinator sends it after
+% a window is selected (select_window/2).  This default primary does
+% nothing (OURS); a held subclass's own method or demon runs instead or
+% after it.
+:has_been_selected(W);
+
 % :deselect_window(W) -- window M5, INTERPOLATED (selector and body OURS)
 % from TM-126 p7 (PROSE, window.md §4.1): another window was selected,
 % so this one's cursor goes.
@@ -292,6 +315,17 @@ size(Options, 40, 10) :- unbound(Options), !;
 size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
 size([_ | Os], C, R) :- !, size(Os, C, R);
 size(_, 40, 10);
+
+% the held option permission(P) (window M7); out when none
+permission(Options, out) :- unbound(Options), !;
+permission([{permission, P} | _], P) :- permission_name(P), !;
+permission([_ | Os], P) :- !, permission(Os, P);
+permission(_, out);
+
+permission_name(out);
+permission_name(wait);
+permission_name(show);
+permission_name(notify);
 
 position(Options, manipulator, 0) :- unbound(Options), !;
 position([{position, X, Y} | _], X, Y) :- !;

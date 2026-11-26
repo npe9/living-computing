@@ -22,14 +22,19 @@ Each screen is a live kl0 run, the same run test_espc.py Window pins:
   - manip, hidden, reshaped (window M7): with a second requester's window
     over the Login PIMOS window, the window manipulator opened on it by
     the middle button; that window hidden under the other by HIDE; it
-    reshaped by RESHAPE (test_win_m7_manip).
+    reshaped by RESHAPE (test_win_m7_manip);
+  - expand, windows, notify (window M7's other items and permissions):
+    window 2, moved clear of window 1, grown by EXPAND; the
+    manipulator's MENU submenu listing the windows (test_win_m7_items);
+    the notify window of window 2, covered by window 1 as it echoes
+    (test_win_m7_permissions).
 The PNG is the whole device frame, 1,280 x 1,024 dots, one bit a dot
 (psi/windev.py png_bytes, stdlib zlib only); the frame's PBM sha256 is
 printed beside it and must equal the test's pin.
 
 Use:  python3 -I psi/winshot.py OUTDIR [STAGE ...]   (stages: name,
       password, login, bridged, console, menu, over, popup, sweep, manip,
-      hidden, reshaped; all when none is given)
+      hidden, reshaped, expand, windows, notify; all when none is given)
 """
 import os
 import sys
@@ -39,7 +44,8 @@ sys.path.insert(0, HERE)
 
 NAMES = {'console': 'pimos_console', 'menu': 'system_menu', 'over': 'menu_over_window',
          'popup': 'create_kill_popup', 'sweep': 'rubber_band', 'manip': 'window_manipulator',
-         'hidden': 'manipulator_hide', 'reshaped': 'manipulator_reshape'}
+         'hidden': 'manipulator_hide', 'reshaped': 'manipulator_reshape',
+         'expand': 'manipulator_expand', 'windows': 'manipulator_menu', 'notify': 'notify_window'}
 
 
 def main(argv):
@@ -55,7 +61,8 @@ def main(argv):
     T.Window.setUpClass()
     t = T.Window('test_win_m5_login_screen')
     stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep',
-                                                   'manip', 'hidden', 'reshaped']
+                                                   'manip', 'hidden', 'reshaped', 'expand', 'windows',
+                                                   'notify']
     bad = 0
     for stage in stages:
         if stage == 'bridged':
