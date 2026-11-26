@@ -510,6 +510,340 @@ HALF (b), FIRST STEP DONE 2026-11-25: THE ADDER TERMS OF L, LWF, + AND +MG
   converter rows; the relocation's one-byte -1 (above) undiagnosed; the
   byte-wide datapath (F1). The multiplier terms are A4's.
 
+HALF (b), STEP 2 DONE 2026-11-26: THE DECIMAL M+ FAMILY (M+, M+MG, M+1)
+(`StretchSAU.bsv`'s `SauStepCls` / `SauStMem` / `SauStOne`, `StretchExecute.bsv`'s
+`vflDecFieldSteps`, `StretchTiming.bsv`'s `sauRowWithUnit`, which replaces
+`sauSteppedRowClocks`):
+- Pins for step 1's terms through the core came first (commit 73dc325b):
+  `fig14_sign_modifiers.strap` CYCLES=168 and `plus_mg.strap` CYCLES=548.
+  `sauStepRecomp := False` gives 162 / 546; `sauStepZ := False` leaves both
+  at 168 / 548, so z is still unpinned through the core.
+- `SauAddSteps` carries a `cls`, the Table 3 row group (Vol. 1 printed p.3-7,
+  PDF 25, read in the image), and the unit steps each class by its own
+  equation:
+  - M+, M+MG: .6(x/y); "Unlike signs AB > CD, add .6(x/y + 1)". There is no
+    z.
+  - M+1: .6(c + 1); unlike signs .6(x/y) for the true result, .6(2x/y + 1)
+    for the complement.
+  - The switches are `sauStepMemRecomp`, `sauStepOneCarry` and
+    `sauStepOneComp`.
+- The row's own term is now taken out per class (`sauRowWithUnit`).
+  Step 1's `2b` cut would underflow M+1's flat 21/22.
+  - M+ and M+MG are charged max(R, 17 - f + u). R is the row, f = 2 for a
+    whole unsigned word, u = the unit's clocks. With like signs this is
+    exactly R. The row's floor of 21 + b at one or two bytes stays a
+    floor, which is not the adder's.
+  - M+1 is charged max(R, 15 + u). The INVERT rows of PDF 126 print 16 +
+    2b from (DU,16,4) up, Table 3's true-result count over a fixed 16.
+- Only DECIMAL M+ reaches the unit. Binary M+, M+MG and M+1 are computed
+  inline and their rows did not move. Their INVERT rows (BU and B) carry
+  the same -2..-26 residuals.
+- Atlas, the M+ pages (PDF 117, 119, 126; forwarding 144, 146, 153; 2,150
+  cases). Each run is in a frozen copy with `--rebuild`. A first `all`
+  run reused the relocation's simulator, because rsync keeps the source
+  mtime, and showed no moves. It was discarded.
+  - CORRECTED 2026-11-26 (step 3). The `all` run recorded at commit
+    fee9be22 was ALSO partly stale. bsc's `-u` reused a `.bo` compiled
+    with `sauStepOneComp` off, so that run equals a fresh run with that
+    switch off, case for case.
+  - The table below is the fresh re-measurement: `meas.sh` touches the
+    synced sources, and the tree is 6af7078f plus step 3, which touches
+    no M+ path.
+
+  | step | within 1 before -> after | within 3 before -> after | toward | away |
+  |---|---|---|---|---|
+  | relocation, with M+1's unlike x/y (`sauStepMemRecomp`, `...OneCarry`, `...OneComp` off) | 572 -> 630 | 984 -> 1,046 | 151 | 75 |
+  | + all three switches on | 630 -> 738 | 1,046 -> 1,157 | 271 | 13 |
+  | of which `sauStepOneComp` (the M+1 complement; the rest is M+ / M+MG's recomplement) | 732 -> 738 | 1,157 -> 1,157 | 31 | 11 |
+  | all against batch55 | 572 -> 738 | 984 -> 1,157 | 396 | 54 |
+
+  - **Relocation.** M+1's unlike signs now cost .6(x/y). This takes PDF
+    126's INVERT (D,32..64,4) from -10..-26 to within 0.4 (121 toward for
+    M+1).
+    - The 75 away are all 2 clocks or less: the one-byte hold shift of
+      step 1, which is not diagnosed further, plus WB XOVR columns already
+      23 or more under the page (A6).
+    - 22 of the 75 stay within 1 clock.
+  - **The recomplement.**
+    - M+MG's decimal INVERT rows, D and DU at every field and every
+      column, land within 0.75 clocks: for example (DU,48,4) ni_ext goes
+      from -26.0 to -0.01.
+    - M+'s unsigned INVERT rows move HALF way, for example (DU,32,4) from
+      -18 to -9. M+ rewrites its own operand, and in the model the
+      atlas's repetitions alternate: 0 - 444 recomplements and stores
+      444, then 444 - 444 = 0 does not. The page recomplements on every
+      repetition. One candidate is that the machine recomplements on
+      equal magnitudes as well (a nines'-complement end-around carry).
+      That candidate is NOT implemented, because no source has been
+      found.
+    - M+ (DU,64,4) INVERT goes from -17 to +17. In the model every
+      repetition recomplements there, while the page charges half. This
+      is not explained.
+    - The term is KEPT: 240 toward, 2 away. The 2 away are M+ (DU,64,4),
+      both inside 0.05 of the same magnitude on the other side.
+  - **M+1's c term** moves no atlas case (a fresh `sauStepOneCarry :=
+    False` run is identical case for case). With the atlas's operand +1,
+    no M+1 repetition carries out of a digit. `mkSauStepTb` carries it.
+  - **M+1's complement term** moves the unsigned INVERT rows (PDF 126,
+    153): 31 toward, 11 away.
+    - Toward: for example PDF 153 (DU,16,4) ni_ext goes from -1.83 to
+      +0.94, and (DU,8,4) ni_ibox from -2.23 to +0.23.
+    - Away, 5 cases: (DU,4,4) and (DU,8,4) cells that move by 0.5 to 3
+      clocks, all still within 1.7.
+    - Away, 6 cases: PDF 153's INTERNAL columns at (DU,32..64,4), which
+      go from about 0 to +9..+17. Every one of those cells' operands is
+      the oracle's own CHOSEN value: the accumulator's left word, which M+1
+      rewrites at each repetition (`atlas_oracle.py`, "The operand is
+      whatever the accumulator set-up left there ... CHOSEN"). At the same
+      fields, the external and I-box columns, whose operand the page
+      gives, do not move and stay within 1.
+    - The term is KEPT on its source (Table 3's comment column). The
+      large excess is in cells the page does not define.
+- `mkSauStepTb`: vectors 10-16 (literal sums and clocks). Injections, each
+  in a frozen copy:
+  - `sauStepMemRecomp := False` fails 11 (4 against 10);
+  - `sauStepOneCarry := False` fails 13 (2 against 8);
+  - `sauStepOneComp := False` fails 16 (8 against 18);
+  - nothing else fails.
+- MCP boot sections (`STRETCH_HALT_REPORT=1`, private tape): every check
+  passes. Halt clocks are unchanged from batch55: boot 6,321,488, decode
+  6,304,298, assign 6,322,787, past-move 6,339,189, p1deck 6,734,524. MCP
+  runs no decimal M+.
+
+HALF (b), STEP 3 DONE 2026-11-26: THE DECIMAL K FAMILY (K, KE, KR, KF, KFE, KFR)
+(`StretchSAU.bsv`'s `SauStCmp` / `SauStCmpF`, `sauStepCmpW`, `sauStepCmpEarly`,
+`sauStepCmpWLiteral`; `StretchExecute.bsv`'s compare request):
+- Source: Table 3 (Vol. 1 printed p.3-8, PDF 26, read in the image). K, KE
+  and KR cost .6(x/y + w/r). KF, KFE and KFR cost .6(x/y). The glossary
+  (printed p.3-10, PDF 28) defines w as "the number of accumulator
+  significant bits greater than the field length".
+- The decimal compare is a stepped subtraction in mkSAU. The row's K arm
+  is 7 + u (`sauRowWithUnit`, from step 2). The immediate compares are
+  not stepped and keep half (a)'s contract.
+- **w.** It is stepped as ONE pass when the accumulator has a significant
+  digit beyond the field, and none when it has none. This is DERIVED: the
+  loop past the field ends at the first nonzero byte, which decides the
+  compare. PDF 127-129 print K exactly one byte over KF at every field
+  below 64 bits against the standard 64-bit operand, and no extra byte at
+  a whole unsigned word (w = 0).
+- **The literal w/r** counts every digit up to the accumulator's highest
+  significant one. It is kept as a switch and REJECTED by measurement.
+- **The early exit (the +28).** A compare that the signs decide (unlike
+  signs, neither one zero) takes the sign pass, one data pass and K's w
+  pass. PDF 127-132's INVERT SIGN blocks print 12 clocks unsigned and 14
+  signed at every length. The early exit is DERIVED from sau_pau_spec.md
+  section 5 (3 of the 9 paths of Fig. 3.11.12 reach TON SIR without
+  EOC1/EOC2). The pass count is read off the pages.
+- Atlas: the K pages (PDF 127-132; forwarding 154-159; immediate 177-182;
+  4,896 cases). Each run is in a frozen copy with `--rebuild`.
+  - A first `all` run was identical to the `w` run and was discarded.
+    The cause was not the testbench: `rsync -a` restored StretchSAU.bsv
+    with its old mtime, so bsc's `-u` reused the `.bo` compiled with the
+    switch off. `meas.sh` now touches the synced sources.
+  - The table's last column pair is toward / away.
+
+  | step | within 1 before -> after | within 3 before -> after | toward | away |
+  |---|---|---|---|---|
+  | relocation (K's 10 against KF's 8 taken out of the row; `sauStepCmpW`, `sauStepCmpEarly` off) | 2,114 -> 1,948 | 2,816 -> 2,830 | 268 | 492 |
+  | + w | 1,948 -> 2,114 | 2,830 -> 2,794 | 268 | 340 |
+  | + the early exit | 2,114 -> 2,264 | 2,794 -> 3,050 | 408 | 76 |
+  | all against batch55 | 2,114 -> 2,264 | 2,816 -> 3,050 | 410 | 258 |
+  | literal w/r instead (against all) | 2,264 -> 1,974 | 3,050 -> 2,676 | 32 | 560 |
+
+  - Per instruction, all against batch55: K and KR 106 toward / 62 away
+    each, KF and KFR 99 / 67 each. KE, KFE and the immediates do not
+    move.
+  - **The relocation and w, split by cell** (`tsvdiff.py --rows`; WBX =
+    the WB XOVR columns, which are A6's; INV = the INVERT SIGN block).
+    - The relocation's 492 away:
+      - 196 are non-WBX plain cells going from -0.0 to -2.0: K's extra
+        byte taken out, which w puts back;
+      - 252 are WBX;
+      - 44 are non-WBX INV.
+    - w's 340 away:
+      - 164 are non-WBX INV, already +2..+28 above the page. Their excess
+        is the early exit, which is off at that stage: with it on, those
+        rows land (below).
+      - 164 are WBX.
+      - Only 12 are non-WBX plain cells, each within 2.05 (for example
+        (D,8,4) ix_ext -1.05 -> -2.05).
+    - w's 268 toward include 184 non-WBX plain cells: the relocation's
+      -2s restored.
+    - All three terms against batch55, 258 away: 208 WBX, 34 non-WBX INV
+      (the early exit's ix_ext cells below) and 16 non-WBX plain cells,
+      every one within 2.05.
+    - w is KEPT: its source is Table 3's w/r, and its away cells are
+      attributed (the then-absent early exit, A6's WBX columns).
+  - **The early exit.**
+    - The decimal INVERT rows land on the page: for example K INVERT
+      (DU,16,4) ni_ext goes from +5.97 to -0.02.
+    - Of the 76 away:
+      - most are `_int_wbx` columns, which go to -9.1 (A6's WB XOVR
+        timing);
+      - the rest are ix_ext INVERT cells, which go to about -2.05. The
+        page prints 16.07 there, 2 clocks over the signed direct column
+        (14.0) and 4 over the unsigned (12.03); the model's indexed
+        column is 2 over its direct one. The missing clocks are in the
+        indexed path, not in the unit, so they are not attributed to this
+        term.
+    - The term is KEPT.
+- `mkSauStepTb`: vectors 17-21. Injections, each in a frozen copy:
+  - `sauStepCmpW := False` fails 18 and 20 (4 against 6 each);
+  - `sauStepCmpEarly := False` fails 20 (10 against 6) and 21 (8 against
+    2);
+  - `sauStepCmpWLiteral := True` fails 18 (8 against 6);
+  - nothing else fails.
+- Decks: every K deck and both pins pass unchanged (vfl_decimal_compare,
+  vfl_compare_field, vfl_compare_offset).
+- MCP boot sections: every check passes, and the halt clocks are
+  unchanged from step 2.
+- Binary K is computed inline and does not reach the unit. Its rows did
+  not move.
+
+HALF (b), STEP 4 DONE 2026-11-26: DECIMAL SRD'S ROUND (`SauStRnd`, `sauRndPasses`)
+- Sources:
+  - Fig. 3.11.11 Part 2 (R23-9732 PDF 265; `sau_pau_spec.md`) draws the
+    round as two cycles before the store loop: [TOF HK TON RSU] and [TOF
+    RSU TON RND].
+  - Table 3 (Vol. 1 printed p.3-7, PDF 25) charges SRD a pre-execution of
+    3.0 us against ST's 1.8: 1.2 us, two 0.6 us cycles.
+  - The two sources agree with each other and with eboxClocks' 4-clock
+    `srdRound`.
+- The decimal round (nonzero offset) is now a stepped request of two
+  passes, and the row's SRD arm is R - 4 + u (`sauRowWithUnit`).
+- No pin moves: `vfl_srd.strap` stays at CYCLES=1294 and the reproducer
+  passes. No atlas page times SRD at a nonzero offset, so there is no
+  atlas table.
+- `mkSauStepTb` vector 22. Injection observed: `sauRndPasses := 1` fails
+  22 alone (2 against 4).
+- MCP boot sections: every check passes, and the halt clocks are
+  unchanged from step 2.
+
+HALF (b), STEP 5 DONE 2026-11-26: THE CONVERTERS (LCV, LTRCV, CV, DCV)
+(`StretchVFL.bsv`'s `vflCvtFieldPasses`, `StretchSAU.bsv`'s `SauCvtSteps` /
+`sauStepCvtAcc`, `sauRowWithUnit`'s converter arms):
+- Source: Table 3 (Vol. 1 printed pp.3-8, 3-9, PDF 26-27, read in the
+  image), in 0.6 us passes:
+
+  | instruction | B-D | D-B |
+  |---|---|---|
+  | LCV | .6(x + u/8 + 1) | .6(x/y + t/4 + u/8 + 4) |
+  | LTRCV | .6(x + 3), + .6(FLc/8 - 1) beyond 48 bits | .6(x/y + 16), + .6(t/8 - 1) beyond 48 bits |
+  | CV | .6(s + u/8 + 1) | .6(s/4 + 1) |
+  | DCV | .6(s + u/8 + 1), full word 63.0 us | .6(s/4 + 2) |
+
+- `CvtReq` carries `SauCvtSteps {fixed, accS}`.
+  - `fixed` holds the passes the FIELD decides (`vflCvtFieldPasses`).
+  - With `accS`, the unit adds s from the source and, binary to decimal,
+    u/8 from its result: the accumulator terms of CV and DCV.
+  - The unit's time is max(2 x passes, the datapath's own clocks).
+- The row's own part is taken out per class:
+  - LCV and LTRCV: R - 2 x field passes + u.
+  - CV and DCV: less the passes their equation counts at the accumulator
+    the row was fitted to ("+1 at offset 20", PDF 113: s = 1, u/8 = 1),
+    so that accumulator keeps the row's time and any other is charged
+    its own s and u.
+- **DCV D-B is NOT stepped from the data.** Its s/4 is held at the fitted
+  1 (3 passes).
+  - MEASURED: with the term on, the model's CHOSEN DCV D-B field (every
+    digit from the offset to the left end) gives s/4 = 6 at the atlas's
+    first DCV (the accumulator reads 0x100000). Each repetition then
+    re-reads the previous binary result as BCD, so the operand grows: a
+    trace of PDF 139 (D,16,4) shows v growing from 0x100000 to
+    0xbc48e3997634329059a98000000 over twelve repetitions.
+  - PDF 139 and 166 print a flat 18 clocks at every field. The term
+    moved all 96 of those cells by +55.8 clocks.
+  - Either the CHOSEN field or the term's reading is wrong. Which is
+    OPEN; nothing attributes the excess elsewhere.
+- Atlas, the converter pages (PDF 136-139, 163-166, 186, 187; 2,000
+  cases): against batch55, within 1 1,076 -> 1,076, within 3 1,408 ->
+  1,408, 0 toward, 0 away. Every atlas converter cell is at the operand
+  its row was fitted to, so nothing moves by construction. The steps
+  show off the atlas.
+- Pins and decks:
+  - `vfl_dcv.strap` CYCLES 1027 -> 1440, re-pinned. Its B-D DCVs convert
+    up to 80 significant bits (10^24) and now take their s and u. The
+    cause is MEASURED: `sauStepCvtAcc := False` gives 1027 again, with
+    every value check passing.
+  - `cwf_df_fetch_type.strap` CYCLES 6110 -> 6164, re-pinned after the
+    first full suite run caught it. The switch's terms reach only the CV
+    and DCV B-D requests (the only ones carrying `accS`), and the deck
+    has one CV(BU) and one DCV(B); which of the two takes how much was
+    not traced. The cause is MEASURED: `sauStepCvtAcc := False` gives
+    6110 / 581 again, with every check passing.
+  - `vfl_convert.strap` (CV and LTRCV, MCP's time conversion) has no
+    cycle pin. It now reads 616 (598 at batch55) and passes.
+- `mkSauStepTb` vectors 23-27 (conversions, compared on r and clocks).
+  Injections observed:
+  - `sauStepCvtAcc := False` fails 24 (6 against 26), 25 (4 against 10)
+    and 26 (4 against 6);
+  - the field term ignored (`rg_cnp` set to 1 + s instead of `fixed` +
+    s) fails 26 (4 against 6) and 27 (6 against 22);
+  - nothing else fails.
+  - Vector 23 does not discriminate (the datapath floor).
+  - No check sees `vflCvtFieldPasses`' formula THROUGH THE CORE. The
+    atlas cancels it by construction, and no deck pin moves with it. The unit
+  still supports a D-B `accS` (vector 26); only the core's DCV D-B
+  request leaves it off.
+- MCP boot sections: every check passes. The halt clocks MOVE:
+
+  | section | batch55 | `sauStepCvtAcc` off (measured before DCV D-B's `fixed` went 2 -> 3) | final |
+  |---|---|---|---|
+  | boot | 6,321,488 | 6,321,488 | 6,321,488 |
+  | decode | 6,304,298 | 6,304,298 | 6,304,298 |
+  | assign | 6,322,787 | 6,322,787 | 6,322,807 |
+  | past-move | 6,339,189 | 6,339,195 | 6,339,215 |
+  | p1deck | 6,734,524 | 6,734,452 | 6,734,492 |
+
+  - Steps 2-4 leave every MCP halt clock unchanged, so the moves are the
+    converters'.
+  - The accumulator terms account for the difference between the switch-
+    off column and the final one: assign +20, past-move +20, p1deck +40.
+  - NOT ATTRIBUTED: the moves that remain with the switch off, past-move
+    +6 (memory reads -2) and p1deck -72.
+    - LCV and LTRCV cancel by construction at u = 2 x passes. So those
+      moves are not the field term as such, unless the datapath floor
+      (max(2 x passes, the box's clocks)) exceeds the passes there.
+    - MEASURED 2026-11-26, after the suite: with `boxOwnClocks` gated
+      back to `boxKind == 1` (converters stepped but not unit-owned;
+      reverted, no diff), assign 6,322,787 and p1deck 6,734,524 return
+      to batch55.
+      - So p1deck's -72 is the unit-owned charge route itself. A `sauOwn`
+        instruction is charged `sauRowWithUnit` instead of the level
+        path's budget against `boxK`, and drops `boxX`. This is a
+        mechanism, not a sourced time.
+    - Past-move stays at 6,339,195 (reads 599,502) with the gate back.
+      Its +6 / -2 is outside that route and is OPEN.
+  - A trace of the assign section shows seven LCVs (9 field passes, no
+    accumulator term) and three CV / DCV B-D. Two of the B-D convert 34:
+    s = 6 bits, u/8 = 1, so 8 passes against the fitted 3, +10 clocks
+    each. That is assign's +20 exactly.
+  - Past-move's memory reads go 599,504 -> 599,502.
+
+HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
+"LEFT for (b)" line under step 1.
+- Every class the plan named now steps in mkSAU: the adds (step 1), the
+  M+ family (2), the K family (3), SRD's round (4) and the converters (5).
+- BINARY M+, M+MG, M+1 and K are computed inline and do not reach the
+  unit. Their INVERT rows keep their residuals.
+- OPEN, undiagnosed:
+  - step 1's one-byte hold shift;
+  - M+'s unsigned INVERT half way (the alternating repetitions) and M+
+    (DU,64,4) INVERT at +17;
+  - M+1's complement on PDF 153's internal columns (the CHOSEN operand);
+  - the K ix_ext INVERT cells at -2 (the indexed path);
+  - DCV D-B's s/4 against the CHOSEN field (step 5);
+  - MCP past-move's +6 clocks / -2 reads from the converter patch,
+    outside the unit-owned route (step 5);
+  - the unit-owned route's own effect on p1deck (-72), a mechanism with
+    no sourced time (step 5);
+  - the WB XOVR columns, which are A6's.
+- NOT RE-MEASURED:
+  - mkSAU's F1 area;
+  - the full VFL atlas in one run (each step measured its own pages);
+  - z through the core (`sauStepZ` still moves no pinned deck).
+- The byte-wide datapath (F1) remains. The multiplier terms are A4's.
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).

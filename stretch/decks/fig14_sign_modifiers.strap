@@ -75,6 +75,12 @@
 ! not."  So the last STN must store a PLAIN 200 -- a model that let
 ! the N reach an unsigned stored field would put something else there,
 ! and that is exactly what the figure's note 4 is pointing out.
+!
+! CYCLES=168 PINNED 2026-11-25 (run_tests.sh; docs/fidelity_plan.md A3 half
+! (b)).  MODEL behaviour, not a documented time: the suite's check that
+! mkSAU's stepped recomplement pass (Perf. Char. Vol. 1 Table 3, printed
+! p.3-7) reaches the core's timing.  Observed: StretchSAU's
+! sauStepRecomp := False gives 162; sauStepZ := False leaves 168.
 
 ! ONE INJECTION, MEASURED: the N suffix recognised but left inert
 ! (stripped from the mnemonic without setting the modifier) gives

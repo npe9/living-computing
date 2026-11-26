@@ -2709,9 +2709,12 @@ run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./
 # after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
 # landing checked: the counter is the instruction right after the level.
 # Injection numbers above this note were observed at the old pin.
+# RE-PINNED 2026-11-26, CYCLES 6110 -> 6164 (fidelity_plan.md A3 (b) step 5):
+# the CV(BU) and DCV(B) cases now take Table 3's B-D s and u/8 from their
+# accumulator.  Cause MEASURED: sauStepCvtAcc := False gives 6110/581 again.
 run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" ./run_program.sh ../decks/cwf_df_fetch_type.strap StretchCwfDfTypeTb \
     "PC=5043" \
-    "CYCLES=6110+-0" \
+    "CYCLES=6164+-0" \
     "MEMREADS=581" \
     "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
     "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
@@ -3304,7 +3307,10 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 1049 again,
 # every value check unchanged.
-run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1027+-0 \
+# CYCLES 1027 -> 1440, 2026-11-26 (fidelity_plan.md A3 (b) step 5): Table 3's
+# B-D DCV s and u/8 terms (printed p.3-9), stepped by mkSAU; sauStepCvtAcc :=
+# False restores 1027.  The deck's header has the source and the cause.
+run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1440+-0 \
     "F19_store:2000=0x0070001861422000" \
     "F19_acc_left:2200=0" \
     "F19_acc_right:2201=0x7006652" \
@@ -3663,8 +3669,13 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 # only I, and the written-minus "M-MG" is witnessed for the
 # floating-point operation alone.  docs/NEXT.md carries it.
 
+# CYCLES=168 (2026-11-25, fidelity_plan.md A3 (b)): MODEL behaviour, pinned
+# because it is the suite's one check of mkSAU's stepped RECOMPLEMENT through
+# the core (its `-` of A < B, Table 3's "unlike signs CD > AB").  Observed:
+# sauStepRecomp := False gives 162; sauStepZ := False leaves 168 (this deck
+# does not pin z).  The deck's header has the same note.
 run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_program.sh ../decks/fig14_sign_modifiers.strap StretchFig14Tb \
-    "PC=2062" \
+    "PC=2062" "CYCLES=168+-0" \
     "fig14_note1_a_minus_b:1774=0xaaaaaaaaaa00c808" \
     "fig14_notes234:1775=0xc80000c80800c8"
 # Reference Manual printed p.64, Figure 14 "Sign Modifier Example",
@@ -5468,8 +5479,12 @@ run "*, VFL Multiply -- the product at the PAU's own offset 20" ./run_program.sh
 # copied code that never ran -- and MCP's own multiply, printed p.72
 # line 19, is a 24-bit field.  Exchanging the two prefetch slots
 # fails this check ALONE, at 0, with the other eight unmoved.
+# CYCLES=548 (2026-11-25, fidelity_plan.md A3 (b)): MODEL behaviour, pinned
+# as the core-level check of +MG's stepped "CD > AB" pass (Table 3: .6, the
+# cleared result).  Observed: sauStepRecomp := False gives 546; sauStepZ :=
+# False leaves 548.  The deck's header has the same note.
 run "+MG, Add to Magnitude -- Reference Manual Figure 12" ./run_program.sh ../decks/plus_mg.strap StretchPlusMgTb \
-    "PC=2086" \
+    "PC=2086" "CYCLES=548+-0" \
     "pmg_fig12_x_minus_y:1064=70" \
     "pmg_fig12_larger_is_x:1065=100" \
     "pmg_fig12_forced_zero:1066=0" \
