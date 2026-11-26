@@ -692,8 +692,8 @@ from `maxBuffer`.
 
 ## The SIMPOS window framebuffer (`WinFbBox.bsv`)
 
-Milestones H0 and H1 of `../docs/simpos/window_hardware_plan.md`.
-`mkWinFbBox#(fontFile)` is the SIMPOS display's drawing hardware: a
+Milestones H0-H3 of `../docs/simpos/window_hardware_plan.md`.
+`mkWinFbBox#(fontFile, pclk, prst)` is the SIMPOS display's drawing hardware: a
 `Server#(WinFbCmd, WinFbRsp)` box with BRAMs for the 1-bit 1280×1024
 frame, the window save areas, the `test_11` font and its JIS code index,
 and engines for blit (fill, copy, save, restore, glyph), Bresenham lines
@@ -707,8 +707,8 @@ file. Its header lists the injected faults and which streams catch each.
 Measured cycle counts are in the box header.
 
 **The scan-out (`WinScanOut.bsv`, H2).** `mkWinScanOut#(box.scan)` reads
-the frame through the box's new scan port (port B; the dump keeps it
-while a dump runs). Its submodules are:
+the frame through the box's scan port (port B, in the pixel clock's
+domain since H3; the dump uses port A). Its submodules are:
 - `mkWinTiming`: one table of modes. 0 is 1920×1080@30 with the frame
   letterboxed 1:1, 1 is 1280×1024@60 DMT, 2 is 1280×1024 reduced
   blanking (OURS), 3 is 640×480 with a 2×2-OR 2:1 reduction from row
@@ -729,16 +729,56 @@ hand-written benches:
 - `WinTmdsEncTb`: every byte from every disparity state, plus runs and
   random data;
 - `WinTmdsSerTb`: the serializer, with the pixel clock made by
-  `mkClockDivider(5)` and a null crossing.
+  `mkClockDividerOffset(5, K)` for each K = 0..4 (all five alignments),
+  a null crossing, and `WinCrossModel` (below).
 
 `run_win_tb.sh` decodes every capture in Python and compares it with the
 references clock by clock: sync levels, DE, pixels, the three channels,
 the disparity bound, and the characters re-encoded. It runs 17 scan cases
 (the four modes, mode 2 without a cursor, 12 small random timings). Its
 header lists the scan-out injections and what each was seen to fail.
-The whole runner takes about two minutes (2:10 measured
-2026-11-25); `WIN_PART=h2` runs only the scan-out part. The box and the scan-out share
-one clock in Bluesim; the DP16KD's system-to-pixel crossing belongs to H3.
+`WIN_PART=h2` runs only the scan-out part (and H3's bench).
+
+**The board design (H3).** `WinFrame.bsv` (`mkWinFrame`) is the frame
+banked by hand: 80 `mkSyncBRAMCore2` of 1,024 words (one DP16KD each),
+port A in the system clock (registered request, latency 2), port B in
+the pixel clock (registered request, two registered mux levels, latency
+4). `WinUlx3s.bsv` holds `mkWinCore` (the box, the scan-out in the pixel
+domain behind a `mkSyncFIFO` of commands, and a self-test that draws
+`winscan.py`'s mode 0 test card from a load file and starts mode 0) and
+the synthesized `mkWinUlx3s`, whose serializer takes the pixel word and
+the pixel domain's `tog` bit over null crossings and derives its load
+phase from `tog` (flute-lx50's `dvi_ser` method; the serializer's
+header gives the timeline). `WinUlx3sTop.v` is the Verilog top (PLL,
+reset, ODDRX1F); `ulx3s_win.lpf` cites its pin sources.
+`WinUlx3sTb.bsv` runs `mkWinCore` with three clocks (system period 27,
+pixel 10, shift 2 time units) and checks the self-test's frame, a whole
+mode 0 frame of characters and three lines of serial bits.
+`WinCrossModel.bsv` is bench-only: it turns the pixel word to garbage
+when the shift domain samples it on the shift edge where it changes or
+in the following one, so a serializer whose sample phase is not tied to
+the pixel clock fails the serializer checks (H2's uncaught injection
+#14 is now caught). `run_win_fpga.sh` builds the bitstream: bsc
+-verilog, yosys `synth_ecp5` (with `share` left out: it merged the
+multipliers of exclusive rules into one, on the system clock's critical
+path), nextpnr-ecp5 `--85k --package CABGA381` on seeds 1-3, ecppack,
+and `../tools/win_fpga_check.py`, which fails the build if a clock
+misses its frequency, the DP16KD count is not 156, the serializer's 11
+replicated flag flops were merged, or the pclk -> sclk transfer exceeds
+2.70 ns (nextpnr 0.6 reports cross-domain paths but
+cannot constrain them). Measured results (2026-11-25, seeds 1-3, all PASS:
+sclk 384.76-418.24 MHz at 370.10, pclk 74.53-79.43 at 74.00, system
+32.65-34.91 at 25; 9,671 TRELLIS_COMB, 3,612 FF, 156 DP16KD) are in the
+plan's §5.1 and its H3 status. A full run took about 7 minutes (2026-11-25). Output: `build-winfpga/ulx3s_win.bit` (gitignored). The
+owner programs it; no agent runs this:
+
+```
+openFPGALoader -b ulx3s bsv/build-winfpga/ulx3s_win.bit   # from pim/, SRAM only
+```
+
+LEDs: 7 the PLL lock, 0 the self-test done, 1 a self-test error (a
+command status not OK), 2 toggles every 16 frames of the pixel domain
+(a period of about 1.07 s at 29.9 Hz).
 
 ## Regression
 

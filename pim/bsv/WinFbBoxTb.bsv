@@ -26,7 +26,10 @@ typedef 65536 MaxCmds;
 (* synthesize *)
 module mkWinFbBoxTb(Empty);
    RegFile#(Bit#(16), Bit#(104)) stream <- mkRegFileLoad("win_stream.hex", 0, fromInteger(valueOf(MaxCmds) - 1));
-   WinFbBox box <- mkWinFbBox("win_font.hex");
+   // one clock: the box's own clock is the scan port's (WinUlx3sTb runs two)
+   Clock clk <- exposeCurrentClock;
+   Reset rst <- exposeCurrentReset;
+   WinFbBox box <- mkWinFbBox("win_font.hex", clk, rst);
 
    Reg#(Bool) started <- mkReg(False);
    Reg#(File) fFrame <- mkReg(InvalidFile);

@@ -1,9 +1,10 @@
 # The SIMPOS windowing environment in hardware: Bluespec, Bluesim, ULX3S (plan, 2026-11-25)
 
 The owner asked, after reading `window_environment_plan.md`, to "add a plan to actually implement
-this in hardware, simulation and the ulx3s". This page is that plan. Nothing in it is built.
-Section 5's numbers come from one throwaway synthesis run in a scratch directory (Appendix A).
-**No board was touched:** no `openFPGALoader`, no serial port, no card.
+this in hardware, simulation and the ulx3s". This page is that plan. H0-H3 are built (in Bluesim
+and through synthesis; the status follows §6's table); H4 onward is not. Section 5's first numbers
+come from one throwaway synthesis run in a scratch directory (Appendix A); H3's are the BSV
+design's own (§5.1). **No board was touched:** no `openFPGALoader`, no serial port, no card.
 
 It builds on these pages and does not repeat them:
 - `window_environment_plan.md`, the software plan: its §1 display facts, §4 architecture and
@@ -637,12 +638,36 @@ clock reached only 225.23 MHz with a mod-5 counter; a one-hot phase and per-lane
 it, as in flute-lx50's lx49 serializer. Both runs are MEASURED; the source in Appendix A is the
 fixed one.
 
+**MEASURED, 2026-11-25: the BSV design (H3).** `../../bsv/run_win_fpga.sh` builds `mkWinUlx3s` (the
+box, the banked two-clock frame, the scan-out in the pixel domain, the serializer, the self-test)
+in mode 0. Tools: bsc 2026.01, Yosys 0.51 (git c4b5190229), nextpnr-ecp5 nextpnr-0.6, ecppack
+(Trellis) Version 1.4; `--85k --package CABGA381 --speed 6`; yosys `synth_ecp5` with `share` left
+out (it merged the multipliers of exclusive rules into one shared multiplier on the system clock's
+critical path, 22.89 MHz before, 33.89 after, MEASURED).
+
+| seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+|---|---|---|---|---|---|---|---|
+| 1 | 9,671 / 83,640 | 3,612 | 156 / 208 | 34.91 PASS | 74.53 PASS | 384.76 PASS | 1.47 ns |
+| 2 | 9,671 | 3,612 | 156 | 34.32 PASS | 78.72 PASS | 411.52 PASS | 1.24 ns |
+| 3 | 9,671 | 3,612 | 156 | 32.65 PASS | 79.43 PASS | 418.24 PASS | 1.53 ns |
+
+yosys's own counts: 6,505 LUT4, 3,612 TRELLIS_FF, 156 DP16KD, 559 PFUMX, 32 L6MUX21, 112
+TRELLIS_DPR16X4 (the cursor planes and small FIFOs), 4 ODDRX1F, 1 EHXPLLL. The 156 DP16KD are the
+frame's 80 banks, the save areas' 64 and 12 for the font, the glyph index and the self-test's
+stream and configuration (157 was predicted by width and depth; yosys packs one fewer). The drawing box alone was about 5,200 LUT4 in an intermediate build (it
+had been 15,800 before the frame port's request was registered in one rule: bsc had inlined the 80
+bank puts into every calling rule). The critical paths that remain: system, a frame bank's
+output through the 80:1 mux and the funnel into the glyph bitmap's address; pixel, the cursor plane
+RAMs or port B's first mux level; shift, one flop and at most one LUT. The pixel clock's margin on
+seed 1 is small (0.7%). Unchecked cross-domain delays (all through synchronizers): system → pclk
+8.45-10.06 ns, pclk → system 1.21-1.27 ns.
+
 **ESTIMATED (OURS, not synthesized):**
 
 | block | LUT4 | DP16KD | basis |
 |---|---|---|---|
 | scan-out + framebuffer + TMDS (above) | 1,300 | 80 | MEASURED |
-| `mkWinFbBox` drawing engine (fill, line, glyph, copy, funnel shifter, masks, clipping) | 2,000-4,000 | 0 | INFERENCE: comparable to one of the larger `Pimm*Box`es; to be measured at H3 |
+| `mkWinFbBox` drawing engine (fill, line, glyph, copy, funnel shifter, masks, clipping) | 2,000-4,000 | 0 | INFERENCE; MEASURED at H3 as about 5,200 LUT4 (above) |
 | glyph cache: test_11 + the 94×94 index (all six fonts: +13) | 300 | 3 + 5 (= 8; 21 with all fonts) | §2.5 |
 | save areas in block RAM (H0-H7) | 100 | up to ~100 | §2.3 |
 | cursor overlay | 200 | 0 | OURS |
@@ -667,7 +692,7 @@ fixed one.
 | clock | source | used by |
 |---|---|---|
 | 25 MHz | board oscillator, G2 (`ulx3s_85f.lpf`) | system domain: drawing engine, link, input, FEP emulator (35.03 MHz Fmax, PASS at 25) |
-| 370 MHz shift + 74 MHz pixel | **one EHXPLLL**: `ecppll -i 25 -o 370 --clkout1 74` → CLKI_DIV 5, CLKFB_DIV 74, VCO 740 MHz, CLKOP ÷2 = 370, CLKOS ÷10 = 74 (MEASURED output) | scan-out, TMDS, serializer; the pixel and shift clocks are phase-locked from one VCO, so the serializer's load uses no synchronizer. nextpnr reports the pclk → sclk transfer (`h0 <= t0`) as a cross-domain "Max delay" of 1.24 / 1.24 / 1.25 ns (mode 0, seeds 1-3) and 1.29 ns (mode 2), MEASURED, under one 2.70 ns shift period. It is **reported, not checked** against the two outputs' phase relation, so H2 must simulate the load phase and H3 must constrain it |
+| 370 MHz shift + 74 MHz pixel | **one EHXPLLL**: `ecppll -i 25 -o 370 --clkout1 74` → CLKI_DIV 5, CLKFB_DIV 74, VCO 740 MHz, CLKOP ÷2 = 370, CLKOS ÷10 = 74 (MEASURED output) | scan-out, TMDS, serializer; the pixel and shift clocks are phase-locked from one VCO, so the serializer's load uses no synchronizer. nextpnr reports the pclk → sclk transfer (`h0 <= t0`) as a cross-domain "Max delay" of 1.24 / 1.24 / 1.25 ns (mode 0, seeds 1-3) and 1.29 ns (mode 2), MEASURED, under one 2.70 ns shift period. It is **reported, not checked** against the two outputs' phase relation, so H2 must simulate the load phase and H3 must constrain it. **H3:** the serializer takes its load phase from a pixel-domain toggle (flute-lx50's `dvi_ser` method) and `run_win_fpga.sh` fails the build if nextpnr's pclk → sclk delay exceeds 2.70 ns (1.24-1.53 ns on 3 seeds, MEASURED); the five alignments and the unsafe sample ages are simulated (`WinCrossModel.bsv`). 74.25 MHz is not reachable from 25 MHz with 371.25 on the same PLL: `ecppll -i 25 -o 371.25 --clkout1 74.25` gives 370 and 82.2222 MHz (MEASURED), so mode 0 runs at 74.00 MHz, 29.9 Hz |
 | 375 + 75 MHz | `ecppll -i 25 -o 375 --clkout1 75` (VCO 750) | mode 2 |
 | 12 MHz (USB low-speed) | a second PLL output, or a 48 MHz output ÷4 | the HID host (later) |
 
@@ -698,11 +723,16 @@ The ULX3S on this machine runs Linux Flute for another session. Loading any bits
 so these steps wait for a window agreed with that session. **No agent runs them.**
 
 ```
-# from pim/, after bsv/run_win_fpga.sh has built bsv/fpga_build_win/ulx3s_win.bit
-openFPGALoader -b ulx3s bsv/fpga_build_win/ulx3s_win.bit      # SRAM, not flash
-# monitor on the GPDI connector; FTDI on US1
-python3 tools/winlink.py --port /dev/tty.usbserial-* --baud 1000000 --selftest
+# from pim/, after bsv/run_win_fpga.sh has built bsv/build-winfpga/ulx3s_win.bit (H3)
+openFPGALoader -b ulx3s bsv/build-winfpga/ulx3s_win.bit      # SRAM, not flash
+# monitor on the GPDI connector
+# later, with the link (H6): python3 tools/winlink.py --port /dev/tty.usbserial-* --baud 1000000 --selftest
 ```
+
+H3's bitstream has no link: it draws `winscan.py`'s mode 0 test card by itself at reset and starts
+mode 0 (1920×1080 at 74.00 MHz, the frame letterboxed 1:1). LED 7 is the PLL lock, LED 0 the
+self-test done, LED 1 a self-test command that returned a status other than OK, LED 2 toggles every
+16 frames (the pixel domain runs). BTN1 resets.
 
 What to see, per milestone:
 - **H4a**: a test card at 640×480 (border, the 'A' glyph run, the status band), the frame reduced
@@ -778,9 +808,29 @@ The Python references are `../../psi/winscan.py` (modes, timing model, view, che
 16 injections are in the runner's header. One is not caught: the serializer's pixel-word sample phase is
 invisible with ideal clocks in Bluesim. **The pclk → sclk load is therefore not verified by H2.** The box and
 the scan-out share one clock in the bench, so the DP16KD crossing is not verified either. Both go to H3's
-timing constraints.
+timing constraints (done at H3, below).
 
-Not yet: synthesis (H3).
+**H3 built (2026-11-25): synthesis fit, mode 0 PASS on 3 seeds** (the table in §5.1).
+- `../../bsv/WinFrame.bsv` (`mkWinFrame`): the frame banked by hand into 80 DP16KD
+  (`mkSyncBRAMCore2`, 1,024 words each), port A in the system clock (registered request,
+  latency 2), port B in the pixel clock (registered request and two registered mux levels,
+  latency 4). The box waits a cycle for every frame read (`fWait`); its cycle counts, re-measured,
+  are in its header (a full-screen scroll 384,637 cycles, ~15 ms at 25 MHz).
+- `../../bsv/WinUlx3s.bsv`: `mkWinCore` (the box; the scan-out in the pixel domain behind a
+  `mkSyncFIFO` of commands; a self-test FSM drawing the mode 0 test card from a load file) and the
+  synthesized `mkWinUlx3s` (`mkAsyncReset` per domain; null crossings to the serializer);
+  `WinUlx3sTop.v` (PLL, power-on reset, ODDRX1F) and `ulx3s_win.lpf` (pins cited in §5.3).
+- The serializer's load phase comes from the pixel clock (a toggle through a two-flop
+  synchronizer restarts the phase), so H2's uncaught injection #14 is now caught, in Bluesim by
+  `WinCrossModel.bsv` and in the build by the pclk → sclk delay check.
+- `../../bsv/WinUlx3sTb.bsv`: the core on three clocks; the self-test's frame, a whole mode 0
+  frame of characters and three lines of serial bits are checked. `WinTmdsSerTb` runs all five
+  pixel-to-shift alignments.
+- The injected faults and what each failed (OBSERVED) are in `../../bsv/run_win_tb.sh`'s header.
+
+Not yet: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
+report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback
+built (`run_win_fpga.sh` is mode 0 only), and mode 3's 640×480 is the fallback for H4a.
 
 **Order:**
 - H0-H3 are all Bluesim and synthesis. They need no board, and nothing from the owner but review.

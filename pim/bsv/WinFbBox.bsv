@@ -21,8 +21,10 @@
 // Structure (the idiomatic-Bluespec box pattern of the Pimm*Box modules
 // and mkFBox: one module, request/response, the datapath inside, each
 // engine its own rules):
-//   - frame:  mkBRAMCore2, 81,920 x 16.  Port A draws, port B dumps (and
-//             is the scan-out port of H2, the DP16KD's second port).
+//   - frame:  mkWinFrame (WinFrame.bsv, H3), 81,920 x 16 banked by hand
+//             into 80 x 1,024 x 16 block RAMs.  Port A (this clock) draws
+//             and dumps; port B, in the pixel clock domain `pclk`, is the
+//             scan-out's (the DP16KD's second port).
 //   - bitmap: mkBRAMCore1, 65,536 x 16, the save areas (plan §2.3: in
 //             spare block RAM until H8 moves them to SDRAM).
 //   - font:   mkBRAMCore1Load, 4,096 x 16, the f822 words of test_11
@@ -40,30 +42,34 @@
 //             dy > sy, words right to left when dy = sy and dx > sx.
 //   - the line engine (rules line*): Bresenham, one read-modify-write
 //             per pen dot.
-//   - the dump engine (rules dump*), on port B.
-//   - the scan port (H2): port B also answers mkWinScanOut's word reads,
-//             one a cycle, whenever no dump is running (rule scanFetch;
-//             a dump owns port B, and scan reads during it are dropped,
-//             so the picture shows stale words while a dump runs).  It
-//             adds no state and changes no command: the 11 H0/H1 streams
-//             stay byte-identical with the same cycle counts.  Bluesim
-//             runs both ports on one clock; the pixel clock domain of the
-//             real port B is H3's.
+//   - the dump engine (rules dump*), on port A (H3 moved it from port
+//             B, which is now the pixel domain's; port A is idle while a
+//             dump runs).
+//   - the scan port: port B of the frame, clocked by `pclk`, read only,
+//             WinFrameLatB cycles a read (WinFrame.bsv).  It is
+//             independent of the box: a dump no longer stops the
+//             picture.  The one-clock benches pass the box's own clock
+//             as pclk; bsv/WinUlx3sTb.bsv runs it on a separate clock.
 //   - reset: the frame is cleared (81,920 cycles) and the index built;
 //             commands wait until both finish.
 //
-// Cycles (no timing is claimed for the PSI).  Per destination word: a
-// fill 1 (set/reset/copy/reverse, a whole word) or 2 (xor, or an edge
-// word); a blit from memory 3 (whole word, copy/reverse) or 4.  A line
-// dot is 4 cycles, a dump word 2.  MEASURED 2026-11-25 in WinFbBoxTb,
-// one command over an empty stream: clear 1280x984 78,721 cycles
-// (the plan §2.4 estimate is 78,720); xor fill 1280x984 157,441;
-// scroll 1280x964 by 20 lines 231,361 (plan: ~157,000); 100 glyphs
-// 9,772 (~98 each; plan ~64); a 1,280-dot diagonal 5,121 (plan
-// ~2,560); save + restore 400x300 46,502.  A carried funnel word and
-// overlapped source/destination reads would bring copies to ~2 a word;
-// that is left for H3, when the box is synthesized.
-//
+// Cycles (no timing is claimed for the PSI).  H3 registered the frame's
+// port A request (latency 2, WinFrame.bsv) to reach the board's clock,
+// so every frame read now waits one more cycle (register fWait).  Per
+// destination word: a fill 1 (set/reset/copy/reverse, a whole word) or
+// 3 (xor, or an edge word); a blit from the frame 5.  A line dot is 5
+// cycles, a dump word 3.  MEASURED 2026-11-25 in WinFbBoxTb, one command
+// over an empty stream less the empty stream's own count (H1 figures,
+// one-cycle reads, in brackets): clear 1280x984 78,721 (78,721; plan
+// §2.4 estimate 78,720); xor fill 1280x984 236,161 (157,441); scroll
+// 1280x964 by 20 lines 384,637 (231,361; plan ~157,000); 100 glyphs
+// 12,140 (9,772; plan ~64 each); a 1,280-dot diagonal 6,401 (5,121;
+// plan ~2,560); save + restore 400x300 62,102 (46,502).  On the board the
+// box runs on the 25 MHz oscillator (WinUlx3s.bsv), so a full-screen
+// scroll is ~15 ms.  A carried funnel
+// word and pipelined frame reads (several in flight) would bring copies
+// to ~1-2 a word; that is H4's.
+
 // Unimplemented cases fail loud: a font that is not f822 or has more
 // than 255 records stops the simulation at reset.
 package WinFbBox;
@@ -73,6 +79,9 @@ import FIFOF::*;
 import GetPut::*;
 import ClientServer::*;
 import Vector::*;
+import WinFrame::*;
+export WinFrame::*;
+export WinFbBox::*;
 
 typedef struct {
    Bit#(8) op;                  // primitive << 4 | raster op
@@ -84,14 +93,6 @@ typedef struct {
    Bit#(8) status;
    Bit#(16) data;
 } WinFbRsp deriving (Bits, Eq, FShow);
-
-// The scan-out's read of the frame (port B, the DP16KD's second port):
-// put a word address, read the word in the next cycle (mkBRAMCore2, no
-// output register).  H2, for mkWinScanOut (bsv/WinScanOut.bsv).
-interface WinFbScan;
-   method Action put(Bit#(17) addr);
-   method Bit#(16) read;
-endinterface
 
 interface WinFbBox;
    interface Server#(WinFbCmd, WinFbRsp) server;
@@ -172,11 +173,11 @@ function Maybe#(Bit#(14)) indexOf(Bit#(16) c);
       return tagged Invalid;
 endfunction
 
-module mkWinFbBox#(String fontFile)(WinFbBox);
+module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Integer fbW = valueOf(FbW);
    Integer fbH = valueOf(FbH);
 
-   BRAM_DUAL_PORT#(Bit#(17), Bit#(16)) frame <- mkBRAMCore2(valueOf(FbWords), False);
+   WinFrame frame <- mkWinFrame(pclk, prst);
    BRAM_PORT#(Bit#(16), Bit#(16)) bitmap <- mkBRAMCore1(valueOf(SaveWords), False);
    BRAM_PORT#(Bit#(12), Bit#(16)) font <- mkBRAMCore1Load(4096, False, fontFile, False);
    BRAM_PORT#(Bit#(14), Bit#(8)) index <- mkBRAMCore1(valueOf(IndexSize), False);
@@ -201,11 +202,9 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
 
    // ---- blit engine ----------------------------------------------------
    Reg#(SrcKind) bSrc <- mkRegU;
-   Reg#(Bit#(20)) bSrcBase <- mkRegU;
    Reg#(Bit#(8)) bSrcPitch <- mkRegU;
    Reg#(Bit#(16)) bSrcX <- mkRegU;
    Reg#(Bool) bDstSave <- mkRegU;          // False = frame
-   Reg#(Bit#(20)) bDstBase <- mkRegU;
    Reg#(Bit#(8)) bDstPitch <- mkRegU;
    Reg#(Bit#(16)) bDstX <- mkRegU;
    Reg#(Bit#(16)) bW <- mkRegU;
@@ -214,6 +213,8 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
    Reg#(Bool) bUp <- mkRegU;               // rows bottom-up
    Reg#(Bool) bRtl <- mkRegU;              // words right to left
    Reg#(Bit#(16)) bRow <- mkRegU;          // rows done
+   Reg#(Bit#(20)) bDstRow <- mkRegU;
+   Reg#(Bit#(20)) bSrcRow <- mkRegU;
    Reg#(Bit#(12)) bK <- mkRegU;            // destination word in its row
    Reg#(Bit#(12)) bKFirst <- mkRegU;
    Reg#(Bit#(12)) bKLast <- mkRegU;
@@ -224,6 +225,7 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
 
    // ---- glyph lookup -----------------------------------------------------
    Reg#(Bit#(3)) gPh <- mkRegU;
+   Reg#(Bit#(16)) gCode <- mkRegU;
    Reg#(Bit#(8)) gRec <- mkRegU;
    Reg#(Bit#(16)) gX <- mkRegU;
    Reg#(Bit#(16)) gY <- mkRegU;
@@ -254,6 +256,14 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
    // ---- dump engine -----------------------------------------------------
    Reg#(Bit#(17)) dA <- mkRegU;
    Reg#(Bool) dWait <- mkRegU;
+
+   // ---- the frame's port A answers two cycles after a put (WinFrame.bsv,
+   // H3): a rule that reads the frame sets fWait, and the engines stand
+   // still for the one cycle in between ------------------------------------
+   Reg#(Bool) fWait <- mkReg(False);
+   rule frameWait (fWait);
+      fWait <= False;
+   endrule
 
    // =====================================================================
    rule initClear (mode == MInit && !clearDone);
@@ -317,9 +327,12 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
 
    // =====================================================================
    // the blit engine
-   Bit#(20) rowIdx = zeroExtend(bUp ? bH - 1 - bRow : bRow);
-   Bit#(20) dstRow = bDstBase + rowIdx * zeroExtend(bDstPitch);
-   Bit#(20) srcRow = bSrcBase + rowIdx * zeroExtend(bSrcPitch);
+   // the current row's first word, destination and source: registers
+   // stepped by the pitch at each row end (H3: computing base + row x
+   // pitch here put a multiplier on the path to the 80 frame banks'
+   // address pins, and the system clock missed 25 MHz)
+   Bit#(20) dstRow = bDstRow;
+   Bit#(20) srcRow = bSrcRow;
    // the source bit under the destination word's first dot, signed
    Int#(20) q0 = unpack((zeroExtend(bK) << 4) - zeroExtend(bDstX) + zeroExtend(bSrcX));
    Int#(20) jA = q0 >> 4;
@@ -334,7 +347,7 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
       action
          Bit#(20) a = srcRow + pack(j);
          case (bSrc)
-            SFrame: frame.a.put(False, truncate(a), ?);
+            SFrame: begin frame.a.put(False, truncate(a), ?); fWait <= True; end
             SSave:  bitmap.put(False, truncate(a), ?);
             SFont:  font.put(False, truncate(a), ?);
          endcase
@@ -350,7 +363,10 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
       action
          Bit#(20) a = dstRow + zeroExtend(bK);
          if (bDstSave) bitmap.put(wr, truncate(a), d);
-         else frame.a.put(wr, truncate(a), d);
+         else begin
+            frame.a.put(wr, truncate(a), d);
+            if (!wr) fWait <= True;
+         end
       endaction
    endfunction
    Bit#(16) dstData = bDstSave ? bitmap.read : frame.a.read;
@@ -369,6 +385,8 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
                mode <= MIdle;
             end
             bRow <= bRow + 1;
+            bDstRow <= bUp ? bDstRow - zeroExtend(bDstPitch) : bDstRow + zeroExtend(bDstPitch);
+            bSrcRow <= bUp ? bSrcRow - zeroExtend(bSrcPitch) : bSrcRow + zeroExtend(bSrcPitch);
             bK <= bRtl ? bKLast : bKFirst;
          end
          else bK <= bRtl ? bK - 1 : bK + 1;
@@ -387,10 +405,13 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
          else begin
             Bit#(12) kf = truncate(dX >> 4);
             Bit#(12) kl = truncate((dX + w - 1) >> 4);
-            bSrc <= src; bSrcBase <= sBase; bSrcPitch <= sPitch; bSrcX <= sX;
-            bDstSave <= dSave; bDstBase <= dBase; bDstPitch <= dPitch; bDstX <= dX;
+            bSrc <= src; bSrcPitch <= sPitch; bSrcX <= sX;
+            bDstSave <= dSave; bDstPitch <= dPitch; bDstX <= dX;
             bW <= w; bH <= h; bRop <= r; bUp <= up; bRtl <= rtl;
             bRow <= 0; bK <= rtl ? kl : kf; bKFirst <= kf; bKLast <= kl;
+            Bit#(20) last = zeroExtend(h - 1);
+            bDstRow <= dBase + (up ? last * zeroExtend(dPitch) : 0);
+            bSrcRow <= sBase + (up ? last * zeroExtend(sPitch) : 0);
             bPh <= (src == SConst) ? PDst : PSrc0;
             bStatus <= st;
             mode <= MBlit;
@@ -398,16 +419,16 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
       endaction
    endfunction
 
-   rule blitSrc0 (mode == MBlit && bPh == PSrc0);
+   rule blitSrc0 (mode == MBlit && bPh == PSrc0 && !fWait);
       if (jValid(jA)) srcRead(jA);
       bPh <= PSrc1;
    endrule
-   rule blitSrc1 (mode == MBlit && bPh == PSrc1);
+   rule blitSrc1 (mode == MBlit && bPh == PSrc1 && !fWait);
       bSa <= jValid(jA) ? srcData : 0;
       if (jValid(jA + 1)) srcRead(jA + 1);
       bPh <= PDst;
    endrule
-   rule blitDst (mode == MBlit && bPh == PDst);
+   rule blitDst (mode == MBlit && bPh == PDst && !fWait);
       Bit#(16) sb = (bSrc != SConst && jValid(jA + 1)) ? srcData : 0;
       bSb <= sb;
       if (needsDst) begin
@@ -420,7 +441,7 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
          advance;
       end
    endrule
-   rule blitWr (mode == MBlit && bPh == PWr);
+   rule blitWr (mode == MBlit && bPh == PWr && !fWait);
       dstPut(True, ropf(bRop, srcBits, dstData, mask));
       advance;
    endrule
@@ -440,6 +461,16 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
          rspQ.enq(WinFbRsp { isData: False, status: stMISSING, data: 0 });
          mode <= MIdle;
       end
+   endrule
+   // the index slot of the code (H3: a rule of its own, a cycle after
+   // accept, so the slot's multiply is not on accept's path to the index
+   // RAM; the system clock missed 25 MHz there, MEASURED)
+   rule glyphLook (mode == MGlyph && gPh == 7);
+      if (indexOf(gCode) matches tagged Valid .ix) begin
+         index.put(False, ix, ?);
+         gPh <= 1;
+      end
+      else gPh <= 0;
    endrule
    rule glyphNone (mode == MGlyph && gPh == 0);
       // a code with no index slot
@@ -482,21 +513,22 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
    Bit#(20) lAddr = pack(lPy) * 80 + (pack(lPx) >> 4);
    Bit#(16) lBit = 'h8000 >> pack(lPx)[3:0];
 
-   rule lineDot (mode == MLine && lPh == LDot);
+   rule lineDot (mode == MLine && lPh == LDot && !fWait);
       if (!lOn || lK == lWidth)
          lPh <= LStep;
       else if (lPx < fromInteger(fbW) && lPy < fromInteger(fbH)) begin
          frame.a.put(False, truncate(lAddr), ?);
+         fWait <= True;
          lPh <= LWr;
       end
       else lK <= lK + 1;
    endrule
-   rule lineWr (mode == MLine && lPh == LWr);
+   rule lineWr (mode == MLine && lPh == LWr && !fWait);
       frame.a.put(True, truncate(lAddr), ropf(lRop, lBit, frame.a.read, lBit));
       lK <= lK + 1;
       lPh <= LDot;
    endrule
-   rule lineStep (mode == MLine && lPh == LStep);
+   rule lineStep (mode == MLine && lPh == LStep && !fWait);
       if (lX == lX2 && lY == lY2) begin
          rspQ.enq(WinFbRsp { isData: False, status: stOK, data: 0 });
          mode <= MIdle;
@@ -521,12 +553,13 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
 
    // =====================================================================
    // dump, on port B: put an address, then pass the word on
-   rule dumpReq (mode == MDump && !dWait);
-      frame.b.put(False, dA, ?);
+   rule dumpReq (mode == MDump && !dWait && !fWait);
+      frame.a.put(False, dA, ?);
+      fWait <= True;
       dWait <= True;
    endrule
-   rule dumpRsp (mode == MDump && dWait);
-      rspQ.enq(WinFbRsp { isData: True, status: stOK, data: frame.b.read });
+   rule dumpRsp (mode == MDump && dWait && !fWait);
+      rspQ.enq(WinFbRsp { isData: True, status: stOK, data: frame.a.read });
       dWait <= False;
       if (dA == fromInteger(valueOf(FbWords) - 1)) begin
          // the status follows the data; a FIFOF of 2 holds both
@@ -538,13 +571,6 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
    rule dumpEnd (mode == MIdle && dTail);
       rspQ.enq(WinFbRsp { isData: False, status: stOK, data: 0 });
       dTail <= False;
-   endrule
-
-   // =====================================================================
-   // the scan port: a read on port B in any cycle no dump owns it
-   RWire#(Bit#(17)) scanA <- mkRWire;
-   rule scanFetch (mode != MDump &&& scanA.wget matches tagged Valid .a);
-      frame.b.put(False, a, ?);
    endrule
 
    // =====================================================================
@@ -591,11 +617,8 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
                if (a[0] != 0) reply(stBADFONT);
                else begin
                   gX <= a[2]; gY <= a[3]; gRop <= r; gStatus <= stOK;
-                  if (indexOf(a[1]) matches tagged Valid .ix) begin
-                     index.put(False, ix, ?);
-                     gPh <= 1;
-                  end
-                  else gPh <= 0;
+                  gCode <= a[1];
+                  gPh <= 7;
                   mode <= MGlyph;
                end
             end
@@ -645,10 +668,7 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
       interface Put request = toPut(cmdQ);
       interface Get response = toGet(rspQ);
    endinterface
-   interface WinFbScan scan;
-      method Action put(Bit#(17) addr) = scanA.wset(addr);
-      method Bit#(16) read = frame.b.read;
-   endinterface
+   interface WinFbScan scan = frame.b;
 endmodule
 
 endpackage

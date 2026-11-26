@@ -563,6 +563,12 @@ def enc_check(in_path, out_path):
 
 # ---------------------------------------- the serializer's own bench
 CLOCK_CHAR = 0b0000011111       # the clock lane: five ones, five zeros
+# characters skipped at the start of a serializer capture: until the
+# pixel toggle's first change reaches it, the H3 serializer's phase runs
+# from its power-up value (it has no reset), so up to the first few
+# characters are cut; 4 covers every pixel-clock offset WinTmdsSerTb
+# runs (2, H2's figure, did not: offset 1 settled later)
+SER_LOCK = 4
 
 
 def ser_check(px_path, bin_path):
@@ -589,7 +595,7 @@ def ser_check(px_path, bin_path):
     # the clock lane: after the serializer's first load, one boundary
     # gives the clock character throughout
     offs = [o for o in range(10)
-            if all(c == CLOCK_CHAR for c in chars(3, o)[2:])]
+            if all(c == CLOCK_CHAR for c in chars(3, o)[SER_LOCK:])]
     if len(offs) != 1:
         raise Fail('clock lane: %d boundaries give a steady clock character'
                    % len(offs))
@@ -599,7 +605,7 @@ def ser_check(px_path, bin_path):
         got = chars(lane, off)
         want = [p[lane] for p in px]
         hits = [L for L in range(-4, 12)
-                if all(got[k] == want[k - L] for k in range(max(L, 0) + 2,
+                if all(got[k] == want[k - L] for k in range(max(L, 0) + SER_LOCK,
                                                             len(want) + L - 2)
                        if 0 <= k < len(got))]
         if len(hits) != 1:

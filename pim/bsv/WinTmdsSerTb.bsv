@@ -8,7 +8,13 @@
 // LFSR data, different on each channel) and log their characters to
 // win_ser_px.hex.  The characters cross to the shift domain through a
 // mkNullCrossingWire (no synchronizer, as in the hardware: phase-locked
-// clocks).  The serializer's pins (per lane D0 then D1, an ODDRX1F's
+// clocks), with the pixel domain's toggle, and then through
+// mkWinCrossModel (WinCrossModel.bsv, H3), which poisons a read of the
+// characters on the edges where they change.  The pixel clock is the
+// bench clock divided by 5 with an offset K (mkClockDividerOffset,
+// bsc -D SER_K=K; run_win_tb.sh builds K = 0..4), so each of the five
+// alignments of the pixel clock to a phase that runs free from time 0
+// is tried: the serializer must find the pixel clock's phase itself.  The serializer's pins (per lane D0 then D1, an ODDRX1F's
 // order) are written to win_ser.bin, one byte a shift clock:
 // lane 3 (clock) << 6 | lane 2 << 4 | lane 1 << 2 | lane 0, each {D1, D0}.
 // psi/winscan.py `sercheck` rebuilds the serial streams (bit 0 of each
@@ -20,24 +26,31 @@ package WinTmdsSerTb;
 import Clocks::*;
 import Vector::*;
 import WinScanOut::*;
+import WinCrossModel::*;
 
 typedef 3000 Pixels;
 
 (* synthesize *)
 module mkWinTmdsSerTb(Empty);
    Clock sclk <- exposeCurrentClock;
-   ClockDividerIfc div <- mkClockDivider(5);
+`ifndef SER_K
+`define SER_K 0
+`endif
+   ClockDividerIfc div <- mkClockDividerOffset(5, `SER_K);
    Reset prst <- mkAsyncResetFromCR(1, div.slowClock);
 
    // ---- the pixel domain ----------------------------------------------
    Vector#(3, WinTmdsEnc) enc <- replicateM(mkWinTmdsEnc(clocked_by div.slowClock, reset_by prst));
    Reg#(Bit#(16)) pn <- mkReg(0, clocked_by div.slowClock, reset_by prst);
+   Reg#(Bool) tog <- mkReg(False, clocked_by div.slowClock, reset_by prst);
    Reg#(Bit#(16)) lfsr <- mkReg('hace1, clocked_by div.slowClock, reset_by prst);
    Reg#(File) fpx <- mkReg(InvalidFile, clocked_by div.slowClock, reset_by prst);
    function Bit#(10) symOf(WinTmdsEnc e) = e.sym;
    ReadOnly#(Vector#(3, Bit#(10))) wx <- mkNullCrossingWire(sclk, map(symOf, enc),
                                                             clocked_by div.slowClock,
                                                             reset_by prst);
+   ReadOnly#(Bool) tx <- mkNullCrossingWire(sclk, tog, clocked_by div.slowClock,
+                                            reset_by prst);
 
    rule pixel;
       File f = fpx;
@@ -58,12 +71,15 @@ module mkWinTmdsSerTb(Empty);
       enc[2].put(de, 0, d0 ^ d1 ^ pn[7:0]);
       lfsr <= {lfsr[14:0], lfsr[15] ^ lfsr[13] ^ lfsr[12] ^ lfsr[10]};
       pn <= pn + 1;
+      tog <= !tog;
    endrule
 
    // ---- the shift domain ------------------------------------------------
-   WinTmdsSer ser <- mkWinTmdsSer(wx);
+   WinCrossModel xm <- mkWinCrossModel(wx, tx);
+   WinTmdsSer ser <- mkWinTmdsSer(xm.w, xm.tog);
    Reg#(Bit#(32)) sn <- mkReg(0);
    Reg#(File) fs <- mkReg(InvalidFile);
+
 
    rule capture;
       File f = fs;
