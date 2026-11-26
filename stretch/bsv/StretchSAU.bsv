@@ -177,23 +177,63 @@
 // ---------------------------------------------------------------------
 // TIME
 // ---------------------------------------------------------------------
-// The instruction's time is still eboxClocks' (StretchTiming.bsv, Perf.
-// Char. Vol. 1 Table 3 and the Vol. 2 atlas).  mkEBox takes the unit's
-// clocks OFF that budget (StretchCore's rl_exec_resume: boxClocks), so
-// the unit must fit inside the smallest budget of each class: 8 + 2 x 1
-// byte = 10 clocks for an add (the pass of 4, or 8 recomplemented, fits;
-// one digit a clock, 32 or 64, would overrun every short field); DCV's
+// UNSTEPPED REQUESTS (half (a)'s contract, still that of the M+ family,
+// the K family, SRD's round, the converter and the multiplier): the
+// instruction's time is eboxClocks' (StretchTiming.bsv, Perf. Char. Vol.
+// 1 Table 3 and the Vol. 2 atlas), and mkEBox takes the unit's clocks
+// OFF that budget (StretchCore's rl_exec_resume: boxClocks), so the unit
+// must fit inside the smallest budget of each class: 8 + 2 x 1 byte = 10
+// clocks for an add (the pass of 2, or 4 recomplemented, fits); DCV's
 // decimal 18 for a conversion (6 and 4 fit); `*`'s 36 for the multiply.
-// Half (b) inverts this: the unit's stepping becomes the time, and the
-// eboxClocks terms it owns are deleted (fidelity_plan.md A3 lists them).
+//
+// >>> HALF (b), 2026-11-25: A STEPPED ADD OWNS ITS TIME. <<<  L and LWF
+// decimal, + and +MG in both radices send their passes (SauAddSteps).
+// The unit then answers after 2 clocks a pass (Buchholz printed p.209;
+// Table 3's .6 a byte): the field's bytes and sign byte, Table 3's z,
+// and the recomplement (the switches sauStepZ / sauStepRecomp).
+// ownClocks() reports that count, and StretchCore charges the eboxClocks
+// row LESS its byte term (sauSteppedRowClocks) from the answer, taking
+// nothing off.  So the row's byte term is deleted for these, and what the
+// row keeps is its fixed part.  WHAT THIS IS NOT: a byte-wide datapath.
+// The sum is still made 16 digits a clock inside the stepped time (the
+// datapath is never the slower: sauAddDigits' note); only the clock count
+// is the stepping's.  Narrowing the datapath to the byte the passes
+// describe is F1's work, and it does not change a clock.
 // ---------------------------------------------------------------------
 package StretchSAU;
 
 // >>> THE RATES (half (a): the old boxes', unchanged) <<<
 // Adder: digits a clock.  CHOSEN (mkDecBox's decDigitsPerCycle): it must
-// fit the smallest add budget (TIME above) and divide 32.
-Integer sauAddDigits = 8;
+// fit the smallest add budget (TIME above) and divide 32.  16 SINCE HALF
+// (b) (2026-11-25), was 8: a stepped add's time is its passes, 2 clocks
+// each, and the shortest field is one pass, so the datapath must have
+// the sum in 2 clocks (4 recomplemented) or it, not the stepping, would
+// set the time of a one-byte add.  The byte-wide datapath the stepping
+// describes is F1's step, not this one (the header's TIME note).
+Integer sauAddDigits = 16;
 Integer sauDigits    = 32;
+// >>> THE STEPPED TERMS, ONE SWITCH EACH (half (b), 2026-11-25). <<<  A
+// stepped add (SauAddSteps.passes != 0) takes 2 clocks a pass (Buchholz
+// printed p.209: the serial unit's byte pair per 0.6 us; Table 3's .6
+// per term unit).  Its passes are the field's (always), and:
+//   * sauStepZ: Table 3's z (glossary printed p.3-10, PDF 28), "One for
+//     a carry out of the last x/y byte plus one for a carry out of each
+//     succeeding 8 bit byte in binary or 4 bit byte in decimal" -- Fig.
+//     3.11.9's passes after EOC1 while a carry propagates.  With unlike
+//     signs the propagating state is the BORROW (no carry into the byte):
+//     DERIVED, the figure tests CARRY after EOC1 and prints no sense for
+//     a subtraction; a complemented addend beyond the field is all ones
+//     (nines), so a carry there propagates to the end of the accumulator
+//     and could not be what stops the loop.
+//   * sauStepRecomp: Table 3's "Unlike signs CD > AB, add .6(os/r + x/y
+//     + z + 1) to the execution time" (+), ".6" (+MG): the recomplement
+//     pass over the result from the accumulator's right end (Fig. 3.11.9
+//     Part 4, "BAAB TO 127").
+// Each is the attributing injection for what it moves (fidelity_plan.md
+// A3 (b) has the atlas deltas).
+Bool sauStepZ      = True;
+Bool sauStepRecomp = True;
+
 // Multiplier: SOURCED, Buchholz printed p.210, "12 bits of the multiplier
 // are handled in one cycle".  A width, so a typedef; it must divide 48.
 typedef 12 SauMulGroup;
@@ -211,12 +251,41 @@ Integer sauCvtDigits  = 8;
 // so `boxKindOf` still names the class: StretchCore releases the level
 // for the adder (1) and the multiplier (3), not the converter (2)).
 // ---------------------------------------------------------------------
+// >>> THE PASSES OF AN ADD (half (b), 2026-11-25). <<<  What the unit
+// needs to step a request as Fig. 3.11.9 (R23-9732 PDF 263; sau_pau_spec
+// §10) steps it, and to time it as Perf. Char. Vol. 1 Table 3 (printed
+// p.3-7, PDF 25; glossary printed p.3-10, PDF 28) counts it, at 0.6 us =
+// 2 clocks a pass (Buchholz printed p.209, PDF 234):
+//   * `passes`: the field's passes, data bytes (x/y) plus the sign byte's
+//     pass when signed (StretchVFL's vflBytes).  0 = NOT STEPPED: the
+//     unit answers when its datapath has the sum, and the caller's budget
+//     keeps the whole eboxClocks row (half (a)'s contract), for every
+//     caller not yet moved over (the M+ family, the K family, SRD).
+//   * `top`: where the carry is looked at after the field, for Table 3's
+//     z: binary, the bit just above the data (offset + x); decimal, the
+//     digit just above it (offset/4 + x/y).
+//   * `osb`: the bytes below the field, Table 3's os/r (os = the offset,
+//     r = 8 binary, 4 decimal), for the recomplement.
+//   * `b0`: the data bytes, x/y, for the recomplement.
+//   * `mg`: ADD TO MAGNITUDE, whose unlike-signed "CD > AB" result is
+//     cleared, not recomplemented: Table 3 charges it .6, one pass.
+typedef struct {
+  Bit#(8) passes;
+  Bit#(8) top;
+  Bit#(8) osb;
+  Bit#(8) b0;
+  Bool    mg;
+} SauAddSteps deriving (Bits, Eq, FShow);
+
+SauAddSteps sauNoSteps = SauAddSteps { passes: 0, top: 0, osb: 0, b0: 0, mg: False };
+
 typedef struct {
   Bit#(128) a;     // 32 BCD digits, digit 0 in bits 3:0
   Bit#(128) b;
   Bool      sub;   // True: effective signs unlike, compute |a - b|
   Bool      binary;  // True: decimal correction off (p.209): a and b
                      // are 128-bit binary magnitudes, r likewise
+  SauAddSteps steps; // the passes to step (sauNoSteps: not stepped)
 } DecReq deriving (Bits, Eq, FShow);
 
 typedef struct {
@@ -304,6 +373,29 @@ function Bit#(128) dabble(Bit#(128) d, Bit#(1) b);
   return { d[126:0], b };
 endfunction
 
+// TABLE 3's z, from the carries INTO each position (`cv`: binary, bit p
+// is the carry into bit p; decimal, bit k is the carry into digit k).
+// The passes after the field: one for each byte from `top` up while the
+// carry into it is the propagating one (1 like signs, 0 -- a borrow --
+// unlike), and while there is a byte there (EOA1: the accumulator's left
+// end, bit 127 / digit 31).  Whether the propagation ran off the left end
+// is the end carry itself (like signs: the Lost Carry; unlike, its
+// absence: the recomplement), so it is not recounted here.
+function Bit#(8) sauZ(Bool bin, Bool sub, Bit#(128) cv, Bit#(8) top);
+  Bit#(1) prop = sub ? 0 : 1;
+  Bit#(8) z = 0;
+  Bool    go = True;
+  for (Integer j = 0; j < 32; j = j + 1) begin
+    Bit#(9) p = zeroExtend(top) + (bin ? fromInteger(8 * j) : fromInteger(j));
+    Bool there = bin ? (p < 128) : (p < 32);
+    if (go && there) begin
+      if (cv[p[6:0]] == prop) z = z + 1;
+      else go = False;
+    end
+  end
+  return z;
+endfunction
+
 interface SAU;
   method Action request(SauReq r);
   method Bool responseReady();
@@ -311,6 +403,12 @@ interface SAU;
   // interface's note (a guarded response() became the condition of the
   // whole of mkEBox.resume()).
   method SauRsp response();
+  // THE UNIT'S OWN TIME (half (b)): Valid while the answer is a stepped
+  // add's (SauAddSteps.passes != 0), and then the clocks its passes took,
+  // which responseReady() has waited for.  The E-box charges it in place
+  // of the row's byte term (StretchCore's rl_exec_resume).  Invalid for
+  // every request that was not stepped.
+  method Maybe#(Bit#(16)) ownClocks();
 endinterface
 
 typedef enum { SauIdle, SauAddPass, SauRecomp, SauMulPass, SauToDec, SauToBin, SauDone }
@@ -341,6 +439,13 @@ module mkSAU(SAU);
   Reg#(Bool)      rg_bin[2]   <- mkCReg(2, False);
   Reg#(Bool)      rg_carry[2] <- mkCReg(2, False);
   Reg#(Bit#(8))   rg_ctr[2]   <- mkCReg(2, 0);
+  // HALF (b): the stepped add's passes, the carries into each position
+  // (sauZ's `cv`), the clocks since the request, and the stepped time
+  // (set when the add pass ends; responseReady waits for it).
+  Reg#(SauAddSteps) rg_steps[2] <- mkCReg(2, sauNoSteps);
+  Reg#(Bit#(128)) rg_cv[2]    <- mkCReg(2, 0);
+  Reg#(Bit#(16))  rg_el[2]    <- mkCReg(2, 0);
+  Reg#(Bit#(16))  rg_own[2]   <- mkCReg(2, 0);
 
   Integer addClocks = sauDigits / sauAddDigits;
   Integer mulClocks = sauMulWidth / sauMulBits;
@@ -359,6 +464,12 @@ module mkSAU(SAU);
   // of digit steps.  Add: a + b (b already complemented for a
   // subtraction, with the initial carry one).  Recomplement: the
   // complement of the first pass's sum, plus the carry of one.
+  // THE CLOCK OF A REQUEST (half (b)): clocks since it, saturating.  A
+  // request writes 0 at port 1, so in the k-th clock after it this reads k.
+  rule rl_tick (rg_el[0] != '1);
+    rg_el[0] <= rg_el[0] + 1;
+  endrule
+
   rule rl_add (rg_state[0] == SauAddPass || rg_state[0] == SauRecomp);
     Bool      rec = (rg_state[0] == SauRecomp);
     Bool      bin = rg_bin[0];
@@ -366,19 +477,50 @@ module mkSAU(SAU);
     Bit#(128) b = rg_b[0];
     Bit#(1)   c = rg_c[0];
     Bit#(128) r = rg_r[0];
+    // The decimal carries INTO each digit, for sauZ (the add pass only;
+    // a binary request's per-bit carries were taken at the request).
+    Bit#(128) cv = rg_cv[0];
+    Bit#(8)   d0 = (fromInteger(sauDigits / sauAddDigits) - rg_ctr[0]) * fromInteger(sauAddDigits);
     for (Integer k = 0; k < sauAddDigits; k = k + 1) begin
       Bit#(4) x = rec ? sauComp(bin, a[3:0]) : a[3:0];
       Bit#(4) y = rec ? 0 : b[3:0];
+      if (!rec && !bin) cv[d0 + fromInteger(k)] = c;
       match {.d, .c2} = sauDigitStep(bin, x, y, c);
       c = c2;
       a = a >> 4;
       b = b >> 4;
       r = { d, r[127:4] };
     end
+    rg_cv[0] <= cv;
     Bit#(8)  ctr = rg_ctr[0] - 1;
     SauState st  = rg_state[0];
     if (rg_ctr[0] == 1) begin
       if (!rec) begin
+        // THE STEPPED TIME (half (b)), now that every carry is known:
+        // the field's passes, z, and the recomplement if there is one.
+        SauAddSteps sp = rg_steps[0];
+        Bool     rcp = rg_sub[0] && c == 0;
+        // A borrow that runs to the left end is NOT stepped byte by byte:
+        // Table 3 charges +MG's "CD > AB" .6 and nothing for the bytes
+        // beyond the field (and + its recomplement alone).  MEASURED, on
+        // the atlas: counting those passes put +MG INVERT (DU,64,4) 34
+        // clocks over PDF 118 (fidelity_plan.md A3 (b)).  DERIVED: Fig.
+        // 3.11.9's EHOM1 test (the accumulator's high-order end) ends the
+        // loop where nothing beyond is significant.
+        Bit#(8)  z   = rcp ? 0 : sauZ(bin, rg_sub[0], cv, sp.top);
+        Bit#(16) np  = zeroExtend(sp.passes)
+                     + (sauStepZ ? zeroExtend(z) : 0)
+                     + ((sauStepRecomp && rcp)
+                        ? (sp.mg ? 1 : zeroExtend(sp.osb) + zeroExtend(sp.b0) + zeroExtend(z) + 1)
+                        : 0);
+        // AN UNSTEPPED REQUEST KEEPS HALF (a)'s TIME, 4 clocks or 8
+        // recomplemented, though the datapath now has the sum in 2 or 4.
+        // MEASURED: letting the M+ and K families answer at the new
+        // datapath's 2 moved their one-digit atlas cases 1 clock faster,
+        // away from the pages, as the relocation step did for the stepped
+        // ones, with no source behind the move (fidelity_plan.md A3 (b)).
+        // They move when they are stepped, not before.
+        rg_own[0] <= (sp.passes == 0) ? (rcp ? 8 : 4) : 2 * np;
         rg_carry[0] <= (c == 1);
         if (rg_sub[0] && c == 0) begin
           // No end carry: a < b, and r is the tens' complement of b - a.
@@ -464,27 +606,46 @@ module mkSAU(SAU);
         rg_c[1]     <= d.sub ? 1 : 0;
         rg_sub[1]   <= d.sub;
         rg_bin[1]   <= d.binary;
+        // Half (b): a binary add's carry into every bit is a ^ b ^ sum of
+        // the plain 128-bit add the binary chain makes; a decimal add's
+        // carries into each digit are recorded by rl_add as it goes.
+        Bit#(128) bsum = d.a + bc + (d.sub ? 1 : 0);
+        rg_cv[1]    <= d.binary ? (d.a ^ bc ^ bsum) : 0;
+        rg_steps[1] <= d.steps;
+        rg_el[1]    <= 0;
+        rg_own[1]   <= 0;
         rg_ctr[1]   <= fromInteger(addClocks);
         rg_state[1] <= SauAddPass;
       end
       tagged SauMul (tagged VflMul .m): begin
         rg_a[1]     <= zeroExtend(m.mcand);
         rg_r[1]     <= zeroExtend(m.mpr);
+        rg_steps[1] <= sauNoSteps;
+        rg_own[1]   <= 0;
+        rg_el[1]    <= 0;
         rg_ctr[1]   <= fromInteger(mulClocks);
         rg_state[1] <= SauMulPass;
       end
       tagged SauCvt .v: begin
         rg_a[1]     <= v.toDec ? (v.v & ((128'd1 << 96) - 1)) : v.v;
         rg_r[1]     <= 0;
+        rg_steps[1] <= sauNoSteps;
+        rg_own[1]   <= 0;
+        rg_el[1]    <= 0;
         rg_ctr[1]   <= fromInteger(v.toDec ? decClocks : binClocks);
         rg_state[1] <= v.toDec ? SauToDec : SauToBin;
       end
     endcase
   endmethod
 
-  method Bool responseReady() = (rg_state[1] == SauDone);
+  // A stepped add is ready when its passes have been stepped as well as
+  // its sum made (the datapath is never the slower: sauAddDigits' note).
+  method Bool responseReady() = (rg_state[1] == SauDone) && rg_el[1] >= rg_own[1];
 
   method SauRsp response() = SauRsp { r: rg_r[1], carry: rg_carry[1] };
+
+  method Maybe#(Bit#(16)) ownClocks() =
+    (rg_steps[1].passes != 0) ? tagged Valid rg_own[1] : tagged Invalid;
 endmodule
 
 // =====================================================================
@@ -498,7 +659,7 @@ endmodule
 // mkSauAddTb (was mkDecBoxTb).  THE EXPECTATIONS ARE LITERALS, worked by
 // hand from p.60's rule -- not computed by a second decimal adder in the
 // testbench.  Each vector also asserts a LITERAL clock count: 4 for a
-// pass, 8 when the subtraction recomplements.
+// pass, 8 when the subtraction recomplements (unstepped: half (a)'s time).
 //
 // Vectors 0-4 ARE Reference Manual printed p.60's five ADD examples,
 // with the accumulator as `a` and the storage operand shifted two digits
@@ -550,39 +711,39 @@ module mkSauAddTb(Empty);
   function DecReq reqOf(Bit#(4) i) =
     case (i)
       // p.60 example 1: acc 37600+, operand 75679+: like signs.
-      0: DecReq { a: 128'h37600, b: 128'h75679, sub: False, binary: False };
+      0: DecReq { a: 128'h37600, b: 128'h75679, sub: False, binary: False, steps: sauNoSteps };
       // example 2: acc 45623+, operand 53200-: unlike, a < b.
-      1: DecReq { a: 128'h45623, b: 128'h53200, sub: True, binary: False };
+      1: DecReq { a: 128'h45623, b: 128'h53200, sub: True, binary: False, steps: sauNoSteps };
       // example 3: acc 53200+, operand 53200-: unlike, equal.
-      2: DecReq { a: 128'h53200, b: 128'h53200, sub: True, binary: False };
+      2: DecReq { a: 128'h53200, b: 128'h53200, sub: True, binary: False, steps: sauNoSteps };
       // example 4: acc 53200-, operand 53200+: unlike, equal.
-      3: DecReq { a: 128'h53200, b: 128'h53200, sub: True, binary: False };
+      3: DecReq { a: 128'h53200, b: 128'h53200, sub: True, binary: False, steps: sauNoSteps };
       // example 5: acc 53201+, operand 53200-: unlike, a > b.
-      4: DecReq { a: 128'h53201, b: 128'h53200, sub: True, binary: False };
+      4: DecReq { a: 128'h53201, b: 128'h53200, sub: True, binary: False, steps: sauNoSteps };
       // 32 nines + 1: the carry out of digit 31 (Lost Carry).
-      5: DecReq { a: 128'h99999999999999999999999999999999, b: 128'h1, sub: False, binary: False };
+      5: DecReq { a: 128'h99999999999999999999999999999999, b: 128'h1, sub: False, binary: False, steps: sauNoSteps };
       // a carry rippling across a pass boundary (digit 7 -> 8).
-      6: DecReq { a: 128'h99999999, b: 128'h1, sub: False, binary: False };
+      6: DecReq { a: 128'h99999999, b: 128'h1, sub: False, binary: False, steps: sauNoSteps };
       // 0 - 1: recomplement to 1, across all 32 digits.
-      7: DecReq { a: 128'h0, b: 128'h1, sub: True, binary: False };
+      7: DecReq { a: 128'h0, b: 128'h1, sub: True, binary: False, steps: sauNoSteps };
       // BINARY: 2^32 - 1 + 1, the carry rippling across the first
       // pass boundary (bit 31 -> 32).
-      9: DecReq { a: 128'hFFFFFFFF, b: 128'h1, sub: False, binary: True };
+      9: DecReq { a: 128'hFFFFFFFF, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
       // BINARY: 2^128 - 1 + 1: the carry out of bit 127 (Lost Carry).
-      10: DecReq { a: '1, b: 128'h1, sub: False, binary: True };
+      10: DecReq { a: '1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
       // BINARY, unlike signs, a > b: 0x100 - 1 = 0xFF, end carry.
-      11: DecReq { a: 128'h100, b: 128'h1, sub: True, binary: True };
+      11: DecReq { a: 128'h100, b: 128'h1, sub: True, binary: True, steps: sauNoSteps };
       // BINARY, unlike signs, a < b: 1 - 0x100, no end carry, so the
       // second pass recomplements to 0xFF.
-      12: DecReq { a: 128'h1, b: 128'h100, sub: True, binary: True };
+      12: DecReq { a: 128'h1, b: 128'h100, sub: True, binary: True, steps: sauNoSteps };
       // BINARY, unlike signs, equal: zero with the end carry.
-      13: DecReq { a: 128'h5A5A, b: 128'h5A5A, sub: True, binary: True };
+      13: DecReq { a: 128'h5A5A, b: 128'h5A5A, sub: True, binary: True, steps: sauNoSteps };
       // BINARY: 9 + 9 = 0x12 (eighteen); decimal correction would
       // make it 0x18.
-      14: DecReq { a: 128'h9, b: 128'h9, sub: False, binary: True };
+      14: DecReq { a: 128'h9, b: 128'h9, sub: False, binary: True, steps: sauNoSteps };
       // full width: 10^31 - 1 against 10^31 + ... a > b by one digit.
       default: DecReq { a: 128'h10000000000000000000000000000000,
-                        b: 128'h00000000000000000000000000000001, sub: True, binary: False };
+                        b: 128'h00000000000000000000000000000001, sub: True, binary: False, steps: sauNoSteps };
     endcase;
   function DecRsp wantOf(Bit#(4) i) =
     case (i)
@@ -602,6 +763,9 @@ module mkSauAddTb(Empty);
       14: DecRsp { r: 128'h12,    carry: False };
       default: DecRsp { r: 128'h09999999999999999999999999999999, carry: True };
     endcase;
+  // 4 a pass, 8 recomplemented: these requests are not stepped
+  // (sauNoSteps), so they keep half (a)'s time (rl_add's note), though the
+  // datapath has had the sum in 2 / 4 since half (b).
   function Bit#(16) clocksOf(Bit#(4) i) = (i == 1 || i == 7 || i == 12) ? 8 : 4;
 
   rule rl_issue (!done && !issued);
@@ -859,12 +1023,12 @@ module mkSauMixTb(Empty);
 
   function SauReq reqOf(Bit#(4) i) =
     case (i)
-      0: tagged SauAdd DecReq { a: 128'h45623, b: 128'h53200, sub: True, binary: False };
+      0: tagged SauAdd DecReq { a: 128'h45623, b: 128'h53200, sub: True, binary: False, steps: sauNoSteps };
       1: tagged SauCvt CvtReq { toDec: True, v: 128'hFFFFFFFFFFFFFFFFFFFFFFFF };
       2: tagged SauMul (tagged VflMul VflMulReq { mcand: 48'hFFFFFFFFFFFF, mpr: 48'hFFFFFFFFFFFF });
-      3: tagged SauAdd DecReq { a: '1, b: 128'h1, sub: False, binary: True };
+      3: tagged SauAdd DecReq { a: '1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
       4: tagged SauCvt CvtReq { toDec: False, v: 128'h99999999999999999999999999999999 };
-      5: tagged SauAdd DecReq { a: 0, b: 0, sub: False, binary: False };
+      5: tagged SauAdd DecReq { a: 0, b: 0, sub: False, binary: False, steps: sauNoSteps };
       default: tagged SauMul (tagged VflMul VflMulReq { mcand: 48'h1, mpr: 48'h1 });
     endcase;
   // The class's view of the answer, widened to 128 bits, and the carry
@@ -915,6 +1079,117 @@ module mkSauMixTb(Empty);
       t0 <= clk;
       idx <= idx + 1;
     end
+  endrule
+
+  rule rl_finish (done);
+    if (fails == 0) $display("ALL TESTS PASSED");
+    else $display("%0d TEST(S) FAILED", fails);
+    $finish(0);
+  endrule
+endmodule
+
+// ---------------------------------------------------------------------
+// mkSauStepTb (half (b), 2026-11-25): THE STEPPED ADD.  Each vector is a
+// request with its passes (SauAddSteps), a LITERAL answer and a LITERAL
+// clock count worked by hand from Table 3's terms at 2 clocks a pass
+// (the switches' note above sauStepZ): 2 x (passes + z + recomplement),
+// the recomplement os/r + x/y + z + 1 (+), or 1 (+MG).  ownClocks() must
+// be Valid and equal the clocks taken, except for the unstepped control.
+//   0  binary (BU,8,8) 0x44 + 0x44: one pass, no carry out       2
+//   1  binary 0xFF + 0x01, top 8: z = 1 (carry into bit 8)       4
+//   2  binary 0xFFFFFF + 0x01, top 8: z = 3 (bits 8, 16, 24)     8
+//   3  binary 0x100 - 0x01, top 8: a borrow into bit 8, z = 1,
+//      absorbed at bit 16; end carry, no recomplement            4
+//   4  binary (BU,16,8) 0x001 - 0x100, top 16: the borrow runs to
+//      the left end, which is not stepped (z = 0: rl_add's note),
+//      then the recomplement 0 + 2 + 0 + 1 = 3: 2 + 3 = 5 passes  10
+//   5  decimal (DU,8,4) 95 + 05, top digit 2: z = 1              6
+//   6  decimal 4444 + 44 at digit 2 (osb 2, top 4): z = 0        4
+//   7  +MG binary (BU,8,8) 1 - 2: the borrow runs to the left end
+//      (z = 0), cleared not recomplemented, so 1 more: 2 passes   4
+//   8  signed binary, one data byte and the sign pass: 2 passes  4
+//   9  the unstepped control (sauNoSteps), 1 + 1: half (a)'s 4
+//      clocks (rl_add's note), ownClocks() Invalid               4
+// INJECTIONS, OBSERVED 2026-11-25 (each in a scratch copy of this file):
+//   * sauStepZ := False: vectors 1, 2, 3 and 5 FAIL on clocks (2, 2, 2, 4
+//     against 4, 8, 4, 6) -- the carry and borrow vectors -- and the rest
+//     pass.
+//   * sauStepRecomp := False: vector 4 FAILS on clocks (4 against 10) and
+//     vector 7 on ownClocks (the unit reports 2 while the datapath's
+//     recomplement takes 4); the rest pass.
+// ---------------------------------------------------------------------
+typedef 10 NStepVec;
+
+(* synthesize *)
+module mkSauStepTb(Empty);
+  SAU            box    <- mkSAU;
+  Reg#(Bit#(4))  idx    <- mkReg(0);
+  Reg#(Bit#(8))  fails  <- mkReg(0);
+  Reg#(Bool)     issued <- mkReg(False);
+  Reg#(Bool)     done   <- mkReg(False);
+  Reg#(Bit#(16)) clk    <- mkReg(0);
+  Reg#(Bit#(16)) t0     <- mkReg(0);
+
+  rule rl_clk; clk <= clk + 1; endrule
+
+  function SauAddSteps st(Bit#(8) p, Bit#(8) top, Bit#(8) osb, Bit#(8) b0, Bool mg) =
+    SauAddSteps { passes: p, top: top, osb: osb, b0: b0, mg: mg };
+  function DecReq reqOf(Bit#(4) i) =
+    case (i)
+      0: DecReq { a: 128'h44, b: 128'h44, sub: False, binary: True, steps: st(1, 8, 0, 1, False) };
+      1: DecReq { a: 128'hFF, b: 128'h01, sub: False, binary: True, steps: st(1, 8, 0, 1, False) };
+      2: DecReq { a: 128'hFFFFFF, b: 128'h01, sub: False, binary: True, steps: st(1, 8, 0, 1, False) };
+      3: DecReq { a: 128'h100, b: 128'h01, sub: True, binary: True, steps: st(1, 8, 0, 1, False) };
+      4: DecReq { a: 128'h001, b: 128'h100, sub: True, binary: True, steps: st(2, 16, 0, 2, False) };
+      5: DecReq { a: 128'h95, b: 128'h05, sub: False, binary: False, steps: st(2, 2, 0, 2, False) };
+      6: DecReq { a: 128'h4444, b: 128'h4400, sub: False, binary: False, steps: st(2, 4, 2, 2, False) };
+      7: DecReq { a: 128'h1, b: 128'h2, sub: True, binary: True, steps: st(1, 8, 0, 1, True) };
+      8: DecReq { a: 128'h10, b: 128'h20, sub: False, binary: True, steps: st(2, 8, 0, 1, False) };
+      default: DecReq { a: 128'h1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
+    endcase;
+  function DecRsp wantOf(Bit#(4) i) =
+    case (i)
+      0: DecRsp { r: 128'h88,      carry: False };
+      1: DecRsp { r: 128'h100,     carry: False };
+      2: DecRsp { r: 128'h1000000, carry: False };
+      3: DecRsp { r: 128'hFF,      carry: True };
+      4: DecRsp { r: 128'hFF,      carry: False };
+      5: DecRsp { r: 128'h100,     carry: False };
+      6: DecRsp { r: 128'h8844,    carry: False };
+      7: DecRsp { r: 128'h1,       carry: False };
+      8: DecRsp { r: 128'h30,      carry: False };
+      default: DecRsp { r: 128'h2, carry: False };
+    endcase;
+  function Bit#(16) clocksOf(Bit#(4) i) =
+    case (i) 0: 2; 1: 4; 2: 8; 3: 4; 4: 10; 5: 6; 6: 4; 7: 4; 8: 4; default: 4; endcase;
+
+  rule rl_issue (!done && !issued);
+    box.request(tagged SauAdd reqOf(idx));
+    issued <= True;
+    t0 <= clk;
+  endrule
+
+  rule rl_collect (!done && issued && box.responseReady());
+    let got  = sauDecRsp(box.response());
+    let want = wantOf(idx);
+    Bit#(16) took = clk - t0;
+    Maybe#(Bit#(16)) own = box.ownClocks();
+    Maybe#(Bit#(16)) wantOwn = (idx == 9) ? tagged Invalid : tagged Valid took;
+    if (got != want) begin
+      $display("FAIL sau step[%0d]: r=%h carry=%0d, want r=%h carry=%0d",
+               idx, got.r, got.carry, want.r, want.carry);
+      fails <= fails + 1;
+    end else if (took != clocksOf(idx)) begin
+      $display("FAIL sau step[%0d] clocks = %0d, want %0d", idx, took, clocksOf(idx));
+      fails <= fails + 1;
+    end else if (own != wantOwn) begin
+      $display("FAIL sau step[%0d] ownClocks wrong (took %0d)", idx, took);
+      fails <= fails + 1;
+    end else
+      $display("PASS sau step[%0d] r=%h carry=%0d in %0d clocks", idx, got.r, got.carry, took);
+    issued <= False;
+    if (idx == fromInteger(valueOf(NStepVec) - 1)) done <= True;
+    else idx <= idx + 1;
   endrule
 
   rule rl_finish (done);

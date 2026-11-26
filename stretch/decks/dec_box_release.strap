@@ -30,7 +30,9 @@
 !   I: disabled, no interruption: an LX of the accumulator ($R) and a Z
 !      of it must each wait for the box's answer (the interlock).
 ! CYCLES/MEMREADS are MODEL behaviour.  The run line in tests/run_tests.sh
-! has the observed injections.
+! has the observed injections.  CYCLES 859 -> 868 on 2026-11-25: the
+! decimal L and + are stepped adds (fidelity_plan.md A3 half (b)), holding
+! their levels 2 clocks a pass; attribution at the run line.
         SLC, (8)4100.0
 START   BD,  $+.32                   ! disable while IA and the mask are set
         LVI, $X13, TBL

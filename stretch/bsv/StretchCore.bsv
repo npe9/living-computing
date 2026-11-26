@@ -1988,6 +1988,9 @@ module mkStretchCore(StretchCore);
     // time, which only the box knows (mkEBox.boxCharge; 0 for every
     // other instruction).  Added to the budget on both paths below.
     Bit#(16) boxX = ebox.boxCharge();
+    // ... and, for a STEPPED add (fidelity_plan.md A3 (b), 2026-11-25),
+    // the serial unit's own clocks: Valid only then.  See the charge.
+    Maybe#(Bit#(16)) sauOwn = ebox.boxOwnClocks();
     resumeYielded <= False;
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
@@ -2029,11 +2032,26 @@ module mkStretchCore(StretchCore);
         // The OTHER branch needs no such term: an I-box-dispatched
         // instruction is charged `budget - elapsed` from its own start
         // clock, which already contains the box's time.
-        Bit#(16) ebudget = eboxClocks(la.headLevel().di) + boxX;
-        if (boxK > ebudget)
-          $display("StretchCore: A BOX OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
-                   pc, boxK, ebudget);
-        ebn = (boxK >= ebudget) ? 0 : ebudget - boxK;
+        //
+        // >>> EXCEPT WHERE THE SERIAL UNIT OWNS ITS TIME (fidelity_plan.md
+        // A3 (b), 2026-11-25). <<<  A stepped add (L, LWF decimal; +, +MG
+        // both radices) has spent the unit's passes, 2 clocks each with
+        // Table 3's z and recomplement (mkSAU), in the box.  That IS the
+        // row's byte term, so the row is charged without it
+        // (sauSteppedRowClocks) and NOTHING is taken off: what is left of
+        // the row -- its fixed part -- runs from the answer, as the
+        // termination does on the machine.  The unit's time is not
+        // bounded by the row, so there is no overrun to report.
+        DecodedInstr hdi = la.headLevel().di;
+        Bit#(16) ebudget = eboxClocks(hdi) + boxX;
+        if (sauOwn matches tagged Valid .u)
+          ebn = eboxClocks(hdi) - sauSteppedRowClocks(hdi);
+        else begin
+          if (boxK > ebudget)
+            $display("StretchCore: A BOX OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
+                     pc, boxK, ebudget);
+          ebn = (boxK >= ebudget) ? 0 : ebudget - boxK;
+        end
         laarRetire(la.headLevel(), ebn);
         noteRetired(la.headLevel(), o);
         la.retireHead();
@@ -2047,7 +2065,11 @@ module mkStretchCore(StretchCore);
         end
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         Bit#(32) elapsed = clk - startClk;
+        // A stepped add's unit time replaces the row's byte term here as
+        // well (the note on the other branch); `elapsed` already holds it.
         Bit#(16) budget = budgetClocks(di, taken) + boxX;
+        if (sauOwn matches tagged Valid .u)
+          budget = budgetClocks(di, taken) - sauSteppedRowClocks(di) + u;
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
         done = isHalt(di, o.next, pc);
       end
