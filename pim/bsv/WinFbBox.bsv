@@ -41,6 +41,14 @@
 //   - the line engine (rules line*): Bresenham, one read-modify-write
 //             per pen dot.
 //   - the dump engine (rules dump*), on port B.
+//   - the scan port (H2): port B also answers mkWinScanOut's word reads,
+//             one a cycle, whenever no dump is running (rule scanFetch;
+//             a dump owns port B, and scan reads during it are dropped,
+//             so the picture shows stale words while a dump runs).  It
+//             adds no state and changes no command: the 11 H0/H1 streams
+//             stay byte-identical with the same cycle counts.  Bluesim
+//             runs both ports on one clock; the pixel clock domain of the
+//             real port B is H3's.
 //   - reset: the frame is cleared (81,920 cycles) and the index built;
 //             commands wait until both finish.
 //
@@ -77,8 +85,17 @@ typedef struct {
    Bit#(16) data;
 } WinFbRsp deriving (Bits, Eq, FShow);
 
+// The scan-out's read of the frame (port B, the DP16KD's second port):
+// put a word address, read the word in the next cycle (mkBRAMCore2, no
+// output register).  H2, for mkWinScanOut (bsv/WinScanOut.bsv).
+interface WinFbScan;
+   method Action put(Bit#(17) addr);
+   method Bit#(16) read;
+endinterface
+
 interface WinFbBox;
    interface Server#(WinFbCmd, WinFbRsp) server;
+   interface WinFbScan scan;
 endinterface
 
 typedef 1280 FbW;
@@ -524,6 +541,13 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
    endrule
 
    // =====================================================================
+   // the scan port: a read on port B in any cycle no dump owns it
+   RWire#(Bit#(17)) scanA <- mkRWire;
+   rule scanFetch (mode != MDump &&& scanA.wget matches tagged Valid .a);
+      frame.b.put(False, a, ?);
+   endrule
+
+   // =====================================================================
    // accept one command and set up its engine
    function Action reply(Bit#(8) st) =
       rspQ.enq(WinFbRsp { isData: False, status: st, data: 0 });
@@ -620,6 +644,10 @@ module mkWinFbBox#(String fontFile)(WinFbBox);
    interface Server server;
       interface Put request = toPut(cmdQ);
       interface Get response = toGet(rspQ);
+   endinterface
+   interface WinFbScan scan;
+      method Action put(Bit#(17) addr) = scanA.wset(addr);
+      method Bit#(16) read = frame.b.read;
    endinterface
 endmodule
 

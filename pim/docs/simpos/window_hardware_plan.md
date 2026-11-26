@@ -744,7 +744,43 @@ header freezes the command format and every OURS choice), `../../bsv/WinFbBox.bs
 of fill, line, glyph, copy, save/restore, dump; save areas and test_11 in block RAM),
 `../../bsv/WinFbBoxTb.bsv`, `../../bsv/run_win_tb.sh` (in `../../run_tests.sh`): 11 streams PBM- and
 status-identical by `cmp`; the injected faults and what each failed are in the runner's header.
-Not yet: synthesis (H3), the scan-out (H2).
+
+**H2 built in Bluesim (2026-11-25).** `../../bsv/WinScanOut.bsv` (`mkWinScanOut`) contains:
+- `mkWinTiming`, the mode table:
+  - mode 0: 1920×1080@30 with the frame letterboxed 1:1 at (320,28);
+  - mode 1: 1280×1024@60 DMT;
+  - mode 2: 1280×1024 RB @49.4, OURS;
+  - mode 3: 640×480 with a 2×2-OR 2:1 reduction from frame row panY. That is OURS, because 2:1 gives 512 rows
+    for 480 lines; the default shows rows 0-959, MELCOM's 960.
+- `mkWinFetch`, which reads port B through a new box scan port;
+- `mkWinCursor`, the overlay of §2.6, latched at the frame start;
+- `mkWinTmdsEnc` ×3;
+- `mkWinTmdsSer`, the 10:1 serializer.
+
+Timings and the TMDS encoding:
+- **Modes 0, 1 and 3 are sourced**, SECONDARY, from the Linux `drm_edid.c` lines for CEA VIC 34, DMT 0x23 and
+  DMT 0x04/VIC 1, fetched 2026-11-25. They match the CHECK figures of §2.2 and Appendix A. 640×480 is −H −V;
+  modes 0 and 1 are +H +V.
+- **Mode 2 is OURS.** Its +H −V polarity is CHECK.
+- Vsync changes at the line start. That is CHECK against CEA-861's edge alignment.
+- The TMDS encoder, the control characters, the bit-0-first order and the channel map are from DVI 1.0
+  Fig. 3-5 p29, §3.2.3 p30 and Fig. 3-2 p26. This was read in a copy of the spec, so it is no longer CHECK.
+  Fig. 3-5 prints the characters q_out[0:9], bit 0 first. The skeleton's [9:0] values agree.
+
+The Python references are `../../psi/winscan.py` (modes, timing model, view, checkers) and
+`../../psi/wintmds.py`. In `../../bsv/run_win_tb.sh`:
+- 17 scan cases decode clock by clock to the reference view, and they re-encode identically. The cases are
+  the four modes, mode 2 with no cursor, and 12 random small timings.
+- The frame dumped after the scan still equals the Python PBM.
+- The encoder bench matches `wintmds.encode` on 15,439 characters.
+- The serializer bench runs at a 5:1 clock relation and carries the characters on all lanes.
+
+16 injections are in the runner's header. One is not caught: the serializer's pixel-word sample phase is
+invisible with ideal clocks in Bluesim. **The pclk → sclk load is therefore not verified by H2.** The box and
+the scan-out share one clock in the bench, so the DP16KD crossing is not verified either. Both go to H3's
+timing constraints.
+
+Not yet: synthesis (H3).
 
 **Order:**
 - H0-H3 are all Bluesim and synthesis. They need no board, and nothing from the owner but review.
