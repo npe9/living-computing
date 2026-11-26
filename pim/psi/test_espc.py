@@ -1490,7 +1490,7 @@ end.''', 'simpos')
         # the new standard_choice_window stand-in; before, the class was
         # missing); rows unchanged.  824 / 239 / 405
         # window M10 (row by row against f825683e's stand-ins, 2026-11-26):
-        # 1,485 -> 1,520 rows, all 35 new rows inherited from stand-ins, no
+        # 1,485 -> 1,520 rows (1,521 below), all 35 new rows inherited from stand-ins, no
         # row removed, no held row changes outcome.  pimos_window gets 8 of
         # pmacs_window's new methods: clear_echo_area/1, echo/2, kill/1
         # success; current_buffer/2, menu_chosen/2, refresh/1,
@@ -1501,8 +1501,10 @@ end.''', 'simpos')
         # other 21 refused at the census editor's unset window (slot
         # constant).  The held select_buffer/4 moves its stop from
         # editor_text_buffer get_buffer_instance/3 (now stood in) to
-        # set_input_buffer/2 on that unset window.  832 / 239 / 432
-        self.assertEqual((len(rows), out), (1520, {'success': 832, 'failure': 239, 'refused': 432, 'exception': 16,
+        # set_input_buffer/2 on that unset window.  832 / 239 / 432.
+        # Then set_input_position/1 (cal_pmacs run/4) inherited by
+        # pimos_window, success: 1,521 rows, 833 / 239 / 432
+        self.assertEqual((len(rows), out), (1521, {'success': 833, 'failure': 239, 'refused': 432, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1643,8 +1645,9 @@ end.''', 'simpos')
         # read_file/4 refused (unbound pathname); select_buffer/4 moves its
         # stop from get_buffer_instance/3 to put/2 on the window's unset
         # output stream (the step 3g artifact).  No held row changes
-        # outcome.  880 / 250 / 373
-        self.assertEqual((len(rows), out), (1520, {'success': 880, 'failure': 250, 'refused': 373,
+        # outcome.  880 / 250 / 373; set_input_position/1 (as in
+        # test_fep_census) success: 1,521 rows, 881 / 250 / 373
+        self.assertEqual((len(rows), out), (1521, {'success': 881, 'failure': 250, 'refused': 373,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -1874,7 +1877,7 @@ end.''', 'simpos')
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
             # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
             # M4/M6: 15 (test_fep_census)
-            self.assertEqual(len(fwd), 1520)    # window M10: 35 inherited methods (test_fep_census)
+            self.assertEqual(len(fwd), 1521)    # window M10: 36 inherited methods (test_fep_census)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
@@ -3625,7 +3628,9 @@ class Window(unittest.TestCase):
                           ('window_graphics', self.GRAPHICS_PIN),
                           ('window_graphics_rest', self.GRAPHICS_REST_PIN),
                           ('choice_window', self.CHOICE_PIN),
-                          ('manipulator_attribute', self.SHOT_PINS['attribute'])):
+                          ('manipulator_attribute', self.SHOT_PINS['attribute']),
+                          ('pmacs_editor', self.M10_PINS['pmacs']),
+                          ('editor_menu', self.M10_PINS['editor_menu'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -6091,6 +6096,419 @@ end."""
         with self.assertRaises(K.Refusal) as e:
             self.send(m, w, 'create_marker', 0, 0, 8, 8, K.Atom('circle'), K.Var())
         self.assertIn('graphics_refused', str(e.exception.detail))
+
+    # -- window M10 (2026-11-26): Pmacs proper ------------------------------
+    # The held programs run whole on the stand-ins, each started as a user
+    # would start a program: an item added to the system menu (OURS, as
+    # the M6/M7 runs add events), chosen after the Login PIMOS run.  The
+    # harness classes are OURS: an as_program heir whose goal/1 calls the
+    # held entry, and for cal_pmacs the four methods its run/4 asks of the
+    # cal program object (cal's own, not loaded).  exshow's class slot
+    # `font` is read from `font:kanji_28.font`, which is not held: the run
+    # gives that name a directory entry for the held test_11 font (OURS
+    # substitute, made in the run only; without it the class is refused,
+    # test_win_m10_exshow).
+    M10_HARNESS = {
+        'exshow': ('exshow', """class m10_exshow has
+nature as_program;
+instance
+:goal(P) :- :go(#exec_show_tmp, "boot", "me:boot.init");
+end."""),
+        'cal': ('cal_pmacs', """class m10_cal has
+nature as_program;
+attribute saved := 0;
+:keep(Class, B) :- Class!saved := B;
+instance
+% cal's program object's slot that run/4 sets to the Pmacs window and back
+attribute cur_window := 0;
+:goal(P) :- :run(#cal_pmacs, "me:boot.init", "me:user.cal", P);
+:get_file_menu(P, P);
+:get_pmacs_window(P, W) :-
+    :create(#cal_pmacs_window, [title("cal"), size(500, 250), position(100, 100)], W);
+:load_file_to_buffer(P, File, B) :-
+    :create(#editor_text_buffer, B, "cal", 0),
+    :retrieve(#directory, F, File, _),
+    :load_file(B, F);
+:save_buffer(P, File, B) :- :keep(#m10_cal, B);
+end."""),
+        # papyrus's my_buffer_selecter (my_select.esp.1) with its two other
+        # natures, papyrus classes not loaded, as empty classes (OURS)
+        'select': ('my_select', """class my_proof_editor has
+end.
+class my_mode_changer has
+end.
+class m10_select has
+nature as_program;
+instance
+:goal(P) :-
+    :create(#pmacs_window, [editor(#my_buffer_selecter), title("papyrus"),
+                            size(500, 250), position(100, 100)], W),
+    :create(#editor_text_buffer, B1, "one", 0),
+    :create(#editor_text_buffer, B2, "two", 0),
+    :set_input_buffer(W, B1),
+    :activate(W),
+    :get_interpreter(W, I),
+    :command_interpret(I);
+end."""),
+    }
+    M10_CLICK = (200, 150)          # inside every M10 program's window
+    C_X, C_S, C_Z = 24, 19, 26
+
+    @staticmethod
+    def m10_key(c):
+        return K.Vec([K.Atom('key'), c])
+
+    @classmethod
+    def m10_keys(cls, text):
+        return [cls.m10_key(c) for c in K.Str(text).codes()]
+
+    @staticmethod
+    def m10_entry(m, d, name):
+        got = [K.deref(e.args[1]) for e in Window._walk(m.get_slot(d, 'entries'))
+               if K.deref(e.args[0]).text == name]
+        return got[0] if got else None
+
+    @staticmethod
+    def m10_node(m, path):
+        d = m.get_slot(K.ClassRef('simpos##directory'), 'root')
+        for name in path.strip('>').split('>'):
+            d = Window.m10_entry(m, d, name)
+        return d
+
+    def m10_start(self, m, prog, font):
+        # the substitute font entry, the added menu item, and the events
+        # that choose it
+        import fep_bridge as FB
+        if font:
+            fd = self.m10_node(m, '>sys>font')
+            t11 = self.m10_entry(m, fd, 'test_11.font')
+            m.set_slot(fd, 'entries', K.Cons(K.Vec([K.Str('kanji_28.font'), t11]),
+                                             m.get_slot(fd, 'entries')))
+        C = K.ClassRef('simpos##coordinator')
+        item = K.Vec([FB.jstr('M10'), K.Atom('m10_' + prog)])
+        m.set_slot(C, 'menu', K.Cons(K.Cons(item, K.NIL), m.get_slot(C, 'menu')))
+        return [K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), FB.jstr('M10')])]
+
+    def pmacs_run(self, prog, *batches, font=True):
+        # later_run with the held source and the harness compiled in, the
+        # program started at the first quiet moment after the login, then
+        # each of BATCHES at the next one, the first after a left click in
+        # the window (it selects it).  -> (machine, frame, the refusal
+        # that ended the run)
+        import fep_bridge as FB
+        import held
+        import windev
+        member, harness = self.M10_HARNESS[prog]
+        psi = FB.PsiSide()
+        m = psi.m
+        for src in (held.member_text(member), harness):
+            ts, failed = espc.compile_text(src, 'simpos')
+            self.assertEqual(failed, {})
+            for t in ts:
+                m.lib.add(t)
+        psi.user = [FB.mouse('rr', *FB.MENU_AT), FB.mouse('l', *FB.LOGIN_ITEM_AT)]
+        rest = [lambda mm: self.m10_start(mm, prog, font)] + [list(b) for b in batches]
+        if len(rest) > 1:
+            rest[1] = [FB.mouse('l', *self.M10_CLICK)] + rest[1]
+
+        def exchange(out):
+            if rest and not psi.shell:
+                b = rest.pop(0)
+                psi.shell, psi.getl = list(b(m) if callable(b) else b), True
+            return []
+        stop = psi.run(exchange)
+        self.assertEqual((rest, psi.shell), ([], []))
+        return m, windev.device(m).frame, stop
+
+    def m10_window(self, m):
+        # the run's Pmacs window (the coordinator's pmacs_window or heir)
+        ws = [w for w in self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'windows'))
+              if 'pmacs' in w.cid]
+        return ws[0] if ws else None
+
+    def m10_rows(self, m, fr):
+        # the window's text rows read back from the frame, reverse video
+        # read as plain text: -> (rows, the set of reversed (row, column))
+        import windev
+        w = self.m10_window(m)
+        P = m.get_slot(w, 'pane')
+        left, top, cols, rows = (m.get_slot(P, k) for k in ('left', 'top', 'cols', 'rows'))
+        out, rev = [], set()
+        for r, line in enumerate(windev.read_cells(fr, left, top, cols, rows)):
+            s, c, i = '', 0, 0
+            while i < len(line):
+                if line[i] == '[' and i + 2 < len(line) and line[i + 2] == ']':
+                    s, i = s + line[i + 1], i + 3
+                    rev.add((r, c))
+                elif line[i] == '#':
+                    s, i = s + ' ', i + 1
+                    rev.add((r, c))
+                else:
+                    s, i = s + line[i], i + 1
+                c += 1
+            out.append(s.rstrip())
+        return out, rev
+
+    def m10_buffer_text(self, m, w=None):
+        w = w or self.m10_window(m)
+        I = m.get_slot(w, 'interpreter')
+        return self.m10_text(m, m.get_slot(I, 'buffer'))
+
+    def m10_text(self, m, B):
+        import simpos_fs
+        v = K.Var()
+        self.assertTrue(self.send(m, B, 'contents', v))
+        return simpos_fs.text_of(K.resolve(v).codes())
+
+    def m10_versions(self, m):
+        # boot.init's versions in >sys>user>pmpsi: {version: (full name, text)}
+        import simpos_fs
+        d = self.m10_node(m, '>sys>user>pmpsi')
+        out = {}
+        for e in self._walk(m.get_slot(d, 'entries')):
+            if K.deref(e.args[0]).text == 'boot.init':
+                f = K.deref(e.args[1])
+                out[m.get_slot(f, 'version')] = (m.get_slot(f, 'full_name').text,
+                                                 simpos_fs.text_of(m.get_slot(f, 'contents').codes()))
+        return out
+
+    # the mode line of exshow's window (pmacs_display.esp, OURS layout from
+    # the screenshots): 99 x 46 text cells, buffer 1 "boot", the file
+    M10_MODE = 'PMACS(fundamental)(99,46) *-1* boot >sys>user>pmpsi>boot.init.%d --Top--'
+    M10_PINS = {
+        'pmacs': ('38ff75a3312808cd9c28ca38de9d94ca5a20ecc8f36aa9a0fd7bd2993f91b204', 131806),
+        'editor_menu': ('a1ec90b6d649a416b562ca341112d4ef7c5d24b25b55e181d2669e050acc6374', 136585),
+    }
+
+    @classmethod
+    def m10_shots(cls):
+        # the event batches of the two pinned M10 screens (psi/winshot.py
+        # `pmacs` and `editor_menu`): exshow's window after `Hi`, C-n, `x`,
+        # C-x C-s; the EDITOR MENU opened after `Hi`
+        import fep_bridge as FB
+        k = cls.m10_key
+        return dict(pmacs=(cls.m10_keys('Hi') + [k(14)] + cls.m10_keys('x') + [k(cls.C_X), k(cls.C_S)],),
+                    editor_menu=(cls.m10_keys('Hi'), [FB.mouse('r', 300, 200)]))
+
+    def test_win_m10_exshow(self):
+        # M10: the HELD disc/exshow.esp (IFS source) runs whole on the
+        # Pmacs stand-ins.  Its exec_show_tmp go/3 makes a pmacs_window
+        # ([title("boot"), size(1100,700), position(0,0)]), creates the
+        # buffer "boot" in the pool (create/4), read_file/4s me:boot.init
+        # into it, set_input_buffer/2, activate/1, set_font/2 (its class
+        # slot's font), flash/1, then command_interpret/1:
+        #   - the screen: the file's lines, the mode line reversed over the
+        #     whole row, the echo line `Read! >sys>user>pmpsi>boot.init.1`;
+        #   - `Hi`, C-n, `x`, C-x C-s: the text edited at the point (C-n
+        #     keeps the column, or the line's end), the new version
+        #     boot.init.2 written with it, version 1 kept, the echo line
+        #     `Written! ...boot.init.2`, the mode line naming version 2;
+        #     the frame pinned (psi/winshot.py `pmacs`);
+        #   - `Hi`, then C-x C-z: the loop ends and exshow kill/1s the
+        #     window: off the coordinator's list, the program ended,
+        #     nothing written;
+        #   - without the substitute font entry the class is refused at its
+        #     slot's initial value (when set_font/2 first reads it).
+        # Injections, OBSERVED: the table after test_win_m10_keys.
+        import windev
+        X, S, Z = self.C_X, self.C_S, self.C_Z
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('exshow')
+        self.assertEqual(stop.cause, 'would suspend')
+        w = self.m10_window(m)
+        self.assertEqual((w.cid, m.get_slot(w, 'title').text), ('simpos##pmacs_window', 'boot'))
+        v = self.m10_versions(m)
+        self.assertEqual(sorted(v), [1])
+        name1, t1 = v[1]
+        self.assertEqual(name1, '>sys>user>pmpsi>boot.init.1')
+        lines = t1.split('\n')
+        self.assertEqual(lines[1], '[')
+        rows, rev = self.m10_rows(m, fr)
+        self.assertEqual(len(rows), 48)
+        self.assertEqual(rows[:len(lines)], [ln[:99] for ln in lines])
+        self.assertEqual(rows[46], self.M10_MODE % 1)
+        self.assertEqual({c for r, c in rev if r == 46}, set(range(99)))
+        self.assertEqual(rows[47], 'Read! >sys>user>pmpsi>boot.init.1')
+        m, fr, stop = self.pmacs_run('exshow', *self.m10_shots()['pmacs'])
+        want = ['Hi' + lines[0], '[x'] + lines[2:]
+        self.assertEqual(self.m10_versions(m), {1: (name1, t1),
+                                                2: ('>sys>user>pmpsi>boot.init.2', '\n'.join(want))})
+        self.assertEqual(self.m10_buffer_text(m), '\n'.join(want))
+        rows, rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[:len(want)], want)
+        self.assertIn((1, 2), rev)          # the cursor, after the x
+        self.assertEqual(rows[46], self.M10_MODE % 2)
+        self.assertEqual(rows[47], 'Written! >sys>user>pmpsi>boot.init.2')
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.M10_PINS['pmacs'])
+        m, fr, stop = self.pmacs_run('exshow', self.m10_keys('Hi'), [k(X), k(Z)])
+        self.assertIsNone(self.m10_window(m))
+        self.assertIn('has ended', stop.detail)
+        self.assertEqual(sorted(self.m10_versions(m)), [1])
+        m, fr, stop = self.pmacs_run('exshow', font=False)
+        self.assertEqual((stop.cause, stop.detail), ('class not generated', 'simpos##exec_show_tmp class '
+                                                     'slot font: its initialisation fails'))
+
+    def test_win_m10_keys(self):
+        # M10, the default bindings (standard_editor.esp, OURS, gap G6) on
+        # exshow's buffer: `ab`, C-b, C-d, C-e, DEL, `Z`, C-n, C-a, C-k,
+        # C-k, `Q`, C-p, `R`, C-f, `S` give the text an Emacs gives (line
+        # 1, `[`, killed with its newline; C-n and C-p keep the column or
+        # take the line's end), shown on the screen; the mode line still
+        # names version 1 (nothing saved).  Then the help key (bound to
+        # nothing) echoes `Undefined key`, the text unchanged, and so does
+        # C-x q (q bound in no prefix table).
+        # Injections, OBSERVED: see the table below this test.
+        k = self.m10_key
+        ks = self.m10_keys
+        seq = (ks('ab') + [k(2), k(4), k(5), k(127)] + ks('Z') + [k(14), k(1), k(11), k(11)] + ks('Q')
+               + [k(16)] + ks('R') + [k(6)] + ks('S'))
+        m, fr, stop = self.pmacs_run('exshow', seq)
+        lines = self.m10_versions(m)[1][1].split('\n')
+        self.assertEqual(lines[1], '[')
+        want = ['aR' + lines[0][0] + 'S' + lines[0][1:-1] + 'Z', 'Q' + lines[2]] + lines[3:]
+        self.assertEqual(self.m10_buffer_text(m), '\n'.join(want))
+        rows, _rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[:len(want)], [ln[:99] for ln in want])
+        self.assertEqual(rows[46], self.M10_MODE % 1)
+        self.assertEqual(rows[47], 'Read! >sys>user>pmpsi>boot.init.1')
+        m, fr, stop = self.pmacs_run('exshow', seq + [k(0x8006)])
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Undefined key')
+        self.assertEqual(self.m10_buffer_text(m), '\n'.join(want))
+        m, fr, stop = self.pmacs_run('exshow', [k(self.C_X)] + ks('q'))
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Undefined key')
+
+    # Window M10 injections, OBSERVED (2026-11-26; each in a private copy
+    # of psi/, the worktree untouched; test_espc.py, test_fep_bridge.py and
+    # test_kl0.py run; all else OK):
+    #   K1 C-d bound to backward_character: M10 keys FAIL/ERROR, nothing else.
+    #   S1 a save overwrites the latest version (kl0 new_version keeps the number; the plan's injection): M10 exshow, M10 menu (ERROR) FAIL/ERROR, nothing else.
+    #   D1 the mode line drawn plain, not reversed: M10 exshow, M10 menu (its pinned frame) FAIL/ERROR, nothing else.
+    #   D2 a text row once drawn is never drawn again: M10 exshow, keys, menu, cal FAIL/ERROR, nothing else.
+    #   M1 an EDITOR MENU item's value not given to the window: M10 menu; test_fep_census (menu_chosen/2 row success) FAIL/ERROR, nothing else.
+    #   R1 the right button not routed to the window: M10 menu (ERROR) FAIL/ERROR, nothing else.
+    #   V1 set_input_buffer/2 does not tell the interpreter: M10 exshow, menu; keys, cal, select (ERROR); test_fep_census FAIL/ERROR, nothing else.
+    #   C1 the editor class from the option only (a subclass's slot ignored): M10 cal FAIL/ERROR, nothing else.
+    #   P1 select_buffer/2's primary does nothing: M10 select; test_fep_census FAIL/ERROR, nothing else.
+    #   X1 the window's datum as the term {data, X} again (the bug found): M4 console, M6 selection, M7 console move; test_fep_bridge.py Console FAIL/ERROR, nothing else.
+
+    # the EDITOR MENU's items (standard_editor.esp show_menu/1: verbatim
+    # from IPSJ 36239 p5), opened by the right button at (300, 200)
+    M10_MENU = ['ABORT', 'List Buffers', 'Save All Files', 'Set Font', 'Set Echo Font',
+                'Set Window Size', 'From Whiteboard', 'To Whiteboard']
+
+    @staticmethod
+    def m10_item(i):
+        # a left click on item I of the EDITOR MENU opened at (300, 200)
+        # (its items from y 221, 16 dots each: menu_pane.esp's layout)
+        import fep_bridge as FB
+        return FB.mouse('l', 320, 221 + 16 * i + 8)
+
+    def test_win_m10_menu(self):
+        # M10, the EDITOR MENU (IPSJ 36239 p5, SCREENSHOT; window.md §2.11):
+        # with exshow's window up and `Hi` typed, the right button on it
+        # (the coordinator gives the window right_click/3; its input gets
+        # mouse#r, bound to show_menu by standard_editor's table) opens a
+        # pop-up titled EDITOR MENU at the mouse with the eight items, one
+        # column (OURS); the frame pinned (psi/winshot.py `editor_menu`).
+        #   - List Buffers: the menu closes, the echo line `Buffers: boot`;
+        #   - Save All Files: the modified buffer written, version 2, echo
+        #     `Written! ...boot.init.2`;
+        #   - ABORT: the menu closes, nothing else (the frame as before the
+        #     right button);
+        #   - Set Font: refused loudly, set_font_by_menu/1 not stood in;
+        #   - a left click away from the menu closes it, no item chosen.
+        # Injections, OBSERVED: the table after test_win_m10_keys.
+        import fep_bridge as FB
+        import windev
+        C = K.ClassRef('simpos##coordinator')
+        hi = self.m10_keys('Hi')
+        right = [FB.mouse('r', 300, 200)]
+        m, before, _ = self.pmacs_run('exshow', hi)
+        before = list(before.rows)
+        m, fr, stop = self.pmacs_run('exshow', *self.m10_shots()['editor_menu'])
+        self.assertEqual(stop.cause, 'would suspend')
+        M = m.get_slot(C, 'menu_pane')
+        x, y, wd, it = (K.resolve(m.get_slot(M, k)) for k in ('x', 'y', 'w', 'items_top'))
+        self.assertEqual((x, y, it), (300, 200, 221))
+        self.assertEqual(windev.read_cells(fr, x + 2, y + 3, wd // 11, 1), ['   EDITOR MENU'])
+        for i, label in enumerate(self.M10_MENU):
+            # each label centred (menu_pane.esp), so read at every offset
+            self.assertTrue(any(label in windev.read_cells(fr, x + 2 + d, it + 16 * i + 1, (wd - 4) // 11, 1)[0]
+                                for d in range(11)), label)
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.M10_PINS['editor_menu'])
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(1)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Buffers: boot')
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(2)])
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Written! >sys>user>pmpsi>boot.init.2')
+        self.assertEqual(self.m10_versions(m)[2][1].split('\n')[0][:4], 'Hi% ')
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(0)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(fr.rows, before)
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [FB.mouse('l', 800, 100)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(fr.rows, before)
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(3)])
+        self.assertIn('standard_editor:set_font_by_menu/1 (not in the stand-in)', stop.detail)
+
+    def test_win_m10_cal(self):
+        # M10, cal's Pmacs (HELD cal2.12/cal_pmacs.esp, IFS source): its
+        # cal_pmacs_window (a pmacs_window whose `editor` slot is
+        # #cal_pmacs_editor) gets a cal_pmacs_editor, so the held editor
+        # class's own binding `:command(Editor,pf#11,cal_menu)` comes
+        # before the stand-in defaults.  The held cal_pmacs run/4 runs
+        # whole (its cal program object OURS, M10_HARNESS):
+        # load_file_to_buffer, get_pmacs_window (title, size(500,250),
+        # position(100,100): 44 x 14 text cells), set_input_buffer/2,
+        # goto_beginning/1, set_input_position/1, activate/1,
+        # command_interpret/1:
+        #   - `ab` typed: the buffer's text, the default keys still bound;
+        #   - pf#11: the held cal_menu/1 runs, and is refused at the class
+        #     it creates, cal_op_menu (cal's, not loaded);
+        #   - C-x C-z: the loop ends, run/4 deactivate/1s the window (off
+        #     the screen), takes current_buffer/2 and save_buffer/3s it: the
+        #     buffer kept by the harness has the edited text; the program
+        #     ends.
+        # Injections, OBSERVED: the table after test_win_m10_keys.
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('cal', self.m10_keys('ab'))
+        w = self.m10_window(m)
+        self.assertEqual((w.cid, K.deref(m.get_slot(w, 'editor')).cid),
+                         ('simpos##cal_pmacs_window', 'simpos##cal_pmacs_editor'))
+        self.assertEqual([m.get_slot(w, s) for s in ('x', 'y', 'columns', 'rows')], [100, 100, 44, 16])
+        t1 = self.m10_versions(m)[1][1]
+        self.assertEqual(self.m10_buffer_text(m), 'ab' + t1)
+        rows, _rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[0], ('ab' + t1)[:44])
+        self.assertEqual(rows[14][:36], 'PMACS(fundamental)(44,14) *-1* cal >')
+        m, fr, stop = self.pmacs_run('cal', self.m10_keys('ab') + [k(0x8100 + 11)])
+        self.assertEqual(stop.detail, 'send simpos##cal_op_menu:create/2 (class class not loaded)')
+        m, fr, stop = self.pmacs_run('cal', self.m10_keys('ab') + [k(self.C_X), k(self.C_Z)])
+        self.assertIsNone(self.m10_window(m))
+        self.assertIn('has ended', stop.detail)
+        B = K.deref(m.get_slot(K.ClassRef('simpos##m10_cal'), 'saved'))
+        self.assertEqual(self.m10_text(m, B), 'ab' + t1)
+
+    def test_win_m10_select(self):
+        # M10, papyrus's my_buffer_selecter (HELD demo/EDITOR/
+        # my_select.esp.1, IFS source): a pmacs_standard_editor heir with
+        # after-demons on select_buffer/1, select_buffer/2 and
+        # list_buffers/1 (no primaries: SIMPOS's are combined with them,
+        # window.md §2.12).  A pmacs_window made with
+        # editor(#my_buffer_selecter), visiting buffer "one" of the pool
+        # [two, one]: C-x b (select_buffer/1, the stand-in's next pooled
+        # buffer) runs the stand-in primaries, the window now visits
+        # "two", then the held after-demon of select_buffer/2, which is
+        # refused at its first send, show_mode_menu/2 (papyrus's
+        # my_mode_changer, not loaded: an empty class here).
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('select', [k(self.C_X)] + self.m10_keys('b'))
+        w = self.m10_window(m)
+        E = K.deref(m.get_slot(w, 'editor'))
+        self.assertEqual(E.cid, 'simpos##my_buffer_selecter')
+        I = m.get_slot(w, 'interpreter')
+        self.assertEqual(m.get_slot(m.get_slot(I, 'buffer'), 'name').text, 'two')
+        self.assertIn('my_buffer_selecter:show_mode_menu/2', stop.detail)
 
 if __name__ == '__main__':
     unittest.main()

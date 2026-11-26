@@ -171,6 +171,11 @@ attribute permission := out;
         :set_buffer(Window!interpreter, B),
         Window!visiting := 1,
         drawn_again(Window);
+% INTERPOLATED (selector HELD: cal_pmacs run/4 sends it to its
+% cal_pmacs_window before activate/1; 25 held uses, docs/simpos/required/
+% requirements.tsv; meaning UNKNOWN, body OURS): nothing (the point stays
+% where the editor's goto_beginning/1 put it).
+:set_input_position(Window);
 % INTERPOLATED (selector HELD, USAGE pmacs_window current_buffer/2 6U,
 % cal_pmacs run/4; body OURS): the buffer the editor visits.
 :current_buffer(Window, B) :- :buffer(Window!interpreter, B);

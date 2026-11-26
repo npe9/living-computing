@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write the live window screens as PNGs (windows M4-M6, OURS rendering of
+"""Write the live window screens as PNGs (windows M4-M10, OURS rendering of
 the HELD test_11 font).
 
 Each screen is a live kl0 run, the same run test_espc.py Window pins:
@@ -38,7 +38,12 @@ Each screen is a live kl0 run, the same run test_espc.py Window pins:
   - choice (window M9): the HELD pimfep superviser's error mode menu, a
     standard_choice_window (test_win_m9_choice);
   - attribute (window M9): the manipulator's ATTRIBUTE sheet on window 2
-    (test_win_m9_attribute).
+    (test_win_m9_attribute);
+  - pmacs (window M10): the HELD disc/exshow.esp's Pmacs window on
+    me:boot.init after `Hi`, C-n, `x`, C-x C-s: the edited text, the
+    reversed mode line, the echo line `Written! ...` (test_win_m10_exshow);
+  - editor_menu (window M10): the EDITOR MENU opened on that window by the
+    right button (test_win_m10_menu).
 The PNG is the whole device frame, 1,280 x 1,024 dots, one bit a dot
 (psi/windev.py png_bytes, stdlib zlib only); the frame's PBM sha256 is
 printed beside it and must equal the test's pin.
@@ -46,7 +51,7 @@ printed beside it and must equal the test's pin.
 Use:  python3 -I psi/winshot.py OUTDIR [STAGE ...]   (stages: name,
       password, login, bridged, console, menu, over, popup, sweep, manip,
       hidden, reshaped, expand, windows, notify, graphics, graphics_rest,
-      choice, attribute; all when none
+      choice, attribute, pmacs, editor_menu; all when none
       is given)
 """
 import os
@@ -60,7 +65,8 @@ NAMES = {'console': 'pimos_console', 'menu': 'system_menu', 'over': 'menu_over_w
          'hidden': 'manipulator_hide', 'reshaped': 'manipulator_reshape',
          'expand': 'manipulator_expand', 'windows': 'manipulator_menu', 'notify': 'notify_window',
          'graphics': 'window_graphics', 'graphics_rest': 'window_graphics_rest',
-         'choice': 'choice_window', 'attribute': 'manipulator_attribute'}
+         'choice': 'choice_window', 'attribute': 'manipulator_attribute',
+         'pmacs': 'pmacs_editor', 'editor_menu': 'editor_menu'}
 
 
 def main(argv):
@@ -78,7 +84,7 @@ def main(argv):
     stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep',
                                                    'manip', 'hidden', 'reshaped', 'expand', 'windows',
                                                    'notify', 'graphics', 'graphics_rest', 'choice',
-                                                   'attribute']
+                                                   'attribute', 'pmacs', 'editor_menu']
     bad = 0
     for stage in stages:
         if stage == 'bridged':
@@ -101,6 +107,9 @@ def main(argv):
         elif stage == 'choice':
             _m, frame, _menu = t.choice_run()
             want = T.Window.CHOICE_PIN
+        elif stage in T.Window.M10_PINS:
+            _m, frame, _stop = t.pmacs_run('exshow', *T.Window.m10_shots()[stage])
+            want = T.Window.M10_PINS[stage]
         elif stage in T.Window.SHOT_PINS:
             _m, frame, _stop = t.later_run(*T.Window.shot_events()[stage]())
             want = T.Window.SHOT_PINS[stage]

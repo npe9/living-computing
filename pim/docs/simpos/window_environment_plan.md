@@ -474,7 +474,7 @@ Sizes are rough, counted in lines of ESP stand-in plus Python, and include the t
 | M7 | **The window manipulator** (TM-125 p8 items; video), restacking with save areas, `out`/`show` permission | `test_win_m7_manip`: HIDE then SHOW restores a covered window's dots exactly; MOVE and RESHAPE call the held `has_been_reshaped/1` | skip the save-area restore: the restore test fails | ~350 |
 | M8 | **Graphics and markers** (W§2.5-2.6): `draw_line/5-8`, rectangles, filled shapes, `draw_string/4-6`, `transfer/8`, `copy/9`, markers, `get_mouse_position/3` | `test_win_m8_graphics`: the held paragraph `p_icon`/`g_window` draw paths (the `execute_graphics_command/2` batch, W§2.5) give pinned dot counts; XOR twice erases | make `exclusive_or` act as `set`: the erase check fails | ~500 |
 | M9 | **Choice windows and the remaining menu kinds** (W§2.9-2.10, §3.3-3.4) | `test_win_m9_choice`: a held `choice_list` create (pimfep `standard_choice_window`) reads back `[{Key,Value}]` | return the default for an edited field: fails | ~350 |
-| M10 | **Pmacs proper**: buffers, mode line, echo line, the EDITOR MENU, a minimal default key set (OURS, gap G6), the papyrus/cal editor subclasses | `test_win_m10_pmacs`: the held `disc/exshow.esp` sequence (create, get_editor, read_file, command_interpret) edits and saves a file in `simpos_fs` | — | ~1200 |
+| M10 | **Pmacs proper**: buffers, mode line, echo line, the EDITOR MENU, a minimal default key set (OURS, gap G6), the papyrus/cal editor subclasses | `test_win_m10_exshow` (planned as `test_win_m10_pmacs`): the held `disc/exshow.esp` sequence (create, get_editor, read_file, command_interpret) edits and saves a file in `simpos_fs` | a save overwrites the file's version (S1): the exshow and menu tests fail | ~1200 |
 | M11 | **Live view and IFS applications.** The browser canvas; then IFS programs one at a time (W§7's order) once their non-window needs are met | per program, a pinned screen and transcript | — | open |
 
 **Status (2026-11-25):** M5's device layer exists as `../../psi/winfb.py` (framebuffer, the §4.1
@@ -671,6 +671,29 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
   (`temporary_choice_window`, `..._with_no_execute`).
 - Screens: `screens/choice_window.png`, `screens/manipulator_attribute.png`.
 
+**Status (2026-11-26, window M10: Pmacs proper)** (`../../psi/README.md` "Window M10"; tests
+`test_win_m10_exshow`, `test_win_m10_keys`, `test_win_m10_menu`, `test_win_m10_cal`,
+`test_win_m10_select`):
+- Three held programs run whole: disc `exshow.esp` (a file read into a pooled buffer, edited,
+  saved as a new version with the old kept, exit kills the window), cal `cal_pmacs.esp` (its
+  `cal_pmacs_window`'s editor class from the slot, its own pf#11 binding before the defaults) and
+  papyrus `my_select.esp.1` (held after-demons on `select_buffer/2` run after the stand-in
+  primary). Their harness classes are OURS; exshow's missing `kanji_28.font` is a test_11
+  substitute made in the run.
+- The screen: text rows, the reversed mode line `PMACS(fundamental)(C,R) *-N* Name Path --Top--`,
+  the echo line; only changed rows are redrawn. The EDITOR MENU on the right button, IPSJ 36239
+  p5's eight items; three are stood in, five refuse loudly.
+- Key macros: `mouse#B` atoms (HELD names), key#lf = 10 witnessed by held cells, the other values
+  OURS (G2). Default bindings OURS (G6, Q6).
+- No new device primitive: `window_pane` gained `draw_row/4` and `set_cursor/3` over the frozen
+  set, so the frame interface (§4.1) is unchanged.
+- Found and fixed: a term vector put on a stream lost its elements to the sender's backtracking
+  (the console replay diverged); the datum is now a heap vector.
+- Not done: Pmacs's other ~100 commands (search, yank, regions, windows, modes), a prompt for C-x
+  b, the five other menu items, Pmacs's own mode names, scrolling by command, the M9 leftovers (a
+  second ATTRIBUTE while a sheet is up; editing a choice window's text field).
+- Screens: `screens/pmacs_editor.png`, `screens/editor_menu.png`.
+
 Also pinned (2026-11-26): the coordinator's own process is never held back (P13), by
 `test_win_m7_coordinator_writes`.
 
@@ -692,7 +715,7 @@ step 3l did):
   selected window;
 - EXPAND's order of the edges, MENU's titles, the notify window's look, and `out` as the default
   permission;
-- Pmacs's default bindings.
+- Pmacs's default bindings, the mode line's layout, the EDITOR MENU's one column, C-x b without a prompt, a save as a new version (M10).
 
 ---
 

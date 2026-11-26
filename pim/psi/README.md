@@ -4856,6 +4856,135 @@ window too):
 | E2 | MENU's submenu lists the choice windows | M9 attribute only |
 | P13 | (above) | coordinator writes only (ERROR) |
 
+### Window M10: Pmacs proper (2026-11-26)
+
+Three held programs now run whole on the Pmacs stand-ins, each started
+from an item added to the system menu (OURS harness classes, in
+`test_espc.py` `Window.M10_HARNESS`):
+- disc `exshow.esp` (IFS source): `exec_show_tmp go/3` makes a
+  `pmacs_window` (title, `size(1100,700)`, `position(0,0)`), creates the
+  pooled buffer "boot" (`create/4`, or `get_buffer_instance/3` and
+  `reset/1` when the name is taken), `read_file/4`s `me:boot.init`,
+  `set_input_buffer/2`, `activate/1`, `set_font/2`, `flash/1`,
+  `command_interpret/1`, then `kill/1`. Its class slot `font` is
+  initialised from `font:kanji_28.font`, which is not held: the run gives
+  that name a directory entry for test_11 (OURS substitute, in the run
+  only). Without it the class is refused at that slot.
+- cal-esp `cal2.12/cal_pmacs.esp`: `cal_pmacs_window` (a `pmacs_window`
+  whose `editor` slot holds `#cal_pmacs_editor`) and `cal_pmacs run/4`
+  (load, `set_input_buffer/2`, `goto_beginning/1`,
+  `set_input_position/1`, `activate/1`, `command_interpret/1`,
+  `deactivate/1`, `current_buffer/2`, save). The held editor's own
+  `:command(Editor,pf#11,cal_menu)` is found before the stand-in
+  defaults; pf#11 runs the held `cal_menu/1`, refused at the class it
+  creates, `cal_op_menu` (cal's, not loaded).
+- papyrus `demo/EDITOR/my_select.esp.1`: `my_buffer_selecter`, a
+  `pmacs_standard_editor` heir with after-demons on `select_buffer/1,2`
+  and `list_buffers/1`. Its two other natures (papyrus classes, not
+  loaded) are empty classes here. C-x b runs the stand-in primaries (the
+  window visits the next pooled buffer), then the held demon, refused at
+  its first send, `show_mode_menu/2`.
+
+**The key macros** (`espc.py` key_constant; gap G2). `mouse#B` is the
+atom named `mouse#B` (HELD: the names are in the .ptf symbol tables).
+`key#N`, `control#"c"` and `pf#N` are integers (INFERENCE: no such atom
+is held). Their values are OURS (ASCII where there is one, C-x = 24,
+pf#N = 16#8100 + N), except key#lf = 10. The held cells witness two of
+them: kappa2 KMACS2.ESP `command/3` and DUMP.ESP `dumpLine/6.11#1`
+compile exact only with mouse#r the atom and key#lf 10 (each injection
+loses exactly that row). With the macros, held code that was refused
+compiles: kappa2 12,871 -> 12,963 compared, 1,514 -> 1,518 exact, none
+lost; paragraph 1,280 -> 1,286 compared, none exact. Paragraph's
+`as_view_select_window read/2` nests five deep, and two of its `$or$`s
+pair with another arity (the held compiler numbers that nest one level
+deeper): OPEN, pinned in `Structure.test_counts`. dedit.esp compiles but
+its `exit` (`->`); cal_pmacs.esp, my_select.esp.1, exshow.esp compile
+whole.
+
+**The stand-ins** (selectors HELD where held code sends them, bodies OURS):
+- `editor_text_buffer`: the buffer pool, a class slot (PROSE IPSJ
+  114007: buffers "registered in a buffer pool and reachable by name");
+  `create/4` fails on a taken name (exshow relies on it); a buffer's
+  number is its order of creation from 1. Navigation (`move_to_first/1`,
+  `next_line/2` and the rest), `load_file/2`, `contents/2`, `saved/2`.
+  The OURS `create/3` of window M4 is renamed `new_buffer/3` (the held
+  `create/3` is `(Class, ^Buffer, Size)`).
+- `standard_editor`: the default binding tables, `:command(Editor, Key,
+  Method)` and `:control_x(..)` (the form HELD: pimos_window_editor
+  command/3, dedit control_c/3, papyrus my_save), and the commands. OURS,
+  gap G6: C-f/b/n/p/a/e/d/k, DEL and BS, the arrows, RETURN, C-x C-s
+  (save), C-x C-z and C-x C-c (exit), C-x C-b (list buffers), C-x b (the
+  next pooled buffer: no prompt is stood in), mouse#r (the EDITOR MENU).
+  A save writes a NEW VERSION of the file (kl0 `binary_file
+  new_version/3`; INFERENCE from TR-524 p9: versions are assigned by the
+  file system, old ones kept), and echoes `Written! <path>`.
+- `editor_command_interpreter`: each input is looked up in the editor's
+  tables (first answer, so a held subclass's clauses come first), the
+  method sent with `:refute(Editor, M, {})`; a printing character is
+  inserted; anything else is `undefined_key/2` (a beep, `Undefined key`).
+  `exit` (the held table binds it) ends the loop after the editor's
+  `exit/1`. After each input the window is redisplayed.
+- `pmacs_display` (OURS class, not a SIMPOS name): the screen of a window
+  that visits a buffer (`set_input_buffer/2`): the text rows, the mode
+  line `PMACS(fundamental)(C,R) *-N* Name Path --Top--` reversed, the
+  echo line (SCREENSHOT IPSJ 36239 p5-6, IPSJ 114012 Fig. 2; the fields
+  per window.md §2.11; layout OURS). Only the rows that changed are
+  drawn. It draws with two new `window_pane` methods, `draw_row/4` and
+  `set_cursor/3`, over the existing bitmap_display primitives. **No
+  device primitive was added**: the frame interface the viewer will tee
+  is unchanged. A window that never visits a buffer (PIMOS's console)
+  keeps M4's plain text screen.
+- `pmacs_window`: the `editor` slot names a subclass's editor class
+  (HELD cal_pmacs_window), the held create options (title, position,
+  size in dots or cells, `status_window(off)`), the echo line, the right
+  button, menu values, `kill/1` and `deactivate/1` off the screen,
+  `set_input_position/1` (meaning UNKNOWN: nothing).
+- the coordinator: the right button goes to the window under the mouse
+  (`right_click/3`); `editor_menu/3` opens the EDITOR MENU there, its
+  items verbatim from IPSJ 36239 p5, one column (OURS); a chosen item's
+  value goes to the window's input. Only ABORT, List Buffers and Save
+  All Files are stood in; the other five refuse loudly.
+- `pmacs_standard_editor`: a `standard_editor` heir (INFERENCE).
+
+**A bug found on the way**: `pmacs_window input_data/2` first wrapped
+its datum as the term `{data, X}`. The held `pimos_window_process` loop
+backtracks after putting it, and the binding of the term's elements was
+undone (the README "Open" item on vectors in slots). The console tape's
+replay met `{_, _}` and diverged at exchange 11. The datum is now a heap
+vector (`new_heap_vector/2`, as list_index.esp's entries); injection X1
+puts the term back.
+
+**Census.** 1,485 -> 1,520 rows, all 35 new rows inherited by
+pimos_window and pimos_window_editor, no held row changes outcome; the
+held `select_buffer/4` moves its stop past `get_buffer_instance/3`
+(row by row in `test_fep_census`, `test_step3f_census_recipes`).
+
+**Tests**: `test_win_m10_exshow` (the screen, an edit saved as version
+2 with version 1 kept, exit kills the window, the class refused without
+the substitute font), `test_win_m10_keys` (the bindings against an
+Emacs's result; undefined keys), `test_win_m10_menu` (the eight items,
+List Buffers, Save All Files, ABORT, a click away, Set Font refused),
+`test_win_m10_cal`, `test_win_m10_select`. Screens:
+`../docs/simpos/screens/pmacs_editor.png` (stage `pmacs`),
+`editor_menu.png` (stage `editor_menu`).
+
+**Injections, OBSERVED** (2026-11-26; each in a private copy of `psi/`,
+the worktree untouched; test_espc.py, test_fep_bridge.py and test_kl0.py
+run; all else OK):
+
+| | injection | fails |
+|---|---|---|
+| K1 | C-d bound to backward_character | M10 keys |
+| S1 | a save overwrites the latest version (kl0 new_version keeps the number; the plan's injection) | M10 exshow, M10 menu (ERROR) |
+| D1 | the mode line drawn plain, not reversed | M10 exshow, M10 menu (its pinned frame) |
+| D2 | a text row once drawn is never drawn again | M10 exshow, keys, menu, cal |
+| M1 | an EDITOR MENU item's value not given to the window | M10 menu; test_fep_census (menu_chosen/2 row success) |
+| R1 | the right button not routed to the window | M10 menu (ERROR) |
+| V1 | set_input_buffer/2 does not tell the interpreter | M10 exshow, menu; keys, cal, select (ERROR); test_fep_census |
+| C1 | the editor class from the option only (a subclass's slot ignored) | M10 cal |
+| P1 | select_buffer/2's primary does nothing | M10 select; test_fep_census |
+| X1 | the window's datum as the term {data, X} again (the bug found) | M4 console, M6 selection, M7 console move; test_fep_bridge.py Console |
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window
@@ -4987,7 +5116,11 @@ test_kappa2's exact count).
   choice window, M9), HARDCOPY (no printer) and SUPERIOR/INFERIOR (no
   window hierarchy); the look of the notify window (none printed; OURS
   now); TM-225's default permission ① wait (the stand-ins default to
-  `out`); Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the
+  `out`); Pmacs proper (M10: done in part, section "Window M10"; open
+  there: Pmacs's other commands, a prompt for C-x b, five EDITOR MENU
+  items, papyrus and cal run only through their editor classes, not
+  whole; the M9 leftovers, a second ATTRIBUTE while a sheet is up and
+  editing a choice window's text field). `pmacs_window` getl/2 is not stood in (the
   census's dump_log/1 stops there); M8's shapes beyond lines,
   rectangles and strings, images and markers. Sections "Window M7's rest"
   and "Window M8".
@@ -4999,7 +5132,9 @@ test_kappa2's exact count).
 - **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
   copies only lists): a binding undone on backtracking empties the
   stored vector's element. Found in window M4 (`pmacs_request.esp`'s
-  head); how the PSI copied a slot's value is not printed.
+  head); how the PSI copied a slot's value is not printed. Met again in
+  window M10 on a stream (`{data, X}` put by `input_data/2`), worked
+  around with a heap vector (injection X1).
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still
