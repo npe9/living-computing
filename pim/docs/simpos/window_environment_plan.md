@@ -651,6 +651,9 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
 - **STOP: `paint/5`.** A seed fill needs the frame's dots, and no frozen primitive gives a dot's
   value to the program, so it is refused loudly. `save_image/6` is not stood in for the same
   reason.
+- The five refusals (paint, save_image, the off-screen `hide_window`, the matrix `copy/9`, TM-785
+  p40's six-element ellipse) are researched in `m8_stops.md`. It gives the sources, what the PSI
+  did, and a recommended resolution for each.
 - Patterns and images are drawn as winfb's styled `line` (its style operand). No primitive was
   added, so the hardware contract (§4.1) is unchanged.
 - Screen: `screens/window_graphics_rest.png`.
