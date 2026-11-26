@@ -480,6 +480,12 @@ sizes. **Confidence.** High for the four table kinds and the black
 entry sizes; medium for WEC constants; none for message bytes. **Unknown:** message order codes and body byte formats (no
 report gives them); how PIM/m addresses 256 PEs (the 7-bit PE field of
 the Multi-PSI packet cannot; inference); EXMRF.
+*Note 2026-11-26: the message order codes are now read from the
+Pseudo PIM/m console (`pimmcsp.ptf` class `kl1_message_order_macro`:
+`m_throw` 0 .. `m_profile_request` 23, `m_multi_cont` 30,
+`m_multi_last` 31; the pairing of names to constants INFERENCE), and
+agree with VPIM's `_NW_` codes 0-10 and 14-23 (`multi_pe.md` §1.1).
+The body byte formats are still unknown.*
 
 ## 7. Memory management and GC
 
