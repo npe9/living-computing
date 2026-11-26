@@ -269,7 +269,11 @@ compared on it (`ref/pimm/lockstep_jtoa.py`, `bsv/run_pimm_lockstep.sh`):
                    INFERENCE/OURS) at a goal switch: the old heap
                    [lo, hp), the new [to, top), from the load address,
                    and an FNV-1 checksum of the new heap's cells (tag,
-                   then value); its own writes are not traced
+                   then value); its own writes are not traced.  Asked
+                   by collect_garbage, or (stage 5) by an allocation
+                   that takes hp - lo past the heap limit less 4096
+                   (Machine.heap_limit, RESTORE 5; pimm_gc.py "When
+                   memory runs out"); the request itself has no line
 
 Every register and memory write is traced, whoever makes it: an
 instruction, the scheduler taking a goal, a wake-up, or the bench

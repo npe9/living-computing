@@ -409,16 +409,19 @@ def save_prompt(path, m, loaded, info):
     """--save-prompt FILE: the machine at the shell's prompt (run dry,
     no SCSI command moving, the window's getl held), with its device,
     for lockstep_shell.py.  The device's file server (a function of
-    this module) is not pickled: lockstep_shell.py gives it back."""
+    this module) is not pickled: lockstep_shell.py gives it back.
+    Nor is its directory lister (R7 ls; 2026-11-25: pickled, it was
+    __main__.home_listing, which lockstep_shell.py cannot load)."""
     dev = m.fep
     tr, m.tr = m.tr, None
     of, dev.open_file = dev.open_file, None
+    ld, dev.list_dir = getattr(dev, 'list_dir', None), None
     lines, dev.script = dev.script, []
     info = dict(info, prompt=dict(instructions=tr.instructions, steps=m.steps,
                                   console=cons.console(tr)))
     with open(path, 'wb') as f:
         _pickler(f).dump((m, loaded, info))
-    m.tr, dev.open_file, dev.script = tr, of, lines
+    m.tr, dev.open_file, dev.script, dev.list_dir = tr, of, lines, ld
     say('saved the machine at the prompt (%d instructions) to %s' % (tr.instructions, path))
 
 

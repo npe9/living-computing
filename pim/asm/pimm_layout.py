@@ -102,3 +102,12 @@ EXC_REDUCTION_FAILURE, EXC_RAISED = 9, 16
 ADDR_BITS = 27                  # memory size in cells = 1 << ADDR_BITS
 MEMORY_CELLS = 1 << ADDR_BITS
 HEAP = 0x8000                   # first heap cell, from the load address
+# R7G stage 5 (2026-11-25), a collection when memory runs out: the
+# insurance below the heap limit, in cells.  VPIM's
+# _HEAP_END_INSURANCE_OFST, 4096 KL1 words (src/basics/bsc_heap_page.psl.c
+# :32): an allocation past the heap's end less this asks for a collection
+# (b_IfHeapLimitWarning, :86-90 and :335-338).  The limit itself is a
+# machine parameter, Machine.heap_limit / RESTORE 5 (0: none), as
+# PIMM.PARAM's kl1_heap_limit is the Pseudo PIM/m's (literature_gaps.md
+# 1.2); ref/pimm/pimm_gc.py has the rule
+HEAP_INSURANCE = 4096

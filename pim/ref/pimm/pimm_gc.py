@@ -87,13 +87,56 @@ Ours, each for want of PIM/m's:
     an FNV-1 checksum of the new heap's cells (tag, then value, each
     a 32-bit step), which the Bluespec's collector writes the same.
 
+When memory runs out (stage 5, 2026-11-25; the owner's rule "it's okay
+to infer what you don't have"): a collection is also made when the heap
+reaches its limit, not only when collect_garbage asks.  What is held:
+
+  - PIM/m (`M92`, FGCS'92 vol. 1 p. 430, 3.2): MRB reclamation leaves
+    garbage it cannot reclaim, "Therefore, a PE may exhaust its local
+    memory space and invoke a batch-mode garbage collector."  READ: the
+    trigger is the local memory running out.
+  - Pseudo PIM/m (psdpim SYSTEM.DIR/PIMM.PARAM, literature_gaps.md 1.2):
+    "(kl1_heap_limit , 16'800)" a parameter; a "Copying GC" section
+    with "Requested Words to GC"; the console's "Copying GC Memory
+    Shortage : \\x words" (pimmcsp.ptf strings).  READ: a heap limit,
+    and a shortage the collection can end in.  Its unit is not stated.
+  - Multi-PSI/V2 (TR-469 pp. 5-6): "data cells are allocated to a half
+    of the heap area, the active heap, until it is used up and the
+    tracing garbage collector are invoked".
+  - VPIM (ANALOGY, src/basics/bsc_heap_page.psl.c): the heap's end is
+    the end of the half in use (b_InitCurrentHeapEndPtr :340-345); an
+    allocation past the end less _HEAP_END_INSURANCE_OFST, 4096 words
+    (:32), sets _PAGE_ALLOC_FAIL_EVENT (b_IfHeapLimitWarning, :86-90;
+    an allocation of several pages past the end sets it too and fails
+    soft, returning EOL, :197-200); between reductions the event handler then asks for the
+    collection (f_event_handler_main.psl.c f_SelfIntHandler :272-274,
+    f_RequestLocalGC); one past the end itself is "PANIC Heap
+    Overflow" (:73-74).
+
+Ours, from those: the limit is Machine.heap_limit (the core's RESTORE 5),
+in cells, the size of the heap in use [lo, hp), 0 for none (the memory
+alone bounds it, as before).  An allocation that takes hp - lo past
+limit - HEAP_INSURANCE (pimm_layout, VPIM's 4096) sets the request
+collect_garbage sets, so the collection is made at the next goal switch
+as that one is; once the heap has been collected, an allocation past
+the limit itself is the end ("heap full: past the heap limit", VPIM's
+panic).  Before the first collection only the memory bounds the heap:
+the boot's heap is the IPL's link, 77.86M cells of it garbage, made by
+a model that reuses nothing (gap_analysis.md B8), and no limit a PIM/m
+PE had would hold it.  A collection after which hp - lo is still past
+limit - HEAP_INSURANCE ends the machine, after its K line ("gc: memory
+shortage", the Pseudo PIM/m's console string).  Not modelled: the
+free pools of M92 p. 427 (FVP/FLP/FGP), MRB reclamation, the limit's
+unit and PIMM.PARAM's value, the two limits kl1_heap_limit_a/b.
+
 Refused (pimm.Unimplemented): a pointer into the dead part of memory
 below lo or at or above hp, a tag the collector does not know, the
 to-space not fitting.
 """
 import pimm
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS, S_NEXT, S_GOAL,
-                         SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE, HEAP)
+                         SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE, HEAP,
+                         HEAP_INSURANCE)
 
 GCHDR, GCFWD = 0x3c, 0x3d           # OURS: not in tagtbl.kl1
 K_GOAL, K_SUSP, K_SHOEN = 1, 2, 3
@@ -410,9 +453,16 @@ class Collector:
         m.heap_lo, m.hp = self.to, self.top
         m.gc_count = getattr(m, 'gc_count', 0) + 1
         m.gc_counts = self.counts
+        # every collection's paths summed, for the tests (not machine state)
+        paths = getattr(m, 'gc_paths', None) or {}
+        m.gc_paths = {k: paths.get(k, 0) + v for k, v in self.counts.items()}
         if getattr(m, 'gc_dump', None) is not None:     # a test's: the new heap, cell by cell
             m.gc_dump.append(new_cells)
         m.event(line)
+        if m.heap_limit and self.top - self.to > m.heap_limit - HEAP_INSURANCE:
+            # stage 5: the live heap leaves no room under the limit
+            raise RuntimeError('gc: memory shortage: %d cells live, the limit %d'
+                               % (self.top - self.to, m.heap_limit))
         return line
 
 

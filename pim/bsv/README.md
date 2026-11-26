@@ -271,7 +271,9 @@ updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are al
 the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`,
 `add_shoen_resource` and `allow_shoen_resource_report` (acknowledged, no resource counted);
 its profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
-Not modelled: garbage collection, priorities, built-in
+Not modelled: priorities (garbage collection is in since R7G,
+`PimmGcBox.bsv`, below: when `collect_garbage` asks and when the heap
+reaches its limit; not MRB reclamation or the free pools), built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.
 
@@ -400,6 +402,12 @@ is not loadable: make it again with the two commands above):
 | ls (R7) | `ls` | 164,287 | 768,488 | 32 |
 | gc (R7G) | `gc` | 89,179 | 368,543 | 18 |
 | gc_listener (R7G) | `gc`, the compile_work lines, `gc`, the listener_sieve lines | 1,752,873 | 7,880,429 | 283 |
+| listener_sieve_limit (R7G 5) | listener_sieve's, heap limit 2,952,727 | 1,575,086 | 7,144,911 | 249 |
+| pipe_three_limit (R7G 6) | pipe_three's, heap limit 2,000,000 | 501,560 | 2,123,508 | 25 |
+| ts_limit (R7G 5) | ts's, heap limit 2,050,000 | 160,945 | 705,106 | 34 |
+| ts_short (R7G 5) | ts's, heap limit 1,900,000: `gc: memory shortage` | 135,590 | 431,779 | 5 |
+| ts_heap_full (R7G 5) | ts's, heap limit 2,000,000: `heap full: past the heap limit` | 135,785 | 445,203 | 5 |
+| listener_pools (R7) | `listener`, `print_length(2).`, the primer's bag, keyed_bag and keyed_set goals | 967,660 | 3,847,621 | 104 |
 
 R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
 1.4, "R7P, the pipe"): the four rows above, measured on both models
@@ -425,6 +433,54 @@ pass clearing every link, the K line's checksum `0e81de44` (line
 `... 79768686 763810b1`; a waiting SCSI command's first variable not
 moved, `E error: scsi: a waiting command's variable was not free`
 where the reference writes it (line 254,630).
+
+R7G stage 5 (2026-11-25, when memory runs out; INFERENCE/OURS,
+`../ref/pimm/pimm_gc.py` "When memory runs out",
+`../docs/binary_reverse_engineering.md` 1.4 `gc` item 5): RESTORE 5
+gives the goal box a heap limit L (`PimmGBox.setLimit`; 0, none, in
+every other run). An allocation that takes hp - lo past L - 4096
+(`heapInsurance`, VPIM's `_HEAP_END_INSURANCE_OFST`) raises `heapLow`,
+which `PimmGcBox.requested` answers as it does `collect_garbage`; once
+the heap has been collected, one past L stops the core `heap full:
+past the heap limit`; a collection that leaves more than L - 4096 live
+stops it `gc: memory shortage` after its K line. In lockstep (APPS
+`listener_sieve_limit`, `ts_limit`, `ts_short`, `ts_heap_full`;
+`lockstep_shell.py` LIMITS): every line identical, the counts in
+PINNED. Injections, each a copy of `bsv/` with one line changed, run
+against a kept work directory (observed 2026-11-25; every line before
+the one given identical):
+`low <= True` dropped (no limit request), ts_limit FAIL at line 4,107,
+the reference's first `K gc` where the core picks `G 77832990`;
+`heapLo <= nlo` dropped in `gcSet` (the heap in use measured from the
+old half), ts_limit FAIL at line 4,220, `E error: heap full: past the
+heap limit` 58 instructions in; the insurance 0, ts_limit FAIL at line
+514,442, the second `K gc` not made; the hard limit's `fatal` dropped,
+ts_heap_full FAIL, the core's trace goes on past the reference's stop;
+the shortage's `fatal` dropped, ts_short FAIL the same way; RESTORE 5
+dropped (`DROPPED` ('ts_limit', 5), `INJECT=1`), FAIL at line 4,107.
+
+R7G stage 6 (2026-11-25, the collector's paths no session reached
+before): with the limit placed so a collection falls where they are
+non-empty (`lockstep_shell.py` LIMITS and GC_PATHS; `compare` fails if
+the reference's run took a named path zero times), every root is now
+moved in lockstep: a goal parked in a shoen (pipe_three_limit), the
+goals made ready since the last pickup, the merger's `mwh`
+(pipe_three_limit), a non-empty merger list `mq` (listener_sieve_limit),
+`set_timer`'s armed alarm (ts_limit, ts_short) and a `to_processor`
+goal's code argument (listener_sieve_limit, ts_short). Injections in
+`PimmGcBox.bsv` (observed 2026-11-25, as above): the parked goal's
+`SH_GOAL` not rewritten, pipe_three_limit FAIL at line 675,002, the
+second `K gc`'s checksum `45f3393b` for `b318d5ed`; `to_processor`'s
+code not rewritten, ts_short FAIL at line 150,833, the second `K gc`'s
+checksum `9678e84c` for `ffc093ec`; the alarm's `setWakeup` dropped,
+ts_limit FAIL at line 523,673, `E error: the Wakeup of set_timer is
+bound`; `nMq` left the from-space list (`gbox.mqOf`),
+listener_sieve_limit FAIL at line 2,388,104, the goal picked after the
+second `K gc` (`G 80788823` for `G 33070`); `nMwH` left so,
+pipe_three_limit FAIL at line 675,004 (`G 79850166` for `G 33042`).
+(Dropping the `nMq`/`nMwH` assignment altogether fails at the first
+collection, line 4,108, whatever the lists hold, so it does not test
+the path; the injections above do.)
 
 R7 `ls` (2026-11-25): the home directory through 204 and 237
 (`ref/pimm/fep.py` `listing`, the reply's form INFERENCE from PIMOS's

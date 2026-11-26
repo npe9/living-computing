@@ -937,6 +937,35 @@ the device are given it again whenever the machine runs dry.
     573-604, `checkQuote`), and the Listener prints the vector `{=,
     variable(K), WT}` through it (`debugger/listener/buffer.kl1`:
     97-106), so ` E =[2]` is the held source's text.
+  - **The Listener's pools** (R7, 2026-11-25; APPS `listener_pools`,
+    in lockstep on both models, 967,660 instructions, 3,847,621 trace
+    lines, every line identical; no model changed for it). The
+    primer's three examples of section "Pools" (`primer25.tex`:
+    2110-2190: `pool:bag`, `pool:keyed_bag`, `pool:keyed_set`) typed
+    into the Listener as printed, each goal on one line, the
+    keyed_bag goal with the period the primer leaves out, after
+    `print_length(2).` (INFERENCE: the primer cuts its answers after
+    two elements, `put("str"), ... ]`, and does not say it was set;
+    the held Listener's default is 10, `debugger/listener/buffer.kl1`
+    :35-36). Line by line against the primer (ours, then the
+    primer's where they differ): bag ` A = yes`, ` B ={vect}` (`B =
+    {vect}`), ` C =[atom,"str"]`, ` D ={}`, ` S =[empty(yes),put("str"),
+    ... ]`; keyed_bag ` A = yes`, ` B = no`, ` C ="str2"`, ` D ={atom}`,
+    ` E = v(1)`, ` F =[str("str1"),{{vect},v(100)}]` (`F =
+    [{{vect},v(100)},str("str1")]`), ` S =[empty(yes),put("atom",atom),
+    ... ]`; keyed_set ` A ={}`, ` B ={"str"}`, ` C = atom`, ` S
+    =[put(key,"str", ... ),put(key,atom, ... ), ... ]` (`put(key,"str",
+    ...)`). Every value is the primer's. The spacing is the held
+    unparser's, as for listener_sieve above, and the prompts are
+    `[2]`..`[4]` for the primer's `[1]`..`[3]`, `print_length` taking
+    `[1]`. The one real difference is keyed_bag's F, whose two entries
+    come in the other order: `get_all` walks the hash table from its top
+    bucket (`utility/pool/k_bag.kl1`:298-301), and an entry's bucket is
+    `hasher:hash` of its key, which for an atom is the builtin `hash`.
+    Both that function (PDSS's) and the atom numbers it is applied to
+    are OURS, so the order of entries under different keys is not
+    evidence either way. The Listener's remember mode (`^X =[a,b]`) was
+    also seen to work; it is not pinned.
   - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
     `add_bignum` in on both models (VPIM's edges, `pimm.py`
     `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs
@@ -1011,7 +1040,105 @@ the device are given it again whenever the machine runs dry.
        window's only check is that prompt. Not run: a collection with
        goals parked in a shoen, a `to_processor` goal, a non-empty
        merger list, an armed alarm (no session here makes them at a
-       collection).
+       collection). *(Run since, item 6 below.)*
+    5. **When memory runs out (stage 5, 2026-11-25; INFERENCE/OURS,
+       the owner's rule above).** What triggers a collection on PIM/m,
+       from what is held: `M92` p. 430 (3.2), MRB reclamation leaves
+       garbage it cannot reclaim, "Therefore, a PE may exhaust its local
+       memory space and invoke a batch-mode garbage collector"; the
+       Pseudo PIM/m's `SYSTEM.DIR/PIMM.PARAM` (two-byte JIS, decoded
+       2026-11-25: lines 45-47 `(kl1_heap_limit , 16'800)` with
+       `16'1000` and `16'1800` commented out, lines 179-187 a "Copying
+       GC" section of `rqwd` "Requested Words to GC", `clwd` "Collected
+       Words by GC", `gccnt` "GC Count", all 0), no unit given; the CSP's
+       console string "Copying GC Memory Shortage : \x words"
+       (`literature_gaps.md` 1.2); TR-469 pp. 5-6 (Multi-PSI/V2): cells
+       are allocated in the active half "until it is used up and the
+       tracing garbage collector are invoked"; VPIM (ANALOGY,
+       `src/basics/bsc_heap_page.psl.c`): the heap's end is the end of
+       the half in use (:340-345), an allocation in one page past the
+       end less `_HEAP_END_INSURANCE_OFST`, 4096 words (:32), sets
+       `_PAGE_ALLOC_FAIL_EVENT` (:86-90; past the end itself, "PANIC
+       Heap Overflow", :73-74), one of several pages past the end sets
+       the same event and fails soft, returning EOL (:197-200), and
+       between reductions the event handler asks for the collection
+       (`f_event_handler_main.psl.c` :272-274, `f_RequestLocalGC`).
+       The firmware: bit `#34` of `W1f`, which `collect_garbage` sets
+       (`02d6`-`02d7`), is cleared at `030c`-`030e`, called from
+       `02de` in the routine at `02d8`; `02d8` is called from `0335`,
+       `21e2` and `4840`, and `21d7`-`21e2` tests `W1f`'s bits one by
+       one as a dispatcher would (`mekbn.py --rtl 0 26624`, searched
+       2026-11-25). No other microinstruction names `#34` with `W1f`,
+       so no allocation path was seen setting the request; `4830`-
+       `4832` compares `R01` with a cell read from `#50` and `483a`-
+       `4840` ends in a call of `02d8`, which may be an allocator's
+       limit check calling the handler directly: a lead, NOT read.
+       **The rule (both models).** The heap limit L is a machine
+       parameter, `Machine.heap_limit` on the reference and RESTORE 5
+       on the core (`PimmGBox.bsv` `setLimit`), in cells of the heap in
+       use [lo, hp), 0 for none (the memory alone bounds the heap, as
+       before: every run before this stage). An allocation that takes
+       hp - lo past L - 4096 (`pimm_layout.HEAP_INSURANCE`, VPIM's)
+       sets the request `collect_garbage` sets (`PimmGBox` `heapLow`,
+       which `PimmGcBox.requested` also answers), so the collection is
+       made at the next goal switch; once the heap has been collected,
+       an allocation past L itself ends the machine (`heap full: past
+       the heap limit`, VPIM's panic; harsher than VPIM's several-page
+       path, OURS: a reduction that allocates more than 4096 cells
+       past the warning, as the SCSI box's 4097-cell buffers can, ends
+       there); a collection after which hp - lo is still past L - 4096
+       ends it after its K line (`gc: memory shortage`). Before the
+       first collection only the memory bounds the heap: the boot's
+       heap is the IPL's link, 77.86M cells, made by a model that
+       reuses nothing (`gap_analysis.md` B8). Not modelled: the free
+       pools (`M92` p. 427), MRB reclamation, the limit's unit and
+       `PIMM.PARAM`'s value, `kl1_heap_limit_a`/`_b`. **Checked**
+       (`lockstep_shell.py` LIMITS, `bsv/run_pimm_apps.sh`, every line
+       identical on both models; `compare` checks a limited run that
+       completes against the unlimited pin: the same instructions, the
+       lines more by its K lines): APPS `listener_sieve_limit` (L =
+       2,952,727 cells) is listener_sieve's run instruction for
+       instruction, 1,575,086 instructions, 7,144,911 trace lines (its
+       pin 7,144,906, five K lines more), every collection the limit's:
+       `K gc 32768 77854696 77854696 79722946 3a1d4d4e` at the first
+       goal switch (the boot's heap being past L), then `... 77854696
+       80803338 32768 2128972 1b3edfff`, `... 32768 2983578 2983578
+       5263101 95196b18`, `... 2983578 5934594 5934594 8378001
+       c9ef341e`, `... 5934594 8886811 32768 2617467 23de9892`; the
+       window is the primer's sieve. `ts_limit` (`ts`, L = 2,050,000):
+       three K lines, the task table, 160,945 instructions, 705,106
+       lines. `ts_short` (L = 1,900,000): eleven collections, the last
+       leaving 1,897,335 cells live, past L - 4096, so the run ends
+       after that K line, `gc: memory shortage` (135,590 instructions,
+       431,779 lines; the core's `E error: gc: memory shortage` at the
+       reference's stop). `ts_heap_full` (L = 2,000,000): after the
+       first collection a reduction allocates past L itself, `heap
+       full: past the heap limit` (135,785 instructions, 445,203
+       lines). Observed injections on the core (each a copy of `bsv/`
+       built with one line changed, run against the kept work
+       directory): `bsv/README.md`, "R7G stage 5". On the reference
+       (`ref/pimm/r7g_limit.py`): r7g_gc.py's session with L =
+       3,000,000 gives the run without the limit (1,752,873
+       instructions, the same window and trace but for what the
+       collections move, seven K lines for two), and with the limit's
+       request dropped it ends `heap full: past the heap limit` at
+       454,697 instructions, before the compile's window is written:
+       the session that would otherwise exhaust the heap.
+    6. **The paths no session reached (stage 6, 2026-11-25).** The
+       limits of stage 5 are placed so that a collection falls where
+       each root of stage 4's "Not run" is non-empty (how: a run
+       without the limit recording, at each goal switch, the heap
+       allocated so far and which roots hold goals;
+       `lockstep_shell.py`, the comment at `listener_sieve_limit`), and
+       `compare` fails if the reference's run took a named path zero
+       times (GC_PATHS, `pimm_gc.Collector.counts` summed): a goal
+       parked in a shoen and the merger's `mwh` (pipe_three_limit), a
+       non-empty merger list and a `to_processor` goal's code argument
+       (listener_sieve_limit), an armed alarm (ts_limit; ts_short both
+       the alarm and `to_processor`). All in lockstep, every line
+       identical; each path is discriminated by an injection in
+       `PimmGcBox.bsv` that fails at or just after the collection that
+       takes it (observed: `bsv/README.md`, "R7G stage 6").
   - **`ls`** (R7, 2026-11-25; INFERENCE, the owner's rule of
     2026-11-25 "It's okay to infer what you don't have"). 204's own
     reply is documented (`{Id, 1}`, `fep_services.md` §2.3); the

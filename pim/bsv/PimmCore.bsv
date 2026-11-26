@@ -59,7 +59,8 @@ interface PimmCore;
   // a checkpoint (ref/pimm/lockstep_shell.py), between runs, the queues
   // empty: what of a saved machine is not in its memory.  0 the heap
   // pointer; 1..3 the exec stage's (PimmExec.restore); 4, 16..31 the
-  // SCSI box's (PimmScsiBox.restore).  Nothing is traced
+  // SCSI box's (PimmScsiBox.restore); 5 (R7G stage 5) the heap limit,
+  // a number of cells, 0 none (PimmGBox setLimit).  Nothing is traced
   method Action restore(Bit#(8) which, Cell c);
   // R7L: the driver's ALARM: the clock moved on to the armed alarm's time
   method Action skipToAlarm;
@@ -247,6 +248,7 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   endmethod
   method Action restore(Bit#(8) which, Cell c);
     if (which == 0) gbox.setHp(cellAddr(c));
+    else if (which == 5) gbox.setLimit(cellAddr(c));     // R7G stage 5: the heap limit, cells
     else if (which < 4) exec.restore(which, c.val);
     else scsi.restore(which, c);
   endmethod

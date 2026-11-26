@@ -80,7 +80,8 @@ def main(argv):
     # the address of every predicate's first instruction
     im = kbndis.Image()
     lines += ['', "Bit#(32) loadAddress = 32'h%08x;" % im.load,
-              'Integer heapStart = %d;' % L.HEAP, '']
+              'Integer heapStart = %d;' % L.HEAP,
+              'Integer heapInsurance = %d;   // R7G: VPIM _HEAP_END_INSURANCE_OFST' % L.HEAP_INSURANCE, '']
     for k in ('G_LINK', 'G_STATUS', 'G_CODE', 'G_ARGN', 'G_ARGS', 'READY',
               'SUSPENDED', 'TAKEN', 'S_NEXT', 'S_GOAL', 'S_SIZE',
               'SH_COUNT', 'SH_STATUS', 'SH_PARENT', 'SH_REPORT', 'SH_GOAL', 'SH_SIZE',
