@@ -937,6 +937,35 @@ the device are given it again whenever the machine runs dry.
     573-604, `checkQuote`), and the Listener prints the vector `{=,
     variable(K), WT}` through it (`debugger/listener/buffer.kl1`:
     97-106), so ` E =[2]` is the held source's text.
+  - **The Listener's pools** (R7, 2026-11-25; APPS `listener_pools`,
+    in lockstep on both models, 967,660 instructions, 3,847,621 trace
+    lines, every line identical; no model changed for it). The
+    primer's three examples of section "Pools" (`primer25.tex`:
+    2110-2190: `pool:bag`, `pool:keyed_bag`, `pool:keyed_set`) typed
+    into the Listener as printed, each goal on one line, the
+    keyed_bag goal with the period the primer leaves out, after
+    `print_length(2).` (INFERENCE: the primer cuts its answers after
+    two elements, `put("str"), ... ]`, and does not say it was set;
+    the held Listener's default is 10, `debugger/listener/buffer.kl1`
+    :35-36). Line by line against the primer (ours, then the
+    primer's where they differ): bag ` A = yes`, ` B ={vect}` (`B =
+    {vect}`), ` C =[atom,"str"]`, ` D ={}`, ` S =[empty(yes),put("str"),
+    ... ]`; keyed_bag ` A = yes`, ` B = no`, ` C ="str2"`, ` D ={atom}`,
+    ` E = v(1)`, ` F =[str("str1"),{{vect},v(100)}]` (`F =
+    [{{vect},v(100)},str("str1")]`), ` S =[empty(yes),put("atom",atom),
+    ... ]`; keyed_set ` A ={}`, ` B ={"str"}`, ` C = atom`, ` S
+    =[put(key,"str", ... ),put(key,atom, ... ), ... ]` (`put(key,"str",
+    ...)`). Every value is the primer's. The spacing is the held
+    unparser's, as for listener_sieve above, and the prompts are
+    `[2]`..`[4]` for the primer's `[1]`..`[3]`, `print_length` taking
+    `[1]`. The one real difference is keyed_bag's F, whose two entries
+    come in the other order: `get_all` walks the hash table from its top
+    bucket (`utility/pool/k_bag.kl1`:298-301), and an entry's bucket is
+    `hasher:hash` of its key, which for an atom is the builtin `hash`.
+    Both that function (PDSS's) and the atom numbers it is applied to
+    are OURS, so the order of entries under different keys is not
+    evidence either way. The Listener's remember mode (`^X =[a,b]`) was
+    also seen to work; it is not pinned.
   - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
     `add_bignum` in on both models (VPIM's edges, `pimm.py`
     `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs

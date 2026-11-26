@@ -117,6 +117,17 @@ import pimm  # noqa: E402
 import longrun_ipl as longrun  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
+# R7, the Listener's pools: the primer's session of section "Pools"
+# (primer25.tex:2110-2190, the PIMOS 2.5 primer), typed into the Listener
+# as printed but each goal on one line, after print_length(2).
+LISTENER_POOLS = (
+    'listener', 'print_length(2).',
+    'pool:bag(S), S=[empty(A), put("str"), put(atom), put({vect}), get(B), get_all(C), '
+    'get_if_any(D)].',
+    'pool:keyed_bag(S), S=[empty(A), put("atom",atom), put(str,"str1"), put(str,"str2"), '
+    'put({vect},v(1)), empty(str,B), get(str,C), get_if_any("atom",D), '
+    'get_and_put({vect},E,v(100)), get_all(F) ].',
+    'pool:keyed_set(S), S=[put(key,"str",A), put(key,atom,B), get(key,C)].')
 # (the saved machine, the lines typed) -> (trace lines, instructions),
 # measured on both models 2026-11-24 (bsv/run_pimm_shell.sh), with the
 # login ID 0 (fep.py LOGIN, P-f3; the link row was 20107047, 8766339
@@ -174,6 +185,9 @@ PINNED = {
     ('prompt', ('ts', ''), 2050000): (705106, 160945),
     ('prompt', ('ts', ''), 1900000): (431779, 135590),
     ('prompt', ('ts', ''), 2000000): (445203, 135785),
+    # R7, the Listener's pools (2026-11-25): the primer's three examples
+    # (primer25.tex:2120-2190), APPS listener_pools
+    ('prompt', LISTENER_POOLS): (3847621, 967660),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -336,6 +350,27 @@ APPS = {
                      'default_package(work).', 'sample1:sieve([1,2,3],E,O).'),
         ('Shell>> ', '** KL1 Compiler **\n', 'COMPILE> ', 'Package : work\n!WARNING! not included in the working packages : work\n', 'COMPILE> ', 'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n', "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n", '=>  :- module sample1 .\n', 'Compile Succeeded : sample1\n\n', '"work:: sample1" Loaded\n', 'Total Number of Warning : 1\n', 'COMPILE> ', 'Shell>> ', 'Shell>> ', '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n', '[1] ', '\n', '[2] ', ' E =[2]\n O =[1,3]\n\n', '[3] ')),
 }
+# R7, the Listener's pools (2026-11-25): the primer's three examples, in
+# its order, as the held Listener answers them.  Against the primer's
+# text (docs/binary_reverse_engineering.md 1.4, "The Listener's pools"):
+# every value the same but keyed_bag's F, whose two entries come in the
+# other order (get_all walks the hash table from its top bucket,
+# utility/pool/k_bag.kl1:298-301, and the bucket is hasher:hash of the
+# key: of an atom, builtin hash, whose function here is OURS (PDSS's) on
+# an atom number of OURS); the spacing the held unparser's (as
+# listener_sieve's); print_length(2) is typed first because the primer's
+# answers are cut after two elements (`put("str"), ... ]`,
+# `put(key,"str", ...)`), where the held Listener's own default is 10
+# (debugger/listener/buffer.kl1:35-36): INFERENCE, the primer does not
+# say it was set
+APPS_POOLS = ('listener_pools', (LISTENER_POOLS,
+    ('*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n',
+     '[1] ', '\n', '[2] ',
+     ' A = yes\n B ={vect}\n C =[atom,"str"]\n D ={}\n S =[empty(yes),put("str"), ... ]\n\n', '[3] ',
+     ' A = yes\n B = no\n C ="str2"\n D ={atom}\n E = v(1)\n F =[str("str1"),{{vect},v(100)}]\n'
+     ' S =[empty(yes),put("atom",atom), ... ]\n\n', '[4] ',
+     ' A ={}\n B ={"str"}\n C = atom\n S =[put(key,"str", ... ),put(key,atom, ... ), ... ]\n\n', '[5] ')))
+APPS[APPS_POOLS[0]] = APPS_POOLS[1]
 # R7G stage 5 (2026-11-25), a collection when memory runs out: the APPS
 # run with a heap limit (pimm.Machine.heap_limit, RESTORE 5; pimm_gc.py
 # "When memory runs out"), name -> cells.  Their windows are APPS's; the

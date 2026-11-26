@@ -407,6 +407,7 @@ is not loadable: make it again with the two commands above):
 | ts_limit (R7G 5) | ts's, heap limit 2,050,000 | 160,945 | 705,106 | 34 |
 | ts_short (R7G 5) | ts's, heap limit 1,900,000: `gc: memory shortage` | 135,590 | 431,779 | 5 |
 | ts_heap_full (R7G 5) | ts's, heap limit 2,000,000: `heap full: past the heap limit` | 135,785 | 445,203 | 5 |
+| listener_pools (R7) | `listener`, `print_length(2).`, the primer's bag, keyed_bag and keyed_set goals | 967,660 | 3,847,621 | 104 |
 
 R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
 1.4, "R7P, the pipe"): the four rows above, measured on both models
