@@ -691,8 +691,9 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
   OURS (G2). Default bindings OURS (G6, Q6).
 - No new device primitive: `window_pane` gained `draw_row/4` and `set_cursor/3` over the frozen
   set, so the frame interface (§4.1) is unchanged.
-- Found, not fixed: espc flattens `(A ; B) ; C` into one `$or$`, where the held compiler keeps
-  the inner one; cuts make it behavioural (`../../psi/README.md` "Open").
+- Found, fixed after M10 (2026-11-26): espc flattened `(A ; B) ; C` into one `$or$`, where the
+  held compiler keeps the inner one. Cuts make it behavioural. kl0 also let a cut in a `$or$` cut
+  the whole clause (`../../psi/README.md` "Nested disjunctions and the cut in a `$or$`").
 - Found and fixed: a term vector put on a stream lost its elements to the sender's backtracking
   (the console replay diverged); the datum is now a heap vector.
 - Not done: Pmacs's other ~100 commands (search, yank, regions, windows, modes), a prompt for C-x

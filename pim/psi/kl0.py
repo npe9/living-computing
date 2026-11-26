@@ -40,9 +40,16 @@ THE MACHINE (OURS, WAM-shaped as layers/KL0.md §3 describes KL0)
 - Cut: a predicate's entry barrier is kept in B0 and also put in register
   A_arity (MEASURED: kappa##kappaDBC_interface pic/1 saves A1 with
   `20 01 00` and cuts with `dd 01 01`; pmi dd/de take the register).
-  A `$or$N` (kind 0x12) keeps its caller's barrier, so a cut inside a
-  disjunction cuts the clause (OURS reading, consistent with
-  pic/1's `$or$3/1`, whose `!` is d0 with A1 overwritten).
+  A `$or$N` (kind 0x12) is entered like any predicate, with its own
+  barrier, so a cut inside a disjunction cuts only that disjunction's
+  alternatives (PRINTED: TM-388 4.6 p.111 Example 2, App. G pp.161-162,
+  "differently from ! of Prolog"; held code that relies on it:
+  kappa2 stwin.esp get_number/3's `Number = abort` after an inner
+  `!, fail`, and pb/hash.esp search_and_get/5's
+  `!, relative_cut_and_fail(1)`, which would be plain `fail` if `!`
+  already cut the clause).  Until 2026-11-26 a `$or$` kept its
+  caller's barrier (OURS, now withdrawn: pic/1's `$or$3/1`, `!` as d0
+  with A1 overwritten, fits either reading).
 - Slot assignment is not undone on backtracking (ESP's semantics, TM-388
   §3.5 slots are object state).
 - Method dispatch goes through the loader's Fig. A-1 tables
@@ -662,9 +669,9 @@ class Machine:
             self.cont, self.env = self.env.cont, self.env.prev
         elif not last:
             self.cont = (code, off + 1, self.env, self.b0)
-        if p.kind != 0x12:
-            # a $or$N (kind 0x12) keeps the caller's barrier: OURS
-            self.enter_pred(p)
+        # a $or$N (kind 0x12) too: a cut in a disjunction is local to it
+        # (TM-388 4.6 p.111; see the module docstring)
+        self.enter_pred(p)
         self.pc = (code, target)
 
     def enter_pred(self, p):

@@ -361,10 +361,16 @@ MEASURED facts the witnesses settled:
   So `Y =< H/2` compiles to `67 H Y`.
 - A hash table's entry target is the stored offset + 1.
 
-OURS: a disjunction `$or$N` (header kind 0x12) keeps its caller's
-barrier, so its `!` (d0) cuts the whole clause. This agrees with
-`pic/1`'s `$or$3/1`, whose `!` is d0 with A1 already overwritten, but
-no test discriminates it.
+PRINTED (since 2026-11-26): a disjunction `$or$N` (header kind 0x12) is
+entered with its own barrier, so its `!` (d0) cuts only the
+disjunction's alternatives, not the clause's. TM-388 §4.6 p.111
+(Example 2) and App. G pp.161-162 say so ("differently from ! of
+Prolog"). Held code relies on it: kappa2 stwin.esp `get_number/3`
+answers `Number = abort` after an inner `!, fail`, and pb/hash.esp
+`search_and_get/5` writes `!, relative_cut_and_fail(1)`, which would be
+plain `fail` if `!` cut the clause. Until then kl0 kept the caller's
+barrier (OURS: `pic/1`'s `$or$3/1`, `!` as d0 with A1 overwritten, fits
+both readings). `test_espc.py` NestedDisjunction discriminates it.
 
 **Method dispatch** goes through `Librarian.send` and runs TM-388
 §3.4's combined method: before-demons, then the primaries as
@@ -4896,10 +4902,10 @@ loses exactly that row). With the macros, held code that was refused
 compiles: kappa2 12,871 -> 12,963 compared, 1,514 -> 1,518 exact, none
 lost; paragraph 1,280 -> 1,286 compared, none exact. Paragraph's
 `as_view_select_window read/2` nests five deep, and two of its `$or$`s
-pair with another arity: espc FLATTENS `(A ; B) ; C` into one `$or$`
+pair with another arity: espc FLATTENED `(A ; B) ; C` into one `$or$`
 where the held compiler keeps the inner one its own predicate, a
-behavioural difference under cuts ("Open"), pinned in
-`Structure.test_counts`. dedit.esp compiles but its `exit` (`->`;
+behavioural difference under cuts (fixed 2026-11-26; see "Nested
+disjunctions and the cut in a `$or$`"). dedit.esp compiles but its `exit` (`->`;
 `test_win_m10_dedit_compiles`); cal_pmacs.esp, my_select.esp.1,
 exshow.esp compile whole.
 
@@ -5111,6 +5117,108 @@ refusal lists); kl0's census rows
 `Language.test_multiply` (its injection, `*` as blt 40, fails it and
 test_kappa2's exact count).
 
+## Nested disjunctions and the cut in a `$or$` (2026-11-26)
+
+Two fixes, one in espc and one in kl0. Found at window M10.
+
+**espc: a disjunction's alternatives are its right spine** (`espc.py`
+`alternatives/1`, used by `number_ors` and `disjunction`).
+- `A ; B ; C` and `A ; (B ; C)` are one `$or$` of three clauses.
+- `(A ; B) ; C` is two `$or$`s: the outer one's first clause calls the
+  inner one. espc used to flatten it into one `$or$` of three clauses.
+
+The rule is MEASURED on the held code. Every left-nested disjunction in
+the census sources has the held `$or$` paths and arities the rule gives.
+There are seven:
+- paragraph p_menu.esp: `as_view_select_window read/2`;
+- kappa2 user_if/pb/stwin.esp (lines 90-104 and 112-125):
+  `pb_status_window get_number/3` and `get_font/3`;
+- kappa2 `kappaMDM_parse parse_occ/3`;
+- kappa2 `kappaCCT copy_table/1`;
+- kappa2 `pb_bck_cell search_enzan_code/7`, twice. That predicate is
+  refused, so it is checked only for the `$or$`s espc compiles.
+
+utter has none. The stand-ins, the M10 held members, the printed
+listings and the ESP in the tests have none either (a scan of their
+parse trees), so nothing outside the census changes.
+
+`read/2` also settles the right-hand case: its parenthesised right
+argument `alt ; (C==mouse#l, ... ; !, Code='$$nil')` is one `$or$`. A
+separate `$or$` would share four variables, but held `#1#1` has arity 3
+and the tree is five deep, not six.
+
+The clearest witness is held `get_number/3`, whose source is
+`((equal_string(N,""),!,fail ; :get_number(#symbolizer,Number,N)) ;
+Number = abort)`:
+- `#1` is `c4` / call `#1#1` / `c0` / get `abort`;
+- `#1#1` is `e4`, the `""` test, `d5` (`!, fail`) / `e0`, the send.
+
+**kl0: a `$or$` has its own cut barrier** (`call_local` enters a kind
+0x12 predicate like any other). Until now kl0 kept the caller's barrier,
+so a cut in any disjunction cut the whole clause. That is Prolog's rule,
+not ESP's:
+- PRINTED, TM-388 §4.6 p.111 (PDF p.123), `!`: "If ! is used in an OR
+  clause, the alternative of the OR clause is cut". Its Example 2 shows
+  that the clause's own alternative is not cut.
+- PRINTED, TM-388 App. G pp.161-162 (PDF pp.173-174): in Prolog the `!`
+  also cuts the clause's alternative; in ESP it does not, and
+  `relative_cut(1)` gives Prolog's effect "only after compilation".
+- HELD-SOURCE: `get_number/3`'s `Number = abort` and `read/2`'s
+  `Code='$$nil'` are dead code under the clause-wide cut.
+  pb/hash.esp `search_and_get/5` writes `!, relative_cut_and_fail(1)`
+  in a disjunction, which would be plain `fail` if `!` already cut the
+  clause. Its held `$or$` has a `pmi db` there; db has no row in the
+  table, so that is INFERENCE only.
+- The manual does not state the nesting rule. That comes from the held
+  rows.
+
+Under the old kl0 the espc fix changed structure only: the probe below
+gave `[]` at Y=0 with two `$or$`s as with one.
+
+**Effects** (`espc.py check`, row by row against the flattening restored
+by a monkeypatch):
+
+| | paragraph | kappa2 |
+|---|---|---|
+| compared | 1,286 -> 1,289 | 12,963 -> 12,967 |
+| exact | 258 (unchanged) | 1,518 (unchanged) |
+| `$or$` paired with another arity | 2 -> 0 | 21 -> 18 |
+| compiled only | 2 -> 0 | 134 (unchanged) |
+| held `$or$` with no compiled counterpart | 11 -> 8 | 248 -> 244 |
+
+- In paragraph, the two pairs were read/2's `#1#1#1#1` and `#1#1#1#2`
+  (held arity 3, ours 2).
+- In kappa2, the three pairs that went are `copy_table/1.11#2#1`
+  (held 2, ours 3) and the two `search_enzan_code/7.11#5#{3,5}#2#2#1`
+  (held 9, ours 6). The 18 that remain are not nesting; they were not
+  examined.
+- No compared row got worse:
+  - `get_number`/`get_font` `#1` and `copy_table/1.11#2#1` moved from
+    `other` to `moves and environment` and `clause order`;
+  - the new inner `$or$`s compare as `registers`, `other` or
+    `clause order`.
+- The held arity-9 `search_enzan_code …#2#2#1` was paired with our
+  flattened arity-6 `$or$` before. It is now its own `$or$` and is
+  refused (it calls the refused `check_value_attribute/3`), so it counts
+  as `$or$ of a refused predicate`. This is why kappa2's
+  "calls a refused local" goes 3,336 -> 3,338.
+- Utter is unchanged.
+- Under the new kl0 rule, test_kl0.py, the behave census, the FEP census
+  pins and the `QC_WIN=1` window benches are unchanged (19 of 20 quick
+  checks passed; test_espc.py failed only on the two pins this change
+  moves).
+
+**Test**: `test_espc.py` NestedDisjunction.
+- Shape: `p :- ((Y<1,!,fail ; Y>=5,R=b) ; R=c)` gives `$or$0` with two
+  clauses, calling `$or$1` with two. The flat `q` gives one `$or$` of
+  three.
+- kl0: at Y=0, `p` answers `[[0, c]]` and `q` answers `[]`. Y=3 and
+  Y=7 are controls.
+- Held rows: `get_number`/`get_font` `#1` and `#1#1` are compared at the
+  held arity, with `semantic` forms equal for three of them, and read/2's
+  `#1#1#1#1#1-3` are compared.
+- The injections and their observed failures are in the class header.
+
 ## Open
 
 - **espc drops a method named `div` or `mod` silently.** `:div(C,X) :-
@@ -5149,8 +5257,10 @@ test_kappa2's exact count).
   `$or$` (paragraph `as_view_select_window read/2`'s rows sit one level
   deeper). A cut is local to its `$or$`, so the difference is
   behavioural: held, `A, !, X` with X failing still tries C; ours does
-  not. Pinned as two odd rows in `Structure.test_counts`; not fixed
-  (outside window M10).
+  not. **FIXED 2026-11-26**, section "Nested disjunctions and the cut
+  in a `$or$`". The fix also found a second bug, in kl0: a `$or$` kept
+  its caller's cut barrier, so a cut in any disjunction cut the whole
+  clause, against TM-388 p.111. Fixed in the same section.
 - **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
   copies only lists): a binding undone on backtracking empties the
   stored vector's element. Found in window M4 (`pmacs_request.esp`'s

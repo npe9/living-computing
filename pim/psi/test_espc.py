@@ -155,6 +155,10 @@
    from a backup, restored by cp, cmp-checked, observed: answering a new
    empty list fails test_step3g_invocation_stack, test_fep_census and
    test_step3f_census_recipes; test_kl0.py passes.
+17. Nested disjunctions (2026-11-26, NestedDisjunction): `(A ; B) ; C`
+   is two $or$s as in the held code (espc.py alternatives/1), and kl0
+   gives a $or$ its own cut barrier (TM-388 4.6 p.111); the injections
+   are in the class header.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -262,6 +266,20 @@ def check():
     if _CHECK is None:
         _CHECK = espc.check('paragraph')
     return _CHECK
+
+
+_KAPPA2 = None
+
+
+def kappa2():
+    """(held library, espc.check('kappa2')), computed once."""
+    global _KAPPA2
+    if _KAPPA2 is None:
+        import librarian as LB
+        lib = LB.Librarian()
+        lib.load_held(pkgs=espc.PROGRAMS['kappa2'])
+        _KAPPA2 = lib, espc.check('kappa2', lib)
+    return _KAPPA2
 
 
 def compile_one(text):
@@ -505,12 +523,17 @@ class Structure(unittest.TestCase):
         # compiler keeping the inner $or$ its own predicate.  A cut is
         # local to its $or$, so this is a BEHAVIOURAL difference, not only
         # numbering: held, `A, !, X` with X failing fails the inner $or$
-        # and C is still tried; ours, the cut commits past C.  OPEN (an
-        # espc fix outside M10; psi/README.md "Open")
-        self.assertEqual((c['pred compared'], c['pred exact']), (1286, 258))
+        # and C is still tried; ours, the cut commits past C.
+        # FIXED 2026-11-26 (espc.py alternatives/1; NestedDisjunction):
+        # 1,289 compared, 258 exact.  read/2's three X-range $or$s
+        # (#1#1#1#1#1-3) are compared ('other', like the rest of read/2),
+        # #1#1#1#1 and #1#1#1#2 pair at the held arity 3 (2 before), the
+        # two compiled-only rows are gone, and #1#1 other -> moves and
+        # environment.  Both invariants are back to 0
+        self.assertEqual((c['pred compared'], c['pred exact']), (1289, 258))
         self.assertEqual(c['key collisions'], 0)
-        self.assertEqual(c['$or$ paired with another arity'], 2)
-        self.assertEqual(c['pred compiled only'], 2)
+        self.assertEqual(c['$or$ paired with another arity'], 0)
+        self.assertEqual(c['pred compiled only'], 0)
 
     def test_aspect_differences(self):
         # paragraph_version: the version slot, "3200" in the source and
@@ -530,6 +553,103 @@ class Structure(unittest.TestCase):
                                                   'search_num/4 35'])):
             for p in preds:
                 self.assertEqual(got[(cid, p)], 'exact', (cid, p))
+
+
+class NestedDisjunction(unittest.TestCase):
+    """`(A ; B) ; C` is two $or$s, the inner one called from the outer
+    one's first clause; `A ; B ; C` and `A ; (B ; C)` are one $or$ of
+    three clauses (espc.py alternatives/1: a disjunction's alternatives
+    are its right spine).  MEASURED on the held code: every left-nested
+    disjunction in the census sources (seven: paragraph p_menu.esp
+    as_view_select_window :read/2; kappa2 stwin.esp pb_status_window
+    :get_number/3 and :get_font/3, kappaMDM_parse parse_occ/3, kappaCCT
+    copy_table/1, two in pb_bck_cell search_enzan_code/7) has the held
+    $or$ paths and arities this rule gives (search_enzan_code's only
+    where espc compiles them: the predicate is refused), and read/2's
+    parenthesised right argument is one $or$ (held #1#1 has arity 3, a
+    separate $or$ would share 4).  utter, psi/standin, the M10 held
+    members, the printed listings and the ESP in the tests have none.
+
+    It is behavioural because a cut is local to its $or$ (PRINTED:
+    TM-388 4.6 p.111, PDF p.123, Example 2, and App. G pp.161-162: in
+    Prolog the cut "cuts also" the clause's alternative, in ESP it does
+    not).  kl0 gives a $or$ its own barrier since 2026-11-26 (it kept
+    the caller's before, so a cut in any $or$ cut the clause).  The held
+    stwin.esp get_number/3 is the case: `((equal_string(N,""),!,fail ;
+    :get_number(#symbolizer,Number,N)) ; Number = abort)` answers
+    `abort` on an empty line only if the cut stays in the inner $or$;
+    held get_number/3.35#1 is c4 / call #1#1 / c0 / get abort, and #1#1
+    holds the d5 (`!, fail`) and the send.
+
+    Injections (2026-11-26, observed; each into the working file from a
+    backup copy, restored by cp, cmp clean):
+    - A, espc.py alternatives/1 returning flat(t, ';') again (the
+      flattening): test_shape, test_cut_scope_on_kl0 (p at Y=0 gives
+      `[]`), test_held_rows, Structure.test_counts (1,286) and
+      MacroBank.test_kappa2 (12,963) fail; nothing else (110 run).
+    - B, kl0.py call_local not entering a kind 0x12 predicate again (a
+      $or$ keeps its caller's barrier): only test_cut_scope_on_kl0 fails
+      (p at Y=0 gives `[]`); test_kl0.py passes (49 tests), so nothing
+      else in either file depended on the clause-wide cut.
+    """
+    T = '''class t has
+:p(C, Y, R) :- ((Y < 1, !, fail ; Y >= 5, R = b) ; R = c);
+:q(C, Y, R) :- (Y < 1, !, fail ; Y >= 5, R = b ; R = c);
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        ts, failed = espc.compile_text(cls.T, 'user')
+        assert not failed and not any(t.refusals for t in ts)
+        (cls.t,) = ts
+        cls.m = K.Machine(espc.library(ts))
+
+    def test_shape(self):
+        # p: $or$0 (two clauses, the first calling $or$1), $or$1 (two);
+        # q: $or$2, three clauses
+        t = self.t
+        ors = {p.name: p for p in t.preds() if p is not None and p.kind == 0x12}
+        self.assertEqual(sorted((n, p.arity) for n, p in ors.items()),
+                         [('$or$0', 2), ('$or$1', 2), ('$or$2', 2)])
+        choice = {n: [op for _tag, op, _a, _b in code(t, n) if op in (0xe4, 0xe2, 0xe0)]
+                  for n in ors}
+        self.assertEqual(choice, {'$or$0': [0xe4, 0xe0], '$or$1': [0xe4, 0xe0],
+                                  '$or$2': [0xe4, 0xe2, 0xe0]})
+        self.assertEqual(sorted(v for v in espc.canonical(t).values() if '#' in v),
+                         ['p/3.25#1', 'p/3.25#1#1', 'q/3.25#1'])
+
+    def test_cut_scope_on_kl0(self):
+        # Y=0: p's cut fails only the inner $or$, so R = c is still tried;
+        # q's cut is in the one $or$ and commits past R = c.  Y=3 and Y=7
+        # are controls (every rule agrees)
+        got = {sel: [K.call_class_method(self.m, 'user##t', sel, [y, K.Var()]) for y in (0, 3, 7)]
+               for sel in ('p', 'q')}
+        self.assertEqual(repr(got['p']), '[[[0, c]], [[3, c]], [[7, b], [7, c]]]')
+        self.assertEqual(repr(got['q']), '[[], [[3, c]], [[7, b], [7, c]]]')
+
+    def test_held_rows(self):
+        lib, r = kappa2()
+        cid = 'kappa##pb_status_window'
+        rows = {x[1]: x[2] for x in r['rows'] if x[0] == cid and '#' in x[1]}
+        self.assertEqual(rows, {'get_number/3.35#1 12': 'moves and environment',
+                                'get_number/3.35#1#1 12': 'registers',
+                                'get_font/3.35#1 12': 'moves and environment',
+                                'get_font/3.35#1#1 12': 'other'})
+        ht, t = lib.templates[cid], r['templates'][cid]
+        ch, cn = espc.canonical(ht), espc.canonical(t)
+        hs = {ch[p.offset]: p for p in ht.preds() if p is not None}
+        cs = {cn[p.offset]: p for p in t.preds() if p is not None}
+        for k in ('get_number/3.35#1', 'get_number/3.35#1#1', 'get_font/3.35#1'):
+            self.assertEqual(hs[k].arity, cs[k].arity, k)
+            self.assertEqual(espc.semantic(espc.normal(t, cs[k], espc._pool_ours, cn)),
+                             espc.semantic(espc.normal(ht, hs[k], espc._pool_held, ch)), k)
+        # the outer $or$ calls the inner one, then `Number = abort`
+        self.assertEqual(espc.semantic(espc.normal(t, cs['get_number/3.35#1'], espc._pool_ours, cn)),
+                         [('call', 'get_number/3.35#1#1'), ('const', 'abort')])
+        # paragraph read/2: the three X-range $or$s, one level deeper, compared
+        got = {x[1]: x[2] for x in check()['rows'] if x[0] == 'paragraph##as_view_select_window'}
+        for k in ('read/2.35#1#1#1#1#1 12', 'read/2.35#1#1#1#1#2 12', 'read/2.35#1#1#1#1#3 12'):
+            self.assertEqual(got[k], 'other', k)
 
 
 class Behaviour(unittest.TestCase):
@@ -620,7 +740,7 @@ end.'''
         # Of the exact ones, 822 are in the 406 classes with a bank, and
         # 109 of those have source clauses that a bank rule changed: the
         # expansion meets the held cells (structural witness).
-        r = espc.check('kappa2')
+        _lib, r = kappa2()
         c = r['counts']
         self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
@@ -636,7 +756,26 @@ end.'''
         # refused -> exact, kappaFMP_dump dumpLine/6.11#1 other -> exact;
         # none lost; 10 compared rows other -> moves and environment and
         # one other -> clause order, closer to the held cells
-        self.assertEqual((c['pred compared'], c['pred exact']), (12963, 1518))
+        # with `(A ; B) ; C` kept as two $or$s (2026-11-26,
+        # NestedDisjunction; row by row against the flattening): 12,967
+        # compared, 1,518 exact.  Six left-nested disjunctions: their new
+        # inner $or$s are compared (get_number/3.35#1#1 registers,
+        # get_font/3.35#1#1 other, parse_occ/3.35#1#1 other,
+        # copy_table/1.11#2#1#1 clause order) and outer ones move closer
+        # (get_number and get_font #1 other -> moves and environment,
+        # copy_table/1.11#2#1 other -> clause order).  In pb_bck_cell's
+        # refused search_enzan_code/7, #5#3#2#2#1#1 and #5#5#2#2#1#1 and
+        # their #1s now pair at the held arity 6 (moves and environment,
+        # 'other' or not compared before), while the held arity-9
+        # #...#2#2#1s, paired with our flattened arity-6 $or$s before, are
+        # now ours apart and refused (they call the refused
+        # check_value_attribute/3), so they count as `$or$ of a refused
+        # predicate`
+        self.assertEqual((c['pred compared'], c['pred exact']), (12967, 1518))
+        # 21 before the fix; the three gone are copy_table/1.11#2#1 (held
+        # arity 2, ours 3) and the two search_enzan_code #...#2#2#1 (9,
+        # 6).  The 18 left are not disjunction nesting (not examined)
+        self.assertEqual(c['$or$ paired with another arity'], 18)
         # the held cells witness two of the key macros' values (espc.py
         # key_constant): KMACS2.ESP `:command(Self,mouse#r,kappa_menu)` is
         # exact only with mouse#r the atom named `mouse#r`, and DUMP.ESP

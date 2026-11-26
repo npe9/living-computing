@@ -238,6 +238,29 @@ def flat(t, op=','):
     return [] if t is None else [t]
 
 
+def alternatives(t):
+    """The alternatives of a disjunction: its RIGHT spine only.  `;` is
+    xfy, so `A ; B ; C` (and `A ; (B ; C)`) is one $or$ of three clauses,
+    but a parenthesised disjunction in the LEFT argument, `(A ; B) ; C`,
+    is a goal of the first alternative and becomes its own $or$.
+    MEASURED on the held code: all seven left-nested disjunctions in the
+    census sources get the held $or$ paths and arities (psi/README.md
+    "Nested disjunctions and the cut in a `$or$`"), e.g. kappa2 stwin.esp
+    `:get_number/3` (`((equal_string(N,""),!,fail ; ...) ; N = abort)`:
+    held get_number/3.35#1 is c4 / call #1#1 / c0 / get abort, and #1#1
+    holds the `!, fail` (d5) and the send), and paragraph p_menu.esp
+    as_view_select_window `:read/2` (its X-range $or$s sit at
+    #1#1#1#1#1-3).  The same read/2 has a parenthesised RIGHT argument,
+    `A ; (B ; C)`, kept as one $or$ (held #1#1 has arity 3, not the 4 a
+    separate $or$ would share).  It matters because a cut is local to its
+    $or$ (TM-388 4.6 p.111): held, `(A, !, fail ; B) ; C` still tries C."""
+    out = []
+    while t[0] == 'cmp' and t[1] == ';' and len(t[2]) == 2:
+        out.append(t[2][0])
+        t = t[2][1]
+    return out + [t]
+
+
 def vars_of(t, acc=None):
     """Named variables of T in order of first occurrence ('_' excluded)."""
     if acc is None:
@@ -1912,7 +1935,7 @@ class ClassCompiler:
             # numbering is not the source's (see canonical())
             self.or_count[parent] += 1
             path = self.or_path[name] = '%s#%d' % (parent, self.or_count[parent])
-            for alt in flat(t, ';'):
+            for alt in alternatives(t):
                 self.number_ors(alt, path)
         elif t[0] == 'cmp' and t[1] == ',' and len(t[2]) == 2:
             for x in t[2]:
@@ -1921,7 +1944,7 @@ class ClassCompiler:
     def disjunction(self, t, outside, body):
         """(A ; B ; ...) -> a call of a new local $or$N (kind 0x12) whose
         arguments are the variables shared with the rest of the clause."""
-        alts = flat(t, ';')
+        alts = alternatives(t)
         inner = vars_of(t)
         shared = [v for v in outside if v in inner]
         name = self.or_names[id(t)]
