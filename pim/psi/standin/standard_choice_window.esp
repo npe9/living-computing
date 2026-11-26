@@ -81,6 +81,10 @@ instance
 % outer top-left ([] none given), the pane (0: not shown).
 attribute items := [], values := [], answers := 0, owner := 0,
           rows := 0, cols := 0, at := [], pane := 0, number := 0;
+% OURS: the slots the coordinator reads of every shown window (uncover/3
+% its permission, MENU's named/2 its title): a sheet is written at once,
+% untitled.
+attribute permission := out, title := 0;
 
 % INTERPOLATED (selector and arguments: window.md section 2.10, cited
 % above; body OURS): set_item_value.

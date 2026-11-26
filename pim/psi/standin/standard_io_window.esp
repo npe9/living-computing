@@ -683,9 +683,11 @@ command(W, draw_filled_circle, 6, A) :- !,
 command(W, draw_ellipse, 7, A) :- !,
         el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, Wd), el(A, 5, St), el(A, 6, Op),
         :draw_ellipse(W, CX, CY, RX, RY, Wd, St, Op);
-command(W, draw_filled_ellipse, 6, A) :- !,
-        el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, Pt), el(A, 5, Op),
-        :draw_filled_ellipse(W, CX, CY, RX, RY, Pt, Op);
+% TM-785 p40's printed draw_filled_ellipse vector {200, 0, 100, 1, dotted,
+% set} has six elements, the filled circle's layout with its `1`: read as
+% {CX, CY, RX, RY, Pattern, Op} it is an ellipse 1 dot high, read as the
+% circle's it is no ellipse.  Ambiguous, so refused loudly (OURS).
+command(W, draw_filled_ellipse, 6, _) :- !, :graphics_refused(W, draw_filled_ellipse);
 command(W, draw_arc, 8, A) :- !,
         el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, A1), el(A, 4, A2), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
         :draw_arc(W, CX, CY, R, A1, A2, Wd, St, Op);

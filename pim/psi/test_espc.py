@@ -5207,14 +5207,16 @@ end."""
         #     words; the frame unchanged.
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
-        # test_kl0.py run, all else OK):
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
         #   G10 styled/6 does not turn the word by the piece's column:
-        #       this test FAILS, nothing else.
+        #       this test, test_win_m8_shapes (its light_paint disc) and
+        #       test_win_m8_rest_screen FAIL, nothing else.
         #   G11 row_words/6 reads a pattern string 1 word a row: this test
-        #       FAILS, nothing else.
-        #   G12 blt 44 puts the quotient where the remainder goes:
-        #       this test FAILS, nothing else (test_kl0's census does not
-        #       run set_pattern/2's values).
+        #       and test_win_m8_rest_screen FAIL, nothing else.
+        #   G12 blt 44 puts the quotient where the remainder goes: this
+        #       test and test_win_m8_rest_screen FAIL, nothing else
+        #       (test_kl0's census does not run set_pattern/2's values).
         import windev
         import winfb
         X0, Y0 = self.GRAPHICS_AT
@@ -5315,11 +5317,12 @@ end."""
         #     short for its size; the frame unchanged.
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
-        # test_kl0.py run, all else OK):
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
         #   G13 image_in/6 draws transparent (no reset of the area): this
-        #       test FAILS, nothing else.
-        #   G14 get_plane_count/2 answers 3: this test FAILS, nothing
-        #       else.
+        #       test and test_win_m8_rest_screen FAIL, nothing else.
+        #   G14 get_plane_count/2 answers 3: this test FAILS and
+        #       test_win_m8_rest_screen ERRORS, nothing else.
         import windev
         import winfb
         X0, Y0 = self.GRAPHICS_AT
@@ -5474,20 +5477,25 @@ end."""
         #     inside, a fan whose radius leaves it, an unknown pattern.
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
-        # test_kl0.py run, all else OK):
-        #   G15 the disc rule x*x + y*y =< R*R (no + R): this test FAILS,
-        #       nothing else.
-        #   G16 a sweep over 180 degrees taken as narrow: this test FAILS,
-        #       nothing else.
-        #   G17 no inner ellipse (every outline filled): this test FAILS,
-        #       nothing else.
-        #   G18 the polygon not closed: this test FAILS, nothing else.
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
+        #   G15 the disc rule x*x + y*y =< R*R (no + R): this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G16 a sweep over 180 degrees taken as narrow: this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G17 no inner ellipse (every outline filled): this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G18 the polygon not closed: this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
         #   G19 draw_fan/9 without its first radius: this test FAILS,
         #       nothing else.
         #   G20 an outline's op not checked (an integer colour op sent on):
         #       this test FAILS, nothing else.
         #   G21 the second quadrant's cosine not negated: this test FAILS,
         #       nothing else.
+        #   E3 TM-785 p40's six-element draw_filled_ellipse vector drawn
+        #      (read as {CX, CY, RX, RY, Pattern, Op}), not refused: this
+        #      test FAILS, nothing else (Window tests only).
         import windev
         import winfb
         A = K.Atom
@@ -5561,7 +5569,11 @@ end."""
                      ('draw_ellipse', 100, 100, 10, 5, 0, S, SET),
                      ('draw_polygon', plist([(10, 10), (450, 20), (10, 30)]), 0, 0, 0, 0, 1, S, SET),
                      ('draw_fan', 100, 20, 40, 60, 120, 1, S, SET),
-                     ('draw_filled_circle', 100, 100, 10, 1, A('zigzag'), SET)]:
+                     ('draw_filled_circle', 100, 100, 10, 1, A('zigzag'), SET),
+                     # TM-785 p40's six-element draw_filled_ellipse vector,
+                     # ambiguous (standard_io_window.esp command/4)
+                     ('execute_graphics_command',
+                      K.Cons(K.Vec([A('draw_filled_ellipse'), K.Vec([200, 50, 100, 1, A('fix'), SET])]), K.NIL))]:
             with self.assertRaises(K.Refusal) as e:
                 self.send(m, w, *args)
             self.assertIn('graphics_refused', str(e.exception.detail))
@@ -5597,7 +5609,8 @@ end."""
         # dots, which no frozen primitive gives the program).
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
-        # test_kl0.py run, all else OK):
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
         #   C1 copy_in/9 does not draw the destination's own dots back (D)
         #      before the copy goes on through Op: this test FAILS, nothing
         #      else.  (First run, with the first copy `copy` onto the empty
@@ -5764,7 +5777,8 @@ end."""
         # manipulator (the selected window's cursor back).  `wait`, then
         # abort: the permission stays out.  The events are the run's own
         # (later_run batches through the coordinator's stream).
-        # Injections, OBSERVED: see test_win_m9_choice's header (A1).
+        # Injections, OBSERVED: see test_win_m9_choice's header (M1-M4,
+        # A1, E1, E2).
         E = self.manip_events()
         C = K.ClassRef('simpos##coordinator')
         login, two = E['login'], E['two']
@@ -5780,6 +5794,25 @@ end."""
         self.assertEqual(windev.read_cells(sheet, 703, 720, 16, 1), ['WINDOW ATTRIBUTE'])
         self.assertEqual(windev.read_cells(sheet, 703 + 15 * 11, 734, 4, 1), ['wait'])
         self.assertEqual((windev.pbm_sha256(sheet), sheet.count()), self.SHOT_PINS['attribute'])
+        # the sheet is owned by the coordinator's own process, so its
+        # writes go through manager/1's bypass in this run
+        owners = [self._walk(o) for o in self._walk(m.get_slot(C, 'owners'))]
+        self.assertIn([s, K.deref(m.get_slot(C, 'process'))], owners)
+        self.assertNotEqual(K.deref(m.get_slot(C, 'process')), 0)
+        # the sheet is not a window the user arranges: a middle click on
+        # it opens no manipulator, and MENU's submenu does not list it
+        import fep_bridge as FB
+        m, mid, _ = self.later_run(login, two, E['attribute'], [FB.mouse('m', 720, 740)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(mid.rows, sheet.rows)
+        m, _, _ = self.later_run(login, two, E['attribute'], E['windows'])
+        Mp = K.deref(m.get_slot(C, 'menu_pane'))
+        listed = [K.deref(K.deref(i).args[1]) for col in self._walk(m.get_slot(Mp, 'columns'))
+                  for i in self._walk(col)]
+        S2 = self._walk(m.get_slot(C, 'choices'))
+        self.assertEqual(len(listed), 2)
+        self.assertEqual(len(S2), 1)
+        self.assertNotIn(S2[0], listed)
         m, done, _ = self.later_run(login, two, E['attribute'], E['attribute_wait'], E['attribute_do_it'])
         w2 = self.manip_check(m, done, [self.MANIP_W2, self.MANIP_W1])[0]
         self.assertEqual(m.get_slot(w2, 'permission'), K.Atom('wait'))
@@ -5815,19 +5848,29 @@ end."""
         #   - set_item_value/3 on a key the menu lacks refuses loudly.
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
-        # test_kl0.py run, all else OK):
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
         #   M1 a click on an option does not change the field's value:
-        #      this test FAILS, nothing else.
+        #      this test and test_win_m9_attribute FAIL, nothing else.
         #   M2 the coordinator sends a click on a choice window to a
-        #      selection (no choose/3): this test ERRORS, nothing else.
+        #      selection (no choose/3): this test ERRORS and
+        #      test_win_m9_attribute FAILS, nothing else.
         #   M3 deactivate/1 does not give the selected window its cursor
-        #      back: this test FAILS, nothing else.
+        #      back: this test and test_win_m9_attribute FAIL, nothing
+        #      else.
         #   M4 read/2 returns the fields' defaults, not their values (the
         #      plan's injection): first run, NOTHING failed (the one edit
         #      ended on the held default, off); with the edit to `on`
-        #      added, this test FAILS, nothing else.
+        #      added, this test and test_win_m9_attribute FAIL, nothing
+        #      else.
         #   A1 ATTRIBUTE's do_it sets nothing (attribute_set/2 ignores the
         #      result): test_win_m9_attribute FAILS, nothing else.
+        #   E1 a middle click on a choice window opens the manipulator on
+        #      it (no not_choice/2): test_win_m9_attribute FAILS, nothing
+        #      else (Window tests only).
+        #   E2 MENU's listed/3 lists the choice windows:
+        #      test_win_m9_attribute FAILS, nothing else (Window tests
+        #      only).
         import fep_bridge as FB
         import windev
         A = K.Atom

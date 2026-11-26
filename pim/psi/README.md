@@ -4457,7 +4457,8 @@ SHOW, HIDE, RESHAPE, MOVE, EXPAND, MENU, PERMISSION, EXIT.
 
 Not offered, each for want of what it acts on:
 - ATTRIBUTE: TM-125 p7 Fig. 4's choice window, with typed values. Choice
-  windows are milestone M9.
+  windows are milestone M9 (offered since: "Window M9" below, with
+  PERMISSION only, and the manipulator has nine items).
 - HARDCOPY: no printer is modelled (window.md §2.2 `hardcopy/2
   (W,laser_printer)`, USAGE).
 - SUPERIOR and INFERIOR: they move the "editing base" along the window
@@ -4495,7 +4496,8 @@ own size, which gives back the same cells.
 | `test_win_m7_console_move` | (changed) RESHAPE of PIMOS's console to 351 x 251 dots gives 31 x 16 cells, its buffer wrapped at 31 columns |
 
 Pins moved, each accounted in the test's header:
-- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items);
+- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items;
+  167 with nine since window M9's ATTRIBUTE);
   its screen `window_manipulator.png`;
 - `test_win_m7_console_move`: RESHAPE's pane 523 x 219 -> 347 x 247;
 - the census pins (`test_fep_census`, `test_step3f_census_recipes`,
@@ -4669,14 +4671,19 @@ stand-in class `bitmap` answers `get_plane_count/2` = 1, so the held
 image code takes its monochrome path. The held paragraph
 `type_switch_icon` `draw/6` runs from the .ptf: three held `draw_box`
 frames, then the icon through the held `restore/7` -> `adjust_pos` ->
-`restore_image/6`.
+`restore_image/6`. The icon's place is the held `adjust_pos`'s (its Y is
+Y0 + the label height - 24), with OUR label height of 16
+(`get_label_height/2`, OURS: no source gives the strip's height).
 
 **Shapes**: `draw_circle/7` (PRINTED WINCS p3), `draw_ellipse/8`,
 `draw_arc/9`, `draw_elliptical_arc/10`, `draw_fan/9`,
 `draw_filled_circle/5` (USAGE gog) and `/7`, `draw_filled_ellipse/7`,
 `draw_filled_fan/9`, `draw_graph/2`, `/9`, `draw_polygon/2`, `/9`
 (TM-785 p40's vectors; the arity INFERENCE from their length), each also
-through `execute_graphics_command/2`. The dots are OURS
+through `execute_graphics_command/2`. One printed vector is refused
+loudly: TM-785 p40's `draw_filled_ellipse` `{200, 0, 100, 1, dotted, set}`
+has six elements, the filled circle's layout with its `1`, so it reads
+either as an ellipse 1 dot high or as no ellipse (OURS: ambiguous). The dots are OURS
 (`window_pane.esp` `shape_in/9`): a disc is x*x + y*y =< R*R + R, an
 ellipse scales the disc's half-width, an outline is the shape less the
 shape W dots smaller, and a sector is tested by cross products with a
@@ -4727,19 +4734,23 @@ Screen: `../docs/simpos/screens/window_graphics_rest.png` (`winshot.py`
 stage `graphics_rest`): the held bar views and icon, and the shapes.
 
 **Injections, OBSERVED** (2026-11-26; each from a backup copy, restored
-by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run):
+by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run,
+then each rerun at the final code with the Window tests, the other two
+modules having failed nothing in the first run; "rest screen" is
+`test_win_m8_rest_screen`, whose pinned screen draws them all):
 
 | | injection | fails |
 |---|---|---|
-| G10 | a styled piece not turned by its column | patterns only |
-| G11 | a pattern string read one word a row | patterns only |
-| G12 | blt 44's quotient and remainder swapped | patterns only |
-| G13 | an image drawn transparent | images only |
-| G14 | `get_plane_count/2` answers 3 | images only |
-| G15 | the disc rule without + R | shapes only |
-| G16 | a sweep over 180 degrees taken as narrow | shapes only |
-| G17 | no inner ellipse (outlines filled) | shapes only |
-| G18 | the polygon not closed | shapes only |
+| E3 | the six-element `draw_filled_ellipse` vector drawn | shapes only |
+| G10 | a styled piece not turned by its column | patterns, shapes (the light_paint disc), rest screen |
+| G11 | a pattern string read one word a row | patterns, rest screen |
+| G12 | blt 44's quotient and remainder swapped | patterns, rest screen |
+| G13 | an image drawn transparent | images, rest screen |
+| G14 | `get_plane_count/2` answers 3 | images, rest screen (ERROR) |
+| G15 | the disc rule without + R | shapes, rest screen |
+| G16 | a sweep over 180 degrees taken as narrow | shapes, rest screen |
+| G17 | no inner ellipse (outlines filled) | shapes, rest screen |
+| G18 | the polygon not closed | shapes, rest screen |
 | G19 | `draw_fan/9` without its first radius | shapes only |
 | G20 | an outline's op not checked | shapes only |
 | G21 | the second quadrant's cosine not negated | shapes only |
@@ -4792,7 +4803,10 @@ one cell wider than the widest row. The coordinator keeps the shown
 choice windows (`add_choice/2`, `remove_choice/2`), and a left click on one
 goes to its `choose/3`, not to a selection. Deactivating draws back what
 was under the sheet, and the selected window's cursor, which
-`cursor_aside/1` took off when the sheet was drawn.
+`cursor_aside/1` took off when the sheet was drawn. A choice window is
+not a window the user arranges (OURS): a middle click on one opens no
+manipulator, and MENU's submenu leaves it out. It has a `permission` of
+`out` and no title, the slots the coordinator reads of every window.
 
 **ATTRIBUTE** (TM-125 p8, between PERMISSION and EXIT) opens a choice
 window at the mouse, owned by the coordinator. It is made with
@@ -4815,7 +4829,10 @@ The row count is unchanged.
   frame. Abort gives `abort`. An unknown key is refused.
 - `test_win_m9_attribute`: ATTRIBUTE on window 2 of the manipulator run,
   PERMISSION `wait` clicked, then do_it: window 2's permission becomes
-  `wait` and the sheet is gone; with abort, it is unchanged.
+  `wait` and the sheet is gone; with abort, it is unchanged. The sheet's
+  owner is the coordinator's own process (so manager/1's bypass is live
+  on this route); a middle click on it opens nothing; MENU lists the two
+  requester windows and not it.
 
 - `test_win_m9_choice_screen`: the menu's screen pinned; the committed
   PNGs decode to their pins.
@@ -4824,15 +4841,19 @@ Screens: `../docs/simpos/screens/choice_window.png` (stage `choice`),
 `manipulator_attribute.png` (stage `attribute`); `window_manipulator.png`
 re-rendered (nine items).
 
-**Injections, OBSERVED** (2026-11-26; as above):
+**Injections, OBSERVED** (2026-11-26; as above, each rerun at the final
+code; M9 attribute is `test_win_m9_attribute`, whose sheet is a choice
+window too):
 
 | | injection | fails |
 |---|---|---|
-| M1 | a click on an option does not change the value | M9 choice only |
-| M2 | a click on a choice window goes to a selection | M9 choice only (ERROR) |
-| M3 | deactivate does not give the cursor back | M9 choice only |
-| M4 | read/2 returns the defaults (the plan's injection; first run NOTHING failed, the one edit ended on the held default; an edit to `on` added) | M9 choice only |
+| M1 | a click on an option does not change the value | M9 choice, M9 attribute |
+| M2 | a click on a choice window goes to a selection | M9 choice (ERROR), M9 attribute |
+| M3 | deactivate does not give the cursor back | M9 choice, M9 attribute |
+| M4 | read/2 returns the defaults (the plan's injection; first run NOTHING failed, the one edit ended on the held default; an edit to `on` added) | M9 choice, M9 attribute |
 | A1 | ATTRIBUTE's do_it sets nothing | M9 attribute only |
+| E1 | a middle click on a choice window opens the manipulator on it | M9 attribute only |
+| E2 | MENU's submenu lists the choice windows | M9 attribute only |
 | P13 | (above) | coordinator writes only (ERROR) |
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
