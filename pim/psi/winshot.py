@@ -18,14 +18,18 @@ Each screen is a live kl0 run, the same run test_espc.py Window pins:
     whose dots its save area keeps (test_win_m7_save_areas);
   - popup, sweep (window M6): with Login PIMOS shown, its item chosen
     again: the `create`/`kill` pop-up; then `create`, a corner, a move:
-    the rubber-band outline (test_win_m6_create_kill).
+    the rubber-band outline (test_win_m6_create_kill);
+  - manip, hidden, reshaped (window M7): with a second requester's window
+    over the Login PIMOS window, the window manipulator opened on it by
+    the middle button; that window hidden under the other by HIDE; it
+    reshaped by RESHAPE (test_win_m7_manip).
 The PNG is the whole device frame, 1,280 x 1,024 dots, one bit a dot
 (psi/windev.py png_bytes, stdlib zlib only); the frame's PBM sha256 is
 printed beside it and must equal the test's pin.
 
 Use:  python3 -I psi/winshot.py OUTDIR [STAGE ...]   (stages: name,
-      password, login, bridged, console, menu, over, popup, sweep; all
-      when none is given)
+      password, login, bridged, console, menu, over, popup, sweep, manip,
+      hidden, reshaped; all when none is given)
 """
 import os
 import sys
@@ -34,7 +38,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 NAMES = {'console': 'pimos_console', 'menu': 'system_menu', 'over': 'menu_over_window',
-         'popup': 'create_kill_popup', 'sweep': 'rubber_band'}
+         'popup': 'create_kill_popup', 'sweep': 'rubber_band', 'manip': 'window_manipulator',
+         'hidden': 'manipulator_hide', 'reshaped': 'manipulator_reshape'}
 
 
 def main(argv):
@@ -49,7 +54,8 @@ def main(argv):
     os.makedirs(out, exist_ok=True)
     T.Window.setUpClass()
     t = T.Window('test_win_m5_login_screen')
-    stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep']
+    stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep',
+                                                   'manip', 'hidden', 'reshaped']
     bad = 0
     for stage in stages:
         if stage == 'bridged':

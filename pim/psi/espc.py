@@ -2339,10 +2339,58 @@ def compile_classes(defs, package, known=None):
     return out, failed
 
 
+# The control constructs that cannot head a clause.  A clause read with
+# one of them as its head is a body whose head was lost, most often into
+# the comment line before it (`% the head :foo(X) :-` then `bar(X),
+# baz(X);` reads as the clause `','(bar(X), baz(X))`).
+BODY_ONLY_HEADS = (',', ';', '->', '|', '\\+')
+
+
+def source_refusals(defs, path):
+    """The items of DEFS that a source compile must not drop: those not
+    parsed as an item of their part (a local clause outside the local
+    part, a method head in it, ...) and clauses headed by a control
+    construct.  Until 2026-11-25 both were dropped or compiled with no
+    complaint (README "espc fails loud on a swallowed head")."""
+    bad = []
+    for d in defs:
+        for line, why in d['unparsed']:
+            bad.append('%s line %s: %s' % (d['name'], line, why))
+        for c in d['clauses']:
+            if c['name'] in BODY_ONLY_HEADS:
+                bad.append('%s: a clause headed by %s/%d (a body whose head is lost, perhaps in a comment)'
+                           % (d['name'], c['name'], len(c['head'])))
+    return bad
+
+
+# A comment line that ends as a clause head does (`:-`, or `:- !,`),
+# followed by an indented line of code: the clause's head is in the
+# comment and its body reads on as a clause of its own.  A body of one
+# goal reads as a fact, which nothing else can tell from a real one, so
+# the source text is looked at (a heuristic, OURS).
+SWALLOWED_HEAD = re.compile(r'^[ \t]*%.*:-[ \t]*(!,)?[ \t]*\n[ \t]+[^%\s]', re.M)
+
+
+def swallowed_heads(text):
+    """-> the line numbers of comment lines that end as a clause head and
+    are followed by an indented line of code (SWALLOWED_HEAD)."""
+    return [text.count('\n', 0, m.start()) + 1 for m in SWALLOWED_HEAD.finditer(text)]
+
+
 def compile_text(text, package, known=None, path='<source>'):
+    """Compile source TEXT.  -> (templates, failures), as compile_classes.
+    A syntax error, an item dropped by the parser or a clause with no head
+    (source_refusals) is a CompileRefusal: the source is ours or copied, so
+    nothing in it may vanish silently (the held programs go through
+    check(), which records such items as `unparsed source`)."""
     defs, nerr = parse_text(text, path)
     if nerr:
         raise CompileRefusal('syntax', '%d items not parsed in %s' % (nerr, path))
+    bad = source_refusals(defs, path)
+    bad += ['line %d: a comment ending as a clause head, then an indented line of code' % n
+            for n in swallowed_heads(text)]
+    if bad:
+        raise CompileRefusal('source', '%s: %s' % (path, '; '.join(bad)))
     return compile_classes(defs, package, known)
 
 

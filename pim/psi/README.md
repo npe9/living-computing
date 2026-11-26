@@ -4163,15 +4163,17 @@ head).
 - `menu_pane`: a title wider than the columns widens the last column
   (OURS; the pop-up's title is wider than `create`).
 
-**Open, found by probes (not in a test):**
+**Open, found by probes (not in a test); both FIXED in the next section
+(window M7), and now pinned:**
 - After `create`, keys go first to the OLDER requester: it already waits
   in get/2 on the coordinator's one keyboard stream, so the first key of
   `local` reached window 1 and the rest window 2. The created window is
   drawn and placed right, but typing into it is not right yet; per-window
   keyboard streams would fix it. After `kill`, a click in window 1 and
-  `local` RETURN reach it.
+  `local` RETURN reach it. (`test_win_m7_keyboard_focus`.)
 - Killing a window that lies under a newer one restores its saved dots
-  over the newer window (no restacking or clipping).
+  over the newer window (no restacking or clipping). (`test_win_m7_manip`,
+  the kill-under case.)
 
 **espc fails loud on a refused stand-in predicate.** `espc.standins()`
 now raises `CompileRefusal('stand-in', ...)` naming the predicate and the
@@ -4212,6 +4214,189 @@ Screens (`psi/winshot.py`, pinned, checked by `assert_shots`):
 | R3 | placement ignored | create/kill only |
 | R4 | cursor_aside a no-op | create/kill only |
 | E1 | check_standin_refusals a no-op | the refusal test only (test_espc.py and test_kl0.py run whole) |
+
+### Window M7: the manipulator and keyboard focus (2026-11-25)
+
+**Keyboard focus.** Each `standard_io_window` reads its own input stream
+(the `input` slot, unused since step 3m), and the coordinator puts a key
+on the selected window's stream (`typed/2`). Basis:
+- the selected window has the keyboard (PROSE TM-225 p11, TM-115 p111;
+  window.md §2.7, §4.1);
+- a window is selected when it is shown (TM-225 p10-11) or by a left
+  click on it (PRINTED TR-046 p28, `mouse#l` = visit; PROSE TM-115 p111);
+- a selection also brings the window to the top (INFERENCE from TM-225
+  p11: the selected window is the top of the stack);
+- `select/1` "make it the keyboard (input) window" (PROSE Giho 8609 p19,
+  TM-125 p22; window.md §2.1) and TM-126 p7 (the selected window's cursor
+  blinks; clicks go to the fully visible window under the mouse).
+  The held code was searched for how a program picks the keyboard window
+  (`docs/simpos/subsystems/notes/ptf.md`, 2026-11-25). pimfep sends no
+  `select/1`. `has_been_selected/1` is a `select_notifier` callback,
+  defined by kappa `pbwin` (an after-demon) and paragraph
+  `profiler_view_window`. So selection by the user, as modelled, is the
+  only path the held FEP route needs. The stand-ins do not send
+  `has_been_selected/1` (open).
+
+Until M7 every requester read the coordinator's one keyboard stream, so
+after `create` the first key went to the older requester, which was
+already waiting in get/2. Keys typed while no window is selected go,
+oldest first, to the next window selected (coordinator `type_ahead/2`,
+OURS). The step 3m dialogue and the M5 screens need this: they queue all
+their keys before the requester shows its window. `pmacs_window` already
+had a stream of its own (its interpreter's input).
+
+**The stack** (`coordinator.esp` "THE STACK", OURS). The coordinator's
+`windows` list is now the stacking order, top first. Every restack goes
+through two new pane methods (`window_pane.esp`):
+- `lift/1`: the pane's own dots saved, then what was under it drawn back;
+- `lay/1`: what is under it saved, then its own dots drawn back.
+
+They are called top-down and bottom-up, so a pane is always the top one
+on the screen when its dots are saved. This is the mechanism of PROSE
+TM-225 p10 and TM-126 p5 (window.md §4.1 "Implementation"): a hidden
+window's image is kept in a save area, and restacking copies between the
+save areas and the frame. A restack that would change no dot only
+reorders the list and sends nothing: this is the case when the window
+overlaps none of the windows it passes. So the M4 tape's frames and the
+`saves()` logs of the M6/M7 tests are unchanged.
+
+What uses the stack:
+- kill: `take_off/2` lifts the windows above, erases the pane and lays
+  them back;
+- a selection: raises the window;
+- `pmacs_window` `drawn_again` (set_font/2, has_been_reshaped/1): peels
+  the windows above before it draws the new pane;
+- `cursor_aside/1`: leaves alone a selected window that is lifted, whose
+  cursor is in its saved dots.
+
+**MOVE** (`window_pane.esp` `move_to/3`, OURS order). The device's
+restore draws an area back where it was saved (winfb is frozen, and
+`bsv/WinFbBox.bsv` runs it). So the dots go across by a copy in the frame:
+1. the pane's dots are saved;
+2. the under-area of the old place is drawn back, and kept;
+3. what is under the new place is saved;
+4. the pane's dots are drawn at the old place and copied to the new one;
+5. the moved dots are saved;
+6. the old under-area is drawn back again, and the moved dots over it.
+
+`save_memory` gains `put_back/2`, a restore that keeps the area.
+
+**The manipulator** (`coordinator.esp` "THE MANIPULATOR").
+- The middle button over a window opens a pop-up titled `WINDOW
+  MANIPULATOR` at the mouse, for that window. The items are SHOW, HIDE,
+  RESHAPE and MOVE, verbatim from TM-125 p8 (PRINTED-INTERFACE, window.md
+  §4.4). The other eight items are not offered.
+- That the middle button opens it is OURS. TM-125 puts the manipulator
+  on the system menu, but the held login.com has no such item, and adding
+  one would change every menu pin. The middle button moves a pimfep
+  window (USAGE, window.md §5.3).
+- SHOW raises and selects the window.
+- HIDE moves it to the bottom of the window list (TM-125 p8). A selected
+  window loses its cursor while it is still on top, and the new top
+  window is then selected (INFERENCE, TM-225 p11).
+- MOVE: an outline of the window's size follows the mouse (exclusive_or,
+  as create's), and a left click places its top-left. The window is
+  raised, selected and moved with its dots. Then `reshape/5` and the
+  callback `has_been_reshaped/1` are sent (window.md §2.1, §2.12: the
+  reshape notifier calls it after the geometry is set).
+- RESHAPE: two corner clicks with the rubber band (TM-125 p8 "point at
+  the top-left and bottom-right corners with the mouse"), then
+  `reshape/5` and `has_been_reshaped/1`.
+
+`standard_io_window` gains `reshape/5` (USAGE selector, window.md §2.1)
+and `has_been_reshaped/1` (OURS bodies). When the kept rectangle is not
+the pane's, the pane is made again there: as many cells of the font as
+fit (at least 1 x 1), the title, the transcript's lines oldest first, and
+the cursor if selected. The echoed codes are not in the transcript, so a
+typed line is lost on a RESHAPE (OURS). On `pmacs_window`, the held-route
+stand-ins `reshape/5` and `has_been_reshaped/1` redraw the buffer at the
+new place. Its text size is not changed (open).
+
+**espc fails loud on a swallowed head** (`espc.compile_text`:
+`source_refusals`, `swallowed_heads`). A comment line could eat a
+clause's head, and the body then compiled with no complaint:
+- in the method part, it read as a local clause outside the local part,
+  which the parser dropped into `unparsed`, reported nowhere;
+- in the local part, it read as a clause headed by `','/2`, or, for a body
+  of one goal, as a fact.
+
+`compile_text` now refuses (CompileRefusal `source`) on three things:
+- any item the parser dropped;
+- a clause headed by a control construct (`BODY_ONLY_HEADS`);
+- a comment line that ends as a clause head does (`:-`, `:- !,`) and is
+  followed by an indented line of code (`SWALLOWED_HEAD`, a heuristic,
+  OURS).
+
+The held programs go through `check()`, which still records such items as
+`unparsed source`. Every stand-in and test program compiles unchanged.
+
+**Tests** (`test_espc.py` `Window`):
+
+| test | what it pins |
+|---|---|
+| `test_win_m7_keyboard_focus` | after `create`, `local` RETURN reaches the new requester only (each window's history; its text read back from the frame); a left click on the older window's uncovered part raises and selects it, and the next line is its own |
+| `test_win_m7_manip` | the manipulator's place, title and items; HIDE equals a frame built from `two` and `before`; HIDE then SHOW equals `two` exactly; a kill under another window equals a run that never made it, with the same line typed; MOVE of the top window equals a window made there; MOVE of the covered window equals a composed frame; RESHAPE's outline (2w + 2(h - 2) dots), the new pane (35 x 12 cells), its title, transcript and cursor, and outside it the frame with the window gone. After each: save memory holds only the windows' own areas, every command is OK, and the stream replays to the frame |
+| `test_win_m7_console_move` | MOVE of PIMOS's console (HELD `pimos_window` on the `pmacs_window` stand-in): `has_been_reshaped/1` makes a new pane, the window's place is (100, 100), and the frame equals the replay's with the console's dots moved; RESHAPE moves it with its size kept |
+| `test_espc_swallowed_head` | four swallowed-head forms refused (`source`); the same clause with its head on its own line compiles |
+
+None of the earlier pins moved. The new restacks send nothing to the
+device when no dot would change, so the `saves()` logs of
+`test_win_m7_save_areas` and every earlier frame are as before. Screens
+(`psi/winshot.py`, checked by `assert_shots`):
+`../docs/simpos/screens/window_manipulator.png`, `manipulator_hide.png`,
+`manipulator_reshape.png`.
+
+**Injections, OBSERVED** (2026-11-26, at the final code): each from a backup copy, restored by copy, `cmp`
+clean; `test_espc.py` Window (E2, E3: all of `test_espc.py`),
+`test_fep_bridge.py` and `test_kl0.py` run; `test_kl0.py` stayed OK in
+each; the lists are in the tests' heads.
+
+| | injection | fails |
+|---|---|---|
+| F1b | step 3m's keyboard back: one shared stream, the read gated on selection, no type-ahead | keyboard focus, manip |
+| F1 | the same with M7's type-ahead kept (it puts each key back on the stream it takes it from) | M4, bridged and login screens, M6 selection, console move, focus, manip; bridge replay and login service |
+| F2 | type-ahead a no-op | M4, bridged and login screens, M6 selection, console move; bridge replay and login service |
+| F3 | a selection does not raise | focus, manip |
+| M1 | lift/1 skips the restore (the plan's injection) | focus, manip |
+| M2 | kill lifts nothing (M6's way) | manip only |
+| M3 | HIDE lays the window on top | manip only |
+| M4 | MOVE leaves the old place's dots | manip, console move |
+| M5 | RESHAPE draws no transcript | manip only |
+| M6 | no overlap ever found | focus, manip |
+| M7 | uncover/3 lifts nothing (no `out` permission) | manip only (the covered-output case) |
+| M8 | MOVE and RESHAPE send no has_been_reshaped/1 | console move, manip (its RESHAPE) |
+| E2 | source_refusals and swallowed_heads answer [] | swallowed-head test only |
+| E3 | swallowed_heads alone answers [] | swallowed-head test only |
+
+
+**Output to a covered window: permission `out`.** Per-window input made
+this reachable: a covered requester reads its queued keys, echoes them
+and prompts. A probe drew window 2's prompt over window 1's label. Each
+output method of `window_pane` (set_title, put_string, put_code,
+put_codes, new_line, clear) now asks the coordinator to uncover the pane
+(`uncover/3`: the windows above are lifted if one overlaps it), draws, and
+lays them back (`unpeel/2`). The covered part goes into the save areas
+above, and only the shown part appears. This is TM-225 p10-11's ② and
+TM-125 p6's OUTPUT, the held `permission(out)` (63 USAGE sites, window.md
+§4.1). Giving every window this permission is OURS; TM-225's default is
+① wait.
+
+**The console** (`test_win_m7_console_move`). After the M4 replay, the
+mouse events go straight to the coordinator's `event/2` (OURS harness:
+the tape's script is fixed). MOVE of `pimfep##pimos_window` sends
+`reshape/5` and `has_been_reshaped/1`. The stand-in redraws the window at
+its new place with a new pane, and the frame equals the replay's with the
+console's dots moved. RESHAPE moves it and keeps its size.
+
+**Open:**
+- the other output permissions (wait, show, notify) and a per-window
+  choice of permission;
+- a pop-up menu over a covered window that writes: the lifted windows'
+  areas would be drawn back under the menu, not over it. No flow does
+  this;
+- the manipulator's other eight TM-125 p8 items;
+- a `pmacs_window` RESHAPE that changes its text size (it moves only);
+- `has_been_selected/1` is not sent.
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
@@ -4340,14 +4525,18 @@ test_kappa2's exact count).
   `substring(S, H, T - H, P)`, `O!a := X + O!b` and `X = O!a + X` with
   head arguments compile; no failing shape was found, but none is proven
   absent.
-- **The window environment after M6/M7's save areas:** the manipulator
-  (M7: restacking, HIDE/SHOW, MOVE, RESHAPE, output permission), Pmacs
-  proper (M10). `pmacs_window` getl/2 is not stood in (the census's
-  dump_log/1 stops there).
+- **The window environment after M7's manipulator:** output permission
+  beyond `out` (wait, show, notify), the manipulator's other TM-125 p8 items (EXPAND,
+  MENU, PERMISSION, ATTRIBUTE, HARDCOPY, SUPERIOR, INFERIOR, EXIT), a
+  `pmacs_window` RESHAPE that changes its text size (it moves only), and
+  Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the census's
+  dump_log/1 stops there). Section "Window M7: the manipulator and
+  keyboard focus".
 - **espc drops a refused stand-in predicate silently: FIXED 2026-11-25**
-  (section "Window M6's rest and M7's save areas"). A related gap seen on
-  the way: a clause body with no head (a comment line ate the head) was
-  compiled without a complaint; not investigated.
+  (section "Window M6's rest and M7's save areas"). The related gap, a
+  clause body with no head (a comment line ate the head) compiled
+  without a complaint: **FIXED 2026-11-25** (section "Window M7: the
+  manipulator and keyboard focus", `test_espc_swallowed_head`).
 - **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
   copies only lists): a binding undone on backtracking empties the
   stored vector's element. Found in window M4 (`pmacs_request.esp`'s

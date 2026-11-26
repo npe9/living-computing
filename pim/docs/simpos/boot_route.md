@@ -712,6 +712,15 @@ Since then (the README's "Window M6's rest and M7's save areas"):
 `SWAPPED`/`spool` are not drawn: the sources show them but not what sets
 them.
 
+Since then (the README's "Window M7: the manipulator and keyboard focus"):
+- each window reads its own input stream, and keys go to the selected
+  window, so the requester made by `create` gets the keys typed into it;
+- the window manipulator opens on the middle button over a window. Its
+  items are SHOW, HIDE, RESHAPE and MOVE (TM-125 p8). The windows above
+  are lifted into save areas and laid back, so a kill, HIDE or MOVE
+  repaints what it uncovers (`screens/window_manipulator.png`,
+  `manipulator_hide.png`, `manipulator_reshape.png`).
+
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
@@ -720,8 +729,9 @@ login run (§4.5). Open, in order:
 1. DONE in step 3n (§4.6, §6.5): the wire from SIMPOS to PIMOS. The
    shell's window on the PSI: DONE in window M4 (§4.8), on stand-ins for
    the lost PMACS editor's buffer and command loop; the screen's chrome
-   (M6) and save areas (M7, part) since. Open: lia / tcpip logins; the
-   window manipulator (M7).
+   (M6) and save areas (M7, part) since; the window manipulator (M7) and
+   per-window keyboard input since. Open: lia / tcpip logins; the output
+   permissions other than `out` (M7).
 2. The FEP census side items: blt 0d (DONE in step 3n as an INFERENCE,
    `object/3`, outputs unbound) and blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s

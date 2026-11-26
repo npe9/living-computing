@@ -3541,7 +3541,10 @@ class Window(unittest.TestCase):
                           ('system_menu', self.MENU_PINS['boxed']),
                           ('menu_over_window', self.SHOT_PINS['over']),
                           ('create_kill_popup', self.SHOT_PINS['popup']),
-                          ('rubber_band', self.SHOT_PINS['sweep'])):
+                          ('rubber_band', self.SHOT_PINS['sweep']),
+                          ('window_manipulator', self.SHOT_PINS['manip']),
+                          ('manipulator_hide', self.SHOT_PINS['hidden']),
+                          ('manipulator_reshape', self.SHOT_PINS['reshaped'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -3792,6 +3795,43 @@ end.
             espc.check_standin_refusals(ts, 'probe_clock.esp')
         self.assertIn('simpos##probe_clock refuses hour/3: arithmetic immediate', str(e.exception))
 
+    def test_espc_swallowed_head(self):
+        # espc fails loud on a clause whose head was swallowed by the
+        # comment line before it (espc.compile_text: source_refusals,
+        # swallowed_heads; 2026-11-25).  Until then the body compiled with
+        # no complaint: in the method part as a local clause outside the
+        # local part, dropped by the parser (`unparsed`, never reported);
+        # in the local part as a clause headed by ','/2, or, for a body of
+        # one goal, as a fact.  Each of the four forms below is now a
+        # CompileRefusal; the stand-ins and every test program still
+        # compile (standins() in setUpClass).  Injections, OBSERVED
+        # (2026-11-25, from a backup copy, restored by copy, cmp clean):
+        #   E2 source_refusals answers [] and swallowed_heads [] (the old
+        #      behaviour): this test FAILS, nothing else in this file,
+        #      test_kl0.py or test_fep_bridge.py.
+        #   E3 swallowed_heads alone answers []: this test FAILS (the
+        #      one-goal body in the local part, which only the source text
+        #      shows), nothing else.
+        def compiled(part, body):
+            if part == 'local':
+                text = "class t has\n:ok(C) :- true;\nlocal\n%s\nbar(_);\nbaz(_);\nend.\n" % body
+            else:
+                text = "class t has\n:ok(C) :- true;\n%s\nlocal\nbar(_);\nbaz(_);\nend.\n" % body
+            return espc.compile_text(text, 'user')
+        for part, body, why in (
+                ('method', '% the head  :foo(C, X) :-\n        bar(X), baz(X);', 'outside the local part'),
+                ('method', '% the head  :foo(C, X) :- !,\n        bar(X);', 'outside the local part'),
+                ('local', '% the head  foo(X) :-\n        bar(X), baz(X);', 'a clause headed by ,/2'),
+                ('local', '% the head  foo(X) :-\n        bar(X);', 'a comment ending as a clause head')):
+            with self.assertRaises(espc.CompileRefusal, msg=body) as e:
+                compiled(part, body)
+            self.assertEqual(e.exception.construct, 'source')
+            self.assertIn(why, str(e.exception))
+        # the same with the head on its own line compiles
+        ts, failed = compiled('local', '% the head\nfoo(X) :-\n        bar(X), baz(X);')
+        self.assertFalse(failed)
+        self.assertIn(('foo', 1), [(p.name, p.arity) for p in ts[0].preds() if p is not None])
+
     def test_win_m6_date(self):
         # M6, the band's date source: date_time get_value/8 and set_count/3
         # (INTERPOLATED from cil/src/ms_ist.esp:735-742, HELD-SOURCE; the
@@ -3861,12 +3901,21 @@ end.
             over=lambda: (login, [L('rr', 700, 500)]),
             popup=lambda: (login, pop),
             sweep=lambda: (login, pop + [L('l', 540, 220), L('l', 600, 500),
-                                         K.Vec([K.Atom('move'), 900, 600])]))
+                                         K.Vec([K.Atom('move'), 900, 600])]),
+            # window M7 (test_win_m7_manip): the manipulator open over
+            # window 2; window 2 hidden under window 1; window 2 reshaped
+            manip=lambda: (login, Window.manip_events()['two'], Window.manip_events()['menu']),
+            hidden=lambda: (login, Window.manip_events()['two'], Window.manip_events()['hide']),
+            reshaped=lambda: (login, Window.manip_events()['two'], Window.manip_events()['reshape']))
 
     SHOT_PINS = {
         'over': ('a398542a5a3d589728d533c59c9b01ce551f2a487e839b2a7e15bb2220c599b3', 104904),
         'popup': ('42bfaa7dd1c4e7d2fc1c703be0569243e5cfc96cf639edd3081db31832c26058', 102627),
         'sweep': ('d329f4fbb05d319a26922c63e309efdc7313863c96e978b88ecddfea82d2b6a9', 101796),
+        # window M7, the manipulator (test_win_m7_manip)
+        'manip': ('d02a2c6eb6ea05275311d02eb6abc57c2e0bfc508a6470942823a0140bdbdc06', 105365),
+        'hidden': ('4501d0323c4d5dcd0fbb9e66972aea3c0072c7e282a1e0e3d41c5eb118cedcd9', 104313),
+        'reshaped': ('01b2c46048cf3292391a76cb071dce2b527c0daec656a96eab736ecdaeb0c42b', 105062),
     }
 
     def test_win_m6_create_kill(self):
@@ -3893,12 +3942,11 @@ end.
         #      on the mouse): this test FAILS, nothing else.
         #   R4 coordinator cursor_aside/1 a no-op: this test FAILS,
         #      nothing else.
-        # Not tested, and found wrong by a probe (open, psi/README.md):
-        # keys typed after `create` go first to the older requester,
-        # which already waits in get/2 on the one keyboard stream (the
-        # first key of `local` reached window 1, the rest window 2).
-        # After `kill`, a click in window 1 and `local` RETURN reach it
-        # (probe, 2026-11-25).
+        # Found wrong by a probe then, fixed and pinned in window M7: keys
+        # typed after `create` went first to the older requester
+        # (test_win_m7_keyboard_focus); a kill under a newer window put
+        # stale dots over it (test_win_m7_manip).  This test's pins did
+        # not move.
         import fep_bridge as FB
         import windev
         import winfb
@@ -4051,6 +4099,328 @@ end.
         self.assertEqual(e.exception.detail, 'bitmap_display save/7: winfb status 4')
         # the refused command is logged (and refused again on a replay)
         self.assertEqual(self.saves(m)[-2:], ['save 15 0 0 16 1 15', 'save 16 0 0 16 1 16'])
+
+    # window M7, the manipulator and keyboard focus (coordinator.esp "THE
+    # STACK", "THE MANIPULATOR"; standard_io_window.esp "Window M7"): the
+    # event batches (later_run) of test_win_m7_manip,
+    # test_win_m7_keyboard_focus and psi/winshot.py.  Window 1 is the Login
+    # PIMOS window at (755, 544); window 2, a second requester made by
+    # create/kill's `create` at (600, 500), covers its top-left corner.
+    # The middle button at (620, 560), on window 2, opens the manipulator
+    # there: SHOW, HIDE, RESHAPE, MOVE, items 16 dots apart from y 581.
+    @staticmethod
+    def manip_events():
+        import fep_bridge as FB
+        L = FB.mouse
+        mv = lambda px, py: K.Vec([K.Atom('move'), px, py])   # noqa: E731
+        item = lambda i: L('l', 700, 588 + 16 * i)             # noqa: E731
+        menu = L('m', 620, 560)
+        return dict(
+            login=[L('rr', *FB.MENU_AT), L('l', *FB.LOGIN_ITEM_AT)],
+            two=[L('rr', 200, 150), L('l', 500, 195), L('l', 540, 220), L('l', 600, 500),
+                 L('l', 1000, 640)],
+            menu=[menu],
+            hide=[menu, item(1)],
+            show=[menu, item(0)],
+            move=[menu, item(3), mv(300, 300), L('l', 100, 100)],
+            # MOVE of the covered window 1: the manipulator opened on its
+            # uncovered part (clamped at the right edge, at x 1056), MOVE
+            move1=[L('m', 1100, 600), L('l', 1180, 676), L('l', 100, 100)],
+            reshape=[menu, item(2), L('l', 100, 100), mv(300, 250), L('l', 500, 300)],
+            reshape_band=[menu, item(2), L('l', 100, 100), mv(300, 250)],
+            # create/kill's `kill`: the newest requester (window 2)
+            kill=[L('rr', 100, 100), L('l', 400, 145), L('l', 440, 188)],
+            # window 2 made at (100, 100) by create/kill's sweep
+            two_at_100=[L('rr', 200, 150), L('l', 500, 195), L('l', 540, 220), L('l', 100, 100),
+                        L('l', 500, 300)])
+
+    @staticmethod
+    def paste(dst, src, x, y, w, h, dx=None, dy=None):
+        # the W x H dots of frame SRC at (X, Y) put into DST at (DX, DY)
+        dx, dy = (x if dx is None else dx), (y if dy is None else dy)
+        mask = (1 << w) - 1
+        for j in range(h):
+            bits = (src.rows[y + j] >> (1280 - x - w)) & mask
+            row = dst.rows[dy + j] & ~(mask << (1280 - dx - w))
+            dst.rows[dy + j] = row | (bits << (1280 - dx - w))
+
+    def manip_check(self, m, fr, windows):
+        # after a restack save memory holds each window's own area and
+        # nothing else, every device command is OK, and the stream replays
+        # to the same frame.  -> the windows, top first
+        import windev
+        import winfb
+        C = K.ClassRef('simpos##coordinator')
+        ws = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual([[m.get_slot(m.get_slot(w, 'pane'), k) for k in ('x', 'y', 'w', 'h')] for w in ws],
+                         windows)
+        self.assertEqual(len(self._walk(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))), len(ws))
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+        return ws
+
+    MANIP_W1 = [755, 544, 446, 121]
+    MANIP_W2 = [600, 500, 446, 121]
+    BOX_AT = (400, 950, 440, 18)
+
+    def test_win_m7_keyboard_focus(self):
+        # M7, keyboard focus (standard_io_window.esp, coordinator.esp):
+        # each window reads its own input stream, and the coordinator puts
+        # a key on the selected window's (typed/2).  Basis: the selected
+        # window has the keyboard (PROSE TM-225 p11, TM-115 p111;
+        # window.md §2.7, §4.1); a window is selected by showing it
+        # (TM-225 p10-11) or by a left click on it (PRINTED TR-046 p28
+        # `mouse#l` visit; PROSE TM-115 p111), which also brings it to the
+        # top (INFERENCE, TM-225 p11: the selected window is the top of
+        # the stack).  Until M7 every requester read the coordinator's one
+        # keyboard stream, so after `create` the first key of `local` went
+        # to the older requester, already waiting in get/2 (README "Open").
+        # Keys typed while no window is selected go to the next one
+        # selected (coordinator type_ahead/2, OURS).
+        # Injections, OBSERVED: see test_win_m7_manip's header (F1b, F1,
+        # F3, M1 and M6 fail this test; F2 fails the earlier ones).
+        import fep_bridge as FB
+        import windev
+        E = self.manip_events()
+        C = K.ClassRef('simpos##coordinator')
+
+        def history(m, w):
+            return [h if isinstance(h, int) else h.text for h in reversed(self._walk(m.get_slot(w, 'history')))]
+        local = K.Str('local').codes() + [13]
+        prompt = ['Enter FEP node name--------->']
+        then = prompt + local + ['Enter your PIMOS user name-->']
+        m, fr, stop = self.later_run(E['login'], E['two'], self.keys('local'))
+        self.assertEqual(stop.cause, 'would suspend')
+        w2, w1 = self.manip_check(m, fr, [self.MANIP_W2, self.MANIP_W1])
+        self.assertEqual(history(m, w2), then)
+        self.assertEqual(history(m, w1), prompt)
+        self.assertEqual(windev.read_cells(fr, 603, 520, 40, 4), ['Enter FEP node name--------->', 'local',
+                                                                  'Enter your PIMOS user name-->', '#'])
+        # a click on window 1's uncovered part: it comes to the top,
+        # selected, and the next line is its own
+        m, fr, stop = self.later_run(E['login'], E['two'], self.keys('local'),
+                                     [FB.mouse('l', 1100, 600)] + self.keys('local'))
+        self.assertEqual(stop.cause, 'would suspend')
+        w1, w2 = self.manip_check(m, fr, [self.MANIP_W1, self.MANIP_W2])
+        self.assertIs(m.get_slot(C, 'selected'), w1)
+        self.assertEqual(history(m, w1), then)
+        self.assertEqual(history(m, w2), then)
+        self.assertEqual(windev.read_cells(fr, 758, 564, 40, 4), ['Enter FEP node name--------->', 'local',
+                                                                  'Enter your PIMOS user name-->', '#'])
+        self.assertEqual(self.band(fr)[2], ['standard_io_window/1'])
+
+    def test_win_m7_manip(self):
+        # M7, the window manipulator (coordinator.esp "THE MANIPULATOR",
+        # "THE STACK"; window_pane.esp lift/1, lay/1, move_to/3).  Items
+        # verbatim from TM-125 p8 (PRINTED-INTERFACE, window.md §4.4):
+        # SHOW "show the whole of a partly shown window", HIDE "move it to
+        # the bottom of the window list", RESHAPE "point at the top-left
+        # and bottom-right corners with the mouse", MOVE "move by mouse";
+        # the others are not offered (OURS).  It opens on the middle button
+        # over a window, for that window (OURS: TM-125 puts it on the
+        # system menu, whose held login.com items have no such entry; the
+        # middle button moves a pimfep window, USAGE window.md §5.3).
+        # Restacking keeps each hidden part in save areas and copies
+        # between them and the frame (PROSE TM-225 p10, TM-126 p5,
+        # window.md §4.1).  Each case is compared with a frame built
+        # without the manipulator:
+        #   - HIDE window 2: window 1 whole over it, selected (INFERENCE,
+        #     TM-225 p11: the selected window is the top), window 2's
+        #     cursor off: `two` with window 1's rectangle and the band's
+        #     box from `before`, window 2's block cursor off;
+        #   - SHOW after HIDE: exactly `two` (the plan's pin: HIDE then
+        #     SHOW restores the covered window's dots);
+        #   - kill window 2 while it lies under window 1 (README "Open"
+        #     until M7: its save area put stale dots over window 1): the
+        #     frame of a run that never made window 2, with the same line
+        #     typed into window 1;
+        #   - MOVE window 2 to (100, 100): the frame of a run that made it
+        #     there;
+        #   - MOVE the covered window 1 to (100, 100): `before` with window
+        #     1 moved, window 2 whole from `two`, its cursor off;
+        #   - output to covered window 2 (permission `out`): the frame of
+        #     the same output written while window 2 was on top;
+        #   - RESHAPE window 2 to (100, 100)-(500, 300): a new pane of
+        #     35 x 12 cells there with its title and transcript (the held
+        #     callback has_been_reshaped/1 sent after reshape/5,
+        #     standard_io_window OURS bodies), and outside it the frame
+        #     with window 2 gone.
+        # After each, save memory holds the windows' own areas only, every
+        # command is OK and the stream replays to the frame.
+        # Injections, OBSERVED (2026-11-26, at the final code; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, test_kl0.py OK in each, all else OK):
+        #   F1b step 3m's keyboard back (typed/2 and the read on the
+        #       coordinator's one stream, the read gated on selection, no
+        #       type-ahead): test_win_m7_keyboard_focus and this test FAIL.
+        #   F1  the same with M7's type-ahead kept (it then puts each key
+        #       back on the stream it takes it from): M4, the bridged and
+        #       login screens, M6 selection, the console move, keyboard
+        #       focus and this test FAIL or ERROR, and test_fep_bridge.py
+        #       test_replay and test_login_service_and_login.
+        #   F2  type_ahead/2 a no-op: M4, the bridged and login screens, M6
+        #       selection and the console move FAIL, and test_fep_bridge.py
+        #       test_replay and
+        #       test_login_service_and_login (their keys are queued before
+        #       the requester's window is selected).
+        #   F3  a selection does not raise its window: keyboard focus and
+        #       this test FAIL.
+        #   M1  lift/1 skips the save-area restore (the plan's injection):
+        #       keyboard focus and this test FAIL.
+        #   M2  take_off/2 lifts nothing (M6's kill): this test only.
+        #   M3  HIDE lays the hidden window last, on top: this test only.
+        #   M4  move_to/3 does not draw the old place's under-area back:
+        #       this test and test_win_m7_console_move.
+        #   M5  has_been_reshaped/1 draws no transcript: this test only.
+        #   M6  the overlap test never finds one (nothing is lifted):
+        #       keyboard focus and this test FAIL.
+        #   M7  uncover/3 lifts nothing (no `out` permission): this test
+        #       only (the covered-output case).
+        #   M8  MOVE and RESHAPE send no has_been_reshaped/1:
+        #       test_win_m7_console_move and this test (the RESHAPE).
+        import windev
+        import winfb
+        E = self.manip_events()
+        C = K.ClassRef('simpos##coordinator')
+        login = E['login']
+        m, before, _ = self.later_run(login)
+        m, two, _ = self.later_run(login, E['two'])
+        w2, w1 = self.manip_check(m, two, [self.MANIP_W2, self.MANIP_W1])
+        p2 = m.get_slot(w2, 'pane')
+        cur2 = [m.get_slot(p2, 'cx'), m.get_slot(p2, 'cy'), 11, 14]
+        self.assertEqual(cur2, [603, 534, 11, 14])
+        # the manipulator, at the middle button
+        m, menu, stop = self.later_run(login, E['two'], E['menu'])
+        self.assertEqual(stop.cause, 'would suspend')
+        P = m.get_slot(C, 'menu_pane')
+        self.assertEqual([K.resolve(m.get_slot(P, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
+                         [620, 560, 224, 87, 581])
+        self.assertEqual(windev.read_cells(menu, 633, 563, 18, 1), ['WINDOW MANIPULATOR'])
+        for i, label in enumerate(('SHOW', 'HIDE', 'RESHAPE', 'MOVE')):
+            n = len(label)
+            self.assertEqual(windev.read_cells(menu, 622 + (220 - 11 * n) // 2, 582 + 16 * i, n, 1), [label])
+        self.assertEqual((windev.pbm_sha256(menu), menu.count()), self.SHOT_PINS['manip'])
+        # HIDE
+        m, hidden, stop = self.later_run(login, E['two'], E['hide'])
+        self.assertEqual(stop.cause, 'would suspend')
+        w1h, w2h = self.manip_check(m, hidden, [self.MANIP_W1, self.MANIP_W2])
+        self.assertIs(m.get_slot(C, 'selected'), w1h)
+        want = winfb.Frame()
+        want.rows = list(two.rows)
+        want.command(winfb.FILL << 4 | 2, cur2 + [0, 0])
+        self.paste(want, before, *self.MANIP_W1)
+        self.paste(want, before, *self.BOX_AT)
+        self.assertEqual(hidden.rows, want.rows)
+        self.assertEqual((windev.pbm_sha256(hidden), hidden.count()), self.SHOT_PINS['hidden'])
+        # SHOW after HIDE: the frame before the HIDE
+        m, shown, stop = self.later_run(login, E['two'], E['hide'], E['show'])
+        ws = self.manip_check(m, shown, [self.MANIP_W2, self.MANIP_W1])
+        self.assertIs(m.get_slot(C, 'selected'), ws[0])
+        self.assertEqual(shown.rows, two.rows)
+        # kill the covered window 2, after a line typed into window 1
+        m, alone, _ = self.later_run(login, self.keys('local'))
+        m, killed, stop = self.later_run(login, E['two'], E['hide'], self.keys('local'), E['kill'])
+        self.assertEqual(stop.cause, 'would suspend')
+        self.manip_check(m, killed, [self.MANIP_W1])
+        self.assertEqual(killed.rows, alone.rows)
+        # output to a covered window (permission `out`, window_pane.esp's
+        # head): the line typed into window 2 and the click raising window
+        # 1 in one batch, so window 2 echoes and prompts while covered: the
+        # frame of the same events in two batches (written before the raise)
+        from fep_bridge import mouse
+        m, late, stop = self.later_run(login, E['two'], self.keys('local') + [mouse('l', 1100, 600)])
+        self.manip_check(m, late, [self.MANIP_W1, self.MANIP_W2])
+        m, early, _ = self.later_run(login, E['two'], self.keys('local'), [mouse('l', 1100, 600)])
+        self.assertEqual(late.rows, early.rows)
+        # MOVE window 2 (the top one)
+        m, moved, stop = self.later_run(login, E['two'], E['move'])
+        self.manip_check(m, moved, [[100, 100, 446, 121], self.MANIP_W1])
+        m, made, _ = self.later_run(login, E['two_at_100'])
+        self.assertEqual(moved.rows, made.rows)
+        # MOVE the covered window 1
+        m, moved1, stop = self.later_run(login, E['two'], E['move1'])
+        w1m, w2m = self.manip_check(m, moved1, [[100, 100, 446, 121], self.MANIP_W2])
+        self.assertIs(m.get_slot(C, 'selected'), w1m)
+        want = winfb.Frame()
+        want.rows = list(before.rows)
+        want.command(winfb.FILL << 4 | 1, self.MANIP_W1 + [0, 0])
+        self.paste(want, two, *self.MANIP_W2)
+        want.command(winfb.FILL << 4 | 2, cur2 + [0, 0])
+        self.paste(want, before, *self.MANIP_W1, dx=100, dy=100)
+        self.assertEqual(moved1.rows, want.rows)
+        # RESHAPE window 2: the outline (201 x 151), then the new pane
+        m, band, _ = self.later_run(login, E['two'], E['reshape_band'])
+        self.assertEqual(sum(bin(a ^ b).count('1') for a, b in zip(two.rows, band.rows)), 2 * 201 + 2 * (151 - 2))
+        m, reshaped, stop = self.later_run(login, E['two'], E['reshape'])
+        self.assertEqual(stop.cause, 'would suspend')
+        w2r, _w1 = self.manip_check(m, reshaped, [[100, 100, 391, 191], self.MANIP_W1])
+        q = m.get_slot(w2r, 'pane')
+        self.assertEqual([m.get_slot(q, k) for k in ('cols', 'rows')], [35, 12])
+        self.assertEqual(self._walk(m.get_slot(w2r, 'place')), [100, 100, 401, 201])
+        self.assertEqual(windev.read_cells(reshaped, 103, 103, 35, 1), ['Pimos remote login 6'])
+        self.assertEqual(windev.read_cells(reshaped, 103, 120, 35, 2), ['Enter FEP node name--------->', '#'])
+        self.assertEqual(self.band(reshaped)[2], ['standard_io_window/2'])
+        want = winfb.Frame()
+        want.rows = list(before.rows)
+        want.command(winfb.FILL << 4 | 2, [758, 578, 11, 14, 0, 0])      # window 1's cursor off
+        self.paste(want, two, *self.BOX_AT)                              # the box names window 2
+        self.paste(want, reshaped, 100, 100, 391, 191)
+        self.assertEqual(reshaped.rows, want.rows)
+        self.assertEqual((windev.pbm_sha256(reshaped), reshaped.count()), self.SHOT_PINS['reshaped'])
+
+    def test_win_m7_console_move(self):
+        # M7, MOVE and RESHAPE on PIMOS's console (the M4 run replayed from
+        # its tape), whose window class is the HELD pimfep##pimos_window
+        # on the pmacs_window stand-in: the manipulator sends reshape/5
+        # (stand-in: the window's place) and has_been_reshaped/1, whose
+        # stand-in body redraws the window at its new place (drawn_again:
+        # a new pane, the buffer's text).  The tape's user script is fixed,
+        # so after the replay the mouse events are given straight to the
+        # coordinator's event/2 (OURS harness).  MOVE by the middle button
+        # at (300, 300), MOVE at y 376, the place (100, 100): the frame
+        # equals the replay's with the console's rectangle cleared and its
+        # dots put at (100, 100); a new pane was made (has_been_reshaped/1
+        # ran); the window's own place is (100, 100).  RESHAPE then to
+        # (50, 50)-(400, 300): the console moves to (50, 50), its size
+        # kept (open: a Pmacs RESHAPE that changes the text size).
+        # Injections, OBSERVED: see test_win_m7_manip's header (F1, F2, M4
+        # and M8 fail this test).
+        import fep_bridge as FB
+        import windev
+        import winfb
+        psi, _t = self.console()
+        m = psi.m
+        C = K.ClassRef('simpos##coordinator')
+        fr = windev.device(m).frame
+        before = winfb.Frame()
+        before.rows = list(fr.rows)
+        con, login = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual(con.cid, 'pimfep##pimos_window')
+        old = m.get_slot(con, 'pane')
+        self.assertEqual([m.get_slot(old, k) for k in ('x', 'y', 'w', 'h')], [200, 200, 523, 219])
+        L = FB.mouse
+
+        def events(*evs):
+            for ev in evs:
+                K.call_class_method(m, 'simpos##coordinator', 'event', [ev])
+        events(L('m', 300, 300), L('l', 380, 376), K.Vec([K.Atom('move'), 150, 150]), L('l', 100, 100))
+        new = m.get_slot(con, 'pane')
+        self.assertIsNot(new, old)
+        self.manip_check(m, fr, [[100, 100, 523, 219], self.MANIP_W1])
+        self.assertEqual((m.get_slot(con, 'x'), m.get_slot(con, 'y')), (100, 100))
+        want = winfb.Frame()
+        want.rows = list(before.rows)
+        want.command(winfb.FILL << 4 | 1, [200, 200, 523, 219, 0, 0])
+        self.paste(want, before, 200, 200, 523, 219, dx=100, dy=100)
+        self.assertEqual(fr.rows, want.rows)
+        self.assertEqual(windev.read_cells(fr, 103, 103, 13, 1), ['PIMOS CONSOLE'])
+        events(L('m', 300, 300), L('l', 380, 360), L('l', 50, 50), L('l', 400, 300))
+        self.manip_check(m, fr, [[50, 50, 523, 219], self.MANIP_W1])
+        want = winfb.Frame()
+        want.rows = list(before.rows)
+        want.command(winfb.FILL << 4 | 1, [200, 200, 523, 219, 0, 0])
+        self.paste(want, before, 200, 200, 523, 219, dx=50, dy=50)
+        self.assertEqual(fr.rows, want.rows)
 
 if __name__ == '__main__':
     unittest.main()

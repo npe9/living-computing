@@ -58,12 +58,13 @@
 %     the selected window's cursor (deselect_window/1 for the one before,
 %     selected/1 for the new one), the status band's box (status_band.esp:
 %     the window's `<class>/<n>`, n counted from 1 as windows are drawn),
-%     the shown windows newest first for the mouse's hit test (no
-%     restacking until M7);
+%     the shown windows newest first for the mouse's hit test (since
+%     M7 the stacking order, top first: below);
 %   - THE KEYBOARD: a {key, Code} goes to the selected window's typed/2
-%     (standard_io_window: the keyboard stream, as step 3m; pmacs_window:
-%     its command interpreter's input), or the keyboard stream when none
-%     is selected;
+%     (standard_io_window: since M7 its own input stream, until M7 the
+%     coordinator's keyboard stream; pmacs_window: its command
+%     interpreter's input), or the keyboard stream when none is selected
+%     (since M7 passed on to the next window selected, below);
 %   - THE STATUS BAND: drawn when the coordinator starts (draw_status/1,
 %     from coordinator_program.esp).
 %
@@ -98,6 +99,43 @@
 %     is exterminated (process.esp exterminate/1) and its windows killed
 %     (their kill/1: each restores what was under it, save_memory.esp);
 %   - the right button cancels a sweep (and opens the menu).
+% Window M7, the stack and the manipulator (2026-11-25), OURS in form:
+%   - THE STACK: `windows` is the stacking order, top first.  Every
+%     restack lifts panes top-down and lays them back bottom-up
+%     (window_pane.esp lift/1, lay/1), each pane's own dots and the dots
+%     under it in save areas: the mechanism of PROSE TM-225 p10, TM-126
+%     p5 (window.md §4.1 "Implementation": a hidden window's image is kept
+%     in a save area; restacking copies between the save areas and the
+%     frame).  A restack that would change no dot (the window overlaps
+%     none of those it passes) only reorders the list.  Kill (take_off/2),
+%     a selection (raise), HIDE (lower) and pmacs_window's redraw
+%     (peel/3, unpeel/2) go through it;
+%   - SELECTION RAISES: the selected window is the top of the stack and
+%     has the keyboard (PROSE TM-225 p11, TRANSLATION; that a selection
+%     raises is INFERENCE from it);
+%   - THE KEYBOARD (since M7): a key goes to the selected window's own
+%     input stream (its typed/2); keys typed while none is selected wait
+%     on the coordinator's stream and go, oldest first, to the next window
+%     selected (type_ahead/2, OURS);
+%   - THE MANIPULATOR: the middle button over a window opens a pop-up
+%     titled `WINDOW MANIPULATOR` at the mouse, for that window (OURS:
+%     TM-125 p8 invokes the manipulator from the system menu, whose held
+%     login.com items have none; the middle button moves a pimfep window,
+%     USAGE window.md §5.3).  Its items, verbatim from TM-125 p8
+%     (PRINTED-INTERFACE, window.md §4.4), four of twelve: SHOW "show the
+%     whole of a partly shown window" (raise and select); HIDE "move it to
+%     the bottom of the window list" (a selected window's cursor goes
+%     while it is on top, then the new top is selected: INFERENCE, TM-225
+%     p11); RESHAPE "point at the top-left and bottom-right corners with
+%     the mouse" (two corner clicks, the rubber band as create's); MOVE
+%     "move by mouse" (an outline of the window's size follows the mouse,
+%     a left click places its top-left; the dots go with it,
+%     window_pane.esp move_to/3).  MOVE and RESHAPE raise and select the
+%     window, then send reshape/5 and the callback has_been_reshaped/1
+%     (window.md §2.1, §2.12: the reshape notifier calls it after the
+%     geometry is set).  Output to a covered window: permission `out`
+%     for every window (uncover/3, window_pane.esp's head).  Not
+%     modelled: the other permissions and the other eight items.
 % The windows' owners (the process that made each, `:self(#process, P)`
 % at add_window/3) and the programs started ([Name, P]) are kept for kill,
 % as lists (kl0 keeps a list's values in a slot; a vector would keep its
@@ -121,7 +159,9 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
           owners := [];
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
-% window (standard_io_window.esp); `selected`, that window (0: none).
+% window (standard_io_window.esp) until window M7, since then holding only
+% the keys typed while no window is selected (type_ahead/2); `selected`,
+% that window (0: none).
 % INTERPOLATED from TR-061 and TR-046 PDF p26-p28 (PRINTED prose and
 % code): the coordinator receives the keyboard events; keys the
 % translation table does not take go to the selected window (TM-225 p11,
@@ -182,13 +222,17 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 % INTERPOLATED (selector and body OURS): select_window; basis above and in
 % the head comment.
 :select_window(Class, W) :-
-        S = Class!selected, S == W, !;
+        S = Class!selected, S == W, !,
+        raise(Class, W),
+        :selected(W);
 :select_window(Class, W) :-
         deselect(Class!selected),
+        raise(Class, W),
         Class!selected := W,
         :selected(W),
         :status_name(W, Kind, N),
-        :show_selected(#status_band, Kind, N);
+        :show_selected(#status_band, Kind, N),
+        type_ahead(Class, W);
 
 % :add_window(#coordinator, W, N) -- window M4/M6 (selector and body
 % OURS): W is drawn; N its number.
@@ -217,8 +261,47 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 % (its deselect_window/1), as the panes are not clipped (window_pane.esp).
 % INTERPOLATED (selector and body OURS): cursor_aside; basis above and in
 % the head comment.
-:cursor_aside(Class) :- S = Class!selected, S \== 0, !, :deselect_window(S);
+:cursor_aside(Class) :- S = Class!selected, S \== 0, on_screen(S), !,
+        :deselect_window(S);
 :cursor_aside(_);
+
+% :take_off(#coordinator, W) -- window M7 (selector and body OURS, see
+% the head comment, "the stack"): W's pane leaves the screen (its kill/1):
+% the windows above it are lifted if one of them overlaps it, its pane
+% erased (what was under it drawn back), and they are laid back.
+% INTERPOLATED (selector and body OURS): take_off; basis above and in
+% the head comment.
+:take_off(Class, W) :-
+        above(Class!windows, W, Above),
+        peel(W!pane, Above, Lifted),
+        :erase(W!pane),
+        unpeel(Lifted);
+
+% :peel(#coordinator, W, Lifted) and :unpeel(#coordinator, Lifted) --
+% window M7 (selectors and bodies OURS): every window above W lifted, top
+% first, so W's pane can be drawn again as the top one (pmacs_window.esp
+% drawn_again: a new pane in its place); then laid back.
+% INTERPOLATED (selector and body OURS): peel; basis above and in the
+% head comment.
+:peel(Class, W, Lifted) :-
+        above(Class!windows, W, Lifted),
+        lift_all(Lifted);
+% INTERPOLATED (selector and body OURS): unpeel; basis above and in the
+% head comment.
+:unpeel(Class, Lifted) :- unpeel(Lifted);
+
+% :uncover(#coordinator, Pane, Lifted) -- window M7 (selector and body
+% OURS): before a window's pane draws output, the windows above it are
+% lifted if one of them overlaps it (output permission `out`,
+% window_pane.esp's head); unpeel/2 lays them back.  A pane of no shown
+% window (not yet added, or a census instance) lifts nothing.
+% INTERPOLATED (selector and body OURS): uncover; basis above and in the
+% head comment.
+:uncover(Class, Pane, Lifted) :-
+        owner(Class!windows, Pane, W), !,
+        above(Class!windows, W, Above),
+        peel(Pane, Above, Lifted);
+:uncover(_, _, []);
 
 % :placement(#coordinator, X, Y) -- window M6 (selector and body OURS,
 % see the head comment): the top-left of the outline swept for the next
@@ -264,6 +347,7 @@ click(Class, rr, _, _) :- !, cancel(Class), open_menu(Class);
 click(Class, l, X, Y) :- Class!menu_pane \== 0, !, menu_click(Class, Class!dialogue, X, Y);
 click(Class, l, X, Y) :- Class!dialogue \== [], !, corner(Class, Class!dialogue, X, Y);
 click(Class, l, X, Y) :- !, visit(Class, Class!windows, X, Y);
+click(Class, m, X, Y) :- !, cancel(Class), manipulator(Class, Class!windows, X, Y);
 click(_, _, _, _);
 
 % the system menu's item; then the create/kill pop-up's (head comment)
@@ -275,6 +359,11 @@ menu_click(Class, [which, Name], X, Y) :-
         :item_at(Class!menu_pane, X, Y, _, Action), !,
         close_menu(Class),
         which(Class, Action, Name);
+menu_click(Class, [manipulator, W], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, Item), !,
+        close_menu(Class),
+        Class!dialogue := [],
+        manipulate(Class, Item, W);
 menu_click(Class, _, _, _) :- close_menu(Class), Class!dialogue := [];
 
 chosen(Class, Label, Name, X, Y) :-
@@ -291,15 +380,36 @@ which(Class, kill, Name) :- Class!dialogue := [], kill_program(Class, Name);
 % started at the swept place
 corner(Class, [sweep, Name], X, Y) :- !,
         Class!dialogue := [corner, Name, X, Y];
-corner(Class, [corner, Name, X1, Y1], X2, Y2) :-
+corner(Class, [corner, Name, X1, Y1], X2, Y2) :- !,
         unoutline(Class),
         span(X1, X2, X, W), span(Y1, Y2, Y, H),
         Class!placement := [X, Y, W, H],
         Class!dialogue := [],
         start(Class, Name);
+% window M7: RESHAPE's corners, MOVE's place
+corner(Class, [reshape, Win], X, Y) :- !,
+        Class!dialogue := [reshape_corner, Win, X, Y];
+corner(Class, [reshape_corner, Win, X1, Y1], X2, Y2) :- !,
+        unoutline(Class),
+        span(X1, X2, X, W), span(Y1, Y2, Y, H),
+        Class!dialogue := [],
+        reshape(Class, Win, X, Y, W, H);
+corner(Class, [move, Win], X, Y) :-
+        unoutline(Class),
+        Class!dialogue := [],
+        move(Class, Win, X, Y);
 
 moved(_, M, _, X, Y) :- M \== 0, !, :box_at(M, X, Y);
+% window M7: MOVE's outline, the window's size, its top-left at the mouse
+moved(Class, _, [move, Win], X, Y) :- !,
+        unoutline(Class),
+        P = Win!pane,
+        outline(Class, X, Y, P!w, P!h);
 moved(Class, _, [corner, _, X1, Y1], X2, Y2) :- !,
+        unoutline(Class),
+        span(X1, X2, X, W), span(Y1, Y2, Y, H),
+        outline(Class, X, Y, W, H);
+moved(Class, _, [reshape_corner, _, X1, Y1], X2, Y2) :- !,
         unoutline(Class),
         span(X1, X2, X, W), span(Y1, Y2, Y, H),
         outline(Class, X, Y, W, H);
@@ -349,6 +459,129 @@ disowned([], _, []);
 disowned([[X, _] | R], W, R) :- X == W, !;
 disowned([X | R], W, [X | T]) :- disowned(R, W, T);
 
+% window M7, THE STACK (OURS, see the head comment).  `windows` is the
+% stacking order, top first.  Every restack goes through lift/1 and lay/1
+% of window_pane.esp, top-down and bottom-up, so each pane is the top one
+% on the screen when its dots are saved or drawn back.  A restack that
+% would change no dot (the window moved past overlaps none of the windows
+% it passes) only reorders the list, so nothing is sent to the device.
+
+% the windows above W, top first
+above([], _, []);
+above([X | _], W, []) :- X == W, !;
+above([X | R], W, [X | A]) :- above(R, W, A);
+
+below([], _, []);
+below([X | R], W, R) :- X == W, !;
+below([_ | R], W, B) :- below(R, W, B);
+
+% the windows above P's window, all lifted if one of them overlaps it
+peel(P, Above, Above) :- overlapped(P, Above), !, lift_all(Above);
+peel(_, _, []);
+
+overlapped(P, [U | _]) :- on_screen(U), :overlaps(P, U!pane), !;
+overlapped(P, [_ | Us]) :- overlapped(P, Us);
+
+lift_all([]);
+lift_all([U | Us]) :- :lift(U!pane), lift_all(Us);
+
+% laid back bottom first (the list is top first)
+unpeel([]);
+unpeel([U | Us]) :- unpeel(Us), :lay(U!pane);
+
+owner([W | _], Pane, W) :- P = W!pane, P == Pane, !;
+owner([_ | Ws], Pane, W) :- owner(Ws, Pane, W);
+
+on_screen(W) :- P = W!pane, P \== 0, P!image == 0;
+
+member(X, [Y | _]) :- X == Y, !;
+member(X, [_ | R]) :- member(X, R);
+
+% bring to front (SHOW, and a selection: TM-225 p11, the selected window
+% is top of the stack)
+raise(Class, W) :- Class!windows = [T | _], T == W, !;
+raise(Class, W) :- member(W, Class!windows), !,
+        above(Class!windows, W, Above),
+        without(Class!windows, W, Rest),
+        Class!windows := [W | Rest],
+        peel(W!pane, Above, Lifted),
+        raised(W, Lifted);
+raise(_, _);
+
+raised(_, []) :- !;
+raised(W, Lifted) :- :lift(W!pane), unpeel(Lifted), :lay(W!pane);
+
+% to the bottom (HIDE: TM-125 p8 "move it to the bottom of the window
+% list"); every window lifted, W laid first, the others over it
+lower(Class, W) :- last(Class!windows, L), L == W, !;
+lower(Class, W) :- member(W, Class!windows), !,
+        Old = Class!windows,
+        below(Old, W, Below),
+        without(Old, W, Rest),
+        append(Rest, [W], New),
+        Class!windows := New,
+        lowered(W, Old, Rest, Below);
+lower(_, _);
+
+lowered(W, Old, Rest, Below) :- overlapped(W!pane, Below), !,
+        lift_all(Old),
+        :lay(W!pane),
+        unpeel(Rest);
+lowered(_, _, _, _);
+
+last([X], X) :- !;
+last([_ | R], X) :- last(R, X);
+
+append([], L, L);
+append([X | R], L, [X | T]) :- append(R, L, T);
+
+% window M7, THE MANIPULATOR (OURS menu, TM-125 p8's items; see the head
+% comment): opened by the middle button over a window, for that window
+manipulator(Class, Ws, X, Y) :- under_mouse(Ws, X, Y, W), !,
+        close_menu(Class),
+        :create(#menu_pane, "WINDOW MANIPULATOR",
+                [[{"SHOW", show}, {"HIDE", hide}, {"RESHAPE", reshape},
+                  {"MOVE", move}]], X, Y, M),
+        Class!menu_pane := M,
+        Class!dialogue := [manipulator, W];
+manipulator(_, _, _, _);
+
+under_mouse([W | _], X, Y, W) :- :contains(W, X, Y), !;
+under_mouse([_ | Ws], X, Y, W) :- under_mouse(Ws, X, Y, W);
+
+manipulate(Class, show, W) :- !, :select_window(Class, W);
+manipulate(Class, hide, W) :- !, hide(Class, W);
+manipulate(Class, reshape, W) :- !, Class!dialogue := [reshape, W];
+manipulate(Class, move, W) :- !, Class!dialogue := [move, W];
+manipulate(_, _, _);
+
+% HIDE: the selected window loses its cursor while it is still on top;
+% once it is lowered the new top window is selected (INFERENCE: TM-225
+% p11, the selected window is top of the stack)
+hide(Class, W) :- S = Class!selected, S == W, !,
+        :deselect_window(W),
+        Class!selected := 0,
+        lower(Class, W),
+        Class!windows = [T | _],
+        :select_window(Class, T);
+hide(Class, W) :- lower(Class, W);
+
+% MOVE and RESHAPE: the window raised and selected, then moved (its dots
+% go with it, window_pane.esp move_to/3) or given its new rectangle;
+% either way told so by the held callback has_been_reshaped/1 (window.md
+% §2.1, §2.12: the reshape notifier calls it after the geometry is set)
+move(Class, W, X, Y) :-
+        :select_window(Class, W),
+        P = W!pane,
+        :move_to(P, X, Y),
+        :reshape(W, P!x, P!y, P!w, P!h),
+        :has_been_reshaped(W);
+
+reshape(Class, W, X, Y, Wd, Ht) :-
+        :select_window(Class, W),
+        :reshape(W, X, Y, Wd, Ht),
+        :has_been_reshaped(W);
+
 % the newest window under the mouse is selected; none: nothing changes
 visit(_, [], _, _);
 visit(Class, [W | _], X, Y) :- :contains(W, X, Y), !, :select_window(Class, W);
@@ -356,6 +589,15 @@ visit(Class, [_ | Ws], X, Y) :- visit(Class, Ws, X, Y);
 
 key(0, Code, Class) :- !, :put(Class!keyboard, Code);
 key(W, Code, _) :- :typed(W, Code);
+
+% window M7: the keys typed while no window was selected go, oldest
+% first, to the window selected next (OURS); none when the coordinator
+% was never started (no keyboard stream: a census or a direct send)
+type_ahead(Class, _) :- Class!keyboard == 0, !;
+type_ahead(Class, W) :- :try_to_get(Class!keyboard, Code), !,
+        :typed(W, Code),
+        type_ahead(Class, W);
+type_ahead(_, _);
 
 % the window selected before loses its cursor
 deselect(0) :- !;
