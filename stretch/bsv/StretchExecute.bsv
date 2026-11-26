@@ -3406,6 +3406,20 @@ function SauAddSteps vflDecAddSteps(VflCtx cx, Bit#(8) offDec, Bool mg);
                        osb: od, b0: vb.b0, mg: mg };
 endfunction
 
+// >>> THE PASSES mkSAU STEPS FOR THE OTHER DECIMAL CLASSES (fidelity_plan.md
+// A3 (b) step 2 on, 2026-11-25). <<<  The M+ family's, the K family's and
+// SRD's round's requests carry the field COMPACTED: digit 0 of `a` and `b`
+// is the field's low digit (decCompact), so the field's data digits are
+// 0 .. x/y - 1 and the carry is looked at from digit x/y (`top`).  The
+// passes are the field's data bytes and its sign byte's (vflBytes, the
+// count eboxClocks' rows use).  `cls` names the Table 3 equation
+// (StretchSAU's SauStepCls); `early` is the compare's sign decision.
+function SauAddSteps vflDecFieldSteps(VflCtx cx, SauStepCls cls, Bool early);
+  VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, True);
+  return SauAddSteps { passes: vb.b0 + vb.s, top: vb.b0, osb: 0, b0: vb.b0,
+                       mg: False, cls: cls, early: early };
+endfunction
+
 function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
     VflInstr vi = cx.vi;
     Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
@@ -4512,7 +4526,8 @@ function VflArm vflMemAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
               Bool dSub = (dOpnd.sign != dAccSh.sign);
               Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
-                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False, steps: sauNoSteps });
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False,
+                                              steps: vflDecFieldSteps(cx, addOne ? SauStOne : SauStMem, False) });
               Bool dDec = (vi.m.decimal == 1);
               Bool dAsk = dDec && !isValid(decOf(boxResult));
               DecRsp dr = validValue(decOf(boxResult));

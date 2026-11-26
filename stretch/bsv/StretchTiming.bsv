@@ -770,25 +770,63 @@ endfunction
 function Bit#(16) budgetClocks(DecodedInstr d, Bool taken) =
   2 * iboxCycles(d, taken) + eboxClocks(d);
 
-// >>> THE PART OF A VFL ROW THE SERIAL UNIT NOW STEPS (fidelity_plan.md
-// A3 (b), 2026-11-25). <<<  2 clocks (0.6 us) a byte, sign byte
-// included: Table 3's .6(x/y) plus the signed .6 (eboxClocks' `b`),
-// Buchholz printed p.209 (PDF 234), the serial unit's rate.  When mkSAU
-// answers a request that carried its pass count (SauAddSteps, an
-// instruction whose time the unit owns), StretchCore's rl_exec_resume
-// charges the row LESS this, plus the unit's own stepped clocks -- so
-// the byte term of the row is the unit's, and only the row's fixed part
-// (and any departure of the fit from 2 a byte) stays here.  Timed off
-// the instruction AS DECODED, as eboxClocks is; the unit steps the
-// field as carried (a second-indexed length can make them differ).
-function Bit#(16) sauSteppedRowClocks(DecodedInstr d);
+// >>> THE E-BOX TIME OF A VFL ROW WHOSE BYTES THE SERIAL UNIT STEPPED
+// (fidelity_plan.md A3 (b), 2026-11-25). <<<  When mkSAU answers a
+// request that carried its passes (SauAddSteps), it reports `u`, the
+// clocks its passes took (2 a pass, 0.6 us: Buchholz printed p.209, PDF
+// 234; Table 3's .6 a term, Vol. 1 printed p.3-7, PDF 25).  This is the
+// E-box time of the instruction GIVEN u, in eboxClocks' units (the
+// removal clock already off): eboxClocks' row with the term the unit now
+// owns taken out and u put in its place.  Per class, exactly the term
+// that row charged (a row that is not `2b` must not be cut as if it
+// were):
+//   * L, LWF, +, +MG (step 1): the row's byte term 2b (sign byte
+//     included) is the unit's: R - 2b + u.
+//   * M+, M+MG: the row is a FIT, 18 + 2b (16 + 2b for a whole unsigned
+//     word) with a FLOOR of 21 + b at one or two bytes (PDF 117, 119).
+//     The floor is not the adder's -- the field is too short for the
+//     bytes to set the time -- so it is kept as a floor: max(R, 17 - f +
+//     u), f = 2 for a whole unsigned word.  With like signs u = 2b and
+//     this is R exactly; Table 3's recomplement (AB > CD) adds to u.
+//     READ off PDF 119's decimal INVERT rows and then MEASURED
+//     (fidelity_plan.md A3 (b) step 2): printed = max(22 + b, 18 + 2b +
+//     2(b + 1)) to 0.1 us for M+MG at every decimal field, and the stepped
+//     model now lands on every one of them.
+//   * M+1: the row is flat, 21 (22 signed beyond the sign byte), PDF 126:
+//     at the atlas's operand Table 3's .6(c + 1) is one pass, so the
+//     floor again holds: max(R, 15 + u).  15 = 16 - 1: PDF 126's INVERT
+//     rows print 16 + 2b from (DU,16,4) up, Table 3's "true result"
+//     .6(x/y) over a fixed 16.
+//   (The two arms below take effect when their classes send passes:
+//   SRD's round and the K family, steps 3 and 4.)
+//   * SRD (decimal, nonzero offset): the row's 4-clock round (srdRound
+//     in eboxClocks) is the unit's: R - 4 + u.
+//   * K, KE, KR, KF, KFE, KFR (not immediate): KF's own fixed part, 8
+//     (PDF 130-132, Table 3's 1.8 + .6 to the clock), less the removal
+//     clock: 7 + u.  K's extra byte over KF (eboxClocks' 10 against 8) is
+//     the unit's w pass now, and the whole-word -2 is that pass's absence
+//     (no accumulator digit beyond a 64-bit field at the atlas operand).
+// Timed off the instruction AS DECODED, as eboxClocks is; the unit steps
+// the field as carried (a second-indexed length can make them differ).
+function Bit#(16) sauRowWithUnit(DecodedInstr d, Bit#(16) u);
+  Bit#(16) r = eboxClocks(d);
   case (d) matches
     tagged VflInt .v: begin
-      VflBytes vb = vflBytes(effLength(v.a.length), effByteSize(v.a.bs),
-                             v.m.unsign == 0, v.m.decimal == 1);
-      return 2 * (zeroExtend(vb.b0) + zeroExtend(vb.s));
+      Bit#(7) len_ = effLength(v.a.length);
+      Bool    sgn  = (v.m.unsign == 0);
+      VflBytes vb = vflBytes(len_, effByteSize(v.a.bs), sgn, v.m.decimal == 1);
+      Bit#(16) b  = zeroExtend(vb.b0) + zeroExtend(vb.s);
+      Bit#(16) f  = (!sgn && len_ == 64) ? 2 : 0;
+      case (v.code)
+        6'b001001, 6'b101001: return max(r, 17 - f + u);
+        6'b101011:            return max(r, 15 + u);
+        6'b101101:            return r - ((v.a.offset != 0) ? 4 : 0) + u;
+        6'b010001, 6'b010011, 6'b010101,
+        6'b110001, 6'b110011, 6'b110101: return 7 + u;
+        default:              return r - 2 * b + u;
+      endcase
     end
-    default: return 0;
+    default: return r + u;
   endcase
 endfunction
 

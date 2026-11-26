@@ -510,6 +510,83 @@ HALF (b), FIRST STEP DONE 2026-11-25: THE ADDER TERMS OF L, LWF, + AND +MG
   converter rows; the relocation's one-byte -1 (above) undiagnosed; the
   byte-wide datapath (F1). The multiplier terms are A4's.
 
+HALF (b), STEP 2 DONE 2026-11-26: THE DECIMAL M+ FAMILY (M+, M+MG, M+1)
+(`StretchSAU.bsv`'s `SauStepCls` / `SauStMem` / `SauStOne`, `StretchExecute.bsv`'s
+`vflDecFieldSteps`, `StretchTiming.bsv`'s `sauRowWithUnit`, which replaces
+`sauSteppedRowClocks`):
+- Pins for step 1's terms through the core came first (commit 73dc325b):
+  `fig14_sign_modifiers.strap` CYCLES=168 and `plus_mg.strap` CYCLES=548.
+  `sauStepRecomp := False` gives 162 / 546; `sauStepZ := False` leaves both
+  at 168 / 548, so z is still unpinned through the core.
+- `SauAddSteps` carries a `cls`, the Table 3 row group (Vol. 1 printed p.3-7,
+  PDF 25, read in the image), and the unit steps each class by its own
+  equation:
+  - M+, M+MG: .6(x/y); "Unlike signs AB > CD, add .6(x/y + 1)". There is no
+    z.
+  - M+1: .6(c + 1); unlike signs .6(x/y) for the true result, .6(2x/y + 1)
+    for the complement.
+  - The switches are `sauStepMemRecomp`, `sauStepOneCarry` and
+    `sauStepOneComp`.
+- The row's own term is now taken out per class (`sauRowWithUnit`).
+  Step 1's `2b` cut would underflow M+1's flat 21/22.
+  - M+ and M+MG are charged max(R, 17 - f + u). R is the row, f = 2 for a
+    whole unsigned word, u = the unit's clocks. With like signs this is
+    exactly R. The row's floor of 21 + b at one or two bytes stays a
+    floor, which is not the adder's.
+  - M+1 is charged max(R, 15 + u). The INVERT rows of PDF 126 print 16 +
+    2b from (DU,16,4) up, Table 3's true-result count over a fixed 16.
+- Only DECIMAL M+ reaches the unit. Binary M+, M+MG and M+1 are computed
+  inline and their rows did not move. Their INVERT rows (BU and B) carry
+  the same -2..-26 residuals.
+- Atlas, the M+ pages (PDF 117, 119, 126; forwarding 144, 146, 153; 2,150
+  cases). Each run is in a frozen copy with `--rebuild`. A first `all`
+  run reused the relocation's simulator, because rsync keeps the source
+  mtime, and showed no moves. It was discarded.
+
+  | step | within 1 before -> after | within 3 before -> after | toward | away |
+  |---|---|---|---|---|
+  | relocation, with M+1's unlike x/y (`sauStepMemRecomp`, `...OneCarry`, `...OneComp` off) | 572 -> 630 | 984 -> 1,046 | 151 | 75 |
+  | + all three switches on (every move is M+ / M+MG: the recomplement) | 630 -> 732 | 1,046 -> 1,157 | 240 | 2 |
+  | all against batch55 | 572 -> 732 | 984 -> 1,157 | 381 | 59 |
+
+  - **Relocation.** M+1's unlike signs now cost .6(x/y). This takes PDF
+    126's INVERT (D,32..64,4) from -10..-26 to within 0.4 (121 toward for
+    M+1).
+    - The 75 away are all 2 clocks or less: the one-byte hold shift of
+      step 1, which is not diagnosed further, plus WB XOVR columns already
+      23 or more under the page (A6).
+    - 22 of the 75 stay within 1 clock.
+  - **The recomplement.**
+    - M+MG's decimal INVERT rows, D and DU at every field and every
+      column, land within 0.75 clocks: for example (DU,48,4) ni_ext goes
+      from -26.0 to -0.01.
+    - M+'s unsigned INVERT rows move HALF way, for example (DU,32,4) from
+      -18 to -9. M+ rewrites its own operand, and in the model the
+      atlas's repetitions alternate: 0 - 444 recomplements and stores
+      444, then 444 - 444 = 0 does not. The page recomplements on every
+      repetition. One candidate is that the machine recomplements on
+      equal magnitudes as well (a nines'-complement end-around carry).
+      That candidate is NOT implemented, because no source has been
+      found.
+    - M+ (DU,64,4) INVERT goes from -17 to +17. In the model every
+      repetition recomplements there, while the page charges half. This
+      is not explained.
+    - The term is KEPT: 240 toward, 2 away. The 2 away are M+ (DU,64,4),
+      both inside 0.05 of the same magnitude on the other side.
+  - **M+1's c and complement terms** move no atlas case. With the atlas's
+    operand +1, no M+1 repetition carries out of a digit or recomplements
+    in the model. `mkSauStepTb` carries them.
+- `mkSauStepTb`: vectors 10-16 (literal sums and clocks). Injections, each
+  in a frozen copy:
+  - `sauStepMemRecomp := False` fails 11 (4 against 10);
+  - `sauStepOneCarry := False` fails 13 (2 against 8);
+  - `sauStepOneComp := False` fails 16 (8 against 18);
+  - nothing else fails.
+- MCP boot sections (`STRETCH_HALT_REPORT=1`, private tape): every check
+  passes. Halt clocks are unchanged from batch55: boot 6,321,488, decode
+  6,304,298, assign 6,322,787, past-move 6,339,189, p1deck 6,734,524. MCP
+  runs no decimal M+.
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).
