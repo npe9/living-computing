@@ -935,6 +935,39 @@ answers port A two cycles after a put, and the box waited a cycle on every frame
   1,280 data records up the link (about 171 kB, about 6.8 M bench cycles at 4 cycles a bit), so
   a dump after every command would cost hours of Bluesim.
 
+**H5 built in Bluesim (2026-11-26).** The keyboard and mouse, at the wire level.
+- `../../tools/wininput.py` is the reference, and its header freezes what is OURS. It keeps two
+  tables apart:
+  - HOST, the keyboard's: a USB HID usage to its scan code set 2 make code (the break is F0
+    before the last byte). SDL2's scancodes are the same numbers.
+  - KEYS, §3.1's table: set 2 to the PSI's keys. It is generated into
+    `../../bsv/WinKeyTable.bsv` (`wininput.py bsv`, checked by `--check`), and its JIS for all
+    of printing ASCII equals `psi/kl0.py` Str's (`jischeck`).
+  It also freezes the event record (KIND, A, B, C, FLAGS, T; 10 bytes), the error codes, the
+  receivers' model, and a script format that is expanded to host actions and device bytes.
+- `../../bsv/WinInput.bsv` holds the box. `mkWinPs2Rx` is the pins: synchronizers, a clock
+  filter, 11 bits, parity and stop checked, a timeout for a cut frame. `mkWinKbdDec` decodes
+  E0/F0/E1 and Shift/Ctrl/Alt through the table. `mkWinMouseDec` turns 3-byte packets into an
+  absolute position, clamped, starting at the coordinator's (640, 472), with PS/2's Y inverted.
+  `mkWinInput` merges them with a millisecond stamp. `mkWinPs2Dev` is the benches' PS/2 device
+  model: it drives clock and data as a device does, and makes parity, stop, cut and clock-glitch
+  faults on request.
+- `../../bsv/WinInputTb.bsv` and `../../bsv/run_win_input.sh` (called by `run_win_tb.sh`) run
+  four cases, each checked record for record against the model:
+  - `keys`: every printing key both ways, the named keys, F1-F12, Shift-F1..F7 (pf#12-18),
+    Pause (abort), Ctrl-J (lf), Ctrl-G (bell), held keys repeating;
+  - `mouse`: moves past every edge, and each button;
+  - `faults`: on both receivers, between good input;
+  - `board`: `keys` at the board's bit time (2,000 cycles), filter and timeout.
+  11 injections are in the runner's header, including the plan's make/break swap. Two passed
+  the first scripts: the swap, until held keys were added, and a missing clock filter, until
+  clock glitches were added.
+- **OURS or INFERENCE, open for the board check deferred to the end:**
+  - US2's PS/2 wiring (D+ clock, D- data) is INFERENCE, from the usual passive adapter.
+  - Host-to-device sending is not built, so a real mouse, which streams only after F4, is
+    exercised in Bluesim only.
+  - US2 is one port (R3), so the board top takes the keyboard there.
+
 Not yet, and last by the owner's decision of 2026-11-26: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
 report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback
 built (`run_win_fpga.sh` is mode 0 only), and mode 3's 640×480 is the fallback for H4a.

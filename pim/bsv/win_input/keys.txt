@@ -1,0 +1,49 @@
+# H5: every printing key, both shifts, the named keys, F1-F12 and Shift-F1..F7,
+# Pause, Ctrl and Alt (tools/wininput.py's script format)
+type The quick brown fox jumps over the lazy dog. 0123456789
+type THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG!
+type !@#$%^&*()-_=+[{]}\|;:'",<.>/?`~ x
+key enter
+key kpenter
+key bs
+key tab
+key esc
+key del
+key up
+key down
+key left
+key right
+key insert
+key pause
+key f1
+key f2
+key f3
+key f4
+key f5
+key f6
+key f7
+key f8
+key f9
+key f10
+key f11
+key f12
+shiftkey f1
+shiftkey f5
+shiftkey f7
+shiftkey f8
+shiftkey f12
+ctrlkey j
+ctrlkey g
+ctrlkey a
+altkey x
+down shift
+down q
+up shift
+up q
+down x
+down x
+down x
+up x
+wait 5
+type local
+key enter

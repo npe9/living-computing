@@ -992,6 +992,16 @@ status). The host side for the board is the owner's step:
 `python3 tools/winlink.py` holds the framing, but its serial-port mode is
 not written (no agent opens the port).
 
+**The keyboard and mouse (H5, Bluesim).** `WinInput.bsv` holds the PS/2
+receivers (`mkWinPs2Rx`), the keyboard decoder through the generated §3.1
+table `WinKeyTable.bsv` (`../tools/wininput.py bsv`; never edit it by hand),
+the mouse decoder, `mkWinInput` (both, with a millisecond stamp) and
+`mkWinPs2Dev`, a PS/2 device model for the benches. `run_win_input.sh`
+(from `run_win_tb.sh`) clocks scripted bytes into the pins through the
+device models and compares every record with `../tools/wininput.py`'s
+model. It covers the keys, the mouse, line faults, and one case at the
+board's bit time. Its header lists 11 injections and what each failed.
+
 LEDs: 7 the PLL lock, 0 the self-test done, 1 a self-test error (a
 command status not OK), 2 toggles every 16 frames of the pixel domain
 (a period of about 1.07 s at 29.9 Hz), 3 the link's line in is low.
