@@ -97,6 +97,14 @@ class window_pane has
         Pane!under := Area,
         frame(Pane);
 
+% :pattern(#window_pane, Pattern) -- window M8's rest (selector and body
+% OURS): Pattern is one pattern_in/7 draws: a name below, or a held
+% pattern string of 256 words.
+% INTERPOLATED (selector and body OURS): pattern; basis above and at
+% pattern_in/7.
+:pattern(_, P) :- named(P, 0, _), !;
+:pattern(_, P) :- string(P, N, _), N == 256;
+
 instance
 
 % OURS representation: the outer rectangle (x, y, w, h), the inside's
@@ -337,7 +345,164 @@ attribute under := 0, image := 0;
         :unpeel(#coordinator, Lifted);
 :transfer_in(Pane, _, _, _, _, _, _, _) :- :graphics_refused(Pane, transfer);
 
+% :pattern_in(Pane, X, Y, Width, Height, Pattern, Op) -- window M8's rest
+% (2026-11-26), INTERPOLATED (selector and body OURS) from window.md §2.5
+% draw_filled_rectangle/8: the rectangle, cut to the inside, filled with a
+% pattern through Op.  A pattern is a tile of rows of 16-bit words, MSB
+% leftmost (the frame's order): a named one (standard_io_window.esp
+% "PATTERNS", its look OURS) is 4 rows of one word, a held pattern string
+% (256 words) 64 rows of 4 words (INFERENCE, standard_io_window.esp).  The
+% tile is anchored at the inside's top-left (OURS).  Each row is drawn as
+% styled lines of the frozen device line (psi/windev.py line/8, winfb's
+% style operand): one line when the row's words are equal, else one a
+% 16-dot piece; a piece whose word is 0 is not sent.  A 0 dot of the
+% pattern leaves the frame's dot as it was, whatever Op (OURS: the
+% device's line plots only the style's 1 dots).
+:pattern_in(Pane, X, Y, W, H, P, Op) :-
+        cut(X, X + W, Pane!iw, X1, W1), cut(Y, Y + H, Pane!ih, Y1, H1),
+        W1 > 0, H1 > 0, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        pattern_rows(Pane, P, X1, X1 + W1 - 1, Y1, Y1 + H1, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:pattern_in(_, _, _, _, _, _, _);
+
+% :image_in(Pane, S, X, Y, Width, Height) -- window M8's rest (2026-11-26),
+% INTERPOLATED (selector and body OURS) from window.md §2.5's image
+% methods: restore_image/6 (USAGE paragraph p_imag.esp:22, p_v_imag.esp:19)
+% draws the image string S at (X, Y), Width x Height dots, ceil(Width/16)
+% words a row, MSB leftmost (the held image classes: profiler_icon_image3
+% is 112 words for its 16 x 112, p_m_image3.esp and p_imag.esp h3 := 112;
+% the row order and the bit order are INFERENCE: the frame's own).  OURS
+% look: the image is opaque (the area reset, then the 1 dots set); each
+% row is sent as styled lines of the frozen device line (windev line/8),
+% one for each run of equal non-zero words.  The image must lie wholly
+% inside and S hold its words, or the method refuses loudly.
+:image_in(Pane, S, X, Y, W, H) :-
+        inside(Pane, X, Y, W, H), value((W + 15) / 16, N),
+        string(S, L, _), value(H * N, Need), L >= Need, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        fill_cut(Pane, X, Y, W, H, reset),
+        image_rows(Pane, S, X, Y, W, N, 0, H),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:image_in(Pane, _, _, _, _, _) :- :graphics_refused(Pane, image);
+
 local
+
+% window M8's rest, images (OURS, see image_in/6)
+image_rows(_, _, _, _, _, _, J, H) :- J >= H, !;
+image_rows(Pane, S, X, Y, W, N, J, H) :-
+        value(J * N, Base),
+        image_runs(Pane, S, X, Y + J, W, N, Base, 0),
+        image_rows(Pane, S, X, Y, W, N, J + 1, H);
+
+image_runs(_, _, _, _, _, N, _, K) :- K >= N, !;
+image_runs(Pane, S, X, Y, W, N, Base, K) :-
+        string_element(S, Base + K, 0), !,
+        image_runs(Pane, S, X, Y, W, N, Base, K + 1);
+image_runs(Pane, S, X, Y, W, N, Base, K) :-
+        string_element(S, Base + K, Wd),
+        run_end(S, Base, N, K, Wd, E),
+        value(X + K * 16, X1), value(X + E * 16 + 15, X2a), low_end(X2a, X + W - 1, X2),
+        :line(#bitmap_display, Pane!left + X1, Pane!top + Y, Pane!left + X2,
+              Pane!top + Y, 1, Wd, set),
+        image_runs(Pane, S, X, Y, W, N, Base, E + 1);
+
+run_end(S, Base, N, K, Wd, E) :- K + 1 < N, string_element(S, Base + K + 1, Wd), !,
+        run_end(S, Base, N, K + 1, Wd, E);
+run_end(_, _, _, K, _, K);
+
+% window M8's rest, patterns (OURS, see pattern_in/7)
+pattern_rows(_, _, _, _, Y, E, _) :- Y >= E, !;
+pattern_rows(Pane, P, X1, X2, Y, E, Op) :-
+        row_words(P, Y, W0, W1, W2, W3),
+        pattern_row(Pane, X1, X2, Y, W0, W1, W2, W3, Op),
+        pattern_rows(Pane, P, X1, X2, Y + 1, E, Op);
+
+% a named pattern's row (4 rows of one word), a string's (64 rows of 4)
+row_words(P, Y, W, W, W, W) :- named(P, 0, _), !,
+        rem4(Y, R), named(P, R, W);
+row_words(P, Y, W0, W1, W2, W3) :-
+        rem64(Y, R), value(R * 4, I),
+        string_element(P, I, W0), string_element(P, I + 1, W1),
+        string_element(P, I + 2, W2), string_element(P, I + 3, W3);
+
+pattern_row(Pane, X1, X2, Y, W, W, W, W, Op) :- !,
+        styled(Pane, X1, X2, Y, W, Op);
+pattern_row(Pane, X1, X2, Y, W0, W1, W2, W3, Op) :-
+        pieces(Pane, X1, X2, Y, {W0, W1, W2, W3}, Op);
+
+pieces(_, X, X2, _, _, _) :- X > X2, !;
+pieces(Pane, X, X2, Y, Ws, Op) :-
+        rem16(X, R), value(X + 15 - R, E0), low_end(E0, X2, E),
+        rem64(X, Q), value(Q / 16, K), vector_element(Ws, K, W),
+        styled(Pane, X, E, Y, W, Op),
+        pieces(Pane, E + 1, X2, Y, Ws, Op);
+
+low_end(A, B, A) :- A =< B, !;
+low_end(_, B, B);
+
+% one row piece from X1 to X2 (inside dots) whose dots are the word W at
+% the tile's columns: the style is W turned left by X1's column in it
+styled(_, _, _, _, 0, _) :- !;
+styled(Pane, X1, X2, Y, W, Op) :-
+        rem16(X1, S), rotated(W, S, St),
+        :line(#bitmap_display, Pane!left + X1, Pane!top + Y, Pane!left + X2,
+              Pane!top + Y, 1, St, Op);
+
+% W turned left by S bits in 16, one bit at a time (OURS arithmetic: espc
+% emits no shift, and X/Y only by a constant)
+rotated(W, 0, W) :- !;
+rotated(W, S, R) :- turned(W, W1), rotated(W1, S - 1, R);
+
+turned(W, R) :- W >= 16#"8000", !, Top = 16#"FFFF", value(W + W - Top, R);
+turned(W, R) :- value(W + W, R);
+
+% the named patterns, a word for each of 4 rows.  The names are the held
+% and printed ones (window.md §2.5 "Fill pattern"): light_paint (USAGE
+% paragraph p_imag.esp go1/1, bar_v.esp set_pattern/2), dotted (bar_v.esp
+% set_pattern/2; TM-785 p40), right_hatch (USAGE bar2_v.esp:263), mesh,
+% left_hatch, small_mesh (PRINTED-INTERFACE TM-785 p40).
+% light_paint's dots are HELD-DERIVED: paragraph's image classes were made
+% by filling a window `fix, set`, then `light_paint, reset`, drawing on it
+% and save_image/6 (p_imag.esp go1/1 :175-198, p_v_imag.esp :151-152,
+% :228), so their background words are the complement of light_paint:
+% profiler_mono_selector_image (saved at the inside's (0, 0)) has 16#"7777"
+% on every even row and 16#"DDDD" on every odd one, that is light_paint =
+% 16#"8888", 16#"2222" (MEASURED on the held .ptf, test_win_m8_images).
+% The icon images (saved at (52, 58) and others) show the same lattice, a
+% dot every 4 columns, the rows 2 columns apart, at another phase; so the
+% anchor is not the inside's top-left in every window (INFERENCE: the
+% screen's, with the windows' places unknown), and the phase here, the
+% selector's at the inside's top-left, is OURS.  The other names' looks
+% are OURS: no source shows a dot of them.
+named(light_paint, 0, 16#"8888") :- !;
+named(light_paint, 2, 16#"8888") :- !;
+named(light_paint, _, 16#"2222") :- !;
+named(dotted, 0, 16#"AAAA") :- !;
+named(dotted, 2, 16#"AAAA") :- !;
+named(dotted, _, 0) :- !;
+named(mesh, 0, 16#"FFFF") :- !;
+named(mesh, _, 16#"8888") :- !;
+named(small_mesh, 0, 16#"AAAA") :- !;
+named(small_mesh, 2, 16#"AAAA") :- !;
+named(small_mesh, _, 16#"5555") :- !;
+named(left_hatch, 0, 16#"8888") :- !;
+named(left_hatch, 1, 16#"4444") :- !;
+named(left_hatch, 2, 16#"2222") :- !;
+named(left_hatch, _, 16#"1111") :- !;
+named(right_hatch, 0, 16#"1111") :- !;
+named(right_hatch, 1, 16#"2222") :- !;
+named(right_hatch, 2, 16#"4444") :- !;
+named(right_hatch, _, 16#"8888");
+
+% the remainder of V >= 0 by 4, 16 and 64
+rem4(V, R) :- value(V - V / 4 * 4, R);
+rem16(V, R) :- value(V - V / 16 * 16, R);
+rem64(V, R) :- value(V - V / 64 * 64, R);
 
 moved(Pane, X, Y) :- X == Pane!x, Y == Pane!y, !;
 moved(Pane, X, Y) :-

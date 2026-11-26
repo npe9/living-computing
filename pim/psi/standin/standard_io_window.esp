@@ -295,15 +295,28 @@ attribute permission := out;
 % es_gin.esp:855); execute_graphics_command/2, a list of {Name, {Args}}
 % (USAGE paragraph p_icon.esp:61, :176; g_window.esp:141-142 the
 % five-element draw_string, :169 the seven-element draw_filled_rectangle
-% with a held pattern, which refuses: only fix); get_mouse_position/3 (SCREENSHOT
+% with a held pattern); get_mouse_position/3 (SCREENSHOT
 % IPSJ 36239 p5; USAGE).  The default op is exclusive_or ("default is
 % exclusive or", PRINTED-INTERFACE TM-125 p17); the default line is 1 dot,
 % solid.  OURS bodies, drawn by the pane (window_pane.esp "Window M8").
 % Refused loudly (graphics_refused/2 is no method, OURS): a line style
 % other than solid, a rectangle style other than solid or filled, a fill
-% pattern other than fix (light_paint and the TM-785 patterns have no
-% printed look), a command execute_graphics_command/2 does not know, and
-% drawing on a window that is not on the screen.
+% pattern that is neither fix, a named pattern nor a pattern string, a
+% command execute_graphics_command/2 does not know, and drawing on a
+% window that is not on the screen.
+% Window M8's rest (2026-11-26), PATTERNS: draw_filled_rectangle/8 takes,
+% beside fix, the named patterns light_paint, dotted, mesh, small_mesh,
+% left_hatch and right_hatch (window.md §2.5; light_paint's dots
+% HELD-DERIVED from paragraph's saved images, the others' looks OURS:
+% window_pane.esp named/3) and a held pattern string: paragraph bar_v.esp
+% set_pattern/2 makes one by new_string(S, 256, 16) and set_pattern1/4, /6,
+% /10, which write each word four times running (words N..N+3 the first,
+% N+4..N+7 the second, ...).  The string is read as a 64 x 64 tile, 4 words
+% a row, so every row repeats one word and the rows cycle through the
+% words given (INFERENCE: the 4-fold repeat is what makes a row of 64 dots;
+% read as 1 word a row, `16#"5555", 16#"AAAA"` would be stripes 4 rows
+% high, not the 50% mesh the pair is everywhere else).  Drawn by the pane
+% (window_pane.esp pattern_in/7) with styled lines of the frozen device.
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_line.
 :draw_line(W, X1, Y1, X2, Y2) :- line(W, X1, Y1, X2, Y2, 1, solid, exclusive_or);
@@ -322,6 +335,8 @@ attribute permission := out;
 :draw_filled_rectangle(W, X, Y, Wd, Ht, Op) :- pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
 :draw_filled_rectangle(W, X, Y, Wd, Ht, _, fix, Op) :- !,
         pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+:draw_filled_rectangle(W, X, Y, Wd, Ht, _, Pt, Op) :- :pattern(#window_pane, Pt), !,
+        pane_of(W, P), :pattern_in(P, X, Y, Wd, Ht, Pt, Op);
 :draw_filled_rectangle(W, _, _, _, _, _, Pattern, _) :- :graphics_refused(W, Pattern);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_string.
@@ -341,6 +356,21 @@ attribute permission := out;
         command(W, Name, N, Args),
         :execute_graphics_command(W, Cs);
 :execute_graphics_command(W, _) :- :graphics_refused(W, command);
+% Window M8's rest (2026-11-26), IMAGES: restore_image/6 `(W, S, X, Y,
+% Width, Height)` (USAGE paragraph p_imag.esp:22 restore/7, p_v_imag.esp
+% :19, :252) draws an image string, opaque (window_pane.esp image_in/6);
+% get_label_height/2 (USAGE paragraph p_imag.esp:619 adjust_pos/3, cil
+% ds_brs.esp:280; window.md §2.2) answers the label strip's height, the
+% font's cell plus 2 (window_pane.esp's layout, OURS).  save_image/6 and
+% restore_full_color_image/6 are not stood in (save_image reads the
+% frame's dots, which no frozen device primitive does; the colour form is
+% never reached on the 1-plane screen, bitmap.esp).
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): restore_image.
+:restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :image_in(P, S, X, Y, Wd, Ht);
+% INTERPOLATED (selector: window.md section 2.2, cited above; body OURS):
+% get_label_height.
+:get_label_height(W, H) :- pane_of(W, P), value(P!ch + 2, H);
 % the mouse in the window's inside, in dots (the window's units: no
 % set_inside_units/3 is stood in)
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;

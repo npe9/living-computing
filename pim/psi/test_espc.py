@@ -704,7 +704,7 @@ class Standins(unittest.TestCase):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##abort_handler', 'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
-            'simpos##binary_file', 'simpos##boot_process',
+            'simpos##binary_file', 'simpos##bitmap', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##buffer_region', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##coordinator',
             'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
@@ -4845,8 +4845,10 @@ end."""
         #   - a fill at (430, 270), 50 x 50, cut to the inside: 10 x 10;
         #   - transfer/8 (copy) of the box to (220, 10);
         #   - get_mouse_position/3 after a move to (150, 160): (47, 40);
-        #   - refused loudly: a dotted line, the light_paint pattern, a
-        #     slanted line leaving the inside, an unknown command.
+        #   - refused loudly: a dotted line, an unknown pattern (light_paint
+        #     until M8's rest: test_win_m8_patterns), a slanted line leaving
+        #     the inside, an unknown command (draw_bars; draw_arc until M8's
+        #     rest: test_win_m8_shapes).
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
         # test_kl0.py run, all else OK):
@@ -4915,9 +4917,9 @@ end."""
         self.assertEqual([K.resolve(v) for v in xy], [47, 40])
         # loud refusals; the frame unchanged
         for sel, args in (('draw_line', [0, 0, 10, 0, 1, K.Atom('dotted'), K.Atom('set')]),
-                          ('draw_filled_rectangle', [0, 0, 5, 5, 0, K.Atom('light_paint'), K.Atom('set')]),
+                          ('draw_filled_rectangle', [0, 0, 5, 5, 0, K.Atom('zigzag'), K.Atom('set')]),
                           ('draw_line', [400, 0, 460, 30]),
-                          ('execute_graphics_command', [K.Cons(K.Vec([K.Atom('draw_arc'), K.Vec([1, 2])]),
+                          ('execute_graphics_command', [K.Cons(K.Vec([K.Atom('draw_bars'), K.Vec([1, 2])]),
                                                                K.NIL)])):
             with self.assertRaises(K.Refusal) as e:
                 self.send(m, w, sel, *args)
@@ -5038,6 +5040,239 @@ end."""
         self.assertIn('graphics_refused', str(e.exception.detail))
         self.assertEqual(fr.rows, rows)
         self.assertEqual(len(self._walk(m.get_slot(S, 'used'))), used)
+
+    # window M8's rest: the named patterns' looks (OURS, window_pane.esp
+    # named/3), a word for each of 4 rows
+    NAMED_PATTERNS = {'light_paint': [0x8888, 0x2222, 0x8888, 0x2222], 'dotted': [0xAAAA, 0, 0xAAAA, 0],
+                      'mesh': [0xFFFF, 0x8888, 0x8888, 0x8888],
+                      'small_mesh': [0xAAAA, 0x5555, 0xAAAA, 0x5555],
+                      'left_hatch': [0x8888, 0x4444, 0x2222, 0x1111],
+                      'right_hatch': [0x1111, 0x2222, 0x4444, 0x8888]}
+
+    def pattern_dot(self, p, x, y):
+        # the reference: pattern P's dot at inside (X, Y), the tile
+        # anchored at the inside's top-left; a pattern string a 64 x 64
+        # tile of 4 words a row (INFERENCE, standard_io_window.esp
+        # "PATTERNS")
+        if isinstance(p, K.Atom):
+            wd = self.NAMED_PATTERNS[p.name][y % 4]
+        else:
+            wd = p.codes()[(y % 64) * 4 + (x % 64) // 16]
+        return (wd >> (15 - x % 16)) & 1
+
+    def pattern_fill(self, want, p, x, y, wd, ht, iw=440, ih=280):
+        # the reference fill (set) of P over (X, Y, WD, HT) cut to the inside
+        X0, Y0 = self.GRAPHICS_AT
+        for yy in range(max(y, 0), min(y + ht, ih)):
+            for xx in range(max(x, 0), min(x + wd, iw)):
+                if self.pattern_dot(p, xx, yy):
+                    want.rows[Y0 + yy] |= 1 << (1279 - X0 - xx)
+
+    def held_patterns(self, m):
+        # the HELD paragraph##bar_v local set_pattern/2 (bar_v.esp:333-362)
+        # for N = 0..5, run on the compiled .ptf
+        cid = 'paragraph##bar_v'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        out = []
+        for n in range(6):
+            m.reset()
+            v = K.Var()
+            (got,) = [K.resolve(v) for _ in m.solve((m.code(cid), ps[('set_pattern', 2)].offset), [n, v])]
+            out.append(got)
+        return out
+
+    def test_win_m8_patterns(self):
+        # M8's rest, fill patterns (window.md §2.5; standard_io_window.esp
+        # "PATTERNS", window_pane.esp pattern_in/7): draw_filled_rectangle/8
+        # with a pattern other than fix, drawn as styled lines of the
+        # frozen device line (windev line/8, winfb's style operand).
+        #   - the HELD bar_v set_pattern/2 (needs blt 44, kl0_opcodes.tsv)
+        #     gives light_paint, a string, dotted and three strings for N
+        #     = 0..5; each string is 256 words, the set_pattern1 words each
+        #     four times running;
+        #   - the HELD paragraph##g_window local draw_list_b/8 (g_window.esp
+        #     :160-183, the mono bar list) with those six patterns and the
+        #     numbers 1..6, its list given to execute_graphics_command/2:
+        #     each 17 x 11 bar equals the reference (pattern_dot: a string
+        #     read as a 64 x 64 tile, 4 words a row, INFERENCE), and its
+        #     number is read back beside it;
+        #   - the six named patterns and a rectangle cut at the inside's
+        #     left edge, against a frame built dot by dot;
+        #   - exclusive_or twice erases a patterned fill;
+        #   - refused loudly: an unknown pattern name, a string not of 256
+        #     words; the frame unchanged.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   G10 styled/6 does not turn the word by the piece's column:
+        #       this test FAILS, nothing else.
+        #   G11 row_words/6 reads a pattern string 1 word a row: this test
+        #       FAILS, nothing else.
+        #   G12 blt 44 puts the quotient where the remainder goes:
+        #       this test FAILS, nothing else (test_kl0's census does not
+        #       run set_pattern/2's values).
+        import windev
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        pats = self.held_patterns(m)
+        self.assertEqual([p.name if isinstance(p, K.Atom) else len(p.codes()) for p in pats],
+                         ['light_paint', 256, 'dotted', 256, 256, 256])
+        self.assertEqual(pats[5].codes()[:8], [0x5555] * 4 + [0xAAAA] * 4)
+        self.assertEqual(pats[1].codes()[:32], [0x1010] * 4 + [0] * 12 + [0x0101] * 4 + [0] * 12)
+        # the held g_window mono bar list
+        cid = 'paragraph##g_window'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        ((_n, font),) = K.call_class_method(m, 'simpos##font', 'create', [K.Str('font:test_11.font'), K.Var()])
+        items = K.NIL
+        for i in reversed(range(6)):
+            items = K.Cons(pats[i], K.Cons(i + 1, items))
+        m.reset()
+        dl = K.Var()
+        (dl,) = [K.resolve(dl) for _ in m.solve((m.code(cid), ps[('draw_list_b', 8)].offset),
+                                                [10, 10, 1, items, dl, font, 30, 280])]
+        self.assertTrue(self.send(m, w, 'execute_graphics_command', dl))
+
+        def region(f, x, y, wd, ht):
+            return [(f.rows[Y0 + y + j] >> (1280 - X0 - x - wd)) & ((1 << wd) - 1) for j in range(ht)]
+        for i, p in enumerate(pats):
+            y = 10 + 18 * i
+            ref = winfb.Frame()
+            self.pattern_fill(ref, p, 10, y + 3, 17, 11)
+            self.assertEqual(region(fr, 10, y + 3, 17, 11), region(ref, 10, y + 3, 17, 11), i)
+            self.assertEqual(windev.read_cells(fr, X0 + 33, Y0 + y, 1, 1), [str(i + 1)])
+        # the named patterns, and one cut at the left edge
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        for i, name in enumerate(sorted(self.NAMED_PATTERNS)):
+            p, x, y = K.Atom(name), 5 + i * 70, 5
+            self.assertTrue(self.send(m, w, 'draw_filled_rectangle', x, y, 67, 83, 1, p, K.Atom('set')))
+            self.pattern_fill(want, p, x, y, 67, 83)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', -7, 100, 53, 61, 0, pats[4], K.Atom('set')))
+        self.pattern_fill(want, pats[4], -7, 100, 53, 61)
+        self.assertEqual(fr.rows, want.rows)
+        # exclusive_or twice
+        n0 = fr.count()
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 100, 100, 77, 50, 1, pats[5],
+                                  K.Atom('exclusive_or')))
+        self.assertEqual(fr.count() - n0, sum(self.pattern_dot(pats[5], x, y)
+                                              for x in range(100, 177) for y in range(100, 150)))
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 100, 100, 77, 50, 1, pats[5],
+                                  K.Atom('exclusive_or')))
+        self.assertEqual(fr.rows, want.rows)
+        # refusals
+        bad = K.Str('')
+        bad.set_codes([0x5555] * 16)
+        for pt in (K.Atom('zigzag'), bad):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, 'draw_filled_rectangle', 0, 0, 5, 5, 0, pt, K.Atom('set'))
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, want.rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def image_ref(self, want, codes, x, y, wd, ht):
+        # the reference restore_image/6: WD x HT dots at inside (X, Y),
+        # ceil(WD/16) words a row, MSB leftmost, opaque
+        X0, Y0 = self.GRAPHICS_AT
+        n = (wd + 15) // 16
+        for j in range(ht):
+            for i in range(wd):
+                bit = 1 << (1279 - X0 - x - i)
+                if (codes[j * n + i // 16] >> (15 - i % 16)) & 1:
+                    want.rows[Y0 + y + j] |= bit
+                else:
+                    want.rows[Y0 + y + j] &= ~bit
+
+    def test_win_m8_images(self):
+        # M8's rest, images (window.md §2.5; standard_io_window.esp
+        # "IMAGES", window_pane.esp image_in/6, bitmap.esp):
+        #   - :get_plane_count(#bitmap, N) is 1, so the HELD
+        #     profiler_icon_image_lib's class slot `color` (initialised by
+        #     its color_check2/1) is 1, the monochrome path;
+        #   - light_paint MEASURED: the HELD profiler_mono_selector_image
+        #     (p_v_imag.esp:151-152, :228: fix set, light_paint reset, saved
+        #     at the inside's (0, 0)) has 16#"7777" only on even rows and
+        #     16#"DDDD" only on odd ones, the complement of window_pane.esp's
+        #     light_paint (8888, 2222);
+        #   - restore_image/6 of the HELD profiler_icon_image3 (16 x 112)
+        #     over a black block: opaque, equal to the reference; twice,
+        #     the same frame;
+        #   - the HELD paragraph##type_switch_icon :draw/6 (p_icon.esp:170
+        #     -186: three draw_box/5 and :restore(#profiler_icon_image_lib,
+        #     Win, image1, X+1, Y+24, 16, h1), whose restore/7 adjusts Y by
+        #     get_label_height/2 - 24 and sends restore_image/6) equals the
+        #     three held draw_box/5 and the reference image1 at (X+1, Y+24
+        #     + 16 - 24); get_label_height/2 is 16;
+        #   - refused loudly: an image leaving the inside, a string too
+        #     short for its size; the frame unchanged.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   G13 image_in/6 draws transparent (no reset of the area): this
+        #       test FAILS, nothing else.
+        #   G14 get_plane_count/2 answers 3: this test FAILS, nothing
+        #       else.
+        import windev
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        self.assertEqual(K.call_class_method(m, 'simpos##bitmap', 'get_plane_count', [K.Var()]), [[1]])
+        self.assertEqual(m.get_slot(K.ClassRef('paragraph##profiler_icon_image_lib'), 'color'), 1)
+
+        def image(cid):
+            ((s,),) = K.call_class_method(m, cid, 'get', [K.Var()])
+            return s.codes()
+        sel = image('paragraph##profiler_mono_selector_image')
+        self.assertEqual(len(sel), 24 * 238)
+        rows = {0x7777: set(), 0xDDDD: set()}
+        for i, c in enumerate(sel):
+            if c in rows:
+                rows[c].add((i // 24) % 2)
+        self.assertEqual(rows, {0x7777: {0}, 0xDDDD: {1}})
+        lp = self.NAMED_PATTERNS['light_paint']
+        self.assertEqual([0xffff & ~0x7777, 0xffff & ~0xDDDD], lp[:2])
+        # restore_image/6, opaque over black
+        img3 = image('paragraph##profiler_icon_image3')
+        self.assertEqual(len(img3), 112)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 0, 0, 40, 130, K.Atom('set')))
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        ((s3,),) = K.call_class_method(m, 'paragraph##profiler_icon_image3', 'get', [K.Var()])
+        self.assertTrue(self.send(m, w, 'restore_image', s3, 10, 10, 16, 112))
+        self.image_ref(want, img3, 10, 10, 16, 112)
+        self.assertEqual(fr.rows, want.rows)
+        self.assertTrue(self.send(m, w, 'restore_image', s3, 10, 10, 16, 112))
+        self.assertEqual(fr.rows, want.rows)
+        # the held icon's draw/6, against its own draw_box/5 and the image
+        lh = K.Var()
+        self.assertTrue(self.send(m, w, 'get_label_height', lh))
+        self.assertEqual(K.resolve(lh), 16)
+        ic = K.make_instance(m, 'paragraph##type_switch_icon')
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(ic, 'draw', [100, 20, 20, 84, w, ic])))
+        m2, w2 = self.graphics_window()
+        self.assertTrue(self.send(m2, w2, 'draw_filled_rectangle', 0, 0, 40, 130, K.Atom('set')))
+        self.assertTrue(self.send(m2, w2, 'restore_image', s3, 10, 10, 16, 112))
+        for k in range(3):
+            self.assertEqual(self.held_draw_box(m2, w2, 100, 20 + 28 * k, 19, 28), 1)
+        ref = winfb.Frame()
+        ref.rows = list(windev.device(m2).frame.rows)
+        self.image_ref(ref, image('paragraph##profiler_icon_image1'), 101, 20 + 24 + 16 - 24, 16, 84)
+        self.assertEqual(fr.rows, ref.rows)
+        # refusals
+        rows = list(fr.rows)
+        for args in ((s3, 430, 10, 16, 112), (s3, 10, 10, 16, 113)):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, 'restore_image', *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
 
     def test_win_m8_markers(self):
         # M8, markers (window.md §2.6; standard_io_window.esp "MARKERS",

@@ -1,0 +1,18 @@
+% SCAFFOLDING stand-in for SIMPOS's class `bitmap`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3).  Window M8's rest
+% (2026-11-26): the one method the held paragraph image code sends to it.
+% USAGE: `:get_plane_count(#bitmap, N)` (window.md §2.13; paragraph
+% p_imag.esp:601, :616 color_check/1 and color_check2/1, the PSI/UX edits
+% of 1991 that replaced `:get_parameter(#ipl, bmm_size, Dev)`; p_v_imag.esp
+% :111-117; gog-esp DISPB1.ESP:36): 1 plane is monochrome (p_imag.esp:596
+% -604: N > 1 is colour), and so are 07FF's (window.md §2.13).
+
+class bitmap has
+
+% :get_plane_count(#bitmap, N) -- INTERPOLATED (body OURS): the stand-in's
+% screen is the 1-bit frame of psi/winfb.py (OURS, the hardware plan
+% §2.1), so 1.
+:get_plane_count(_, 1);
+
+end.
