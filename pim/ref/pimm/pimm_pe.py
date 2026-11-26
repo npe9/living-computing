@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PIM/m with more than one PE, on the reference model: rungs M1 to M3.
+"""PIM/m with more than one PE, on the reference model: rungs M1 to M5.
 
 docs/multi_pe.md is the plan and the evidence; every choice below is
 labelled there.  In brief:
@@ -7,17 +7,21 @@ labelled there.  In brief:
 - A System holds N PEs.  Each PE is a pimm.Machine of its own (its own
   memory, heap, registers, ready queue): PIM/m has one memory per PE
   (M92 p. 430).  The PEs are made by copying one loaded machine, so a
-  code address means the same on every PE (OURS scaffolding; PIM/m
-  sends a module's global identifier and fetches it, M92 pp. 430-431).
-  After a PE has collected, its modules have moved: a goal thrown from
-  or to it with code in the heap is refused (rung M5, code fetch).
+  loaded module is at the same address on every PE (OURS scaffolding).
+  A code or module word in the heap goes in a message as its module's
+  number and offset (CODE_ID, MODULE_ID), each PE taking its own copy
+  of that module; one made after the split is fetched, copied from the
+  PE that has it (PIM/m sends a module's global identifier and fetches
+  it, M92 pp. 430-431; the copy without messages is OURS).  The modules
+  a PE has are roots of its collector.
 - current_node gives (k, N) on PE k (PIMOS manual e-builtin.tex
   current_node).  current_processor gives (k, N, 1): PIMOS's
   mdlib#current_cluster(Cluster, Total) is current_processor(Cluster,
   X, Y), Total := X*Y on Multi-PSI and PIM/m (pimos.vmac 378-381,
   HELD-SOURCE); N = N x 1 is OURS.  unbound/2 gives {k, Address, X}
-  (VPIM kblt_b_unbound, the cluster number); of an external reference
-  VPIM throws a goal to its owner: refused.
+  (VPIM kblt_b_unbound, the cluster number); of an external variable
+  the goal unbound(X, Result) is thrown to its owner, as VPIM does
+  (rung M5), and of an external value (EXVAL) it gives {X} at once.
 - Goal@node(K) (enqueue_goal_to_processor, 23:65; PIMOS compiler
   newnorm.kl1:842-905) with K this PE makes the goal here; with K
   another PE it sends %throw_goal (VPIM's cluster branch, klb_fork.psl.c
@@ -115,8 +119,31 @@ labelled there.  In brief:
   269-300), and plain again when its last entry is freed unbound
   (OURS).  EMHOK is not modelled.
 
-Goals of the root only (no shoen): a throw from inside a shoen is
-refused (rung M4).  The PE classes never change a single machine:
+- Rung M4, the shoen across PEs (docs/multi_pe.md 5, M4).  A shoen's
+  ID is a black export entry of its record (SHREC) on its home PE, its
+  WEC the negative of the WTC given out (VPIM: the WTC is the shoen's
+  weighted throw count; TM-1044 9).  A throw from a shoen gives
+  WTC_THROW = wtctu 0x400 and min(rsctu 0x1000, what is left) of
+  resource with the goal (Pseudo PIM/m PARAM, preferred to VPIM's
+  2^16/2^24 units: INFERENCE); while any WTC is out the shoen's goal
+  count holds 1 more, so it cannot terminate until every foster
+  parent's %terminated and every %return_wtc is back.  On the goal's
+  PE a FOSTER PARENT is made (VPIM f_Get_FP_Ptr): a record of the
+  shoen layout, parent 0, mask 0, report INT 0, with %ready {1, ID,
+  WTC, PE} to the shoen, which answers %supply_wtc (wtcsu 0x1000000;
+  %stop or %abort first if the shoen is stopped or ended).  The
+  foster parent throws on with its own WTC (asking %request_wtc when
+  it has less than 0x403, the goal queued), asks %request_resource
+  when its resource is out, forwards an exception as %exception {10,
+  ID, WTC, tag, number, Info, NewCode, NewArgv}, answers
+  %ask_statistics with %answer_statistics (its consumption), and ends
+  with %terminated {2, ID, PE, WTC, resource left, used}.  The shoen
+  broadcasts started/stopped/aborted as %start/%stop/%abort to its
+  live foster parents.  Consumption reported back is the shoen's
+  (reductions = used / 2).  OURS: abort at home ends the shoen at once
+  (as on one PE), late WTC just freeing the entry.
+
+The PE classes never change a single machine:
 pimm.Machine's behaviour on one PE is untouched (its run() calls the
 same goal_switch() this file calls).
 """
@@ -132,8 +159,14 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import pimm  # noqa: E402
 import pimm_gc  # noqa: E402
 from pimm import (INT, ATOM, REF, UNDF, HOOK, LIST, STRG, CDESC, VECT0,  # noqa: E402
-                  Unimplemented, sx16)
+                  SHREC, Unimplemented, sx16)
 from pimm_layout import G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS, SUSPENDED, TAKEN, HEAP  # noqa: E402
+from pimm_layout import (SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE,  # noqa: E402
+                         SH_REDUCTIONS, SH_REMOVE, SH_MASK, SH_RSC_HI, SH_RSC_LO,
+                         SH_RSC_FLAGS, RSC_REPORT_DISALLOWED, STARTED, STOPPED,
+                         TERMINATED, REMOVED, READY, REPORT_STARTED, REPORT_STOPPED,
+                         REPORT_ABORTED, REPORT_EXCEPTION, REPORT_RESOURCE_LOW,
+                         REPORT_STATISTICS_STARTED, REPORT_STATISTICS)
 
 # external cells and IDs (debugger/inspector/tagtbl.kl1): o = MRB off
 EXREF, EXREFx, EXVAL, EXVALx = 0x32, 0x33, 0x34, 0x35
@@ -150,11 +183,40 @@ KIND_NAMES = {M_THROW: 'throw', M_READ: 'read', M_ANSWER: 'answer_value',
 # where the arguments start in a %throw_goal packet (VPIM's fields 1-15),
 # and %unify's first argument (its fields 1-6 before it)
 THROW_ARGS = 15
+# code across PEs (rung M5, code fetch): a code or module word in the
+# heap goes as its module's number in the loaded order and the offset
+# in it, and the receiver finds its own copy of that module (PIM/m
+# sends the module's global identifier and fetches it, M92 pp. 430-431;
+# here every PE has every module, copied before the split, so the fetch
+# is a lookup: OURS).  Packet words only, never in memory; no PIM/m
+# byte format.
+CODE_ID, MODULE_ID = 0x1C0, 0x1C2
 UNIFY_ARG1 = 7
 LONG_VECT = VECT0 + 14
 # the WEC a black export gives each ID it sends (VPIM
 # D_EXPORT_WEC_UNIT; TR-390 7: 2^24)
 WEC_UNIT = 1 << 24
+# rung M4, the shoen across PEs: the console's codes (docs/multi_pe.md 1.1)
+M_READY, M_TERMINATED, M_START, M_STOP, M_ABORT = 1, 2, 3, 4, 5
+M_EXCEPTION = 10
+M_REQUEST_WTC, M_SUPPLY_WTC, M_RETURN_WTC = 14, 15, 16
+M_REQUEST_RSC, M_SUPPLY_RSC, M_RETURN_RSC = 17, 18, 19
+M_ASK_STAT, M_ANSWER_STAT = 20, 21
+KIND_NAMES.update({M_READY: 'ready', M_TERMINATED: 'terminated', M_START: 'start',
+                   M_STOP: 'stop', M_ABORT: 'abort', M_EXCEPTION: 'exception',
+                   M_REQUEST_WTC: 'request_wtc', M_SUPPLY_WTC: 'supply_wtc',
+                   M_RETURN_WTC: 'return_wtc', M_REQUEST_RSC: 'request_resource',
+                   M_SUPPLY_RSC: 'supply_resource', M_RETURN_RSC: 'return_resource',
+                   M_ASK_STAT: 'ask_statistics', M_ANSWER_STAT: 'answer_statistics'})
+# the WTC units: a thrown goal's (PIMM.PARAM wtctu 16'400; VPIM
+# _WTC_THROW_GOAL_UNIT 2^10), a supply's (wtcsu 16'1000000; VPIM
+# _SUPPLY_WTC_UNIT 2^24), a control message's (VPIM _SHOEN_WTC_UNIT 1),
+# and what a foster parent keeps back (VPIM _WTC_RESERVED, 1 + 2)
+WTC_THROW, WTC_SUPPLY, WTC_CONTROL, WTC_RESERVED = 0x400, 0x1000000, 1, 3
+# the resource units: a thrown goal's and a supply's (PIMM.PARAM rsctu
+# 16'1000, rscsu 16'10000; VPIM's are 2^16 and 2^24: the Pseudo PIM/m's
+# parameter file is preferred, docs/multi_pe.md 5, M4)
+RSC_THROW, RSC_SUPPLY = 0x1000, 0x10000
 
 
 def ext_id(pe, entry):
@@ -188,8 +250,24 @@ class PE(pimm.Machine):
         self.roots = {}             # words a bench holds: roots of the collector
         self.reading = {}           # reply export entry -> import entry
         self.collections = 0
+        # the loaded modules' descriptors, in the loaded order: a root of
+        # the collector (PIMOS's module table is one), moved by it
+        self.mods = list(system.mods)
+        self.mod_gid = {a: g for g, a in enumerate(self.mods)}
         self.heap_log = []          # get_heap_size: (size, used), in order
         self.paths = {}             # which paths ran, for the tests (not machine state)
+        # rung M4: a shoen of this PE with goals elsewhere -> {'e': its
+        # black export entry (the shoen ID), 'fps': {pe: %ready less
+        # %terminated}, 'adv': the resource out at its foster parents,
+        # 'stat': the answers each pending statistics waits for, 'req':
+        # the PEs whose resource request waits}
+        self.homes = {}
+        self.fps = {}               # shoen ID -> the foster parent's record here
+        self.fpi = {}               # foster parent record -> {'sid', 'wtc', 'given',
+        #                             'reported', 'wait_wtc', 'queued', 'req'}
+
+    def is_fp(self, sh):
+        return sh in self.fpi
 
     def ran(self, path):
         self.paths[path] = self.paths.get(path, 0) + 1
@@ -209,8 +287,27 @@ class PE(pimm.Machine):
 
     def i_unbound(self, pc, x, y, z, c16):
         v = self.deref(self.reg[x])
+        if self.is_ex(v) and self.mem[v[1]][0] & ~1 == EXVAL:
+            # an exported VALUE (a list, vector or string: EXVAL) is never
+            # a variable, so {X} at once, no message (OURS from the tag's
+            # meaning, TM-1044 9.2; rung M5, the Listener printing an
+            # answer whose cells are on other PEs)
+            self.ran('unbound/2 of an external value')
+            w, a = self.vnew(1)
+            self.mem[a] = v
+            self.reg[y] = w
+            return
         if self.is_ex(v):
-            raise Unimplemented('unbound/2 of an external reference (VPIM throws it to the owner)')
+            # an exported variable: as VPIM's kblt_b_unbound, the goal
+            # unbound(X, Result) is thrown to X's owner (the image's stub
+            # for the built-in, pimm_stubs), which answers there; Result
+            # is a fresh variable here, bound by that PE's %unify
+            self.ran('unbound/2 thrown to the owner')
+            r = self.new_var()
+            k = id_pe(self.imports[self.mem[v[1]][1]]['id'])
+            self.throw(k, self.stubs['unbound']['addr'], [v, r])
+            self.reg[y] = r
+            return
         if self.unbound(v):
             w, a = self.vnew(3)
             self.mem[a], self.mem[a + 1], self.mem[a + 2] = (INT, self.pe), (INT, v[1]), v
@@ -240,7 +337,7 @@ class PE(pimm.Machine):
         self.system.log.append(('ask', self.pe))
         return pimm.Machine.i_collect_garbage(self, pc, x, y, z, c16)
 
-    def goal_switch(self, limit):
+    def goal_switch_gc(self, limit):
         if self.gc_request:
             self.collections += 1
             self.system.log.append(('gc', self.pe))
@@ -272,8 +369,10 @@ class PE(pimm.Machine):
             raise Unimplemented('enqueue_goal_to_processor, %d arguments' % n)
         code = pc + 2 + sx16(c16)
         if k == self.pe:
+            self.system.placed.append((self.pe, self.pe, code))
             self.record(pimm.READY, code, self.argv[1:n + 1])
         else:
+            self.system.placed.append((self.pe, k, code))
             self.throw(k, code, self.argv[1:n + 1])
         return pc + 2
 
@@ -286,8 +385,10 @@ class PE(pimm.Machine):
         k = self.node_number(w)
         code = self.reg[y][1] - self.load
         if k == self.pe:
+            self.system.placed.append((self.pe, self.pe, code))
             self.record(pimm.READY, code, self.reg[:z])
         else:
+            self.system.placed.append((self.pe, k, code))
             self.throw(k, code, self.reg[:z])
         return None
 
@@ -295,19 +396,450 @@ class PE(pimm.Machine):
     def send(self, dst, packet):
         self.system.send(self.pe, dst, packet)
 
-    def throw(self, k, code, args):
-        if self.shoen:
-            raise Unimplemented('a goal thrown from inside a shoen (rung M4)')
-        if self.collections and code >= HEAP:
-            raise Unimplemented('a goal thrown after a collection moved its module (rung M5)')
-        packet = [(INT, M_THROW), (INT, 0), (INT, 0), (INT, 0), (INT, 0), (INT, 0),
+    def throw(self, k, code, args, sh=None):
+        """%throw_goal of code(args) to PE k, a goal of shoen sh (the
+        current one if None).  From inside a shoen (rung M4) it carries
+        the shoen ID, WTC and resource (VPIM f_Send_IntClMsg_
+        ThrowGoal_Sub): from the shoen's own PE, WTC_THROW of WTC newly
+        given out by its export entry and RSC_THROW of the resource not
+        yet out; from a foster parent, WTC_THROW of its own WTC (with
+        less than WTC_THROW + WTC_RESERVED the goal waits for
+        %supply_wtc, counted as one of the foster parent's children,
+        f_ThrowGoalMsgSusp) and RSC_THROW of its resource left, or what
+        there is."""
+        sh = self.shoen if sh is None else sh
+        sid = wtc = rsc = 0
+        if sh and self.is_fp(sh):
+            fp = self.fpi[sh]
+            if fp['wtc'] < WTC_THROW + WTC_RESERVED:
+                self.ran('throw waits for WTC')
+                fp['queued'].append((k, code, list(args)))
+                self.mem[sh + SH_COUNT] = (INT, self.mem[sh + SH_COUNT][1] + 1)
+                if not fp['wait_wtc']:
+                    fp['wait_wtc'] = True
+                    self.fp_send(sh, M_REQUEST_WTC, [(INT, self.pe)])
+                return
+            fp['wtc'] -= WTC_THROW
+            sid, wtc = fp['sid'], WTC_THROW
+            left = self.rsc_left(sh)
+            rsc = min(RSC_THROW, max(left, 0))
+            self.set_rsc_left(sh, left - rsc)
+            fp['given'] -= rsc
+            self.ran('throw from a foster parent')
+        elif sh:
+            h = self.home_of(sh)
+            rsc = min(RSC_THROW, max(self.rsc_left(sh) - h['adv'], 0))
+            h['adv'] += rsc
+            sid, wtc = self.mint(sh, WTC_THROW), WTC_THROW
+            self.ran('throw from a shoen')
+        packet = [(INT, M_THROW), (INT, sid), (INT, wtc), (INT, 0), (INT, 0), (INT, rsc),
                   (INT, 0), (INT, 0), (INT, self.system.n), (INT, 0),
-                  (pimm.COD, self.load + code), (INT, 0), (INT, 0), (INT, 0),
+                  self.code_out(pimm.COD, self.load + code), (INT, 0), (INT, 0), (INT, 0),
                   (INT, len(args))]
         assert len(packet) == THROW_ARGS
         for a in args:
             packet += self.level0(a, k)
         self.send(k, packet)
+
+    # ---- the shoen across PEs (rung M4) --------------------------------
+    def home_of(self, sh):
+        """The table of a shoen of this PE with goals elsewhere: made at
+        its first throw, with its ID, a black export entry of its record
+        (VPIM: "荘園ＩＤ (黒輸出表エントリのオフセット)",
+        f_int_cl_recv_throw_goal.psl.c), whose WEC is the WTC given out
+        (TR-390 7; VPIM f_AddWTCWithReclaimExpEntryAndShoenTerminate_Sub:
+        the shoen terminates when it is all back).  While any is out the
+        shoen counts one more child (OURS: so that pimm.py's count, its
+        end at 0 and its report are the one-PE code), and the entry, a
+        root of the collector, holds the record."""
+        h = self.homes.get(sh)
+        if h is None:
+            e = self.next_export
+            self.next_export += 1
+            w = (SHREC, sh)
+            self.exports[e] = w
+            self.wec[e] = 0
+            self.black[key(w)] = e
+            h = self.homes[sh] = {'e': e, 'fps': {}, 'adv': 0, 'stat': [], 'req': []}
+            self.mem[sh + SH_COUNT] = (INT, self.mem[sh + SH_COUNT][1] + 1)
+            self.system.log.append(('shoen out', self.pe, sh))
+        return h
+
+    def mint(self, sh, n):
+        """n of WTC given out by shoen sh's entry; its ID."""
+        h = self.home_of(sh)
+        self.wec[h['e']] -= n
+        return ext_id(self.pe, h['e'])
+
+    def free_export(self, e):
+        w = self.exports[e]
+        self.free_entry(e)
+        if w[0] == SHREC:
+            self.shoen_back(w[1])
+
+    def shoen_back(self, sh):
+        """All of shoen sh's WTC is back: no goal or message of it is
+        anywhere else.  The child it counted for that ends (unless an
+        abort ended the shoen already)."""
+        h = self.homes.pop(sh)
+        self.system.log.append(('shoen back', self.pe, sh))
+        if h['adv'] or any(h['fps'].values()) or h['stat'] or h['req']:
+            self.system.anomalies.append(('shoen back with', self.pe, sh, h))
+        if self.mem[sh + SH_STATUS][1] not in (TERMINATED, REMOVED):
+            self.ended(sh, 0)
+
+    def home_shoen(self, sid):
+        """The shoen record of an ID of this PE's."""
+        e = id_entry(sid)
+        w = self.exports.get(e)
+        if w is None or w[0] != SHREC:
+            raise Unimplemented('a shoen ID %x of no shoen here' % sid)
+        return e, w[1]
+
+    def to_fps(self, sh, kind, extra=()):
+        """A control message to every foster parent of shoen sh (VPIM
+        f_Send_IntClMsg_ToAllFPs), each with WTC_CONTROL newly given
+        out; the PEs it went to."""
+        h = self.homes.get(sh)
+        live = sorted(k for k, n in (h['fps'].items() if h else ()) if n)
+        for k in live:
+            self.to_fp(sh, k, kind, extra)
+        return live
+
+    def to_fp(self, sh, k, kind, extra=(), wtc=WTC_CONTROL):
+        sid = self.mint(sh, wtc)
+        self.send(k, [(INT, kind), (INT, sid), (INT, wtc)] + list(extra))
+
+    def fp_send(self, fp, kind, extra, wtc=WTC_CONTROL):
+        """A message of foster parent fp to its shoen, with wtc of its
+        WTC (VPIM: every message to the shoen carries some)."""
+        info = self.fpi[fp]
+        if info['wtc'] < wtc:
+            raise Unimplemented('a foster parent with no WTC for a message (VPIM suspends it)')
+        info['wtc'] -= wtc
+        self.send(id_pe(info['sid']), [(INT, kind), (INT, info['sid']), (INT, wtc)] + list(extra))
+
+    def new_fp(self, sid):
+        """A foster parent for the shoen of ID sid, here (VPIM f_Get_FP_Ptr,
+        f_InitFPSlots: started, child count 0, the goal's resource;
+        manual e-shoen.tex:304 "a new shoen is created on the goal's
+        destination node"): a record of the shoen's layout, its parent
+        0 so that it is the top of this PE's chain, its mask 0 (an
+        exception goes to the shoen), and %ready to the shoen."""
+        fp = self.alloc(SH_SIZE)
+        for i, w in ((SH_COUNT, 0), (SH_STATUS, STARTED), (SH_PARENT, 0), (SH_REPORT, 0),
+                     (SH_GOAL, 0), (SH_REDUCTIONS, 0), (SH_REMOVE, 0), (SH_MASK, 0),
+                     (SH_RSC_HI, 0), (SH_RSC_LO, 0), (SH_RSC_FLAGS, 0)):
+            self.mem[fp + i] = (INT, w)
+        self.fps[sid] = fp
+        # wait_wtc: the shoen answers %ready with %supply_wtc (VPIM
+        # f_ShoenReceiveReady), so it is as if asked (INFERENCE)
+        self.fpi[fp] = {'sid': sid, 'wtc': 0, 'given': 0, 'reported': 0,
+                        'wait_wtc': True, 'queued': [], 'req': False}
+        self.system.log.append(('fp', self.pe, sid))
+        return fp
+
+    def fp_end(self, fp):
+        """Foster parent fp terminates (VPIM f_FPTerminateWithUnlockFP_Sub):
+        %terminated with all its WTC, the resource it has left and what
+        it consumed not yet reported; it is TERMINATED (a goal of it met
+        later is discarded) and forgotten."""
+        info = self.fpi.pop(fp)
+        del self.fps[info['sid']]
+        self.mem[fp + SH_STATUS] = (INT, TERMINATED)
+        left = max(self.rsc_left(fp), 0)
+        used = info['given'] - left - info['reported']
+        if info['queued']:
+            self.ran('aborted foster parent drops a waiting throw')
+        self.system.log.append(('fp end', self.pe, info['sid']))
+        self.send(id_pe(info['sid']),
+                  [(INT, M_TERMINATED), (INT, info['sid']), (INT, self.pe), (INT, info['wtc']),
+                   (INT, left >> 32), (INT, left & 0xffffffff),
+                   (INT, used >> 32), (INT, used & 0xffffffff)])
+
+    def terminate(self, sh):
+        if self.is_fp(sh):
+            return self.fp_end(sh)
+        if self.mem[sh + SH_REPORT][0] == INT:
+            # a foster parent already ended by %abort: a child shoen of it
+            # ending cannot reach here (its goals are discarded)
+            raise Unimplemented('a foster parent ended twice')
+        return pimm.Machine.terminate(self, sh)
+
+    def report(self, sh, code, car=None):
+        if self.is_fp(sh):
+            if code != REPORT_RESOURCE_LOW:
+                raise Unimplemented('a report %r to a foster parent' % (code,))
+            # its resource is out (taken_check): ask the shoen (VPIM
+            # f_FPRequestResource_Sub)
+            info = self.fpi[sh]
+            if not info['req']:
+                info['req'] = True
+                self.ran('foster parent asks for resource')
+                self.fp_send(sh, M_REQUEST_RSC, [(INT, self.pe)])
+            return
+        pimm.Machine.report(self, sh, code, car)
+        if sh in self.homes:
+            kind = {REPORT_STARTED: M_START, REPORT_STOPPED: M_STOP,
+                    REPORT_ABORTED: M_ABORT}.get(code)
+            if kind is not None and self.to_fps(sh, kind):
+                self.ran('%s to the foster parents' % KIND_NAMES[kind])
+
+    def charge(self, sh, used):
+        """Resource a foster parent of shoen sh consumed: half of it the
+        shoen's reductions (2 a reduction, manual e-shoen.tex:42), all of
+        it taken from the shoen and those above it, as pimm.py
+        end_reduction takes a local goal's."""
+        if used:
+            self.mem[sh + SH_REDUCTIONS] = (INT, self.mem[sh + SH_REDUCTIONS][1] + (used >> 1) & 0xffffffff)
+            for s in self.chain_of(sh):
+                self.set_rsc_left(s, self.rsc_left(s) - used)
+
+    def avail(self, sh):
+        return self.rsc_left(sh) - self.homes[sh]['adv']
+
+    def supply(self, sh):
+        """Answer the resource requests of shoen sh's foster parents while
+        it has a supply unit not yet out (VPIM
+        f_Send_IntClMsg_SupplyResource_ToResourceRequestFPs_Sub); with
+        none, resource_low to the shoen once (VPIM
+        f_ReplicateSupplyResourceDestinations: when its reports are
+        allowed), so that its monitor may add some."""
+        h = self.homes[sh]
+        while h['req'] and self.avail(sh) >= RSC_SUPPLY:
+            k = h['req'].pop(0)
+            h['adv'] += RSC_SUPPLY
+            self.ran('resource supplied')
+            self.to_fp(sh, k, M_SUPPLY_RSC)
+        if h['req'] and not self.mem[sh + SH_RSC_FLAGS][1] & RSC_REPORT_DISALLOWED \
+                and self.mem[sh + SH_STATUS][1] == STARTED:
+            self.mem[sh + SH_RSC_FLAGS] = (INT, self.mem[sh + SH_RSC_FLAGS][1] | RSC_REPORT_DISALLOWED)
+            self.ran('resource_low for a foster parent')
+            pimm.Machine.report(self, sh, REPORT_RESOURCE_LOW)
+
+    def i_shoen_statistics(self, pc, x, y, z, c16):
+        """pimm.py's, and with foster parents (VPIM f_ShoenStatistics_Sub):
+        10 at once, %ask_statistics to each, and {9, H, L} when every
+        one has answered with what it consumed."""
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('shoen_statistics(%r)' % (h,))
+            sh = h[1]
+            ho = self.homes.get(sh)
+            pimm.Machine.report(self, sh, REPORT_STATISTICS_STARTED)
+            live = self.to_fps(sh, M_ASK_STAT) if ho else []
+            if live:
+                self.ran('statistics asked of the foster parents')
+                ho['stat'].append(len(live))
+            else:
+                self.report_statistics(sh)
+            return [h]
+        self.builtin('shoen_statistics', [x, y], f)
+
+    def report_statistics(self, sh):
+        red = self.mem[sh + SH_REDUCTIONS][1]
+        self.report3(sh, REPORT_STATISTICS, red >> 31, red << 1)
+
+    def exception(self, num, tag, b, c):
+        """pimm.py's, Info's Pe this PE; from inside a foster parent
+        before any shoen here accepts it, %exception to the shoen
+        (VPIM f_Send_IntClMsg_Exception: kind, shoen ID, WTC, the type,
+        the number, Info, NewCode, NewArgv), where the innermost shoen
+        from it up that accepts it is reported to."""
+        target = fp = 0
+        for sh in self.chain_of(self.shoen):
+            if self.is_fp(sh):
+                fp = sh
+                break
+            if self.mem[sh + SH_MASK][1] & tag:
+                target = sh
+                break
+        if not target and not fp:
+            raise Unimplemented('an exception (tag %x) no shoen accepts' % tag)
+        nc, na = self.new_var(), self.new_var()
+        self.record(READY, self.stubs['apply']['addr'], [nc, na])
+        if callable(c):
+            c = c()
+        info = self.alloc(3)
+        self.mem[info] = (INT, self.pe)
+        self.mem[info + 1] = b
+        self.mem[info + 2] = c
+        if target:
+            self.exception_report(target, num, (VECT0 + 6, info), nc, na)
+            return
+        self.ran('exception to the shoen')
+        home = id_pe(self.fpi[fp]['sid'])
+        self.fp_send(fp, M_EXCEPTION, [(INT, tag), (INT, num)] + self.level0((VECT0 + 6, info), home)
+                     + self.level0(nc, home) + self.level0(na, home))
+
+    def exception_report(self, target, num, info, nc, na):
+        m = self.alloc(5)
+        self.mem[m] = (INT, REPORT_EXCEPTION)
+        self.mem[m + 1] = (INT, num)
+        self.mem[m + 2] = info
+        self.mem[m + 3] = nc
+        self.mem[m + 4] = na
+        pimm.Machine.report(self, target, None, car=(VECT0 + 10, m))
+
+    def goal_switch(self, limit):
+        # resource that came back (or was added) answers a waiting request
+        for sh in [s for s, h in self.homes.items() if h['req']]:
+            if self.avail(sh) >= RSC_SUPPLY:
+                self.supply(sh)
+        return self.goal_switch_gc(limit)
+
+    def receive_goal(self, packet, code, args):
+        """A thrown goal: of the root; of a shoen of this PE (it is the
+        shoen's again, its WTC and resource back); else of the foster
+        parent of its shoen here, made if there is none (VPIM
+        f_Recv_IntClMsg_Throw_Goal_Sub, f_Get_FP_Ptr)."""
+        sid, wtc, rsc = packet[1][1], packet[2][1], packet[5][1]
+        if not sid:
+            self.record(pimm.READY, code, args)
+            return
+        if id_pe(sid) == self.pe:
+            self.ran('goal came home to its shoen')
+            e, sh = self.home_shoen(sid)
+            self.homes[sh]['adv'] -= rsc
+            self.record(pimm.READY, code, args, shoen=sh)
+            self.mem[sh + SH_COUNT] = (INT, self.mem[sh + SH_COUNT][1] + 1)
+            self.give_back(e, wtc)
+            return
+        fp = self.fps.get(sid)
+        if fp is None:
+            fp = self.new_fp(sid)
+            self.fpi[fp]['wtc'] = wtc
+            self.fp_send(fp, M_READY, [(INT, self.pe)])
+        else:
+            self.ran('goal to a foster parent')
+            self.fpi[fp]['wtc'] += wtc
+        self.fpi[fp]['given'] += rsc
+        self.set_rsc_left(fp, self.rsc_left(fp) + rsc)
+        self.record(pimm.READY, code, args, shoen=fp)
+        self.mem[fp + SH_COUNT] = (INT, self.mem[fp + SH_COUNT][1] + 1)
+
+    def receive_shoen(self, src, kind, packet):
+        """The shoen and foster-parent messages (rung M4)."""
+        sid, wtc = packet[1][1], packet[2][1]
+        if id_pe(sid) == self.pe:                       # to the shoen
+            e, sh = self.home_shoen(sid)
+            h = self.homes[sh]
+            self.event('N %s %d %d' % (KIND_NAMES[kind], src, e))
+            if kind == M_READY:
+                h['fps'][src] = h['fps'].get(src, 0) + 1
+                st = self.mem[sh + SH_STATUS][1]
+                if st == STOPPED:
+                    self.ran('ready while stopped')
+                    self.to_fp(sh, src, M_STOP)
+                elif st in (TERMINATED, REMOVED):
+                    self.ran('ready while aborted')
+                    self.to_fp(sh, src, M_ABORT)
+                self.to_fp(sh, src, M_SUPPLY_WTC, wtc=WTC_SUPPLY)
+                self.give_back(e, wtc)
+            elif kind == M_TERMINATED:
+                wtc = packet[3][1]
+                left = packet[4][1] << 32 | packet[5][1]
+                used = packet[6][1] << 32 | packet[7][1]
+                h['fps'][src] -= 1
+                h['adv'] -= left + used
+                self.charge(sh, used)
+                if src in h['req'] and not h['fps'][src]:
+                    h['req'] = [k for k in h['req'] if k != src]
+                self.give_back(e, wtc)
+            elif kind == M_REQUEST_WTC:
+                self.to_fp(sh, src, M_SUPPLY_WTC, wtc=WTC_SUPPLY)
+                self.give_back(e, wtc)
+            elif kind == M_RETURN_WTC:
+                self.give_back(e, wtc)
+            elif kind == M_REQUEST_RSC:
+                h['req'].append(src)
+                self.supply(sh)
+                self.give_back(e, wtc)
+            elif kind == M_RETURN_RSC:
+                h['adv'] -= packet[3][1] << 32 | packet[4][1]
+                self.give_back(e, wtc)
+            elif kind == M_ANSWER_STAT:
+                used = packet[3][1] << 32 | packet[4][1]
+                h['adv'] -= used
+                self.charge(sh, used)
+                h['stat'][0] -= 1
+                if not h['stat'][0]:
+                    h['stat'].pop(0)
+                    self.ran('statistics answered')
+                    self.report_statistics(sh)
+                self.give_back(e, wtc)
+            elif kind == M_EXCEPTION:
+                tag, num = packet[3][1], packet[4][1]
+                info, i = self.get0(packet, 5)
+                nc, i = self.get0(packet, i)
+                na, i = self.get0(packet, i)
+                target = 0
+                for s in self.chain_of(sh):
+                    if self.mem[s + SH_MASK][1] & tag:
+                        target = s
+                        break
+                if not target:
+                    raise Unimplemented('an exception (tag %x) no shoen accepts' % tag)
+                self.exception_report(target, num, info, nc, na)
+                self.give_back(e, wtc)
+            else:
+                raise Unimplemented('message kind %d to a shoen' % kind)
+            return
+        fp = self.fps.get(sid)                          # to a foster parent
+        self.event('N %s %d %x' % (KIND_NAMES[kind], src, sid))
+        if fp is None:
+            # none here now (it terminated): the WTC goes back (VPIM
+            # f_Recv_IntClMsg_*_Sub "No FP... WTC return"), a supply of
+            # resource with it, statistics answered 0 (2.4.2)
+            self.ran('no foster parent for %s' % KIND_NAMES[kind])
+            back = [(INT, M_RETURN_WTC), (INT, sid), (INT, wtc), (INT, self.pe)]
+            if kind == M_SUPPLY_RSC:
+                back = [(INT, M_RETURN_RSC), (INT, sid), (INT, wtc), (INT, 0), (INT, RSC_SUPPLY),
+                        (INT, self.pe)]
+            elif kind == M_ASK_STAT:
+                back = [(INT, M_ANSWER_STAT), (INT, sid), (INT, wtc), (INT, 0), (INT, 0),
+                        (INT, self.pe)]
+            self.send(id_pe(sid), back)
+            return
+        info = self.fpi[fp]
+        info['wtc'] += wtc
+        st = self.mem[fp + SH_STATUS][1]
+        if kind == M_START:
+            if st == STOPPED:
+                self.mem[fp + SH_STATUS] = (INT, STARTED)
+                self.release(fp)
+        elif kind == M_STOP:
+            if st == STARTED:
+                self.mem[fp + SH_STATUS] = (INT, STOPPED)
+        elif kind == M_ABORT:
+            # VPIM f_FPReceiveAbort: aborted, its stopped goals freed; it
+            # ends now (OURS, as pimm.py's abort ends the shoen at once;
+            # VPIM ends it at its next goal's end): its goals met later
+            # are discarded (taken_check)
+            self.ran('foster parent aborted')
+            self.fp_end(fp)
+        elif kind == M_SUPPLY_WTC:
+            info['wait_wtc'] = False
+            queued, info['queued'] = info['queued'], []
+            for k, code, args in queued:
+                self.ran('throw sent with the WTC supplied')
+                self.throw(k, code, args, sh=fp)
+                if fp in self.fpi:
+                    self.ended(fp, 0)               # the goal it counted is gone
+        elif kind == M_SUPPLY_RSC:
+            info['req'] = False
+            info['given'] += RSC_SUPPLY
+            self.set_rsc_left(fp, self.rsc_left(fp) + RSC_SUPPLY)
+            self.mem[fp + SH_RSC_FLAGS] = (INT, self.mem[fp + SH_RSC_FLAGS][1] & ~RSC_REPORT_DISALLOWED)
+            if st == STARTED and self.rsc_left(fp) > 0:
+                self.release(fp)
+        elif kind == M_ASK_STAT:
+            used = info['given'] - self.rsc_left(fp) - info['reported']
+            info['reported'] += used
+            self.fp_send(fp, M_ANSWER_STAT, [(INT, used >> 32), (INT, used & 0xffffffff),
+                                             (INT, self.pe)])
+        else:
+            raise Unimplemented('message kind %d to a foster parent' % kind)
 
     def is_ex(self, d):
         """d (dereferenced) is a reference to an external cell."""
@@ -332,7 +864,7 @@ class PE(pimm.Machine):
             self.wec[e] -= WEC_UNIT
         return ext_id(self.pe, e)
 
-    def free_export(self, e):
+    def free_entry(self, e):
         w = self.exports.pop(e)
         if e in self.wec:
             del self.wec[e]
@@ -416,6 +948,12 @@ class PE(pimm.Machine):
         t, mrb = d[0] & ~1, d[0] & 1
         if t in (INT, ATOM, VECT0):
             return [(t, d[1])]
+        if t in (pimm.COD, pimm.MOD):
+            # code, or a module, as the thrown goal's code goes (rung M4:
+            # prof's apply_with_pgm(Code, ArgV)@node(Node)): by its
+            # module's number if it is in the heap (code_out)
+            self.ran('code sent')
+            return [self.code_out(t, d[1])]
         if self.is_ex(d):
             return self.forward(d, mrb, dst)
         if self.unbound(d):
@@ -433,7 +971,7 @@ class PE(pimm.Machine):
         """The words of a message for w at level 1."""
         d = self.deref(w)
         t = d[0] & ~1
-        if self.unbound(d) or t in (INT, ATOM, VECT0):
+        if self.unbound(d) or t in (INT, ATOM, VECT0, pimm.COD, pimm.MOD):
             return self.level0(d, dst)
         self.ran('level 1 %s' % ('list' if t == LIST else 'string' if t == STRG
                                  else 'long vector' if t == LONG_VECT else 'vector'))
@@ -526,12 +1064,130 @@ class PE(pimm.Machine):
         self.nsusp += 1
         self.hook(g, d[1])
 
+    def module_base(self, tag, a):
+        """The module descriptor of a code word (the predicate head two
+        cells before it holds the offset back to it, as pimm.py
+        i_code_to_predicate and pimm_gc read it) or of a module word."""
+        if tag == pimm.MOD:
+            return a
+        h = self.mem[a - 2]
+        if h[0] != pimm.PREDH:
+            raise Unimplemented('code at %x has no predicate head' % a)
+        return a - 2 - (h[1] & 0xffffff)
+
+    def module_id(self, base):
+        """The global number of the module at base here: its place in
+        the loaded order, or, for one made here later (a compiled
+        module), the next number, given at its first send (OURS)."""
+        g = self.mod_gid.get(base)
+        if g is None:
+            g = len(self.system.mod_home)
+            self.system.mod_home.append(self.pe)
+            self.mods += [None] * (g + 1 - len(self.mods))
+            self.mods[g] = base
+            self.mod_gid[base] = g
+            self.ran('module numbered')
+        return g
+
+    def code_out(self, tag, a):
+        """A code (COD) or module (MOD) word at address a as a message
+        sends it: in the image as it is; in the heap as {CODE_ID or
+        MODULE_ID, module number << 24 | offset} (CODE_ID above)."""
+        if a - self.load < HEAP:
+            return (tag, a)
+        base = self.module_base(tag, a)
+        g = self.module_id(base)
+        self.ran('code sent by its module')
+        return (CODE_ID if tag == pimm.COD else MODULE_ID, g << 24 | (a - base))
+
+    def code_in(self, w):
+        """The word here for a code or module word of a message: this
+        PE's copy of the module, fetched if it has none."""
+        if w[0] in (pimm.COD, pimm.MOD):
+            return w
+        g = w[1] >> 24
+        base = self.mods[g] if g < len(self.mods) else None
+        if base is None:
+            base = self.fetch(g)
+        return (pimm.COD if w[0] == CODE_ID else pimm.MOD, base + (w[1] & 0xffffff))
+
+    def fetch(self, g):
+        """Module g copied here from the PE that numbered it (PIM/m
+        fetches a module by its global identifier, M92 pp. 430-431; here
+        the copy is made at once, without messages: OURS).  Its cells
+        are copied word by word; what they point at outside the module
+        (its constants: strings, vectors, lists, the cells of its calls
+        to other modules) is copied with it, sharing kept; a call cell
+        still unbound is a fresh variable here (linked here when first
+        called); a code or module word is this PE's copy of that
+        module."""
+        src = self.system.pes[self.system.mod_home[g]]
+        a = src.mods[g]
+        n = src.mem[a][1] & 0xffffff
+        new = self.alloc(n + 1)
+        self.mods += [None] * (g + 1 - len(self.mods))
+        self.mods[g] = new
+        self.mod_gid[new] = g
+        memo = {}
+        self.mem[new] = src.mem[a]
+        for i in range(1, n + 1):
+            self.mem[new + i] = self.copy_from(src, src.mem[a + i], memo)
+        self.system.log.append(('fetch', self.pe, g))
+        self.ran('module fetched')
+        return new
+
+    def copy_from(self, src, w, memo):
+        """The word w of PE src's memory as a word here (fetch)."""
+        t, v = w
+        k = t & ~1 if t < 0x20 else t
+        if k in (INT, ATOM, UNDF, VECT0) or t in (0x22, 0x23, pimm.PREDH, pimm.FLT):
+            return w
+        if t in (pimm.MOD, pimm.COD):
+            base = src.module_base(t, v)
+            g = src.module_id(base)
+            here = self.mods[g] if g < len(self.mods) and self.mods[g] is not None else self.fetch(g)
+            return (t, here + (v - base))
+        if k == REF:
+            if v not in memo:
+                c = src.mem[v]
+                memo[v] = a = self.alloc(1)
+                self.mem[a] = (UNDF, 0) if c[0] & ~1 == UNDF else self.copy_from(src, c, memo)
+            return (t, memo[v])
+        if k == LIST:
+            return (t, self.copy_block(src, v, 2, memo))
+        if VECT0 + 2 <= k <= VECT0 + 12:
+            return (t, self.copy_block(src, v, (k - VECT0) // 2, memo))
+        if k == LONG_VECT:
+            return (t, self.copy_block(src, v, 3 + src.mem[v + 1][1], memo, head=3))
+        if k == STRG:
+            if v not in memo:
+                n = (src.mem[v][1] & 0xffffff) + 1
+                memo[v] = a = self.alloc(n)
+                for i in range(n):
+                    self.mem[a + i] = src.mem[v + i]
+            return (t, memo[v])
+        raise Unimplemented('fetching a module: a word with tag %02x' % t)
+
+    def copy_block(self, src, v, n, memo, head=0):
+        if v in memo:
+            return memo[v]
+        memo[v] = a = self.alloc(n)
+        for i in range(n):
+            c = src.mem[v + i]
+            if i < head:
+                self.mem[a + i] = (c[0], a + 3) if c[0] == pimm.VDESC else c
+            else:
+                self.mem[a + i] = self.copy_from(src, c, memo)
+        return a
+
     # ---- receiving -----------------------------------------------------
     def get0(self, pk, i):
         """A level-0 word of a message at pk[i]: (the word here, next i)."""
         w = pk[i]
         if w[0] & ~1 in (INT, ATOM, VECT0):
             return w, i + 1
+        if w[0] in (pimm.COD, pimm.MOD, CODE_ID, MODULE_ID):
+            return self.code_in(w), i + 1
         if w[0] in EX_TAGS:
             black = w[0] & 1
             wec, j = (pk[i + 1][1], i + 2) if black else (None, i + 1)
@@ -610,16 +1266,16 @@ class PE(pimm.Machine):
         self.shoen = 0              # a message is decoded at the root
         try:
             if kind == M_THROW:
-                if self.collections and packet[10][1] - self.load >= HEAP:
-                    raise Unimplemented('a goal thrown to a PE whose modules a collection moved (rung M5)')
                 n = packet[THROW_ARGS - 1][1]
-                code = packet[10][1] - self.load
+                code = self.code_in(packet[10])[1] - self.load
                 args, i = [], THROW_ARGS
                 for _ in range(n):
                     a, i = self.get0(packet, i)
                     args.append(a)
-                self.record(pimm.READY, code, args)
+                self.receive_goal(packet, code, args)
                 self.event('N throw %d %d' % (src, code))
+            elif kind in KIND_NAMES and kind not in (M_READ, M_ANSWER, M_RELEASE, M_UNIFY):
+                self.receive_shoen(src, kind, packet)
             elif kind == M_UNIFY:
                 w = packet[UNIFY_ARG1]
                 e = self.own_entry(w, 'unify')
@@ -766,10 +1422,29 @@ class PECollector(pimm_gc.Collector):
 
     def more_roots(self):
         pe = self.m
+        # rung M5: the loaded modules are roots (PIMOS's module table;
+        # VPIM's collector, f_GCPreProcedure_Sub, keeps the code area),
+        # so a goal thrown here later finds its module (code_in)
+        pe.mods = [a and self.module(a) for a in pe.mods]
+        if pe.mods:
+            pe.ran('modules kept at a collection')
+        pe.mod_gid = {a: g for g, a in enumerate(pe.mods) if a}
         for e in sorted(pe.exports):
             pe.exports[e] = self.word(pe.exports[e])
         for k in sorted(pe.roots):
             pe.roots[k] = self.word(pe.roots[k])
+        # rung M4: the foster parents (VPIM's collector: one of its roots,
+        # f_GCPreProcedure_Sub), each with the goals that wait for WTC
+        fpi = {}
+        for fp in sorted(pe.fpi):
+            info = pe.fpi[fp]
+            info['queued'] = [(k, self.code(pe.load + c) - pe.load, [self.word(a) for a in args])
+                              for k, c, args in info['queued']]
+            fpi[self.shoen(fp)] = info
+        pe.fpi = fpi
+        pe.fps = {info['sid']: fp for fp, info in fpi.items()}
+        # a shoen with goals elsewhere: its record is held by its entry
+        pe.homes = {pe.exports[h['e']][1]: h for h in pe.homes.values()}
 
     def after_scan(self):
         pe = self.m
@@ -801,6 +1476,29 @@ class PECollector(pimm_gc.Collector):
 PE.Collector = PECollector
 
 
+def shoen_accounting(system):
+    """At quiescence: every shoen with goals elsewhere has its WTC
+    (its entry's WEC = minus what its foster parents hold), its
+    resource out and its foster parents accounted for; what is not."""
+    s, bad = system, []
+    if any(s.queues.values()):
+        return [('messages in flight',)]
+    for pe in s.pes:
+        for sh, h in pe.homes.items():
+            sid = ext_id(pe.pe, h['e'])
+            fps = [(o.pe, o.fpi[o.fps[sid]]) for o in s.pes if sid in o.fps]
+            held = sum(i['wtc'] for _k, i in fps)
+            if pe.wec[h['e']] + held:
+                bad.append(('WTC not accounted for', pe.pe, pe.wec[h['e']], held))
+            out = sum(i['given'] - i['reported'] for _k, i in fps)
+            if h['adv'] != out:
+                bad.append(('resource out', pe.pe, h['adv'], out))
+            live = sorted(k for k, n in h['fps'].items() if n)
+            if live != sorted(k for k, _i in fps):
+                bad.append(('foster parents known', pe.pe, live, [k for k, _i in fps]))
+    return bad
+
+
 def dumps(machine):
     """The machine pickled with longrun_ipl's pickler (its memory and
     registers trace their writes through .machine)."""
@@ -821,6 +1519,14 @@ class System:
         self.pes = []
         for k in range(n):
             m = pickle.loads(blob)
+            if not k:
+                # the loaded modules, in the loaded order (lockstep_xmod
+                # loaded: their descriptors above the image, ascending)
+                self.mods = sorted(a for a, c in m.mem.items()
+                                   if a >= m.load + HEAP and c[0] == pimm.CDESC and c[1] >> 24 == 6)
+                # the PE that numbered each module made after the split (None:
+                # the loaded ones, on every PE)
+                self.mod_home = [None] * len(self.mods)
             m.__class__ = PE
             m.setup(self, k)
             self.pes.append(m)
@@ -828,6 +1534,7 @@ class System:
         self.log = []               # ('gc', pe), ('ask', pe), ('send', kind, src, dst), in order
         self.sent = {}              # kind -> count
         self.anomalies = []         # what a check must find empty
+        self.placed = []            # (PE, the node it is made on or sent to, code) of each @node goal
 
     def send(self, src, dst, packet):
         self.queues[(src, dst)].append(packet)
@@ -842,11 +1549,14 @@ class System:
                 while q:
                     pe.receive(s, q.popleft())
 
-    def run(self, quota=1, limit=10 ** 8):
+    def run(self, quota=1, limit=10 ** 8, rounds=None):
         """Run every PE until no PE has a goal and no message is in
-        flight.  Returns the goal switches each PE made."""
+        flight (or for `rounds` turns of every PE, a bench's way to act
+        while the system runs).  Returns the goal switches each PE made."""
         switches = [0] * self.n
-        while True:
+        while rounds is None or rounds > 0:
+            if rounds is not None:
+                rounds -= 1
             busy = False
             for pe in self.pes:
                 for _ in range(quota):
