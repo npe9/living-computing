@@ -65,6 +65,18 @@
 ! second product is 2**32 - 2**16, bit 32 of the sum is a zero and the
 ! store rounds down.  FAIL C (got 0a28000000001000) and acc_left (got
 ! 0a28000000001007); FT and the PC passed.
+!
+! HALT CLOCKS, fidelity_plan.md A4 step 3 (2026-11-26). No check here pins
+! a time.
+! The STRETCH_HALT_REPORT halt moved 480 -> 762 (+282).
+! The cause was measured by running this deck with StretchPAU.bsv's
+! switches.
+! With every step-3 switch off (pauChainMulAdd and pauMa*), the halt is 480
+! again.
+! With the chain on and the terms off, it is 480. So the cause is the Table
+! 2 add terms: the accumulator holds 2**80 from the D*, and each of the
+! sixteen `*+` adds a small product to it, a pre-shift of about 75 places,
+! ceil((s-3)/4) = 18 cycles a `*+`.
 
 START   LX, $3, SXTEEN
         L(U), A

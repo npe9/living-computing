@@ -407,7 +407,7 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // added in StretchCore's rl_exec_resume): the operand-dependent
       // pre-shifts, the reduction loops, the remainder complement and
       // D/'s remainder normalization, walked from the operands by
-      // StretchDivBox ("THE 7030'S REDUCTION LOOP").  A normalized 1 by
+      // StretchPAU.bsv ("THE 7030'S REDUCTION LOOP").  A normalized 1 by
       // a normalized 1 comes to 25 (/), 31 (D/), 29 (R/), the atlas's
       // 7.50, 9.60 (less D/'s unprinted 1), 8.70 us.  These used to be
       // 4, 10 and 8, "before the data-dependent reduction loops", and

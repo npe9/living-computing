@@ -61,6 +61,16 @@
 ! F219Y  DIVIDE DOUBLE, three separate checks: the quotient against
 !        FK138, the 49th quotient bit against FPK80's fraction, and
 !        the REMAINDER register against FK139.
+!
+! HALT CLOCKS, fidelity_plan.md A4 step 3 (2026-11-26). No check here pins
+! a time.
+! The STRETCH_HALT_REPORT halt moved 867 -> 881 (+14).
+! The cause was measured by running this deck with StretchPAU.bsv's
+! switches.
+! With every step-3 switch off (pauChainMulAdd and pauMa*), the halt is 867
+! again.
+! With the chain on and the terms off, it is 867. So the cause is the Table
+! 2 add terms of its `*+`.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

@@ -2553,7 +2553,7 @@ recipe is one `mkW(f)` module per function):
 **One combinational 96-bit divider is about 165,000 TRELLIS_COMB
 (118,755 + 2 x 22,896), twice an 85F by itself.** That is most of §9's
 overrun in one statement pair. The FP divide box that would replace its
-floating sibling, `mkFpDivBox` (`StretchDivBox.bsv`), exists and is
+floating sibling, `mkFpDivBox` (`StretchPAU.bsv (was StretchDivBox.bsv)`), exists and is
 tested standalone, but nothing in `StretchExecute.bsv` or
 `StretchCore.bsv` instantiates it.
 

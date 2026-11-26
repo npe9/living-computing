@@ -92,12 +92,11 @@ import StretchTypes::*;
 import StretchStorage::*;
 import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
-import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
+import StretchPAU::*;          // PauReq/PauRsp/mkPAU: the parallel unit (FpReq/FpRsp, DivReq/DivRsp)
 import StretchSAU::*;          // mkSAU, the serial arithmetic unit (2026-11-25,
                                // fidelity_plan A3): the serial adder's
                                // DecReq/DecRsp, the multiplier's VflReq/VflRsp
                                // and the converter's CvtReq/CvtRsp
-import StretchFpBox::*;        // FpReq/FpRsp/mkFpBox: the floating-point box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -1833,7 +1832,7 @@ typedef struct {
   // NOT A WRITE EITHER: the floating-point box's request (2026-11-19,
   // plan §1c step 5f), exactly as divReq is the divider's.  `*`, `D*`
   // and `*+` report here the multiply they need (mkFpBox,
-  // StretchFpBox.bsv), and since stage 2 `+`, `+MG`, `M+`, `M+MG`, `D+`,
+  // StretchPAU.bsv), and since stage 2 `+`, `+MG`, `M+`, `M+MG`, `D+`,
   // `D+MG` and `F+` the add datapath they need (none when the
   // preparation answers by itself: flagged operands, an exponent
   // difference over 95); execute() bails on it with NeedBox when it has no
@@ -2431,7 +2430,7 @@ function Tuple2#(Word64, FpCommit)
         FpDouble db = fpdFromWord(operand);
         db.sign = opnd.sign;   // the sign modifiers, already applied
         // THE ADD'S DATAPATH IS THE FP BOX'S (2026-11-19, §1c step 5f
-        // stage 2, StretchFpBox.bsv): the preparation runs here and either
+        // stage 2, StretchPAU.bsv): the preparation runs here and either
         // answers (flagged operands, a difference over 95) or asks the box,
         // whose answer comes back as fpAns -- the multiply's shape below.
         FpdAddPrep ap = fpAddDoublePrep(da, db, normalized, noisy, c == fpop_D_PLUS_MG);
@@ -2558,7 +2557,7 @@ function Tuple2#(Word64, FpCommit)
       end
       fpop_PLUS, fpop_PLUS_MG: begin // + / +MG
         // THE ADD'S DATAPATH IS THE FP BOX'S (2026-11-19, §1c step 5f
-        // stage 2, StretchFpBox.bsv): the preparation runs here and either
+        // stage 2, StretchPAU.bsv): the preparation runs here and either
         // answers (flagged operands, a difference over 95) or asks the box,
         // whose answer comes back as fpAns -- the multiply's shape below.
         FpAddPrep ap = fpAddPrep(acc, opnd, normalized, noisy, c == fpop_PLUS_MG, False);
@@ -2660,7 +2659,7 @@ function Tuple2#(Word64, FpCommit)
         end
       end
       fpop_STAR: begin // *
-        // THE MULTIPLY IS THE FP BOX'S (2026-11-19, StretchFpBox.bsv):
+        // THE MULTIPLY IS THE FP BOX'S (2026-11-19, StretchPAU.bsv):
         // `fpAns` is its answer, the whole of what fpMul returned, and
         // fpReq is what it is asked.  On the evaluation that produces the
         // request fpAns is zeros and everything below is DISCARDED by
@@ -2895,12 +2894,18 @@ function Tuple2#(Word64, FpCommit)
         // unnormalized throughout the addition", and noisy's
         // one-bits enter "during the left shifting associated
         // with normalization" of the sum.
-        // The product is the FP box's (StretchFpBox.bsv), unnormalized as
+        // The product is the FP box's (StretchPAU.bsv), unnormalized as
         // p.99 says; the addition below is still this arm's.
-        fpc.fpReq = tagged Valid (tagged FpMul FpMulReq { a: opnd, b: ftv,
-                      normalized: False, noisy: False, dbl: True });
+        // SINCE fidelity_plan.md A4 step 3 (2026-11-26) THE ADDITION IS
+        // THE UNIT'S TOO: one chained request (FpMulAdd), and fpAns is the
+        // sum.  `pauChainMulAdd := False` restores the arm's fpAddDouble.
+        FpMulReq  mq = FpMulReq { a: opnd, b: ftv, normalized: False, noisy: False, dbl: True };
+        fpc.fpReq = tagged Valid (pauChainMulAdd
+                      ? tagged FpMulAdd FpMulAddReq { mul: mq, acc: da,
+                                                      normalized: normalized, noisy: noisy }
+                      : tagged FpMul mq);
         FpdResult m = fpRspDouble(fpAns);
-        FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
+        FpdResult r = pauChainMulAdd ? m : fpAddDouble(da, m.res, normalized, noisy, False);
         fpc.accLeft = tagged Valid fpdAccLeft(r.res);
         fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         // The sign byte takes the sum's sign and the ACCUMULATOR's
@@ -3110,7 +3115,7 @@ typedef struct {
 // the binary multiply of `*` and `*+`.  An arm that asked it takes
 // `vflOf(boxResult)`.
 //
-// FIVE SINCE 2026-11-19: the FLOATING-POINT BOX (StretchFpBox.bsv,
+// FIVE SINCE 2026-11-19: the FLOATING-POINT BOX (StretchPAU.bsv,
 // mkFpBox), fpArithClass's datapath moved out class by class; stage 1 is
 // the multiply of `*`, `D*` and `*+`.  An arm that asked it takes
 // `fpOf(boxResult)`.  boxKindOf is Bit#(3) for it, and mkEBox's
@@ -8735,7 +8740,7 @@ function ActionValue#(ExecDispatch)
         // /, R/, D/ and SRT are all implemented now.  SRT is still
         // combinational, for the same reason fpMul is.  THE THREE
         // DIVIDES ARE NOT, since 2026-11-15: their 96 restoring steps
-        // are done by mkEBox's divide box (StretchDivBox.bsv), reached
+        // are done by mkEBox's divide box (StretchPAU.bsv), reached
         // by the NeedBox bail below, because three inlined copies of
         // fpDivFrac did not fit the FPGA.  The real machine's divide
         // really is iterative -- about 3.5 quotient bits per cycle,
@@ -8815,7 +8820,7 @@ function ActionValue#(ExecDispatch)
             divQR = tuple2(b.q[48:0], {1'b0, b.rem});
           // THE MULTIPLIES GO ROUND TWICE TOO, since 2026-11-19: `*`,
           // `D*` and `*+` come back carrying fpcA.fpReq, and bail on it
-          // the same way for the FP box (StretchFpBox.bsv), whose answer
+          // the same way for the FP box (StretchPAU.bsv), whose answer
           // goes in as fpAns.  So do the adds (stage 2, the same day):
           // `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG`, `F+`.
           FpRsp fpAns = fromMaybe(unpack(0), fpOf(boxResult));
@@ -9250,8 +9255,13 @@ interface EBox;
   // depend on the operands (pre-shifts, reduction loops, remainder
   // complement, D/'s remainder normalization), over and above
   // eboxClocks' zero-divisor floor.  The divide box computes it
-  // (StretchDivBox's walk); 0 for every other instruction, including
-  // the VFL divide, whose time is eboxClocks' fit.
+  // (mkPAU's divide walk, StretchPAU.bsv); 0 for the VFL divide, whose
+  // time is eboxClocks' fit.  SINCE 2026-11-26 (fidelity_plan.md A4 step
+  // 3) also the floating-point class's Table 2 add terms -- pre-shift,
+  // normalization, recomplement, forced zero -- for `*+`'s sum and the
+  // plain adds, and `*+`'s Fig. 3.8.13 "accumulator exponent smaller"
+  // path: mkPAU.fpExtra, behind StretchPAU.bsv's switches.  0 for every
+  // other instruction.
   method Bit#(16) boxCharge();
   // THE SERIAL UNIT'S OWN TIME (fidelity_plan.md A3 (b), 2026-11-25),
   // read in the same clock as boxClocks: Valid when the held instruction
@@ -9314,8 +9324,12 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // as they are blocked while a read is outstanding.
   Reg#(Bool)               subjReady     <- mkReg(False);
 
-  // THE DIVIDE BOX, INSTANTIATED ONCE (the mkFBox/mkRISCV_MBox shape),
-  // and the third thing a held instruction can be waiting for.
+  // THE PARALLEL ARITHMETIC UNIT (StretchPAU.bsv, mkPAU; fidelity_plan.md
+  // A4, 2026-11-26), INSTANTIATED ONCE (the mkFBox/mkRISCV_MBox shape):
+  // one module for what were the divide box (mkDivBox, 2026-11-15; boxKind
+  // 0) and the floating-point box (mkFpBox, 2026-11-19; boxKind 4).  It is
+  // the third thing a held instruction can be waiting for.  (The text below
+  // is the divide box's, and holds for every class of both units.)
   // execute() returns NeedBox with a dividend and a divisor; start()
   // or resume() hands them to the box and holds the instruction
   // exactly as for a read; canResume() answers when the box has
@@ -9333,19 +9347,18 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // the box again with whatever the operands then are -- which is
   // precisely what the combinational arm did on every run, so the
   // behaviour is unchanged in that corner too.
-  DivBox                   divBox        <- mkDivBox;
+  PAU                      pau           <- mkPAU;
   // THE SERIAL ARITHMETIC UNIT (StretchSAU.bsv, mkSAU; fidelity_plan.md
   // A3, 2026-11-25), one module for what were the decimal adder
   // (mkDecBox, 2026-11-16), the radix converter (mkCvtBox, the same day)
   // and the VFL multiplier (mkVflBox, 2026-11-18).  `boxKind` (boxKindOf:
-  // 0 divider, 1 the SAU's adder, 2 its converter, 3 its multiplier, 4
-  // the FP box) says which the held instruction is waiting on, and for
-  // 1-3 which view of the SAU's answer it takes.  It is meaningful only
-  // while `boxWait` is set.
+  // 0 the PAU's divider, 1 the SAU's adder, 2 its converter, 3 its
+  // multiplier, 4 the PAU's floating-point class) says which the held
+  // instruction is waiting on, and which view of the unit's answer it
+  // takes.  It is meaningful only while `boxWait` is set.
   SAU                      sau           <- mkSAU;
-  // THE FLOATING-POINT BOX (StretchFpBox.bsv), the fifth, 2026-11-19:
-  // boxKind 4, which is why boxKind is three bits wide.
-  FpBox                    fpBox         <- mkFpBox;
+  // The floating-point class (mkFpBox until 2026-11-26) is boxKind 4,
+  // which is why boxKind is three bits wide.
   Reg#(Bit#(3))            boxKind       <- mkReg(0);
   Reg#(Bool)               boxWait       <- mkReg(False);
   Reg#(Bit#(32))           boxT0         <- mkReg(0);
@@ -9398,11 +9411,11 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // The look-ahead supplied the operand (or it was immediate),
         // so the first thing this instruction waits for is the box.
         case (rq) matches
-          tagged BoxDiv .d: divBox.request(d);
+          tagged BoxDiv .d: pau.request(tagged PauDiv d);
           tagged BoxDec .d: sau.request(tagged SauAdd d);
           tagged BoxCvt .d: sau.request(tagged SauCvt d);
           tagged BoxVfl .d: sau.request(tagged SauMul d);
-          tagged BoxFp  .d: fpBox.request(d);
+          tagged BoxFp  .d: pau.request(tagged PauFp d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;
@@ -9430,15 +9443,16 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   method Bool canResume() = isValid(held)
                             && (subjReady
                                 || (boxWait ? ((boxKind == 1 || boxKind == 2 || boxKind == 3) ? sau.responseReady()
-                                               : boxKind == 4 ? fpBox.responseReady()
-                                                              : divBox.responseReady())
+                                                                                              : pau.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
   method Bool fpBoxWaiting() = isValid(held) && boxWait && boxKind == 4 && owner == OwnerLA;
   method Maybe#(Bit#(3)) laBoxWaiting() = (isValid(held) && boxWait && owner == OwnerLA)
                                           ? tagged Valid boxKind : tagged Invalid;
-  method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
-                                ? divBox.response().fpExtra : 0;
+  method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && pau.responseReady())
+                                ? pauDivRsp(pau.response()).fpExtra
+                                : (boxWait && boxKind == 4 && pau.responseReady())
+                                  ? pau.fpExtra() : 0;
   method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && (boxKind == 1 || boxKind == 2) && sau.responseReady())
                                            ? sau.ownClocks() : tagged Invalid;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
@@ -9517,8 +9531,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       rbox = tagged Valid (boxKind == 1 ? tagged RspDec sauDecRsp(sau.response())
                          : boxKind == 2 ? tagged RspCvt sauCvtRsp(sau.response())
                          : boxKind == 3 ? tagged RspVfl sauVflRsp(sau.response())
-                         : boxKind == 4 ? tagged RspFp fpBox.response()
-                                        : tagged RspDiv divBox.response());
+                         : boxKind == 4 ? tagged RspFp pauFpRsp(pau.response())
+                                        : tagged RspDiv pauDivRsp(pau.response()));
       // `boxWait` is cleared below, in the arms of the dispatch that do
       // not ask for a box again -- ONE write per arm.  Clearing it here
       // and setting it again in the NeedBox arm was two writes bsc
@@ -9732,11 +9746,11 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // been installed) and the instruction now needs the divider:
         // read first, then the box.  The word stays in `prefetch`.
         case (rq) matches
-          tagged BoxDiv .d: divBox.request(d);
+          tagged BoxDiv .d: pau.request(tagged PauDiv d);
           tagged BoxDec .d: sau.request(tagged SauAdd d);
           tagged BoxCvt .d: sau.request(tagged SauCvt d);
           tagged BoxVfl .d: sau.request(tagged SauMul d);
-          tagged BoxFp  .d: fpBox.request(d);
+          tagged BoxFp  .d: pau.request(tagged PauFp d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;

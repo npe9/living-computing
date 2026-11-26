@@ -137,6 +137,16 @@
 !   c10, each one too large.  c11 SURVIVES, and for a reason: the sum
 !   becomes 2**48 + 2**25 + 124, which is even and needs no rounding,
 !   and that is the very word the rounded odd sum gives.
+!
+! HALT CLOCKS, fidelity_plan.md A4 step 3 (2026-11-26). No check here pins
+! a time.
+! The STRETCH_HALT_REPORT halt moved 980 -> 986 (+6).
+! The cause was measured by running this deck with StretchPAU.bsv's
+! switches.
+! With every step-3 switch off (pauChainMulAdd and pauMa*), the halt is 980
+! again.
+! With the chain on and the terms off, it is 986. So the cause is
+! pauChainMulAdd (as in F216B); the add terms move nothing.
 
         SLC, 100.0
 START   LX, $1, 201.0             ! Start

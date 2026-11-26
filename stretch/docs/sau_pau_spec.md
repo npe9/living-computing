@@ -260,7 +260,7 @@ n + 25 for pp.208-216 (p.208 = PDF 233, p.216 = PDF 241).
      - remainder 101: 3/4 for ≥11001, 3/2 for ≤10001, else 1;
      - remainder 110: 3/4 for ≥11110, 3/2 for ≤10100, else 1;
      - remainder 111: 3/2 for ≤10111, else 1.
-   - **This agrees with `divMultiple` in `StretchDivBox.bsv`**. (A first
+   - **This agrees with `divMultiple` in `StretchPAU.bsv (was StretchDivBox.bsv)`**. (A first
      read at overview scale was one row off on columns 101 and 110 and
      was corrected at the zoom.)
    - The CE chart's "dummy cycle if more than 6 quotient bits were
@@ -399,7 +399,7 @@ own page head says "(SEE SHEET 2, FIGURE 3.8.15)", which is right.
 Per the brief, the roadmap's reading ("Step 6 groundwork", the trial /
 intermediate / last reduction cycles, "Number of Reduction or Dummy
 Cycles Depend Upon Number of Quotient Bits Developed per Step (Cycle)")
-is reused, and `StretchDivBox.bsv`'s header already quotes it further.
+is reused, and `StretchPAU.bsv (was StretchDivBox.bsv)`'s header already quotes it further.
 Only the end of the sheet was read this session, to fix the D/ branch
 point (tiles t240c, t240d, sheet rotated 90°):
 
@@ -547,7 +547,7 @@ it ("A CHECKER RETURNS CONTROL TO SAU"; "SAU RESUMES CONTROL"). See
 Per the brief. The roadmap's lines: "GATES 36 & 72 & ENABLE MULTIPLE
 DECODING", "GATE COUNTER ADDER TO REG & SUB SHIFT AMOUNT FROM CTR", "(D3,
 CTR=0, TRUE RESULT) -> FINAL DVDE TGR", "IF DIVIDEND NOT NORMALIZED TAKE
-SAME ACTION AS FP", "REDUCTION CYCLES JUST LIKE FP". `StretchDivBox.bsv`
+SAME ACTION AS FP", "REDUCTION CYCLES JUST LIKE FP". `StretchPAU.bsv (was StretchDivBox.bsv)`
 adds "(D3, BIT 2-0 SHIFT <= 6)" beside "NORMALIZATION LOOP". These are
 extracts, not a cycle table (GAP below). What they settle for A3/A4: the
 VFL divide's reduction is the FP divide's reduction ("JUST LIKE FP"),
@@ -833,7 +833,7 @@ whether it repeats. **Still open.**
    8-24, 1/1/63 (Index 3-2, PDF 58).
 2. **`ebox_roadmap.md` lines 645 and 859, "[NOT IN THE SOURCES]" for
    divide bits-per-cycle.** Stale: Buchholz Figs 14.11-14.12 (pp.214-215,
-   PDF 239-240) print the rule. `StretchDivBox.bsv` already uses it.
+   PDF 239-240) print the rule. `StretchPAU.bsv (was StretchDivBox.bsv)` already uses it.
    `mkFpDivBox`'s `divBitsPerCycle = 6` and `coreDivBitsPerCycle = 24`
    remain marked INVENTED in the bsv, correctly.
 3. **3.8.9's printed page** is 8-8 (PDF 232), not "—" (`ebox_roadmap.md`
