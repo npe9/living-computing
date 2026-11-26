@@ -117,6 +117,12 @@ or APPS rows from a prompt checkpoint on the reference and measures
 them: the reductions of the query's shoen by kind (`R9_TALLY`), the
 list case of `mark_element` (`R9_MARKS`), and that case made wrong
 (`R9_INJECT`) (`../../docs/pimos_roadmap.md` R9).
+`mp1_rebuild.py` (OURS, not in the suite: it needs the prompt
+checkpoint) is rung MP1(a) of `../../docs/other_pims.md` §4: PIMOS 3.6
+files compiled by the held compiler from the prompt, served as home
+files for this process only (`longrun_ipl.add_home_file`, so `ls`'s
+pins are unchanged), each module compared with the held one; `run`,
+`report` (pinned verdicts) and `inject`.
 `lockstep_mklist.py` (in the suite) checks `mark_element` on a list
 cell, Position 0 the car and 1 the cdr, on a code of the bench's.  168
 instructions on both models (counted 2026-11-24: 168 `i_` handlers in
