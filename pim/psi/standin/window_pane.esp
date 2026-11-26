@@ -388,8 +388,9 @@ attribute surface := 0, pitch := 0;
 % :draw_line_in(Pane, X1, Y1, X2, Y2, Width, Op) -- INTERPOLATED
 % (selector and body OURS) from window.md §2.5 draw_line/8 (TM-125 p17,
 % TM-785 p40): a solid line Width dots wide.  A horizontal or vertical
-% line is a fill, its width going down or right (as the device's line,
-% psi/winfb.py: the extra dots along the minor axis).
+% line is a fill; the width goes up from an x-major line and right from a
+% y-major one (the PSI's geometry, line_in/7, INFERENCE 2026-11-26; the
+% device's line widens down or right, so line_in/7 compensates).
 % A slanted line leaving the inside is refused BEFORE uncover/3, as
 % transfer_in/8's areas are, so a covered window's lifted panes are never
 % left lifted by the refusal.
@@ -441,6 +442,7 @@ attribute surface := 0, pitch := 0;
 % profiler_mono_selector_image hold test_11's glyphs 3 rows below the
 % draw_string Y of p_imag.esp draw_label/5 and p_v_imag.esp box/6, so the
 % printed "top-left" is the font's line top, the glyph cell below it.
+% INTERPOLATED (selector and body OURS): draw_string_in; basis above.
 :draw_string_in(Pane, X, Y, S, Font, Op) :- string_drawn(Pane, X, Y, S, Font, Op, line);
 
 % :transfer_in(Pane, SX, SY, DX, DY, Width, Height, Op) -- INTERPOLATED
@@ -664,8 +666,10 @@ attribute surface := 0, pitch := 0;
 % inside's top-left (OURS: the shown frame's layout is OURS, and the held
 % type_switch_icon draw/6 places its image against draw_box/5 lines by
 % that layout, test_win_m8_images).
+% INTERPOLATED (selector and body OURS): save_image_in; basis above.
 :save_image_in(Pane, S, X, Y, W, H) :-
         image_origin(Pane, OX, OY), :read_in(Pane, S, X - OX, Y - OY, W, H);
+% INTERPOLATED (selector and body OURS): restore_image_in; basis above.
 :restore_image_in(Pane, S, X, Y, W, H) :-
         image_origin(Pane, OX, OY), :image_in(Pane, S, X - OX, Y - OY, W, H);
 

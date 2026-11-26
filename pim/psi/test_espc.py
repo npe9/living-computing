@@ -5727,7 +5727,9 @@ end."""
         # test_kl0.py run, all else OK; rerun at the final code with the
         # Window tests, the results below):
         #   G13 image_in/6 draws transparent (no reset of the area): this
-        #       test and test_win_m8_rest_screen FAIL, nothing else.
+        #       test and test_win_m8_rest_screen FAIL, nothing else.  (G13
+        #       predates 2026-11-26's 1 = white sense; the area is now set,
+        #       so the injection's analogue is "no set of the area".)
         #   G14 get_plane_count/2 answers 3: this test FAILS and
         #       test_win_m8_rest_screen ERRORS, nothing else.
         import windev
