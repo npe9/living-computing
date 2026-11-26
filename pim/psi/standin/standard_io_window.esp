@@ -367,16 +367,36 @@ attribute permission := out;
 % :19, :252) draws an image string, opaque (window_pane.esp image_in/6);
 % get_label_height/2 (USAGE paragraph p_imag.esp:619 adjust_pos/3, cil
 % ds_brs.esp:280; window.md §2.2) answers the label strip's height, the
-% font's cell plus 2 (window_pane.esp's layout, OURS).  save_image/6 and
-% restore_full_color_image/6 are not stood in (save_image reads the
-% frame's dots, which no frozen device primitive does; the colour form is
-% never reached on the 1-plane screen, bitmap.esp).
+% font's cell plus 2 (window_pane.esp's layout, OURS).
+% restore_full_color_image/6 is not stood in (the colour form is never
+% reached on the 1-plane screen, bitmap.esp); save_image/6 is, below.
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): restore_image.
 :restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :image_in(P, S, X, Y, Wd, Ht);
 % INTERPOLATED (selector: window.md section 2.2, cited above; body OURS):
 % get_label_height.
 :get_label_height(W, H) :- pane_of(W, P), value(P!ch + 2, H);
+% Window M8's stops, step 2 (2026-11-26), READING DOTS BACK on the device's
+% read (the 2026-11-26 extension, OURS, owner-approved; window_pane.esp
+% read_in/6, point_in/4): save_image/6 `(W, String, X, Y, Width, Height)`
+% (USAGE paragraph p_imag.esp:198, p_v_imag.esp:228) fills the caller's
+% 16-bit string, ceil(Width/16) words a row x Height (one plane:
+% get_plane_count is 1 here, bitmap.esp), restore_image/6's layout;
+% get_point_value/4 `(W, X, Y, ^Value)` and set_point_value/4 `(W, X, Y,
+% Value)` (PRINTED-INTERFACE TM-125 p17: "the value (0/1) of the pixel";
+% set as a 1 x 1 fill, set for 1 and reset for 0, OURS; another value
+% refuses loudly).
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited
+% above; body OURS): save_image.
+:save_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :read_in(P, S, X, Y, Wd, Ht);
+% INTERPOLATED (selector and arguments: TM-125 p17, cited above; body
+% OURS): get_point_value.
+:get_point_value(W, X, Y, V) :- pane_of(W, P), :point_in(P, X, Y, V);
+% INTERPOLATED (selector and arguments: TM-125 p17, cited above; body
+% OURS): set_point_value.
+:set_point_value(W, X, Y, 1) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, set);
+:set_point_value(W, X, Y, 0) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, reset);
+:set_point_value(W, _, _, _) :- :graphics_refused(W, point_value);
 % Window M8's rest (2026-11-26), SHAPES (window.md §2.5): draw_circle/7
 % `(W, CX, CY, R, Width, Style, Op)` (PRINTED WINCS p3), draw_ellipse/8
 % `(W, CX, CY, RX, RY, Width, Style, Op)`, draw_arc/9 and draw_fan/9
@@ -385,10 +405,11 @@ attribute permission := out;
 % `(W, CX, CY, R, _, Pattern, Op)`, draw_filled_fan/9 `(W, CX, CY, R, A1,
 % A2, _, Pattern, Op)` (each PRINTED-INTERFACE TM-785 p40, the vector
 % data/2 gives, the arity INFERENCE from its length); draw_filled_circle/5
-% `(W, CX, CY, R, Op)` (USAGE gog DISPB2.ESP:94); draw_filled_ellipse/7
-% `(W, CX, CY, RX, RY, Pattern, Op)` (TM-785 p40 prints a six-element
-% vector `{200, 0, 100, 1, dotted, set}`, the filled circle's layout; the
-% order here is INFERENCE from the outline's); draw_graph/2 and
+% `(W, CX, CY, R, Op)` (USAGE gog DISPB2.ESP:94); draw_filled_ellipse/8
+% `(W, CX, CY, RX, RY, _, Pattern, Op)` (USAGE icotext) and /6 `(W, CX,
+% CY, RX, RY, Op)` (USAGE gog), and /7 `(W, CX, CY, RX, RY, Pattern, Op)`
+% (INFERENCE: TM-785 p40 prints a six-element vector `{200, 0, 100, 1,
+% dotted, set}`, one element short; the method's own comment); draw_graph/2 and
 % draw_polygon/2 `(W, [(X, Y), ...])` (USAGE kwic scrolls.esp:1135),
 % /9 `(W, Points, _, _, _, _, Width, Style, Op)` (TM-785 p40: elements 1-4
 % are unknown and ignored).  The angles are whole degrees, anticlockwise
@@ -404,28 +425,51 @@ attribute permission := out;
 % (DX, DY), the direction INFERENCE, window.md §2.5) between two shown
 % windows (window_pane.esp copy_in/9).  Refused loudly: Src not a shown
 % window (util_scroll's own source is a 2000 x 2000 `hide_window` never
-% shown: an off-screen bitmap, which the frozen device lacks -- its save
-% memory is 65,536 words, a 2000 x 2000 image 250,000), the other held
-% form `(W, DX, DY, Src, SX, SY, Width, Height, Matrix)` (util_scroll.esp
-% :218, :222: a scaled copy, which no device primitive does), an op that
-% is not an op name.
+% shown; since step 3 of m8_stops.md such a window is a surface pane, but
+% 2000 x 2000 is 250,000 words and bitmap memory 65,536: bitmap_memory;
+% a smaller one refuses surface_copy), an op that is not an op name.  The
+% other held form `(W, DX, DY, Src, SX, SY, Width, Height, Matrix)`
+% (util_scroll.esp :218, :222) is stood in for whole scales since step 4
+% ("THE MATRIX FORM" below).
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): copy.
+% Window M8's stops, step 4 (2026-11-26), THE MATRIX FORM: copy/9 `(W, DX,
+% DY, Src, SX, SY, Width, Height, Matrix)` (USAGE icotext util_scroll.esp
+% :218-224, :245-251; docs/simpos/m8_stops.md §5).  Matrix {A, B, C, D, E,
+% F} is read as a row-major 2 x 3 affine map from the source rectangle's
+% top-left to (DX, DY), x' = A x + B y + C, y' = D x + E y + F (INFERENCE:
+% the only layout that puts the held vectors' equal scales {2,0,0,0,2,0}
+% at x and y).  Width x Height is the source's extent.  Stood in: whole
+% scales A, E >= 1 with B = C = D = F = 0 (the one held matrix a caller
+% reaches is {2,0,0,0,2,0}), nearest dot, opaque (window_pane.esp
+% magnify_in/10, OURS).  Refused loudly: rotation or shear (B or D not
+% 0), an offset, a scale below 1 or not whole (the held Min/Max and the
+% commented-out 0.8 and 1.5), a destination leaving the inside.
+% magnify/? and expand/9 (TM-785 p20 PROSE, euod def.esp:909 USAGE) are not
+% stood in: no source fixes their arguments.
+% INTERPOLATED (selector and arguments: USAGE, cited above; body OURS):
+% copy.
+:copy(W, DX, DY, Src, SX, SY, Wd, Ht, {A, 0, 0, 0, E, 0}) :-
+        integer(DX), integer(A), integer(E), A >= 1, E >= 1, !,
+        pane_of(W, P), pane_of(Src, Q), :magnify_in(P, Q, SX, SY, Wd, Ht, DX, DY, A, E);
 :copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- integer(Src), !, :graphics_refused(W, matrix_copy);
 :copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- op_name(Op), !,
-        pane_of(W, P), pane_of(Src, Q), :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
+        pane_of(W, P), pane_of(Src, Q), on_frame(W, P), on_frame(W, Q),
+        :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
 :copy(W, _, _, _, _, _, _, _, Op) :- :graphics_refused(W, Op);
-% Window M8's rest, PAINT, A STOP: paint/5 `(W, X, Y, Pattern, Op)` (USAGE
-% kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1, 1, Pattern1, set)`)
-% fills the region around (X, Y) (a seed fill: INFERENCE from the name and
-% the one-dot seed).  Finding the region's edge needs the frame's dots, and
-% no frozen device primitive gives a dot's value to the program
-% (psi/winfb.py: fill, line, glyph and copy write; save and restore move
-% dots between the frame and save memory unseen), so paint/5 is refused
-% loudly here and not stood in (psi/README.md "Window M8's rest").
+% Window M8's stops, step 2 (2026-11-26), PAINT: paint/5 `(W, X, Y,
+% Pattern, Op)` (USAGE kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1,
+% 1, Pattern1, set)`, gog DISPPBMS.esp:117, cil es_gin.esp:1761) fills the
+% region around (X, Y): a seed fill (INFERENCE from the name and the one-dot
+% seed), the region the 4-connected dots of the seed's value (OURS and
+% INFERENCE: window_pane.esp paint_in/5), Pattern fix or a pattern through
+% Op.  Refused loudly: an op that is not an op name, a pattern that is
+% neither fix nor a pattern (as the filled shapes).
 % INTERPOLATED (selector: window.md section 2.5, cited above; body OURS):
-% paint, refused.
-:paint(W, _, _, _, _) :- :graphics_refused(W, paint);
+% paint.
+:paint(W, X, Y, Pt, Op) :- op_name(Op), fill_pattern(Pt), !,
+        pane_of(W, P), :paint_in(P, X, Y, Pt, Op);
+:paint(W, _, _, Pt, _) :- :graphics_refused(W, Pt);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_circle.
 :draw_circle(W, CX, CY, R, Wd, St, Op) :- outline(W, CX, CY, R, R, Wd, all, St, Op);
@@ -451,8 +495,19 @@ attribute permission := out;
 :draw_filled_circle(W, CX, CY, R, Op) :- filled(W, CX, CY, R, R, all, fix, Op);
 :draw_filled_circle(W, CX, CY, R, _, Pt, Op) :- filled(W, CX, CY, R, R, all, Pt, Op);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
-% body OURS): draw_filled_ellipse.
+% body OURS): draw_filled_ellipse.  Window M8's stops resolved (2026-11-26,
+% docs/simpos/m8_stops.md §6): the held forms are /8 `(W, CX, CY, RX, RY,
+% _, Pattern, Op)` (USAGE icotext imi_draw_win.esp:250-282, six sites
+% `(...,0,fix,set|reset)`, and its util_scroll.esp:116-117, :315-316
+% forwarders), the element after RY unknown and ignored as the filled
+% circle's /7 ignores its own; and /6 `(W, CX, CY, RX, RY, Op)` (USAGE gog
+% CGS_DEMO.ESP:416, :424), pattern fix as draw_filled_circle/5.  The /7
+% `(W, CX, CY, RX, RY, Pattern, Op)` rests only on TM-785 p40's six-element
+% vector, one element short of the held /8 layout (m8_stops.md §6): its
+% order is INFERENCE, no held caller sends it, and it is kept.
+:draw_filled_ellipse(W, CX, CY, RX, RY, Op) :- filled(W, CX, CY, RX, RY, all, fix, Op);
 :draw_filled_ellipse(W, CX, CY, RX, RY, Pt, Op) :- filled(W, CX, CY, RX, RY, all, Pt, Op);
+:draw_filled_ellipse(W, CX, CY, RX, RY, _, Pt, Op) :- filled(W, CX, CY, RX, RY, all, Pt, Op);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_filled_fan.
 :draw_filled_fan(W, CX, CY, R, A1, A2, _, Pt, Op) :- angles(W, A1, A2), !,
@@ -542,15 +597,30 @@ echo(W, Code) :- W!echo == on, !, W!history := [Code | W!history],
 echo(_, _);
 
 % window M3/M5 (OURS, see the head comment): the pane, made once
-open(W) :- W!pane \== 0, !;
+open(W) :- P = W!pane, P \== 0, P!surface == 0, !;
 open(W) :-
-        size(W!options, Cols, Rows),
+        cell_size(W, Cols, Rows),
         position(W!options, X, Y),
         :create(#window_pane, X, Y, Cols, Rows, W!font, P),
+        S = W!pane,
         W!pane := P,
         :add_window(#coordinator, W, N),
         W!number := N,
-        drawn_title(W);
+        drawn_title(W),
+        shown_surface(S, P);
+
+% window M8's stops, step 3 (OURS): a window drawn on before activate/1
+% shows what it drew (the surface pane's dots copied into the new pane's
+% inside, its area freed)
+shown_surface(0, _) :- !;
+shown_surface(S, P) :- :shown_in(S, P);
+
+% the pane's size in cells: the size option in cells, or in dots (as many
+% cells of the font as fit, at least 1 x 1, OURS)
+cell_size(W, Cols, Rows) :- dots(W!options, Wd, Ht), !,
+        :cell_of(#window_pane, W!font, Cw, Ch),
+        cells(Wd, Cw, Cols), cells(Ht, Ch, Rows);
+cell_size(W, Cols, Rows) :- size(W!options, Cols, Rows);
 
 size(Options, 40, 10) :- unbound(Options), !;
 size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
@@ -585,6 +655,7 @@ pane_do(select, P) :- :select(P);
 pane_do(deselect, P) :- :deselect(P);
 
 % window M7: the pane leaves the screen through the coordinator's stack
+erased(W) :- P = W!pane, P \== 0, P!surface \== 0, !, :free(P), W!pane := 0;
 erased(W) :- W!pane \== 0, !, :take_off(#coordinator, W);
 erased(_);
 
@@ -596,7 +667,38 @@ value(V, V);
 
 % window M8 (OURS, see "Window M8" above)
 pane_of(W, P) :- P = W!pane, P \== 0, !;
+% window M8's stops, step 3 (OURS): a window drawn on before it is shown
+% draws into a surface pane (window_pane.esp create_surface/5), its inside
+% the window's size option in dots (the held `size(Wd, Ht)`, paragraph
+% p_imag.esp:171) or in cells (`{size, {ch, C}, {ch, R}}`, 40 x 10 when
+% none); activate/1 copies it into the shown pane (open/1).  A killed
+% window refuses.
+pane_of(W, P) :- W!killed == 0, !,
+        inside_size(W, Iw, Ih),
+        :create_surface(#window_pane, Iw, Ih, W!font, P),
+        W!pane := P;
 pane_of(W, _) :- :graphics_refused(W, not_shown);
+
+% window M8's stops, step 3 (OURS): copy/9 between two windows runs on the
+% frame only; a window not shown (a surface pane) refuses loudly
+% (surface_copy: icotext util_scroll.esp:211 copies from its never-shown
+% 2000 x 2000 canvas, which bitmap memory cannot hold before H8 anyway)
+on_frame(_, P) :- P!surface == 0, !;
+on_frame(W, _) :- :graphics_refused(W, surface_copy);
+
+inside_size(W, Iw, Ih) :- dots(W!options, Iw, Ih), !;
+inside_size(W, Iw, Ih) :-
+        size(W!options, Cols, Rows),
+        :cell_of(#window_pane, W!font, Cw, Ch),
+        times(Cols, Cw, Iw), times(Rows, Ch, Ih);
+
+dots(Options, _, _) :- unbound(Options), !, fail;
+dots([{size, Wd, Ht} | _], Wd, Ht) :- integer(Wd), integer(Ht), !;
+dots([_ | Os], Wd, Ht) :- dots(Os, Wd, Ht);
+
+times(N, C, P) :- times(N, C, 0, P);
+times(0, _, P, P) :- !;
+times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
 
 line(W, X1, Y1, X2, Y2, Wd, solid, Op) :- !,
         pane_of(W, P), :draw_line_in(P, X1, Y1, X2, Y2, Wd, Op);
@@ -690,10 +792,16 @@ command(W, draw_ellipse, 7, A) :- !,
         el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, Wd), el(A, 5, St), el(A, 6, Op),
         :draw_ellipse(W, CX, CY, RX, RY, Wd, St, Op);
 % TM-785 p40's printed draw_filled_ellipse vector {200, 0, 100, 1, dotted,
-% set} has six elements, the filled circle's layout with its `1`: read as
-% {CX, CY, RX, RY, Pattern, Op} it is an ellipse 1 dot high, read as the
-% circle's it is no ellipse.  Ambiguous, so refused loudly (OURS).
+% set} has six elements (read again at 600 dpi: not an OCR error), one
+% short of the held /8 layout {CX, CY, RX, RY, _, Pattern, Op}, and no
+% held method takes that arity (docs/simpos/m8_stops.md §6: none of the
+% 18 SIMPOS archives, cil, paragraph or the 5 CESP archives has a /7).
+% Which element was lost cannot be recovered, so it is refused loudly
+% (OURS).  The seven-element vector is the held /8's.
 command(W, draw_filled_ellipse, 6, _) :- !, :graphics_refused(W, draw_filled_ellipse);
+command(W, draw_filled_ellipse, 7, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, U), el(A, 5, Pt), el(A, 6, Op),
+        :draw_filled_ellipse(W, CX, CY, RX, RY, U, Pt, Op);
 command(W, draw_arc, 8, A) :- !,
         el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, A1), el(A, 4, A2), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
         :draw_arc(W, CX, CY, R, A1, A2, Wd, St, Op);

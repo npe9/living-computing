@@ -16,7 +16,9 @@
 // Interface: Server#(WinFbCmd, WinFbRsp).  One command at a time; each
 // is answered on completion by one status response (isData False).  A
 // dump is answered by the frame's 81,920 words, row-major, as isData
-// responses, then its status.
+// responses, then its status; a read (prim a, the 2026-11-26 extension)
+// by its rectangle's words, then its status.  A target (prim b, the same
+// extension) sets the destination or the source surface register.
 //
 // Structure (the idiomatic-Bluespec box pattern of the Pimm*Box modules
 // and mkFBox: one module, request/response, the datapath inside, each
@@ -25,8 +27,20 @@
 //             into 80 x 1,024 x 16 block RAMs.  Port A (this clock) draws
 //             and dumps; port B, in the pixel clock domain `pclk`, is the
 //             scan-out's (the DP16KD's second port).
-//   - bitmap: mkBRAMCore1, 65,536 x 16, the save areas (plan §2.3: in
-//             spare block RAM until H8 moves them to SDRAM).
+//   - bitmap: mkBRAMCore1, 65,536 x 16, the save areas and the drawing
+//             areas (plan §2.3: in spare block RAM until H8 moves them to
+//             SDRAM).  Cleared at reset beside the frame (rule
+//             initClearB), so it reads 0 until written, as the
+//             reference's does.
+//   - the surfaces (the 2026-11-26 extension, prim b): two registers,
+//             the destination (d*: fill, line, glyph, a copy's target) and
+//             the source (s*: a copy's and a read's), each the frame (base
+//             0, pitch 80, 1,280 x 1,024) or an area (base, pitch, w, h,
+//             and its end word for the copy's overlap check).  Every
+//             engine clips to the surface's w and h.  An area destination
+//             is drawn through the bitmap pipe (bDstSave), an area source
+//             read as a save area is (SSave); save, restore and dump keep
+//             the frame.
 //   - font:   mkBRAMCore1Load, 4,096 x 16, the f822 words of test_11
 //             from a load file (the bench's, made from the held archive
 //             by psi/winfb.py fonthex).
@@ -46,16 +60,29 @@
 //             carried one, a 16-bit funnel at a constant offset); fill,
 //             copy, save, restore and glyph are all blits (a fill's
 //             source is a constant 1).  Direction is chosen for
-//             overlapping frame-to-frame copies: rows bottom-up when
-//             dy > sy, words right to left when dy = sy and dx > sx.
+//             overlapping copies within one surface (the frame, or one
+//             area: both the source stream and the read-modify-write go
+//             through bp then): rows bottom-up when dy > sy, words right
+//             to left when dy = sy and dx > sx.  Each blit's first rows,
+//             base + row x pitch, are made by rule blitSetup a cycle
+//             after the command is taken (mode MSetup), so no multiply is
+//             on accept's path or a RAM's address.
 //   - the line engine, two stages: Bresenham (rule lGen, one pen dot a
 //             cycle) and the merge (rule lMerge: consecutive dots of one
-//             word become one item).
+//             word become one item).  The pen dot's word is a row
+//             register plus x / 16: the row (lRow, and lPenRow for an
+//             x-major pen) steps by +-pitch, from base + y1 x pitch made
+//             in rule lSetup; no per-dot multiply.
 //   - the read-modify-write stage (rules rPass, rRead*, w*), shared by
 //             the blit and the line: reads a destination word when it
 //             is needed, writes ropf of it, waits while an earlier item
 //             still has to write the word it reads (mkWinPendQ), and ends
 //             the command with the last write.
+//   - the read (the 2026-11-26 extension, psi/winfb.py's header): a blit
+//             from the frame whose sink is the response queue instead of
+//             the read-modify-write stage (rule sCollectRead: the funnel's
+//             word under the mask, so the pad dots are 0), its status after
+//             the words as a dump's is (dTail).
 //   - the dump engine (rules dump*), on port A (H3 moved it from port
 //             B, which is now the pixel domain's; port A is idle while a
 //             dump runs).
@@ -88,6 +115,13 @@
 //   a 1,280-dot diagonal (0,0)-(1279,1023)          2,196 (6,401; 5,121)
 //   save + restore 400x300                         16,514 (62,102; 46,502)
 //   the empty stream (reset and the final dump)   163,846 (327,683)
+// Since the drawing targets (2026-11-26) every blit and line takes one
+// setup cycle more (MEASURED with win_measure.sh: clear 78,725, xor fill
+// 157,444, scroll 155,206, 100 glyphs 6,780, the diagonal 2,197, save +
+// restore 16,516); the empty stream is unchanged (the bitmap clear runs
+// inside the frame's).  On an area the per-word figures are those of the
+// bitmap RAM: an area-to-area copy shares bp's one port between its
+// source reads, destination reads and writes, as frame-to-frame shares fp.
 // The plan's §2.4 estimates were 78,720, ~157,000, ~64 a glyph and ~2,560.
 // On the board the box runs on the 25 MHz oscillator (WinUlx3s.bsv), so a
 // full-screen scroll is ~6.2 ms.  The streams are in bsv/win_measure/,
@@ -138,8 +172,9 @@ Bit#(8) stBADFONT = 2;
 Bit#(8) stMISSING = 3;
 Bit#(8) stBADSAVE = 4;
 Bit#(8) stNOSAVE = 5;
+Bit#(8) stBADSURF = 6;
 
-typedef enum { MInit, MIdle, MBlit, MGlyph, MLine, MDump } Mode deriving (Bits, Eq);
+typedef enum { MInit, MIdle, MBlit, MGlyph, MLine, MDump, MSetup } Mode deriving (Bits, Eq);
 typedef enum { SConst, SFrame, SSave, SFont } SrcKind deriving (Bits, Eq);
 
 // a token of the blit's source stream (WinFbBox's stage 1 -> stage 2)
@@ -258,6 +293,27 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Reg#(Bit#(12)) fBase <- mkReg(0);      // the strip's first word
    Reg#(Maybe#(Bit#(8))) fMissing <- mkReg(tagged Invalid);
 
+   Reg#(Bit#(16)) clearB <- mkReg(0);     // the bitmap memory's clear
+   Reg#(Bool) clearBDone <- mkReg(False);
+
+   // ---- the surfaces (the 2026-11-26 extension, psi/winfb.py's header):
+   // the destination (d*) and the source (s*), each the frame (base 0,
+   // pitch 80, 1,280 x 1,024) or an area of the bitmap memory; *End is
+   // the area's word after its last (base + pitch * h), kept for the
+   // copy's overlap check --------------------------------------------------
+   Reg#(Bool) dArea <- mkReg(False);
+   Reg#(Bit#(16)) dBase <- mkReg(0);
+   Reg#(Bit#(8)) dPitch <- mkReg(80);
+   Reg#(Bit#(16)) dW <- mkReg(1280);
+   Reg#(Bit#(16)) dH <- mkReg(1024);
+   Reg#(Bit#(17)) dEnd <- mkReg(0);
+   Reg#(Bool) sArea <- mkReg(False);
+   Reg#(Bit#(16)) sBase <- mkReg(0);
+   Reg#(Bit#(8)) sPitch <- mkReg(80);
+   Reg#(Bit#(16)) sW <- mkReg(1280);
+   Reg#(Bit#(16)) sH <- mkReg(1024);
+   Reg#(Bit#(17)) sEnd <- mkReg(0);
+
    // ---- save slots ------------------------------------------------------
    Reg#(Vector#(SaveSlots, Maybe#(SaveSlot))) slots <- mkReg(replicate(tagged Invalid));
 
@@ -289,6 +345,13 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Reg#(Bit#(12)) sK <- mkRegU;            // destination word in its row
    Reg#(Bit#(16)) sCarry <- mkRegU;        // the funnel's carried source word
    FIFOF#(SrcTok) tokQ <- mkSizedFIFOF(4);
+   Reg#(Bool) bRead <- mkReg(False);       // the blit is a read (the extension)
+   // the setup cycle's operands (rule blitSetup): each side's first row
+   // is base + row x pitch, computed a cycle after the command is taken
+   Reg#(Bit#(20)) pSBase <- mkRegU;
+   Reg#(Bit#(16)) pSRow <- mkRegU;
+   Reg#(Bit#(20)) pDBase <- mkRegU;
+   Reg#(Bit#(16)) pDRow <- mkRegU;
 
    // ---- the read-modify-write stage -------------------------------------
    FIFOF#(RmwItem) rmwQ <- mkFIFOF;
@@ -322,6 +385,9 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Reg#(Bit#(16)) lWidth <- mkRegU;
    Reg#(Bit#(16)) lK <- mkRegU;
    Reg#(Bool) lGenOn <- mkReg(False);
+   Reg#(Bool) lInit <- mkReg(False);       // the setup cycle (rule lSetup)
+   Reg#(Bit#(20)) lRow <- mkRegU;          // the destination's row lY: base + lY x pitch
+   Reg#(Bit#(20)) lPenRow <- mkRegU;       // the pen dot's row (x-major: lY + lK)
    FIFOF#(LineDot) dotQ <- mkFIFOF;
    // the word being merged: consecutive pen dots in one word
    Reg#(Bool) mHas <- mkReg(False);
@@ -389,7 +455,16 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
       fsI <= fsI + 1; fs <= 6;
    endrule
 
-   rule initDone (mode == MInit && clearDone && fs == 8);
+   // the bitmap memory is cleared beside the frame (65,536 cycles inside
+   // the frame's 81,920), so an area reads 0 until it is written, as the
+   // reference's bitmap memory does (psi/winfb.py's header)
+   rule initClearB (mode == MInit && !clearBDone);
+      bp.write(zeroExtend(clearB), 0);
+      if (clearB == fromInteger(valueOf(SaveWords) - 1)) clearBDone <= True;
+      clearB <= clearB + 1;
+   endrule
+
+   rule initDone (mode == MInit && clearDone && clearBDone && fs == 8);
       mode <= MIdle;
    endrule
 
@@ -476,7 +551,7 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                       SSave:  bp.rsp[pSrc].deq;
                       default: np.rsp[pSrc].deq;
                    endcase;
-   rule sCollect (mode == MBlit && (!tokQ.first.mem || srcRdy));
+   rule sCollect (mode == MBlit && !bRead && (!tokQ.first.mem || srcRdy));
       SrcTok t = tokQ.first;
       tokQ.deq;
       Bit#(16) w = t.mem ? srcWord : 0;
@@ -490,8 +565,30 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
       end
    endrule
 
-   function Action startBlit(SrcKind src, Bit#(20) sBase, Bit#(8) sPitch, Bit#(16) sX,
-                             Bool dSave, Bit#(20) dBase, Bit#(8) dPitch, Bit#(16) dX,
+   // a read's stage 2: the funnel's word under the destination mask (0 at
+   // the pad dots) goes out as a data response; the status follows the
+   // last word (dTail, as a dump's)
+   rule sCollectRead (mode == MBlit && bRead && (!tokQ.first.mem || srcRdy));
+      SrcTok t = tokQ.first;
+      tokQ.deq;
+      Bit#(16) w = t.mem ? srcWord : 0;
+      if (t.mem) srcDeq;
+      sCarry <= w;
+      if (!t.load) begin
+         rspQ.enq(WinFbRsp { isData: True, status: stOK,
+                             data: funnel(False, sCarry, w, bSOff) & t.mask });
+         if (t.last) begin
+            mode <= MIdle; bRead <= False;
+         end
+      end
+   endrule
+
+   // a blit's operands: each side's base word, its first row (from the
+   // top), its pitch and its first dot; the destination's RAM (dSave: the
+   // bitmap memory); the size, already cut; the op and the direction.
+   // The row addresses are made by rule blitSetup a cycle later.
+   function Action startBlit(SrcKind src, Bit#(20) sb, Bit#(16) sRow0, Bit#(8) sp, Bit#(16) sX,
+                             Bool dSave, Bit#(20) db, Bit#(16) dRow0, Bit#(8) dp, Bit#(16) dX,
                              Bit#(16) w, Bit#(16) h, Bit#(4) r, Bool up, Bool rtl,
                              Bit#(8) st);
       action
@@ -502,21 +599,32 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
          else begin
             Bit#(12) kf = truncate(dX >> 4);
             Bit#(12) kl = truncate((dX + w - 1) >> 4);
-            bSrc <= src; bSrcPitch <= sPitch; bSrcX <= sX;
-            bDstSave <= dSave; bDstPitch <= dPitch; bDstX <= dX;
+            bSrc <= src; bSrcPitch <= sp; bSrcX <= sX;
+            bDstSave <= dSave; bDstPitch <= dp; bDstX <= dX;
             bW <= w; bH <= h; rRop <= r; bUp <= up; bRtl <= rtl;
             bKFirst <= kf; bKLast <= kl;
             bSOff <= truncate(sX - dX);
-            Bit#(20) last = zeroExtend(h - 1);
+            Bit#(16) last = up ? h - 1 : 0;
             sOn <= True; sFirst <= src != SConst;
             sRow <= 0; sK <= rtl ? kl : kf;
-            sDstRow <= dBase + (up ? last * zeroExtend(dPitch) : 0);
-            sSrcRow <= sBase + (up ? last * zeroExtend(sPitch) : 0);
+            pSBase <= sb; pSRow <= sRow0 + last;
+            pDBase <= db; pDRow <= dRow0 + last;
             rStatus <= st;
-            mode <= MBlit;
+            mode <= MSetup;
          end
       endaction
    endfunction
+
+   // the blit's first rows, base + row x pitch (the surfaces' pitches are
+   // variables since the extension; a cycle of its own keeps the multiply
+   // off accept's path and off the RAMs' address pins, as glyphLook's)
+   rule blitSetup (mode == MSetup);
+      Bit#(24) so = zeroExtend(pSRow) * zeroExtend(bSrcPitch);
+      Bit#(24) dof = zeroExtend(pDRow) * zeroExtend(bDstPitch);
+      sSrcRow <= pSBase + truncate(so);
+      sDstRow <= pDBase + truncate(dof);
+      mode <= MBlit;
+   endrule
 
    // =====================================================================
    // the read-modify-write stage (the blit's destination words and the
@@ -613,12 +721,12 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    endrule
    rule glyph6 (mode == MGlyph && gPh == 6);
       Bit#(16) gh = font.read;
-      Bool outside = gX >= fromInteger(fbW) || gY >= fromInteger(fbH);
-      Bit#(16) w = outside ? 0 : min16(gRw, fromInteger(fbW) - gX);
-      Bit#(16) h = outside ? 0 : min16(gh, fromInteger(fbH) - gY);
-      Bit#(20) sBase = zeroExtend(fBase) + zeroExtend(gRy) * zeroExtend(fWpr);
-      startBlit(SFont, sBase, fWpr, gRx,
-                False, zeroExtend(gY) * 80, 80, gX, w, h, gRop, False, False, gStatus);
+      // cut to the destination surface (the frame or an area)
+      Bool outside = gX >= dW || gY >= dH;
+      Bit#(16) w = outside ? 0 : min16(gRw, dW - gX);
+      Bit#(16) h = outside ? 0 : min16(gh, dH - gY);
+      startBlit(SFont, zeroExtend(fBase), gRy, fWpr, gRx,
+                dArea, zeroExtend(dBase), gY, dPitch, gX, w, h, gRop, False, False, gStatus);
    endrule
 
    // =====================================================================
@@ -634,21 +742,40 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Int#(20) lPx = lXMajor ? lX : lX + unpack(zeroExtend(lK));
    Int#(20) lPy = lXMajor ? lY + unpack(zeroExtend(lK)) : lY;
    Bool lOn = lStyle[15 - lI] == 1;
-   Bit#(20) lAddr = pack(lPy) * 80 + (pack(lPx) >> 4);
+   // the pen dot's word: its row's first word (registers stepped by the
+   // pitch, no multiply: a variable multiply on a RAM address missed
+   // 25 MHz in H3) plus its x / 16.  Rows are kept modulo 2^20 while the
+   // line is off the surface; a dot is only drawn on it, where the
+   // address is exact.
+   Bit#(20) lAddr = (lXMajor ? lPenRow : lRow) + (pack(lPx) >> 4);
    Bit#(16) lBit = 'h8000 >> pack(lPx)[3:0];
+   Bit#(20) lPitch = zeroExtend(dPitch);
+
+   // the setup cycle: the start's row, base + y1 x pitch
+   (* descending_urgency = "lSetup, lGen" *)   // never both: lInit, then lGenOn
+   rule lSetup (mode == MLine && lInit);
+      Bit#(24) o = zeroExtend(pack(lY)[15:0]) * zeroExtend(dPitch);
+      Bit#(20) row = zeroExtend(dBase) + truncate(o);
+      lRow <= row; lPenRow <= row;
+      lInit <= False; lGenOn <= True;
+   endrule
 
    rule lGen (mode == MLine && lGenOn);
-      Bool onScr = lPx < fromInteger(fbW) && lPy < fromInteger(fbH);
+      Bool onScr = lPx < unpack(zeroExtend(dW)) && lPy < unpack(zeroExtend(dH));
       Bool penDone = !lOn || lK + 1 == lWidth;
       Bool atEnd = lX == lX2 && lY == lY2;
       Bool last = penDone && atEnd;
       if ((lOn && onScr) || last)
          dotQ.enq(LineDot { dot: lOn && onScr, addr: lAddr, bits: lBit, last: last });
-      if (!penDone) lK <= lK + 1;
+      if (!penDone) begin
+         lK <= lK + 1;
+         lPenRow <= lPenRow + lPitch;
+      end
       else if (atEnd) lGenOn <= False;
       else begin
          Int#(20) e2 = 2 * lErr;
          Int#(20) err = lErr;
+         Bit#(20) row = lRow;
          if (e2 >= lDy) begin
             err = err + lDy;
             lX <= lSxNeg ? lX - 1 : lX + 1;
@@ -656,7 +783,9 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
          if (e2 <= lDx) begin
             err = err + lDx;
             lY <= lSyNeg ? lY - 1 : lY + 1;
+            row = lSyNeg ? lRow - lPitch : lRow + lPitch;
          end
+         lRow <= row; lPenRow <= row;
          lErr <= err;
          lI <= lI + 1;
          lK <= 0;
@@ -726,15 +855,29 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
       Vector#(6, Bit#(16)) a = c.a;
       Bit#(16) fw = fromInteger(fbW);
       Bit#(16) fh = fromInteger(fbH);
-      if (prim == 0 || prim > 7 || r > 4)
+      // a copy between two different areas that share words (BADSURF)
+      Bool sameArea = sBase == dBase && sPitch == dPitch;
+      Bool meet = zeroExtend(sBase) < dEnd && zeroExtend(dBase) < sEnd;
+      // the cut to a surface (psi/winfb.py): the rectangle at (a[0], a[1])
+      // on the destination (fill) or the source (copy, read), and a
+      // copy's at (a[4], a[5]) on the destination.  The surfaces' sizes are
+      // registers since the extension, so the cut is shared by the three
+      // primitives rather than built for each (it was against constants).
+      Bool onDst = prim == 1;
+      Bool isCopy = prim == 4;
+      Bit#(16) w1 = onDst ? dW : sW;
+      Bit#(16) h1 = onDst ? dH : sH;
+      Bool outside = a[0] >= w1 || a[1] >= h1 || (isCopy && (a[4] >= dW || a[5] >= dH));
+      Bit#(16) cw0 = min16(a[2], w1 - a[0]);
+      Bit#(16) ch0 = min16(a[3], h1 - a[1]);
+      Bit#(16) cw = outside ? 0 : (isCopy ? min16(cw0, dW - a[4]) : cw0);
+      Bit#(16) ch = outside ? 0 : (isCopy ? min16(ch0, dH - a[5]) : ch0);
+      if (prim == 0 || (prim > 7 && prim != 10 && prim != 11) || r > 4)
          reply(stBADOP);
       else case (prim)
-         1: begin // fill x y w h
-               Bool outside = a[0] >= fw || a[1] >= fh;
-               Bit#(16) w = outside ? 0 : min16(a[2], fw - a[0]);
-               Bit#(16) h = outside ? 0 : min16(a[3], fh - a[1]);
-               startBlit(SConst, 0, 0, 0, False, zeroExtend(a[1]) * 80, 80, a[0],
-                         w, h, r, False, False, stOK);
+         1: begin // fill x y w h, on the destination surface
+               startBlit(SConst, 0, 0, 0, 0, dArea, zeroExtend(dBase), a[1], dPitch, a[0],
+                         cw, ch, r, False, False, stOK);
             end
          2: begin // line x1 y1 x2 y2 width style
                if (a[4] == 0) reply(stOK);
@@ -750,8 +893,8 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                   lSxNeg <= !(x1 < x2); lSyNeg <= !(y1 < y2);
                   lXMajor <= dx >= -dy;
                   lStyle <= a[5]; lI <= 0; lWidth <= a[4]; lK <= 0;
-                  rRop <= r; rStatus <= stOK; bDstSave <= False;
-                  lGenOn <= True; mHas <= False;
+                  rRop <= r; rStatus <= stOK; bDstSave <= dArea;
+                  lInit <= True; mHas <= False;
                   mode <= MLine;
                end
             end
@@ -764,13 +907,15 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                   mode <= MGlyph;
                end
             end
-         4: begin // copy sx sy w h dx dy
-               Bool outside = a[0] >= fw || a[4] >= fw || a[1] >= fh || a[5] >= fh;
-               Bit#(16) w = outside ? 0 : min16(a[2], min16(fw - a[0], fw - a[4]));
-               Bit#(16) h = outside ? 0 : min16(a[3], min16(fh - a[1], fh - a[5]));
-               startBlit(SFrame, zeroExtend(a[1]) * 80, 80, a[0],
-                         False, zeroExtend(a[5]) * 80, 80, a[4], w, h, r,
-                         a[5] > a[1], a[5] == a[1] && a[4] > a[0], stOK);
+         4: begin // copy sx sy w h dx dy, source surface -> destination surface
+               // the direction is chosen whatever the surfaces: it is needed
+               // when they are one (the frame, or one area: one RAM, one
+               // coordinate system) and harmless otherwise
+               if (sArea && dArea && !sameArea && meet) reply(stBADSURF);
+               else
+                  startBlit(sArea ? SSave : SFrame, zeroExtend(sBase), a[1], sPitch, a[0],
+                            dArea, zeroExtend(dBase), a[5], dPitch, a[4], cw, ch, r,
+                            a[5] > a[1], a[5] == a[1] && a[4] > a[0], stOK);
             end
          5: begin // save id x y w h base
                Bit#(4) id = truncate(a[0]);
@@ -783,8 +928,8 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                   reply(stBADSAVE);
                else begin
                   slots[id] <= tagged Valid SaveSlot { x: a[1], y: a[2], w: w, h: h, base: a[5] };
-                  startBlit(SFrame, zeroExtend(a[2]) * 80, 80, a[1],
-                            True, zeroExtend(a[5]), truncate(pitch), 0, w, h, 3,
+                  startBlit(SFrame, 0, a[2], 80, a[1],
+                            True, zeroExtend(a[5]), 0, truncate(pitch), 0, w, h, 3,
                             False, False, stOK);
                end
             end
@@ -793,8 +938,8 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                if (a[0] >= fromInteger(valueOf(SaveSlots))) reply(stBADSAVE);
                else if (slots[id] matches tagged Valid .s) begin
                   Bit#(16) pitch = (s.w + 15) >> 4;
-                  startBlit(SSave, zeroExtend(s.base), truncate(pitch), 0,
-                            False, zeroExtend(s.y) * 80, 80, s.x, s.w, s.h, r,
+                  startBlit(SSave, zeroExtend(s.base), 0, truncate(pitch), 0,
+                            False, 0, s.y, 80, s.x, s.w, s.h, r,
                             False, False, stOK);
                end
                else reply(stNOSAVE);
@@ -802,6 +947,40 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
          7: begin // dump
                dA <= 0; dB <= 0; dIss <= True; dTail <= True;
                mode <= MDump;
+            end
+         10: begin // read x y w h (the 2026-11-26 extension): a blit of the
+               // source surface's rectangle to dot 0 of rows ceil(w/16) words
+               // long, out as data
+               if (cw == 0 || ch == 0) reply(stOK);
+               else begin
+                  bRead <= True; dTail <= True;
+                  startBlit(sArea ? SSave : SFrame, zeroExtend(sBase), a[1], sPitch, a[0],
+                            False, 0, 0, 80, 0, cw, ch, 3, False, False, stOK);
+               end
+            end
+         11: begin // target which kind base pitch w h (the 2026-11-26 extension)
+               // (pitch > 255 is refused, so its low byte suffices)
+               Bit#(25) need = zeroExtend(a[2]) + zeroExtend(a[3][7:0]) * zeroExtend(a[5]);
+               Bool bad = a[4] == 0 || a[5] == 0 || a[3] == 0 || a[3] > 255 ||
+                          (zeroExtend(a[3]) << 4) < (Bit#(20))'(zeroExtend(a[4])) ||
+                          need > fromInteger(valueOf(SaveWords));
+               Bool area = a[1] == 1;
+               if (a[0] > 1 || a[1] > 1) reply(stBADOP);
+               else if (area && bad) reply(stBADSURF);
+               else begin
+                  Bit#(16) b = area ? a[2] : 0;
+                  Bit#(8) pt = area ? truncate(a[3]) : 80;
+                  Bit#(16) w = area ? a[4] : fw;
+                  Bit#(16) h = area ? a[5] : fh;
+                  Bit#(17) e = truncate(need);
+                  if (a[0] == 0) begin
+                     dArea <= area; dBase <= b; dPitch <= pt; dW <= w; dH <= h; dEnd <= e;
+                  end
+                  else begin
+                     sArea <= area; sBase <= b; sPitch <= pt; sW <= w; sH <= h; sEnd <= e;
+                  end
+                  reply(stOK);
+               end
             end
       endcase
    endrule

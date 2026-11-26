@@ -385,6 +385,31 @@ as CY the shape is half above the window, so 0 is probably a corrupted value as 
 Each step changes the hardware contract, so each updates `window_hardware_plan.md` §1.2 and §2.4
 and the winfb/RTL lockstep bench, and records the change as OURS.
 
+**Status (2026-11-26, implementation):** the owner said "do it"; progress is recorded step by step
+in `../../psi/README.md` "Window M8's stops resolved".
+- Step 1 DONE: `/8`, `/6` and `rough_dotted` stood in (`test_win_m8_stops_ellipse`).
+- Step 2 DONE:
+  - the read primitive in `psi/winfb.py` and `bsv/WinFbBox.bsv`, in lockstep (`run_win_tb.sh`);
+  - on top of it `save_image/6`, `get_point_value/4`, `set_point_value/4`, and `paint/5` as a
+    4-connected seed fill (`test_win_m8_stops_read`).
+  - The held paragraph run waits for step 3: it draws into windows that are never shown.
+- Step 3a DONE: drawing targets (prim `b`) in the winfb contract, in `psi/winfb.py` and
+  `bsv/WinFbBox.bsv` in lockstep, with bitmap memory 0 at reset (`window_hardware_plan.md` §2.4).
+  The stand-in's use of them (hidden windows drawn in areas) is step 3b.
+- Step 3b DONE (`test_win_m8_stops_surface`):
+  - windows drawn before they are shown, or never shown, draw into surface panes in bitmap
+    memory;
+  - paragraph `make/3` runs go1-go6, but its images do NOT match the held ones (every word
+    differs: line geometry and pattern phase, OURS; open in `psi/README.md`);
+  - icotext's 2000 x 2000 canvas refuses loudly (H8).
+- Step 4 DONE (`test_win_m8_stops_matrix`): the axis-aligned whole-scale matrix `copy/9`, nearest
+  dot, above the line (a read, then rows drawn as images). Rotation, shear, offsets and fractional
+  scales refuse. `magnify`/`expand/9` are not stood in.
+- All four steps are done. Open:
+  - the paragraph images differ from the held ones;
+  - paint is dot by dot;
+  - the host link does not carry reads (`WinLink.bsv`).
+
 ## 8. Sources read for this page
 
 - TM-785 PDF p19-20 (folios 14-15), p35 (folio 30), p40 (folio 35): page images.

@@ -19,7 +19,8 @@
 #      for each directed mnemonic stream win_streams/*.txt (assembled by
 #      psi/winfb.py asm), with the bench's +stall (it takes no response 3
 #      cycles in 8, so the box's queues and credits fill): pipe.txt drives
-#      the pipelined stages (H3 follow-up);
+#      the pipelined stages (H3 follow-up), reads_stall.txt the read and
+#      targets_stall.txt the drawing targets (the 2026-11-26 extension);
 #  10. run_win_link.sh (its own header).
 # Everything goes to bsv/build-win/ (WIN_BUILD to override; the root
 # .gitignore's build-*/ covers it).  BSC_BIN pins a compiler, as in
@@ -50,10 +51,40 @@
 #       lines, rand_h1_1, rand_h1_2
 #  10 save: the overflow check one word short (need >= size):
 #       save_restore, rand_h1_2
+# The read (the 2026-11-26 extension, psi/winfb.py's header): every read
+# answers its words into win_read.txt (WinFbBoxTb), compared with the
+# reference's fourth file.  OBSERVED 2026-11-26, the same way:
+#  R1 the read's pad dots not masked (sCollectRead without & t.mask):
+#       reads, rand_r_1, rand_r_2, reads_stall
+#  R2 the bench writes each read word with bit 0 flipped (the comparison
+#       of the read files itself): reads, rand_r_1, rand_r_2, reads_stall
+#  R3 the read's height cut one row short at the frame's bottom:
+#       reads, rand_r_1, rand_r_2, reads_stall
 # A first pass missed 5 and 6 in the directed streams (only the random
 # ones caught them: save_restore saved at x = y, copy_overlap had no
 # source ending on a word's first dot); both streams were then changed
 # and every injection re-run, giving the sets above.
+# The drawing targets (prim b, the same extension): gen streams targets
+# and rand_x2_1..3, and win_streams/targets_stall.txt.  OBSERVED
+# 2026-11-26, each in a private copy of pim/bsv and pim/psi (the tree's
+# files never edited), the stream loop of step 4 on the final RTL;
+# every stream not listed stayed `same` (the 11 frozen and the read
+# streams in every run):
+#  T1 the area clip uses the frame's W (the fill's cut: w1 = fw, not dW):
+#       targets, rand_x2_1, rand_x2_2, rand_x2_3, targets_stall
+#  T2 the BADSURF overlap check off by one (<= for <: adjacent areas
+#       refused): targets_stall only.  No gen stream has two areas that
+#       touch; targets_stall's C and D [4000, 4040) and [4040, 4080) were
+#       put in for this before the first pass, which caught it.
+#  T3 the line steps its rows by 80, not the area's pitch: targets,
+#       rand_x2_1, rand_x2_2, rand_x2_3, targets_stall
+#  T4 a same-area overlapping copy always top-down (up = False when both
+#       surfaces are areas): targets (read file only), rand_x2_2,
+#       targets_stall
+#  U0 (the undefined-contents choice) the bitmap RAM not cleared at reset
+#       (Bluesim's mkBRAMCore1 does not start at 0): targets,
+#       rand_x2_1, rand_x2_2, rand_x2_3, targets_stall.  So the streams
+#       do read words they never wrote, and the reset clear is needed.
 #
 # H2, the scan-out (WinScanOut.bsv; plan §2.2, §2.6, §4):
 #   5. python3 -I psi/test_winscan.py: the TMDS and scan-out references'
@@ -243,19 +274,22 @@ for name in $H01; do
     *)   args=
          python3 -I "$WINFB" gen "$name" > "$B/$name.hex" ;;
   esac
-  python3 -I "$WINFB" run "$B/$name.hex" "$B/$name.py.pbm" "$B/$name.py.status"
+  python3 -I "$WINFB" run "$B/$name.hex" "$B/$name.py.pbm" "$B/$name.py.status" "$B/$name.py.read"
   cp "$B/$name.hex" "$B/run/win_stream.hex"
-  rm -f "$B/run/win_frame.pbm" "$B/run/win_status.txt"
+  rm -f "$B/run/win_frame.pbm" "$B/run/win_status.txt" "$B/run/win_read.txt"
   (cd "$B/run" && ./../sim_win $args > sim.log 2>&1) || { cat "$B/run/sim.log"; status=1; continue; }
   cp "$B/run/win_frame.pbm" "$B/$name.bsv.pbm"
   cp "$B/run/win_status.txt" "$B/$name.bsv.status"
+  cp "$B/run/win_read.txt" "$B/$name.bsv.read"
   n=$(grep -c . "$B/$name.py.status" || true)
   imgs=$(( $(wc -c < "$B/$name.py.pbm") / 163853 ))
   cyc=$(sed -n 's/.* commands, \([0-9]*\) cycles/\1/p' "$B/run/sim.log")
-  if cmp -s "$B/$name.py.pbm" "$B/$name.bsv.pbm" && cmp -s "$B/$name.py.status" "$B/$name.bsv.status"; then
-    echo "   same  $name: $n commands, $imgs PBM images, $cyc cycles"
+  if cmp -s "$B/$name.py.pbm" "$B/$name.bsv.pbm" && cmp -s "$B/$name.py.status" "$B/$name.bsv.status" \
+     && cmp -s "$B/$name.py.read" "$B/$name.bsv.read"; then
+    rd=$(grep -c . "$B/$name.py.read" || true)
+    echo "   same  $name: $n commands, $imgs PBM images, $rd read words, $cyc cycles"
   else
-    echo "   DIFFERS $name: $n commands, $imgs images (cmp $B/$name.py.pbm $B/$name.bsv.pbm; status files likewise)"
+    echo "   DIFFERS $name: $n commands, $imgs images (cmp $B/$name.py.pbm $B/$name.bsv.pbm; status and read files likewise)"
     status=1
   fi
 done

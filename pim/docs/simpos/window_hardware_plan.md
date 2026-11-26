@@ -131,7 +131,7 @@ the server into RTL.
 | piece | in the PSI | here | grade |
 |---|---|---|---|
 | Framebuffer and bitmap memory | display controller on Multibus (INFERENCE) | `mkWinFbBox` over block RAM (frame) and SDRAM (save areas) | OURS |
-| Rasterop / drawing | controller or microcode (INFERENCE) | `mkWinFbBox` primitives = S§4.1's `fb_fill`, `fb_line`, `fb_glyph`, `fb_copy`, `fb_save`/`fb_restore` | OURS |
+| Rasterop / drawing | controller or microcode (INFERENCE) | `mkWinFbBox` primitives = S§4.1's `fb_fill`, `fb_line`, `fb_glyph`, `fb_copy`, `fb_save`/`fb_restore`; since 2026-11-26 also `read` and `target` (§2.4's extension: drawing on areas of bitmap memory) | OURS |
 | Scan-out | CRT controller (not documented) | `mkWinScanOut`: timing, fetch, cursor, TMDS, serializer | OURS |
 | Keyboard and mouse | console processor (PRINTED figure) | `mkWinInputBox`: PS/2 or USB-HID front ends to event records | OURS |
 | Window manager, classes, coordinator | SIMPOS software on the PSI CPU | **unchanged**: the ESP stand-ins on kl0 | — |
@@ -399,6 +399,52 @@ The engine is one box with sub-rules (fill, line, glyph, copy), per the idiomati
 
 **Clipping** is to the request's rectangle. The stand-in window manager already does window
 clipping (S§4.1), so the box clips only to the screen.
+
+**The 2026-11-26 extension (OURS, owner-approved).** The command set frozen in `psi/winfb.py` was
+itself OURS. The owner approved extending it so that SIMPOS can read dots back
+(`docs/simpos/m8_stops.md` §7). Its basis:
+- TM-125 p17 (PRINTED-INTERFACE) gives `get_point_value/4`;
+- TM-115 p82 (PROSE) says bitmap areas are loaded from and saved to strings.
+
+The record format and every rule are OURS:
+
+| prim | record | answer |
+|---|---|---|
+| `a` read | `a0 x y w h - -` | the rectangle of the SOURCE surface, cut as a fill is cut, as data words: ceil(w'/16) per row, row-major, dots from bit 15, the last word's pad dots 0; then the status OK. A cut rectangle with no dots answers no words. |
+| `b` target | `b0 which kind base pitch w h` | sets a surface register: which 0 the destination, 1 the source; kind 0 the frame (the rest ignored), kind 1 an area of the 65,536-word bitmap memory, w × h dots, row j from bit 15 of word base + j × pitch. OK; BADOP if which > 1 or kind > 1; BADSURF (6), the register unchanged, if w = 0, h = 0, pitch = 0, pitch > 255, 16 × pitch < w or base + pitch × h > 65,536. |
+
+- Prims 8, 9 and c–f stay reserved (BADOP), so the older streams' `0x90`/`0x93` records still mean
+  what they meant.
+- **Drawing targets (prim `b`, step 3 of `m8_stops.md` §7; basis TM-225 p10, PROSE: a hidden
+  window's output writes its save area).** Both registers are the frame at reset.
+  - fill, line and glyph draw on the destination surface; read and copy take dots from the source
+    surface; copy goes from the source to the destination. Each clips to its surface's w × h as
+    to the frame's 1,280 × 1,024 (right and bottom edges); an area's pad dots past w are never
+    written.
+  - A copy between two DIFFERENT areas (base or pitch unequal) whose word ranges
+    [base, base + pitch × h) meet is BADSURF and draws nothing, whatever its rectangle. One area
+    onto itself (equal base and pitch, w and h free) is allowed: the RTL's direction rule for an
+    overlapping copy needs one coordinate system.
+  - save, restore and dump always act on the frame, whatever the registers hold.
+- **Contents (OURS):** bitmap memory is 0 at reset, as the frame is. `mkWinFbBox` clears it beside
+  the frame (rule `initClearB`, 65,536 cycles inside the frame's 81,920), so reset takes no longer:
+  the empty stream is 163,846 cycles before and after, MEASURED with `win_measure.sh`. The
+  alternative, an area undefined until written, was not taken: the finished gen streams
+  (`targets`, `rand_x2_*`) read areas and pad words they never wrote.
+- The RTL computes each blit's first rows, base + row × pitch, in rule `blitSetup` a cycle after
+  the command is taken (one cycle more a fill, copy, glyph, read, save and restore), and a line's
+  start row in rule `lSetup`. The line engine no longer multiplies per dot: its row registers step
+  by ±pitch (H3 had seen a variable multiply on a RAM address miss 25 MHz).
+- `bsv/WinFbBox.bsv` answers it in lockstep with the reference, checked by `bsv/run_win_tb.sh` on
+  the read streams. The words leave as a dump's frame words do.
+- Open item: the host link does not carry them yet. Its TX (`bsv/WinLink.bsv` `sendData`) frames
+  data as 64-word records and takes 64 answers without looking at `isData`. So a read whose word
+  count is not a multiple of 64 would send its status, and later answers, as data words. This was
+  found by reading the rule; no read has been run through the link.
+- `bsv/WinFbBox.bsv` runs the targets in lockstep too: the gen streams `targets`, `rand_x2_1..3`
+  and the directed `bsv/win_streams/targets_stall.txt` (under +stall), with injections T1-T4 in
+  `bsv/run_win_tb.sh`'s header. No target record has been run through the host link
+  (`bsv/WinLink.bsv`).
 
 ### 2.5 Fonts
 
@@ -668,6 +714,20 @@ plane read and dot select. Seeds 1 and 2 passed at 75.35 and 77.32 (MEASURED).
 yosys's own counts: 7,313 LUT4 (808 more than H3), 4,277 TRELLIS_FF, 156 DP16KD, 646 PFUMX, 6
 L6MUX21 and 142 TRELLIS_DPR16X4. The added DPR16X4 are the stages' small FIFOs.
 
+**MEASURED, 2026-11-26: after the read** (§2.4's 2026-11-26 extension, rule `sCollectRead`). Same
+tools and script.
+
+| seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+|---|---|---|---|---|---|---|---|
+| 1 | 10,708 / 83,640 | 4,278 | 156 / 208 | 36.23 PASS | 81.37 PASS | 418.24 PASS | 1.45 ns |
+| 2 | 10,708 | 4,278 | 156 | 35.44 PASS | 84.05 PASS | 420.34 PASS | 1.26 ns |
+| 3 | 10,708 | 4,278 | 156 | 31.73 PASS | 84.56 PASS | 389.26 PASS | 1.47 ns |
+
+Against the build before it: 69 more TRELLIS_COMB, 1 more FF, the same DP16KD. yosys counts
+7,366 LUT4 (53 more). The m8_stops.md §3 estimate of 200-500 LUT4 was high, because the read reuses
+the blit's source stream and funnel. The system clock's lowest seed fell from 34.66 to 31.73 MHz;
+it still passes 25 MHz.
+
 yosys's own counts: 6,505 LUT4, 3,612 TRELLIS_FF, 156 DP16KD, 559 PFUMX, 32 L6MUX21, 112
 TRELLIS_DPR16X4 (the cursor planes and small FIFOs), 4 ODDRX1F, 1 EHXPLLL. The 156 DP16KD are the
 frame's 80 banks, the save areas' 64 and 12 for the font, the glyph index and the self-test's
@@ -678,6 +738,31 @@ output through the 80:1 mux and the funnel into the glyph bitmap's address; pixe
 RAMs or port B's first mux level; shift, one flop and at most one LUT. The pixel clock's margin on
 seed 1 is small (0.7%). Unchecked cross-domain delays (all through synchronizers): system → pclk
 8.45-10.06 ns, pclk → system 1.21-1.27 ns.
+
+**MEASURED, 2026-11-26: after the drawing targets** (§2.4's prim `b`: the surface registers, rules
+`blitSetup`, `lSetup`, `initClearB`, the line's row registers). Same tools and script.
+
+| seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+|---|---|---|---|---|---|---|---|
+| 1 | 11,690 / 83,640 | 4,549 | 156 / 208 | 36.44 PASS | 78.06 PASS | 373.83 PASS | 1.34 ns |
+| 2 | 11,690 | 4,549 | 156 | 34.55 PASS | 82.71 PASS | 406.01 PASS | 1.48 ns |
+| 3 | 11,690 | 4,549 | 156 | 33.55 PASS | 87.17 PASS | 384.17 PASS | 1.25 ns |
+
+Against the read's build (10,708 / 4,278 / 156; sys 36.23, 35.44, 31.73): 982 more TRELLIS_COMB,
+271 more FF and the same DP16KD. yosys counts 8,058 LUT4 (692 more than the read's 7,366) and
+9 MULT18X18D in all (no count was kept for the read's build). Where the growth is was not
+measured: sharing the cut between fill, copy and read (the final build) did not shrink it. The
+worst seed's system clock rose from 31.73 to 33.55 MHz. The pitch multiplies moved out of `accept`, `glyph6` and the line's address
+into setup cycles of their own.
+
+The shift clock is close: seed 1's sclk is 373.83 MHz against 370.10, a 1% margin. Its path is one
+flop and one LUT, and 2.3 ns of it is routing. The FIRST build of this change failed there: seed 1's
+sclk was 326.26 MHz, with sys 34.18, 34.25, 33.35 and 11,682 TRELLIS_COMB. It differed from the
+final build only in the cut: one per primitive, and the target's 16 × 16 multiply. INFERENCE: the
+serializer's logic did not change, and the two builds are within 8 TRELLIS_COMB of each other, so
+the failure is the serializer's placement, which varies from one build to the next. Any later
+change to the box may fail this check again; the 3-seed PASS here is narrow. Placing the serializer in a region of
+its own would be the fix, not a change to the box.
 
 **ESTIMATED (OURS, not synthesized):**
 

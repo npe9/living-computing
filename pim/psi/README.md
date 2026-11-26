@@ -4769,6 +4769,170 @@ modules having failed nothing in the first run; "rest screen" is
 | C3 | the screen under the source's block not drawn back | copy only |
 | C4 | the source saved without `uncover/3` | copy only |
 
+### Window M8's stops resolved (2026-11-26)
+
+The owner's "do it" (2026-11-26) on `../docs/simpos/m8_stops.md`: its
+recommendations, in its §7 order, one commit a step.
+
+**Step 1: the held `draw_filled_ellipse` forms and `rough_dotted`.**
+- `/8` `(W, CX, CY, RX, RY, _, Pattern, Op)` (USAGE icotext
+  `imi_draw_win.esp:250-282`, `util_scroll.esp` forwarders) and `/6`
+  `(W, CX, CY, RX, RY, Op)`, pattern fix (USAGE gog `CGS_DEMO.ESP:416,
+  :424`). `/7` is kept, relabelled INFERENCE (only TM-785 p40's defective
+  vector). `execute_graphics_command/2`'s seven-element vector is `/8`;
+  the printed six-element vector stays refused, now because no held
+  method has that arity (m8_stops.md §6).
+- `rough_dotted` (kappa2 `pdim.esp:1094` and seven more held programs):
+  density INFERENCE (sparser than `dotted`: examds `sl_draw.win`'s
+  thresholds, paragraph `rmon.esp`'s order), dots OURS (`8888, 0, 2222,
+  0`). No held image shows it.
+- Neither held caller compiles under espc (icotext: 52 refused predicates;
+  gog `CGS_DEMO.ESP`: its macro bank `moji` is not held), so
+  `test_win_m8_stops_ellipse` replays their calls, transcribed.
+- Injections, OBSERVED (Window, `test_fep_bridge.py`, `test_kl0.py`):
+  S1 `/8` drawn with fix: stops_ellipse only; S2 `/6` drawn exclusive_or:
+  first NOTHING (drawn on white), then, the /6 drawn over a half-black
+  block, stops_ellipse only; S3 rough_dotted's rows swapped:
+  stops_ellipse and patterns.
+
+**Step 2: reading dots back (the 2026-11-26 extension of the winfb
+contract, OURS, owner-approved).**
+- `winfb.py` prim `a`, `read x y w h`. The rectangle is cut as a fill is
+  cut and answered as data words: ceil(w'/16) a row, the pad dots 0, then
+  OK. Prims 8, 9 and b-f stay BADOP. The format is in
+  `../docs/simpos/window_hardware_plan.md` §2.4.
+  - The 11 older streams are byte-identical to the frozen reference.
+  - Three new gen streams (`reads`, `rand_r_1`, `rand_r_2`) and
+    `bsv/win_streams/reads_stall.txt` (under `+stall`).
+  - `bsv/WinFbBox.bsv` reads in lockstep with it: a blit from the frame
+    whose sink is the response queue (rule `sCollectRead`), its status
+    after the words.
+  - The bench writes `win_read.txt`, and `run_win_tb.sh` compares it too.
+    Its header records injections R1-R3.
+- `windev.py` `read/7` writes the words into the caller's string in one
+  `set_codes`. On top of it (`standin/window_pane.esp` `read_in/6`,
+  `point_in/4`, `paint_in/5`; `standard_io_window.esp`):
+  - `save_image/6`, `get_point_value/4` and `set_point_value/4`;
+  - `paint/5`, a seed fill. The region is the dots 4-connected to the
+    seed with the seed's value: INFERENCE and OURS. It is found by a
+    scanline search on rows read once each, then drawn span by span, so a
+    pattern's 0 dots cannot feed the search.
+  - Reads go through `uncover/3` and take the cursor off, as drawing does.
+- `test_win_m8_stops_read` covers:
+  - `save_image/6` of a 40-wide block, open and covered;
+  - point values;
+  - gog `DISPPBMS.esp:116-118`'s painted triangle and cil
+    `es_gin.esp:1752-1762`'s `draw_triangle`, both transcribed (neither
+    class compiles under espc);
+  - kappa2's patterned `paint(W, 1, 1, Pattern, set)` form inside an
+    outline;
+  - the refusals.
+  Its header records the injections.
+- MEASURED cost: paint tests dot by dot. A 78 x 48 region (3,744 dots)
+  takes about 1 s. A 120,000-dot region passes kl0's 20,000,000-step
+  limit. kappa2's icons are 61 x 64 (`pdim.esp:573-574`), within the
+  measured size. Open item: test whole words for large regions.
+- Not yet run: the held callers paragraph `make/3` (`p_imag.esp` go1-go6),
+  gog and cil. paragraph draws into windows that are never shown, which
+  needs step 3 (drawing targets); its saved `profiler_icon_image1..6` are
+  then the independent oracle of `save_image`'s layout. Until then the
+  test's expected words repeat the implementation's own row and bit order.
+- Open item for the host link (`bsv/WinLink.bsv`, the hardware agent's
+  file, not changed here). The TX frames data as 64-word records
+  (`wLeft <= 64`), and `sendData` takes 64 answers without looking at
+  `isData`. So a read whose word count is not a multiple of 64 would have
+  its status, and the answers after it, sent as data words. This is from
+  reading the rule; it has not been run.
+
+**Step 3a: drawing targets in the winfb contract (the same extension,
+OURS, owner-approved).** Python and RTL only; no stand-in uses them yet.
+- `winfb.py` prim `b`, `target which kind base pitch w h`, sets the
+  destination (which 0) or the source (1) surface: the frame (kind 0) or
+  an area of the 65,536-word bitmap memory (kind 1). BADSURF (6) refuses
+  an area that memory cannot hold, and a copy between two different areas
+  that share words. fill, line and glyph draw on the destination; copy
+  and read take dots from the source. save, restore and dump stay on the
+  frame. Bitmap memory is 0 at reset. The rules are in
+  `../docs/simpos/window_hardware_plan.md` §2.4.
+  - The 11 frozen streams and `reads`, `rand_r_1`, `rand_r_2` give the
+    same output as before.
+  - New gen streams: `targets`, `rand_x2_1..3`. New directed stream:
+    `bsv/win_streams/targets_stall.txt`.
+- `bsv/WinFbBox.bsv` runs them in lockstep. It has the surface registers,
+  a setup cycle for base + row x pitch (`blitSetup`, `lSetup`), and a
+  line engine stepped by the pitch, with no per-dot multiply. It clears
+  the bitmap RAM at reset beside the frame. Injections T1-T4 are in
+  `run_win_tb.sh`'s header; synthesis is in the plan's §5.1.
+- Next is step 3b: the stand-in's hidden windows draw into areas. That
+  makes paragraph's `p_imag.esp` runnable.
+
+**Step 3b: windows drawn before they are shown, or never shown (OURS
+bodies).**
+- A window drawn on before `activate/1` gets a surface pane
+  (`standin/window_pane.esp` `create_surface/5`).
+  - Its inside is an area of bitmap memory, `ceil(Iw/16)` words a row,
+    taken from `save_memory.esp`'s first-fit list (new `allocate/3` and
+    `free/2`; a surface's id is `-1 - Base`, never a device slot).
+  - The area is cleared on allocation (OURS: TM-115 p44 says 1.0's areas
+    are not).
+  - The inside is the window's `size(Wd, Ht)` in dots (paragraph's form),
+    or its size in cells.
+- `coordinator.esp` `uncover/3` aims the device at the area (`windev.py`
+  `surface/5`), and `unpeel/2` aims it back at the frame.
+  - Every shown pane's `uncover/3` aims at the frame first. So a drawing
+    refused inside a surface pane's uncover cannot leave a shown window
+    drawing into the area.
+  - `windev` sends target records only when the surface changes, so runs
+    that draw only on the frame stream what they streamed before.
+- `activate/1` copies the surface into the new pane's inside (`windev`
+  `show/7`) and frees the area. `kill/1` of a window never shown frees it.
+  A `size(Wd, Ht)` window, when shown, gets as many cells as fit.
+- Refused loudly:
+  - copy/9 to or from a window never shown (`surface_copy`);
+  - a surface bitmap memory cannot hold (`bitmap_memory`). icotext's
+    2000 x 2000 canvas needs 250,000 words; the memory is 65,536 words of
+    block RAM until H8 moves it to SDRAM.
+- `test_win_m8_stops_surface` covers:
+  - the HELD paragraph `make/3` (p_imag.esp go1-go6), run through its
+    public `make_image_class_file/3`, with a harness model in place of its
+    file-writing `:write/4`. Each image is made into a 500 x 400 window
+    that is never shown. The frame is unchanged and no area is left.
+  - kappa2's paint before activate;
+  - the refused-uncover case;
+  - icotext's canvas;
+  - the stream replaying to the same frame and bitmap memory.
+- **Open: the paragraph images do not match the held
+  `profiler_icon_image1..6`; every word differs.** The counts are pinned
+  as `PARAGRAPH_GAP`, MEASURED, not a target. Image 5 (lines only) shows
+  three causes:
+  - the stand-in's light_paint phase is 3 dots off (its anchor at the
+    inside is OURS);
+  - the box lines lie about 8 rows higher;
+  - they are drawn black where the held image is white.
+  So the stand-in's `draw_line` geometry and ops (OURS) are not the
+  PSI's. This is the first independent oracle for them. Fixing it needs
+  the line semantics re-derived from these images, which is not done
+  here.
+
+**Step 4: copy/9's matrix form, whole scales.** `(W, DX, DY, Src, SX,
+SY, Width, Height, {A, B, C, D, E, F})` (USAGE icotext
+`util_scroll.esp:218-224`). The matrix is read as a row-major 2 x 3
+affine map (INFERENCE, m8_stops.md §5).
+- Stood in (`window_pane.esp` `magnify_in/10`): whole scales A, E >= 1,
+  B = C = D = F = 0. Each source dot becomes A x E dots (nearest dot,
+  OURS), drawn opaque. It runs above the device line: a read of the
+  source (step 2), then rows drawn as images. No RTL was needed.
+- Refused loudly: rotation and shear, an offset, scales that are not
+  whole (the held `Min/Max`, the commented-out 0.8 and 1.5), a
+  destination leaving the inside.
+- `magnify` and `expand/9` are not stood in: no source fixes their
+  arguments (euod's layout is INFERENCE only).
+- icotext's own call still refuses, because its source is the 2000 x 2000
+  canvas (`bitmap_memory`, H8).
+- `test_win_m8_stops_matrix` covers {2,0,0,0,2,0} and {3,0,0,0,1,0}
+  against a dot-by-dot reference, and the refusals. Its header records
+  the injections.
+
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
 Injection P13 (the coordinator's own process held back like any writer)
