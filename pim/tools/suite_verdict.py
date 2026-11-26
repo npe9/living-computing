@@ -21,11 +21,11 @@ ALLOWED = [
     re.compile(r"^=== formal BMC \(fixed PASS, buggy FAIL\) ===$"),
     re.compile(r"^=== (buggy smoke|multiway bug|decode error bug|fault bug)"
                r" \(expect FAIL with VCD\) ===$"),
-    re.compile(r"^SBY [\d:]+ \[bsv/formal/(%s)\] engine_0: Status returned "
+    re.compile(r"^SBY +[\d:]+ \[bsv/formal/(%s)\] engine_0: Status returned "
                r"by engine: FAIL$" % "|".join(BUGS)),
-    re.compile(r"^SBY [\d:]+ \[bsv/formal/(%s)\] summary: engine_0 \(.*\) "
+    re.compile(r"^SBY +[\d:]+ \[bsv/formal/(%s)\] summary: engine_0 \(.*\) "
                r"returned FAIL$" % "|".join(BUGS)),
-    re.compile(r"^SBY [\d:]+ \[bsv/formal/(%s)\] DONE \(FAIL, rc=2\)$"
+    re.compile(r"^SBY +[\d:]+ \[bsv/formal/(%s)\] DONE \(FAIL, rc=2\)$"
                % "|".join(BUGS)),
     re.compile(r"^(buggy smoke|multiway bug|decode error bug|fault bug): "
                r"FAIL as expected \(rc=2\)$"),
