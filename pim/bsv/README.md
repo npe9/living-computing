@@ -703,8 +703,42 @@ frozen in the header of `../psi/winfb.py`, the Python reference.
 `WinFbBoxTb.bsv` (hand-written, committed) reads a command stream and
 writes P4 PBM frames plus status files. `run_win_tb.sh` runs 11 streams
 on both the box and the Python layer and `cmp`s every frame and status
-file. It takes about a minute, and its header lists the injected faults
-and which streams catch each. Measured cycle counts are in the box header.
+file. Its header lists the injected faults and which streams catch each.
+Measured cycle counts are in the box header.
+
+**The scan-out (`WinScanOut.bsv`, H2).** `mkWinScanOut#(box.scan)` reads
+the frame through the box's new scan port (port B; the dump keeps it
+while a dump runs). Its submodules are:
+- `mkWinTiming`: one table of modes. 0 is 1920×1080@30 with the frame
+  letterboxed 1:1, 1 is 1280×1024@60 DMT, 2 is 1280×1024 reduced
+  blanking (OURS), 3 is 640×480 with a 2×2-OR 2:1 reduction from row
+  panY. Custom timings are accepted too.
+- `mkWinFetch`: one word read per 16-dot group, two in the 2:1 mode, into
+  a small queue.
+- `mkWinCursor`: the 16×16 mask/image overlay. It has 8 shapes, takes its
+  position at the frame start, and is never written into the frame.
+- `mkWinTmdsEnc` ×3: DVI 1.0 Fig. 3-5.
+- `mkWinTmdsSer`: the 10:1 serializer, two bits per shift clock.
+
+The references are `../psi/winscan.py` (modes, timing model, view,
+checkers) and `../psi/wintmds.py` (TMDS encode and decode, cited by DVI
+1.0 page); their unit tests are `../psi/test_winscan.py`. There are three
+hand-written benches:
+- `WinScanOutTb`: draws a stream, captures one frame plus a few lines of
+  characters, and dumps the frame again afterwards;
+- `WinTmdsEncTb`: every byte from every disparity state, plus runs and
+  random data;
+- `WinTmdsSerTb`: the serializer, with the pixel clock made by
+  `mkClockDivider(5)` and a null crossing.
+
+`run_win_tb.sh` decodes every capture in Python and compares it with the
+references clock by clock: sync levels, DE, pixels, the three channels,
+the disparity bound, and the characters re-encoded. It runs 17 scan cases
+(the four modes, mode 2 without a cursor, 12 small random timings). Its
+header lists the scan-out injections and what each was seen to fail.
+The whole runner takes about two minutes (2:10 measured
+2026-11-25); `WIN_PART=h2` runs only the scan-out part. The box and the scan-out share
+one clock in Bluesim; the DP16KD's system-to-pixel crossing belongs to H3.
 
 ## Regression
 
