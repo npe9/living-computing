@@ -4163,6 +4163,16 @@ head).
 - `menu_pane`: a title wider than the columns widens the last column
   (OURS; the pop-up's title is wider than `create`).
 
+**Open, found by probes (not in a test):**
+- After `create`, keys go first to the OLDER requester: it already waits
+  in get/2 on the coordinator's one keyboard stream, so the first key of
+  `local` reached window 1 and the rest window 2. The created window is
+  drawn and placed right, but typing into it is not right yet; per-window
+  keyboard streams would fix it. After `kill`, a click in window 1 and
+  `local` RETURN reach it.
+- Killing a window that lies under a newer one restores its saved dots
+  over the newer window (no restacking or clipping).
+
 **espc fails loud on a refused stand-in predicate.** `espc.standins()`
 now raises `CompileRefusal('stand-in', ...)` naming the predicate and the
 reason. Before, the predicate was dropped and showed only at run time as
@@ -4192,11 +4202,11 @@ Screens (`psi/winshot.py`, pinned, checked by `assert_shots`):
 
 | | injection | fails |
 |---|---|---|
-| S1 | menu_pane erase clears instead of restoring | M7 only |
-| S2 | save_memory always slot 0 | M7, M6 selection |
-| S3 | restore by exclusive_or | M7, test_win_pane, every window pin |
-| D1 | calendar from 1900 | the date test and every band pin |
-| D2 | weekday off by one | every band pin |
+| S1 | menu_pane erase clears instead of restoring | M7, create/kill |
+| S2 | save_memory always slot 0 | M7, M6 selection, create/kill |
+| S3 | restore by exclusive_or | M7, create/kill, test_win_pane, every window pin |
+| D1 | calendar from 1900 | the date test, every band pin, M7, create/kill |
+| D2 | weekday off by one | every band pin, M7, create/kill |
 | R1 | outline edge by set | create/kill only |
 | R2 | no shown program found (no pop-up) | create/kill only (ERROR) |
 | R3 | placement ignored | create/kill only |

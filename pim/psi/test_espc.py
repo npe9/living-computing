@@ -3390,6 +3390,10 @@ class Window(unittest.TestCase):
 
     def test_win_m5_login_screen(self):
         # M5 (and M3's core): the Login PIMOS window drawn by a LIVE run.
+        # Window M6's date (2026-11-25): every stage's pin moved by -941
+        # dots (PINS; M6_PINS before the date), accounted by assert_date
+        # (DATE): with the date's rectangle set black again the frame is
+        # its M6 pin.
         # The boot of step 3l/3m (B8 probe, coordinator, the held login.com
         # menu) starts the HELD pimfep##pimos_login_requester; its held
         # initiate/1 and read/4 send create/3, set_font/2 (font:test_11.font,
@@ -3599,6 +3603,9 @@ class Window(unittest.TestCase):
         #   J8 status_band: the band 40 rows high, not 80: this test, the
         #      three stages of test_win_m5_login_screen,
         #      test_win_m5_bridged_screen and test_win_m6_system_menu FAIL.
+        # Window M6's date (2026-11-25): this run's frame has 941 dots
+        # fewer than CONSOLE_PIN had before it (now M6_CONSOLE_PIN), the
+        # band's date; assert_date and DATE account for it.
         #   J9 pmacs_request: the argument read from the stored vector again
         #      (the backtracking bug, pmacs_request.esp's head): this test,
         #      test_win_m6_selection and Console.test_replay FAIL.
@@ -3792,14 +3799,15 @@ end.
         # Python's calendar, across 1901, the banner day 33742 (fep.py
         # DATE, the PSI's default), the leap day of 2000 and the end of a
         # day; the band's weekday (status_band.esp) is pinned through DATE
-        # in every band pin.  Injections, OBSERVED (2026-11-25; from a
-        # backup copy, restored by copy, cmp clean; Window,
-        # test_fep_bridge.py and test_kl0.py run):
+        # in every band pin.  Injections, OBSERVED (2026-11-25, re-run at
+        # the final commit; from a backup copy, restored by copy, cmp
+        # clean; Window, test_fep_bridge.py and test_kl0.py run, all else
+        # OK):
         #   D1 the calendar counted from 1900: this test, the three M5
-        #      stages, the bridged screen, M4 and the system menu FAIL.
-        #   D2 the weekday off by one ((N + 3) mod 7): the three M5 stages,
-        #      the bridged screen, M4 and the system menu FAIL (this test
-        #      does not read the weekday).
+        #      stages, the bridged screen, M4, the system menu,
+        #      test_win_m7_save_areas and test_win_m6_create_kill FAIL.
+        #   D2 the weekday off by one ((N + 3) mod 7): the same set
+        #      without this test (it does not read the weekday).
         import datetime
         sys.path.insert(0, os.path.join(HERE, '..', 'ref', 'pimm'))
         import fep
@@ -3883,11 +3891,14 @@ end.
         #      else.
         #   R3 window_pane ignores the swept placement (the window centred
         #      on the mouse): this test FAILS, nothing else.
-        #   R4 coordinator cursor_aside/1 a no-op (the selected window's
-        #      cursor saved under the new window and toggled over it):
-        #      this test FAILS, nothing else (the M4 pins are unchanged by
-        #      cursor_aside: the console's own selection took the login
-        #      window's cursor off before).
+        #   R4 coordinator cursor_aside/1 a no-op: this test FAILS,
+        #      nothing else.
+        # Not tested, and found wrong by a probe (open, psi/README.md):
+        # keys typed after `create` go first to the older requester,
+        # which already waits in get/2 on the one keyboard stream (the
+        # first key of `local` reached window 1, the rest window 2).
+        # After `kill`, a click in window 1 and `local` RETURN reach it
+        # (probe, 2026-11-25).
         import fep_bridge as FB
         import windev
         import winfb
@@ -3977,19 +3988,19 @@ end.
         # loaded, so the start refuses loudly, after the restore).  The
         # window's own area stays in use; out of save memory is a loud
         # refusal (winfb BADSAVE), never a silent clear.
-        # Injections, OBSERVED (2026-11-25; each from a backup copy,
+        # Injections, OBSERVED (2026-11-25, re-run at the final commit
+        # with every window test in place; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
         # test_kl0.py run, all else OK):
         #   S1 menu_pane erase/1 clears its rectangle (fill reset, M6's
-        #      way) instead of restoring: this test FAILS, nothing else
-        #      (every other menu closes over blank dots).
-        #   S2 save_memory always gives slot 0 (the menu's save replaces
-        #      the window's): this test and test_win_m6_selection FAIL
-        #      (there the killed requester's window restores the console's
-        #      saved area at the console's place).
+        #      way) instead of restoring: this test and
+        #      test_win_m6_create_kill FAIL.
+        #   S2 save_memory always gives slot 0 (a later save replaces an
+        #      earlier one's entry): this test, test_win_m6_selection and
+        #      test_win_m6_create_kill FAIL.
         #   S3 save_memory restores by exclusive_or, not copy: this test,
-        #      test_win_pane, the three M5 stages, the bridged screen, M4
-        #      and the system menu FAIL.
+        #      test_win_pane, the three M5 stages, the bridged screen, M4,
+        #      the system menu and test_win_m6_create_kill FAIL.
         import fep_bridge as FB
         import windev
         x, y = FB.MENU_AT

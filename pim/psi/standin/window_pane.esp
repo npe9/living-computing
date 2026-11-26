@@ -45,7 +45,9 @@
 % p10 and TM-126 p5, PROSE, window.md §4.1) and restored when it is
 % erased, so a window killed over another leaves the other's dots as they
 % were when it was covered (what the covered window wrote meanwhile is
-% lost: no output permission is modelled, OURS).  Since the pane is not
+% lost: no output permission is modelled, OURS; and killing a window that
+% lies under a newer one puts its saved dots over the newer one: no
+% restacking).  Since the pane is not
 % clipped, the selected window's block cursor (drawn by exclusive_or) is
 % taken off before a new pane is drawn (coordinator cursor_aside/1, OURS),
 % so it is neither saved under the new pane nor later toggled over it.
