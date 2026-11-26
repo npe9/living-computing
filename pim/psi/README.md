@@ -3817,10 +3817,11 @@ on the PSI/UX the SIMPOS window manager stayed in SIMPOS and an outside
 the primitive line, and what a live run drew is exactly a winfb command
 stream: the test replays the device's log through `winfb.run_stream` and
 gets the same frame, which is also what `../bsv/WinFbBox.bsv`'s bench and
-the hardware plan's UART consume. One cost: KL0 multiplies two registers
-with no witnessed opcode (espc refuses `X*Y`), so the pane keeps the
-cursor's dot position beside its cell and multiplies by repeated
-addition.
+the hardware plan's UART consume. One cost, when it was written: espc
+refused `X*Y` on two registers, so the pane keeps the cursor's dot
+position beside its cell and multiplies by repeated addition. (espc
+emits `X*Y` as blt 42 since 2026-11-25, section "espc's register cache
+after an overwrite" below; the pane is unchanged.)
 
 **The tests** (`test_espc.py`, class `Window`):
 
@@ -3866,8 +3867,11 @@ run's final screen.
 compiled `Pane!h`'s sum from a register that `put r0, w` (the slot name
 of the assignment before it) had just overwritten: espc kept `Ih` cached
 in r0 after the slot-name put reused r0. kl0 refused (`add on w`), so it
-was not silent here; the pane passes the sizes through a local instead.
-The fault is in `espc.py`'s register cache and is not fixed (open below).
+was not silent here; the pane passed the sizes through a local instead.
+The fault was in `espc.py`'s register cache; it is fixed (section
+"espc's register cache after an overwrite", below), and `create/7` now
+assigns the sizes directly (the local `sizes/3` is gone; the screens'
+pins are unchanged).
 
 **Injections, observed** (2026-11-25; each from a backup copy, restored
 by copy, `cmp` clean; the full test_espc.py and test_kl0.py run each
@@ -3943,16 +3947,118 @@ and the glyphs of the Login PIMOS prompt. Since window M0/M3/M5 (the
 section before) it is reached from the `SIMPOS_MODELS` hook through
 `windev.py`, unchanged: the live runs draw with its commands.
 
+## espc's register cache after an overwrite (2026-11-25)
+
+**The fault.** `Regs` records what each register holds; a register
+holding only a cached copy of a permanent variable (or a temporary with
+no uses left) counts as free, and `Regs.lowest()` hands it out to be
+written. Two writers did not then replace the record, so `where` still
+named the register for the variable and a later read took the new
+contents:
+- slotset's put of the slot name (`ClauseCompiler.inline`), the window
+  M5 case above: `Pane!h := Ih + Ch + 9` added the atom `w`;
+- a built-in's output register when the output is a constant (`builtin`
+  restores the register's old record around the call, and `bind_out` of
+  a constant reads the register instead of binding it):
+  `W = Z, vector_element(V, 0, 5), O!c := W` stored the element 5, not
+  W. This one computed a wrong value silently.
+
+**The fix.** `Regs.lowest()` drops the record of the register it returns
+(`Regs.evict`), so whatever its caller writes, the stale entry is gone;
+slotset also records the name's register while the name is in it.
+Audited for writes without a record, each followed by `R.set` or
+`R.drop`: `to_reg` (every `pick()`, the `prefer` path included),
+`slot_get`, `arith`/`dest` (including the in-place takeover of a cached
+Y), `build`, `get_value`/`unify_seq` (`hr`, `tr`, nested structures),
+`unify`'s aliasing and expression cases, `builtin` (new_heap_vector,
+new_string, the outputs), `bind_out`, `call` (each argument, the class
+receiver's `a9`/`25`), `clear_way` (its direct `holder[i] = None` follows
+`R.set(r, h)` of the moved value, which updates `where`), `head` and
+`ensure_env`. Only the two writers above were unrecorded. Comparisons
+(`blt 62`-`67`) and `set_*` built-ins write no register.
+
+**Where it was live, and the compiled-output diff.** Every compile the
+suite makes (54 stand-ins, paragraph, kappa2 and utter's held source,
+fep_bridge's boot class, and each `compile_text` of test_espc,
+test_kl0, test_fep_bridge and test_winfb: 3,246 class compiles) was
+listed before and after, predicate by predicate (offsets and pool
+displacements normalised). Five predicates of held source changed (seven
+listings: utter's source is compiled once into `fts` by
+`compiled_program` and once into its own packages by `check`), exactly
+the five places the old compiler read a stale entry (a scratch detector
+on the old compiler; two more stale reads are in predicates refused for
+another reason, so emitted nothing):
+- `paragraph##h_grade set_from_endl/5`: `X!end := End` stored the slot
+  name `from`; now `End` is reloaded from its Y, as the held code does
+  (`a2 02 01` before the `2f`);
+- `paragraph##profiler_view_window has_been_reshaped/1`: an argument
+  copied from r0 after a slot-name put there; now `a2 03 01`, the held
+  cell;
+- `kappa##kappaMDM_table_update $or$52/6`: one reload added after a
+  slot-name put (the class's later pool displacements and one choice
+  offset shift by that cell; nothing else in the class changed);
+- `qxt##objterm` and `qxt##translator` `module_head/1` (one source
+  shape): after `string_element(Str, 0, 0x236d)` the next
+  `string_element` read Str from the register holding the character; now
+  Str is reloaded from Y0, as the held `a4 00 00`.
+The held cells were paired at these points for h_grade,
+profiler_view_window and module_head; kappaMDM_table_update's was not.
+The stand-ins and the boot class compile byte-identical. `espc.py
+check`'s rows (24,531, all three programs) and kl0's census rows (six
+packages 530, plain FEP 1,468, FEP with recipes 1,468) are identical
+before and after: these predicates keep their class of difference.
+
+**The test** is `test_espc.py` `RegisterCache` (both shapes, run on kl0;
+its header has the observed injections). Its third test is a relative
+found while auditing: a comparison marked its left operand's register
+busy while it put the right one, so `X < X + 1` lost X (a KeyError for a
+temporary, a TypeError for a head argument not yet saved); X's register
+now keeps its record, as in `arith()`. Compiled output unchanged by it.
+
+**`X*Y` on two registers** (the same day). espc refused it as having no
+witnessed opcode, but kl0_opcodes.tsv has row blt 42 `multiply` since
+step 3m (KNOWN-PLAINTEXT: paragraph##h layout/2 @73 `42 01 02 01`,
+h.esp:21 `(Obj!num - 1)*Obj!x_space`, the product over the first
+operand; kl0 runs it). `arith()` now emits it as it does add and
+subtract. `X/Y` stays refused: blt 43's witnesses put the quotient over
+the second operand (`43 01 00 00`, `43 00 01 01`), a shape espc does not
+emit. Compiling the newly reachable code showed a crash of the same
+family as the cache fault: in `C*Elm*4 + C` (paragraph##receiver send/7)
+the right operand C was a head argument not yet saved in its Y; marking
+its register `rhs` dropped its `where` entry, and the left operand's read
+of C then allocated the environment with no register to save C from (a
+TypeError). Such a register now keeps its record, as a temporary's did
+since step 3c. (Injection, observed: that keeping reverted from a copy,
+the setUpClass of `Behaviour`, both `Emission` tests and three
+`Structure` tests ERROR with the TypeError, nothing else; restored by
+copy, `cmp` clean.) Effects, row by row (`espc.py check`, all programs):
+106 predicates that were refused (or `$or$`s of refused ones) now
+compile and are compared: paragraph 1,241 -> 1,280 compared (exact 258,
+unchanged), kappa2 12,816 -> 12,871 (exact 1,513 -> 1,514:
+with_kappaMDU_table_with_pp tab/3), utter 568 -> 580 (exact 110 -> 112:
+tour##tt_basic_predicate product/3 and product/6). No compared
+predicate changes its class of difference; no exact one is lost. The
+stand-ins and the boot class compile byte-identical (106 predicates are
+new in the held programs' listings; the others differ only in their
+refusal lists); kl0's census rows
+(six packages, FEP plain and with recipes) are identical. Test:
+`Language.test_multiply` (its injection, `*` as blt 40, fails it and
+test_kappa2's exact count).
+
 ## Open
 
-- **espc's register cache and slot-name puts** (window M0/M3/M5). In
-  `Pane!iw := Iw, Pane!ih := Ih, Pane!w := Iw + 6, Pane!h := Ih + Ch + 9`
-  the slot name `w` was put in r0 while espc still took r0 to hold `Ih`
-  (the slotset branch of `ClauseCompiler.inline` takes `R.lowest()` for
-  the name without dropping what the cache says r0 holds). kl0 refused
-  the sum (`add on w`); a case where the stale register held an integer
-  would compute a wrong value silently. Not fixed; `window_pane.esp`
-  works around it.
+- **espc drops a method named `div` or `mod` silently.** `:div(C,X) :-
+  X = 1;` compiles to a class with no `div` predicate, no refusal and no
+  failure (`mod` likewise; `quo` compiles). Found 2026-11-25; not
+  investigated (the reader presumably takes them as operators). A
+  construct must fail loud.
+- **espc's other temporary register markings.** `arith()` and the
+  comparison keep the record of a variable's own register while the
+  other operand is put; `builtin()` does for a temporary only, and
+  slotset and `unify` mark unconditionally. Probed 2026-11-25:
+  `substring(S, H, T - H, P)`, `O!a := X + O!b` and `X = O!a + X` with
+  head arguments compile; no failing shape was found, but none is proven
+  absent.
 - **The window environment after M0/M3/M5:** M4 (the PIMOS console as a
   PSI `pmacs_window` through the held `pimos_window_editor`, once PIMOS's
   window commands reach the PSI), the status band, the system menu drawn

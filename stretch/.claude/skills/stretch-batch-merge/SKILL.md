@@ -25,12 +25,12 @@ git merge --no-ff <branch1> [<branch2> ...]      # resolve conflicts here
    - Timing pins come from whichever side has the newer timing source.
    - For conflicts inside code, ask the authoring agent (SendMessage) when it
      is still alive.
-2. **Run the full suite** in the background with a private tape:
+2. **Run the full suite** as a run_in_background command:
    ```sh
-   cd $S/batchNN/stretch/tests && STRETCH_HALT_REPORT=1 \
-     STRETCH_TAPE=$S/bNN_tape.bin ./run_tests.sh > $S/bNN_suite.log 2>&1
+   $S/batchNN/stretch/tests/suite_bg.sh run $S/bNN    # private tape, HALT_REPORT, .done verdict
    ```
-   Judge it with `stretch-suite-verdict`. On red, fix in the batch tree and
+   Judge `$S/bNN.log` with `stretch-suite-verdict`; `suite_bg.sh status $S/bNN`
+   gives the wrapper's GREEN/RED/KILLED. On red, fix in the batch tree and
    re-run.
 3. **Check that master's stretch/ has not moved** since the batch base:
    ```sh

@@ -11,6 +11,10 @@ own. Apply every step below.
 
 ## Verdict
 
+Runs started with `tests/suite_bg.sh run PREFIX` already write this verdict
+to `PREFIX.done` (GREEN / RED / KILLED, with counts). Still read the FAIL
+lines yourself before merging. By hand:
+
 ```sh
 L=<log>
 tail -1 "$L"                                   # must be: All regression tests passed.

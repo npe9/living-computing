@@ -63,7 +63,7 @@ class window_pane has
         Pane!cols := Cols, Pane!rows := Rows,
         times(Cols, Cw, 0, Iw), times(Rows, Ch, 0, Ih),
         Pane!iw := Iw, Pane!ih := Ih,
-        sizes(Pane, Iw + 6, Ih + Ch + 9),
+        Pane!w := Iw + 6, Pane!h := Ih + Ch + 9,
         place(Pane, X, Y),
         Pane!left := Pane!x + 3, Pane!top := Pane!y + Ch + 6,
         Pane!cx := Pane!left, Pane!cy := Pane!top,
@@ -76,8 +76,9 @@ instance
 % the font's device id, the size in cells, the cursor's cell (col, row)
 % and its top-left dot (cx, cy), whether the cursor is wanted (selected)
 % and whether it is drawn now, and the title drawn.  The cursor's dot is
-% kept beside its cell because KL0 multiplies two registers with no
-% witnessed opcode (espc refuses X*Y): every position is a sum.
+% kept beside its cell, and every position is a sum, because espc refused
+% X*Y on two registers when this was written (it emits blt 42 since
+% 2026-11-25; psi/README.md, the register-cache section).
 attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
           iw := 0, ih := 0, cw := 0, ch := 0, font := 0, cols := 0,
           rows := 0, col := 0, row := 0, cx := 0, cy := 0, want := off,
@@ -160,11 +161,6 @@ local
 % N x C as a sum (OURS: see the slots)
 times(0, _, P, P) :- !;
 times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
-
-% (the outer size is passed in, not assigned after the slots above: espc
-% then reused Ih's register for a slot name, a compiler fault noted in
-% psi/README.md "Window M0/M3/M5")
-sizes(Pane, W, H) :- Pane!w := W, Pane!h := H;
 
 metrics(0, Id, Cw, Ch) :- !, :default_font(#bitmap_display, Id, Cw, Ch);
 metrics(Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;

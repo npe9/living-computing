@@ -306,6 +306,7 @@ class Language(unittest.TestCase):
 :ne(C,X,Y) :- X =\\= Y;
 :inc(C,X,Z) :- Z = X+1;
 :mul(C,X,Y,Z) :- Z = X*Y;
+:quo(C,X,Y,Z) :- Z = X/Y;
 :sub(C,X,Z) :- Z = (X+1)-X;
 instance
 :foo(O) :- frob(O);
@@ -339,9 +340,9 @@ end.''')
     def test_refusals_name_the_construct(self):
         t = compile_one(self.T)
         got = {r[0][0]: r[1] for r in t.refusals}
-        # X+Y compiles since step 3c (blt 40, 2026-11-24); X*Y is still
-        # refused
-        self.assertEqual(got, {'mul': 'arithmetic X*Y', 'ne': 'comparison =\\=',
+        # X+Y compiles since step 3c (blt 40, 2026-11-24), X*Y since
+        # 2026-11-25 (blt 42); X/Y is still refused
+        self.assertEqual(got, {'quo': 'arithmetic X/Y', 'ne': 'comparison =\\=',
                                'foo': 'built-in frob/1'})
 
     def test_add_and_shared_operand(self):
@@ -361,6 +362,112 @@ end.''')
         (r,) = K.call_class_method(m, 'user##t', 'sub', [5, K.Var()])
         self.assertEqual(K.resolve(r[1]), 1)
 
+    def test_multiply(self):
+        # Z = X*Y on two registers is blt 42 multiply with the result over
+        # the first operand (kl0_opcodes.tsv row 42: paragraph##h layout/2
+        # @73 `42 01 02 01`, h.esp:21), emitted since 2026-11-25.
+        # Injection (observed 2026-11-25, espc.py from a copy, restored by
+        # copy, cmp clean; full test_espc and test_kl0 runs): `*` emitted
+        # as blt 40 add: this test FAILS (the opcode) and MacroBank
+        # test_kappa2 FAILS (1,513 exact, not 1,514: the held cells of
+        # with_kappaMDU_table_with_pp tab/3 have blt 42), nothing else;
+        # test_kl0 OK
+        t = compile_one(self.T)
+        self.assertIn(0x42, [c[1] for c in code(t, 'mul') if c[0] == 0x21])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##t', 'mul', [3, 4, K.Var()])
+        self.assertEqual(K.resolve(r[2]), 12)
+
+
+class RegisterCache(unittest.TestCase):
+    """espc's register cache after a register is overwritten (2026-11-25).
+    A free register may still be recorded as holding a cached copy of a
+    permanent variable; a write into it that did not replace the record
+    left the cache naming the register, and a later read of the variable
+    took the new contents.  Two writers did that: slotset's put of the
+    slot name (found by window M5: window_pane create/7, `add on w`), and
+    a built-in's output register when the output is a constant (the
+    register is read, not bound, so the stale record was restored).  The
+    fix drops the record in Regs.lowest(), where every such register is
+    handed out.
+
+    In each clause below Z (A2) and the receiver O (A3) are permanent:
+    they live across ok/1.  ok3/3 is the next call, so A0-A2 are its
+    pending arguments and an arithmetic result goes to A3 or above.
+
+    Injections (2026-11-25, observed; each from a copy of espc.py,
+    restored by copy, cmp clean):
+    - the whole fix reverted (full test_espc.py and test_kl0.py runs):
+      test_slot_name_put ([3, 106, b]: `O!c := Z` stored the atom b, the
+      slot name of `O!b := X + 6`, put in the register that cached Z) and
+      test_builtin_output_to_constant ([0, 0, 5]: the element read into
+      W's register, where W is 3) FAIL, nothing else; test_kl0 OK.  (On
+      the same compiler `O!c := Z + 1` refused `add on b`, by a scratch
+      run; the test stops at name1.)
+    - only the eviction in Regs.lowest() removed, slotset's own record of
+      the name kept (full test_espc.py run): only
+      test_builtin_output_to_constant FAILS.
+      Slotset's record is then redundant with the eviction (removing it
+      alone fails nothing); it is kept so that the name's register is
+      recorded where it is written."""
+    T = '''class rc has
+instance
+attribute a := 0, b := 0, c := 0;
+:name1(O, X, Y, Z) :- ok(O), O!a := Z, O!b := X + 6, O!c := Z, ok3(O, X, Y);
+:name2(O, X, Y, Z) :- ok(O), O!a := Z, O!b := X + 6, O!c := Z + 1, ok3(O, X, Y);
+:elem(O, X, Y, Z) :- ok(O), W = Z, vector_element(Y, 0, 5), O!c := W, ok3(O, W, Y), ok(W);
+:get(O, A, B, C) :- A = O!a, B = O!b, C = O!c;
+local
+ok(_);
+ok3(_, _, _);
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        cls.t = compile_one(cls.T)
+        assert not cls.t.refusals, cls.t.refusals
+
+    def run_set(self, sel):
+        m = K.Machine(espc.library([self.t]))
+        cid = K.ClassRef('user##rc')
+        (o,) = [K.resolve(m.x[0]) for _ in m.solve_send(cid, 'new', [K.Var(), cid])]
+        m.reset()
+        n = sum(1 for _ in m.solve_send(o, sel, [100, K.Vec([5, 6]), 3, o]))
+        self.assertEqual(n, 1)
+        m.reset()
+        regs = [K.Var(), K.Var(), K.Var(), o]
+        (got,) = [[K.resolve(r) for r in regs[:3]] for _ in m.solve_send(o, 'get', regs)]
+        return got
+
+    def test_slot_name_put(self):
+        self.assertEqual(self.run_set('name1'), [3, 106, 3])
+        self.assertEqual(self.run_set('name2'), [3, 106, 4])
+
+    def test_builtin_output_to_constant(self):
+        self.assertEqual(self.run_set('elem'), [0, 0, 3])
+
+    def test_compare_reads_its_own_operand(self):
+        # `X < X + 1`: the comparison marked X's register 'cmp' while Y
+        # was put, so Y's read of X lost it: a KeyError for a temporary, a
+        # TypeError at the allocate for a head argument not yet saved
+        # (both observed on the compiler before 2026-11-25).  X's register
+        # now keeps its record, as in arith().  Injection (observed, from
+        # a copy, restored by copy, cmp clean; full test_espc.py): that
+        # keeping reverted, only this test ERRORS
+        t = compile_one('''class cmpx has
+:temp(C, X) :- X < X + 1;
+:temp2(C, X, Y) :- X + 1 > X, Y = X;
+:head(C, X) :- X < X + 1, ok(X), ok(X);
+local
+ok(_);
+end.''')
+        self.assertEqual(t.refusals, [])
+        m = K.Machine(espc.library([t]))
+        for sel in ('temp', 'head'):
+            self.assertEqual(len(K.call_class_method(m, 'user##cmpx', sel, [5])), 1)
+        (r,) = K.call_class_method(m, 'user##cmpx', 'temp2', [5, K.Var()])
+        self.assertEqual(K.resolve(r[1]), 5)
+
 
 class Structure(unittest.TestCase):
     def test_counts(self):
@@ -376,8 +483,10 @@ class Structure(unittest.TestCase):
         # rows (add, type tests, string_tail, equal_string, substring,
         # search_character, stack_vector): no exact predicate lost.
         # 1234 / 256 before step 3d's rows (vector_to_list, set_subvector,
-        # `{}` and four-element vectors): none lost
-        self.assertEqual((c['pred compared'], c['pred exact']), (1241, 258))
+        # `{}` and four-element vectors): none lost.  1241 / 258 before
+        # X*Y on two registers (blt 42, 2026-11-25): 39 refused predicates
+        # compile, none exact, no compared one changes its class
+        self.assertEqual((c['pred compared'], c['pred exact']), (1280, 258))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -496,7 +605,10 @@ end.'''
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
         # with the step 3c rows: 12,479 compared, 1,485 exact
         # with the step 3d rows: 12,816 compared, 1,513 exact (none lost)
-        self.assertEqual((c['pred compared'], c['pred exact']), (12816, 1513))
+        # with X*Y on two registers (blt 42, 2026-11-25): 12,871 compared,
+        # 1,514 exact (with_kappaMDU_table_with_pp tab/3 newly exact; no
+        # compared predicate changes its class)
+        self.assertEqual((c['pred compared'], c['pred exact']), (12871, 1514))
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
         # internal: 2 before step 3c (the PCM add_to_ele_by_search/10
