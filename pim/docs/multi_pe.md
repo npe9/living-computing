@@ -201,8 +201,8 @@ packet bytes and hardware-assembled 40-bit words.
 
 | Oracle | What it fixes | Label |
 |---|---|---|
-| `seqgc:go/0` from `pimm_shell360E.sav` | on N nodes run from node c: N collections, one per node, in the order 0, 1, .., N-1 without c, then c (each round's `%unify` comes after its collection, `proceedGcCall/1`); N-1 throws, N-1 `%unify` | HELD-SOURCE, its dataflow |
-| `gc:go/0` from the same file | N collections, one per node; c's after every other node's `%unify`; N-1 throws, N-1 `%unify` | HELD-SOURCE |
+| `seqgc:go/0` from `pimm_shell360E.sav` | on N nodes run from node c: N collection requests (the `collect_garbage` guards), one per node, in the order 0, 1, .., N-1 without c, then c; a round's `%unify` is sent before that node's collection is made (`proceedGcCall/1` is a tail call, and the collection waits for a goal switch); N-1 throws, N-1 `%unify` | HELD-SOURCE, its dataflow |
+| `gc:go/0` from the same file | N requests and N collections, one per node; c's request after every other node's `%unify` was sent; the others' order not fixed; N-1 throws, N-1 `%unify` | HELD-SOURCE |
 | KL1's semantics | placement does not change an answer: every multi-PE run's results equal the one-PE run's and KLIC 2.002's | the language |
 | The primer's `sample9` | the placement order 0,1,2,3,0,1,2,3 for `distribute(8)` on 4 nodes | PRINTED |
 | The manual's exception rules | an atom node is `illegal_input`, an out-of-range one `range_overflow` | PRINTED |
@@ -254,4 +254,48 @@ is the shape of M7, not a small change inside this rung.
 
 ## 5. Status
 
-*(Filled in as rungs are reached.)*
+**M1 reached on the reference model, 2026-11-26.** `ref/pimm/pimm_pe.py`
+(the PEs and the network, §3) and `ref/pimm/m1_gc.py` (the check, in
+`run_tests.sh`). `pimm.Machine.run` was split so that a goal switch is
+one method, `goal_switch()`, which the PEs call between deliveries;
+one machine's traces are byte-identical to before (compared on
+`lockstep_tproc`, 2,066,384 lines; `lockstep_shoen3`, 13,165;
+`lockstep_merge`, 2,438; `lockstep_shoen`, 5,534; one-machine
+`seqgc`, 334).
+
+What runs: PIMOS's compiled `seqgc:go/0` and `gc:go/0`
+(`pimm_shell360E.sav`, modules 33 and 22) on (N, c) = (1,0), (2,0),
+(2,1), (4,0), (4,2), each under quota 1 and quota 1,000,000: 20 runs,
+`m1 gc: PASS (20 runs)`, about a minute (35 s with `M1_CACHE`).
+Reductions on the home PE (quota 1 / long quota): `seqgc` N=2 23/25,
+N=4 45/51; `gc` N=2 10/12, N=4 18/22; each other PE 2 (`seqgc`) or 1
+(`gc`). The difference is the scheduler's (a `waitGcLoopSeq/6` that
+suspends once under the long quota), so reductions are printed, not
+pinned.
+
+Observed fault injections (each on a private copy of `pimm_pe.py`,
+the whole `m1_gc.py` run):
+
+| Injection | Observed |
+|---|---|
+| every `@node` made local | every N>1 case FAILS under both quotas (request and throw order, one request per node, one collection per node, messages `{0: 0, 9: 0}`); N=1 passes |
+| `current_node` gives node 0 everywhere | the c≠0 cases (`seqgc` and `gc`, 2/1 and 4/2) raise `KeyError` (e.g. 3762438966): a collection mid-run drops the loaded code, which is not a root in the bare run; the c=0 cases pass |
+| `current_node` gives TotalNode 1 | every N>1 case FAILS (no throws; with c=2 one throw, to PE 0) |
+| no `%unify` sent | every N>1 case FAILS under both quotas; the home is left with live exports and 2 or 4 suspended goals |
+| `%unify` writes the cell without waking its waiters | all cases PASS under quota 1; under quota 1,000,000 every N>1 case FAILS, and "the two schedules differ": why both quotas are run |
+| the raw external word passed as the argument (no import) | raises `Unimplemented: a second unification of external cell (50, 16777217)` |
+
+Not reached, open:
+
+- On the core: M7 (above).
+- `current_processor` and `unbound` refuse on more than one PE
+  (unsourced there); `to_processor` with another PE is written (the
+  same dispatch as `enqueue_goal_to_processor`) but no program of M1
+  runs it.
+- An `EX` cell in a collection is not exercised: `seqgc` sends its
+  `%unify` before the collection, and a collection with live exports
+  is refused loudly (`pimm_gc.py` refuses the tag). M3.
+- The bare run's loaded code is not a collector root (the node-0
+  injection shows it); in PIMOS the module table is. M5.
+- Exports are of atomic values and unbound variables only; a
+  structure argument is refused. M2.

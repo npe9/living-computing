@@ -136,6 +136,20 @@ instructions (refused: what they change is unsourced) and the
 resource ones acknowledged with nothing counted, no
 unification failure inside a shoen, no built-in exceptions.
 
+**Several PEs (rung M1, 2026-11-26; `docs/multi_pe.md`).**
+`pimm_pe.py` makes a `System` of N PEs, each a `Machine` of its own
+(copied from one loaded machine), with `current_node`, `Goal@node(K)`
+as a `%throw_goal` message, an unbound argument exported and the
+importer's unification of it with an integer or atom sent home as
+`%unify`; VPIM's logical packets, the console's message codes, a FIFO
+per pair of PEs, delivery at a goal switch, the PEs in turn with a
+quota. `python3 ref/pimm/m1_gc.py` (in the suite, about a minute) runs
+PIMOS's own compiled `seqgc:go/0` and `gc:go/0` from
+`pimm_shell360E.sav` on 1, 2 and 4 PEs under two quotas against what
+their source fixes. `pimm.Machine.run` calls the same `goal_switch()`
+the PEs call; one machine's traces are byte-identical to before.
+Reference only: the core is one PE (rung M7).
+
     python3 ref/pimm/test_jtoa.py
 
 runs module `jis_to_ascii` from the image against an oracle built from

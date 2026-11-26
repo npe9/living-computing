@@ -549,7 +549,9 @@ addressing rule on a layout known from elsewhere.*
   message kinds with their codes (VPIM's numbering); PIMOS's tag table
   holds VPIM's exported-variable and external-cell tags; `@node` is
   the one instruction 23:65; the oracles are PIMOS's own `seqgc` and
-  `gc` commands and the primer's `sample9`.*
+  `gc` commands and the primer's `sample9`. M1 is reached on the
+  reference model (`ref/pimm/pimm_pe.py`, `m1_gc.py`, `multi_pe.md`
+  §5); the core stays one PE until M7.*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
