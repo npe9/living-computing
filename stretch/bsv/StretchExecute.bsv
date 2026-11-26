@@ -3384,6 +3384,28 @@ function WordAddr vflRmwNextRead(Bit#(2) have, WordAddr w0, Bool crosses,
 
 // THE LOAD AND ADD FAMILY (A2): L, LWF, + and +MG, moved verbatim from
 // vflIntOp.  Writes: the accumulator (VflCommit's trio).
+// >>> THE PASSES mkSAU STEPS FOR L, LWF, + AND +MG (fidelity_plan.md A3
+// (b), 2026-11-25). <<<  SauAddSteps (StretchSAU.bsv) from the field as
+// carried: the data bytes x/y and the sign byte's pass (StretchVFL's
+// vflBytes, the count eboxClocks' row uses), where the carry is looked at
+// after the field (Table 3's z), and the bytes below it (os/r, for the
+// recomplement).  Binary: the data's top bit is the offset plus x, and
+// os/r is the offset in 8-bit bytes, rounded up.  Decimal: the offset is
+// a whole digit (printed p.57, its two low-order bits ignored), the data
+// is x/y digits from there, and os/r is the offset in 4-bit bytes.
+function SauAddSteps vflBinAddSteps(VflCtx cx, Bool mg);
+  VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, False);
+  return SauAddSteps { passes: vb.b0 + vb.s, top: cx.offSh + vb.x,
+                       osb: (cx.offSh + 7) >> 3, b0: vb.b0, mg: mg };
+endfunction
+
+function SauAddSteps vflDecAddSteps(VflCtx cx, Bit#(8) offDec, Bool mg);
+  VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, True);
+  Bit#(8) od = offDec >> 2;
+  return SauAddSteps { passes: vb.b0 + vb.s, top: od + vb.b0,
+                       osb: od, b0: vb.b0, mg: mg };
+endfunction
+
 function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
     VflInstr vi = cx.vi;
     Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
@@ -3460,7 +3482,8 @@ function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
                 ind = setResultIndicatorsF(ind, shifted);
                 if (ldPf) ind = setBit(ind, ind_PF, 1);
               end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False, binary: False });
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False, binary: False,
+                                                                 steps: vflDecAddSteps(cx, offDec, False) });
                 needsRead = tagged Valid 0;
               end
             end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
@@ -3599,7 +3622,8 @@ function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
                 if (!dSub && dr.carry) ind = setBit(ind, ind_LC, 1);
                 if (dPf) ind = setBit(ind, ind_PF, 1);
               end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub, binary: False });
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub, binary: False,
+                                                                 steps: vflDecAddSteps(cx, offDec, magnitude) });
                 needsRead = tagged Valid 0;
               end
             end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
@@ -3677,7 +3701,8 @@ function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
                 if (bPf) ind = setBit(ind, ind_PF, 1);
               end else begin
                 needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: addSh.mag,
-                                                                 sub: bSub, binary: True });
+                                                                 sub: bSub, binary: True,
+                                                                 steps: vflBinAddSteps(cx, magnitude) });
                 needsRead = tagged Valid 0;
               end
             end
@@ -3892,7 +3917,7 @@ function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
                     : (as_ == 0) ? m
                     : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
                 end else begin
-                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False });
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False, steps: sauNoSteps });
                   needsRead = tagged Valid 0;
                 end
               end
@@ -4114,7 +4139,7 @@ function VflArm vflStoreFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool decAsk = decRound && !isValid(decOf(boxResult));
               DecRsp decRsp = validValue(decOf(boxResult));
               Maybe#(BoxReq) decReq = tagged Valid (tagged BoxDec DecReq {
-                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False });
+                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False, steps: sauNoSteps });
               Bit#(128) decAccU = acc.mag >> offDec;
               Bit#(128) decAcc = (decRound ? decRsp.r : acc.mag) >> offDec;
               Bit#(7) decNumLen = (vi.m.unsign == 1) ? len_
@@ -4487,7 +4512,7 @@ function VflArm vflMemAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
               Bool dSub = (dOpnd.sign != dAccSh.sign);
               Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
-                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False });
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False, steps: sauNoSteps });
               Bool dDec = (vi.m.decimal == 1);
               Bool dAsk = dDec && !isValid(decOf(boxResult));
               DecRsp dr = validValue(decOf(boxResult));
@@ -9188,6 +9213,13 @@ interface EBox;
   // (StretchDivBox's walk); 0 for every other instruction, including
   // the VFL divide, whose time is eboxClocks' fit.
   method Bit#(16) boxCharge();
+  // THE SERIAL UNIT'S OWN TIME (fidelity_plan.md A3 (b), 2026-11-25),
+  // read in the same clock as boxClocks: Valid when the held instruction
+  // waits on mkSAU's adder for a STEPPED add (SauAddSteps), and then the
+  // clocks the unit's passes took (mkSAU.ownClocks).  StretchCore charges
+  // it in place of the eboxClocks row's byte term, and takes no box clocks
+  // off for it.  Invalid for every other instruction.
+  method Maybe#(Bit#(16)) boxOwnClocks();
   // THE LEVEL RELEASE (2026-11-19, plan §1c step 5f stage 2): True while
   // the held instruction is a look-ahead level's and is waiting on the FP
   // box (boxKind 4) and nothing else.  While it is, start() may be called
@@ -9367,6 +9399,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                           ? tagged Valid boxKind : tagged Invalid;
   method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
                                 ? divBox.response().fpExtra : 0;
+  method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && boxKind == 1 && sau.responseReady())
+                                           ? sau.ownClocks() : tagged Invalid;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);
     // `pc` and `len` are the EXECUTE's while a subject is held, which

@@ -387,6 +387,97 @@ SAU kinds:
   action); `/` (mkDivBox, the PAU's); the connectives (`connectiveOp`).
   Each must first send its byte loop through the adder.
 
+HALF (b), FIRST STEP DONE 2026-11-25: THE ADDER TERMS OF L, LWF, + AND +MG
+(`bsv/StretchSAU.bsv`, `StretchExecute.bsv`'s `vflBinAddSteps` /
+`vflDecAddSteps` and `boxOwnClocks`, `StretchCore.bsv`'s `rl_exec_resume`,
+`StretchTiming.bsv`'s `sauSteppedRowClocks`, `StretchVFL.bsv`'s `vflBytes`):
+- What changed:
+  - The four classes' requests carry their passes (`SauAddSteps`: the
+    field's data bytes and sign pass, from `vflBytes`, the count
+    `eboxClocks` uses; where z is looked at; os/r and x/y for the
+    recomplement). The binary L and LWF arms do not reach the unit, so
+    their row is untouched.
+  - `mkSAU` answers such a request after 2 clocks a pass (Buchholz printed
+    p.209; Table 3's .6 a byte, Vol. 1 printed p.3-7): the field's passes,
+    Table 3's z (glossary printed p.3-10: a pass for each byte the carry,
+    or with unlike signs the borrow, propagates into), and on "CD > AB"
+    the recomplement, os/r + x/y + z + 1 for `+`, 1 for `+MG`. It reports
+    that count (`ownClocks`).
+  - `rl_exec_resume` then charges the `eboxClocks` row LESS its byte term
+    (`sauSteppedRowClocks`, 2 clocks a byte with the sign byte) and takes
+    NO box clocks off: the subtraction is dropped for these four. Every
+    other class keeps half (a)'s contract (row charged whole, box clocks
+    subtracted): the M+ family, the K family, decimal SRD's round, the
+    converter and the multiplier.
+  - The add datapath is now 16 digits a clock (was 8), so the sum is never
+    later than the stepping (a one-pass field is 2 clocks). It is still
+    not the byte-wide datapath the passes describe: the clock count is
+    the stepping's, the width is F1's.
+  - An UNSTEPPED add still answers at half (a)'s 4 clocks (8
+    recomplemented). MEASURED on a first full run that let them answer at
+    the new datapath's 2 / 4: M+, M+MG, M+1 and the K family moved 246
+    atlas cases (88 toward, 158 away; one-digit fields 1 clock faster, the
+    relocation's signature below). With half (a)'s time kept they do not
+    move at all (the full-atlas table below).
+- A borrow that runs off the left end (the recomplement case) is NOT
+  stepped: z = 0 there. Counted, it put `+MG` INVERT (DU,64,4) 34 clocks
+  over PDF 118 (16 digit passes to the end + 1), where Table 3 charges +MG
+  ".6" alone. DERIVED reading: Fig. 3.11.9's EHOM1 test ends the loop.
+- The three steps, measured one at a time, on the pages of these
+  instructions (PDF 116, 118, 120, 121; forwarding 143, 145, 147, 148;
+  immediate 171-174; 3,260 cases), each against the step before.
+  "toward/away" = |residual| fell/rose by more than 0.05 clock:
+
+  | step | within 1 before -> after | within 3 before -> after | toward | away |
+  |---|---|---|---|---|
+  | relocation (byte term moved into the unit, no z, no recomplement) | 1,807 -> 1,811 | 2,312 -> 2,314 | 44 | 28 |
+  | + Table 3's z (`sauStepZ`) | 1,811 -> 2,066 | 2,314 -> 2,303 | 798 | 344 |
+  | + the recomplement (`sauStepRecomp`) | 2,066 -> 2,106 | 2,303 -> 2,300 | 40 | 12 |
+  | all three against the base | 1,807 -> 2,106 | 2,312 -> 2,300 | 858 | 376 |
+
+  - The relocation is not neutral, and says where the hold sits: a
+    one-byte field's box hold is 2 clocks now (was 4) and its level
+    retires 2 clocks sooner, with the same total. 28 cases (one-byte `+`,
+    `+MG` (BU,1,8) / (BU,8,8) and decimal L, LWF (DU,4,4) / (D,4,4), INDEXING
+    EXTERNL) come out 1 clock faster, away from the page (-1.05 -> -2.05);
+    44 forwarding cases (PDF 143-148, ix_ext) move +0.25 toward it. Not
+    diagnosed further.
+  - z's 344 away: 304 are in the two WB XOVR columns, where the model was
+    already 3-5 clocks OVER the page before this (the crossover's own
+    charge, "WB XOVR in general" in `atlas_oracle.md`), and z adds the same
+    carries there as in every other column. The other 40 are signed fields,
+    binary (B,n,1) 0 -> +0.53 and decimal (D,8,4) 0 -> +0.89: every one
+    stays within 1 clock. No non-crossover case leaves the 1-clock band.
+    KEPT, on that reading; the crossover excess is the store/fetch path's
+    (A6), not the adder's.
+  - The recomplement's 12 away are WB XOVR INVERT SIGN (`+MG` (BU,64,8)
+    +3 -> +5). Its 40 toward are the same instruction's other columns
+    (-2 -> 0).
+- MCP boot (the six `run_mcp_*` IPL / P1 sections, `STRETCH_HALT_REPORT`),
+  after the relocation and after all three: every check passes both times.
+  Halt clocks against the base: relocation -10, -10, -10, +8, +25; all
+  three -2, -2, -2, +16, +65 (boot, decode, assign, past-move, p1deck).
+  No term broke the boot, so no budget term was found covering a memory
+  access.
+- THE WHOLE VFL ATLAS (PDF 102-189, 18,238 cases) against the half (a)
+  base: within 1 clock 8,905 -> 9,204, within 3 11,286 -> 11,274; 858
+  toward, 376 away -- exactly the 3,260-case table's moves, and no case of
+  any other instruction moves. Exact cases 7,099 -> 7,769, mean |residual|
+  5.16 -> 5.13 clocks. Per instruction (within 1 before -> after, toward /
+  away): `+` 308 -> 406, 302 / 206; `+MG` 281 -> 426, 380 / 162; `+I` 64 ->
+  96, 84 / 0; `+MGI` 38 -> 62, 84 / 0; L and LWF 462 -> 462, 4 / 4 each;
+  LI, LWFI unchanged.
+- MOVED PINS (both MODEL pins, both from the relocation alone: the same
+  count with z and the recomplement switched off, in scratch copies):
+  `decks/vfl_srd.strap` CYCLES 1290 -> 1294 (its decimal L(DU,16,4) holds
+  its level 8 clocks, not 4) and `decks/dec_box_release.strap` CYCLES 859
+  -> 868 (its decimal L and + likewise). The atlas's own L and + pages at
+  those fields do not move; no page measures these sequences.
+- Unit test: `mkSauStepTb` (`tests/run_saustep_test.sh`), ten literal
+  vectors. Injections, each in a scratch copy: `sauStepZ` off fails 1, 2,
+  3, 5 (the carry and borrow vectors); `sauStepRecomp` off fails 4 and 7
+  (7 on `ownClocks`, since the datapath's recomplement still takes 4).
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).

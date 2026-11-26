@@ -506,11 +506,10 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       Bit#(4) bsz  = effByteSize(v.a.bs);
       Bool    sgn  = (v.m.unsign == 0);
       Bool    dec  = (v.m.decimal == 1);
-      Bit#(8) x = !sgn ? zeroExtend(len_)
-                : (len_ > zeroExtend(bsz)) ? zeroExtend(len_) - zeroExtend(bsz) : 0;
-      Bit#(8) y = dec ? zeroExtend(bsz) : 8;
-      Bit#(8) b0 = (x + y - 1) / y;              // data bytes
-      Bit#(16) s = sgn ? 1 : 0;
+      VflBytes vb = vflBytes(len_, bsz, sgn, dec);   // StretchVFL: shared with mkSAU's requests
+      Bit#(8) x = vb.x;
+      Bit#(8) b0 = vb.b0;                        // data bytes
+      Bit#(16) s = zeroExtend(vb.s);
       Bit#(16) b = zeroExtend(b0) + s;           // bytes, sign byte included
       Bit#(16) fl = zeroExtend(len_);
       Bool fullU = !sgn && len_ == 64;           // a whole unsigned word
@@ -767,5 +766,27 @@ endfunction
 
 function Bit#(16) budgetClocks(DecodedInstr d, Bool taken) =
   2 * iboxCycles(d, taken) + eboxClocks(d);
+
+// >>> THE PART OF A VFL ROW THE SERIAL UNIT NOW STEPS (fidelity_plan.md
+// A3 (b), 2026-11-25). <<<  2 clocks (0.6 us) a byte, sign byte
+// included: Table 3's .6(x/y) plus the signed .6 (eboxClocks' `b`),
+// Buchholz printed p.209 (PDF 234), the serial unit's rate.  When mkSAU
+// answers a request that carried its pass count (SauAddSteps, an
+// instruction whose time the unit owns), StretchCore's rl_exec_resume
+// charges the row LESS this, plus the unit's own stepped clocks -- so
+// the byte term of the row is the unit's, and only the row's fixed part
+// (and any departure of the fit from 2 a byte) stays here.  Timed off
+// the instruction AS DECODED, as eboxClocks is; the unit steps the
+// field as carried (a second-indexed length can make them differ).
+function Bit#(16) sauSteppedRowClocks(DecodedInstr d);
+  case (d) matches
+    tagged VflInt .v: begin
+      VflBytes vb = vflBytes(effLength(v.a.length), effByteSize(v.a.bs),
+                             v.m.unsign == 0, v.m.decimal == 1);
+      return 2 * (zeroExtend(vb.b0) + zeroExtend(vb.s));
+    end
+    default: return 0;
+  endcase
+endfunction
 
 endpackage

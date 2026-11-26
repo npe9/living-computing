@@ -2392,7 +2392,10 @@ run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator k
     "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
     "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
 # RE-PINNED 2026-11-17: CYCLES 1246 -> 1290.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 1246, injection C leaves 1290.
-run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1290+-0" \
+# CYCLES 1290 -> 1294, 2026-11-25 (fidelity_plan.md A3 half (b)): the
+# decimal L before case 9 is a stepped add now; the deck's header has the
+# attribution (mkSAU's switches; relocation alone gives 1294).
+run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1294+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
     "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
@@ -2927,9 +2930,16 @@ run "BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program
 #   K1 (deferIboxStores := False): wheres 0x0213400000000000, stws 0x0000200000000000,
 #     CYCLES 858, MEMREADS 65; case S not recovered.
 #   IH (iboxHazard skipped beside a held level): zout 0x46, CYCLES 855.
+# CYCLES 859 -> 868, 2026-11-25 (fidelity_plan.md A3 half (b)): the deck's
+# decimal L and + are stepped adds now, so the box holds their levels 2
+# clocks a pass (+(DU,16,4): 4 passes, 8 clocks, against half (a)'s flat 4)
+# and each retires at the answer.  Attributed by mkSAU's switches in
+# scratch copies: relocation alone 868, z alone 868, both 868; base 859.
+# Every other pin of the deck (WHEREL, WHERES, STWS, OUTL, ZOUT, MEMREADS
+# 66, the trails) is unchanged.
 run "BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/dec_box_release.strap StretchDecBoxRelTb \
     "PC=4301" \
-    "CYCLES=859+-0" \
+    "CYCLES=868+-0" \
     "MEMREADS=66" \
     "wherel:3328=0x0211a00000000000" "wheres:3329=0x0213200000000000" \
     "stws:3330=0" "outl:3331=0x46" "zout:3332=0" \
@@ -10480,6 +10490,13 @@ run "SAU MULTIPLIER (was VFL ARITHMETIC BOX) (binary multiply; literal products 
 # single-class literals.  Injection (the converter's request leaving the
 # result register as the last class left it): bsv/StretchSAU.bsv's header.
 run "SAU MIXED CLASSES (shared registers; literal answers and clocks)" "$TESTS_DIR/run_saumix_test.sh"
+# 2026-11-25 (fidelity_plan.md A3 half (b)): mkSauStepTb, the STEPPED add.
+# Requests carrying their passes (SauAddSteps) take 2 clocks a pass with
+# Table 3's z and recomplement terms (Perf. Char. Vol. 1 printed pp.3-7,
+# 3-10; Buchholz p.209); literal answers, literal clock counts, and the
+# unit's ownClocks() equal to the clocks taken.  Injections:
+# bsv/StretchSAU.bsv at mkSauStepTb and fidelity_plan.md A3 (b).
+run "SAU STEPPED ADD (Table 3's passes, 2 clocks each; literal answers and clocks)" "$TESTS_DIR/run_saustep_test.sh"
 # 2026-11-19: mkFpBox, the floating-point box (plan §1c step 5f, stage 1:
 # MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
 # printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution

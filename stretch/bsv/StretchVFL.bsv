@@ -79,6 +79,29 @@ function Bit#(7) effLength(Bit#(6) length) =
 function Bit#(4) effByteSize(Bit#(3) bs) =
   (bs == 0) ? 8 : zeroExtend(bs);
 
+// >>> THE SERIAL UNIT'S BYTES OF A FIELD (fidelity_plan.md A3 (b),
+// 2026-11-25). <<<  Perf. Char. Vol. 1 Table 3's .6(x/y) (printed p.3-7,
+// PDF 25) with printed p.3-10's (PDF 28) x and y: x = the field length
+// unsigned, the field less the byte size signed; y = 8 binary, the byte
+// size decimal.  `b0` = ceil(x/y), the data bytes; `s` = 1 for the sign
+// byte's pass when signed (Table 3's preamble, printed p.3-6: "Signed
+// operations can be computed by adding .6 microseconds").  ONE
+// definition, shared by eboxClocks (StretchTiming) and the E-box's
+// requests to mkSAU (StretchExecute), so the bytes the time budget
+// takes off and the passes the unit steps are the same count.
+typedef struct {
+  Bit#(8) x;     // data bits
+  Bit#(8) b0;    // data bytes, ceil(x / y)
+  Bit#(8) s;     // 1 when signed (the sign byte's pass), else 0
+} VflBytes deriving (Bits, Eq, FShow);
+
+function VflBytes vflBytes(Bit#(7) len_, Bit#(4) bsz, Bool sgn, Bool dec);
+  Bit#(8) x = !sgn ? zeroExtend(len_)
+            : (len_ > zeroExtend(bsz)) ? zeroExtend(len_) - zeroExtend(bsz) : 0;
+  Bit#(8) y = dec ? zeroExtend(bsz) : 8;
+  return VflBytes { x: x, b0: (x + y - 1) / y, s: sgn ? 1 : 0 };
+endfunction
+
 // Whether a field would span two words. writeField below can only issue
 // one call to the underlying single-write-port storage per invocation
 // (see bsv/README.md "Toolchain"/"Scope": RegFile -- even the "WCF"
