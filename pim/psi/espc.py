@@ -24,8 +24,9 @@ WHAT IT MAY EMIT
 Only opcodes with a row in psi/kl0_opcodes.tsv, and only in the operand
 patterns those rows say were witnessed (`Asm` checks every cell
 against the table).  A construct that would need anything else is refused
-with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X+Y`
-on two registers (no witnessed register add), a vector of one, or of five or
+with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X/Y`
+on two registers (blt 43 is witnessed only with its result over the second
+operand, not emitted), a vector of one, or of five or
 more, elements built in a body (not emitted yet: `{}`, two, three and four
 are pmi b0, b2, b3, b4; kl0 has rows for b1, b5, b6, b7 since step 3e, but
 espc does not use them), `=\\=` (no witness of
@@ -1213,21 +1214,31 @@ class ClauseCompiler:
             r = self.dest(x, prefer, avoid)
             self.asm.blt(imm[op], r, y[1], r)
             return r
-        if op in ('-', '+'):
+        if op in ('-', '+', '*'):
             # blt 41 subtract and blt 40 add (step 3c), both witnessed
-            # with the result over the first operand
+            # with the result over the first operand; blt 42 multiply
+            # likewise (step 3m row; paragraph##h layout/2 @73 `42 01 02
+            # 01`, h.esp:21 `(Obj!num - 1)*Obj!x_space`), emitted since
+            # 2026-11-25
             yr = self.to_reg(y, scratch=False)
             held = self.R.holder.get(yr)
             # as in builtin(): a variable's register stays the variable's,
-            # so X may read it too (`S - (S + 1)`)
-            if not (y[0] == 'var' and held == ('var', y[1])):
+            # so X may read it too (`S - (S + 1)`); so does a head argument
+            # still waiting to be saved in its Y (a 'pvar', live, so not
+            # reused): marked 'rhs', it lost its `where` entry, and X's
+            # read of it allocated the environment with no register to
+            # save it from (a TypeError, first reached through X*Y:
+            # paragraph##receiver send/7, `C*Elm*4 + C`, 2026-11-25)
+            if not (y[0] == 'var' and held in (('var', y[1]), ('pvar', y[1]))):
                 self.R.set(yr, ('val', 'rhs'))
             r = self.dest(x, prefer, avoid)
             self.R.set(yr, held)
-            self.asm.blt(0x41 if op == '-' else 0x40, r, yr, r)
+            self.asm.blt({'-': 0x41, '+': 0x40, '*': 0x42}[op], r, yr, r)
             self.consume(y, yr)
             return r
-        raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (no witnessed opcode)')
+        # X/Y: blt 43 divide is witnessed only with the quotient over the
+        # SECOND operand (`43 01 00 00`, `43 00 01 01`), not emitted here
+        raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (blt 43 not emitted)')
 
     def dest(self, x, prefer, avoid):
         """A register holding X's value that may be overwritten (the

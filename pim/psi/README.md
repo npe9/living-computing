@@ -3817,10 +3817,11 @@ on the PSI/UX the SIMPOS window manager stayed in SIMPOS and an outside
 the primitive line, and what a live run drew is exactly a winfb command
 stream: the test replays the device's log through `winfb.run_stream` and
 gets the same frame, which is also what `../bsv/WinFbBox.bsv`'s bench and
-the hardware plan's UART consume. One cost: KL0 multiplies two registers
-with no witnessed opcode (espc refuses `X*Y`), so the pane keeps the
-cursor's dot position beside its cell and multiplies by repeated
-addition.
+the hardware plan's UART consume. One cost, when it was written: espc
+refused `X*Y` on two registers, so the pane keeps the cursor's dot
+position beside its cell and multiplies by repeated addition. (espc
+emits `X*Y` as blt 42 since 2026-11-25, the register-cache section
+below; the pane is unchanged.)
 
 **The tests** (`test_espc.py`, class `Window`):
 
@@ -3988,6 +3989,34 @@ before and after: these predicates keep their class of difference.
 
 **The test** is `test_espc.py` `RegisterCache` (both shapes, run on kl0;
 its header has the observed injections).
+
+**`X*Y` on two registers** (the same day). espc refused it as having no
+witnessed opcode, but kl0_opcodes.tsv has row blt 42 `multiply` since
+step 3m (KNOWN-PLAINTEXT: paragraph##h layout/2 @73 `42 01 02 01`,
+h.esp:21 `(Obj!num - 1)*Obj!x_space`, the product over the first
+operand; kl0 runs it). `arith()` now emits it as it does add and
+subtract. `X/Y` stays refused: blt 43's witnesses put the quotient over
+the second operand (`43 01 00 00`, `43 00 01 01`), a shape espc does not
+emit. Compiling the newly reachable code showed a crash of the same
+family as the cache fault: in `C*Elm*4 + C` (paragraph##receiver send/7)
+the right operand C was a head argument not yet saved in its Y; marking
+its register `rhs` dropped its `where` entry, and the left operand's read
+of C then allocated the environment with no register to save C from (a
+TypeError). Such a register now keeps its record, as a temporary's did
+since step 3c. (Injection, observed: that keeping reverted from a copy,
+the setUpClass of `Behaviour`, both `Emission` tests and three
+`Structure` tests ERROR with the TypeError, nothing else; restored by
+copy, `cmp` clean.) Effects, row by row (`espc.py check`, all programs):
+106 predicates that were refused (or `$or$`s of refused ones) now
+compile and are compared: paragraph 1,241 -> 1,280 compared (exact 258,
+unchanged), kappa2 12,816 -> 12,871 (exact 1,513 -> 1,514:
+with_kappaMDU_table_with_pp tab/3), utter 568 -> 580 (exact 110 -> 112:
+tour##tt_basic_predicate product/3 and product/6). No compared
+predicate changes its class of difference; no exact one is lost. The
+stand-ins and the boot class compile byte-identical; kl0's census rows
+(six packages, FEP plain and with recipes) are identical. Test:
+`Language.test_multiply` (its injection, `*` as blt 40, fails it and
+test_kappa2's exact count).
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

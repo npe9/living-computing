@@ -306,6 +306,7 @@ class Language(unittest.TestCase):
 :ne(C,X,Y) :- X =\\= Y;
 :inc(C,X,Z) :- Z = X+1;
 :mul(C,X,Y,Z) :- Z = X*Y;
+:quo(C,X,Y,Z) :- Z = X/Y;
 :sub(C,X,Z) :- Z = (X+1)-X;
 instance
 :foo(O) :- frob(O);
@@ -339,9 +340,9 @@ end.''')
     def test_refusals_name_the_construct(self):
         t = compile_one(self.T)
         got = {r[0][0]: r[1] for r in t.refusals}
-        # X+Y compiles since step 3c (blt 40, 2026-11-24); X*Y is still
-        # refused
-        self.assertEqual(got, {'mul': 'arithmetic X*Y', 'ne': 'comparison =\\=',
+        # X+Y compiles since step 3c (blt 40, 2026-11-24), X*Y since
+        # 2026-11-25 (blt 42); X/Y is still refused
+        self.assertEqual(got, {'quo': 'arithmetic X/Y', 'ne': 'comparison =\\=',
                                'foo': 'built-in frob/1'})
 
     def test_add_and_shared_operand(self):
@@ -360,6 +361,22 @@ end.''')
         self.assertEqual(K.resolve(r[2]), 7)
         (r,) = K.call_class_method(m, 'user##t', 'sub', [5, K.Var()])
         self.assertEqual(K.resolve(r[1]), 1)
+
+    def test_multiply(self):
+        # Z = X*Y on two registers is blt 42 multiply with the result over
+        # the first operand (kl0_opcodes.tsv row 42: paragraph##h layout/2
+        # @73 `42 01 02 01`, h.esp:21), emitted since 2026-11-25.
+        # Injection (observed 2026-11-25, espc.py from a copy, restored by
+        # copy, cmp clean; full test_espc and test_kl0 runs): `*` emitted
+        # as blt 40 add: this test FAILS (the opcode) and MacroBank
+        # test_kappa2 FAILS (1,513 exact, not 1,514: the held cells of
+        # with_kappaMDU_table_with_pp tab/3 have blt 42), nothing else;
+        # test_kl0 OK
+        t = compile_one(self.T)
+        self.assertIn(0x42, [c[1] for c in code(t, 'mul') if c[0] == 0x21])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##t', 'mul', [3, 4, K.Var()])
+        self.assertEqual(K.resolve(r[2]), 12)
 
 
 class RegisterCache(unittest.TestCase):
@@ -443,8 +460,10 @@ class Structure(unittest.TestCase):
         # rows (add, type tests, string_tail, equal_string, substring,
         # search_character, stack_vector): no exact predicate lost.
         # 1234 / 256 before step 3d's rows (vector_to_list, set_subvector,
-        # `{}` and four-element vectors): none lost
-        self.assertEqual((c['pred compared'], c['pred exact']), (1241, 258))
+        # `{}` and four-element vectors): none lost.  1241 / 258 before
+        # X*Y on two registers (blt 42, 2026-11-25): 39 refused predicates
+        # compile, none exact, no compared one changes its class
+        self.assertEqual((c['pred compared'], c['pred exact']), (1280, 258))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -563,7 +582,10 @@ end.'''
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
         # with the step 3c rows: 12,479 compared, 1,485 exact
         # with the step 3d rows: 12,816 compared, 1,513 exact (none lost)
-        self.assertEqual((c['pred compared'], c['pred exact']), (12816, 1513))
+        # with X*Y on two registers (blt 42, 2026-11-25): 12,871 compared,
+        # 1,514 exact (with_kappaMDU_table_with_pp tab/3 newly exact; no
+        # compared predicate changes its class)
+        self.assertEqual((c['pred compared'], c['pred exact']), (12871, 1514))
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
         # internal: 2 before step 3c (the PCM add_to_ele_by_search/10
