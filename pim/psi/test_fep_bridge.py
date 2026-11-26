@@ -191,11 +191,50 @@ class Tape(unittest.TestCase):
         self.assertEqual([x for _d, x in t['result']['log']], ['Shell>> '] + list(texts))
         self.assertEqual({d for d, _x in t['result']['log']}, {28})
 
+
+CONSOLE_TAPE = os.path.join(HERE, 'fep_bridge_tapes', 'console_pwd.json')
+
+
+class Console(unittest.TestCase):
+    """Window M4 (2026-11-25): PIMOS's shell window, its 104 device, is
+    the PSI's (BridgeFep.BRIDGED).  The live run (s3_merger.pkl, 28 s)
+    recorded psi/fep_bridge_tapes/console_pwd.json; the user (OURS) logs
+    in by the mouse and types `pwd` into the console once PIMOS's 110
+    waits.  login_pwd.json (step 3n, the window fep.py's) still replays
+    (Tape above)."""
+
+    def test_replay(self):
+        stop, psi, left, t = B.replay(CONSOLE_TAPE)
+        self.assertEqual((stop.cause, left), ('would suspend', []))
+        self.assertEqual(psi.requester_window(), Tape.WINDOW)
+        self.assertEqual(t['shell'], ['pwd'])
+        # fep.py answered none of the window's messages: no log, nothing held
+        self.assertEqual((t['result']['log'], t['result']['held']), ([], {}))
+        # PIMOS's messages to its window, in order, and the PSI's answers
+        to, back = [], []
+        for e in t['exchanges']:
+            to += [B.show(bytes.fromhex(r)) for r in e['to_psi']]
+            back += [B.show(bytes.fromhex(r)) for r in e['from_psi']]
+        to28 = [p[2:] for p in to if p[0] == 28]
+        self.assertEqual(to28, [
+            [104, b'', J('pmpsi'), J('pmpsi')], [127, 200, 200, 47, 14],
+            [130, J('PIMOS CONSOLE')], [132, J('font:test_11.font')], [143],
+            [70], [70], [70], [112], [111, J('Shell>> ')], [112], [112], [110],
+            [111, J(' The value of task: directory is ">sys>user>pmpsi" . \n')],
+            [112], [111, J('Shell>> ')], [112], [112], [110]])
+        back28 = [p[2:] for p in back if p[0] == 28]
+        # {Id, 1} to each but the 70s (abort: no reply, as fep.py's and
+        # the login servers' 70s, fep_services.md 6.7) and the last 110,
+        # which waits; the first
+        # 110's answer is the line the user typed, from the editor's buffer
+        self.assertEqual(back28, [[1]] * 5 + [[1]] * 4 + [[1, J('pwd')]] + [[1]] * 5)
+        self.assertEqual((psi.user_at, psi.shell_at), (6, 19))
+
     @unittest.skipUnless(os.environ.get('FEP_BRIDGE_PKL'), 'set FEP_BRIDGE_PKL to the link checkpoint')
     def test_live(self):
-        with open(TAPE) as f:
+        with open(CONSOLE_TAPE) as f:
             t = json.load(f)
-        result, _psi, _pim = B.live(os.environ['FEP_BRIDGE_PKL'], t['lines'])
+        result, _psi, _pim = B.live(os.environ['FEP_BRIDGE_PKL'], t['shell'])
         self.assertEqual(json.loads(json.dumps(result)), t['result'])
 
 

@@ -1,0 +1,86 @@
+% SCAFFOLDING stand-in for SIMPOS's class `editor_command_interpreter`
+% (Pmacs's command loop), compiled by psi/espc.py into the package
+% `simpos`.  It is NOT SIMPOS: Pmacs is lost, its default key bindings too
+% (window.md gap G6; the plan §0).  The class name is SIMPOS's (window.md
+% §2.14, nature-only); that it is what get_interpreter/2 answers is
+% INFERENCE.  Window milestone M4 (2026-11-25).
+% USAGE (held cells and sources):
+%   - pimfep##pimos_window_process goal/1 @99-c9 and $or$0/3 @19a-1b3:
+%     `:get_interpreter(Window, I)` on its pimos_window, then the window's
+%     process runs `command_interpret` on it inside tag_catch/9 (the tag
+%     pimos_abort, the abort handler abort_command) and catch/8, and then
+%     asks the editor is_closed/1;
+%   - pimos_window_editor getl/3, putb/4, clear/3, buffer_name/3, after
+%     attention/1: `I!original_buffer`, the window's text buffer (slot
+%     read by name, blt 27);
+%   - held IFS callers send `:command_interpret(I)` to the answer of
+%     get_interpreter/2 (window.md §2.11: chal cal_pmacs.esp:51, cil
+%     src/ms_msm.esp:497, ds_brs.esp:64, ds_edt.esp:65, kwic-esp
+%     src/dtCompiler.esp:31, txtstrct ctx_system.esp:472: "run the editor
+%     loop until exit").
+% Model (OURS throughout, labelled):
+%   - the interpreter reads one input at a time from its stream `input`:
+%     what the window's input_data/2 puts (the front end's pmacs_request,
+%     pimos_window_process put/2 @eb; the atom `exit`, pimos_window_editor
+%     after close/3 @6a-73) and the keys the coordinator gives the window
+%     while it is selected (coordinator.esp, {key, Code});
+%   - a request is run on the window (pmacs_request.esp); a key: 13
+%     (RETURN) is the editor's carriage_return/1, so pimos_window_editor's
+%     held before/after demons run (@2bd, @2c8: the after-demon answers a
+%     pending getl, $or$4/2 @4b7-4cc), any other code is inserted at the
+%     point (Pmacs's self-insert; the minimal binding set is OURS, gap G6:
+%     no other key is bound); `exit` ends the loop;
+%   - after each input the buffer is redisplayed, as an Emacs redisplays
+%     after a command (INFERENCE: Pmacs is "Emacs-like", IPSJ 114007,
+%     PROSE).
+
+class editor_command_interpreter has
+
+% :create(#editor_command_interpreter, Window, Editor, Buffer, I) -- OURS
+% selector: made with its pmacs_window (pmacs_window.esp create/3).
+% INTERPOLATED (selector and body OURS): create; basis above and in
+% the head comment.
+:create(Class, Window, Editor, Buffer, I) :-
+        :new(Class, I),
+        I!window := Window, I!editor := Editor,
+        I!original_buffer := Buffer,
+        :create(#stream, Input),
+        I!input := Input;
+
+instance
+
+% `original_buffer` is HELD (the slot name pimos_window_editor reads); the
+% others OURS.
+attribute window := 0, editor := 0, original_buffer := 0, input := 0;
+
+% INTERPOLATED (body OURS) from pimos_window_process $or$0/3 @1a4 and the
+% IFS callers above.
+:command_interpret(I) :- loop(I);
+
+% :input(I, Data) -- OURS selector: Data joins the input (the window's
+% input_data/2 and the keyboard).
+% INTERPOLATED (selector and body OURS): input; basis above and in
+% the head comment.
+:input(I, Data) :- :put(I!input, Data);
+
+local
+
+loop(I) :- :get(I!input, X), run(I, X);
+
+run(_, exit) :- !;
+run(I, X) :- integer(X), !, key(I, X), :redisplay(I!original_buffer), loop(I);
+run(I, Request) :-
+        request(I, Request, Request!selector),
+        :redisplay(I!original_buffer), loop(I);
+
+key(I, 13) :- !, :carriage_return(I!editor);
+key(I, C) :- :insert_code(I!original_buffer, C);
+
+% the one request the route makes (pmacs_request.esp); any other is sent
+% to the window under a selector no class has, so kl0 refuses it aloud
+request(I, Request, kl1_message) :- !,
+        :argument(Request, Message),
+        :kl1_message(I!window, Message);
+request(I, Request, _) :- :unknown_pmacs_request(I!window, Request);
+
+end.

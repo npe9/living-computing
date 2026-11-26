@@ -1,12 +1,10 @@
 % SCAFFOLDING stand-in for SIMPOS's class `pmacs_window` (the Pmacs editor
 % window), compiled by psi/espc.py into the package `simpos`.  It is NOT
-% SIMPOS: no part of it is printed or held, and NO DISPLAY IS MODELLED.
-% It is MINIMAL: creation, get_editor/2, and (step 3f) the geometry,
-% title, font and display methods of window.md §2.1-2.3 as slots and
-% no-ops.  The text protocol (putl/2, putf/3, getl/2, ...; docs/simpos/
-% subsystems/window.md §2.4, §2.11), get_interpreter/2 and the
-% has_been_reshaped/1 callback are not stood in, so a caller stops
-% there.  INTERPOLATED (labelled) from:
+% SIMPOS: no part of it is printed or held.  It is MINIMAL: creation,
+% get_editor/2, and (step 3f) the geometry, title, font and display
+% methods of window.md §2.1-2.3 as slots.  Window M4 (2026-11-25) gives it
+% the text protocol the held pimos_window_editor needs and draws it (see
+% "WINDOW M4" below).  INTERPOLATED (labelled) from:
 %   - window.md §2.11 (corrected 2026-11-24 by docs/simpos/
 %     source_check_2026-11-24.md, row SA36): disc/exshow.esp:24 (held
 %     IFS source) sends create/3, `:create(#pmacs_window,[title(Buf)|
@@ -32,19 +30,58 @@
 %     so the slot is pmacs_window's.
 % Model (OURS): the window and its editor are made together and point at
 % each other.  An `{editor, Class}` option names the editor's class
-% (standard_editor without one); the other options are ignored.  What
+% (standard_editor without one); the other options are ignored (the
+% {size, 70, 110} of create_pimos_window/3 too: its unit is UNKNOWN, and
+% PIMOS's 127 sets the text size before the console is drawn).  What
 % `activity` means is UNKNOWN; it starts at 0.
+%
+% WINDOW M4 (2026-11-25): THE PIMOS CONSOLE.  PIMOS's window device (FEP
+% commands 104-146, docs/fep_services.md §2.6) reaches the held
+% pimfep##pimos_window_process and pimos_window_editor on the PSI, whose
+% compiled cells send these (read with psi/fepread/ptfread.py):
+%   - get_interpreter/2 (goal/1 @ad; getl/3 @106, putb/4 @177, clear/3
+%     @36, buffer_name/3 @28c, after attention/1 @2ec): the window's
+%     command interpreter, whose slot original_buffer is its text buffer
+%     (USAGE; editor_command_interpreter.esp, editor_text_buffer.esp);
+%   - input_data/2 (pimos_window_process put/2 @eb, a pmacs_request;
+%     pimos_window_editor after close/3 @73, the atom exit): the datum
+%     joins the interpreter's input (INFERENCE: the window's input is what
+%     its command loop reads);
+%   - has_been_reshaped/1 (reshape/7 @21e, set_size/3 @84,
+%     set_inside_size/5 @271, reshape_by_mouse/3 @351, local $or$9/1
+%     @55b), after the geometry is set: the default primary is not
+%     printed (psi/README.md "Open": 23 held files define their own, a
+%     layout of their own windows).  INFERENCE here: a window on the
+%     screen is drawn again at its new place and size, its text redrawn;
+%     one not yet drawn is left alone;
+%   - flash/1 (putb/4 @1a8, flush/3 @238, getl/3 @102, ungetb/4 @39a):
+%     "make buffered output visible now" (USAGE, window.md Appendix A;
+%     cil/src/es_trc.esp:1401-1420): the buffer is redisplayed.
+% Drawing (OURS bodies, as standard_io_window.esp's): the window owns a
+% window_pane, made when it is first activated or shown, at its position
+% (set_position/3, reshape/5; 0, 0 when never set: OURS) and text size
+% (set_text_size/3; 40 x 10 when never set: OURS) in its font (set_font/2;
+% the device's substitute when never set); the title in its label; the
+% text buffer drawn in the pane; show/1 selects the window (the
+% coordinator's select_window/2: its block cursor, the status band's
+% box), and keys typed while it is selected join its interpreter's input
+% (typed/2, OURS).
 
 class pmacs_window has
 
 % INTERPOLATED from: the pimfep `:create(#pmacs_window, Opts, W)` sends;
 % the editor option from pimos_window create_pimos_window/3 (step 3e).
+% Window M4: the window's text buffer and command interpreter are made
+% with it (OURS: the held code finds them through get_interpreter/2).
 :create(Class, Options, Window) :-
         :new(Class, Window),
         editor_class(Options, Editor_class),
         :new(Editor_class, Editor),
         Window!editor := Editor,
-        Editor!window := Window;
+        Editor!window := Window,
+        :create(#editor_text_buffer, "", Buffer),
+        :create(#editor_command_interpreter, Window, Editor, Buffer, I),
+        Window!interpreter := I;
 % INTERPOLATED from: kwic-esp src/inEditor1.esp:151 and mendels
 % comp_win.esp:54-62 `:create(#pmacs_window, Opts, _, W)` (held IFS
 % source; Opts with `nature([with_superior_input_buffer])` and
@@ -55,8 +92,9 @@ class pmacs_window has
 
 instance
 
-% INTERPOLATED: the representation (OURS).
-attribute editor := 0;
+% INTERPOLATED: the representation (OURS).  Window M4: the interpreter,
+% the pane (0: not drawn), the window's number in the status box (OURS).
+attribute editor := 0, interpreter := 0, pane := 0, number := 0;
 
 % INTERPOLATED (step 3e) from: pimos_window create_pimos_window/3, which
 % sets it to 1 after creating the window; meaning UNKNOWN.
@@ -65,6 +103,20 @@ attribute activity := 0;
 % INTERPOLATED from: window.md §2.11 `:get_editor(W, E)`.
 :get_editor(Window, Editor) :-
         Editor = Window!editor;
+
+% Window M4, INTERPOLATED (body OURS) from the USAGE in the head comment.
+:get_interpreter(Window, I) :- I = Window!interpreter;
+
+% Window M4, INTERPOLATED (body OURS) from the USAGE in the head comment.
+:input_data(Window, Data) :- :input(Window!interpreter, Data);
+
+% Window M4, INTERPOLATED (body INFERENCE, see the head comment).
+:has_been_reshaped(Window) :- drawn_again(Window);
+
+% Window M4, INTERPOLATED (body OURS) from window.md §2.3, Appendix A
+% (USAGE): the buffer made visible.
+:flash(Window) :- Window!interpreter == 0, !;
+:flash(Window) :- buffer(Window, B), :redisplay(B);
 
 % Step 3f: the window's geometry, title and font, and the display
 % methods, as pimfep##pimos_window_editor sends them to its window (kl0
@@ -79,12 +131,12 @@ attribute activity := 0;
 % `:get_title(Instance,^Title)` (PRINTED-INTERFACE, for a menu window,
 % 1985) and `:get_size(Instance,^Width,^Height)`.  Model
 % (OURS): each value is a slot, set by the setter and read back by the
-% getter; nothing is displayed, so the display methods succeed and do
-% nothing.  The initial values are OURS (0, an empty title); the font
+% getter.  The initial values are OURS (0, an empty title); the font
 % starts as 0, since no font object is stood in.  What `manipulator` in
 % place of a coordinate does (the user places the window; cited as
 % TM-125 p15, but step 3g's re-check found the word on neither PDF p15
-% nor p16, so USAGE only) is not modelled: it is stored like a number.
+% nor p16, so USAGE only) is stored like a number; window_pane.esp
+% places such a window at the mouse (M6, OURS).
 
 % INTERPOLATED: the representation (OURS); see the note above.
 attribute x := 0, y := 0, width := 0, height := 0,
@@ -116,34 +168,66 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % get_inside_size/3).
 :get_text_size(Window, C, R) :-
         C = Window!columns, R = Window!rows;
-% INTERPOLATED from: window.md §2.2 set_title/2 (TM-125 p15).
+% INTERPOLATED from: window.md §2.2 set_title/2 (TM-125 p15).  Window M4:
+% drawn in the label when the window is on the screen.
 :set_title(Window, T) :-
-        Window!title := T;
+        Window!title := T,
+        drawn_title(Window);
 % INTERPOLATED from: window.md §2.2 get_title/2 (USAGE, 111 uses;
 % PRINTED-INTERFACE TM-115 PDF p64, folio 59, `:get_title(Instance,
 % ^Title)`, found by step 3g's re-check).
 :get_title(Window, T) :-
         T = Window!title;
-% INTERPOLATED from: window.md §2.2 set_font/2 (TM-112 p16).
+% INTERPOLATED from: window.md §2.2 set_font/2 (TM-112 p16).  Window M4:
+% a window on the screen is drawn again in the new font (OURS).
 :set_font(Window, F) :-
-        Window!font := F;
+        Window!font := F,
+        drawn_again(Window);
 % INTERPOLATED from: window.md §2.2 get_font/2 (USAGE).
 :get_font(Window, F) :-
         F = Window!font;
-% INTERPOLATED from: window.md §2.1 activate/1 (TM-125 p16); nothing is
-% displayed here.
-:activate(Window) ;
+% INTERPOLATED from: window.md §2.1 activate/1 (TM-125 p16).  Window M4:
+% the window is drawn (OURS, as standard_io_window.esp).
+:activate(Window) :- open(Window);
 % INTERPOLATED from: window.md §2.1 deactivate/1 (TM-125 p16).
 :deactivate(Window) ;
-% INTERPOLATED from: window.md §2.1 show/1 (TM-125 p16).
-:show(Window) ;
+% INTERPOLATED from: window.md §2.1 show/1 (TM-125 p16).  Window M4: the
+% window is drawn and selected (TM-225 p10-11, PROSE: SHOW changes the
+% selected window; as standard_io_window.esp).
+:show(Window) :- Window!interpreter == 0, !;
+:show(Window) :- open(Window), :select_window(#coordinator, Window);
 % INTERPOLATED from: window.md §2.1 hide/1 (TM-125 p16).
 :hide(Window) ;
 % INTERPOLATED from: window.md §2.3 beep/1 (USAGE, 69 uses).
 :beep(Window) ;
-% INTERPOLATED from: window.md §2.3 flash/1 (USAGE, pimfep
-% pimos_window_editor).
-:flash(Window) ;
+
+% :putl(W, Line) -- Window M4, INTERPOLATED (body OURS) from window.md
+% §2.4 putl/2 ("write the line, then a newline"; PRINTED Giho 8609 p20)
+% and the census's pimfep_message_log dump_log/1 stop: the line and a
+% key#lf go in at the end of the buffer, which is redisplayed.
+:putl(Window, Line) :-
+        buffer(Window, B),
+        :end_of_buffer(B, E), :move_to(B, E),
+        :insert_string(B, Line), :insert_code(B, 10),
+        :redisplay(B);
+
+% Window M4/M6 (selectors and bodies OURS): the coordinator's side of
+% selection, the keyboard and the mouse (coordinator.esp).
+% INTERPOLATED (selector and body OURS): selected; basis above and in
+% the head comment.
+:selected(Window) :- drawn(Window, select);
+% INTERPOLATED (selector and body OURS): deselect_window; basis above and in
+% the head comment.
+:deselect_window(Window) :- drawn(Window, deselect);
+% INTERPOLATED (selector and body OURS): typed; basis above and in
+% the head comment.
+:typed(Window, Code) :- :input(Window!interpreter, Code);
+% INTERPOLATED (selector and body OURS): contains; basis above and in
+% the head comment.
+:contains(Window, X, Y) :- Window!pane \== 0, :contains(Window!pane, X, Y);
+% INTERPOLATED (selector and body OURS): status_name; basis above and in
+% the head comment.
+:status_name(Window, "pmacs_window", N) :- N = Window!number;
 
 local
 
@@ -157,5 +241,51 @@ editor_class(_, #standard_editor);
 
 editor_option(Option, _) :- unbound(Option), !, fail;
 editor_option({editor, Class}, Class);
+
+buffer(Window, B) :- I = Window!interpreter, B = I!original_buffer;
+
+% window M4 (OURS, see the head comment): the pane, made once.  A window
+% not made by create/3 (no interpreter, so no text: an instance made by
+% new/2 alone, as kl0's census makes them) is not drawn, and activate/1,
+% show/1 and flash/1 do nothing on it, as before M4 (OURS).
+open(Window) :- Window!pane \== 0, !;
+open(Window) :- Window!interpreter == 0, !;
+open(Window) :-
+        pane(Window),
+        :add_window(#coordinator, Window, N),
+        Window!number := N;
+
+% a new pane at the window's place and size, its title, its text
+pane(Window) :-
+        text_size(Window, Cols, Rows),
+        :create(#window_pane, Window!x, Window!y, Cols, Rows, Window!font, P),
+        Window!pane := P,
+        drawn_title(Window),
+        buffer(Window, B),
+        :set_pane(B, P),
+        :redisplay(B);
+
+text_size(Window, 40, 10) :- Window!columns == 0, !;
+text_size(Window, C, R) :- C = Window!columns, R = Window!rows;
+
+% the window on the screen drawn again (has_been_reshaped/1, set_font/2):
+% erased, a new pane, the title, the text, the cursor if selected
+drawn_again(Window) :- Window!pane == 0, !;
+drawn_again(Window) :-
+        :erase(Window!pane),
+        pane(Window),
+        reselect(Window);
+
+reselect(Window) :- S = #coordinator!selected, S == Window, !, :select(Window!pane);
+reselect(_);
+
+drawn_title(Window) :- Window!pane \== 0, !, :set_title(Window!pane, Window!title);
+drawn_title(_);
+
+drawn(Window, What) :- Window!pane \== 0, !, pane_do(What, Window!pane);
+drawn(_, _);
+
+pane_do(select, P) :- :select(P);
+pane_do(deselect, P) :- :deselect(P);
 
 end.

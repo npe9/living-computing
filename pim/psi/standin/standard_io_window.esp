@@ -70,7 +70,7 @@
 %     at its size option in cells of its font, {size,{ch,C},{ch,R}} (the
 %     held option, @af-b4), placed by its position option; the held
 %     {position, manipulator} (the user sweeps the place, window.md
-%     §4.5; no mouse is modelled) centres it (OURS).  No size option:
+%     §4.5) centres it (OURS; on the mouse since M6, below).  No size option:
 %     40 x 10 cells (OURS).  With no set_font/2 yet, the device's
 %     substitute for the default font_13 (OURS, psi/windev.py).  The
 %     label is drawn in the window's font (the held requester gives the
@@ -86,6 +86,17 @@
 %     inhibited, draws nothing;
 %   - clear/1: the inside cleared, the cursor home;
 %   - kill/1: the window's rectangle cleared (OURS).
+%
+% Window M4/M6 (2026-11-25), all OURS bodies: the window registers with
+% the coordinator when it opens (add_window/3: its number N, so the status
+% band's box names it `standard_io_window/N`) and leaves on kill/1
+% (remove_window/2); show/1 selects it through the coordinator
+% (select_window/2, which also redraws the box); the left button on it
+% selects it (contains/3); a key the coordinator gives it while selected
+% (typed/2) goes on the coordinator's keyboard stream, where read/2 and
+% getl/2 take it, as before.  The {position, manipulator} placement now
+% centres the window on the mouse (window_pane.esp): at the mouse's start
+% (640, 472) that is the old centred place, (417, 411).
 
 class standard_io_window has
 
@@ -104,7 +115,7 @@ instance
 attribute options := [], font := 0, label_font := 0, title := 0,
           active := 0, shown := 0, transcript := [], input := 0,
           pending := [], echo := on, history := [], beeps := 0,
-          killed := 0, pane := 0;
+          killed := 0, pane := 0, number := 0;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
 :set_font(W, F) :- W!font := F;
@@ -127,9 +138,7 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 % OURS).
 :show(W) :-
         W!shown := 1, open(W),
-        deselect(#coordinator!selected, W),
-        #coordinator!selected := W,
-        drawn(W, select);
+        :select_window(#coordinator, W);
 
 % :putl(W, Line) -- INTERPOLATED (body OURS) from read/4 @ef: the line
 % joins the transcript (and, step 3m, the history).
@@ -171,12 +180,32 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 :clear_buffer(W) :- W!pending := [];
 
 % step 3m, INTERPOLATED (body OURS) from exit_program/1 @28e.
-:kill(W) :- W!killed := 1, W!active := 0, drawn(W, erase);
+:kill(W) :-
+        W!killed := 1, W!active := 0, drawn(W, erase),
+        :remove_window(#coordinator, W);
 
 % :deselect_window(W) -- window M5, INTERPOLATED (selector and body OURS)
 % from TM-126 p7 (PROSE, window.md §4.1): another window was selected,
 % so this one's cursor goes.
 :deselect_window(W) :- drawn(W, deselect);
+
+% Window M4/M6 (selectors and bodies OURS): the coordinator's side of
+% selection (select_window/2: the cursor drawn), the keyboard (a key
+% typed while this window is selected goes on the coordinator's keyboard
+% stream, which next_code reads: step 3m's path), the mouse's hit test and
+% the status band's name (coordinator.esp).
+% INTERPOLATED (selector and body OURS): selected; basis above and in
+% the head comment.
+:selected(W) :- drawn(W, select);
+% INTERPOLATED (selector and body OURS): typed; basis above and in
+% the head comment.
+:typed(W, Code) :- :put(#coordinator!keyboard, Code);
+% INTERPOLATED (selector and body OURS): contains; basis above and in
+% the head comment.
+:contains(W, X, Y) :- W!pane \== 0, :contains(W!pane, X, Y);
+% INTERPOLATED (selector and body OURS): status_name; basis above and in
+% the head comment.
+:status_name(W, "standard_io_window", N) :- N = W!number;
 
 local
 
@@ -204,6 +233,8 @@ open(W) :-
         position(W!options, X, Y),
         :create(#window_pane, X, Y, Cols, Rows, W!font, P),
         W!pane := P,
+        :add_window(#coordinator, W, N),
+        W!number := N,
         drawn_title(W);
 
 size(Options, 40, 10) :- unbound(Options), !;
@@ -234,12 +265,6 @@ drawn_line(_, _);
 drawn_code(W, 13) :- W!pane \== 0, !, :new_line(W!pane);
 drawn_code(W, C) :- W!pane \== 0, !, :put_code(W!pane, C);
 drawn_code(_, _);
-
-% the window selected before loses its cursor (OURS: a window of another
-% class, or none, is left alone)
-deselect(S, W) :- S == W, !;
-deselect(0, _) :- !;
-deselect(S, _) :- :deselect_window(S);
 
 line(W, Codes) :- next_code(W, C), rest(W, C, Codes);
 rest(_, 13, []) :- !;

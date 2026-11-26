@@ -2403,6 +2403,13 @@ class Machine:
         s, t = self._str(self.x[a], 'equal_string'), self._str(self.x[b], 'equal_string')
         self.nxt(code, off) if s.codes() == t.codes() else self.fail()
 
+    def op_not_equal_string(self, code, off, a, b, c, v):
+        # window M4 (2026-11-25): blt 69, KNOWN-PLAINTEXT on kappa2
+        # KP_UPT.ESP:124, :131 `not_equal_string(X, "")` (kl0_opcodes.tsv);
+        # met at pimfep##pimos_window_editor set_font/4 @c7
+        s, t = self._str(self.x[a], 'not_equal_string'), self._str(self.x[b], 'not_equal_string')
+        self.fail() if s.codes() == t.codes() else self.nxt(code, off)
+
     def op_string_tail(self, code, off, a, b, c, v):
         s = self._str(self.x[a], 'string_tail')
         cs = s.codes()

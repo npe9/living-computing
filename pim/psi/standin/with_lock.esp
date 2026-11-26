@@ -52,6 +52,18 @@ attribute lock_count := 0;
         Object!lock_count := N - 1;
 :unlock(Object);
 
+% :lock_with_hook(Object), :unlock_with_hook(Object) -- window M4
+% (2026-11-25), INTERPOLATED from: kappa2 kernel/dbo/KP_DBOBF.ESP (above:
+% it brackets its work with them as fep_device_table does with
+% lock/unlock) and pimfep##pimos_window_editor lock/2 @3f8 and unlock/2
+% @3e8 (held cells: the window's text buffer, natures as_resource and
+% with_lock here, is locked so around putb/4, getl/3, ungetb/4 and after
+% attention/1).  What the hook is is UNKNOWN; here (OURS) each is lock/1
+% and unlock/1.
+:lock_with_hook(Object) :- :lock(Object);
+% INTERPOLATED as lock_with_hook/1 above (the same USAGE; body OURS).
+:unlock_with_hook(Object) :- :unlock(Object);
+
 % INTERPOLATED from: the class-level :locked/1 (LOADER.ESP:134).
 :locked(Object) :-
         N = Object!lock_count,

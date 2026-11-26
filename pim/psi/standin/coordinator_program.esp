@@ -17,6 +17,7 @@ instance
 % take the coordinator's events for ever.
 :goal(Program) :-
         :read_login_file(#coordinator),
+        :draw_status(#coordinator),
         loop(#coordinator);
 
 local

@@ -1,0 +1,117 @@
+% SCAFFOLDING, OURS: the status line at the bottom of the screen, compiled
+% by psi/espc.py into the package `simpos`.  `status_band` is NOT a SIMPOS
+% class name: the class that drew it is lost.  Window milestone M6
+% (2026-11-25).  As window_pane.esp, it sends only the
+% simpos##bitmap_display primitives (psi/windev.py).
+%
+% THE LOOK, each choice with its basis (window.md §4.2, the plan §3):
+%   - a black band across the bottom of the screen, below all windows, two
+%     rows of text: SCREENSHOT melco.wmv@50 (2.50), esp.wmv@108-109 (A00),
+%     TM-153 PDF p28 Fig. 7 (2.00), FSTJ 26(1) p99 Fig. 9 (4.2);
+%   - row 1 `USER : name`, row 2 `SIMPOS Version v`, in white: the same
+%     screenshots;
+%   - a reverse box (white, black text) naming the window that has the
+%     keyboard (INFERENCE, window.md §4.2: the middle box; TM-126 p7 PROSE
+%     "the selected window's name is shown on the bottom line"; gap G14);
+%     the name `<class>/<n>` (SCREENSHOT FSTJ 26(1) p99,
+%     `editor_buffer_window/19`; the plan §3 "Window names");
+%   - the band is the frame's rows below the 1,280 x 944 screen, 944 to
+%     1,023 (OURS: the plan §1.1 puts the band below the logical screen,
+%     its height S a parameter; here S fills winfb's 1,024-row frame);
+%   - the rows 8 dots and 30 dots below the band's top, the text 8 dots
+%     from the left, the box at x = 400 (OURS);
+%   - the status-line font is not held (the plan §1.4): test_11 (OURS);
+%   - the version: `V7`, the same OURS value as ref/pimm/fep.py's 240
+%     answer ("SIMPOS V7"; docs/fep_services.md §6.3: the PSI asks
+%     simpos##version, not held);
+%   - not drawn: `SWAPPED`, `spool` and the date (FSTJ 4.2): no swapping,
+%     spooler or clock is modelled, so they would show nothing true.
+
+class status_band has
+
+% :draw(#status_band) -- OURS: the band, with the name of the process's
+% user (simpos user/2, local_name/2: user.esp), blank when it has none.
+% INTERPOLATED (selector and body OURS): draw; basis above and in
+% the head comment.
+:draw(Class) :-
+        :default_font(#bitmap_display, Id, Cw, Ch),
+        :fill(#bitmap_display, 0, 944, 1280, 80, set),
+        user(U),
+        text(Id, Cw, "USER : ", 8, 952, X),
+        name(Id, Cw, U, X, 952),
+        text(Id, Cw, "SIMPOS Version V7", 8, 974, _);
+
+% :show_selected(#status_band, Kind, N) -- OURS: the box names the window
+% Kind/N (Kind a string), or is cleared when Kind is 0.
+% INTERPOLATED (selector and body OURS): show_selected; basis above and in
+% the head comment.
+:show_selected(Class, Kind, N) :-
+        :default_font(#bitmap_display, Id, Cw, Ch),
+        :fill(#bitmap_display, 400, 950, 440, Ch + 4, set),
+        boxed(Id, Cw, Ch, Kind, N);
+
+local
+
+user(Name) :- :user(#user, U), U \== 0, !, :local_name(U, Name);
+user(0);
+
+name(_, _, 0, _, _) :- !;
+name(Id, Cw, S, X, Y) :- text(Id, Cw, S, X, Y, _);
+
+boxed(_, _, _, 0, _) :- !;
+boxed(Id, Cw, Ch, Kind, N) :-
+        string(Kind, K, _),
+        digits(N, Ds),
+        count(Ds, 0, Nd),
+        times(K + Nd + 3, Cw, 0, W),
+        :fill(#bitmap_display, 400, 950, W, Ch + 4, reset),
+        box_left(L),
+        text_on(Id, Cw, Kind, L + Cw, 952, X),
+        slash(Slash),
+        :glyph(#bitmap_display, Id, Slash, X, 952, copy),
+        codes(Id, Cw, Ds, X + Cw, 952);
+
+% white text on the black band (glyphs `reverse`: opaque, inverted)
+text(Id, Cw, S, X, Y, X1) :- string(S, N, _), glyphs(Id, Cw, S, 0, N, X, Y, reverse, X1);
+% black text in the white box
+text_on(Id, Cw, S, X, Y, X1) :- string(S, N, _), glyphs(Id, Cw, S, 0, N, X, Y, copy, X1);
+
+glyphs(_, _, _, I, N, X, _, _, X) :- I >= N, !;
+glyphs(Id, Cw, S, I, N, X, Y, Op, X1) :-
+        string_element(S, I, C),
+        :glyph(#bitmap_display, Id, C, X, Y, Op),
+        glyphs(Id, Cw, S, I + 1, N, X + Cw, Y, Op, X1);
+
+codes(_, _, [], _, _);
+codes(Id, Cw, [C | Cs], X, Y) :-
+        :glyph(#bitmap_display, Id, C, X, Y, copy),
+        codes(Id, Cw, Cs, X + Cw, Y);
+
+% the JIS digits of N >= 0, most significant first (row 23, 16#2330 + d)
+digits(N, Ds) :- digits(N, [], Ds);
+digits(N, Acc, [D | Acc]) :- N < 10, !, digit(N, D);
+digits(N, Acc, Ds) :-
+        quotient(N, 10, 0, Q),
+        times(Q, 10, 0, T),
+        digit(N - T, D),
+        digits(Q, [D | Acc], Ds);
+
+digit(N, D) :- zero(Z), value(Z + N, D);
+zero(9008);
+
+value(V, V);
+
+slash(8511);
+
+box_left(400);
+
+quotient(D, Q, R, R) :- D < Q, !;
+quotient(D, Q, R0, R) :- quotient(D - Q, Q, R0 + 1, R);
+
+times(0, _, P, P) :- !;
+times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+end.

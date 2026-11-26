@@ -37,12 +37,45 @@
 % system_menu of TR-046 PDF p27, with its multi_column_menu, is not
 % built: its menu_item and multi_column_menu classes are lost); the order
 % of the login file's items as they are read.
+%
+% Window M4/M6 (2026-11-25), OURS throughout, labelled:
+%   - THE MOUSE: the events {mouse, Button, X, Y} (Button one of the
+%     held mouse#l ll m mm r rr names, window.md §3.5) and {move, X, Y},
+%     the plan's §4.3 event format; the cursor's place in class slots,
+%     starting at the screen's centre (640, 472).  `mouse#rr` opens the
+%     system menu (PRINTED TR-046 p28, the translation table; PROSE TM-112
+%     p16, p19), drawn at the mouse (menu_pane.esp); with the menu open a
+%     move boxes the item under the mouse and `mouse#l` on an item starts
+%     it (step 3l's path), off the items closes the menu; with no menu
+%     `mouse#l` selects the window under the mouse (PROSE TM-126 p7,
+%     TM-225 p11: a click goes to the shown window under the mouse
+%     cursor; that a left click selects is INFERENCE from the plan §4.3
+%     "mouse#l on a window -> visit").  The other buttons do nothing here.
+%     `invoke_system_menu` (step 3l's event) opens the menu at the mouse
+%     too, and {select, Label} (step 3l's answer) closes it;
+%   - THE WINDOWS: select_window/2, add_window/3 and remove_window/2, sent
+%     by the window stand-ins (standard_io_window.esp, pmacs_window.esp):
+%     the selected window's cursor (deselect_window/1 for the one before,
+%     selected/1 for the new one), the status band's box (status_band.esp:
+%     the window's `<class>/<n>`, n counted from 1 as windows are drawn),
+%     the shown windows newest first for the mouse's hit test (no
+%     restacking until M7);
+%   - THE KEYBOARD: a {key, Code} goes to the selected window's typed/2
+%     (standard_io_window: the keyboard stream, as step 3m; pmacs_window:
+%     its command interpreter's input), or the keyboard stream when none
+%     is selected;
+%   - THE STATUS BAND: drawn when the coordinator starts (draw_status/1,
+%     from coordinator_program.esp).
 
 class coordinator has
 
 % OURS state (see above).
 attribute items := [], menu := [], shown := 0, started := [], events := 0,
           process := 0, keyboard := 0, selected := 0;
+% Window M4/M6, OURS (see the head comment): the shown windows, newest
+% first; how many were drawn; the mouse; the open menu's pane (0: none).
+attribute windows := [], count := 0, mouse_x := 640, mouse_y := 472,
+          menu_pane := 0;
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
 % window (standard_io_window.esp); `selected`, that window (0: none).
@@ -85,20 +118,117 @@ attribute items := [], menu := [], shown := 0, started := [], events := 0,
 % :event(#coordinator, Event) -- INTERPOLATED (OURS selector): one event,
 % as the coordinator process takes it from its stream.
 :event(Class, invoke_system_menu) :- !,
-        Class!shown := Class!menu;
+        open_menu(Class);
 :event(Class, {key, Code}) :- !,
-        :put(Class!keyboard, Code);
+        key(Class!selected, Code, Class);
 :event(Class, {select, Label}) :- !,
         Class!shown \== 0,
         find_item(Class!shown, Label, Name),
-        Class!shown := 0,
+        close_menu(Class),
+        start(Class, Name);
+% window M6 (OURS, see the head comment)
+:event(Class, {mouse, Button, X, Y}) :- !,
+        Class!mouse_x := X, Class!mouse_y := Y,
+        click(Class, Button, X, Y);
+:event(Class, {move, X, Y}) :- !,
+        Class!mouse_x := X, Class!mouse_y := Y,
+        moved(Class, Class!menu_pane, X, Y);
+
+% :select_window(#coordinator, W) -- window M4/M6 (selector and body
+% OURS; see the head comment): W becomes the selected window.
+% INTERPOLATED (selector and body OURS): select_window; basis above and in
+% the head comment.
+:select_window(Class, W) :-
+        S = Class!selected, S == W, !;
+:select_window(Class, W) :-
+        deselect(Class!selected),
+        Class!selected := W,
+        :selected(W),
+        :status_name(W, Kind, N),
+        :show_selected(#status_band, Kind, N);
+
+% :add_window(#coordinator, W, N) -- window M4/M6 (selector and body
+% OURS): W is drawn; N its number.
+% INTERPOLATED (selector and body OURS): add_window; basis above and in
+% the head comment.
+:add_window(Class, W, N) :-
+        value(Class!count + 1, N),
+        Class!count := N,
+        Class!windows := [W | Class!windows];
+
+% :remove_window(#coordinator, W) -- window M4/M6 (selector and body
+% OURS): W has left the screen; if it was selected, none is.
+% INTERPOLATED (selector and body OURS): remove_window; basis above and in
+% the head comment.
+:remove_window(Class, W) :-
+        without(Class!windows, W, Ws),
+        Class!windows := Ws,
+        unselect(Class, W);
+
+% :draw_status(#coordinator) -- window M6 (selector and body OURS): the
+% status band (status_band.esp).
+% INTERPOLATED (selector and body OURS): draw_status; basis above and in
+% the head comment.
+:draw_status(Class) :- :draw(#status_band);
+
+local
+
+value(V, V);
+
+start(Class, Name) :-
         :get_class_object(#library, Name, Program_class),
         :create(Program_class, Program),
         :create(#process, P),
         :activate(P, Program),
         Class!started := [P | Class!started];
 
-local
+% the system menu: open (drawn at the mouse), closed (erased)
+open_menu(Class) :-
+        close_menu(Class),
+        Class!shown := Class!menu,
+        :create(#menu_pane, "SYSTEM MENU", Class!menu, Class!mouse_x,
+                Class!mouse_y, M),
+        Class!menu_pane := M;
+
+close_menu(Class) :- Class!menu_pane == 0, !, Class!shown := 0;
+close_menu(Class) :-
+        :erase(Class!menu_pane),
+        Class!menu_pane := 0, Class!shown := 0;
+
+click(Class, rr, _, _) :- !, open_menu(Class);
+click(Class, l, X, Y) :- Class!menu_pane \== 0, !, menu_click(Class, X, Y);
+click(Class, l, X, Y) :- !, visit(Class, Class!windows, X, Y);
+click(_, _, _, _);
+
+menu_click(Class, X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, Name), !,
+        close_menu(Class),
+        start(Class, Name);
+menu_click(Class, _, _) :- close_menu(Class);
+
+moved(_, 0, _, _) :- !;
+moved(_, M, X, Y) :- :box_at(M, X, Y);
+
+% the newest window under the mouse is selected; none: nothing changes
+visit(_, [], _, _);
+visit(Class, [W | _], X, Y) :- :contains(W, X, Y), !, :select_window(Class, W);
+visit(Class, [_ | Ws], X, Y) :- visit(Class, Ws, X, Y);
+
+key(0, Code, Class) :- !, :put(Class!keyboard, Code);
+key(W, Code, _) :- :typed(W, Code);
+
+% the window selected before loses its cursor
+deselect(0) :- !;
+deselect(S) :- :deselect_window(S);
+
+unselect(Class, W) :- S = Class!selected, S == W, !,
+        Class!selected := 0,
+        :show_selected(#status_band, 0, 0);
+unselect(_, _);
+
+without([], _, []);
+without([X | R], W, R) :- X == W, !;
+without([X | R], W, [X | T]) :- without(R, W, T);
 
 read_items(Class, In) :- :end_of_input(In), !;
 read_items(Class, In) :-

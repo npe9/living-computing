@@ -46,10 +46,14 @@ class window_pane has
 
 % :create(#window_pane, X, Y, Cols, Rows, Font, Pane) -- INTERPOLATED
 % (selector and body OURS) from the layout above: a pane of Cols x Rows
-% cells of Font at the outer top-left (X, Y), or centred on the screen
-% when X is the atom `manipulator` (OURS: the held option
-% {position, manipulator} lets the user sweep the place with the mouse,
-% window.md §4.5; no mouse is modelled).  Font is a font stand-in or 0
+% cells of Font at the outer top-left (X, Y), or, when X is the atom
+% `manipulator`, centred on the mouse cursor (the odd dot to the upper
+% left) and kept on the screen (OURS: the held option {position,
+% manipulator} lets the user sweep the outline with the mouse, window.md
+% §4.5; the sweep is not modelled, so the window goes where the mouse is
+% when it is made: window M6.  The cursor starts at the screen's centre,
+% coordinator.esp, so a run with no mouse event centres the window, as
+% before M6).  Font is a font stand-in or 0
 % (the device's OURS substitute for the default font_13).  The pane is
 % drawn at once: cleared, bordered, its rule.
 :create(Class, X, Y, Cols, Rows, Font, Pane) :-
@@ -104,6 +108,23 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
         put_char(Pane, Code),
         cursor_on(Pane);
 
+% :put_codes(Pane, Codes) -- window M4, INTERPOLATED (selector and body
+% OURS) from window.md §2.3 write/2: a list of codes at the cursor, as
+% put_string/2 (the Pmacs buffer's text, editor_text_buffer.esp).
+:put_codes(Pane, Codes) :-
+        cursor_off(Pane),
+        put_list(Pane, Codes),
+        cursor_on(Pane);
+
+% :contains(Pane, X, Y) -- window M6 (selector and body OURS): (X, Y) is
+% inside the pane's outer rectangle (the mouse's hit test,
+% coordinator.esp).
+% INTERPOLATED (selector and body OURS): contains; basis above and in
+% the head comment.
+:contains(Pane, X, Y) :-
+        X >= Pane!x, X < Pane!x + Pane!w,
+        Y >= Pane!y, Y < Pane!y + Pane!h;
+
 % :new_line(Pane) -- INTERPOLATED (body OURS) from window.md §2.3 (the
 % newline) and §2.4 putl/2 ("then a newline").
 :new_line(Pane) :-
@@ -150,8 +171,18 @@ metrics(Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;
 
 place(Pane, manipulator, _) :- !,
         :get_size(#bitmap_display, Sw, Sh),
-        Pane!x := (Sw - Pane!w) / 2, Pane!y := (Sh - Pane!h) / 2;
+        C = #coordinator,
+        on_screen(C!mouse_x - (Pane!w + 1) / 2, Pane!w, Sw, X),
+        on_screen(C!mouse_y - (Pane!h + 1) / 2, Pane!h, Sh, Y),
+        Pane!x := X, Pane!y := Y;
 place(Pane, X, Y) :- Pane!x := X, Pane!y := Y;
+
+on_screen(V, _, _, 0) :- V < 0, !;
+on_screen(V, W, S, V) :- V + W =< S, !;
+on_screen(_, W, S, V) :- S >= W, !, value(S - W, V);
+on_screen(_, _, _, 0);
+
+value(V, V);
 
 % the rectangle set, its inside reset (a 2-dot border), the rule under
 % the label strip
@@ -179,6 +210,9 @@ put_codes(Pane, S, I, N) :-
         string_element(S, I, C),
         put_char(Pane, C),
         put_codes(Pane, S, I + 1, N);
+
+put_list(_, []);
+put_list(Pane, [C | Cs]) :- put_char(Pane, C), put_list(Pane, Cs);
 
 put_char(Pane, 10) :- !, newline(Pane);
 put_char(Pane, 13) :- !, Pane!col := 0, Pane!cx := Pane!left;

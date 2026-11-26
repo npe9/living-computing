@@ -1,0 +1,210 @@
+% SCAFFOLDING stand-in for SIMPOS's class `editor_text_buffer` (a Pmacs
+% text buffer), compiled by psi/espc.py into the package `simpos`.  It is
+% NOT SIMPOS: Pmacs is lost (docs/simpos/subsystems/window.md §0.3, §2.11;
+% the plan docs/simpos/window_environment_plan.md §0 "What is lost").
+% Window milestone M4 (2026-11-25).  The class name is SIMPOS's (USAGE:
+% pimfep##pimos_window_editor $or$2/2 sends `:get_buffer_instance(
+% #simpos##editor_text_buffer, ..)` and `create/4`; window.md §2.14 lists
+% it with the editor classes).  Every selector below is HELD, as the
+% compiled cells of pimfep##pimos_window_editor send it (read with
+% psi/fepread/ptfread.py, 2026-11-25); every body is INFERENCE from those
+% call sites or OURS, labelled.
+%
+% THE CALL SITES (pimos_window_editor, cells):
+%   - putb/4 @168-1b1: `Interp!original_buffer` is the buffer (blt 27
+%     after get_interpreter/2), lock/2, `:current_position(B, P0)`,
+%     `:input_region(B, R)`, `:position(R, S, E)`, `:move_to(B, S)`,
+%     `:insert_string(B, Text)`, then S + N (blt 40, N the text's length
+%     from string/3 @16d) given to `:set_position(R, S+N, S+N)` (a3 00 01:
+%     both arguments the same register), $or$0/4 (@466: P0 < S keeps P0,
+%     else P0 + N), `:move_to(B, P)`, unlock/2, `flash/1` on the window;
+%   - getl_from_buffer/3 @413-449: `:input_region(B, R)`, `:position(R, S,
+%     E)`, `:end_of_buffer(B, End)`, `:search(B, S, End, 10, Pos)` (the
+%     integer 10 from a7 02 00 0a), else the getl is left pending
+%     (set_getl_id/2); found: `:see_position(B, S, Pos - S, Line)` (blt 41),
+%     `:set_position(R, Pos + 1, Pos + 1)` (blt 45 twice), the reply
+%     {Id, 1, Line};
+%   - ungetb/4 @361-3a3: as putb/4; clear/3 @2b-47: `:reset(B)`;
+%     buffer_name/3 @281-29c: `:get_name(B, Name)`; after attention/1
+%     @2e4-311: position/3, `:end_of_buffer/2`, `:delete/3` ($or$6/3);
+%   - lock/2 @3f8 and unlock/2 @3e8: `:assigned(B)` then
+%     `:lock_with_hook(B)`; else `:assign(B)`, `:lock_with_hook(B)`; and
+%     back with `:unlock_with_hook(B)` (and `:resign(B)`): the natures
+%     as_resource and with_lock (stand-ins in this directory).
+% So the buffer's positions are integers (they are added and subtracted
+% by blt 40, 41, 45) and a line ends at code 10, key#lf (INFERENCE: the
+% search's 10; the PSI's key#lf, window.md §2.3).
+%
+% Model (OURS):
+%   - the text a list of 16-bit codes in order, with its length and the
+%     point (the position insertions go to); a position is the number of
+%     codes before it, 0 .. length;
+%   - insert_string/2 inserts at the point and moves the point past the
+%     text (INFERENCE from putb/4: it moves to S, inserts, and computes
+%     S + N itself, so nothing settles where insert leaves the point; an
+%     Emacs insert leaves it after, IPSJ 114007 "Emacs-like", PROSE);
+%   - the input region one object of the OURS class buffer_region with two
+%     positions; the held code reads only the first (MEASURED on the cells:
+%     the second, Y11 in putb/4 and Y4 in getl_from_buffer/3, is never read
+%     again) and sets both to the same value;
+%   - the display: the buffer is drawn by its window's pane
+%     (window_pane.esp) when the window is told to make it visible (flash/1,
+%     USAGE "make buffered output visible now", window.md §2.3, Appendix A;
+%     and the interpreter after each key, editor_command_interpreter.esp).
+%     `shown` counts the leading codes on the screen, `valid` how many of
+%     them are still the text's: a change at position P lowers valid to P.
+%     Redisplay appends when valid = shown and redraws the pane otherwise.
+
+class editor_text_buffer has
+
+nature as_resource, with_lock;
+
+% :create(#editor_text_buffer, Name, Buffer) -- OURS selector (the held
+% create/4 of $or$2/2 is not on the route): an empty buffer.
+% INTERPOLATED (selector and body OURS): create; basis above and in
+% the head comment.
+:create(Class, Name, Buffer) :-
+        :new(Class, Buffer),
+        Buffer!name := Name,
+        :create(#buffer_region, R),
+        Buffer!region := R;
+
+instance
+
+% OURS representation (see above).  `pane` is the window's pane (0: not
+% drawn), set by pmacs_window.
+attribute name := "", text := [], length := 0, point := 0, region := 0,
+          pane := 0, shown := 0, valid := 0;
+
+% INTERPOLATED from putb/4 @181 (USAGE): the point.
+:current_position(B, P) :- P = B!point;
+
+% INTERPOLATED from putb/4 @185 and getl_from_buffer/3 @41a: the input
+% region (OURS: one per buffer).
+:input_region(B, R) :- R = B!region;
+
+% INTERPOLATED from putb/4 @18e, @1a2 (USAGE): the point to P (OURS: kept
+% inside the text).
+:move_to(B, P) :- 0 =< P, P =< B!length, !, B!point := P;
+
+% INTERPOLATED from putb/4 @192 (USAGE): Text's codes at the point (see
+% the head comment for where the point is left).
+:insert_string(B, Text) :-
+        string(Text, N, _),
+        codes(Text, 0, N, Codes),
+        P = B!point,
+        insert(B!text, P, Codes, New),
+        changed(B, P),
+        B!text := New,
+        grown(B, N, P);
+
+% :insert_code(B, Code) -- OURS selector: one code at the point (the
+% interpreter's self-insert and the editor's carriage_return/1).
+% INTERPOLATED (selector and body OURS): insert_code; basis above and in
+% the head comment.
+:insert_code(B, Code) :-
+        P = B!point,
+        insert(B!text, P, [Code], New),
+        changed(B, P),
+        B!text := New,
+        grown(B, 1, P);
+
+% INTERPOLATED from getl_from_buffer/3 @423 and after attention/1 @303
+% (USAGE): the position after the last code.
+:end_of_buffer(B, E) :- E = B!length;
+
+% :search(B, From, To, Code, Pos) -- INTERPOLATED from getl_from_buffer/3
+% @42a: the first position in From .. To-1 that holds Code, else fail
+% (INFERENCE: the held caller leaves the getl pending on failure).
+:search(B, From, To, Code, Pos) :-
+        drop(B!text, From, Rest),
+        find(Rest, From, To, Code, Pos);
+
+% :see_position(B, From, N, String) -- INTERPOLATED from
+% getl_from_buffer/3 @433: the N codes from From as a new 16-bit string
+% (INFERENCE: the reply's Line, 16-bit as PIMOS's getl expects,
+% docs/fep_services.md §2.6 "widened").
+:see_position(B, From, N, String) :-
+        drop(B!text, From, Rest),
+        new_string(String, N, 16),
+        fill(Rest, String, 0, N);
+
+% :delete(B, From, To) -- INTERPOLATED from after attention/1 @2f2
+% ($or$6/3, USAGE): the codes From .. To-1 removed; the point is kept
+% before them (OURS).
+:delete(B, From, To) :-
+        From =< To, To =< B!length, !,
+        cut_out(B!text, 0, From, To, New),
+        changed(B, From),
+        B!text := New,
+        shrunk(B, To - From, From);
+
+% INTERPOLATED from clear/3 @3b (USAGE): the buffer emptied (OURS: the
+% region and the point home).
+:reset(B) :-
+        changed(B, 0),
+        B!text := [], B!length := 0, B!point := 0,
+        :set_position(B!region, 0, 0);
+
+% INTERPOLATED from buffer_name/3 @292 (USAGE).
+:get_name(B, Name) :- Name = B!name;
+
+% :lock_with_hook(B), :unlock_with_hook(B): with_lock.esp.
+
+% :redisplay(B) -- OURS selector: the pane made to show the text (see the
+% head comment).
+% INTERPOLATED (selector and body OURS): redisplay; basis above and in
+% the head comment.
+:redisplay(B) :- B!pane == 0, !;
+:redisplay(B) :-
+        B!valid == B!shown, !,
+        drop(B!text, B!shown, Rest),
+        :put_codes(B!pane, Rest),
+        B!shown := B!length, B!valid := B!length;
+:redisplay(B) :-
+        :clear(B!pane),
+        :put_codes(B!pane, B!text),
+        B!shown := B!length, B!valid := B!length;
+
+% :set_pane(B, Pane) -- OURS selector: the pane the text is drawn in
+% (pmacs_window, when the window is drawn or redrawn): nothing of the text
+% is on it yet.
+% INTERPOLATED (selector and body OURS): set_pane; basis above and in
+% the head comment.
+:set_pane(B, Pane) :- B!pane := Pane, B!shown := 0, B!valid := 0;
+
+local
+
+codes(_, I, N, []) :- I >= N, !;
+codes(S, I, N, [C | Cs]) :- string_element(S, I, C), codes(S, I + 1, N, Cs);
+
+insert(Text, 0, Codes, New) :- !, append(Codes, Text, New);
+insert([X | Text], P, Codes, [X | New]) :- insert(Text, P - 1, Codes, New);
+
+append([], L, L);
+append([X | R], L, [X | T]) :- append(R, L, T);
+
+drop(L, 0, L) :- !;
+drop([_ | L], N, R) :- drop(L, N - 1, R);
+
+find([C | _], P, To, Code, P) :- P < To, C == Code, !;
+find([_ | Rest], P, To, Code, Pos) :- P + 1 < To, find(Rest, P + 1, To, Code, Pos);
+
+fill(_, _, I, N) :- I >= N, !;
+fill([C | R], S, I, N) :- set_string_element(S, I, C), fill(R, S, I + 1, N);
+
+cut_out([], _, _, _, []);
+cut_out([X | R], I, From, To, [X | T]) :- I < From, !, cut_out(R, I + 1, From, To, T);
+cut_out([_ | R], I, From, To, T) :- I < To, !, cut_out(R, I + 1, From, To, T);
+cut_out([X | R], I, From, To, [X | T]) :- cut_out(R, I + 1, From, To, T);
+
+% a change at P: the screen is right only up to P
+changed(B, P) :- P < B!valid, !, B!valid := P;
+changed(_, _);
+
+% the length and the point after N codes went in at P (the point moves
+% past them: see insert_string/2)
+grown(B, N, P) :- B!length := B!length + N, B!point := P + N;
+shrunk(B, N, From) :- B!length := B!length - N, B!point := From;
+
+end.

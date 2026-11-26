@@ -1,0 +1,29 @@
+% SCAFFOLDING, OURS: the input region of an editor_text_buffer
+% (editor_text_buffer.esp), compiled by psi/espc.py into the package
+% `simpos`.  `buffer_region` is NOT a SIMPOS class name: the region's class
+% is not named anywhere held.  Window milestone M4 (2026-11-25).  Its two
+% selectors are HELD: pimfep##pimos_window_editor putb/4 @18a, @199 and
+% getl_from_buffer/3 @41f, @43a send `:position(R, S, E)` and
+% `:set_position(R, S, E)` to what `:input_region(B, R)` answers.  The
+% held code reads only the first position (where the next line PIMOS asks
+% for begins) and always sets both to one value (editor_text_buffer.esp's
+% head comment); what the second means in Pmacs is UNKNOWN, OURS: kept and
+% answered.
+
+class buffer_region has
+
+% INTERPOLATED (selector and body OURS): create; basis above and in
+% the head comment.
+:create(Class, R) :- :new(Class, R);
+
+instance
+
+attribute start := 0, finish := 0;
+
+% INTERPOLATED from putb/4 @18a and getl_from_buffer/3 @41f (USAGE).
+:position(R, S, E) :- S = R!start, E = R!finish;
+
+% INTERPOLATED from putb/4 @199 and getl_from_buffer/3 @43a (USAGE).
+:set_position(R, S, E) :- R!start := S, R!finish := E;
+
+end.
