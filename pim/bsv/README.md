@@ -70,9 +70,11 @@ instruction and is tested by trace comparison with it.
 | `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
-| `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`) |
+| `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`); the order of two strings for `string_less_than` and `string_not_less_than` (R7L, `lockstep_sord.py`) |
 | `PimmPBox.bsv` | passive-unification box: `wait_value` on two structures, VPIM's general passive unification with an explicit stack of 512 frames (a register file), on its own memory port (`port[10]`, `MemClients` 11) and the data box for each dereference; answers equal, not equal, wait (the variable to note) or refused (2026-11-25, `lockstep_pstruct.py`) |
-| `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard) |
+| `PimmGcBox.bsv` | garbage-collection box (R7G, 2026-11-25, INFERENCE/OURS): `ref/pimm/pimm_gc.py`'s copying collector step for step, one StmtFSM per routine (block, data, word, module, code, goal, goals, shoen) and the main one: the roots (the goal box's queues, the timer box's alarm variable, the SCSI box's waiting commands, the current shoen), the scan, the links, the FNV-1 checksum and the `K gc` line; `collect_garbage` asks (exec stage), `PimmCore` `pick_or_fire` collects before the alarm; its own memory port (`port[11]`, `MemClients` 12), writes untraced (`MemPort.quiet`) |
+| `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard); (R7L) the resource: left at create 0, taken at the end of each run from the shoen and those above it, a goal parked when none is left with `resource_low` once until allowed, `add_shoen_resource` releasing them, `allow_shoen_resource_report`, `return_resource` of what is left |
+| `PimmTBox.bsv` | timer box (R7L): the processor's one alarm, `set_timer` to a time still to come; checked at each goal switch by the core's `pick_or_fire`, fired with the time, the waiting goals woken (`lockstep_timer.py`) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
@@ -312,6 +314,16 @@ length:
 | the prompt | `cat <= file("pimos:pimos.groups")` | 8,587,072 to 8,760,665 (173,593) | 731,110 | `Shell>> ` again, nothing left to run, 1,224 goals waiting |
 | the link | `shutdown`, `yes` | 0 to 8,766,319 | 20,107,017 | `PIMOS END********`, nothing left to run, 253 goals waiting; 21 min in all, 897 s of it the Bluesim run and compare |
 
+Re-measured 2026-11-25 with R7L's resource model (shoen records of 11
+cells, the checkpoints made afresh; every line identical, the new
+counts in `PINNED`):
+
+| From | Typed | Instructions of `go()` | Trace lines | Ends |
+|---|---|---|---|---|
+| the prompt | `shutdown`, `yes` | 8,595,408 to 8,775,555 (180,147) | 912,901 | nothing left to run, 250 goals waiting |
+| the prompt | `cat <= file("pimos:pimos.groups")` | 8,595,408 to 8,769,465 (174,057) | 778,956 | nothing left to run, 1,222 goals waiting |
+| the link | `shutdown`, `yes` | 0 to 8,775,555 | 20,435,590 | as the prompt's row |
+
 The last row is the first time PIMOS's start, the login and the shell
 have run on the Bluespec core: everything `longrun_ipl.py --go --fep`
 does after the link, 221 device answers on the tape, 5,859 splices of
@@ -357,26 +369,69 @@ Outside the suite, like `run_pimm_shell.sh`. Ends with
 and how it stands against the primers and manuals:
 `../docs/binary_reverse_engineering.md` 1.4, "Commands past the shell".
 
-Measured 2026-11-24 from the prompt checkpoint (login ID 0, 8,587,072
-instructions), every line identical:
+Measured 2026-11-25 (R7L) from a prompt checkpoint made with R7L's
+resource model (login ID 0, 8,595,408 instructions), every line
+identical; each row re-measured so, since the shoen record grew to
+11 cells (a checkpoint made before 2026-11-25 has 8-cell records and
+is not loadable: make it again with the two commands above):
 
 | Name | Typed | Instructions | Trace lines | SCSI commands on the tape |
 |---|---|---|---|---|
-| pwd | `pwd` | 29,867 | 229,102 | 21 |
-| echo_string | `echo("a b c")` | 118,027 | 482,259 | 25 |
-| echo_list | `echo([a,b,c])` | 127,373 | 509,143 | 25 |
-| echo_new_atom | `echo(zorkqx)` | 121,155 | 489,049 | 25 |
-| usage_echo | `usage(echo)` | 133,233 | 520,129 | 25 |
-| help | `help` | 36,685 | 324,411 | 27 |
-| who | `who` | 146,977 | 555,038 | 25 |
-| history | `set hl=20`, `history` | 56,133 | 441,489 | 41 |
-| rs | `rs`, (empty) | 190,791 | 800,789 | 36 |
-| versions | `versions` | 114,472 | 610,006 | 38 |
-| compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
-| compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
-| compile_sample1 | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | 149 |
-| compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,008,832 | 4,359,920 | 178 |
-| ts | `ts` | 68,783 | 184,130 | 3 |
+| pwd | `pwd` | 29,867 | 238,706 | 21 |
+| echo_string | `echo("a b c")` | 119,086 | 517,878 | 25 |
+| echo_list | `echo([a,b,c])` | 128,432 | 549,572 | 25 |
+| echo_new_atom | `echo(zorkqx)` | 122,214 | 525,706 | 25 |
+| usage_echo | `usage(echo)` | 134,283 | 559,339 | 25 |
+| help | `help` | 36,685 | 340,013 | 27 |
+| who | `who` | 148,036 | 594,630 | 25 |
+| history | `set hl=20`, `history` | 56,133 | 460,085 | 41 |
+| rs | `rs`, (empty) | 191,871 | 866,760 | 36 |
+| versions | `versions` | 114,507 | 640,392 | 38 |
+| compile_exit | `compile`, `!exit` | 256,137 | 1,108,374 | 45 |
+| compile_missing | `compile`, `sample2`, `!exit` | 319,530 | 1,859,522 | 94 |
+| compile_sample1 | `compile`, `sample1`, `!exit` | 974,813 | 4,546,925 | 149 |
+| compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,009,886 | 4,865,583 | 178 |
+| ts | `ts`, (empty) | 160,945 | 705,103 | 34 |
+| listener_sieve | `compile`, `!package work`, `sample1`, `!exit`, `listener`, `default_package(work).`, `sample1:sieve([1,2,3],E,O).` | 1,575,086 | 7,144,906 | 249 |
+| pipe_echo (R7P) | `echo("a b c") \| lc` | 311,242 | 1,325,831 | 25 |
+| pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
+| pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
+| pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
+| ls (R7) | `ls` | 164,287 | 768,488 | 32 |
+| gc (R7G) | `gc` | 89,179 | 368,543 | 18 |
+| gc_listener (R7G) | `gc`, the compile_work lines, `gc`, the listener_sieve lines | 1,752,873 | 7,880,429 | 283 |
+
+R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
+1.4, "R7P, the pipe"): the four rows above, measured on both models
+from the R7L prompt checkpoint, every line identical. No model was
+changed for them. pipe_echo and pipe_three write `$$$ Line = 1 $$$`,
+pipe_grep `$$$ Line = 5 $$$`; pipe_primer, the primer's line as
+printed, is the held PIMOS's own failure (a reduction failure in
+`task_stdio:invoke_std_handler/3`, the console's `EXCEPTION WAS
+OCCURRED in PIMOS : error code:`, nothing written, the run dry with
+1,373 goals waiting), the same on both models.
+
+R7G (2026-11-25, `gc`): `collect_garbage` asks and the core's
+collector (`PimmGcBox.bsv`) copies at the next goal switch, as the
+reference's (`ref/pimm/pimm_gc.py`, INFERENCE/OURS by ANALOGY with
+VPIM's) does; the `K gc` lines are identical, `K gc 32768 77892213
+77892213 79768684 a8652141` (the heap from 77.86M cells to 1.88M), and
+in gc_listener the second, `K gc 77892213 82173730 32768 2452104
+638807af`, back to the heap's base; every later line (addresses
+included) identical. Injections in the box (observed, each FAIL at
+the line given, every other line before it identical): the links
+pass clearing every link, the K line's checksum `0e81de44` (line
+198,832); a mixed block's unbound variable not moved in, the K line
+`... 79768686 763810b1`; a waiting SCSI command's first variable not
+moved, `E error: scsi: a waiting command's variable was not free`
+where the reference writes it (line 254,630).
+
+R7 `ls` (2026-11-25): the home directory through 204 and 237
+(`ref/pimm/fep.py` `listing`, the reply's form INFERENCE from PIMOS's
+reader, `../docs/fep_services.md` U7), ` >sys>user>pmpsi>sample1.kl1.1`
+then the prompt, on both models; the FEP emulator serves the same
+(`PimmFepEmu.bsv`, a card entry flagged a directory), checked by the
+"direct kernel" tape's section 12 (`run_fepemu.sh`).
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
@@ -419,15 +474,24 @@ counts 187, so it is one tick behind only for a read fewer than 236
 instructions after one of the reference's ticks: the read is 135 after
 one in compile_exit (caught), 357 in compile_missing (not caught).
 
+Re-derived for R7L's checkpoint (2026-11-25; its RESTORE 2 is 483,081
+ticks, RESTORE 3 112 instructions past the last): with RESTORE 3
+dropped the core counts 423 to its next tick where the reference
+counts 311, so it is a tick behind only for a read fewer than 112
+after one of the reference's ticks. The compile's `system_timer` read
+is now 264 after one in compile_exit (not caught) and 63 in
+compile_missing (caught), so the two commands traded roles: the table
+below is the R7L run, and compile_exit's 3 is now the control.
+
 | Command | RESTORE dropped | Result |
 |---|---|---|
-| echo_new_atom | 1, `new_atom`'s counter | FAIL at line 25,012, instruction 8,124: `R 8 0200012731` on the reference, `R 8 0200010000` on the core (the atom numbered from the reset value) |
+| echo_new_atom | 1, `new_atom`'s counter | FAIL at line 27,640, instruction 8,124: `R 8 0200012731` on the reference, `R 8 0200010000` on the core (the atom numbered from the reset value) |
 | echo_new_atom | 2, 3 | PASS: no clock read |
 | compile_exit | 1 | PASS: no `new_atom` |
-| compile_exit | 2, the ticks | FAIL at line 828,137, instruction 234,242: `R 9 000007611f` / `R 9 000000022a` |
-| compile_exit | 3, the instructions since the tick | FAIL at the same line: `R 9 000007611f` / `R 9 000007611e`, one tick short |
-| compile_missing | 2 | FAIL at line 1,484,817, instruction 288,608: `R 9 000007619f` / `R 9 00000002aa` |
-| compile_missing | 3 | PASS, as predicted: the read falls past the 236 |
+| compile_exit | 2, the ticks | FAIL at line 902,215, instruction 235,341: `R 9 0000076135` / `R 9 000000022c` |
+| compile_exit | 3, the instructions since the tick | PASS, as predicted: the read falls 264 past a tick, past the 112 |
+| compile_missing | 2 | FAIL at line 1,568,167, instruction 289,707: `R 9 00000761b6` / `R 9 00000002ad` |
+| compile_missing | 3 | FAIL at the same line, as predicted (63 past a tick): `R 9 00000761b6` / `R 9 00000761b5`, one tick short |
 | pwd | 16-21: unit, lun, direction, length, the cdb's word, the cdb's length | FAIL at line 1: the trace's first command line (`B 7 1 0820004000 2 16384` on the reference) |
 | pwd | 22, the buffer's word | FAIL at line 12, a write of the data |
 | pwd | 23, the buffer's length | FAIL at line 4 |
@@ -625,6 +689,56 @@ that finishes, and when the core has nothing to run), binding Id and
 NewObj at once and the rest when it finishes; (4) on `FepRefused` stop
 loudly (the reference raises `FepError`); (5) give `scsi_init` Info[0]
 from `maxBuffer`.
+
+## The SIMPOS window framebuffer (`WinFbBox.bsv`)
+
+Milestones H0 and H1 of `../docs/simpos/window_hardware_plan.md`.
+`mkWinFbBox#(fontFile)` is the SIMPOS display's drawing hardware: a
+`Server#(WinFbCmd, WinFbRsp)` box with BRAMs for the 1-bit 1280×1024
+frame, the window save areas, the `test_11` font and its JIS code index,
+and engines for blit (fill, copy, save, restore, glyph), Bresenham lines
+and the dump. It imports only standard libraries. The display hardware
+is undocumented, so all of it is OURS scaffolding. The command format is
+frozen in the header of `../psi/winfb.py`, the Python reference.
+`WinFbBoxTb.bsv` (hand-written, committed) reads a command stream and
+writes P4 PBM frames plus status files. `run_win_tb.sh` runs 11 streams
+on both the box and the Python layer and `cmp`s every frame and status
+file. Its header lists the injected faults and which streams catch each.
+Measured cycle counts are in the box header.
+
+**The scan-out (`WinScanOut.bsv`, H2).** `mkWinScanOut#(box.scan)` reads
+the frame through the box's new scan port (port B; the dump keeps it
+while a dump runs). Its submodules are:
+- `mkWinTiming`: one table of modes. 0 is 1920×1080@30 with the frame
+  letterboxed 1:1, 1 is 1280×1024@60 DMT, 2 is 1280×1024 reduced
+  blanking (OURS), 3 is 640×480 with a 2×2-OR 2:1 reduction from row
+  panY. Custom timings are accepted too.
+- `mkWinFetch`: one word read per 16-dot group, two in the 2:1 mode, into
+  a small queue.
+- `mkWinCursor`: the 16×16 mask/image overlay. It has 8 shapes, takes its
+  position at the frame start, and is never written into the frame.
+- `mkWinTmdsEnc` ×3: DVI 1.0 Fig. 3-5.
+- `mkWinTmdsSer`: the 10:1 serializer, two bits per shift clock.
+
+The references are `../psi/winscan.py` (modes, timing model, view,
+checkers) and `../psi/wintmds.py` (TMDS encode and decode, cited by DVI
+1.0 page); their unit tests are `../psi/test_winscan.py`. There are three
+hand-written benches:
+- `WinScanOutTb`: draws a stream, captures one frame plus a few lines of
+  characters, and dumps the frame again afterwards;
+- `WinTmdsEncTb`: every byte from every disparity state, plus runs and
+  random data;
+- `WinTmdsSerTb`: the serializer, with the pixel clock made by
+  `mkClockDivider(5)` and a null crossing.
+
+`run_win_tb.sh` decodes every capture in Python and compares it with the
+references clock by clock: sync levels, DE, pixels, the three channels,
+the disparity bound, and the characters re-encoded. It runs 17 scan cases
+(the four modes, mode 2 without a cursor, 12 small random timings). Its
+header lists the scan-out injections and what each was seen to fail.
+The whole runner takes about two minutes (2:10 measured
+2026-11-25); `WIN_PART=h2` runs only the scan-out part. The box and the scan-out share
+one clock in Bluesim; the DP16KD's system-to-pixel crossing belongs to H3.
 
 ## Regression
 

@@ -1,0 +1,30 @@
+% SCAFFOLDING: the program the coordinator process runs (class name OURS),
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS.
+% Step 3l, route steps B6 and B8.  INTERPOLATED from TR-061 and TR-046
+% (prose: the coordinator is a background process that takes the input
+% events and runs the system menu; shell.md §1.1) and TM-181 p3 (login
+% reads the login file); see coordinator.esp.  The loop's shape is the
+% held device loop's (pimfep##as_pimos_device loop_main/1: a get on the
+% input stream, the request handled, the loop again; ANALOGY).
+
+class coordinator_program has
+
+nature as_program;
+
+instance
+
+% :goal(Program) -- INTERPOLATED (see above): read the login file, then
+% take the coordinator's events for ever.
+:goal(Program) :-
+        :read_login_file(#coordinator),
+        loop(#coordinator);
+
+local
+
+loop(C) :-
+        :get(C!events, Event),
+        :event(C, Event), !,
+        loop(C);
+loop(C) :- loop(C);
+
+end.

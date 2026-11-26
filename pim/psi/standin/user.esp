@@ -1,0 +1,95 @@
+% SCAFFOLDING stand-in for SIMPOS's class `user`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no body of `user` is
+% printed or held.  Step 3l, route step B7 (docs/simpos/boot_route.md).
+% MINIMAL: what login (pimfep##simpos_user) sends.
+%
+% USAGE (held cells and held source, read 2026-11-25):
+%   - pimfep##simpos_user class create/4 @1a-24:
+%     `:identify(#user, Name, Password, U)`, its first send;
+%   - pimfep##simpos_user instance setup_process/2 @e3-109: `:initial_mode(U,
+%     Mode)`, `:passwords(U, X, Y)` (Y then given to the process's password
+%     list by set_passwords/2; X unused);
+%   - pimfep##simpos_user username/2 @b5 `:local_name(U, N)`, nickname/2
+%     @be, fullname/2 @da, login_password/2 @c7-d5 (`:login_password(U,
+%     P)` compared with equal_string, blt 68, to the 16-bit string given);
+%   - held source kappa2 kernel/svm/SVCTL.ESP:1702-1707 (as ANALOGY of a
+%     SIMPOS caller): `:user(#simpos##user, Login_user)`, "Login_user_object
+%     is SIMPOS_user_object", `:local_name(Login_user, Str)`,
+%     `:initial_mode(Login_user, Mode)`;
+%   - PRINTED prose: TM-134 p66, p68 (login asks a user name and a
+%     password; an unregistered user types `me` for both); IPSJ 115247
+%     (4E-8) p1-p2 (registered users, ranks, a superuser); gog-esp
+%     INSTALL.e:24-31 (register: `Rank : general`).
+% The registry is OURS: the class slot `users`, a list of user objects,
+% made by register/4 (selector OURS).  psi/simpos_fs.py mount/1 registers
+% the one user the route needs, `pmpsi` (INFERENCE: the held login.com
+% defines "me" := ["user:pmpsi"]), with the password "pmpsi" (OURS: no
+% source gives it) and rank `general` (OURS, from gog-esp's register
+% dialogue).
+
+class user has
+
+% OURS: the registered users (see above).
+attribute users := [];
+
+% :identify(#user, Name, Password, U) -- the registered user of that name
+% whose password it is; fails otherwise.  INTERPOLATED from the held send
+% (simpos_user create/4 @20-24) and TM-134 p66 (login checks a name and a
+% password); that a mismatch fails (rather than raises) is INFERENCE: the
+% sender cuts after it (@1e dd) and has no handler.
+:identify(Class, Name, Password, U) :-
+        find(Class!users, Name, Password, U);
+
+% :register(#user, Name, Password, Mode) -- INTERPOLATED (OURS: selector and body): enter
+% a user in the registry (the route's "maintenance -> register", gog-esp
+% INSTALL.e:24-31, done by the mount).
+:register(Class, Name, Password, Mode) :-
+        :new(Class, U),
+        U!name := Name, U!password := Password, U!initial_mode := Mode,
+        Class!users := [U | Class!users];
+
+% :user(#user, U) -- the user of the calling process.  INTERPOLATED from
+% kappa2 SVCTL.ESP:1703 (held source, ANALOGY) and the printed process slot
+% `user` (TM-100 Fig. 3.1).
+:user(Class, U) :- :self(#process, P), :user(P, U);
+
+instance
+
+% OURS representation.
+attribute name := 0, password := 0, initial_mode := 0;
+
+% :local_name(U, Name) -- INTERPOLATED from simpos_user username/2 @b5 and
+% SVCTL.ESP:1704 (a string, given to enter_atom).
+:local_name(U, Name) :- Name = U!name;
+
+% :user_password(U, P) -- step 3m, INTERPOLATED from its one held send,
+% pimfep##as_pimos_login_requester create_message/3 @419, beside
+% :local_name/2 @415: the two go into the login record as RN and RP, the
+% SIMPOS user and password that PIMOS later confirms through
+% simpos_user_device's identify/4 (docs/fep_services.md §6.4, §6.5).  That
+% it is the login password is INFERENCE from that use.
+:user_password(U, P) :- P = U!password;
+
+% :initial_mode(U, Mode) -- INTERPOLATED from simpos_user setup_process/2
+% @f2-f5 and SVCTL.ESP:1706; the value (`general`) is OURS.
+:initial_mode(U, Mode) :- Mode = U!initial_mode;
+
+% :login_password(U, P) -- INTERPOLATED from simpos_user login_password/2
+% @c7-d5 (compared with equal_string).
+:login_password(U, P) :- P = U!password;
+
+% :passwords(U, X, Passwords) -- INTERPOLATED (INFERENCE) from its one held
+% send, simpos_user setup_process/2 @fa-102: the third argument is given
+% to the process's password list (set_passwords/2), the second is not
+% used.  Here X is the login password and Passwords the list of it
+% (OURS).
+:passwords(U, X, Passwords) :-
+        X = U!password, Passwords = [X];
+
+local
+
+find([U | _], Name, Password, U) :-
+        equal_string(Name, U!name), equal_string(Password, U!password), !;
+find([_ | Us], Name, Password, U) :- find(Us, Name, Password, U);
+
+end.

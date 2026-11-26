@@ -157,6 +157,16 @@ the 63 codes stands in the `--pairs` output under the same name, as do
 | 235 | expunge | 286 | none | `{Id, 1}` |
 
 The form of `File_names` (one string; its separator) was not read (U7).
+*Served since 2026-11-25 (R7, `ls`), the form INFERENCE from PIMOS's
+reader (U7's row): `fep.py` answers 204 on the home directory `[1]`
+(another directory `[5]`), 237 with `"*.*"` in JIS (ls's own wildcard,
+`shell/utils/ls.kl1`:31, 40) `[1, File_names]`, one 16-bit JIS string
+of entry names each ended by an LF, a file named with its version
+(`sample1.kl1.1`: `shell/utils/pathname.kl1` `is_directory_or_file/4`
+counts the periods), and 60 on it `[1]` (`fep.listing`,
+`longrun_ipl.home_listing`); another wildcard raises. The FEP emulator
+serves the same from a card entry flagged a directory (`mkfepcard.py`),
+checked on the "direct kernel" tape's section 12.*
 
 ### 2.4 Timer (`bios/fep_module/time_dvc.kl1`)
 
@@ -282,7 +292,11 @@ in order of creation, so the numbers shift with the order.
    and nothing is sent (`bios/boot/sysTman.kl1`:28-33); if not,
    `timer:create` sends 310 and every alarm is a 303 (34-35,
    `bios/boot/timer.kl1`:30, 60-62). The run takes the first branch
-   (§1.4 stop table, `system_timer`/`set_timer` implemented).
+   (§1.4 stop table, `system_timer`/`set_timer` implemented). So
+   `set_timer` to a time still to come (`ts`'s `on_after`, R7L
+   2026-11-25) is the processor's own alarm, not a FEP service: no
+   wire, nothing in `fep.py` or `PimmFepEmu.bsv` (`pimm_semantics.md`
+   `set_timer`).
 4. Syslog: **wire 203** `{Id, 203, "", 0, 0, "pimos:pimos.syslog"}`
    (`bios/boot/syslog.kl1`:33). Done. Afterwards only `putb(Buffer)`
    becomes **111** on that device (86-89); the only users found are
@@ -467,8 +481,10 @@ Weaker than the source allows, or to check:
   INFERENCE from `pimos_window_editor reshape_by_mouse/3`, §6.2 and
   §6.8, its body not walked). The FEP emulator answers it the same
   (`PimmFepEmu.bsv` `windowAnswered`, `direct_kernel.tape`).
-  Not served, met by commands typed (`binary_reverse_engineering.md`
-  1.4, "Commands past the shell"): 204 (directory) for `ls`.
+  Not served until 2026-11-25, met by commands typed
+  (`binary_reverse_engineering.md` 1.4, "Commands past the shell"):
+  204 (directory) for `ls`; now served with 237 and 60 on it, the
+  listing's form INFERENCE (§2.3's note, U7).
   (2026-11-25, R7) Served: one home file, the primer's `sample1.kl1`
   (`longrun_ipl.HOME_FILES`, its text read from `primer25.tex.Z`
   lines 592-605 at run time), and 221 (pathname) and 222 (attributes)
@@ -500,7 +516,7 @@ branch), the other window calls.
 | U4 | **SETTLED (§6.2, §6.8).** 127, 132, 143 are `pimos_window_editor` `reshape/7`, `set_font/4`, `show/3`; all 63 codes have a PSI handler. Still open: `refute/3` (SIMPOS's, not held) is taken to call the method named, from the arities; the 8-element `get_max_size` has no PSI clause | The `refute` method of SIMPOS's object class; a grep of the patch files' objects for a sender of the 8-element 103 (U8) |
 | U5 | **SETTLED (§6.6).** 900-903 pass only between FEPs; on the PIM/m's own link 903 is logged and dropped and the others are not made. Still open: nothing for PIMOS. Grade: READ FROM CONSTANTS, with the clause chaining of `fep_scsi_output put/4` (`c2`/`d3`: both now have rows in `psi/kl0_opcodes.tsv`, but neither witness shows a failed test falling through to the next clause, c2's targets itself and d3's is a cut; so this stays INFERENCE, `simpos/source_check_2026-11-24.md` 4.6) under "903 is dropped" | A KL0 opcode document, or the first close on the real link |
 | U6 | **Settled on the PIMOS side (READ, 2026-11-24; §7.1).** 70 gets no reply of its own, in all six device modules. Idle device: `{Id, 70}` is sent and only the send's result is taken (`file_dvc.kl1`:256-260, 552-556); no `receive` is queued. Request outstanding: its `receive(Vars, Result)` is already queued (493-498); `{Id, 70}` is sent and `device_abort1` waits for the send's result **and** the outstanding request's reply (521-525, 578-582). So the FEP owes exactly one reply, that of the interrupted request, with any status (6, `aborted`, gives the caller 6 and zeros by the reply rule); a second packet would be taken as the answer to the device's next request (`fep_rcvr.kl1`:86-92, replies are matched in order). After either the device answers every request `aborted` locally until a `reset` (`device_aborted`, 352-406) PSI half: **PARTLY (§6.7).** PSI half settled: no reply to 70; the interrupted timer, `io`, `getl`, socket `getb`/`accept` request is answered `{Id, 6}`; nothing found for a file or directory request. Still open: whether the kernel's client expects a reply to 70 (the PIMOS half), and what `tag_catch/9` does to a file request in progress | Open on the PSI side only: what status the real FEP gives the interrupted request (`abort_timer`, `device_abort/1` in `pimfep.ptf`) |
-| U7 | **Settled on the PIMOS side (READ; §7.1).** Both are ONE string, widened to 16 bits for Code 0 (EUC to JIS for 1), cut at elements of value 10 (LF). `File_names` (237, 238): each name up to an LF; the last may end with the string instead (`server/fep/file/dir_dvc.kl1`:304-339); the result is a list of 16-bit strings. `Attributes` (222): nine fields, the first six strings (Owner, UpdateUser, CDate, CTime, MDate, MTime), then three decimal integers in JIS digits (LinkCnt, FSize, RSize), **every integer field ended by an LF** (the digits are counted to one before the cut, `file_dvcb.kl1`:598-651, 668-691); taken only if 240's OS string begins `"SIMPOS"` (or Code is 1, the UNIX reading), otherwise abnormal (557-576). The object's modules agree with this source in clause counts and integers (`dir_device`, `file_request_device`, `fep_directory_device` are the `mkdir` patch's; §7.1) | The PSI's side (`pimos_directory`, `pimos_file`), not decoded; the date and time strings' format, which PIMOS passes through unread |
+| U7 | **Settled on the PIMOS side (READ; §7.1).** Both are ONE string, widened to 16 bits for Code 0 (EUC to JIS for 1), cut at elements of value 10 (LF). `File_names` (237, 238): each name up to an LF; the last may end with the string instead (`server/fep/file/dir_dvc.kl1`:304-339); the result is a list of 16-bit strings. `Attributes` (222): nine fields, the first six strings (Owner, UpdateUser, CDate, CTime, MDate, MTime), then three decimal integers in JIS digits (LinkCnt, FSize, RSize), **every integer field ended by an LF** (the digits are counted to one before the cut, `file_dvcb.kl1`:598-651, 668-691); taken only if 240's OS string begins `"SIMPOS"` (or Code is 1, the UNIX reading), otherwise abnormal (557-576). The object's modules agree with this source in clause counts and integers (`dir_device`, `file_request_device`, `fep_directory_device` are the `mkdir` patch's; §7.1) | The PSI's side (`pimos_directory`, `pimos_file`), not decoded; the date and time strings' format, which PIMOS passes through unread. *2026-11-25: 237's answer is served for `ls` in this form, INFERENCE (§2.3's note): the LF after the last name too, and the version in a file's name, are ours* |
 | U8 | **Settled to the depth of §7.1** (`python3 asm/fep_services/savpreds.py`). (a) The patch modules ARE the held source: `scsi_fep` differs from its base in `send_packet2/10` and `send_packet3/10` alone, exactly the source's "Remake by Amanuma" (the rounding of a string's length moved, `copy_string_elements` for `substring`: a string argument cut across packets); `fep_server` gains an abort line through the 240 fetch (8 predicates added, 5 dropped, 2 changed); neither changes a code, a layout or the order of commands. (b) The object is built with `fep_interface` = `scsi`, `virtual_machine_interface` not `yes`, `machine` not `vm` (and `mpsi`/`pimm` in the timer), `machine_type` = `mpsi`, `ipl_parameter` = `yes`, `autoloading` not `no`: it asks for `pimos:autoload.tbl`. tcpip, telnet and remote login are not build switches but `pimos.conf` terms | Instruction-level equality with the source was not shown (no compiler is run): the measure is predicate names, clause counts, integers, atoms and the module's constants. `pimos.h`, which sets the switches, is not held |
 | U9 | **Settled by reading (§7.3); one link INFERENCE.** The login shell's standard I/O is the "PIMOS CONSOLE" window of step 15: the user's task is made with no `stdio` option (`login_sv.kl1`:1536-1541) and `login_p:top` sets `task:top_task` (`login_p.kl1`:94), which makes `shell:login` use its standard I/O and not a new window (`shell/main/shell.kl1`:101-110). That the task inherits the "login" task's window is INFERENCE (the request handler between them was not traced). No partition dialogue with the held files: `login:go(.., [], off)` has no partition list (`login.kl1`:204-207 makes it `none`), the login server answers `get_part_info` with `[]` (`login_sv.kl1`:961-964), so `login_p:go2` takes its `[]` clause (`login_p.kl1`:29-34); "Enter your partition ?" needs a non-empty list and a `k` at "Confirm(<return> or kill): " (275-277, 485-488), on the task's `inter` window (24) | The run. Not traced: whether the stdio switch sends 141/142, and the wire effect of the login server's `get_date_time` |
 | U10 | **Settled (§7.2).** `pimos:` is the SIMPOS directory `>sys>csp>PIMOS.DIR` (`object/login.com`) holding `object/*` (`object/INSTALL`:8): serve `pimos:NAME` from `pimosobj.tar.Z` `object/NAME`. `me:` is `user:pmpsi` and holds only `init.com` and `login.com` (INSTALL:9), which PIMOS never opens: `me:pimos.init` is absent, status 5. A third name space was missed: the shell's `shell.com` and `pimos.com` are opened in the HOME directory the FEP's `simpos_user_device` gives, not in `pimos:` | Nothing for a stand-in. What a real user's home held is not knowable from the held set |
@@ -575,7 +591,10 @@ READ in `pimos_scsi_front_end` (the main loop `$or$0/3`: `get/3`,
    that id (`device_table`, `get_at/5`). The device's own process
    takes it (`as_pimos_device` local `refute/3`), converts the command
    number to its name and sends `:refute(Device, Name, Vector)`; a
-   failure is answered `{Id, 5}`. For a window the device
+   failure is answered `{Id, 5}` (re-read from the cells 2026-11-25:
+   the local's second clause @14e-165 gets Id from the raw message,
+   replies `{Id, 5}`, and then fails; `simpos/source_check_2026-11-24.md`
+   §9). For a window the device
    (`pimos_window_process put/2`) hands the message to its
    `pimos_window`, whose `kl1_message/2` does the same on the window's
    **editor**. So a device command is the instance method of that

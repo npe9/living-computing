@@ -214,6 +214,15 @@ def device_kwargs(opts):
                 lag=bool(opts['lag']), max_buffer=opts['max_buffer'])
 
 
+def list_dir_for(files):
+    """The directories 204 opens (R7, ls): for files [OBJECTS] the
+    kernel's (longrun_ipl.home_listing), else none."""
+    if files == [OBJECTS]:
+        import longrun_ipl as lr
+        return lr.home_listing
+    return None
+
+
 def open_file_for(files):
     """ref_scsi.boot's open_file, outside a machine: the list of OURS
     and the held .sav files, by the path's bytes; for files [OBJECTS],
@@ -250,7 +259,7 @@ def replay(sections, files, script=None):
     `script` line), or None."""
     out = []
     for opts, cmds in sections:
-        f = ORIGINAL(open_file_for(files), **device_kwargs(opts))
+        f = ORIGINAL(open_file_for(files), list_dir=list_dir_for(files), **device_kwargs(opts))
         if script is not None:
             f.script = list(script)
         dead = None
@@ -637,6 +646,39 @@ def direct_login_sections(std):
     ]
     for e in errs:
         s.append((std, e))
+    # 12. (2026-11-25, R7, ls) the home directory as ls lists it (shell/
+    # utils/ls.kl1, server/fep/file/dir_dvc.kl1): 204 on it [1], 237 with
+    # "*.*" [1, fep.listing's string, INFERENCE], cut, its close [1];
+    # another directory (5), a second at once, 204 again after the close.
+    # Injections (OBSERVED 2026-11-25, bsv/run_fepemu.sh): PimmFepEmu's
+    # wildcardByte with 26h for 25h, direct_kernel FAIL at command 449
+    # (237 refused, why 7) and on; mkfepcard.py without the directory
+    # flag, FAIL at command 448 (204 answered 5 for fep.py's 1); every
+    # other tape PASS in both
+    import longrun_ipl as longrun
+    hdir = fj(longrun.HOME)
+    dr = lambda dev, path: sd(dev, fepm.DIRECTORY, b'', fj('pmpsi'), b'', path)  # noqa: E731
+    lst = lambda dev, wc=fepm.LISTING_WILDCARD: sd(dev, fepm.LISTING_ALL, wc)  # noqa: E731
+    s.append((dict(std, getb_unit=2), [
+        dr(41, fj('>sys>user>other')), r,
+        dr(41, fj(longrun.HOME + '>sample1.kl1')), r,                 # a file: no directory
+        dr(42, hdir), r, lst(42), receive(16000),
+        dr(43, hdir), r, lst(43), receive(20), receive(64),           # cut
+        sd(43, fepm.CLOSE), r, lst(42), r,
+        sd(42, fepm.CLOSE), r,
+        dr(42, hdir), r, lst(42), receive(16000), sd(42, fepm.CLOSE), r]))
+    errs = [
+        [dr(42, hdir), lst(42, fj('*.kl1'))],                         # another wildcard
+        [dr(42, hdir), lst(42, 0)],                                   # an integer
+        [dr(42, hdir), sd(42, fepm.LISTING_ALL)],                     # no wildcard
+        [dr(42, hdir), lst(43)],                                      # another device
+        [dr(42, hdir), sd(42, fepm.CLOSE), lst(42)],                  # closed
+        [dr(42, hdir), dr(42, hdir)],                                 # opened twice
+        [dr(42, hdir), sd(42, fepm.GETB, 10)],                        # not a file
+        [sd(42, fepm.DIRECTORY, b'', fj('pmpsi'), b'', 5)],           # an integer path
+    ]
+    for e in errs:
+        s.append((std, e))
     return s
 
 
@@ -685,7 +727,7 @@ def sizes(opts, items, files):
     """What the emulator's limits of OURS must hold for a tape: the
     largest request message, the most replies queued and devices of
     each kind at once, the most arguments of each command."""
-    f = ORIGINAL(open_file_for(files), **device_kwargs(opts))
+    f = ORIGINAL(open_file_for(files), list_dir=list_dir_for(files), **device_kwargs(opts))
     most = dict(queued=0, files=0, appending=0, timers=0, strio=0, windows=0, held=0,
                 listening=0)
     args = {}

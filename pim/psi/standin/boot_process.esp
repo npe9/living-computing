@@ -1,0 +1,157 @@
+% SCAFFOLDING stand-in for SIMPOS's class `boot_process`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost, and no body of it is printed.  Step 3i, the first step of
+% docs/simpos/boot_route.md (route step B2).
+%
+% What is PRINTED (prose only, page images re-read 2026-11-25):
+%   - TM-100 PDF p6 (folio 4): "a boot process, which is created and
+%     activated by the hardware, not by another process, when the system
+%     is bootstrapped.  The multiple process environment in SIMPOS is
+%     initiated on the boot process.  The supervisor must make it under
+%     its control, after the system has started."
+%   - TM-100 PDF p13 (folio 11): "A boot process is a sole instance of
+%     class 'boot_process', which executes the boot program inheriting
+%     class 'as_boot_program'. ... class 'boot_process' inherits class
+%     'process' and overrides the predicates, :create and :activate."
+%   - TR-056 PDF p21 (folio 19): the overrides are there "so that the boot
+%     process comes under control of the supervisor after the system has
+%     started, by the boot process itself calling these operations."
+% What is HELD (compiled, pimmcsp.ptf): pimmcsp##pseudo_pe_process, a
+% held subclass of simpos##process, release/1 @177-189:
+%     :status(Self, dormant, on_release),
+%     :get_instance(#boot_process, Boot),          % @17f-183
+%     :request(Boot, release, Self)                % @184-189
+% the only held reference to the class (docs/simpos/required/
+% ptf_class_refs.tsv: pimmcsp 1).
+%
+% Stood in:
+%   - nature process (PRINTED, TM-100 p13);
+%   - the class slot `instance` and class method get_instance/2:
+%     INTERPOLATED from the held call site above and "sole instance";
+%     the slot's name is OURS;
+%   - boot/2, the hardware's act of creating and activating the boot
+%     process: OURS (a selector of ours, not SIMPOS's), called by the
+%     stand-in process:self/2 when no process exists yet.  The status it
+%     sets, `active`, is the parenthesised value of the printed status
+%     slot (TM-100 Fig. 3.1, PDF p8: "nil(=dead), dormant, suspended,
+%     ready, (active)").
+%   - step 3j: the overriding class create/2 and instance activate/2,
+%     INTERPOLATED (labelled at the end of the class).
+% Not stood in, so refused loudly: create/3 (kl0 SIMPOS_MODELS: the
+% inherited process version would make a second boot process).  request/3
+% was refused until step 3k (no source says what a request does); step 3k
+% stands in its `release` request, INTERPOLATED (below), and refuses any
+% other request.
+
+class boot_process has
+
+    nature      process ;
+
+    % INTERPOLATED (name OURS): the sole instance (TM-100 p13).
+    attribute   instance := 0 ;
+
+    % :get_instance(#boot_process, Boot) -- the boot process.
+    % INTERPOLATED from pimmcsp##pseudo_pe_process release/1 @17f-183
+    % (held cells) and TM-100 p13 "a sole instance".  The machine is
+    % booted first if it is not yet (:self/2 makes the boot process).
+    :get_instance(Class, Boot) :-
+        :self(#process, _Running),
+        Boot = Class!instance, Boot \== 0 ;
+
+    % :boot(#boot_process, Boot) -- what the hardware does at bootstrap:
+    % make the one boot process and activate it.  INTERPOLATED from TM-100
+    % p6 and TR-056 p21 (prose); the selector boot/2 is OURS, not SIMPOS's.
+    % Called only by process:self/2.
+    :boot(Class, Boot) :-
+        :new(Class, Boot),
+        Class!instance := Boot,
+        Boot!status := active ;
+
+    % ---- step 3j, route step B3: the overrides.  TM-100 p13 and TR-056
+    % PDF p21 (folio 19) say only that boot_process overrides :create and
+    % :activate, "so that the boot process comes under control of the
+    % supervisor after the system has started, by the boot process itself
+    % calling these operations"; TM-100 p13: "After initiation, this boot
+    % process goes under control of the supervisor, and acts exactly as an
+    % ordinary process."  The bodies are INTERPOLATED: each is the printed
+    % process method (TM-100 Fig. 3.1) with what does not apply to a
+    % process the hardware already runs taken out.  create/3 stays
+    % refused (kl0 SIMPOS_MODELS): process:create/3 is itself
+    % INTERPOLATED, and nothing says the boot process overrides it.
+
+    % INTERPOLATED (step 3j; see above).
+    % :create(#boot_process, Boot) -- the boot process gets what the
+    % printed create/2 and create_core/3 give a new process: a context (its
+    % number 0 when it is the first), priorities 0, status dormant.  Not
+    % :new (the boot process exists: "sole instance", TM-100 p13), no
+    % parent (it is "not [created] by another process", TM-100 p6).  Until
+    % step 3k it made no instance_array entry; see the end of the
+    % clause.  The supervisor's ready queue,
+    % the printed class slot ready_queue (Fig. 3.1, PDF p7), is made here
+    % as a list (OURS: the slot has no printed initial value; with_link
+    % "is inherited to put the process into the ready queue", PDF p10, so
+    % the real queue chains processes; a list holds them in order here).
+    :create(Class, Boot) :- !,
+        :self(#process, _Running),
+        Boot = Class!instance, Boot \== 0,
+        :create(#context, Context_number, Stack_number, Context),
+        Boot!context := Context,
+        Boot!priority := 0,
+        Boot!sub_priority := 0,
+        Boot!status := dormant,
+        :create(#list, Queue),
+        #process!ready_queue := Queue,
+        % Step 3k, OURS: the printed class slot instance_array ("Relates a
+        % process to its context_number", PDF p7) is made here as a heap
+        % vector of 63, one element per context (TR-055 PDF p5, TR-056
+        % PDF p19), so that the printed create_core/3's
+        % set_vector_element can run once create/2's PROCESS is corrected.
+        % The boot process takes its own context's element, as
+        % create_core/3 gives every process (INTERPOLATED).
+        new_heap_vector(Array, 63),
+        #process!instance_array := Array,
+        :get_number(Context, Boot_number),
+        set_vector_element(Array, Boot_number, Boot), ! ;
+
+    instance
+
+    % INTERPOLATED (step 3j; see above).
+    % :activate(Boot, Program) -- the printed activate/2 without
+    % :entry_of_invoke and :set_entry_point: the boot process is already
+    % running Program (the boot program it was given at bootstrap), so no
+    % entry is set.  It becomes ready and joins the ready queue, as the
+    % printed one makes any process.  Program is not used (OURS).
+    :activate(Boot, Program) :-
+        :status(Boot, dormant, on_activate), !,
+        :activate(Boot!context),
+        :set_priority(Boot!context, 0),
+        :clear_masks(Boot),
+        :inhibit_interrupt(#process),
+        Boot!status := ready,
+        :add(#process!ready_queue, Boot),
+        :allow_interrupt(#process), ! ;
+
+    % ---- step 3k: request/3, INTERPOLATED.  No body or prose prints it.
+    % Its one held send is pimmcsp##pseudo_pe_process release/1 @184-189:
+    % `:request(Boot, release, Self)`, the last call of release/1 after
+    % `:status(Self, dormant, on_release)` (@17a-17e), with Boot from
+    % `:get_instance(#boot_process, Boot)` (@17f-183).  release/1 is sent
+    % by terminate/1 @1ca after terminate_core/1, and by release_core's
+    % $or$2/1 @361 to the context.  The same class defines the instance
+    % method release_core/1 (@1cf), and NO held cell of the eleven
+    % packages sends release_core/1 (sweep of the compiled cells,
+    % 2026-11-25): its sender is lost SIMPOS.  So the request `release`
+    % is read as: the boot process, the supervisor's own process (TM-100
+    % p13, TR-056 p21), performs :release_core on the requesting process,
+    % which a process cannot do to itself once dormant (INTERPOLATED).
+    % That the boot process does it at once, in the caller's process,
+    % rather than queueing it for its own, is OURS (no request queue is
+    % printed).  Any other request is unwitnessed and refuses loudly:
+    % unsupported_request/2 is not a method of any class (OURS), so the
+    % send is refused "not in the stand-in".
+    :request(Boot, release, Process) :- !,
+        :release_core(Process) ;
+    :request(Boot, Request, Process) :-
+        :unsupported_request(Boot, Request) ;
+
+end.

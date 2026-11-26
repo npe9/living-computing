@@ -3095,17 +3095,17 @@ typedef struct {
 // the foot tests validity only.  Checked by grep when this was added.)
 //
 // TWO BOXES SINCE 2026-11-16: the divider and the DECIMAL ADDER
-// (StretchDecBox.bsv, mkDecBox).  A request names which box it is for
+// (StretchSAU.bsv, mkDecBox).  A request names which box it is for
 // and the answer comes back tagged the same way; an arm that asked the
 // divider takes `divOf(boxResult)` and one that asked the decimal adder
 // `decOf(boxResult)`.  mkEBox remembers which box the held instruction
 // waits on (`boxKind`).
 //
-// THREE SINCE 2026-11-16: the RADIX CONVERTER (StretchCvtBox.bsv,
+// THREE SINCE 2026-11-16: the RADIX CONVERTER (StretchSAU.bsv,
 // mkCvtBox), for CONVERT DOUBLE; an arm that asked it takes
 // `cvtOf(boxResult)`.
 //
-// FOUR SINCE 2026-11-18: the VFL ARITHMETIC BOX (StretchVflBox.bsv,
+// FOUR SINCE 2026-11-18: the VFL ARITHMETIC BOX (StretchSAU.bsv,
 // mkVflBox), vflIntOp's datapath moved out class by class; stage 1 is
 // the binary multiply of `*` and `*+`.  An arm that asked it takes
 // `vflOf(boxResult)`.
@@ -3584,7 +3584,7 @@ function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
               // will not cause a lost carry indication."  (The BINARY
               // arm below sets both by the same rule since 2026-11-16.)
               //
-              // THE SUM IS mkDecBox's (StretchDecBox.bsv), asked for by
+              // THE SUM IS mkDecBox's (StretchSAU.bsv), asked for by
               // the NeedBox bail once every word this instruction reads
               // is in hand -- INCLUDING a progressive refill: the
               // accumulator write below commits on the run that makes
@@ -4709,7 +4709,7 @@ function VflArm vflMulDivFamily(StretchStorage st, VflCtx cx, VflArm a0);
               SM128 acc = readAcc(st);
               // "the accumulator field specified by the offset"
               Bit#(128) accOp = acc.mag >> offSh;
-              // THE 48 x 48 PRODUCT IS mkVflBox's (StretchVflBox.bsv,
+              // THE 48 x 48 PRODUCT IS mkVflBox's (StretchSAU.bsv,
               // 2026-11-18): the PAU's multiplier, twelve multiplier bits
               // a clock, reached by the NeedBox bail exactly as decimal
               // + reaches mkDecBox.  Every write and every indicator is
@@ -5062,7 +5062,7 @@ function VflArm vflConvertFamily(StretchStorage st, VflCtx cx, VflArm a0);
             vflReadsUsed = vf.used;
             if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              // THE CONVERSION IS mkCvtBox's (StretchCvtBox.bsv), 2026-11-17,
+              // THE CONVERSION IS mkCvtBox's (StretchSAU.bsv), 2026-11-17,
               // as DCV's is: asked for once every word this instruction
               // reads is in hand, by the NeedBox bail, and NOTHING is
               // written or set on the run that bails -- the data flags
@@ -5453,7 +5453,7 @@ function VflArm vflConvertTransitFamily(StretchStorage st, VflCtx cx, VflArm a0)
             // affected by CONVERT or CONVERT DOUBLE" (printed p.72).
             //
             // SO IT IS CV's ARM (above) WITH 20/96 FOR 68/48, and the
-            // conversion itself in mkCvtBox (StretchCvtBox.bsv): asked for
+            // conversion itself in mkCvtBox (StretchSAU.bsv): asked for
             // by the NeedBox bail, nothing written on the run that bails.
             //
             // CHOSEN: the decimal field is every digit from the offset to
@@ -5670,7 +5670,7 @@ function ActionValue#(VflOutcome)
       // (G2.3 stage 1). <<<  The list of what this gate lets past is
       // StretchVFL's vflDecimalBuilt, which the I-box's prepareExec asks
       // too; `radixConv` above is kept for the arms that test it.  The
-      // decimal sums go through mkDecBox (StretchDecBox.bsv) by the
+      // decimal sums go through mkDecBox (StretchSAU.bsv) by the
       // NeedBox bail; see each arm's DECIMAL note.
       //
       // >>> AND THE GATE IS GONE, 2026-11-16: with decimal LFT and DCV

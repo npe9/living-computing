@@ -4,7 +4,8 @@
 // >>> WHAT THIS IS <<<  The three boxes the E-box's VFL arms reached --
 // the serial adder (mkDecBox), the VFL multiplier (mkVflBox) and the
 // radix converter (mkCvtBox), StretchDecBox.bsv, StretchVflBox.bsv and
-// StretchCvtBox.bsv until this file -- become ONE stateful module with
+// StretchCvtBox.bsv until this file (those files deleted 2026-11-25;
+// see git history) -- become ONE stateful module with
 // one request method, one responseReady poll and one response value: the
 // mkFBox / mkRISCV_MBox shape (AGENTS.md, "Idiomatic Bluespec"), and the
 // 7030's own: Buchholz, "Planning a Computer System", §14.4, printed

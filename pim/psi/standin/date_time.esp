@@ -1,0 +1,39 @@
+% SCAFFOLDING stand-in for SIMPOS's class `date_time`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `date_time` is printed or held.  Step 3k, route step B4 (the timer
+% device's get_date_time request).  MINIMAL: now/2 and get_count/3.
+% INTERPOLATED (labelled) from:
+%   - the held pimfep##pimos_timer get_date_time/3 @be-d0:
+%     `:now(#date_time, D)`, `:get_count(D, A, B)`, replied as
+%     `{Id, 1, A, B}` (docs/fep_services.md §6.2);
+%   - PIMOS's reader of that reply, bios/fep_module/time_dvc.kl1:371
+%     (docs/fep_services.md §2.4: `{Id, 1, Date, Time}`, Date the days
+%     from 01-Jan-1901, Time the milliseconds from midnight);
+%   - docs/simpos/required/classes.tsv row date_time (class now/2 used
+%     in kappa2, cil, euod, knov, kwic-esp; get_count/3 only in pimfep).
+% There is no clock: the date and time are the class slots date and
+% time, 0 unless set (OURS).
+
+class date_time has
+
+% OURS: the present date and time (no clock is modelled).
+attribute date := 0, time := 0;
+
+% INTERPOLATED: see above.
+:now(Class, D) :-
+        :new(Class, D),
+        D!date := Class!date,
+        D!time := Class!time;
+
+instance
+
+% INTERPOLATED (names OURS).
+attribute date := 0, time := 0;
+
+% :get_count(D, Date, Time) -- INTERPOLATED from get_date_time/3 @c3-c7
+% and the reply order {Id, 1, Date, Time} (see above).
+:get_count(D, Date, Time) :-
+        Date = D!date,
+        Time = D!time;
+
+end.

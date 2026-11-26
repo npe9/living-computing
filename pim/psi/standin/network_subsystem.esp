@@ -1,0 +1,28 @@
+% SCAFFOLDING stand-in for SIMPOS's class `network_subsystem`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `network_subsystem` is printed or held, and NO NETWORK IS MODELLED.
+% Step 3m (docs/simpos/boot_route.md §6).  Its one method is
+% INTERPOLATED (labelled) from:
+%   - pimfep##pimos_remote_login_replier initiate_listener/1 @2d9-316
+%     (held .ptf, cells read 2026-11-25 with psi/fepread/ptfread.py): the
+%     first clause sends `:is_installed(#network_subsystem)` and then
+%     creates a `#network_listener` (notify), a user profile and the
+%     replier's listener; the second clause (@315-316) is `true`, so a PSI
+%     whose network subsystem is not installed initiates the replier with
+%     no listener and goes on;
+%   - pimos_remote_login_server create_socket/2 @464, @4ac: the same test
+%     on the lia and tcpip branches only, never on local_login;
+%   - docs/simpos/required/classes.tsv (row `network_subsystem`):
+%     referenced by pimfep and pimmcsp only.
+% Model (OURS): is_installed/1 FAILS.  This PSI model has no LIA or
+% Ethernet board, so the answer the held code is written to handle (its
+% `true` clause) is the honest one; contrast common_network.esp, whose
+% callers have no clause for "not installed".
+
+class network_subsystem has
+
+% INTERPOLATED from: the replier's initiate_listener/1 (see above).  OURS:
+% it fails, no network is installed.
+:is_installed(Class) :- fail;
+
+end.

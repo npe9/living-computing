@@ -1,0 +1,98 @@
+% SCAFFOLDING stand-in for SIMPOS's class `context`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost, and on the PSI a context is hardware.  Step 3j, route step B3
+% (docs/simpos/boot_route.md).  Every method is INTERPOLATED; what the
+% hardware does with a context (running it) is the dispatcher in kl0.py
+% (OURS, Machine.yield_processor), not this class.
+%
+% What is PRINTED (page images read 2026-11-25):
+%   - TM-100 Fig. 3.1 (PDF p8-9), the only printed uses:
+%       :create(#context, Context_number, Stack_number, Context)  in create/2
+%           ("Make an instance and initiate it.  If hardware processes
+%           are exhausted, then fail.")
+%       :get_number(Context, Context_number)       in create_core/3
+%       :set_entry_point(Process!context, Entry)   in activate/2
+%       :activate(Process!context)                 in activate/2
+%       :set_priority(Process!context, 0)          in activate/2
+%     and the process slot `context` ("Hardware PCB", PDF p8;
+%     CORRECTED step 3k: first read "Hardware PC", source_check §10.2).
+%   - TR-055 PDF p5 (folio 2): four stacks per KL0 execution; "PSI can
+%     have a maximum of 63 contexts executing at the same time ... the
+%     processor has 63 sets of the internal registers for process
+%     control.  Interrupts and traps cause direct context switching at
+%     the hardware level, but process dispatching must be controlled by
+%     software."
+%   - TR-056 PDF p19 (folio 17): each process "is given a hardware process
+%     environment of PSI, such as a register set, a stack group, and heap
+%     memory.  The architecture of PSI restricts the number of processes
+%     in a system to 63."
+% What is HELD (compiled, pimmcsp.ptf, pimmcsp##pseudo_pe_process):
+%   - $or$1/3 @31e-336: :create_for_pseudo_pe_process(#context, .., ..,
+%     default, query, middle, Ctx), then create_core/4 (not stood in);
+%   - terminate_core/1 @1d6 and $or$2/1 @33b: the process's `context`
+%     slot is read, compared with nil, and :get_number(Ctx, N) is sent
+%     (get_number/2, the selector of Fig. 3.1).
+% USAGE (names only): the KL0 built-ins create_process/3,
+% initialize_process/2, change_process/1 and kill_process/1, in cil
+% src/cil_kl0.esp:102-158 (the wrapper table of every built-in); no
+% argument is described.  That the context methods use them is
+% INFERENCE, not used here.
+%
+% Stood in, minimal: a context is an object with a number, an entry
+% point, a priority and a state.  Numbers are given out 0, 1, 2, ...
+% and never reused (OURS: releasing a context is not modelled); the 64th
+% create fails (TR-055 p5's 63).  The stack number is the context number
+% (OURS).
+
+class context has
+
+    % INTERPOLATED (name OURS): the next free hardware context number.
+    attribute   next_number := 0 ;
+
+    % :create(#context, Context_number, Stack_number, Context)
+    % INTERPOLATED from TM-100 Fig. 3.1 create/2 (the call and its
+    % comment) and TR-055 p5 (63 contexts).
+    :create(Class, Number, Stack, Context) :-
+        Number = Class!next_number,
+        Number < 63,
+        :new(Class, Context),
+        Context!number := Number,
+        Class!next_number := Number + 1,
+        Stack = Number ;
+
+    instance
+
+    % INTERPOLATED (names OURS): what the printed calls give a context.
+    attribute   number,
+                entry       := nil,
+                priority    := 0,
+                state       := inactive ;
+
+    % INTERPOLATED from TM-100 Fig. 3.1 create_core/3 and held
+    % pseudo_pe_process terminate_core/1 @1e0, $or$2/1 @347.
+    :get_number(Context, Number) :- Number = Context!number ;
+
+    % INTERPOLATED from TM-100 Fig. 3.1 activate/2: the entry is what
+    % the program's :entry_of_invoke/2 gives (as_program.esp).
+    :set_entry_point(Context, Entry) :- Context!entry := Entry ;
+
+    % INTERPOLATED from TM-100 Fig. 3.1 activate/2: the context may now
+    % be dispatched (kl0's dispatcher runs only an `active` context).
+    :activate(Context) :- Context!state := active ;
+
+    % INTERPOLATED from TM-100 Fig. 3.1 activate/2 (the slot `priority`
+    % "Corresponds to interrupt level", PDF p8).  Stored, not used: the
+    % dispatcher ignores priority (OURS).
+    :set_priority(Context, Priority) :- Context!priority := Priority ;
+
+    % INTERPOLATED (step 3k) from its one held send,
+    % pimmcsp##pseudo_pe_process release_core's $or$2/1 @35f-361
+    % (`:release(Ctx)` after the process's slot context is set to nil and
+    % its control-block words are cleared with blt 94), reached through
+    % boot_process:request/3 (boot_process.esp): the hardware context is
+    % given back.  Only its state changes, to `released` (name OURS); the
+    % number is not reused (as create/4 above, OURS) and kl0's dispatcher
+    % runs only an `active` context.
+    :release(Context) :- Context!state := released ;
+
+end.

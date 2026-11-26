@@ -3200,7 +3200,7 @@ run "binary VFL sign byte: position, flags, zones, ST's indicators, LWF, M+" ./r
     "UFP:548=0" \
     "VFP:549=0"
 # >>> DECIMAL VFL ADD, LOAD AND STORE (G2.3 stage 1), 2026-11-16. <<<  The
-# sums are mkDecBox's (bsv/StretchDecBox.bsv), reached through execute()'s
+# sums are mkDecBox's (bsv/StretchSAU.bsv), reached through execute()'s
 # NeedBox bail.  A1-A5 are Reference Manual printed p.60's five ADD examples
 # (A4 is "00000- Result zero Result negative"); A14 is C22-6578 printed
 # p.15's "(1 1 1 1)2 ... will become (0101)2 with a carry"; the rest are

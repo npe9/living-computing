@@ -533,6 +533,67 @@ and stand-in `simpos##` classes. In order:
        (`source_check_2026-11-24.md` §8). One cross-reference, §6.1
        step 4's `{Id, 5}`, is still unread. The TM-115 `get_position` page is fixed in the generated
        tables.
+   - *2026-11-25, step 3i* (`../../psi/README.md`, the "Step 3i"
+     sections):
+     - The census is order-independent: class slots are dropped before
+       each row. Plain FEP 810 / 165 / 428 becomes 757 / 219 / 427, with
+       recipes 836 / 164 / 403 becomes 782 / 220 / 401. Every removed
+       success was produced by an earlier row. Six packages unchanged.
+     - `boot_route.md` written: the path to a SIMPOS top level, step by
+       step, cited. Its step B2 is taken: the census's process is now a
+       boot process (INTERPOLATED, TM-100 p6/p13, TR-056 p21, held
+       `pseudo_pe_process release/1`). Totals unchanged.
+     - window.md appendix A and §2.14 equal their generators; §6.1 step
+       4's `{Id, 5}` re-read from the cells (`source_check` §9).
+     - pmi 3b, 6c, c8 and blt 00, e0, 1a are KNOWN-PLAINTEXT on held
+       kappa2 and paragraph source. Six packages 317 / 12 / 200 / 1,
+       plain FEP 767 / 221 / 415, with recipes 792 / 222 / 389. Every new
+       success is a census artifact (an unbound argument meeting the
+       first clause, or a template slot constant), not progress; the new
+       real stop is `as_resource assigned/1`. A fault in pmi c9 was found
+       and fixed: its first target is `[]` only (cts_post.esp:18-21).
+   - *2026-11-25, step 3j* (`../../psi/README.md`, "Step 3j"):
+     - `boot_route.md` B3 is done as a stand-in. The boot process comes
+       under the supervisor, and a second process runs and hands back a
+       stream message. The stand-ins are `process:status/3`,
+       `clear_masks/1`, `entry_of_invoke/2`, class `context`, and the
+       boot process's `create/2` and `activate/2` (INTERPOLATED, basis
+       table in the psi README). The dispatcher is OURS.
+     - `as_resource` `assign/1`, `assigned/1` and `resign/1` are
+       INTERPOLATED from held pseudo_scsi call sites, with kappa2 as
+       ANALOGY.
+     - Under the supervisor, the held `pimos_timer create_timer/9` runs
+       to its end. A request to its device process stops at blt 6f.
+     - Plain FEP has 1,466 rows (46 added, all stand-in): 801 / 233 /
+       415. With recipes, 826 / 234 / 389. No held row changed outcome.
+       Six packages are unchanged.
+   - *2026-11-25, steps 3k to 3m* (`../../psi/README.md`, "Step 3k" to
+     "Step 3m"; `boot_route.md` §4.3 to §4.5): B4 for the FEP timer, B5
+     to B8 as stand-ins, the login requester's dialogue and a local login
+     to the held server, with a probe standing in for PIMOS.
+   - *2026-11-25, step 3n* (`../../psi/README.md`, "Step 3n";
+     `boot_route.md` §4.6 and §6.5; `source_check_2026-11-24.md` §13):
+     - The held requester logs into the real PIMOS. PIMOS runs on
+       `ref/pimm/pimm.py` from the IPL's link checkpoint. The PSI side
+       is the held `pimos_scsi_front_end`, its assembler, the replier,
+       the server and `simpos_user_device`, on kl0. The bridge
+       (`../../psi/fep_bridge.py`, OURS) stands in for the SCSI driver
+       and the bus only.
+     - The requester's window shows PIMOS's `Login procedure starts.`,
+       `OK. Your initial program starts.` and `Good luck!`. The shell's
+       window is still `fep.py`'s (the PMACS editor is lost). With `pwd`
+       typed there it shows the pinned shell run's answer,
+       `">sys>user>pmpsi"`, the directory the held `simpos_user_device`
+       gave PIMOS.
+     - kl0 gained substring/7 between 16 and 32 bits, signed 32-bit
+       elements and a sign-extended `get_integer` (INFERENCE), rows blt
+       30 and pmi 36 (KNOWN-PLAINTEXT) and blt 0d (INFERENCE), and an
+       idle interrupt (OURS). There are three new stand-in classes, five
+       new methods in existing stand-ins, and two kl0 models.
+     - Census: six packages 322 / 12 / 195, plain FEP 810 / 238 / 403,
+       with recipes 837 / 239 / 375. Two held rows really move (the
+       front end's `create/6`, the replier's `io/5`); the rest is census
+       probing, as listed there.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

@@ -1,0 +1,47 @@
+% SCAFFOLDING stand-in for SIMPOS's class `font`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no part of it is printed
+% or held, and it draws nothing itself.  Step 3l, route step B6 (the window
+% system), MINIMAL: a font is its file's name (and, window M0, its
+% file read through the display device: see below).
+% USAGE (held cells, read 2026-11-25): pimfep##pimos_login_requester
+% local initiate/1 @b9-c6 (`:create(#font, "font:test_11.font", F)`, A0
+% the name and A1 the new font by the cells @b9-be; then
+% `:set_font(W, F)`, `:set_label_font(W, F)`) and initiate_additional_
+% function/1 @2ce-2d3.
+%
+% Window M0 (2026-11-25): THE FILE IS READ.  psi/simpos_fs.py now places
+% psdpim's FONT.DIR under `font:` (HELD INSTALL line, OURS directory), so
+% create/3 looks the name up with the directory's retrieve/3 (the step 3l
+% stand-in, interface PRINTED TR-056 PDF p23) and has the display device
+% decode it (simpos##bitmap_display load_font/5, psi/windev.py: f822,
+% docs/simpos/window_environment_plan.md §1.4, MEASURED).  The font keeps
+% the device's id for it and its cell, the size of its space character
+% (PROSE TM-115 p16-17, window.md §2.2: the cursor size is reset from the
+% font's space character).  A name with no file FAILS create/3
+% (INFERENCE, as the plan's M0 row says: the held fallback-on-failure
+% evidence is for standard_input_file, not font); on a machine with no
+% file system mounted (the census), retrieve/3 refuses, so create/3 stops
+% there.
+
+class font has
+
+% :create(#font, Name, F) -- INTERPOLATED (body OURS) from the sends above
+% and the window M0 note.
+:create(Class, Name, F) :-
+        :new(Class, F),
+        F!name := Name,
+        :retrieve(#directory, File, Name),
+        :load_font(#bitmap_display, File, Id, W, H),
+        F!id := Id, F!width := W, F!height := H;
+
+instance
+
+% OURS representation: the name given, the device's font id, the cell.
+attribute name := 0, id := 0, width := 0, height := 0;
+
+% :pathname(F, Name) -- INTERPOLATED (body OURS) from the pimfep send
+% font pathname/2 (docs/simpos/window_environment_plan.md §2.1, from
+% subsystems/notes/ptf.tsv): the name the font was made from.
+:pathname(F, Name) :- Name = F!name;
+
+end.

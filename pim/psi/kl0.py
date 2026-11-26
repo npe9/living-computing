@@ -141,6 +141,10 @@ class Atom:
 
 
 NIL = Atom('[]')
+# step 3j: the dispatcher's names
+PROCESS = 'simpos##process'
+ATOM_READY = Atom('ready')
+ATOM_SUSPENDED = Atom('suspended')
 
 
 class Functor:
@@ -207,6 +211,13 @@ class Str:
         out, t, i = [], self.text, 0
         while i < len(t):
             c = t[i]
+            # step 3k: an element wider than 16 bits (a 32-bit string's
+            # 0xffffffff, written by set_string_element) is an 8-hex token
+            if c == "<" and t[i + 9:i + 10] == ">" and all(
+                    x in '0123456789abcdef' for x in t[i + 1:i + 9]):
+                out.append(int(t[i + 1:i + 9], 16))
+                i += 10
+                continue
             if c == "<" and t[i + 5:i + 6] == ">" and all(
                     x in '0123456789abcdef' for x in t[i + 1:i + 5]):
                 out.append(int(t[i + 1:i + 5], 16))
@@ -222,7 +233,10 @@ class Str:
         return out
 
     def set_codes(self, codes):
-        self.text = ''.join(P.ch(x) for x in codes)
+        # step 3n: an element wider than 16 bits (a 32-bit string's) is
+        # written as the 8-hex token codes() reads; P.ch would give
+        # '<10000>' for 0x10000, which no reader takes back
+        self.text = ''.join(P.ch(x) if x <= 0xffff else '<%08x>' % x for x in codes)
 
     # Python equality compares contents, for tests and tables only.  KL0's
     # unification and `==` do NOT use it: on the PSI two strings unify only
@@ -479,6 +493,11 @@ class Machine:
         # this set raises CreatorStopped instead of being dispatched
         self.stop_before = None
         self.sender = None
+        # step 3j: the registers of each process not running (dispatcher, OURS)
+        self.saved = {}
+        # step 3k: the hardware process control blocks written by blt 94,
+        # {(context number, index): value} (OURS representation)
+        self.pcb = {}
 
     # -- code --------------------------------------------------------------
     def code(self, cid):
@@ -694,6 +713,19 @@ class Machine:
             # the receiver is last (register 1), the information first
             raise Raised(resolve(self.x[0]))
         model = SIMPOS_MODELS.get((cid, section, name, arity))
+        if model is None and cid in self.lib.templates:
+            # step 3i: a modelled method is inherited (the census process is
+            # a boot_process, which inherits process's suspend/2): the first
+            # class in the receiver's inheritance order with a model, unless
+            # a class before it defines the method itself
+            for anc in self.lib.build(cid).order:
+                model = SIMPOS_MODELS.get((anc, section, name, arity))
+                if model is not None:
+                    break
+                t = self.lib.templates.get(anc)
+                if t is not None and any((p.name, p.arity) == (name, arity) for p in
+                                         (t.class_preds if section == 'class' else t.instance_preds)):
+                    break
         if model is not None:
             return model(self)
         if cid not in self.lib.templates:
@@ -706,6 +738,26 @@ class Machine:
             if section == 'class' and (name, arity) == ('new', 2):
                 # class `class`'s new/2 (TM-388 §3.6), OURS, as the primary
                 return self.run_combined(co, m, ('new',))
+            if section == 'instance' and (name, arity) == ('class_object', 2):
+                # step 3m: :class_object(Object, Class), the generic object
+                # protocol (docs/simpos/subsystems/gaps.md row 4, owner not
+                # settled; not held).  INTERPOLATED from the held senders
+                # pimfep##pimos_remote_login_server reset/2 @19d and
+                # create_socket/2 @45b: the answer receives
+                # set_local_server_socket/2, a class method of the sender's
+                # own class, so it is the object's class (receiver last)
+                return self.proceed() if self.unify(self.x[0], ClassRef(cid)) else self.fail()
+            if section == 'class' and (name, arity) == ('class_name', 2) and cid.startswith('simpos##'):
+                # step 3m: :class_name(Class, Name), one of the four implicit
+                # methods (new, class_name, super, class_object: IPSJ 51390
+                # p.50, PRINTED as a name only).  The answer's form is
+                # INTERPOLATED from the held pimfep##pimos_remote_login_replier
+                # socket/4 @28f-299 and socket_type/2 @29e-2b2: the class of
+                # a socket is named `port` (or network_group, tcpip_socket),
+                # an atom without its package.  For a class of another
+                # package whether the package is part of the name is not
+                # witnessed: refused below
+                return self.proceed() if self.unify(self.x[0], Atom(cid.split('##', 1)[1])) else self.fail()
             if not co.complete:
                 raise Refusal('simpos', 'send %s:%s/%d (not in the held classes; ancestors %s)' % (
                     cid, name, arity, ' '.join(r for r, _s in co.opaque)))
@@ -818,6 +870,35 @@ class Machine:
         if k == 'halt':
             self.pc = ('halt',)
             return
+        if k == 'yield':
+            # step 3j: after the printed suspend/2, the dispatcher (OURS)
+            self.pc = (code, off + 1)
+            run = self.running_process()
+            if isinstance(run, Instance) and self.get_slot(run, 'status') == ATOM_SUSPENDED:
+                self.yield_processor(run, False)
+            return
+        if k == 'ifdead':
+            # step 3n: after exterminate/1, the running process if it is dead
+            self.pc = (code, off + 1)
+            run = self.running_process()
+            if isinstance(run, Instance) and self.get_slot(run, 'status') == Atom('nil'):
+                self.yield_processor(run, True)
+            return
+        if k == 'exit':
+            # step 3j: a dispatched process's program has ended
+            return self.yield_processor(self.running_process(), True)
+        if k == 'isend':
+            # step 3n: the idle interrupt's :put(Stream, Object), the
+            # receiver last
+            _k, recv, name, args = op
+            self.cont = (code, off + 1, self.env, self.b0)
+            self.x = collections.defaultdict(Var)
+            for i, a in enumerate(args):
+                self.x[i] = a
+            self.x[len(args)] = recv
+            return self.dispatch(recv, name, len(args) + 1)
+        if k == 'dispatch':
+            return self.dispatch_after_interrupt()
         if k == 'return':
             env = self.env
             self.env = env.prev
@@ -924,11 +1005,403 @@ class Machine:
         one process and has no scheduler, so a process that suspends here
         (stream get/2 or see/2 on an empty stream) waits for a put or a
         resume that nothing can make.  Run, the printed body would fail
-        for the census's process (status nil: `:self(#process, P)` makes
-        it with new/2 and nothing activates it), and the wait would show
-        as a clean failure.  So it refuses, cause 'would suspend'."""
+        for the census's process (status `active` since step 3i, when
+        `:self(#process, P)` makes the boot process; nil before: neither
+        is `ready` or `suspended`), and the wait would show as a clean
+        failure.  So it refuses, cause 'would suspend'.  Since step 3i
+        the census process is a boot_process, which inherits this model
+        (dispatch looks the model up along the inheritance order)."""
         reason = resolve(self.x[0])
-        raise Refusal('would suspend', 'process suspend/2 on %r: one process, no scheduler' % (reason,))
+        proc = deref(self.x[1])
+        st = self.get_slot(proc, 'status') if isinstance(proc, Instance) else None
+        if st not in (ATOM_READY, ATOM_SUSPENDED):
+            # step 3j: kept for a process the supervisor does not know (the
+            # census's: the boot process, `active`, before its own
+            # :create and :activate).  The printed body would fail for it.
+            raise Refusal('would suspend', 'process suspend/2 on %r: the process is not under the '
+                          'supervisor (status %r), so nothing can resume it' % (reason, st))
+        # step 3j: a process under the supervisor runs the printed body, and
+        # then the dispatcher (OURS) gives the processor to the next ready
+        # process if the running one is no longer ready
+        co = self.lib.build(PROCESS)
+        m = self.lib.send(co, 'instance', 'suspend', 2)
+        cid, p = [(c, q) for c, q in m.primaries if c == PROCESS][0]
+        self.pc = (Syn('%s:suspend/2 + dispatcher' % PROCESS,
+                       [('save', 2), ('restore', 2), ('call', cid, p.offset), ('yield',), ('return',)]), 0)
+
+    def process_exterminate(self):
+        """:exterminate(Process) (step 3n): the stand-in's body
+        (standin/process.esp: the status becomes nil, dead), then, OURS,
+        the dispatcher: a process that kills itself (the held front end's
+        exit_program/1) gives up the processor as one whose program has
+        ended; another process's saved registers are dropped."""
+        proc = deref(self.x[0])
+        if proc is not self.running_process():
+            self.saved.pop(id(proc), None)
+        co = self.lib.build(PROCESS)
+        m = self.lib.send(co, 'instance', 'exterminate', 1)
+        cid, p = [(c, q) for c, q in m.primaries if c == PROCESS][0]
+        self.pc = (Syn('%s:exterminate/1 + dispatcher' % PROCESS,
+                       [('save', 1), ('restore', 1), ('call', cid, p.offset), ('ifdead',), ('return',)]), 0)
+
+    # -- the dispatcher (step 3j, OURS) -------------------------------------
+    # TR-055 PDF p5 (folio 2): "Interrupts and traps cause direct context
+    # switching at the hardware level, but process dispatching must be
+    # controlled by software."  TR-056 PDF p18 (folio 16): "A ready process
+    # is in a ready queue waiting to be run by the dispatcher"; p21 (folio
+    # 19): an ordinary process, when activated, "is placed in the ready
+    # queue by the supervisor", and resume "calls the software scheduler".
+    # The dispatcher and the scheduler are not printed (TM-100 Fig. 3.4
+    # elides `%RELEASE PROCESSOR ...` and `%ALLOCATE PROCESSOR ...`).  This
+    # one is OURS:
+    #   - each process's registers (pc, argument registers, environment,
+    #     continuation, choice points, trail) are its context's hardware
+    #     state; a process not running keeps them in self.saved;
+    #   - the running process gives up the processor only when it is no
+    #     longer ready: after the printed suspend/2 has made it suspended
+    #     (the `yield` step after the body), or when its program has ended
+    #     (the `exit` step under its first goal).  No preemption, no time
+    #     slice, priority ignored;
+    #   - the next process is the first in the ready queue (the printed
+    #     class slot process!ready_queue, a list since step 3j) that is
+    #     ready and not the one leaving.  A process run for the first time
+    #     starts at its context's entry, {Program, invoke}
+    #     (as_program:entry_of_invoke/2), as :invoke(Program);
+    #   - the running process is kept in process's class slot `current`,
+    #     which self/2 reads;
+    #   - if no process is ready, every process waits: refused, cause
+    #     'would suspend'.
+    def get_slot(self, obj, name):
+        co, sec, k = self.slot_index(obj, name)
+        return deref(self.slot_store(obj, co, sec)[k])
+
+    def set_slot(self, obj, name, value):
+        co, sec, k = self.slot_index(obj, name)
+        self.slot_store(obj, co, sec)[k] = value
+
+    def running_process(self):
+        return self.get_slot(ClassRef(PROCESS), 'current')
+
+    def registers(self):
+        return (self.pc, self.x, self.env, self.cont, self.b0, self.stack, self.trail, self.S, self.sender)
+
+    def set_registers(self, r):
+        (self.pc, self.x, self.env, self.cont, self.b0, self.stack, self.trail, self.S, self.sender) = r
+
+    def ready_processes(self):
+        q = self.get_slot(ClassRef(PROCESS), 'ready_queue')
+        if not isinstance(q, Instance):
+            raise Refusal('would suspend', 'no ready queue (%r): the supervisor is not started' % (q,))
+        out, t = [], self.get_slot(q, 'elements')
+        while isinstance(t, Cons):
+            out.append(deref(t.args[0]))
+            t = deref(t.args[1])
+        return out
+
+    def yield_processor(self, leaving, ended):
+        """LEAVING (the running process) gives up the processor; ENDED: its
+        program has ended and its registers are dropped."""
+        nxt = [p for p in self.ready_processes()
+               if p is not leaving and isinstance(p, Instance) and self.get_slot(p, 'status') == ATOM_READY]
+        if not nxt:
+            puts = self.idle_hook(self) if getattr(self, 'idle_hook', None) else None
+            if puts:
+                if ended:
+                    self.saved.pop(id(leaving), None)
+                else:
+                    self.saved[id(leaving)] = (leaving, self.registers())
+                return self.interrupt(puts)
+            raise Refusal('would suspend', 'no process is ready: %r %s' % (
+                leaving, 'has ended' if ended else 'is %r' % (self.get_slot(leaving, 'status'),)))
+        nxt = nxt[0]
+        if ended:
+            self.saved.pop(id(leaving), None)
+        else:
+            self.saved[id(leaving)] = (leaving, self.registers())
+        self.switch_to(nxt)
+
+    # -- the idle interrupt (step 3n, OURS) ----------------------------------
+    # When every process waits, Machine.idle_hook (a function of the
+    # machine, set by psi/fep_bridge.py) may give (stream, object) pairs:
+    # the input an outside device has for the PSI (the SCSI link to the
+    # PIM/m).  They are put with the printed stream put/2 (TM-100 Fig.
+    # 3.6), which resumes a process waiting in get/2, run on registers of
+    # their own, as an interrupt handler would run (TR-055 PDF p5: "Interrupts
+    # and traps cause direct context switching at the hardware level").
+    # Then the dispatcher goes on: the first ready process runs.  Which
+    # device, when, and in which form is the bridge's (OURS); the put and
+    # the resume are the printed ones.
+    def interrupt(self, puts):
+        ops = []
+        for stream, obj in puts:
+            ops.append(('isend', stream, 'put', [obj]))
+        ops.append(('dispatch',))
+        self.x, self.env, self.trail, self.S, self.sender = collections.defaultdict(Var), None, [], None, None
+        self.b0, self.stack = 0, []
+        self.cont = None
+        self.pc = (Syn('idle interrupt', ops), 0)
+
+    def dispatch_after_interrupt(self):
+        nxt = [p for p in self.ready_processes()
+               if isinstance(p, Instance) and self.get_slot(p, 'status') == ATOM_READY]
+        if not nxt:
+            puts = self.idle_hook(self) if getattr(self, 'idle_hook', None) else None
+            if puts:
+                return self.interrupt(puts)
+            raise Refusal('would suspend', 'no process is ready after an idle interrupt')
+        self.switch_to(nxt[0])
+
+    def switch_to(self, nxt):
+        self.set_slot(ClassRef(PROCESS), 'current', nxt)
+        r = self.saved.pop(id(nxt), None)
+        if r is not None:
+            self.set_registers(r[1])
+            return
+        ctx = self.get_slot(nxt, 'context')
+        if not isinstance(ctx, Instance) or self.get_slot(ctx, 'state') != Atom('active'):
+            raise Refusal('simpos', 'dispatch %r: its context %r is not active' % (nxt, ctx))
+        entry = self.get_slot(ctx, 'entry')
+        if not (isinstance(entry, Vec) and len(entry.args) == 2 and deref(entry.args[1]) == Atom('invoke')):
+            raise Refusal('simpos', 'dispatch %r: entry %r' % (nxt, entry))
+        self.x, self.env, self.trail, self.S, self.sender = collections.defaultdict(Var), None, [], None, None
+        self.b0, self.stack = 0, []
+        end = Syn('%r ends' % (nxt,), [('exit',)])
+        self.cont = (end, 0, None, 0)
+        self.stack.append(Choice((end, 0), self))   # a failed program ends the process too
+        self.x[0] = deref(entry.args[0])
+        self.dispatch(self.x[0], 'invoke', 1)
+
+    def boot_process_override(self):
+        """boot_process's own create/3, refused (step 3i; step 3j stood in
+        create/2 and activate/2, boot_process.esp).  PRINTED that the
+        overrides exist: TM-100 PDF p13 ("class 'boot_process' inherits
+        class 'process' and overrides the predicates, :create and
+        :activate") and TR-056 PDF p21 (the boot process calls them itself
+        to come under the supervisor).  The arity is not given; create/3
+        is itself INTERPOLATED (process.esp), and run on the boot process's
+        class it would make a second boot process."""
+        raise Refusal('simpos', 'boot_process overrides :create and :activate '
+                      '(TM-100 p13, TR-056 p21); create/3 is not stood in')
+
+    # -- the directory (step 3l, route step B5) ------------------------------
+    def directory_retrieve(self, n):
+        """:retrieve(#directory, Object, Pathname) and :retrieve(#directory,
+        Object, Pathname, FullPathname).  INTERPOLATED.
+        PRINTED interfaces: TR-056 PDF p23 (folio 21)
+        `:retrieve(Directory,Object,"Name1>Name2>...")`; TR-524 PDF p36
+        Table 3 (`:retrieve/c`) and p37 App. A (local_logical_file:
+        `:retrieve(#directory, Lfile, Pathname, FullPathname)`).
+        The argument order is the held cells': pimfep##pimos_fep_superviser
+        local full_pathname/1 @1be-1c4 (A0 a new variable, A1
+        "pimos:pimfep.image", A2 the caller's full name) and @1d1-1d7;
+        pimos_file check_file_size/1 @3d2-3d7 (A0 new, A1 the pathname) and
+        remove/2 @1d9-1de.  A miss FAILS: every held caller has a fallback
+        clause after it (full_pathname/1's `c0` @1c6; remove/2's clause 2
+        @1e3; kappa2 SRVCNF.ESP:394-396, BCKFIF.ESP:464-471, held source).
+        The resolution (INTERPOLATED from TR-524 PDF p9, folio 8): a
+        leading '>' is the local root; `Alias:Rest` looks the alias up in
+        the calling process's world (TR-056 PDF p25, folio 23: "The
+        working world is kept in an instance slot of the process"), each
+        directory of its list in order (shell.md §4.2.2, the held login
+        files' `define`); a name without either is taken under the world's
+        default logical name (TM-229 p5: "a default directory used when
+        none is given"); `ident.ext` gives the latest version, `ident.ext.N`
+        version N.  The full pathname of a file carries its version
+        (INFERENCE: TR-524 PDF p9 ">sys>user>gee>humm.txt.3"; held source
+        cal-esp cal2.12/control.esp:1135-1136 and chal control.esp:947-948
+        strip a version from retrieve/4's answer with del_version_number,
+        :969-974); a directory's has none.  OURS: the host prefix
+        (`icpsi277::`) is not part of the full name; the aliases a world
+        does not define are looked up in the class slot `system` of
+        simpos##world (psi/standin/world.esp).  Not modelled: an Object
+        already bound to another object (TR-524's Lfile) fails, as
+        unification does."""
+        path = deref(self.x[1])
+        if isinstance(path, Var):
+            raise Refusal('unbound argument', 'directory retrieve/%d on an unbound pathname' % n)
+        if not isinstance(path, Str):
+            raise Refusal('simpos', 'directory retrieve/%d on %r' % (n, path))
+        root = self.get_slot(ClassRef('simpos##directory'), 'root')
+        if not isinstance(root, Instance):
+            raise Refusal('simpos', 'directory retrieve/%d: no file system is mounted (root %r)' % (n, root))
+        node = self.fs_lookup(root, path.text, 0)
+        if node is None or not self.unify(self.x[0], node):
+            return self.fail()
+        if n == 4 and not self.unify(self.x[2], Str(self.get_slot(node, 'full_name').text)):
+            return self.fail()
+        return self.proceed()
+
+    def input_terms(self, inp):
+        """The terms of a standard_input_file's file (psi/esp_reader.py,
+        OURS) and its position."""
+        import esp_reader
+        f = self.get_slot(inp, 'file')
+        text = self.get_slot(f, 'contents') if isinstance(f, Instance) else None
+        if not isinstance(text, Str):
+            raise Refusal('simpos', 'standard_input_file: %r holds no text here' % (f,))
+        import simpos_fs
+        try:
+            terms = esp_reader.read_terms(sys.modules[__name__], simpos_fs.text_of(text.codes()))
+        except ValueError as e:
+            raise Refusal('simpos', 'standard_input_file: %s' % e)
+        return terms, self.get_slot(inp, 'position')
+
+    def input_gett(self):
+        """:gett(In, Term) -- the next term, or failure at the end.
+        INTERPOLATED: the held send (pimos_login_requester items_list/3
+        @17b-17e); the end fails (INFERENCE from held source utter
+        QXT/trans.esp:20-24, whose gett loop is ended by its last clause,
+        and kwic systems.esp:368-374, which tests end_of_input/1 first).
+        The reader is OURS (psi/esp_reader.py)."""
+        inp = deref(self.x[1])
+        terms, pos = self.input_terms(inp)
+        if pos >= len(terms):
+            return self.fail()
+        self.set_slot(inp, 'position', pos + 1)
+        return self.proceed() if self.unify(self.x[0], terms[pos]) else self.fail()
+
+    def input_end(self):
+        """:end_of_input(In) -- INTERPOLATED from held source kwic-esp
+        src/systems.esp:368-369 and dbUtil.esp:1433-1434 (ANALOGY): true
+        when every term has been read."""
+        terms, pos = self.input_terms(deref(self.x[0]))
+        return self.proceed() if pos >= len(terms) else self.fail()
+
+    def world_root_path(self):
+        """:root_path(World, LogicalName, Root) (step 3n).  INTERPOLATED
+        from its one held send, pimfep##simpos_user_device $or$3/2
+        (@ba-d6, cells read 2026-11-25): `:default_logical_name(W, N)`,
+        `:append(#string, [N, ":"], LN)`, `:root_path(W, LN, Root)`, then
+        `:remote_or_local(#pathname, Root, _, Dir, _, _)`, and Dir is the
+        answer to PIMOS's io(0, [len RN, len RP] ++ RN ++ RP), the user's
+        directory (docs/fep_services.md §6, the reference run's
+        ">sys>user>pmpsi"); the clause's alternative answers ">".
+        INFERENCE: Root is the full pathname of the directory the logical
+        name denotes in World, resolved as directory_retrieve resolves it
+        (the world's aliases, then the system's: TR-524 PDF p9); it fails
+        when the name denotes no directory (and the caller answers ">")."""
+        w, ln = deref(self.x[2]), deref(self.x[0])
+        if not isinstance(ln, Str):
+            raise Refusal('unbound argument' if isinstance(ln, Var) else 'simpos',
+                          'world root_path/3 on %r' % (ln,))
+        root = self.get_slot(ClassRef('simpos##directory'), 'root')
+        if not isinstance(root, Instance):
+            raise Refusal('simpos', 'world root_path/3: no file system is mounted')
+        node = self.fs_lookup(root, ln.text, 0, w)
+        if node is None or node.cid != 'simpos##directory':
+            return self.fail()
+        if not self.unify(self.x[1], Str(self.get_slot(node, 'full_name').text)):
+            return self.fail()
+        return self.proceed()
+
+    def pathname_remote_or_local(self):
+        """:remote_or_local(#pathname, Pathname, _, Local, _, _) (step 3n).
+        INTERPOLATED from the held source callers: cil src/ds_fep.esp:909
+        (`:remote_or_local(#pathname, Pathname_string, _, Local_pathname,
+        _,_)`, then last_name/4 on the local pathname) and cal-esp
+        deb2.12/init.esp:314-318 (the local part compared with
+        ">sys>font>kanji_16.font"), and the held compiled
+        pimfep##simpos_user_device $or$3/2 (@d6).  The HELD-SOURCE
+        pathname.esp (step 3c) says the CESP port does not carry it.
+        INFERENCE: a pathname without a node prefix (`Node::`, pathname.esp
+        comment [2]) is local and is its own local part.  A remote one is
+        not modelled (refused); the second, fifth and sixth arguments (by
+        the callers, never read) are left unbound."""
+        path = deref(self.x[0])
+        if not isinstance(path, Str):
+            raise Refusal('unbound argument' if isinstance(path, Var) else 'simpos',
+                          'pathname remote_or_local/6 on %r' % (path,))
+        if '::' in path.text:
+            raise Refusal('simpos', 'pathname remote_or_local/6: a remote pathname %r is not modelled' % path.text)
+        if not self.unify(self.x[2], path):
+            return self.fail()
+        return self.proceed()
+
+    def world_aliases(self, world=None):
+        """[(name, [dir text, ...])]: the calling process's world (or
+        WORLD, step 3n) first, then the system aliases (OURS, see
+        directory_retrieve)."""
+        out = []
+        if 'simpos##world' not in self.lib.templates:
+            return out, None
+        default = None
+        if world is not None:
+            w = world
+        else:
+            run = self.get_slot(ClassRef(PROCESS), 'current') if PROCESS in self.lib.templates else 0
+            w = self.get_slot(run, 'world') if isinstance(run, Instance) else 0
+        lists = [self.get_slot(ClassRef('simpos##world'), 'system')]
+        if isinstance(w, Instance):
+            lists.insert(0, self.get_slot(w, 'aliases'))
+            d = self.get_slot(w, 'default')
+            default = d.text if isinstance(d, Str) else None
+        for t in lists:
+            t = deref(t)
+            while isinstance(t, Cons):
+                e = deref(t.args[0])
+                # [Name | Directories] (standin/world.esp, OURS)
+                if isinstance(e, Cons) and isinstance(deref(e.args[0]), Str):
+                    dirs, d = [], deref(e.args[1])
+                    while isinstance(d, Cons):
+                        x = deref(d.args[0])
+                        if isinstance(x, Str):
+                            dirs.append(x.text)
+                        d = deref(d.args[1])
+                    out.append((deref(e.args[0]).text, dirs))
+                t = deref(t.args[1])
+        return out, default
+
+    def fs_lookup(self, root, text, depth, world=None):
+        if depth > 8:
+            raise Refusal('simpos', 'directory retrieve: aliases nested over 8 deep at %r' % text)
+        if text.startswith('>'):
+            return self.fs_walk(root, text[1:])
+        aliases, default = self.world_aliases(world)
+        if ':' in text:
+            name, rest = text.split(':', 1)
+        elif default is not None:
+            name, rest = default, text
+        else:
+            return None
+        for a, dirs in aliases:
+            if a != name:
+                continue
+            for d in dirs:
+                node = self.fs_lookup(root, d, depth + 1, world)
+                if node is not None and node.cid == 'simpos##directory':
+                    hit = self.fs_walk(node, rest) if rest else node
+                    if hit is not None:
+                        return hit
+            return None
+        return None
+
+    def fs_walk(self, node, rest):
+        if not rest:
+            return node
+        for comp in rest.split('>'):
+            if not isinstance(node, Instance) or node.cid != 'simpos##directory' or not comp:
+                return None
+            parts = comp.split('.')
+            version = None
+            if len(parts) >= 3 and parts[-1].isdigit():
+                comp, version = '.'.join(parts[:-1]), int(parts[-1])
+            best = None
+            t = self.get_slot(node, 'entries')
+            while isinstance(t, Cons):
+                e = deref(t.args[0])
+                t = deref(t.args[1])
+                if deref(e.args[0]).text != comp:
+                    continue
+                x = deref(e.args[1])
+                v = self.get_slot(x, 'version') if x.cid == 'simpos##binary_file' else None
+                if version is not None and v != version:
+                    continue
+                if best is None or (v is not None and v > best[0]):
+                    best = (v, x)
+            if best is None:
+                return None
+            node = best[1]
+        return node
 
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
@@ -1115,6 +1588,11 @@ class Machine:
         self.cut_to(self.b0)
         self.fail()
 
+    def op_cut_env_fail(self, code, off, a, b, c, v):
+        # step 3m: pmi d6 (p_MAIN.esp:859, `!, fail` inside an environment)
+        self.cut_to(self.env.b0)
+        self.fail()
+
     def op_call_local(self, code, off, a, b, c, v):
         self.call_local(code, off, off + 2 + s16(v), last=False)
 
@@ -1158,15 +1636,105 @@ class Machine:
         self.stack.pop()
         self.pc = (code, off + 2 + s16(v))
 
+    def op_execute_local_switch(self, code, off, a, b, c, v):
+        """pmi 6c (step 3i): a last call to a local predicate whose first
+        instruction is a switch on A_R, with the switch's four targets
+        carried in the call itself (relative to cell + 3) so the callee's
+        switch is skipped.  Witnesses, both on held source:
+        - a `c9` switch_on_list entry: kappa##kappa_loader local
+          append/3 @90 (LOADER.ESP:118-126), both uses (@94, @a3);
+        - a `c6 00 00 00` switch_on_term entry: kappaRDM_manager
+          get_BFS_list_only/2 @6b7 (RDMSOPE.ESP:285-291), the use @6cd;
+        - a `c8` entry: kappaBCM_get_primitive_record get_attr_value/6
+          @133 and get_table_value/6 @19c (BCMGETREC.ESP:124-160), the
+          uses @5d and @54: other is c8's vector path, const and list
+          both its else target.
+        The dispatch follows the entry's own rule (op_switch_on_list,
+        op_switch_on_term, op_switch_on_vector_else).  Only those entries,
+        R = 0, and targets equal to the entry switch's are run; any other
+        refuses (MEASURED over the held corpus in kl0_opcodes.tsv's row)."""
+        w1, w2 = self.operand(code, off)[3], code.cells[off + 2][3]
+        entry = off + 2 + s16(w1 >> 16)
+        e = code.cells.get(entry)
+        base = off + 3
+        const, other, unb, lst = base + s16(v), base + s16(w1), base + s16(w2 >> 16), base + s16(w2)
+        op = e[3] >> 24 if e is not None and e[1] == 0x20 else None
+        if a != 0 or op not in (0xc9, 0xc6, 0xc8) or (e[3] >> 16) & 255 != a or (op == 0xc6 and e[3] & 0xffff):
+            raise Refusal('operand', '%s @%x: pmi 6c to @%x: only a c9, c8 or c6 00 00 00 entry with R = 0 '
+                          'is witnessed' % (code.id, off, entry))
+        if op == 0xc9:
+            ew = code.cells[entry + 1][3]
+            theirs = (entry + 2 + s16(e[3]), entry + 2 + s16(ew >> 16), entry + 2 + s16(ew), entry + 2)
+            # 168 held 6c calls name the cell before c9's nil target, a
+            # `26 00 00 00` get_nil A0 that c9 skips: for [] the same path
+            g = code.cells.get(const)
+            if const + 1 == theirs[0] and g is not None and g[1] == 0x20 and g[3] == 0x26000000:
+                theirs = (const,) + theirs[1:]
+        elif op == 0xc8:
+            els = entry + 3 + s16(e[3])
+            theirs = (els, entry + 2, entry + 2 + s16(self._word(code, entry + 1)), els)
+        else:
+            eb, x1, x2 = entry + 3, self._word(code, entry + 1), self._word(code, entry + 2)
+            theirs = (eb, eb + x1, eb + (x2 >> 16), eb + (x2 & 0xffff))
+        if (const, other, unb, lst) != theirs:
+            raise Refusal('operand', '%s @%x: pmi 6c targets differ from the %02x at @%x' % (code.id, off, op, entry))
+        self.call_local(code, off, entry, last=True)
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, unb)
+        elif isinstance(t, Cons):
+            self.pc = (code, lst)
+        elif op == 0xc9:
+            self.pc = (code, const if t is NIL else other)
+        elif op == 0xc8:
+            self.pc = (code, other if isinstance(t, Vec) else const)
+        elif isinstance(t, Atom):
+            self.pc = (code, const)
+        elif isinstance(t, Vec):
+            self.pc = (code, other)
+        else:
+            raise Refusal('operand', '%s @%x: pmi 6c to a c6 on %s: only unbound, atom, list and vector are '
+                          'witnessed' % (code.id, off, type(t).__name__))
+
     # indexing
+    def op_switch_on_vector_else(self, code, off, a, b, c, v):
+        """pmi c8 (step 3i): R; next word W.  A_R unbound -> cell + 2 + W
+        (the try chain over every clause), a vector -> cell + 2 (a `ce`
+        or the vector clauses' chain), anything else -> cell + 3 + s16 (the
+        clauses whose first argument is not a vector, or `fe`).  Witness:
+        kappaHLC_SIT_taker optimum_set_left_set/7 @234 (HLCSESITTK.ESP:
+        408-424, clause 1 `@anb`, clause 2 `_`): c8 00 00 19, W 7.  A list
+        takes the else target: INFERENCE, from the 57 held 6c calls into a
+        c8, whose list and const targets are all c8's else target.  Only
+        R = 0 is witnessed (all 328 held uses)."""
+        w = self._word(code, off + 1)
+        if a != 0 or w >> 16:
+            raise Refusal('operand', '%s @%x: pmi c8 %02x, word %08x: only R = 0 and a zero high half are '
+                          'witnessed' % (code.id, off, a, w))
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, off + 2 + s16(w))
+        elif isinstance(t, Vec):
+            self.pc = (code, off + 2)
+        else:
+            self.pc = (code, off + 3 + s16(v))
+
     def op_switch_on_list(self, code, off, a, b, c, v):
+        # step 3i: the first target is [] only (TM-444's Lnil).  Before, any
+        # atomic value went there.  Witness: fts##post_cts local
+        # post_cts_list/1 @5b (utter source/FTS/cts_post.esp:18-21
+        # `post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`): its
+        # nil target is @66 `d2`, past the clause's own get_nil @65, so a
+        # non-nil atom sent there would succeed where the source fails.
+        # MEASURED: 520 of the 2,172 held c9s have a `d2` (cut_proceed) as
+        # their first target, which would accept any atom unchecked
         t = deref(self.x[a])
         w = self.operand(code, off)[3]
         if isinstance(t, Var):
             self.pc = (code, off + 2 + s16(w))
         elif isinstance(t, Cons):
             self.pc = (code, off + 2)
-        elif is_atomic(t):
+        elif t is NIL:
             self.pc = (code, off + 2 + s16(v))
         else:
             self.pc = (code, off + 2 + s16(w >> 16))
@@ -1346,6 +1914,33 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    def op_if_atom(self, code, off, a, b, c, v):
+        # blt e0 (step 3i): as e1 with atom/1's test (paragraph as_pred.esp
+        # :419 and :421); [] counts as an atom (NIL is an Atom: INFERENCE)
+        if b:
+            raise Refusal('operand', '%s @%x: blt e0 %02x %02x %02x: only a zero second byte is witnessed'
+                          % (code.id, off, a, b, c))
+        if isinstance(deref(self.x[a]), Atom):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
+    def op_if_less_than(self, code, off, a, b, c, v):
+        # step 3m: blt f4, less_than as a test-and-branch (h.esp:83-85)
+        x, y = self._int(self.x[a], 'if_less_than'), self._int(self.x[b], 'if_less_than')
+        if x < y:
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
+    def op_if_not_less_than(self, code, off, a, b, c, v):
+        # step 3m: blt f5, not_less_than as a test-and-branch (h.esp:78-81)
+        x, y = self._int(self.x[a], 'if_not_less_than'), self._int(self.x[b], 'if_not_less_than')
+        if x >= y:
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):
@@ -1394,7 +1989,12 @@ class Machine:
         self.nxt(code, off) if self.unify(self.x[a], NIL) else self.fail()
 
     def op_get_integer(self, code, off, a, b, c, v):
-        k = u16('get_integer', v)
+        # step 3n: the immediate is sign-extended, as put_integer's (step
+        # 3k).  INFERENCE: fep_message_assembler take_argument/5 @17b-17d,
+        # whose first clause is guarded by `ca` with the 32-bit constant -1
+        # (ffffffff) and then tests the same register with `27 00 ffff`:
+        # read unsigned, the clause could never succeed
+        k = s16(v)
         self.nxt(code, off) if self.unify(self.x[a], k) else self.fail()
 
     def op_get_constant(self, code, off, a, b, c, v):
@@ -1409,6 +2009,17 @@ class Machine:
             return self.fail()
         el = self.S[0]
         self.x[b], self.x[c] = el[0], el[1]
+        self.nxt(code, off)
+
+    def op_get_val_var_list(self, code, off, a, b, c, v):
+        # pmi 3b (step 3i): as 2b, but the car is unified with X_H (a value)
+        # before X_T := cdr; H may equal T (kappa_loader append/3 @9f)
+        if not self.get_struct(a, 'list', 2):
+            return self.fail()
+        el = self.S[0]
+        if not self.unify(el[0], self.x[b]):
+            return self.fail()
+        self.x[c] = el[1]
         self.nxt(code, off)
 
     def op_get_vector_2(self, code, off, a, b, c, v):
@@ -1429,6 +2040,10 @@ class Machine:
 
     def op_get_vector_5(self, code, off, a, b, c, v):
         self._get_vector_k(code, off, a, b, c, 5)
+
+    # pmi 36 (step 3n): paragraph##graph_status_element create/3 @19
+    def op_get_vector_6(self, code, off, a, b, c, v):
+        self._get_vector_k(code, off, a, b, c, 6)
 
     # unify
     def _uvar(self, store, i, code, off):
@@ -1524,8 +2139,22 @@ class Machine:
         self.nxt(code, off)
 
     def op_put_integer(self, code, off, a, b, c, v):
-        self.x[a] = u16('put_integer', v)
+        # step 3k: the immediate is sign-extended (INFERENCE, owner's rule
+        # of 2026-11-25; psi/kl0_opcodes.tsv row pmi a7).  Before step 3k
+        # an immediate >= 0x8000 refused.
+        self.x[a] = s16(v)
         self.nxt(code, off)
+
+    def op_put_integer_word(self, code, off, a, b, c, v):
+        # step 3m: pmi a8 (paragraph h.esp:120-130; kl0_opcodes.tsv): the
+        # integer is the next cell's
+        if b or c:
+            raise Refusal('operand', 'put_integer_word with operand bytes %02x %02x: unwitnessed' % (b, c))
+        w = self.operand(code, off)
+        if w[1] != 0x00 or w[3] >= 1 << 31:
+            raise Refusal('operand', 'put_integer_word: next cell %r unwitnessed' % (w,))
+        self.x[a] = w[3]
+        self.nxt(code, off, 2)
 
     def op_put_constant(self, code, off, a, b, c, v):
         self.x[a] = code.pool_term(off + s16(v))
@@ -1568,7 +2197,29 @@ class Machine:
         self.nxt(code, off)
 
     def resolve_value(self, t):
-        return deref(t)
+        # Step 3k: a list stored in a slot keeps the VALUES of its bound
+        # variables, not the variables.  Before, `:add(List, X)` stored a
+        # list cell whose element was a variable bound to X; when the
+        # storing process later backtracked past that binding (the
+        # interpolated see/2's clauses), the element came unbound and the
+        # supervisor's ready queue lost the process (step 3k's B4 run of a
+        # timer get_count request).  TM-388 PDF p110 (folio 98): "Writing
+        # is carried out by overriding a value over the element", and not
+        # with an unbound variable; that list cells are copied with their
+        # bound variables replaced is OURS (how the PSI keeps a slot's
+        # value from the global stack is not printed).  Vectors, strings
+        # and objects are stored as they are (their identity matters).
+        t = deref(t)
+        if not isinstance(t, Cons):
+            return t
+        cars = []
+        while isinstance(t, Cons):
+            cars.append(self.resolve_value(t.args[0]))
+            t = deref(t.args[1])
+        out = t
+        for c in reversed(cars):
+            out = Cons(c, out)
+        return out
 
     def _int(self, t, what):
         t = deref(t)
@@ -1583,8 +2234,25 @@ class Machine:
         self.nxt(code, off)
 
     def op_subtract(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract'),
-                    'subtract')
+        # step 3m: R != A is witnessed (h.esp:28, paragraph##h $or$2/2 @303
+        # `41 02 00 00`)
+        self.x[c] = self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract')
+        self.nxt(code, off)
+
+    def op_multiply(self, code, off, a, b, c, v):
+        # step 3m: blt 42 (paragraph h.esp:21, kl0_opcodes.tsv); R != A
+        # witnessed (h.esp:25 @8d, on floats); floats are not modelled
+        self.x[c] = self._int(self.x[a], 'multiply') * self._int(self.x[b], 'multiply')
+        self.nxt(code, off)
+
+    def op_divide(self, code, off, a, b, c, v):
+        # step 3m: blt 43 (paragraph h.esp:25 @8e, on floats); on integers
+        # INFERENCE (truncation of non-negative operands, as divide_constant)
+        x, y = self._int(self.x[a], 'divide'), self._int(self.x[b], 'divide')
+        if x < 0 or y <= 0:
+            raise Refusal('operand', 'divide %d / %d: a negative or zero operand is unwitnessed' % (x, y))
+        self.x[c] = x // y
+        self.nxt(code, off)
 
     def op_add_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
@@ -1624,6 +2292,22 @@ class Machine:
         self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
         self.nxt(code, off)
 
+    def op_new_stack_vector(self, code, off, a, b, c, v):
+        # blt 1a (step 3i): new_stack_vector(^V, N); each element a fresh
+        # unbound variable (INFERENCE: kappa2 user_if/pb/mcd.esp:112-116
+        # `new_stack_vector(Cond,3), vector_element(Cond,0,=), ...` compiles
+        # to `1a 00 00 00`, then `blt 20` and `get r0, =`, which unify each
+        # element with a constant; with any bound initial value make_term/5
+        # could never succeed).  V != N: kappaBFM_other_disposition_manager
+        # statistics/3 @93 `1a 02 00 00` (KP_BFMOM.ESP:181-185, the size 21
+        # in A0 from `a7 00 00 15`, INFO out in A2).  Only a zero third
+        # byte is witnessed
+        if c:
+            raise Refusal('operand', '%s @%x: blt 1a %02x %02x %02x: only a zero third byte is witnessed' % (
+                code.id, off, a, b, c))
+        self.x[a] = Vec([Var() for _ in range(self._int(self.x[b], 'new_stack_vector'))])
+        self.nxt(code, off)
+
     def _str(self, t, what):
         t = deref(t)
         if not isinstance(t, Str):
@@ -1653,11 +2337,22 @@ class Machine:
         self.nxt(code, off)
 
     def op_string_element(self, code, off, a, b, c, v):
-        cs = self._str(self.x[a], 'string_element').codes()
+        s = self._str(self.x[a], 'string_element')
+        cs = s.codes()
         i = self._int(self.x[b], 'string_element')
         if not 0 <= i < len(cs):
             raise Refusal('built-in', 'string_element index %d of %d' % (i, len(cs)))
-        self.x[c] = cs[i]
+        e = cs[i]
+        if s.type == 32 and e & 0x80000000:
+            # step 3n: a 32-bit element is read as a signed integer, the
+            # inverse of set_string_element's two's complement (step 3k).
+            # INFERENCE: fep_message_assembler take_argument/5 @17b-17d
+            # tests a message's length word against the constant -1
+            # (`ca` with the cell ffffffff, which const_cell reads signed)
+            # to tell an integer argument, as PIMOS writes it
+            # (scsi_fep.kl1:429-445; ref/pimm/fep.py pack_message)
+            e -= 1 << 32
+        self.x[c] = e
         self.nxt(code, off)
 
     # -- step 3c rows (2026-11-24): add, type tests, equal_string,
@@ -1675,9 +2370,28 @@ class Machine:
         else:
             self.fail()
 
+    def op_heap_vector(self, code, off, a, b, c, v):
+        # blt 05 (step 3i): heap_vector(V, ^N), the heap counterpart of blt
+        # 06: kappa2 kernel/flm/KPEXTENT.ESP:109-112 check_last/1 @1d4
+        # `05 00 00 00` and :118-120 get_address/3 @19c `05 01 02 00` (Pool
+        # in A1, L to A2, then `46 02 01 02` L-1 and vector_element)
+        t = deref(self.x[a])
+        if c:
+            raise Refusal('operand', '%s @%x: blt 05 %02x %02x %02x: only a zero third byte is witnessed' % (
+                code.id, off, a, b, c))
+        if isinstance(t, Vec) and t.heap:
+            self.x[b] = len(t.args)
+            self.nxt(code, off)
+        else:
+            self.fail()
+
     def op_integer(self, code, off, a, b, c, v):
         t = deref(self.x[a])
         self.nxt(code, off) if isinstance(t, int) and not isinstance(t, bool) else self.fail()
+
+    def op_atom(self, code, off, a, b, c, v):
+        # blt 00 (step 3i): g_window.esp:148 @709 (A0), bar2_h.esp:135 @574 (A2)
+        self.nxt(code, off) if isinstance(deref(self.x[a]), Atom) else self.fail()
 
     def op_unbound(self, code, off, a, b, c, v):
         self.nxt(code, off) if isinstance(deref(self.x[a]), Var) else self.fail()
@@ -1721,6 +2435,76 @@ class Machine:
         self.x[r] = t
         self.nxt(code, off, 2)
 
+    def op_copy_string_elements(self, code, off, a, b, c, v):
+        # step 3m: blt 35 (kappa2 TERMCODE.ESP:174, :176; kl0_opcodes.tsv)
+        src, q, low = self.ext_cell(code, off, 'copy_string_elements')
+        if low:
+            raise Refusal('operand', 'copy_string_elements operand cell with low bytes set: unwitnessed')
+        d, s = self._str(self.x[a], 'copy_string_elements'), self._str(self.x[src], 'copy_string_elements')
+        p, n = self._int(self.x[b], 'copy_string_elements'), self._int(self.x[c], 'copy_string_elements')
+        i = self._int(self.x[q], 'copy_string_elements')
+        dc, sc = d.codes(), s.codes()
+        if d.type != s.type:
+            raise Refusal('built-in', 'copy_string_elements from a %d-bit into a %d-bit string: unwitnessed'
+                          % (s.type, d.type))
+        if min(p, n, i) < 0 or p + n > len(dc) or i + n > len(sc):
+            raise Refusal('built-in', 'copy_string_elements %d+%d of %d into %d of %d' % (i, n, len(sc), p, len(dc)))
+        dc[p:p + n] = sc[i:i + n]
+        d.set_codes(dc)
+        self.nxt(code, off, 2)
+
+    def op_substring_7(self, code, off, a, b, c, v):
+        # step 3m: blt 36, substring/7 (kappa2 LUUFIF.ESP:2740, :3105;
+        # kl0_opcodes.tsv).  The byte order and the re-reading of the
+        # storage are INFERENCE; the last two outputs are UNKNOWN (unbound)
+        cell = self.operand(code, off)
+        if cell[1] != 0x00:
+            raise Refusal('operand', 'substring/7: operand cell %s' % (P.show(dict(syms=code.t.symbols), cell),))
+        z, r, u, w = cell[3] >> 24 & 255, cell[3] >> 16 & 255, cell[3] >> 8 & 255, cell[3] & 255
+        s = self._str(self.x[a], 'substring/7')
+        cs = s.codes()
+        p, n = self._int(self.x[b], 'substring/7'), self._int(self.x[c], 'substring/7')
+        size = self._int(self.x[z], 'substring/7')
+        if p < 0 or n < 0 or p + n > len(cs):
+            raise Refusal('built-in', 'substring/7 %d+%d of %d' % (p, n, len(cs)))
+        part = cs[p:p + n]
+        if (s.type, size) == (16, 8):
+            out = [y for x in part for y in (x >> 8 & 255, x & 255)]
+        elif (s.type, size) == (8, 16) and n % 2 == 0:
+            out = [part[k] << 8 | part[k + 1] for k in range(0, n, 2)]
+        elif (s.type, size) == (16, 32) and n % 2 == 0:
+            # step 3n: fep_message_assembler create_argument_string_list/5
+            # @11d-126 (a string argument padded to an even length by
+            # padding/5 @165-176, then re-read as 32-bit elements into the
+            # message).  The high half first: INFERENCE, as 16 to 8 above
+            # and as the wire's words (ref/pimm/fep.py pack_message)
+            out = [part[k] << 16 | part[k + 1] for k in range(0, n, 2)]
+        elif (s.type, size) == (32, 16):
+            # step 3n: take_argument/5 @183-18e, a string argument of the
+            # message: (bytes + 3) >> 2 words re-read as 16-bit elements,
+            # then cut to bytes >> 1 (blt 32 @18c).  INFERENCE as above
+            out = [y for x in part for y in (x >> 16 & 0xffff, x & 0xffff)]
+        elif s.type == size:
+            out = part
+        else:
+            raise Refusal('built-in', 'substring/7 from %d to %d bits (%d elements): unwitnessed' % (s.type, size, n))
+        t = Str('', size)
+        t.set_codes(out)
+        self.x[r] = t
+        if (s.type, size) in ((16, 32), (32, 16)):
+            # step 3n, U and V (INFERENCE): the held callers constrain them.
+            # create_argument_string_list/5 @125-126 requires U == 0
+            # (get_integer A1, 0) and V == the length it passed (get_value
+            # A2, Y6); take_argument/5 @18f takes the next argument's
+            # position as Pos + V (blt 40 add), which is right only if V
+            # is the number of source elements read.  So U = 0 (nothing
+            # left over: the conversions here are whole) and V = N.  The
+            # 16/8 witnesses write `_` for both, so those are left unbound
+            self.x[u], self.x[w] = 0, n
+        else:
+            self.x[u], self.x[w] = Var(), Var()
+        self.nxt(code, off, 2)
+
     def op_search_character(self, code, off, a, b, c, v):
         ch, r, low = self.ext_cell(code, off, 'search_character')
         if low:
@@ -1761,6 +2545,74 @@ class Machine:
         self.x[c] = out
         self.nxt(code, off)
 
+    def op_list_to_vector(self, code, off, a, b, c, v):
+        # blt 6f (step 3k): list_to_vector(L, ^V, ^Tail).  KNOWN-PLAINTEXT
+        # (psi/kl0_opcodes.tsv): the operand order L, V, Tail
+        # (KP_UPTACC.ESP:224-227, $or$9/2 @6eb `6f 01 02 00`, @6ed `6f 00
+        # 03 00`, then `06 02 01`); V a stack vector (stack_vector/2 on it
+        # next, there and in HLCEXTSEL.ESP:170-173 @720-723); Tail [] for a
+        # proper list (ROCHECK.ESP:119-121 check_list/1 @a4-a7 `Tail ==
+        # []`).  INFERENCE, step 3k under the owner's 2026-11-25 rule ("it's
+        # okay to infer"): V holds the list's elements in order, shared
+        # (KP_UPTACC set_old_value_info binds through the vector and
+        # rebuilds the list with vector_to_list); Tail is the list's last
+        # cdr, whatever it is ([] for a proper list, the terminator of an
+        # improper or partial one, the term itself if L is not a list
+        # cell), from check_list/1 and :list/2 (ROCOMMON.ESP:82-84), which
+        # test a list's properness by `Tail == []`.  An unbound L refuses.
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            raise Refusal('unbound argument', 'list_to_vector on %r' % t)
+        els = []
+        while isinstance(t, Cons):
+            els.append(t.args[0])
+            t = deref(t.args[1])
+        self.x[b] = Vec(els)
+        self.x[c] = t
+        self.nxt(code, off)
+
+    def op_set_pcb_entry(self, code, off, a, b, c, v):
+        # blt 94 (step 3k): set_pcb_entry(N, I, V), INFERENCE (row status
+        # INFERENCE, psi/kl0_opcodes.tsv): word I of the hardware process
+        # control block of context N := V.  From the held method names of
+        # pimmcsp##pseudo_pe_process: set_pcb_entry/4 @b9-d2 ends in `94 01
+        # 00 02` after checking its index < 32 (@c3-c4); pcb_entry/4 @7b-84
+        # reads with blt 90 after the same check (@80-81); and from the
+        # uses in release_core's $or$2/1 @34b, @351, @35e and
+        # terminate_core's $or$4/2 @381, @38a, whose first operand is the
+        # number get_number/2 gave for the process's context.  TR-044 App
+        # A.9 (PDF p41) prints the 1984 firmware pair
+        # process_control_block(Process, PCB) / set_process_control_block.
+        # What a word does to the hardware is not modelled: the value is
+        # only recorded.  A non-integer N or I, or I outside 0..31, refuses.
+        n = self._int(self.x[a], 'set_pcb_entry')
+        i = self._int(self.x[b], 'set_pcb_entry')
+        if not 0 <= i < 32:
+            raise Refusal('built-in', 'set_pcb_entry index %d: only 0..31 (pcb_entry/4 @80-81)' % i)
+        self.pcb[(n, i)] = deref(self.x[c])
+        self.nxt(code, off)
+
+    def op_pcb(self, code, off, a, b, c, v):
+        # blt 90 (step 3k): pcb(N, I, ^V), KNOWN-PLAINTEXT operands: held
+        # kappa2 utility/luu/LUUTIME.ESP:105-108 `pcb(Class!s_memory_mgr_no,
+        # 3,MEM)` is kappaLUU_timer start_timer/2 @59-5d: the slot read
+        # into A0 (@5a), `a7 01 00 03` I = 3 into A1, `90 00 01 00`, then
+        # `24 00 03` saves A0 as MEM.  So byte 1 is N, byte 2 I, byte 3 V.
+        # Word I of context N's process control block, the word blt 94
+        # (set_pcb_entry) writes.  INFERENCE (row): the value read is the
+        # one last written by blt 94; the hardware's own words (kappa reads
+        # word 3 of the system processes 2, 8, 17 and 36 for its timing)
+        # are not modelled, so reading a word never written refuses.
+        n = self._int(self.x[a], 'pcb')
+        i = self._int(self.x[b], 'pcb')
+        if not 0 <= i < 32:
+            raise Refusal('built-in', 'pcb index %d: only 0..31 (pcb_entry/4 @80-81)' % i)
+        if (n, i) not in self.pcb:
+            raise Refusal('built-in', 'pcb word %d of context %d: never written, and the hardware '
+                          'words are not modelled' % (i, n))
+        self.x[c] = self.pcb[(n, i)]
+        self.nxt(code, off)
+
     def op_set_subvector(self, code, off, a, b, c, v):
         s, z, low = self.ext_cell(code, off, 'set_subvector')
         if z or low:
@@ -1772,6 +2624,40 @@ class Machine:
             raise Refusal('built-in', 'set_subvector %d+%d of %d from %d' % (p, n, len(vec), len(sub)))
         for i in range(n):
             vec[p + i] = deref(sub[i])
+        self.nxt(code, off, 2)
+
+    def op_object(self, code, off, a, b, c, v):
+        # step 3n: blt 0d, object/3 (kappa2 user_if/pb/som.esp:191-194
+        # `object(Sheet,_,_)` compiles to `0d 00 01 02`, Sheet in A0;
+        # psi/README.md "Reattempted, still blocked").  INFERENCE: it
+        # succeeds when A_A is an object (an instance or a class), fails
+        # otherwise, as the other type tests (atom/1, integer/1) do.  What
+        # the two outputs receive is NOT settled (every held source call
+        # has both `_`), so they are left as fresh unbound variables: a
+        # later use of one refuses as an unbound argument.  On step 3n's
+        # path (pimos_scsi_front_end delete_remote_stream/2 @879 `0d 00 00
+        # 01`) both registers are written again before they are read.
+        t = deref(self.x[a])
+        if isinstance(t, (Instance, ClassRef)):
+            self.x[b], self.x[c] = Var(), Var()
+            self.nxt(code, off)
+        else:
+            self.fail()
+
+    def op_subvector(self, code, off, a, b, c, v):
+        # step 3n: blt 30, subvector/4 (kappa2 HLCCMPS.ESP:169-176,
+        # kappaHLC_builtin_common except_unique/2 @1f3-209; kl0_opcodes.tsv).
+        # The result holds the same element terms as the vector (INFERENCE:
+        # except_unique/2 fills New_Attr only by unifying its subvectors
+        # with Attr's)
+        r, z, low = self.ext_cell(code, off, 'subvector')
+        if z or low:
+            raise Refusal('operand', 'subvector operand cell with low bytes set: unwitnessed')
+        vec = self._vec(self.x[a], 'subvector').args
+        p, n = self._int(self.x[b], 'subvector'), self._int(self.x[c], 'subvector')
+        if p < 0 or n < 0 or p + n > len(vec):
+            raise Refusal('built-in', 'subvector %d+%d of %d' % (p, n, len(vec)))
+        self.x[r] = Vec(vec[p:p + n])
         self.nxt(code, off, 2)
 
     def op_put_vector_0(self, code, off, a, b, c, v):
@@ -1856,6 +2742,16 @@ class Machine:
         e = self._int(self.x[c], 'set_string_element')
         if not 0 <= i < len(cs):
             raise Refusal('built-in', 'set_string_element index %d of %d' % (i, len(cs)))
+        if e < 0:
+            # step 3k: a negative integer in a 32-bit string is stored as
+            # its 32-bit two's complement (INFERENCE: fep_message_assembler
+            # create_argument_string_list/5 @132-133 writes -1 as an
+            # integer argument's length word, which PIMOS reads as -1,
+            # scsi_fep.kl1:429-445, docs/fep_services.md section 1); in a
+            # string of any other element size it is unwitnessed and refuses
+            if s.type != 32 or e < -0x80000000:
+                raise Refusal('built-in', 'set_string_element %d into a %d-bit string: unwitnessed' % (e, s.type))
+            e &= 0xffffffff
         cs[i] = e
         s.set_codes(cs)
         self.nxt(code, off)
@@ -2084,7 +2980,28 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
     ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
+    ('simpos##process', 'instance', 'exterminate', 1): Machine.process_exterminate,
+    ('simpos##world', 'instance', 'root_path', 3): Machine.world_root_path,
+    ('simpos##pathname', 'class', 'remote_or_local', 6): Machine.pathname_remote_or_local,
+    # step 3i: boot_process overrides :create and :activate (TM-100 p13,
+    # TR-056 p21); the overriding bodies are not printed, and the
+    # inherited process versions would run in their place, so they are
+    # refused here (standin/boot_process.esp)
+    # step 3j: create/2 and activate/2 are stood in (INTERPOLATED,
+    # boot_process.esp); create/3 is not
+    ('simpos##boot_process', 'class', 'create', 3): Machine.boot_process_override,
+    # step 3l, route step B5: the directory's retrieve (INTERPOLATED;
+    # standin/directory.esp, psi/simpos_fs.py)
+    ('simpos##directory', 'class', 'retrieve', 3): lambda m: m.directory_retrieve(3),
+    ('simpos##directory', 'class', 'retrieve', 4): lambda m: m.directory_retrieve(4),
+    # step 3l, B6: reading terms (standin/standard_input_file.esp)
+    ('simpos##standard_input_file', 'instance', 'gett', 2): Machine.input_gett,
+    ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
 }
+# window M0/M3/M5 (OURS): the display device's simpos##bitmap_display
+# selectors (psi/windev.py; the window stand-ins draw through them)
+import windev  # noqa: E402
+windev.install(SIMPOS_MODELS, sys.modules[__name__])
 
 
 # -- census recipes (step 3f) ----------------------------------------------
@@ -2409,32 +3326,58 @@ def census(m=None, max_steps=20000):
     return census_of(m, m.lib.free_of_simpos(six, 'union'))
 
 
-def census_of(m, classes, recipes=None):
+def census_of(m, classes, recipes=None, reverse=False):
     """census(): every method of CLASSES, each called once.  RECIPES
     (step 3f): class -> a function making the instance receiver (RECIPES
-    above); a class without one gets new/2's instance."""
+    above); a class without one gets new/2's instance.
+
+    Each row starts from freshly generated class objects (step 3i, OURS):
+    the class slots are dropped before every call, so they take their
+    initial values again on first access (TM-388 p.49), and the census
+    process (stand-in process's class slot `current`) is a new one.  A
+    row's outcome is then what it is alone on a fresh machine, whatever
+    rows ran before it.  Before step 3i one machine's class slots were
+    shared by every row, so a row could read what an earlier row left
+    (pimfep_message_log dump_log/1 read the `log_table` that
+    set_log_table/2 had set to an unbound variable; resign/1 and
+    resign_core/1 popped a program that an earlier row's assign/1 had
+    pushed on the shared process's stack; psi/README.md "Step 3i").  REVERSE runs
+    the classes and each class's methods in the opposite order (the test
+    of that independence, test_espc.py test_step3i_census_order)."""
     rows = []
-    for cid in classes:
+    for cid in (list(classes)[::-1] if reverse else classes):
         co = m.lib.build(cid)
-        for section, table in (('class', co.class_methods), ('instance', co.instance_methods)):
-            for (name, n), meth in table.items():
-                sel = '%s/%d' % (name, n)
-                try:
-                    # step 3g: a request for a device command handler
-                    # (REQUEST_ID), only where the receiver has a recipe
-                    lead = (request_args(m, cid, name, n)
-                            if section == 'instance' and recipes and cid in recipes else [])
-                    recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
-                    regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
-                    ok = any(True for _ in m.solve_send(recv, name, regs))
-                    rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
-                except Refusal as e:
-                    rows.append((cid, section, sel, 'refused', e.cause, e.detail))
-                except Raised as e:
-                    rows.append((cid, section, sel, 'exception', 'raise', repr(e.info)))
-                except StepLimit:
-                    rows.append((cid, section, sel, 'step limit', '', ''))
+        calls = [(section, name, n)
+                 for section, table in (('class', co.class_methods), ('instance', co.instance_methods))
+                 for (name, n) in table]
+        for section, name, n in (calls[::-1] if reverse else calls):
+            m.class_slots = {}
+            m.saved = {}
+            m.pcb = {}
+            rows.append(census_row(m, cid, section, name, n, recipes))
     return rows
+
+
+def census_row(m, cid, section, name, n, recipes=None):
+    """One census row: NAME/N of CID called once with unbound arguments
+    (census_of above).  -> (class, section, selector, outcome, cause,
+    detail)."""
+    sel = '%s/%d' % (name, n)
+    try:
+        # step 3g: a request for a device command handler
+        # (REQUEST_ID), only where the receiver has a recipe
+        lead = (request_args(m, cid, name, n)
+                if section == 'instance' and recipes and cid in recipes else [])
+        recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
+        regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
+        ok = any(True for _ in m.solve_send(recv, name, regs))
+        return (cid, section, sel, 'success' if ok else 'failure', '', '')
+    except Refusal as e:
+        return (cid, section, sel, 'refused', e.cause, e.detail)
+    except Raised as e:
+        return (cid, section, sel, 'exception', 'raise', repr(e.info))
+    except StepLimit:
+        return (cid, section, sel, 'step limit', '', '')
 
 
 FEP_PACKAGES = ('pimfep', 'pimscsi')

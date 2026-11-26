@@ -54,7 +54,9 @@ before the first run):
               a shoen: the stub writes 200, then 100 (the goal
               woken last runs first: the ready queue is newest
               first, as found on the first run); the goal gives
-              "abc", the report [started, terminated | _]
+              "abc", the report [started, terminated | _] (R7L:
+              [started, resource_low, resource_added, terminated | _],
+              below)
 At the end two goals wait: execute/7's control/2 on its open Control
 and report/2 on the raw report's open tail.
 
@@ -82,6 +84,13 @@ value changed: the shoen record has one more cell, SH_MASK, written at
 create (1 shoen made: 1 lines), and start_shoen empties the parked
 list, SH_GOAL := 0 (1 starts: 1 lines); counted on the reference's
 trace (both writes, nothing else new).
+Re-pinned for R7L (2026-11-25), 1089 -> 1225 trace lines: a shoen starts
+with no resource, so execute/7's goal parks and resource_low is
+reported; no monitor listens here, so the bench answers as PIMOS's task
+manager does (driver.Script.fund_parked: add_shoen_resource of
+16#"3FFFFFFF":16#"FFFFFFFF", kernel/init/init.kl1:84-89), and the
+report is [started, resource_low, resource_added, terminated | _].  The
+stub still writes 200, then 100, and two goals still wait.
 """
 import os
 import sys
@@ -93,7 +102,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=3, lines=1089)
+PINNED = dict(parts=3, lines=1225)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 KLB, BLT = 0x23, 0x22
 TEXT = 'abc'
@@ -103,7 +112,8 @@ LATE = -1000
 EXPECT = {
     'node': [0, 1, 7],
     'stubs': [0, 1, 4095, 4096, 4096, 4096, 4096, 3996, 3096, 3096],
-    'execute/7': [ABC, ('|', 'started', ('|', 'terminated', None))],
+    'execute/7': [ABC, ('|', 'started', ('|', 'resource_low', ('|', 'resource_added',
+                                                                ('|', 'terminated', None))))],
 }
 # the stub's output register at execute/7: Max first, its goal being
 # woken last (the ready queue is newest first)
@@ -187,6 +197,7 @@ def script():
     s.arg(7, 8)
     s.spawn(pimm.predicate(im, 'shoen', 'execute/7'), 7)
     s.run()
+    s.fund_parked(9)                                # R7L: the task manager's answer
     s.out(5)
     s.out(8)
     return s

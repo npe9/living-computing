@@ -36,6 +36,8 @@ The docs outside `psi/` were corrected in place:
 8. [§6 Open after this check](#6-open-after-this-check)
 9. [§7 Step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)](#7-step-3fs-interpolated-and-ours-parts-re-checked-2026-11-25)
 10. [§8 The rest of §7, re-checked in step 3h (2026-11-25)](#8-the-rest-of-7-re-checked-in-step-3h-2026-11-25)
+11. [§9 Step 3i: the two items §8 left open (2026-11-25)](#9-step-3i-the-two-items-8-left-open-2026-11-25)
+12. [§10 Step 3k: step 3j's stand-ins re-checked (2026-11-25)](#10-step-3k-step-3js-stand-ins-re-checked-2026-11-25)
 
 ## How the check was done
 
@@ -355,7 +357,9 @@ TM-444, TR-236, TR-044, `cil_kl0.esp` or the ESP manuals, for:
 - the rounding of division;
 - whether substring and string_tail share storage;
 - the bounds of search_character;
-- the third argument of list_to_vector and vector_to_list;
+- the third argument of list_to_vector and vector_to_list (superseded
+  2026-11-25 for list_to_vector: §10.1 settles it from known plaintext;
+  vector_to_list is unchanged);
 - the split of the e/c try family.
 
 TR-044 refers to "[Chikayama 84]" for the details; it is not held.
@@ -374,7 +378,7 @@ whose source is held, the "would-be witnesses".
 | blt 9a | 14 | `inhibit_interrupt`; blt 9b `allow_interrupt` | TERMCODE.ESP:181-193; `cil_kl0.esp`:149, :85 |
 | blt 54 | 418 | `shift_left(X,N,^R)`; also 51 `or`, 55 `shift_right` | BCKBCK.ESP:121-125 @70; KP_TIMER.ESP:43-45; TR-044 A.6 |
 | blt f2 | 3,067 | `==`, else = cell+2+u8, as blt f0 (difference UNKNOWN) | CTS.esp:50-52 @48b |
-| blt 6f | 75 | `list_to_vector(L,^V,^Tail)` | BCMSETSEQ.ESP:346-348 @4c3 |
+| blt 6f | 75 | `list_to_vector(L,^V,^Tail)` (row added 2026-11-25, step 3k, KNOWN-PLAINTEXT: §10.1) | BCMSETSEQ.ESP:346-348 @4c3 |
 | blt 49, R != A | 175 of 585 | as row 49 | above |
 
 Also met without a row: pmi c1, ce, ff, a8; blt 05, 0c, 12, 14, 42, 43,
@@ -794,7 +798,8 @@ This section re-reads the four items that §7 left unread. Page images
 were made with `pdftoppm` and read by eye. Cells come from the
 `ptfread` listings of `pimfep.ptf`. Pool constants were resolved with
 kl0's `Code.pool_term`. With these, §7's four items are re-read. One
-cross-reference stays unread: §6.1 step 4's `{Id, 5}`.
+cross-reference stayed unread: §6.1 step 4's `{Id, 5}` (re-read in
+step 3i, §9).
 
 | Item | Re-read | Verdict |
 |---|---|---|
@@ -919,4 +924,323 @@ Two drifts surfaced in the re-run. Both predate step 3h:
     the appendix.
 
   Only the three citation cells were changed. Bringing the appendix in
-  line with the generator is open.
+  line with the generator was open; step 3i did it (§9).
+
+## §9 Step 3i: the two items §8 left open (2026-11-25)
+
+### `fep_services.md` §6.1 step 4's `{Id, 5}`
+
+Read from the cells of `pimfep##as_pimos_device` local `refute/3`
+(@129-165, `psi/librarian.py class pimfep##as_pimos_device --listing`).
+The six `a9` pool cells were resolved by cell + s16 against the pool
+`kl0.read_pool` reads: @12e, @134 and @152 load
+`#pimfep##fep_message_assembler`, @13a `#pimfep##fep_command_code_table`,
+@146 and @15d `#simpos##process`.
+
+- Clause 1 (@129-14e, `c4 03 00 22`, so the alternative is @14e):
+  `:disassemble(#fep_message_assembler, Raw, Vector)`,
+  `:get_command(#fep_message_assembler, Vector, Code)`,
+  `:convert(#fep_command_code_table, Code, Name)`,
+  `:refute(Self, Name, Vector)`, a cut (@145 `d3`), then
+  `:self(#process, P)`, `:allow_forced_event(P)`.
+- Clause 2 (@14e-165): `:get_device_id(#fep_message_assembler, Raw, Id)`
+  (@152-156); `{Id, 5}` built at @158-15a (`b2 00`, `44 01` for Id,
+  `47 00 00 05` for 5); `:reply_message(Self, {Id, 5})` (@15b-15c);
+  `:self(#process, P)`, `:allow_forced_event(P)` (@15d-164); then `fe`,
+  fail (@165).
+
+**CONFIRMED**: a failed command is answered `{Id, 5}`. One detail is
+added to §6.1 step 4: after replying, the local fails. Its caller
+`$or$1/3` (@215-22d) calls it at @227.
+
+### `window.md` appendix A against its generator
+
+- The generator's `create/4` row now carries the 2026-11-24 correction,
+  which had been made in `window.md` only. It was re-read 2026-11-25:
+  - kwic-esp `src/inEditor1.esp`:151-152: the clause head is at :151,
+    and :152 sends `:create(#pmacs_window, [...], _, InW)`, create/4;
+  - disc `exshow.esp`:24 sends pmacs_window create/3, and :25 sends
+    editor_text_buffer create/4.
+- `tools/window_appendix_gen.py` was re-run. Appendix A is now the
+  generated `coverage/out/selectors.md`, line for line (228 lines). That
+  changes 12 rows:
+  - `create/4`, the citation;
+  - `getl/2` and `putt/2`, which gain their PRINTED row (`ESPtex/
+    program-e.tex`:6736-6745, re-read: the `:putt(B,[1,2]),
+    :putt(B,p(1,2))` then `:get1(B,S)` example, "get1" as printed);
+  - seven selectors go from UNSPECIFIED to CENSUS: `get_character_font/2`,
+    `get_parsing_operator/2`, `get_unparsing_operator/2`,
+    `set_max_depth/2`, `set_max_length/2`, `set_parsing_operator/2`,
+    `set_unparsing_operator/2`.
+- The per-class table of `window.md` §2.14 is the generator's other
+  output (`perclass.md`). It had drifted in four rows since the second
+  sweep (status letters only: `standard_io_buffer`, `pmacs_window`,
+  `standard_editor`, `standard_superior_window`). It is also made equal
+  to the generated file.
+- `gaps.md`'s counts come from `tools/coverage.py`, which reads the notes,
+  not the appendix. They were regenerated in step 3h and do not change.
+
+## §10 Step 3k: step 3j's stand-ins re-checked (2026-11-25)
+
+Every page and line cited by the step 3j stand-ins was re-read in this step. That covers `psi/standin/process.esp`,
+`boot_process.esp`, `context.esp`, `as_program.esp` and `as_resource.esp`, the dispatcher in `kl0.py`, and the basis
+table of `psi/README.md` "Step 3j", checked against these tables citation by citation.
+Page images were read where a PDF has no usable text layer (`pdftoppm -r 150`). TR-044, TM-444 and TM-388 were also
+OCR'd with tesseract so they could be searched. Held cells were re-listed with `psi/librarian.py class X --listing`,
+and held pool strings with `asm/ptfread.py <pkg> --strings`.
+
+### §10.1 blt 6f `list_to_vector` (item 1)
+
+- **The printed sources.**
+  - TR-044 A.8 (PDF p41) prints only a 2-argument `list_to_vector`.
+  - TM-388 §4.5 (PDF p122, folio 110) lists only the integer and floating conversions.
+  - TM-388 ch. 4 (PDF p106-p123) lists neither list_to_vector nor vector_to_list.
+  - The TM-444 OCR has no hit.
+- **The known plaintext.** These held source clauses have held compiled cells, and they settle the three operands:
+  - kappa2 `KP_UPTACC.ESP`:224-227, `$or$9/2`: @6eb `6f 01 02 00`, @6ed `6f 00 03 00`, then @6ef `06 02 01 00`;
+  - `HLCEXTSEL.ESP`:170-173, `delete_temp/1` @720-723;
+  - `ROCHECK.ESP`:119-121, `check_list/1` @a4;
+  - `hash.esp`:152 @1a9, `6f 00 00 02` followed by `26 02`.
+- **The reading.**
+  - Byte 1 is the list, byte 2 the vector and byte 3 the tail. The tail is `[]` for a proper list.
+  - The vector is a stack vector.
+  - 75 held uses: kappa 68, pimmcsp 5, pimfep 1, sancho2 1.
+- **Verdict.**
+  - §2's "NO SOURCE FOUND" for list_to_vector's third argument is superseded, and marked so in place.
+  - The row is KNOWN-PLAINTEXT.
+  - Two parts are INFERENCE, and the row says so: the tail of an improper list, and that the elements are shared, not copied.
+
+### §10.2 TM-100 (the printed process code)
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| PDF p7: class slots `ready_queue` and `instance_array`, with no initial value | page image | CONFIRMED |
+| PDF p8: `create/2` sends `:create_core(PROCESS, Process, Context)` | page image | CONFIRMED as printed. `PROCESS` is not a variable of the clause; its head binds `Class`. The stand-in keeps the printed text in a comment and runs a labelled correction (§10.5) |
+| PDF p8: the slot comment of `context` | page image: "Hardware PCB" (the last letter is degraded and looks like a "2") | **CORRECTED.** The stand-ins and `psi/README.md` cited "Hardware PC". Fixed, each labelled, in `standin/context.esp`, `standin/process.esp` and the README. The reading supports blt 94 being a PCB write (§10.4) |
+| PDF p8: `create/2`'s comment "If hardware processes are exhausted, then fail" | page image | CONFIRMED |
+| PDF p8: the slot `mask_count := 0`, "The number of interrupt mask nestings" | page image | CONFIRMED. Found in passing: the status comment reads "nil(=dead), dormant, suspended, ready, (active) and some others" |
+| PDF p8-p9: the calls of `activate/2` (`set_entry_point`, `activate`, `set_priority`, the ready queue) | page image | CONFIRMED |
+| PDF p6: the quoted lines on processes and the supervisor | page image | CONFIRMED. Found in passing: device handlers are interrupt processes, "not dispatched by the supervisor" |
+| PDF p10: `with_link` and the ready queue | page image | CONFIRMED |
+| PDF p13: the boot process paragraph | page image | CONFIRMED |
+
+### §10.3 TR-056, TR-055, TR-285
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| TR-056 PDF p18 (folio 16): the four states; dispatcher and scheduler; dormant is "just been created or terminated" | page image | CONFIRMED. Found in passing: TR-056 prints `:activate(Process,Program,Goal)` with three arguments, an older interface than TM-100's `activate/2`. The stand-in follows TM-100 |
+| TR-056 PDF p19 (folio 17): the limit of 63, and about 50 ordinary processes | page image | CONFIRMED |
+| TR-056 PDF p21 (folio 19): activation puts the process in the ready queue; resume calls the scheduler; the boot process | page image | CONFIRMED |
+| TR-055 PDF p5: 63 contexts, "63 sets of the internal registers for process control", dispatching by software | page image | CONFIRMED |
+| TR-285 PDF p11 (folio 8): resources are released by the same method | page image | CONFIRMED |
+| TR-087 PDF p4: a stream's retrieve "is suspended" until an object is put | page image (§3.2) | CONFIRMED |
+| TR-059 PDF p30 (folio 28): a device handler is an interrupt process, dispatched by hardware, "instantiated and activated during a system boot-up procedure" | page image | CONFIRMED. It is why the OURS dispatcher's lack of interrupt processes is stated as a difference |
+
+### §10.4 Held cells and held source
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| `pseudo_pe_process` `release/1` @177-189 (the send of `request(Boot, release, Process)`) | listing | CONFIRMED. Since step 3k it runs to the end: release_core, two blt 94, `remove_child`, then the context release |
+| `pseudo_pe_process` `$or$5/2` @3a9-3bc: suspended→dormant @3af, ready→dormant @3b8 | listing | CONFIRMED. Noted: blt 90 (the PCB read) at @3bb had no row; step 3k adds it (`pcb(N, I, ^V)`, operands KNOWN-PLAINTEXT from kappa2 `LUUTIME.ESP`:107, `kappaLUU_timer start_timer/2` @59-5d) |
+| `terminate_core` @1e0 `get_number`; `$or$2` @347 | listing | CONFIRMED |
+| `pseudo_scsi` @71 assign, @155 assigned, @161 resign, @26c, @5bf | listing | CONFIRMED |
+| pimscsi pool string "SCSI is not assigned to process" in `$or$0/1` (@55a, used at @56b) | `ptfread.py pimscsi --strings` and the listing | CONFIRMED |
+| kappa2 `KP_POOL.ESP`:285-290, `check_resource` | source | CONFIRMED |
+| kappa2 `ITRAPP.ESP`:28-33 (the class head, nature `as_resource` at :32-33); `:assign` at :106 | source | CONFIRMED |
+| `pseudo_scsi` `close/1` @150-16d: `assigned/1` @155, status `closed` @15c-15e, `resign/1` @161; the alternative's `not_assigned` and `error/4` @16a-16d | listing | CONFIRMED |
+| kappa2 `ITRSES.ESP`:111-116 | source | CONFIRMED |
+| kappa2 `MOPMANAGER.ESP`:162-168, cited for the handshake (create, activate, get) | source: :162-164 are the banner comment of `create_kappa`, the handshake clause is :165-172, with `:create(#process,Process,[free,free,free,free])` at :170, `:activate(Process,Kappa_kernel)` at :171 and `:get(Stream,FLAG)` at :172 | **CORRECTED** to :165-172 in `psi/README.md`, `boot_route.md` and the `test_step3j_supervisor` header, each labelled |
+| kappa2 `MOPKAPPA.ESP` `goal/1` (the child's `:put`) | source: `:goal(Obj)` at :31, `:put(Obj!stream,created)` at :34, `:put(Obj!stream,fail)` at :37 | CONFIRMED |
+| TM-388 PDF p110 (folio 98): writing a slot overrides a value; it may not be written with an unbound variable or a stack vector | OCR, then page image | CONFIRMED. It is the basis for `resolve_value` copying the cells of a stored list. The copy itself is OURS |
+
+### §10.5 Counts and what changed
+
+- 29 rows were re-read:
+  - CONFIRMED: 26. One of them, the `PROCESS` typo, is CONFIRMED "as printed".
+  - CORRECTED: 2, "Hardware PC" → "Hardware PCB", and `MOPMANAGER.ESP`:162-168 → :165-172.
+  - Superseded: 1, §2's third argument of list_to_vector.
+  - CONTRADICTED: 0.
+- The `create/2` correction: `standin/process.esp` now runs `:create_core(Class, Process, Context)`, labelled
+  CORRECTED. The printed line is kept in the comment above it.
+
+## §11 Step 3l: the inferences of route steps B5 to B8 (2026-11-25)
+
+Step 3l works under the owner's rule of 2026-11-25, "It's okay to infer what you don't have". This section lists every
+INFERENCE the step makes, with its basis, and the OURS choices beside them. Each is also labelled where it is made
+(the file named). Held cells were read with `psi/fepread/ptfread.py` and `psi/librarian.py class X --listing`; held
+source by path and line; page images with `pdftoppm -r 150`. The tests are `psi/test_espc.py` `test_step3l_b5`,
+`test_step3l_b7` and `test_step3l_b6_b8`. The census effect is in `psi/README.md` "Step 3l".
+
+### §11.1 INFERENCE
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | `me:` is `>sys>user>pmpsi` | the HELD login.com defines `"me" := [ "user:pmpsi" ]`; `user:` = `>sys>user` from TM-143 p3 and every held home directory `>sys>user>NAME` (`subsystems/shell.md` §4.1) | `psi/simpos_fs.py` `ME`; `standin/world.esp` |
+| 2 | A file's full pathname carries its version; a directory's does not | TR-524 PDF p9 (folio 8) `>sys>user>gee>humm.txt.3`; HELD source cal-esp `cal2.12/control.esp`:1135-1136 and chal `control.esp`:947-948 strip a version from `retrieve/4`'s answer (`del_version_number`, :969-974) | `kl0.py` `directory_retrieve` |
+| 3 | `retrieve/3,4` fails on a miss | every held caller has a fallback clause after it: `pimos_fep_superviser` `full_pathname/1` @1c6, `pimos_file` `remove/2` @1e3; kappa2 `SRVCNF.ESP`:394-396, `BCKFIF.ESP`:464-471 (HELD source) | `kl0.py` `directory_retrieve` |
+| 4 | `node_full_name/3` succeeds for the node's own name and fails otherwise | its two held senders, `net_spawn_user` `set_default_node/2` @29-36 and `get_your_node/3` @13b-163, whose later clauses take the name as an IP address | `standin/network_node_name.esp` |
+| 5 | `user:identify/4` fails, rather than raises, on a wrong name or password | its held send, `simpos_user` `create/4` @1a-24, is the first goal of a clause; a failure fails login | `standin/user.esp` |
+| 6 | `user:passwords/3` gives `[Password]` as its third argument; the second is unused | its one held send, `simpos_user` `setup_process/2` @e3-109, which passes only the third argument on, to `set_passwords/2` | `standin/user.esp` |
+| 7 | A password list is an object with an access mode and passwords; the process makes one on first use | `simpos_user` `setup_process/2` @ee-102: `password_list/2`, `set_access_mode/2`, `set_passwords/2` | `standin/password_list.esp`, `process.esp` |
+| 8 | `pathname append/4` needs no `convert_to_8` | `convert_to_8` is a send to `cesp##string`, the CESP port's class, not SIMPOS's; SIMPOS strings are 16-bit (the held login files and the held cells' pool strings) | `standin/pathname.esp` |
+| 9 | `standard_input_file gett/2` fails at the end of the file | HELD source utter `source/QXT/trans.esp`:20-24 (a `gett` loop ended by its last clause); kwic-esp `src/systems.esp`:368-374 (tests `end_of_input/1` first) | `kl0.py` `input_gett` |
+| 10 | `pkg##name` is read as one atom | the library takes a class name as an atom (`kl0` `lib_class_named`); the login files' menu items name classes so (`shell.md` §4.2.2) | `psi/esp_reader.py` |
+| 11 | `coordinator:information/3` fails when the item is absent | every held caller has a fallback clause (`shell.md` §2.5: `pimos_fep_superviser` `full_pathname/1` @1c6-1ce, `pimos_login_requester` `close/2` @149-14e) | `standin/coordinator.esp` |
+| 12 | `process:get_number/3` gives the number of the process's context | its held senders, `pimos_login_requester` `title_string/1` @2a4-2ae and `pseudo_pe_process` `get_pe_process_number/2` @220-226; the printed `create_core/3` files a process under its context's number in `instance_array` (TM-100 Fig. 3.1, PDF p8) | `standin/process.esp` |
+
+KNOWN from held source, not inference: a compound term `f(a, b)` is the vector `{f, a, b}` (kwic-esp
+`src/systems.esp`:380-383, `dbUtil.esp`:1437). The reader uses this.
+
+### §11.2 OURS (choices, no source)
+
+- The file tree as a whole (`psi/simpos_fs.py`):
+  - only what PIM/m installs, every version 1;
+  - `>sys>csp>MPSI.DIR` and `PIMOS.DIR` empty, the FONT.DIR files left out;
+  - no host prefix (`icpsi277::`) in a full name;
+  - the aliases every world sees, `world`'s class slot `system` (`user` := `>sys>user`).
+- The user registry (`user`'s class slot `users`, `register/4`), the password `pmpsi` and the rank `general`.
+- The world's representation: a list of `[Name | Directories]`, newest first. It is a list because a slot keeps a
+  list's values and may not hold a stack vector (TM-388 PDF p110, folio 98).
+- The coordinator:
+  - its state in class slots;
+  - its selectors `start/1`, `read_login_file/1` and `event/2`;
+  - the events `invoke_system_menu` (the name of TR-046 PDF p28's printed action) and `{select, Label}`;
+  - the menu as the login file's item columns (no `menu_item` or `multi_column_menu`: those classes are lost).
+- The term reader (`psi/esp_reader.py`) and its operator priorities (Prolog's).
+- `standard_io_window` and `font` (step 3l's fourth commit): a window is its options, fonts, title, a transcript of
+  the lines put and an input stream that `read/2` waits on; a font is its file's name, the file not read. Their
+  selectors and argument order are HELD: `pimos_login_requester` `initiate/1` @af-d7, `read/4` @dc-f3, and
+  `pimos_fep_superviser` `create_log_size_input_window/1` @47f-485 (the options first, the window second).
+- The tests' boot program (`b8_boot`), which logs in and starts the coordinator itself.
+
+### §11.3 What was re-read for this step
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| `psdpim/INSTALL`, the placement lines | the archive member | CONFIRMED, quoted in `psi/simpos_fs.py` |
+| `psdpim/INSTALL.DIR/login.com`: `menu`, `define`, `package` | decoded from the archive (16-bit JIS) | CONFIRMED: menu columns of seven and three items; six `define` names; `package :- user` |
+| TR-524 PDF p9, p36, p37 | page images | CONFIRMED: the version suffix; Table 3 `retrieve/c`; App. A `local_logical_file`'s `retrieve/4` |
+| `pimos_login_requester` `initiate/1` @ad-d7, `read/4` @dc-f3, `title_string/1` @2a2-2bf | listing | CONFIRMED: `:create(#standard_io_window, Opts, W)` with Opts `[{size, {ch, 40}, {ch, 7}}, {position, manipulator}, {nature, [with_icon]}]`; the font, title and `activate/1`; `putl/2` of `Enter FEP node name--------->`, then `read/2`, where the route waits |
+
+## §12 Step 3m: the inferences of the login dialogue and the local login (2026-11-25)
+
+Step 3m works under the same rule as §11. Held cells were read with `psi/fepread/ptfread.py` (pimfep, paragraph),
+and held source by path and line. The tests are `psi/test_espc.py` `test_step3m_keyboard` and
+`test_step3m_local_login`, and the `psi/test_kl0.py` row tests. The census effect is in `psi/README.md`
+"Step 3m". The path is in `boot_route.md` §4.5 and §6.
+
+### §12.1 INFERENCE (and INTERPOLATED behaviour)
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | `standard_io_window read/2` gives one character code, and the window's own input queue (`input_data/2`) is read before the keyboard | `pimos_login_requester check_code/4` @1e9-1eb gives a code back with `input_data/2` and reads again; TM-125 p18 (`read`, one character) | `standin/standard_io_window.esp` |
+| 2 | `getl/2` reads to RETURN (13) and leaves it out | the held `read_password/3` loop (@32a-34c) stops at 13; the node name compares equal to `"local"` only without it | `standin/standard_io_window.esp` |
+| 3 | `user:user_password/2` gives the user's password | its one held send, `as_pimos_login_requester create_message/3` @419, whose answer fills the record's RP | `standin/user.esp` |
+| 4 | blt 43 `divide` on integers truncates non-negative operands | witnessed on floats only (h.esp:25 @8e); the same as `divide_constant` | `kl0_opcodes.tsv`, `kl0.py` |
+| 5 | `port connect/2` links both ports, each into the other's `out_port` | TM-100 PDF p16 prose ("out_port ... contains a list of connected ports"), and the held ends: the requester and the server each ask `who_is_connecting_to/2` of their own port and expect one peer, and each receives on its own port what the other sends | `standin/port.esp` |
+| 6 | `port send/2` is the printed `send/3` with the port as the sender | TR-056 PDF p14 (`:send(Channel, Object)`); TM-100 Fig. 3.8 `send/3` | `standin/port.esp` |
+| 7 | `alarm_watch on_after/5 (Time, From, Port, Message)` arms a send of Message to Port, and `wait_and_return/2` waits on Port | `as_pimos_login_requester receive_block/7` @547-558 and `pimos_remote_login_server receive_block/3` @526-537: the waiting end's own port is the fourth argument, the peer the third, and the message a fresh `timeout` | `standin/alarm_watch.esp` |
+| 8 | `message create/2` makes an empty message | four held sends, each followed by `set_content/2` (requester @2fd, @538; server @50d, @5f6) | `standin/message.esp` |
+| 9 | `class_object/2` on an instance gives its class | server `reset/2` @19d and `create_socket/2` @45b send `set_local_server_socket/2` to the answer, and that is a class method of the sender's own class | `kl0.py` `dispatch` |
+| 10 | `class_name/2` on a `simpos##` class gives its name, without the package, as an atom | replier `socket/4` @28f-299 and `socket_type/2` @29e-2b2 compare the answer with `port`, `network_group` and `tcpip_socket`; IPSJ 51390 p.50 names `class_name` as one of the four implicit methods. Classes of other packages are refused | `kl0.py` `dispatch` |
+| 11 | `network_subsystem is_installed/1` fails on this PSI | the replier's `initiate_listener/1` has a second clause (@315-316), `true`, written for a PSI with no network; the model has no LIA or Ethernet (OURS) | `standin/network_subsystem.esp` |
+| 12 | The INFERENCE parts of the opcode rows: blt 36's byte order (16 to 8 bits, high byte first) and its two unknown outputs; blt 35's operand cell (source string, source index) | given in each row's meaning column | `kl0_opcodes.tsv` |
+
+KNOWN-PLAINTEXT rows added in step 3m (each row gives its witness and held source): blt 42, 43, 35, 36, f4, f5;
+pmi d6, a8; blt 41 with R != A.
+
+### §12.2 CORRECTED
+
+- `port.esp` changes TM-100 Fig. 3.8 in two places. Both are labelled in the file, with the printed text quoted:
+  - The figure's `:channel:send(Out_port, Message, Sender)` is written as a local `channel_send/3`. espc has no
+    class-qualified send.
+  - The recursive call is printed with three arguments, `send(Port, Tap, Message)`, and is written with four. No
+    local `send/3` exists, so as printed espc refuses `send/4` and, with it, the whole of `:send/3`.
+
+### §12.3 OURS
+
+- The keyboard: `{key, Code}` events, the coordinator's keyboard stream and its `selected` slot. The window that was
+  last shown reads the keyboard.
+- The window's `history`: the lines put, the codes echoed, the beeps.
+- No clock, so no alarm fires.
+- The probe `b3m_pimos`, which stands in for `login.kl1`. It sends `io/4` straight to the held replier and server,
+  then the texts of `../fep_services.md` §7.3 for a login that succeeds. It checks nothing.
+- The PSI user `pmpsi` with the password `pmpsi` (from §11). These become RN and RP. `ref/pimm/fep.py`'s LOGIN has
+  RP `''` (`boot_route.md` §6.3).
+
+### §12.4 What was re-read for this step
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| TM-100 PDF p16 (folio 14), Fig. 3.8 | `printed/listings/tm0100_p16.esp` | CONFIRMED: nature `channel`, slot `out_port`, `send/3`, the three-argument recursive call |
+| paragraph `h.esp`:78-135, against `set_x_unit0/2` @208-252 | listing | CONFIRMED: every constant above 32767 is `pmi a8` plus an integer cell; every one below is a `pmi a7` |
+| `pimos_remote_login_server` `local_server_socket/2` @32-38 | listing | CONFIRMED: it fails while the slot is `none` (blt 65), so with no server running the requester writes `Network error.` |
+| `pimos_remote_login_socket_table` `add_at/3` @8c, `initiate/1` @11a | listing | CONFIRMED: `add_at` needs `is_initiated/1`; `initiate/1` is reached from the replier's `initiate/1` |
+
+## §13 Step 3n: the inferences of the wire to PIMOS (2026-11-25)
+
+Step 3n works under the same rule as §11 and §12. Held cells were read with `psi/fepread/ptfread.py` (pimfep,
+pimscsi, paragraph), held source by path and line. The tests are `psi/test_fep_bridge.py` (the assembler against
+`ref/pimm/fep.py`, a scripted PSI run, the live run's tape, and an opt-in live run) and the `psi/test_kl0.py` row
+tests (`Step3nRows`) and `psi/test_espc.py` (`test_step3n_exterminate`, `test_step3n_monogyny_list_index`).
+The path is in `boot_route.md` §4.6 and §6.5; the census effect is in `psi/README.md` "Step 3n".
+
+### §13.1 INFERENCE (and INTERPOLATED behaviour)
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | `substring/7` from 16 to 32 bits joins two elements, the high half first; 32 to 16 splits them the same way | `fep_message_assembler create_argument_string_list/5` @11d-126 (a string padded to an even length, @165-176, then re-read as 32-bit) and `take_argument/5` @183-18e (the reverse); the order is that of PIMOS's wire words (`ref/pimm/fep.py` `pack_message`) and of blt 36 (§12.1 row 12). The held assemble then equals `pack_message` byte for byte on five messages | `kl0.py` `op_substring_7` |
+| 2 | For 16 to 32 bits and back, U = 0 and V = N | `create_argument_string_list/5` @125-126 requires U == 0 and V == the length it passed; `take_argument/5` @18f takes the next argument's position as Pos + V. The 16/8 witnesses write `_` for both, so those stay unbound | `kl0.py` `op_substring_7` |
+| 3 | A 32-bit string element with its top bit set is read as a negative integer | `take_argument/5` @17b-17d compares a message's length word with the constant -1 (`ca`, cell ffffffff) to tell an integer argument; PIMOS writes -1 there (`scsi_fep.kl1`:429-445) | `kl0.py` `op_string_element` |
+| 4 | `get_integer`'s 16-bit immediate is sign-extended | the same clause then tests the register with `27 00 ffff`; read unsigned it could never succeed (as `put_integer`, step 3k) | `kl0.py` `op_get_integer` |
+| 5 | blt 0d `object/3` succeeds on an object (an instance or a class) and fails on anything else; its two outputs are left unbound | the name (witnessed on kappa2 `som.esp`:191-194, `object(Sheet,_,_)`, step 3f) and the other type tests. Every held source call has both outputs `_`. On this path it is met three times, at `pimos_scsi_front_end delete_remote_stream/2` @879, always on the atom `nil`, and fails (traced 2026-11-25): its success branch is not exercised by the run. `test_kl0.py` `Step3nRows.test_object` pins the inference on `scsi_dummy_handler initiate/2` (no source held) | `kl0_opcodes.tsv` (status INFERENCE), `kl0.py` `op_object` |
+| 6 | `subvector/4` (blt 30) gives a vector holding the same element terms | the row's witness (`except_unique/2` @1f3-209, `HLCCMPS.ESP`:169-176) fixes the operands; the front end's `create_device/4` (@432-447) reads the device's arguments from the result | `kl0.py` `op_subvector` |
+| 7 | `monogyny_list_index` is a `list_index` that holds one object per key: `put_at/3` replaces the key's object | the name, the selectors held programs send (`required/classes.tsv`), and `pimfep##simpos_user` `regist/4` (@4d-61) and `identify/4` (@66-72): `setup_process/4` (@7f-9e) tries identify first and regist when it fails | `standin/monogyny_list_index.esp` |
+| 8 | `world root_path/3` gives the full pathname of the directory a logical name denotes | its one held send, `simpos_user_device $or$3/2` (@ba-d6), whose result (through `remote_or_local/6`) answers PIMOS's `io(0, [len RN, len RP] ++ RN ++ RP)` with the user's directory; the clause's alternative answers `">"`. The lookup is `directory_retrieve`'s (TR-524 PDF p9) | `kl0.py` `world_root_path` |
+| 9 | `pathname remote_or_local/6` gives a local pathname as its own local part (the third argument) | held source callers cil `src/ds_fep.esp`:909 and cal-esp `deb2.12/init.esp`:314-318 (the local part then compared with `">sys>font>kanji_16.font"`); a remote one (`Node::`) is refused | `kl0.py` `pathname_remote_or_local` |
+| 10 | `tcpip_network_subsystem is_installed/1` fails on this PSI | the server's `create_socket/2` sends it first in its tcpip clause (@4ac) and has no alternative; the model has no Ethernet (OURS). The result, `{Id, 5}` to `io(0, "tcpip")`, is the answer `fep.py` chose (`../fep_services.md` §7.5), and PIMOS writes `CANNOT MAKE A TCPIP LOGIN SERVICE!!` | `standin/tcpip_network_subsystem.esp` |
+
+INTERPOLATED stand-in methods, each labelled in its file with the held send it comes from: `abort_handler create/2`
+and `abort/3`; `process set_area_limit_execution/7` and `set_package/2` (no-ops; the front end's `initiate/1`
+@21d-22e) and `exterminate/1` (the status nil; the front end's `exit_program/1` @4da-4e2); `stream grant_stream/2` (a
+no-op; @580-597); `string append/3` takes the first string's element size (`assemble/3` @56-75); `world
+default_logical_name/2`; `monogyny_list_index create/2`.
+
+KNOWN-PLAINTEXT rows added, each with its witness and held source: blt 30 `subvector` (`HLCCMPS.ESP`:169-176) and
+pmi 36 `get_vector_6` (paragraph `p_MAIN.esp`:202, `graph_status_element create/3` @19).
+
+### §13.2 CORRECTED
+
+- `list_index` kept its entries as terms `{Next, Object, Key}`. A failure-driven loop undoes a term's bindings, and
+  the held front end's main loop (`pimos_scsi_front_end $or$0/3` @946-960, a repeat) is one, so its device table
+  lost every entry. The entries are now heap vectors (`new_heap_vector/2`, `set_vector_element/3`), as the chain's
+  links already were. How SIMPOS's own index made its entries is not printed: OURS.
+- `string append/3` always made a 16-bit string. The held assembler appends 32-bit strings into a 32-bit message.
+- Step 3m's boot probe queued the user's keys at the boot. Against the real server, which PIMOS creates later, the
+  requester then writes `Network error.` The bridge gives the keys when both sides are quiet (OURS).
+
+### §13.3 OURS
+
+- The bridge (`psi/fep_bridge.py`): the routing (a device PIMOS makes by 601 is the PSI's; the rest, the shell's
+  window 104 among them, stays `fep.py`'s), the 32-bit packing of packets, the exchange order, the moment the user
+  types, and the boot probe `b3n_boot`.
+- The idle interrupt (`kl0.py` `Machine.interrupt`): when every PSI process waits, the bridge's packets are put on
+  the front end's input stream with the printed `stream:put/2`, on registers of their own.
+- The dispatcher's part of `exterminate/1`: a process that kills itself gives up the processor.
+- RP is `pmpsi`, the password the PSI user was registered with in step 3l (§12.3). `fep.py`'s LOGIN has `''`.
+  The held requester sends `:user_password` (§12.1 row 3), and the held `simpos_user_device` identifies with it,
+  so the PSI side is consistent. With RP `''` the boot probe's `simpos_user create/4` finds no such user and the
+  boot fails (tried 2026-11-25). Neither value is sourced, so RP stays `pmpsi`, labelled.
+
+### §13.4 What the bridged run shows that the pinned run does not
+
+`fep.py`'s pinned run and the bridged run agree on every text and on every answer the FEP gives: the replier's
+`[1, [ID]]` to each `io(1)` and `[1, ""]` to `io(2)`, and `[1, ">sys>user>pmpsi"]` to each simpos_user_device's
+`io(0)`. They differ in two places.
+- RP, `pmpsi` against `''`: in the NI and in both 601s of `simpos_user_device` and their `io(0)` (§13.3).
+- PIMOS sends the tcpip server (device 25) a 70 before its 60 in the bridged run, and not in the pinned one. The
+  bridged answers come when the PSI is idle, later in PIMOS's run than `fep.py`'s, which answers inside the SCSI
+  poll. INFERENCE: PIMOS's abort line for that device is bound by then (`../fep_services.md` U6). The cause was
+  not traced in `login.kl1`.
+
+PIMOS's instruction count at the end, 8,626,676, differs from the pinned 8,625,275 accordingly.

@@ -24,8 +24,8 @@ kblt_system_timer): if the time asked for (a system timer value) has
 come, Wakeup is unified at once with the timer's value, else at the
 earliest time after (so Wakeup is now, the timer's low 32 bits); "T2 is after T1 :- T2 &- T1 < 2^(W-1)", &-
 unsigned mod 2^W.  With the clock at 0 a time reached, (0 - Time) mod
-2^32 < 2^31, gives Wakeup = 0; a time still to come is refused (it
-would never come).  22:FF is ALSO modname_to_module in the PIMOS
+2^32 < 2^31, gives Wakeup = 0; a time still to come was refused (it
+would never come) until R7L, which arms the alarm (part alarm below).  22:FF is ALSO modname_to_module in the PIMOS
 assembler's table (library/assembler/inst_tab.kl1:371 and 373, both
 r_r): the bits are one instruction on the machine; both models take it
 as set_timer, which is what the source of the site pim:go/4 reaches
@@ -52,6 +52,22 @@ Parts:
   set_timer, later      Time 1, reached: Wakeup = now, 2, not 1.
                  Pins 2 parts / 166 lines -> 5 / 2805, these parts'
                  lines; the first two unchanged.
+  alarm          (R7L, 2026-11-25) set_timer to a time still to come,
+                 now + 3 ticks (now the reference's clock when the
+                 script is made, nothing runs between): Wakeup W1 is
+                 left unbound, the alarm armed
+  alarm: again   set_timer to now + 5: the alarm already armed is
+                 cancelled, its W1 bound to [] (VPIM kblt_b_set_timer:
+                 "unify old wakeup variable with []"), W2 unbound
+  alarm: fired   the bench's ALARM (nothing to run): the clock moved on
+                 to the alarm's time, and the run's first goal switch
+                 binds W2 to the timer's low 32 bits, which is the
+                 time asked for (VPIM f_WakeupGoalByAlarmClock binds
+                 the time of the interrupt); the goal waiting on W2
+                 (the image's ipl_pool:hash(W2, H, NewX)) is woken
+                 then and gives H, and no goal is left waiting
+                 Pins 5 parts / 2805 lines -> 8 / 2939, these parts'
+                 lines; the first five unchanged.
 The real sites are in pimm_bios360E.sav (96,474 words; sysTman
 create/3 and physical_alarm_timer_device's do_set_alarm/4 and
 check_and_set_alarm/6) and each goes on into a module that file does
@@ -70,7 +86,20 @@ run alone (bsv/run_pimm_lockstep.sh timer) and restored from a copy,
   a tick every 400 instructions     system_timer, later, line 16: R 3 3
                                     for 2
   set_timer answers the time asked  set_timer, line 35 (as above)
-NOT run: a time still to come (refused), a non-integer Time.
+NOT run: a non-integer Time.  (A time still to come: parts alarm,
+alarm: again, alarm: fired, R7L.)
+
+Observed R7L injections (2026-11-25, bsv/PimmStages.bsv and
+bsv/PimmTBox.bsv, each from a backup copy, `run_pimm_lockstep.sh` timer
+and sord, restored by copy and cmp'd; sord PASSED each time):
+  PimmTBox reached strict (a time equal to now still to come)
+                                    part 1 (set_timer), line 14
+  PimmCore fires the alarm with time 0, not now
+                                    part 7 (alarm: fired), line 0
+  the cancelled Wakeup bound to the time, not []
+                                    part 6 (alarm: again), line 14
+NOT separable: the fired Wakeup's value as "the time asked" or "now",
+since the bench's ALARM moves the clock exactly to the alarm's time.
 """
 import os
 import sys
@@ -81,8 +110,9 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=5, lines=2805)
+PINNED = dict(parts=8, lines=2939)
 TIMER_AT = []
+ALARM_AT = []          # the two times asked for, as the script made them
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 KLB = 0x23
 REACHED = (0, -1, -16, -2147483647)
@@ -167,6 +197,39 @@ def script():
     s.spawn(stub, 2)
     s.run()
     s.out(2)
+    # the alarm (R7L): a time still to come, armed; again, the first
+    # Wakeup bound to []; the clock moved on, the second bound to it
+    s.label('alarm')
+    t1 = (s.live().timer() + 3) & 0xffffffff
+    s.argc(1, I(t1))
+    s.newvar(3)
+    s.arg(2, 3)
+    s.spawn(stub, 2)
+    s.run()
+    s.out(3)
+    s.label('alarm: again')
+    t2 = (s.live().timer() + 5) & 0xffffffff
+    ALARM_AT[:] = [t1, t2]
+    s.argc(1, I(t2))
+    s.newvar(4)
+    s.arg(2, 4)
+    s.spawn(stub, 2)
+    s.run()
+    s.out(3)
+    s.out(4)
+    # a goal waiting on W2: the image's ipl_pool:hash(W2, H, NewX)
+    s.newvar(5)
+    s.newvar(6)
+    s.arg(1, 4)
+    s.arg(2, 5)
+    s.arg(3, 6)
+    s.spawn(pimm.predicate(pimm.kbndis.Image(), 'ipl_pool', 'hash/3'), 3)
+    s.run()
+    s.label('alarm: fired')
+    s.alarm()
+    s.run()
+    s.out(4)
+    s.out(5)
     return s
 
 
@@ -204,6 +267,21 @@ def check(m, outs, parts):
     n = sum(ln.startswith(at) for ln in parts.get('set_timer', []))
     if n != len(REACHED) + 2:
         bad.append(('the stub taken %d times' % n,))
+    got = {k: [None if m.unbound(m.deref(w)) else m.term(w) for lab, w in outs if lab == k]
+           for k in ('alarm', 'alarm: again', 'alarm: fired')}
+    # read at the end: W1 [], W2 the time asked for
+    t2 = pimm.signed(ALARM_AT[1])
+    want = {'alarm': [[]], 'alarm: again': [[], t2]}
+    for k in want:
+        if got[k] != want[k]:
+            bad.append((k, got[k], want[k]))
+    # W2 was unbound until the fire: hash/3's goal on it is woken (a W
+    # line) in `alarm: fired` and in no part before, and gives H
+    woke = [lab for lab, lines in parts.items() for ln in lines
+            if ln[0] == 'W' and lab.startswith('alarm')]
+    if woke != ['alarm: fired'] or got['alarm: fired'][0] != t2 or \
+            not isinstance(got['alarm: fired'][1], int):
+        bad.append(('alarm: fired', got['alarm: fired'], woke))
     if m.nsusp:
         bad.append(('%d goals left waiting' % m.nsusp,))
     return bad

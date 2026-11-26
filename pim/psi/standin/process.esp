@@ -10,12 +10,12 @@
 % tm0100_p07.esp-p10.esp): the natures, the class slots, create/2,
 % create_core/3, the instance slots, activate/2, resume/2 and suspend/2,
 % verbatim (layout as printed, comments shortened).  The figure is "part
-% of" the class and "not complete" (TM-100 p5).  One printed oddity is
-% kept as printed: create/2 calls `:create_core(PROCESS, ...)` with
-% PROCESS in capitals, a fresh variable (tm0100_p08.esp transcriber's
-% note: probably a typo for Class).  So the printed create/2 cannot make
-% a process even with a `context` class (none is held or stood in:
-% kl0 refuses at simpos##context:create/4).
+% of" the class and "not complete" (TM-100 p5).  One printed oddity:
+% create/2 calls `:create_core(PROCESS, ...)` with PROCESS in capitals, a
+% fresh variable (tm0100_p08.esp transcriber's note: probably a typo for
+% Class).  Until step 3k it was kept as printed, and create/2 stopped at
+% create_core/3 sent to the unbound PROCESS.  Since step 3k it runs as
+% `Class`, a CORRECTED line with the printed text kept in its comment.
 %
 % The printed instance slots are initialised by code (five
 % `:create(#list, L)` / `:create(#process_clock, C)` predicates).  kl0's
@@ -27,11 +27,15 @@
 %
 % Added (INTERPOLATED, labelled below): the class slot `current`,
 % self/2, inhibit_interrupt/1, allow_interrupt/1, tag_catch/5, /6, /9,
-% create/3, allow_forced_event/1 and inhibit_forced_event/1.
-% Model (INTERPOLATED): one running process (the machine runs one), made
-% on first use and kept in a class slot.  create/3 makes further process
-% objects, dormant; nothing runs them (kl0 runs one goal at a time), so
-% activating one stops at the printed activate/2's lost `context` calls.
+% create/3, allow_forced_event/1 and inhibit_forced_event/1; step 3j:
+% status/3 and clear_masks/1, and create/3 now makes a context.
+% Model (INTERPOLATED): the running process is kept in the class slot
+% `current`, made on first use.  Since step 3i it is the boot process,
+% an instance of the stand-in boot_process.esp.  create/3 makes further
+% process objects, dormant.  Since step 3j the printed activate/2 makes
+% one ready, and kl0's dispatcher (OURS, psi/README.md "Step 3j") runs it
+% when the running process suspends or ends; that needs the boot process
+% to have come under the supervisor (its own create/2 and activate/2).
 
     class  process  has
 
@@ -45,15 +49,22 @@
                 instance_array ;
                 % Relates a process to its context_number.
 
-    % INTERPOLATED: holds the one process; not a printed slot.
+    % INTERPOLATED: holds the running process; not a printed slot.
     attribute   current := 0 ;
 
-    % PRINTED: TM-100 Fig. 3.1, PDF p8 (PROCESS in capitals as printed)
+    % PRINTED: TM-100 Fig. 3.1, PDF p8, with one labelled correction.
+    % CORRECTED (step 3k, 2026-11-25): the printed second line reads
+    %         :create_core(PROCESS, Process, Context), ! ;
+    % with PROCESS in capitals, a variable the clause does not bind (its
+    % head binds Class).  It runs here as `Class`, the transcriber's
+    % reading (tm0100_p08.esp note).  The page image was re-read
+    % (docs/simpos/source_check_2026-11-24.md §10.2): the printed text is
+    % as recorded above.
     :create(Class, Process) :- !,
             % Make an instance and initiate it.  If hardware processes
             % are exhausted, then fail.
         :create(#context, Context_number, Stack_number, Context),
-        :create_core(PROCESS, Process, Context), ! ;
+        :create_core(Class, Process, Context), ! ;
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8
     :create_core(Class, Process, Context) :-
@@ -78,8 +89,13 @@
     % as a process instance; the class-predicate form matches TR-056 p25's
     % `:world(#process,World)`; 46 pimfep methods send it (psi/README.md,
     % "The ESP compiler").  The body is not printed anywhere held.
+    % Step 3i: when no process exists yet, the one made is the boot
+    % process (INTERPOLATED: TM-100 p6, "created and activated by the
+    % hardware, not by another process, when the system is bootstrapped";
+    % boot_process.esp), so the machine's first process is a
+    % boot_process, as on the PSI.  Before step 3i it was a plain process.
     :self(Class, P) :- P = Class!current, P \== 0, !;
-    :self(Class, P) :- :new(Class, P), Class!current := P;
+    :self(Class, P) :- :boot(#boot_process, P), Class!current := P;
 
     % :inhibit_interrupt(#process) / :allow_interrupt(#process) bracket a
     % critical section.
@@ -105,8 +121,8 @@
     %     `:create(#process, P, [free,default,free,small])`, then its local
     %     setup_process/3;
     %   - the printed create_core/3 (TM-100 Fig. 3.1, PDF p8), whose slot
-    %     settings it repeats, without the hardware context (class
-    %     `context` is not stood in) and without :add_child (not stood in).
+    %     settings it repeats (step 3j added the hardware context, step
+    %     3k :add_child; see below).
     % What the four-element list means is not known; it is ignored.
     % INFERENCE: four area-limit check settings, one per stack.  The same
     % atoms open set_area_limit_execution/6, commented "area limit check
@@ -114,21 +130,48 @@
     % `:set_area_limit_execution(Pr,free,free,free,free,nil,nil)`), and
     % TR-079 PDF p9 (Fig. 2, folio 8) draws four stacks: control, global,
     % local and trail.
+    % Step 3j: the hardware context is made as the printed create/2 makes
+    % it, `:create(#context, Context_number, Stack_number, Context)`, and
+    % stored in the printed slot (create_core/3's `Process!context :=
+    % Context`); context.esp is INTERPOLATED.  So the 64th process is not
+    % made (create fails, as create/2's comment says).
     :create(Class, Process, Areas) :-
+        :create(#context, Context_number, Stack_number, Context),
         :new(Class, Process),
+        Process!context := Context,
         :self(#process, Self_process),
         Process!priority := 0,
         Process!sub_priority := 0,
         Process!parent_process := Self_process,
+        :add_child(Self_process, Process),
         Process!world := Self_process!world,
         Process!user := Self_process!user,
         Process!status := dormant, ! ;
+    % Step 3k: create/3 now sends :add_child(Self_process, Process) where
+    % the printed create_core/3 does (TM-100 Fig. 3.1, PDF p8), since
+    % add_child/2 is now stood in (below).
 
+    % :world(#process, World) -- the calling process's world.  PRINTED
+    % interface (TR-056 PDF p25, folio 23: "Though this is a class
+    % predicate, this call returns the working world of the calling
+    % process"); the body is INTERPOLATED (step 3l).
+    :world(Class, World) :- :self(Class, P), World = P!world ;
+
+    % :get_number(#process, Process, N) -- step 3l.  INTERPOLATED
+    % (INFERENCE) from its held senders: pimfep##pimos_login_requester
+    % title_string/1 @2a4-2ae (`:self(#process, P)`, then this, the number
+    % turned into a string for the window's title) and pimmcsp##
+    % pseudo_pe_process get_pe_process_number/2 @220-226.  N is the number
+    % of the process's context, the index the printed create_core/3 files
+    % it under in instance_array (TM-100 Fig. 3.1, PDF p8): INFERENCE.
+    :get_number(Class, Process, N) :- :get_number(Process!context, N) ;
 
     instance
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8 (all instance slots)
-    attribute   context,    % Hardware PC
+    attribute   context,    % Hardware PCB
+                % (CORRECTED step 3k: first transcribed "Hardware PC";
+                % TM-100 PDF p8 page image re-read, source_check §10.2)
                 priority,   % Corresponds to interrupt level
                 sub_priority,
                 mask_count          := 0,
@@ -175,7 +218,12 @@
     % INTERPOLATED: see the slot accessors above.
     :set_world(Process, X) :- Process!world := X ;
     % INTERPOLATED: see the slot accessors above.
-    :password_list(Process, X) :- X = Process!password_list ;
+    % Step 3l: a process with no list yet gets one (OURS: made on first
+    % use, as simpos_user setup_process/2 @ee-f9 sends set_access_mode/2
+    % to the answer; standin/password_list.esp).
+    :password_list(Process, X) :- X = Process!password_list, X \== 0, ! ;
+    :password_list(Process, X) :-
+        :new(#password_list, X), Process!password_list := X ;
     % INTERPOLATED: see the slot accessors above.
     :set_password_list(Process, X) :- Process!password_list := X ;
 
@@ -233,6 +281,45 @@
     :tag_catch(Process, Name, Object, Method, Args,
                Abort_object, Abort_method, Abort_args, Tag) :-
         :refute(Object, Method, Args);
+
+    % :status(Process, Old, New) -- if Process's status is Old, it becomes
+    % New; otherwise fail.  Step 3j.
+    % INTERPOLATED from its five call sites, none with a body:
+    %   - PRINTED: activate/2 below, `:status(Process, dormant,
+    %     on_activate), !` (TM-100 Fig. 3.1, PDF p8), followed later by
+    %     `Process!status := ready`;
+    %   - HELD, pimmcsp##pseudo_pe_process release/1 @17a-17e:
+    %     `:status(Self, dormant, on_release)`, then the boot process is
+    %     asked to release Self; release/1 is sent by terminate/1 @1ca
+    %     after terminate_core/1;
+    %   - HELD, the same class's $or$5/2 @3a9-3bc (reached from
+    %     terminate_core/1 through $or$4/2 @37d): clause 1
+    %     `:status(P, suspended, dormant)`; clause 2 (the try_me_else
+    %     alternative) `:status(P, ready, dormant)`, then a removal
+    %     (remove_only/2, $or$6/2).  A terminated process becomes dormant
+    %     (TR-056 PDF p18, folio 16: dormant "when it has just been created
+    %     or terminated").
+    % So the second argument is the status expected and the third the one
+    % it becomes (INFERENCE from $or$5/2, whose third argument is a status,
+    % `dormant`); on_activate and on_release are transient statuses, the
+    % "and some others" of the printed slot comment (Fig. 3.1, PDF p8).  A
+    % mismatch fails: $or$5/2's second clause is reached only when
+    % clause 1's status/3 fails.  The interrupt bracket is OURS (a test and
+    % a set, made one step as the printed suspend/2 and resume/2 bracket
+    % theirs).
+    :status(Process, Old, New) :-
+        :inhibit_interrupt(#process),
+        (   Process!status == Old, !,
+            Process!status := New,
+            :allow_interrupt(#process)
+        ;   :allow_interrupt(#process), !,
+            fail ) ;
+
+    % :clear_masks(Process) -- no interrupt mask is in force.  Step 3j.
+    % INTERPOLATED from: its one call, in the printed activate/2 below
+    % (TM-100 Fig. 3.1, PDF p9), and the printed slot mask_count := 0,
+    % "The number of interrupt mask nestings" (PDF p8).
+    :clear_masks(Process) :- Process!mask_count := 0 ;
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8-9
     :activate(Process, Program) :-
@@ -359,9 +446,23 @@
     % local exterminate_child/0 (@50e-51e: `:self(#process,P)`,
     % `:children(P,L)`, `:get_contents(L,Cs)`) and
     % pimmcsp##remote_device_manager exit/1 (@8b-97, the same).  That the
-    % method answers the slot's list object is OURS.  add_child/2 is
-    % still not stood in, so the list stays empty.
+    % method answers the slot's list object is OURS.  add_child/2 was not
+    % stood in until step 3k, so the list stayed empty.
     :children(Process, List) :- List = Process!children_processes ;
+
+    % :add_child(Parent, Child) / :remove_child(Parent, Child).
+    % INTERPOLATED (step 3k): add_child/2 from its printed call in
+    % create_core/3 (`:add_child(Self_process, Process)`, TM-100 Fig. 3.1,
+    % PDF p8) and the printed slot children_processes, a list;
+    % remove_child/2 from its one held send, pimmcsp##pseudo_pe_process
+    % release_core's $or$3/1 @36c-374 (`:remove_child(P!parent_process,
+    % P)` in the first clause of a try_me_else whose second clause
+    % proceeds, so a failure is tolerated there).  Appending, and
+    % removing by identity, are OURS (the list stand-in's add/2 and
+    % remove/2).
+    :add_child(Parent, Child) :- :add(Parent!children_processes, Child) ;
+    % INTERPOLATED (step 3k): see add_child/2 just above.
+    :remove_child(Parent, Child) :- :remove(Parent!children_processes, Child) ;
 
     % :die(Process) -- the process terminates.
     % INTERPOLATED (step 3e) from: the printed as_program:resign/1 (above)
@@ -370,5 +471,32 @@
     % released (none is modelled).
     :die(Process) :-
         Process!status := nil ;
+
+    % :exterminate(Process) -- the process is killed.
+    % INTERPOLATED (step 3n) from: its held sends, e.g.
+    % pimfep##pimos_scsi_front_end local exit_program/1 (@4da-4e2:
+    % `:self(#process, P), :exterminate(P)`, the last call: a process
+    % ending itself) and exterminate_child_loop/1 (@526-530, a parent
+    % killing its children); the printed status slot's comment
+    % "nil(=dead)" (TM-100 Fig. 3.1, PDF p8), as die/1.  Only the status
+    % is set (no context, children or resources are modelled).  When the
+    % process is the running one, kl0's dispatcher (OURS,
+    % Machine.process_exterminate) then gives the processor away.
+    :exterminate(Process) :-
+        Process!status := nil ;
+
+    % :set_area_limit_execution(Process, A1, ..., A6) and
+    % :set_package(Process, Package).  Step 3n, INTERPOLATED from their one
+    % held send each, pimfep##pimos_scsi_front_end local initiate/1
+    % (@21d-22e, cells read 2026-11-25): `:self(#process, P)`, then
+    % set_area_limit_execution/7 with the atom `free` in all six
+    % arguments, then `:set_package(P, pimfep)`.  By the names, the
+    % process's memory-area limits and its package for name lookup.
+    % Neither is modelled (no memory areas; the library's lookup order
+    % is the sender's package, step 3f): both succeed and record
+    % nothing (OURS).
+    :set_area_limit_execution(Process, A1, A2, A3, A4, A5, A6) ;
+    % INTERPOLATED (step 3n): see set_area_limit_execution/7 just above.
+    :set_package(Process, Package) ;
 
     end.

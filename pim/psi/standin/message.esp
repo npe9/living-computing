@@ -12,14 +12,22 @@
 %     send it create/2, create/4, new/2 and set_content/2, and pimscsi's
 %     cmt (nature `simpos##message`) sends get_content/2 to itself.
 % Model (OURS): the body in a slot named `body`, read and written by
-% get_content/2 and set_content/2 (the held selectors).  create/2 and
-% create/4 are not stood in: no pimfep or pimscsi method reaches them.
+% get_content/2 and set_content/2 (the held selectors).  create/4 is not
+% stood in: no pimfep or pimscsi method reaches it (create/2: step 3m).
 
 class message has
 
 % PRINTED (prose): TR-056 PDF p14, folio 12, "Class 'message' inherits
 % class 'as_message' to include the first two slots".
 nature as_message;
+
+% :create(#message, M) -- step 3m, INTERPOLATED from the held sends on the
+% local login's path (pimfep, cells read 2026-11-25):
+% as_pimos_login_requester send_message/4 @2fd-301 and receive_block/7
+% @538-53c, pimos_remote_login_server receive_block/3 @50d-511 and
+% send_reply/4 @5f6-5fa; each then sets the content (set_content/2).  A
+% new message with no content (OURS).
+:create(Class, Message) :- :new(Class, Message);
 
 instance
 

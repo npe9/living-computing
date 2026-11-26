@@ -24,8 +24,9 @@ WHAT IT MAY EMIT
 Only opcodes with a row in psi/kl0_opcodes.tsv, and only in the operand
 patterns those rows say were witnessed (`Asm` checks every cell
 against the table).  A construct that would need anything else is refused
-with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X+Y`
-on two registers (no witnessed register add), a vector of one, or of five or
+with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X/Y`
+on two registers (blt 43 is witnessed only with its result over the second
+operand, not emitted), a vector of one, or of five or
 more, elements built in a body (not emitted yet: `{}`, two, three and four
 are pmi b0, b2, b3, b4; kl0 has rows for b1, b5, b6, b7 since step 3e, but
 espc does not use them), `=\\=` (no witness of
@@ -720,10 +721,26 @@ class Regs:
         return not self.live(r)
 
     def lowest(self, avoid=()):
+        """The lowest free register not in AVOID, for the caller to WRITE.
+        A free register may still be recorded as holding a cached Y copy
+        (or a temporary with no uses left): that record is dropped here,
+        since the register is about to be overwritten.  Before this
+        (2026-11-25) a caller that wrote the register without recording
+        what it put there left `where` pointing at it, and a later read
+        of the variable took the new contents: slotset's slot-name put
+        (window_pane create/7, `add on w`) and a built-in's output bound
+        to a constant (vector_element(V, 0, 5) gave W the element)."""
         r = 0
         while not self.free(r) or r in avoid:
             r += 1
+        self.evict(r)
         return r
+
+    def evict(self, r):
+        """R is about to be overwritten: forget a cached copy it holds."""
+        h = self.holder.get(r)
+        if h is not None and h[0] in ('perm', 'var') and not self.live(r):
+            self.set(r, None)
 
     def set(self, r, h):
         old = self.holder.get(r)
@@ -1197,21 +1214,31 @@ class ClauseCompiler:
             r = self.dest(x, prefer, avoid)
             self.asm.blt(imm[op], r, y[1], r)
             return r
-        if op in ('-', '+'):
+        if op in ('-', '+', '*'):
             # blt 41 subtract and blt 40 add (step 3c), both witnessed
-            # with the result over the first operand
+            # with the result over the first operand; blt 42 multiply
+            # likewise (step 3m row; paragraph##h layout/2 @73 `42 01 02
+            # 01`, h.esp:21 `(Obj!num - 1)*Obj!x_space`), emitted since
+            # 2026-11-25
             yr = self.to_reg(y, scratch=False)
             held = self.R.holder.get(yr)
             # as in builtin(): a variable's register stays the variable's,
-            # so X may read it too (`S - (S + 1)`)
-            if not (y[0] == 'var' and held == ('var', y[1])):
+            # so X may read it too (`S - (S + 1)`); so does a head argument
+            # still waiting to be saved in its Y (a 'pvar', live, so not
+            # reused): marked 'rhs', it lost its `where` entry, and X's
+            # read of it allocated the environment with no register to
+            # save it from (a TypeError, first reached through X*Y:
+            # paragraph##receiver send/7, `C*Elm*4 + C`, 2026-11-25)
+            if not (y[0] == 'var' and held in (('var', y[1]), ('pvar', y[1]))):
                 self.R.set(yr, ('val', 'rhs'))
             r = self.dest(x, prefer, avoid)
             self.R.set(yr, held)
-            self.asm.blt(0x41 if op == '-' else 0x40, r, yr, r)
+            self.asm.blt({'-': 0x41, '+': 0x40, '*': 0x42}[op], r, yr, r)
             self.consume(y, yr)
             return r
-        raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (no witnessed opcode)')
+        # X/Y: blt 43 divide is witnessed only with the quotient over the
+        # SECOND operand (`43 01 00 00`, `43 00 01 01`), not emitted here
+        raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (blt 43 not emitted)')
 
     def dest(self, x, prefer, avoid):
         """A register holding X's value that may be overwritten (the
@@ -1337,7 +1364,12 @@ class ClauseCompiler:
             x, y = (g.right, g.left) if swap else (g.left, g.right)
             rx = self.to_reg(x, scratch=True)
             hx = self.R.holder.get(rx)
-            self.R.set(rx, ('val', 'cmp'))
+            # as in arith(): a variable's own register keeps its record
+            # (a temporary, or a head argument not yet saved), so Y may
+            # read it too (`X < X + 1`; before 2026-11-25 a KeyError or,
+            # for a head argument, a TypeError at the allocate)
+            if not (x[0] == 'var' and hx in (('var', x[1]), ('pvar', x[1]))):
+                self.R.set(rx, ('val', 'cmp'))
             ry = self.to_reg(y, scratch=True)
             self.R.set(rx, hx)
             self.asm.blt(int(op, 16), rx, ry, 0)
@@ -1353,9 +1385,11 @@ class ClauseCompiler:
             self.R.set(orr, ('val', 'o'))
             n = self.R.lowest()
             self.asm.atom('put', n, g.slot)
+            self.R.set(n, ('val', 'name'))
             self.R.set(vr, hv)
             self.R.set(orr, ho)
             self.asm.blt(0x2f, orr, n, vr)
+            self.R.drop(n)
             self.consume(g.value, vr)
             self.consume(g.obj, orr)
             return
@@ -1430,6 +1464,8 @@ class ClauseCompiler:
         if v[0] == 'var' and v[1] not in self.y and v[1] not in self.seen:
             t = self.targets.get(v[1])
             if t is not None and R.free(t):
+                # (bind_out records the fresh variable in T, replacing
+                # whatever cache entry T had)
                 return t
         return R.lowest(R.pending)
 

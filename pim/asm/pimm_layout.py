@@ -40,17 +40,32 @@ of PIMOS's debugger/inspector/tagtbl.kl1, what it points at is ours):
                 stage 3): an exception is reported to the innermost
                 shoen whose mask AND the exception's tag is not 0
                 (PIMOS manual e-shoen.tex:57)
+    +SH_RSC_HI, +SH_RSC_LO {INT, the high and low 32 bits of the
+                resource LEFT, two's complement: the sum of the shoen's
+                add_resource amounts less what the goals of it and of
+                every shoen inside it have consumed, 2 a reduction}
+                (R7L, 2026-11-25; 0 at creation, VPIM's
+                _INIT_SHOEN_RESOURCE, f_shoen_main.psl.c)
+    +SH_RSC_FLAGS {INT, bit 0: resource reports disallowed}: clear at
+                creation (VPIM's status word starts 0; manual
+                e-shoen.tex:179 "A report is normally ready for being
+                sent"), set when resource_low is reported, cleared by
+                allow_shoen_resource_report
 SH_GOAL is the head of a list, linked through G_LINK, of the shoen's
 PARKED goals (stage 3): the first goal until start_shoen, and the goals
 taken from the ready queue while the shoen, or one above it, is
-stopped; start_shoen releases them all and writes 0 there.
+stopped, or exhausted (no resource left), and start_shoen releases
+them all and writes 0 there, as add_shoen_resource does on a started
+shoen it gives resource to.
 """
 G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS = 0, 1, 2, 3, 4
 READY, SUSPENDED, TAKEN = 0, 1, 2
 S_NEXT, S_GOAL, S_SIZE = 0, 1, 2
-SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE = 0, 1, 2, 3, 4, 8
+SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE = 0, 1, 2, 3, 4, 11
 SH_REDUCTIONS, SH_REMOVE = 5, 6
 SH_MASK = 7
+SH_RSC_HI, SH_RSC_LO, SH_RSC_FLAGS = 8, 9, 10
+RSC_REPORT_DISALLOWED = 1
 # REMOVED: terminated, then removed (remove_shoen): the report stream is
 # closed and the record is not used again
 DORMANT, STARTED, TERMINATED, REMOVED = 0, 1, 2, 3
@@ -79,6 +94,9 @@ REPORT_RESOURCE_ADDED = 5
 # allow_shoen_resource_report (2026-11-24): 7 `resource_report_allowed`
 # (pimos.vmac, the same table; manual e-shoen.tex 174-180, 254-262)
 REPORT_RESOURCE_REPORT_ALLOWED = 7
+# resource_low (R7L, 2026-11-25): 6 (pimos.vmac:185 shoen#resource_low;
+# the image's report/2 and kernel/builtin/shoen.kl1:220 translate it)
+REPORT_RESOURCE_LOW = 6
 EXC_REDUCTION_FAILURE, EXC_RAISED = 9, 16
 
 ADDR_BITS = 27                  # memory size in cells = 1 << ADDR_BITS

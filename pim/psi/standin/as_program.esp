@@ -6,8 +6,9 @@
 % the class: SIMPOS's full `as_program` is lost.  Layout as printed,
 % comments as printed; nothing is corrected.
 %
-% Every method below is PRINTED (each labelled); nothing here is
-% INTERPOLATED.  TM-100's prose (PDF p11): "On invocation of a program,
+% Every method below is PRINTED (each labelled) except one: step 3j's
+% entry_of_invoke/2, at the end, is INTERPOLATED and labelled so; the
+% figure does not print it.  TM-100's prose (PDF p11): "On invocation of a program,
 % the program is pushed onto the invocation stack of the process and the
 % instance predicate :goal(Program) is called.  When the goal finishes,
 % the program is popped from the invocation stack.  If the stack becomes
@@ -67,5 +68,23 @@
                 :resign(Program)
             ;   :resign(Program),
                 fail ), ! ;
+
+    % ---- step 3j: not in the figure.  INTERPOLATED, the one method of
+    % this file that is not PRINTED.
+    % :entry_of_invoke(Program, Entry) -- where a new process starts to
+    % run Program: Program's invoke/1 above.
+    % INTERPOLATED from: its one call, in the printed process:activate/2
+    % (TM-100 Fig. 3.1, PDF p8), whose result goes to
+    % `:set_entry_point(Process!context, Entry)`; TM-100 PDF p6 (folio 4):
+    % "when a new process is activated, the activate predicate is called
+    % with a program as an argument, because the program instance should
+    % be pushed into the invocation stack of the new process, not of the
+    % calling process" -- which is what invoke/1 does when the new process
+    % runs it (assign/1 pushes onto the stack of `:self(#process, P)`); and
+    % the selector's own name.  On the PSI the entry is a code address in
+    % the hardware context; here it is the vector {Program, invoke}, which
+    % kl0's dispatcher (OURS) runs as :invoke(Program).  The vector is
+    % OURS.
+    :entry_of_invoke(Program, Entry) :- Entry = {Program, invoke} ;
 
     end.

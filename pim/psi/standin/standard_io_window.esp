@@ -1,0 +1,254 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_io_window`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the window
+% classes are lost (docs/simpos/subsystems/window.md), and NO DISPLAY IS
+% MODELLED.  Step 3l, route step B6 (the window system), MINIMAL: what
+% pimfep##pimos_login_requester sends before it waits for its first
+% answer.  A window here is a transcript (the lines put, newest first) and
+% an input stream (the keyboard, OURS: a `stream`, TM-100 Fig. 3.6, so a
+% read waits until a term is put).
+% USAGE (held cells, read 2026-11-25), pimfep##pimos_login_requester:
+%   - local initiate/1 @af-d7: `:create(#standard_io_window, Opts, W)`
+%     (the argument order of the cells @af-b4: A0 the options, A1 the new
+%     window, as pmacs_window's create/3; Opts pool[10]: size {ch,40} by {ch,7}, position manipulator, nature
+%     [with_icon]), set_font/2, set_label_font/2, set_title/2,
+%     activate/1;
+%   - local read/4 @dc-12c: clear/1, show/1, `:putl(W, "Enter FEP node
+%     name--------->")`, `:read(W, Code)` @f3 (ONE character code: the
+%     next local, check_code/4 @1a5, compares it with the integer 0x2121,
+%     the JIS space, and its last clause @1e9-1eb gives it back with
+%     `:input_data(W, Code)`), then `:getl(W, Line)` @100; the same for
+%     the user name (@10a-11b); for the password `inhibit_echo/1` @122,
+%     read_password/3's loop ($or$0/4 @32a-34c: `:read(W, C)` per
+%     character, ending at code 13), `permit_echo/1` @129, `clear/1` @12c;
+%   - local wait/1 @15d-16e: beep/1 twice, clear_buffer/1, read/2;
+%   - local exit_program/1 @285-28e: kill/1.
+% Everything below is OURS in its body; each method's selector is held.
+%
+% Step 3m: KEYBOARD INPUT (OURS path, shaped by the documented model):
+%   - read/2 returns a character code (PRINTED-INTERFACE TM-125 p18,
+%     docs/simpos/subsystems/window.md §2.7: "Code is a character code");
+%     the codes are 16-bit JIS (INFERENCE: check_code/4 tests the JIS
+%     space 0x2121, and the typed line is compared with the pool's 16-bit
+%     "local", "exit", "close"); RETURN is 13 (INFERENCE: read_password's
+%     loop ends at 13, @344);
+%   - keyboard input goes to the SELECTED window (PROSE TM-225 p11, TM-115
+%     p111; window.md §2.7, §4.1); the coordinator receives the keyboard
+%     events (PRINTED prose TR-061, TR-046 PDF p26-p28) and keeps the
+%     typed codes on its stream `keyboard` (OURS, coordinator.esp); a
+%     window becomes the selected one when it is shown (INFERENCE from
+%     TM-225 p10-11, window.md §4.1: SHOW "changes the selected window",
+%     and the selected window is on top and has the keyboard); a read on a window that is not selected waits (window.md
+%     §4.1, 1.0 rule: only the selected window can be read; OURS: for ever);
+%   - input_data/2 "push[es] a synthetic event onto the window's input"
+%     (USAGE, window.md §2.7).  Here the window's own queue `pending` is
+%     read before the keyboard, and input_data/2 adds at its END (INFERENCE
+%     from the two held senders: check_code/4's last clause gives back the
+%     one code just read, and insert_string/4 @18d-1a0 gives a menu item's
+%     string element 0 first, so the string keeps its order only if each
+%     code goes behind the last);
+%   - getl/2 reads codes to 13 and answers the string of the codes before
+%     it, 16-bit (INFERENCE: the line is compared with equal_string to
+%     16-bit pool strings; that 13 ends a line as it ends the password is
+%     INFERENCE; line editing is not modelled, OURS);
+%   - echo: a code taken from the keyboard is echoed unless echo is
+%     inhibited (INFERENCE from inhibit_echo/1 and permit_echo/1 bracketing
+%     the password's reads); codes from `pending` are not echoed again
+%     (OURS).  What is on the screen is not modelled; the echoed codes and
+%     the lines put are kept in `history` (OURS), which clear/1 does not
+%     empty, so a test can read the whole dialogue: a string is a line
+%     put, an integer a code echoed, the atom `beep` a beep, newest first
+%     (plain terms: kl0 copies the cells of a stored list, not of a
+%     vector, so a vector's bindings would be lost on backtracking).
+%
+% Window M3/M5 (2026-11-25): THE WINDOW IS DRAWN.  Beside the transcript
+% and history (kept: the step 3l/3m tests read them), the window owns a
+% `pane` (window_pane.esp, OURS), its part of the screen, made when the
+% window is first activated or shown; the pane draws on the display
+% device through simpos##bitmap_display (psi/windev.py).  What each
+% method draws, all OURS bodies under held selectors:
+%   - activate/1, show/1: the window appears (border, label strip, rule)
+%     at its size option in cells of its font, {size,{ch,C},{ch,R}} (the
+%     held option, @af-b4), placed by its position option; the held
+%     {position, manipulator} (the user sweeps the place, window.md
+%     §4.5; no mouse is modelled) centres it (OURS).  No size option:
+%     40 x 10 cells (OURS).  With no set_font/2 yet, the device's
+%     substitute for the default font_13 (OURS, psi/windev.py).  The
+%     label is drawn in the window's font (the held requester gives the
+%     same font to set_font/2 and set_label_font/2, @c2-c6; OURS
+%     otherwise);
+%   - show/1 also selects: the previously selected window's cursor goes,
+%     this window's block cursor appears (TM-126 p7, PROSE);
+%   - set_title/2: the title in the label strip;
+%   - putl/2: the line at the cursor, then a newline (window_pane.esp
+%     for wrap, scroll, key#lf);
+%   - an echoed code: drawn at the cursor; RETURN (13) as a newline
+%     (INFERENCE: getl/2's line ends there); the password, read with echo
+%     inhibited, draws nothing;
+%   - clear/1: the inside cleared, the cursor home;
+%   - kill/1: the window's rectangle cleared (OURS).
+
+class standard_io_window has
+
+% :create(#standard_io_window, Options, W) -- INTERPOLATED (body OURS):
+% the options are kept, not acted on.
+:create(Class, Options, W) :-
+        :new(Class, W),
+        W!options := Options,
+        :create(#stream, Input),
+        W!input := Input;
+
+instance
+
+% OURS representation (see above).  `input` (step 3l) is no longer read:
+% the keyboard is the coordinator's (step 3m).
+attribute options := [], font := 0, label_font := 0, title := 0,
+          active := 0, shown := 0, transcript := [], input := 0,
+          pending := [], echo := on, history := [], beeps := 0,
+          killed := 0, pane := 0;
+
+% INTERPOLATED (body OURS) from initiate/1 @c2.
+:set_font(W, F) :- W!font := F;
+
+% INTERPOLATED (body OURS) from initiate/1 @c6.
+:set_label_font(W, F) :- W!label_font := F;
+
+% INTERPOLATED (body OURS) from initiate/1 @cc.
+:set_title(W, T) :- W!title := T, drawn_title(W);
+
+% INTERPOLATED (body OURS) from initiate/1 @d7.
+:activate(W) :- W!active := 1, open(W);
+
+% INTERPOLATED (body OURS) from read/4 @e8: clear empties the transcript.
+:clear(W) :- W!transcript := [], drawn(W, clear);
+
+% INTERPOLATED (body OURS) from read/4 @eb: show marks the window shown;
+% step 3m: it selects the window (window.md §4.1, TM-225 p10-11: showing
+% a window "changes the selected window"; that show/1 always does is
+% OURS).
+:show(W) :-
+        W!shown := 1, open(W),
+        deselect(#coordinator!selected, W),
+        #coordinator!selected := W,
+        drawn(W, select);
+
+% :putl(W, Line) -- INTERPOLATED (body OURS) from read/4 @ef: the line
+% joins the transcript (and, step 3m, the history).
+:putl(W, Line) :-
+        W!transcript := [Line | W!transcript],
+        W!history := [Line | W!history],
+        drawn_line(W, Line);
+
+% :read(W, Code) -- step 3m, INTERPOLATED (body OURS) from read/4 @f3
+% and read_password/3: the next character code (see above); with none,
+% the process waits.
+:read(W, Code) :- next_code(W, Code);
+
+% :getl(W, Line) -- step 3m, INTERPOLATED (body OURS) from read/4 @100,
+% @11b: the codes up to RETURN (13), as a new 16-bit string.
+:getl(W, Line) :-
+        line(W, Codes),
+        count(Codes, 0, N),
+        new_string(Line, N, 16),
+        fill(Codes, Line, 0);
+
+% :input_data(W, Code) -- step 3m, INTERPOLATED (body OURS) from
+% check_code/4 @1e9-1eb and insert_string/4 @199: Code joins the end of
+% the window's own input queue.
+:input_data(W, Code) :- append(W!pending, [Code], P), W!pending := P;
+
+% step 3m, INTERPOLATED (body OURS) from read/4 @122.
+:inhibit_echo(W) :- W!echo := off;
+
+% step 3m, INTERPOLATED (body OURS) from read/4 @129.
+:permit_echo(W) :- W!echo := on;
+
+% step 3m, INTERPOLATED (body OURS) from wait/1 @164, @167: a beep is
+% counted and kept in the history.
+:beep(W) :- W!beeps := W!beeps + 1, W!history := [beep | W!history];
+
+% step 3m, INTERPOLATED (body OURS) from wait/1 @16a: discard the pending
+% input (window.md §2.7 "discard pending input", USAGE).
+:clear_buffer(W) :- W!pending := [];
+
+% step 3m, INTERPOLATED (body OURS) from exit_program/1 @28e.
+:kill(W) :- W!killed := 1, W!active := 0, drawn(W, erase);
+
+% :deselect_window(W) -- window M5, INTERPOLATED (selector and body OURS)
+% from TM-126 p7 (PROSE, window.md §4.1): another window was selected,
+% so this one's cursor goes.
+:deselect_window(W) :- drawn(W, deselect);
+
+local
+
+% the window's own queue first, then the keyboard if selected
+next_code(W, Code) :- pop(W!pending, Code, Rest), !, W!pending := Rest;
+next_code(W, Code) :-
+        S = #coordinator!selected, S == W, !,
+        :get(#coordinator!keyboard, Code),
+        echo(W, Code);
+next_code(W, Code) :- :create(#stream, Never), :get(Never, Code);
+
+pop([C | R], C, R);
+
+append([], L, L);
+append([X | R], L, [X | T]) :- append(R, L, T);
+
+echo(W, Code) :- W!echo == on, !, W!history := [Code | W!history],
+        drawn_code(W, Code);
+echo(_, _);
+
+% window M3/M5 (OURS, see the head comment): the pane, made once
+open(W) :- W!pane \== 0, !;
+open(W) :-
+        size(W!options, Cols, Rows),
+        position(W!options, X, Y),
+        :create(#window_pane, X, Y, Cols, Rows, W!font, P),
+        W!pane := P,
+        drawn_title(W);
+
+size(Options, 40, 10) :- unbound(Options), !;
+size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
+size([_ | Os], C, R) :- !, size(Os, C, R);
+size(_, 40, 10);
+
+position(Options, manipulator, 0) :- unbound(Options), !;
+position([{position, X, Y} | _], X, Y) :- !;
+position([{position, manipulator} | _], manipulator, 0) :- !;
+position([_ | Os], X, Y) :- !, position(Os, X, Y);
+position(_, manipulator, 0);
+
+drawn_title(W) :- W!pane \== 0, W!title \== 0, !, :set_title(W!pane, W!title);
+drawn_title(_);
+
+drawn(W, What) :- W!pane \== 0, !, pane_do(What, W!pane);
+drawn(_, _);
+
+pane_do(clear, P) :- :clear(P);
+pane_do(select, P) :- :select(P);
+pane_do(erase, P) :- :erase(P);
+pane_do(deselect, P) :- :deselect(P);
+
+drawn_line(W, Line) :- W!pane \== 0, !, :put_string(W!pane, Line), :new_line(W!pane);
+drawn_line(_, _);
+
+drawn_code(W, 13) :- W!pane \== 0, !, :new_line(W!pane);
+drawn_code(W, C) :- W!pane \== 0, !, :put_code(W!pane, C);
+drawn_code(_, _);
+
+% the window selected before loses its cursor (OURS: a window of another
+% class, or none, is left alone)
+deselect(S, W) :- S == W, !;
+deselect(0, _) :- !;
+deselect(S, _) :- :deselect_window(S);
+
+line(W, Codes) :- next_code(W, C), rest(W, C, Codes);
+rest(_, 13, []) :- !;
+rest(W, C, [C | Codes]) :- line(W, Codes);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+fill([], _, _);
+fill([C | R], S, I) :- set_string_element(S, I, C), fill(R, S, I + 1);
+
+end.

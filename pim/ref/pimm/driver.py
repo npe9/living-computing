@@ -56,6 +56,12 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
                          lockstep_shell.py's scripts, on the bench
                          mkPimmShellTb, whose heap is the saved
                          machine's (bsv/PimmCore.bsv restore)
+    ALARM                the machine has nothing to run, the device
+                         nothing to give, and an alarm is armed
+                         (set_timer to a time still to come): the clock
+                         is moved on to the alarm's time
+                         (pimm.Machine.alarm_skip), so the next RUN's
+                         first goal switch fires it.  R7L, 2026-11-25
 
 The device tape.  The bench has no device: scsi_init and scsi_command
 (bsv/PimmScsiBox.bsv) put each command on the core's port, and the
@@ -92,7 +98,7 @@ sys.path.insert(0, HERE)
 import pimm  # noqa: E402
 
 (END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT,
- SETW, POLL, TAPE, RESTORE) = range(17)
+ SETW, POLL, TAPE, RESTORE, ALARM) = range(18)
 SCRIPT_BITS = 24            # the driver's script memory holds 1 << 24 operations
 # The script file holds the operations only, so the simulator's first
 # line is its warning that the rest of the memory is not given.
@@ -130,6 +136,11 @@ class Script:
     def run(self):
         self._op(RUN)
 
+    def alarm(self):
+        """The machine idle with an alarm armed: the clock moved on to
+        it (ALARM), so the next run() fires it."""
+        self._op(ALARM)
+
     def out(self, a):
         self._op(OUT, a)
 
@@ -154,6 +165,39 @@ class Script:
 
     def poll(self):
         self._op(POLL)
+
+    def fund_parked(self, slot, hi=0x3FFFFFFF, lo=0xFFFFFFFF, once=False):
+        """The bench as PIMOS's task manager (R7L, 2026-11-25): a shoen
+        starts with no resource (VPIM f_shoen_main.psl.c
+        _INIT_SHOEN_RESOURCE 0), so its first goal parks and reports
+        resource_low, which the kernel's task_manager answers with
+        add_resource(16#"3FFFFFFF", 16#"FFFFFFFF") (kernel/init/
+        init.kl1:84-89; the IPL's own monitors answer so too,
+        lockstep_shoen2.py).  Every STARTED shoen with no resource
+        left and goals parked on it is given that amount by a goal of
+        add_shoen_resource's stub at the root (slot: its NewShoen), and
+        the machine run; again until none is left (a funded shoen may
+        make one that parks; once: a single pass, for an amount that may
+        run out).  Found on a live reference machine, so the script is
+        the same for both models."""
+        import pimm_layout as L
+        while True:
+            m = self.live()
+            found = sorted({c[1] for c in m.mem.values() if c[0] == pimm.SHREC})
+            found = [sh for sh in found if m.mem[sh + L.SH_STATUS][1] == L.STARTED
+                     and m.mem[sh + L.SH_GOAL][1] and m.rsc_left(sh) <= 0]
+            if not found:
+                return
+            for sh in found:
+                self.argc(1, (pimm.SHREC, sh))
+                self.argc(2, (pimm.INT, hi))
+                self.argc(3, (pimm.INT, lo))
+                self.newvar(slot)
+                self.arg(4, slot)
+                self.spawn(m.stubs['add_shoen_resource']['addr'], 4)
+                self.run()
+            if once:
+                return
 
     def live(self):
         """Perform the operations added since the last call on a private
@@ -275,6 +319,8 @@ class Script:
             m.scsi_poll()
         elif k == RESTORE:
             pass                # the reference's machine has it already
+        elif k == ALARM:
+            m.alarm_skip()
         else:
             raise ValueError(k)
 

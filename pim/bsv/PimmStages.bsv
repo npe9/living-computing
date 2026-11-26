@@ -27,6 +27,8 @@ import PimmNBox::*;
 import PimmShBox::*;
 import PimmScsiBox::*;
 import PimmPBox::*;
+import PimmTBox::*;
+import PimmGcBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -79,13 +81,18 @@ interface PimmExec;
   // new_atom's counter, 2 the clock's ticks, 3 the instructions since
   // the last tick (pimm.py steps // 423 and steps % 423)
   method Action restore(Bit#(8) which, Bit#(32) v);
+  // R7L: the clock as the last instruction read it (pimm.py timer() at
+  // a goal switch), and the clock moved on k ticks while the machine
+  // waits for an alarm (pimm.py alarm_skip)
+  method Bit#(48) now;
+  method Action skip(Bit#(32) k);
 endinterface
 
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
-               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XMe1, XMe2, XBa1, XBa2, XBa3, XBa4, XBa5, XBa6, XBa7, XBa8, XBa9, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XSCmp, XTimer, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XMe1, XMe2, XBa1, XBa2, XBa3, XBa4, XBa5, XBa6, XBa7, XBa8, XBa9, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep, XUL1, XUL2,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
@@ -100,7 +107,8 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
                    MemPort smem,
-                   PimmShBox shbox, PimmScsiBox scsi, PimmPBox pbox)(PimmExec);
+                   PimmShBox shbox, PimmScsiBox scsi, PimmPBox pbox,
+                   PimmTBox tbox, PimmGcBox gcbox)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -214,6 +222,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // opcode 6E likewise: 8 is the guard extended_floating_point(X,
   // ^NewX), registers y and z
   Bool isExtFloat = op == 16'h236e && x == 8;
+  // ... and 2, 3 the guards extended_floating_point_less_than and
+  // _not_less_than(X, Y), registers y and z (R7L, 2026-11-25; pimm.py
+  // ext_float_compare)
+  Bool isExtCmp = op == 16'h236e && (x == 2 || x == 3);
   // a vector pointer, short (0..6 elements, the size in the tag) or long
   function Bool isVec(Cell c) = (c.tag & 8'hf0) == tag_VECT0o;
   function Bool isLongVec(Cell c) = (c.tag & 8'hfe) == 8'h1e;
@@ -298,7 +310,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_add || op == op_exclusive_or || op == op_string_element
                       || op == op_mark_element || op == op_divide || op == op_shift_left
                       || op == op_not_equal || op == op_multiply || op == op_diff
-                      || op == op_bignum_less_than || op == op_bignum_not_less_than;
+                      || op == op_bignum_less_than || op == op_bignum_not_less_than
+                      || op == op_string_less_than || op == op_string_not_less_than;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -382,11 +395,18 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     // eager read of external references (TM-1044).  One processor has
     // none: nothing is done, the variables noted so far stay noted
     else if (op == op_read_eagerly) next;
+    // collect_garbage, 23:77 (R7G, INFERENCE: its microcode, 02d5-02d7,
+    // only asks): the collection at the next goal switch (PimmGcBox.bsv,
+    // PimmCore pick_or_fire); the guard succeeds
+    else if (op == op_collect_garbage) begin
+      gcbox.request;
+      next;
+    end
     else if (isWaitAtom) begin
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
       st <= XDeref1;
     end
-    else if (isTagAndValue || isFloatGE || isExtFloat) begin
+    else if (isTagAndValue || isFloatGE || isExtFloat || isExtCmp) begin
       dbox.deref(regs.r(y));
       st <= XDeref1;
     end
@@ -926,7 +946,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else begin
       opA <= a;
-      dbox.deref(regs.r(isFloatGE ? z : y));
+      dbox.deref(regs.r(isFloatGE || isExtCmp ? z : y));
       st <= XDeref2;
     end
   endrule
@@ -981,6 +1001,21 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // fails": no floating point here, so two floats are refused
       if ((a.tag & 8'hfe) == tag_FLTo && (b.tag & 8'hfe) == tag_FLTo) stop(EndUnimp);
       else guardFail;
+    end
+    else if (isExtCmp) begin
+      // R7L: anything but two extended floats (tag 3Fh) fails; two are
+      // refused, none can be made here (pimm.py ext_float_compare)
+      if (a.tag == 8'h3f && b.tag == 8'h3f) stop(EndUnimp);
+      else guardFail;
+    end
+    else if (op == op_string_less_than || op == op_string_not_less_than) begin
+      // R7L: two strings, ordered by the string box (pimm.py
+      // string_order); anything else fails; rule sCompare
+      if (!isStrg(a) || !isStrg(b)) guardFail;
+      else begin
+        sbox.compare(a, b);
+        st <= XSCmp;
+      end
     end
     else if (op == op_wait_value && (isVec(a) || isVec(b) || isList(a) || isList(b))) begin
       // a list or a vector on either side: the passive-unification box
@@ -1754,14 +1789,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_set_timer) begin
-      // set_timer(Time, ^Wakeup): a time reached, (now - Time) mod 2^32
-      // < 2^31, gives Wakeup = now (the clock's lower 32 bits); a time
-      // still to come is refused
-      Bit#(32) d = clk[31:0] - a.val;
-      if (!isInt(a) || d[31] == 1) stop(EndUnimp);
+      // set_timer(Time, ^Wakeup): the timer box (R7L, PimmTBox.bsv): a
+      // time reached, (now - Time) mod 2^32 < 2^31, gives Wakeup = now
+      // (the clock's lower 32 bits); one still to come arms the alarm,
+      // Wakeup a fresh variable bound when the time comes; rule timerSet
+      if (!isInt(a)) stop(EndUnimp);
       else begin
-        regs.wr(y, intC(clk[31:0]));
-        finish(tagged Next afterBuiltin);
+        tbox.set(a.val, clk[31:0]);
+        st <= XTimer;
       end
     end
     else if (op == op_new_instruction) begin
@@ -2409,6 +2444,21 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else guardFail;
   endrule
 
+  rule timerSet (st == XTimer);
+    let w <- tbox.setResult;
+    regs.wr(y, w);
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // string_less_than succeeds on -1, string_not_less_than on 0 or 1 (R7L)
+  rule sCompare (st == XSCmp);
+    let r <- sbox.result;
+    Bool less = r.a.val[31] == 1;
+    Bool holds = op == op_string_less_than ? less : !less;
+    if (holds) next;
+    else guardFail;
+  endrule
+
   // hash(X, ^Value, ^NewX): Value, then NewX = X
   rule bHash (st == XBHash);
     let r <- sbox.result;
@@ -2963,7 +3013,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_add_shoen_resource) begin
       if (vals[0].tag != tag_SHREC || !isInt(vals[1]) || !isInt(vals[2])) stop(EndUnimp);
       else begin
-        shbox.addResource(vals[0]);
+        shbox.addResource(vals[0], vals[1].val, vals[2].val);   // R7L: High, Low
         st <= XShS;
       end
     end
@@ -3221,6 +3271,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endmethod
 
   method Bit#(32) reductions = nRed;
+  method Bit#(48) now = clk;
+  method Action skip(Bit#(32) k);
+    ticks <= ticks + zeroExtend(k);
+    clk <= clk + zeroExtend(k);
+  endmethod
 
   method Action enq(Fetched f) = inQ.enq(f);
   method Action restore(Bit#(8) which, Bit#(32) v);

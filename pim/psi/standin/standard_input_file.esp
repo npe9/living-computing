@@ -1,0 +1,47 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_input_file`, compiled
+% by psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no body of
+% it is printed or held.  Step 3l, route step B6 (reading the login file).
+% MINIMAL: reading terms from a text file.
+%
+% USAGE (held cells): pimfep##pimos_login_requester local items_list/3
+% @173-188 (read 2026-11-25): `:create(#standard_input_file, In, Path)`
+% with Path the caller's pathname string ("me:pimos.feps",
+% "me:pimos.uids", pool[26], pool[2b]), then `:gett(In, Term)`,
+% `:close_input(In)`.
+% HELD SOURCE, as ANALOGY of SIMPOS callers: kwic-esp src/expMan.esp:1013-1017
+% (`:retrieve(#directory, File, Name, Full)`, `:open(File)`,
+% `:create(#standard_input_file, Stdin, File)`, `:gett(Stdin, Term)`: a file
+% object also serves); src/systems.esp:368-374 and dbUtil.esp:1433-1437
+% (`:end_of_input(File)` is the test for the end; gett/2 is tried after
+% it); utter source/QXT/trans.esp:20-24 (a loop of gett/2 whose last
+% clause ends it: gett/2 fails at the end, INFERENCE).
+% gett/2 and end_of_input/1 are kl0 models (Python, psi/esp_reader.py, the
+% reader OURS: SIMPOS's reader is lost); position counts the terms read
+% (OURS).
+
+class standard_input_file has
+
+% :create(#standard_input_file, In, Source) -- INTERPOLATED from the uses
+% above: Source is a pathname string, retrieved through the directory
+% (a miss fails), or a file object.
+:create(Class, In, Source) :-
+        file_of(Source, File),
+        :new(Class, In),
+        In!file := File,
+        In!position := 0;
+
+instance
+
+% OURS representation (see above).
+attribute file := 0, position := 0;
+
+% :close_input(In) -- INTERPOLATED from items_list/3 @181 (its last send to
+% the file): nothing to release here (OURS).
+:close_input(In);
+
+local
+
+file_of(Source, File) :- string(Source, _, _), !, :retrieve(#directory, File, Source);
+file_of(File, File);
+
+end.

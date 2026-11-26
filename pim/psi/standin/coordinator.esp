@@ -1,0 +1,130 @@
+% SCAFFOLDING stand-in for SIMPOS's class `coordinator`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost (docs/simpos/subsystems/window.md, shell.md §1.1).  Step 3l, route
+% steps B6 and B8 (docs/simpos/boot_route.md).  MINIMAL: a coordinator
+% process that reads the login file, holds the system menu built from it,
+% answers information/3, and starts a menu item's program in a new
+% process.
+%
+% PRINTED (prose and 1984 code; page images and listings):
+%   - TR-061 (Kurokawa, Tojo, "Coordinator -- the Kernel of the
+%     Programming System for the PSI", 84.04) and TR-046 PDF p26-p28: the
+%     coordinator receives the keyboard and mouse events through a
+%     translation table; the printed default_translation_table maps
+%     `mouse#rr` and `control#"s"` to the coordinator action
+%     {invoke_system_menu, _, _, _} (TR-046_p28.esp, TR-061_p13.esp);
+%   - TM-134 p66, p71; TM-112 p16; TM-181 p3 (shell.md §4.3): a double
+%     right click opens the system menu; an item starts a program in a
+%     new process; the 1.0 dialogue `:create(#c,O). :create(#process,P).
+%     :activate(P,O).` (TM-134 p71) is how a program is started in a new
+%     process;
+%   - TM-181 p3, TM-229 p5-p6 (shell.md §4.1): login sets the system-menu
+%     items, the logical names, runs an initialisation program;
+%   - TM-785 p6, p25; TM-786 p5 (shell.md §4.2): the login file's `menu`
+%     item gives the EXPERTS part of the system menu.
+% USAGE: `:information(#coordinator, Key, Value)`, the value of a user item
+% of the login file (shell.md §2.5 and the §4.2 table: kwic-esp
+% src/systems.esp:297, 327, 364, dbUtil.esp:225; pimfep##pimos_fep_superviser
+% full_pathname/1 @1c9-1ce, pimfep##pimos_login_requester close/2 @149-14e,
+% check_code/4, is_not_exit/1, initiate_additional_function/1).
+% INFERENCE: information/3 fails when the item is absent (every held
+% caller has a fallback clause, shell.md §2.5).
+% OURS throughout, labelled: the coordinator's state in class slots (one
+% coordinator per machine); its event stream and the events
+% `invoke_system_menu` (the printed action's name), {select, Label} (the
+% menu's answer, OURS) and, step 3m, {key, Code} (a key typed, OURS: the
+% code put on the keyboard stream for the selected window); the menu as login.com's item columns (the 1984
+% system_menu of TR-046 PDF p27, with its multi_column_menu, is not
+% built: its menu_item and multi_column_menu classes are lost); the order
+% of the login file's items as they are read.
+
+class coordinator has
+
+% OURS state (see above).
+attribute items := [], menu := [], shown := 0, started := [], events := 0,
+          process := 0, keyboard := 0, selected := 0;
+% Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
+% keyboard handler's output, B4: its class is lost), read by the selected
+% window (standard_io_window.esp); `selected`, that window (0: none).
+% INTERPOLATED from TR-061 and TR-046 PDF p26-p28 (PRINTED prose and
+% code): the coordinator receives the keyboard events; keys the
+% translation table does not take go to the selected window (TM-225 p11,
+% PROSE TRANSLATION: "the selected window has keyboard input").
+
+% :start(#coordinator) -- OURS (selector and body): make the coordinator's
+% event stream and its process, running coordinator_program, as kappa2's
+% held handshake starts a background process (ITRSES.ESP:111-116,
+% ANALOGY): create/3 and activate/2 (TM-100 Fig. 3.1, PRINTED).
+% INTERPOLATED from TR-061's "the coordinator" as a process of its own
+% (shell.md §1.1).
+:start(Class) :-
+        :create(#stream, Events),
+        Class!events := Events,
+        :create(#stream, Keyboard),
+        Class!keyboard := Keyboard,
+        :create(#coordinator_program, Prog),
+        :create(#process, P, [free, free, free, free]),
+        Class!process := P,
+        :activate(P, Prog);
+
+% :information(#coordinator, Key, Value) -- INTERPOLATED (USAGE above).
+:information(Class, Key, Value) :- item(Class!items, Key, Value);
+
+% :read_login_file(#coordinator) -- INTERPOLATED (OURS selector) from
+% TM-181 p3 and TM-229 p5-p6 (prose) and the held login file syntax
+% (shell.md §4.2.2): read me:login.com; `menu` gives the menu's columns,
+% `define` the logical names of the process's world (applied with the
+% world's define/3, as simpos_user create/4 does for "me"), every other
+% head a user item.  A missing login file leaves the menu empty (OURS).
+:read_login_file(Class) :-
+        :create(#standard_input_file, In, "me:login.com"), !,
+        read_items(Class, In),
+        :close_input(In);
+:read_login_file(Class);
+
+% :event(#coordinator, Event) -- INTERPOLATED (OURS selector): one event,
+% as the coordinator process takes it from its stream.
+:event(Class, invoke_system_menu) :- !,
+        Class!shown := Class!menu;
+:event(Class, {key, Code}) :- !,
+        :put(Class!keyboard, Code);
+:event(Class, {select, Label}) :- !,
+        Class!shown \== 0,
+        find_item(Class!shown, Label, Name),
+        Class!shown := 0,
+        :get_class_object(#library, Name, Program_class),
+        :create(Program_class, Program),
+        :create(#process, P),
+        :activate(P, Program),
+        Class!started := [P | Class!started];
+
+local
+
+read_items(Class, In) :- :end_of_input(In), !;
+read_items(Class, In) :-
+        :gett(In, Clause), !,
+        apply(Class, Clause),
+        read_items(Class, In);
+read_items(_, _);
+
+apply(Class, {':-', menu, {items_list, Columns}}) :- !,
+        Class!menu := Columns;
+apply(Class, {':-', define, Definitions}) :- !,
+        :world(#process, World),
+        define(World, Definitions);
+apply(Class, {':-', Key, Value}) :-
+        Class!items := [[Key | Value] | Class!items];
+
+define(World, {',', A, B}) :- !, define(World, A), define(World, B);
+define(World, {':=', Name, Directories}) :- :define(World, Name, Directories);
+
+item([[Key | Value] | _], Key, Value) :- !;
+item([_ | Items], Key, Value) :- item(Items, Key, Value);
+
+find_item([Column | Columns], Label, Name) :- find_in(Column, Label, Name), !;
+find_item([_ | Columns], Label, Name) :- find_item(Columns, Label, Name);
+
+find_in([{L, Name} | _], Label, Name) :- equal_string(L, Label), !;
+find_in([_ | Items], Label, Name) :- find_in(Items, Label, Name);
+
+end.

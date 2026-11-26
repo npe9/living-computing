@@ -1,0 +1,25 @@
+% SCAFFOLDING stand-in for SIMPOS's class `tcpip_network_subsystem`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no
+% part of it is printed or held, and NO NETWORK IS MODELLED.  Step 3n
+% (docs/simpos/boot_route.md §6), as network_subsystem.esp (step 3m).
+% Its one method is INTERPOLATED (labelled) from:
+%   - pimfep##pimos_remote_login_server create_socket/2 (held .ptf, cells
+%     read 2026-11-25 with psi/fepread/ptfread.py): its tcpip clause
+%     sends `:is_installed(#tcpip_network_subsystem)` first (@4ac) and
+%     has no alternative, so on a PSI without TCP/IP create_socket/2
+%     fails, and with it the server's io/4 for io(0, "tcpip"); the string
+%     I/O device then answers {Id, 5} (docs/fep_services.md §6.1 step 4,
+%     §6.4).  PIMOS takes that answer and writes CANNOT MAKE A TCPIP LOGIN
+%     SERVICE!! (login.kl1:986-989; fep_services.md §7.5, where fep.py
+%     chose the same answer as OURS);
+%   - the local_login clause of the same predicate (@44a-45f) never asks.
+% Model (OURS): is_installed/1 FAILS: this PSI model has no Ethernet
+% board.
+
+class tcpip_network_subsystem has
+
+% INTERPOLATED from: the server's create_socket/2 (see above).  OURS: it
+% fails, no TCP/IP is installed.
+:is_installed(Class) :- fail;
+
+end.

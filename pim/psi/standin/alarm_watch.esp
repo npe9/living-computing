@@ -36,4 +36,35 @@ attribute alarm := 0;
 % at once (no clock, one process).
 :wait(Watch);
 
+% Step 3m (docs/simpos/boot_route.md §6): the local login's receive.  Two
+% held senders, the same shape on each side (pimfep, cells read
+% 2026-11-25): as_pimos_login_requester receive_block/7 @547-558 and
+% pimos_remote_login_server receive_block/3 @526-537:
+%   :create(#message, T), :set_content(T, timeout),
+%   :set_count(Time, Count * 1000),
+%   :who_is_connecting_to(Port, L), :get_contents(L, [Peer]),
+%   :on_after(Watch, Time, Peer, Port, T),
+%   :wait_and_return(Watch, M), :get_content(M, C), :cancel(Watch),
+% and then each takes C apart: the atom `timeout` (receive_timeout), the
+% atom `close`, or a string (check_local_message/5 @704-71e).  So the
+% watch is armed to deliver the message T on Port, as from Peer, when
+% the time has passed, and wait_and_return/2 answers the first message
+% that reaches Port: the peer's or the alarm's (INFERENCE).  OURS: no
+% clock, so the alarm's message is never sent and wait_and_return/2
+% waits on the port for the peer (a port is a stream: TM-100 Fig. 3.8,
+% nature channel, Fig. 3.7, nature stream).
+
+attribute port := 0, from := 0, message := 0;
+
+% INTERPOLATED (see above): arm the alarm (kept, never fired: OURS).
+:on_after(Watch, Time, From, Port, Message) :-
+        Watch!alarm := Time, Watch!from := From, Watch!port := Port,
+        Watch!message := Message;
+
+% INTERPOLATED (see above): the next message on the armed port.
+:wait_and_return(Watch, Message) :- :get(Watch!port, Message);
+
+% INTERPOLATED (see above): disarm.
+:cancel(Watch) :- Watch!alarm := 0, Watch!port := 0;
+
 end.
