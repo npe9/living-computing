@@ -3304,7 +3304,10 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 1049 again,
 # every value check unchanged.
-run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1027+-0 \
+# CYCLES 1027 -> 1440, 2026-11-26 (fidelity_plan.md A3 (b) step 5): Table 3's
+# B-D DCV s and u/8 terms (printed p.3-9), stepped by mkSAU; sauStepCvtAcc :=
+# False restores 1027.  The deck's header has the source and the cause.
+run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1440+-0 \
     "F19_store:2000=0x0070001861422000" \
     "F19_acc_left:2200=0" \
     "F19_acc_right:2201=0x7006652" \

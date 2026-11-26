@@ -703,6 +703,79 @@ HALF (b), STEP 4 DONE 2026-11-26: DECIMAL SRD'S ROUND (`SauStRnd`, `sauRndPasses
 - MCP boot sections: every check passes, and the halt clocks are
   unchanged from step 2.
 
+HALF (b), STEP 5 DONE 2026-11-26: THE CONVERTERS (LCV, LTRCV, CV, DCV)
+(`StretchVFL.bsv`'s `vflCvtFieldPasses`, `StretchSAU.bsv`'s `SauCvtSteps` /
+`sauStepCvtAcc`, `sauRowWithUnit`'s converter arms):
+- Source: Table 3 (Vol. 1 printed pp.3-8, 3-9, PDF 26-27, read in the
+  image), in 0.6 us passes:
+
+  | instruction | B-D | D-B |
+  |---|---|---|
+  | LCV | .6(x + u/8 + 1) | .6(x/y + t/4 + u/8 + 4) |
+  | LTRCV | .6(x + 3), + .6(FLc/8 - 1) beyond 48 bits | .6(x/y + 16), + .6(t/8 - 1) beyond 48 bits |
+  | CV | .6(s + u/8 + 1) | .6(s/4 + 1) |
+  | DCV | .6(s + u/8 + 1), full word 63.0 us | .6(s/4 + 2) |
+
+- `CvtReq` carries `SauCvtSteps {fixed, accS}`.
+  - `fixed` holds the passes the FIELD decides (`vflCvtFieldPasses`).
+  - With `accS`, the unit adds s from the source and, binary to decimal,
+    u/8 from its result: the accumulator terms of CV and DCV.
+  - The unit's time is max(2 x passes, the datapath's own clocks).
+- The row's own part is taken out per class:
+  - LCV and LTRCV: R - 2 x field passes + u.
+  - CV and DCV: less the passes their equation counts at the accumulator
+    the row was fitted to ("+1 at offset 20", PDF 113: s = 1, u/8 = 1),
+    so that accumulator keeps the row's time and any other is charged
+    its own s and u.
+- **DCV D-B is NOT stepped from the data.** Its s/4 is held at the fitted
+  1 (3 passes).
+  - MEASURED: with the term on, the model's CHOSEN DCV D-B field (every
+    digit from the offset to the left end) gives s/4 = 6 at the atlas's
+    first DCV (the accumulator reads 0x100000). Each repetition then
+    re-reads the previous binary result as BCD, so the operand grows: a
+    trace of PDF 139 (D,16,4) shows v growing from 0x100000 to
+    0xbc48e3997634329059a98000000 over twelve repetitions.
+  - PDF 139 and 166 print a flat 18 clocks at every field. The term
+    moved all 96 of those cells by +55.8 clocks.
+  - Either the CHOSEN field or the term's reading is wrong. Which is
+    OPEN; nothing attributes the excess elsewhere.
+- Atlas, the converter pages (PDF 136-139, 163-166, 186, 187; 2,000
+  cases): against batch55, within 1 1,076 -> 1,076, within 3 1,408 ->
+  1,408, 0 toward, 0 away. Every atlas converter cell is at the operand
+  its row was fitted to, so nothing moves by construction. The steps
+  show off the atlas.
+- Pins and decks:
+  - `vfl_dcv.strap` CYCLES 1027 -> 1440, re-pinned. Its B-D DCVs convert
+    up to 80 significant bits (10^24) and now take their s and u. The
+    cause is MEASURED: `sauStepCvtAcc := False` gives 1027 again, with
+    every value check passing.
+  - `vfl_convert.strap` (CV and LTRCV, MCP's time conversion) has no
+    cycle pin. It now reads 616 (598 at batch55) and passes.
+- `mkSauStepTb` vectors 23-27 (conversions, compared on r and clocks).
+  Injection observed: `sauStepCvtAcc := False` fails 24 (6 against 26),
+  25 (4 against 10) and 26 (4 against 6); nothing else fails. The unit
+  still supports a D-B `accS` (vector 26); only the core's DCV D-B
+  request leaves it off.
+- MCP boot sections: every check passes. The halt clocks MOVE:
+
+  | section | batch55 | `sauStepCvtAcc` off | final |
+  |---|---|---|---|
+  | boot | 6,321,488 | 6,321,488 | 6,321,488 |
+  | decode | 6,304,298 | 6,304,298 | 6,304,298 |
+  | assign | 6,322,787 | 6,322,787 | 6,322,807 |
+  | past-move | 6,339,189 | 6,339,195 | 6,339,215 |
+  | p1deck | 6,734,524 | 6,734,452 | 6,734,492 |
+
+  - Steps 2-4 leave every MCP halt clock unchanged, so the moves are the
+    converters'.
+  - Of them, the field passes (switch off) account for past-move +6 and
+    p1deck -72, and the accumulator terms for the rest.
+  - A trace of the assign section shows seven LCVs (9 field passes, no
+    accumulator term) and three CV / DCV B-D. Two of the B-D convert 34:
+    s = 6 bits, u/8 = 1, so 8 passes against the fitted 3, +10 clocks
+    each. That is assign's +20 exactly.
+  - Past-move's memory reads go 599,504 -> 599,502.
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).

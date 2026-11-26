@@ -798,7 +798,7 @@ function Bit#(16) budgetClocks(DecodedInstr d, Bool taken) =
 //     rows print 16 + 2b from (DU,16,4) up, Table 3's "true result"
 //     .6(x/y) over a fixed 16.
 //   (The K arm below takes effect from step 3, 2026-11-26, the SRD arm
-//   from step 4.)
+//   from step 4, the converter arms from step 5.)
 //   * SRD (decimal, nonzero offset): the row's 4-clock round (srdRound
 //     in eboxClocks) is the unit's: R - 4 + u.
 //   * K, KE, KR, KF, KFE, KFR (not immediate): KF's own fixed part, 8
@@ -823,6 +823,17 @@ function Bit#(16) sauRowWithUnit(DecodedInstr d, Bit#(16) u);
         6'b101101:            return r - ((v.a.offset != 0) ? 4 : 0) + u;
         6'b010001, 6'b010011, 6'b010101,
         6'b110001, 6'b110011, 6'b110101: return 7 + u;
+        // The converters (step 5): LCV and LTRCV less their field passes
+        // (StretchVFL's vflCvtFieldPasses, the rows' own Table 3 part);
+        // CV and DCV less the passes their equation counts AT THE
+        // ACCUMULATOR THE ROW WAS FITTED TO ("+1 at offset 20", PDF 113):
+        // s = 1 bit / 1 digit, u/8 = 1 -- CV B-D 3, CV D-B 2, DCV B-D 3,
+        // DCV D-B 3 -- so that accumulator keeps the row's time and any
+        // other is charged its own s and u.
+        6'b000011, 6'b100011:
+          return r - 2 * vflCvtFieldPasses(v.code, len_, effByteSize(v.a.bs), sgn, v.m.decimal == 1) + u;
+        6'b011011: return r - ((v.m.decimal == 1) ? 4 : 6) + u;
+        6'b111011: return r - 6 + u;
         default:              return r - 2 * b + u;
       endcase
     end

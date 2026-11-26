@@ -102,6 +102,47 @@ function VflBytes vflBytes(Bit#(7) len_, Bit#(4) bsz, Bool sgn, Bool dec);
   return VflBytes { x: x, b0: (x + y - 1) / y, s: sgn ? 1 : 0 };
 endfunction
 
+// >>> THE SERIAL UNIT'S PASSES OF A CONVERSION (fidelity_plan.md A3 (b)
+// step 5, 2026-11-26). <<<  Perf. Char. Vol. 1 Table 3 (printed pp.3-8,
+// 3-9, PDF 26-27, read in the image), the execution term of each
+// converting operation, in 0.6 us passes, as far as THE FIELD decides it:
+//   LCV B-D    .6(x + u/8 + 1)        x = FL (unsigned) bits, a bit a pass;
+//                                     u = the decimal result's bits
+//   LCV D-B    .6(x/y + t/4 + u/8 + 4) t = the field less zone bits; u =
+//                                     the binary result's bits
+//   LTRCV B-D  .6(x + 3), + .6(FLc/8 - 1) when the converted field passes
+//              48 bits
+//   LTRCV D-B  .6(x/y + 16), + .6(t/8 - 1) when t passes 48 bits
+//   CV / DCV   the accumulator's s, not the field: 1 here for CV B-D,
+//              DCV B-D and CV D-B, 2 for DCV D-B (the constants of their
+//              equations), the s and u terms stepped by the unit itself.
+// The binary-to-decimal u is ceil(FL log10 2) digits, ceil(FL * 77 / 256)
+// as eboxClocks has it; the decimal-to-binary u is ceil(digits log2 10)
+// bits, ceil(d * 851 / 256) (exact for d = 1 .. 32).  `x` follows the
+// rows of eboxClocks (FL for binary, as their 2 FL term), so for the field
+// classes the passes ARE the rows' Table 3 part and only the rows' fixed
+// part stays there (StretchTiming's sauRowWithUnit).
+function Bit#(16) vflCvtFieldPasses(Bit#(6) code, Bit#(7) len_, Bit#(4) bsz, Bool sgn, Bool dec);
+  VflBytes vb = vflBytes(len_, bsz, sgn, dec);
+  Bit#(16) fl  = zeroExtend(len_);
+  Bit#(16) b0  = zeroExtend(vb.b0);
+  Bit#(16) dig = (fl * 77 + 255) / 256;          // B-D result digits
+  Bit#(16) ubd = (dig + 1) / 2;                   // u/8, 4-bit digits
+  Bit#(16) ubits = (b0 * 851 + 255) / 256;        // D-B result bits
+  Bit#(16) udb = (ubits + 7) / 8;
+  Bit#(16) t   = 4 * b0;
+  Bit#(16) p   = 0;
+  case (code)
+    6'b000011: p = dec ? b0 + b0 + udb + 4 : fl + ubd + 1;
+    6'b100011: p = dec ? b0 + 16 + ((t > 48) ? (t + 7) / 8 - 1 : 0)
+                       : fl + 3 + ((4 * dig > 48) ? (4 * dig + 7) / 8 - 1 : 0);
+    6'b011011: p = 1;
+    6'b111011: p = dec ? 2 : 1;
+    default:   p = 0;
+  endcase
+  return p;
+endfunction
+
 // Whether a field would span two words. writeField below can only issue
 // one call to the underlying single-write-port storage per invocation
 // (see bsv/README.md "Toolchain"/"Scope": RegFile -- even the "WCF"

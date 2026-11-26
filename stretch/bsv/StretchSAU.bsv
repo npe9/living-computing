@@ -283,6 +283,13 @@ Bool sauStepCmpEarly = True;
 // charges SRD a pre-execution of 3.0 us against ST's 1.8: 1.2 us = two
 // 0.6 us cycles.  The two agree, and are eboxClocks' 4-clock srdRound.
 Integer sauRndPasses = 2;
+// STEP 5 (2026-11-26), THE CONVERTERS: sauStepCvtAcc, CV / DCV's
+// accumulator terms (s, and u/8 binary to decimal) stepped from the data
+// (SauCvtSteps).  Off: only the equations' constants.  The core asks DCV
+// decimal-to-binary without them (fidelity_plan.md A3 (b) step 5).
+// INJECTION OBSERVED 2026-11-26: False fails mkSauStepTb 24 (6 against
+// 26), 25 (4 against 10) and 26 (4 against 6); the rest pass.
+Bool sauStepCvtAcc = True;
 Bool sauStepMemRecomp = True;
 Bool sauStepOneCarry  = True;
 Bool sauStepOneComp   = True;
@@ -385,10 +392,24 @@ typedef struct {
   Bit#(96) prod;    // the 96-bit product (48 x 48)
 } VflRsp deriving (Bits, Eq, FShow);
 
+// THE PASSES OF A CONVERSION (half (b) step 5, 2026-11-26): `fixed` is
+// what the field decides (StretchVFL's vflCvtFieldPasses; 0 = NOT STEPPED,
+// half (a)'s contract); `accS`, for CV and DCV, adds Table 3's
+// accumulator terms, stepped from the data: s (binary: the source's
+// significant bits; decimal: its significant digits, s/4) and, binary to
+// decimal, u/8 (the result's significant digits, two a byte).
+typedef struct {
+  Bit#(16) fixed;
+  Bool     accS;
+} SauCvtSteps deriving (Bits, Eq, FShow);
+
+SauCvtSteps sauCvtNoSteps = SauCvtSteps { fixed: 0, accS: False };
+
 typedef struct {
   Bool      toDec;   // True: binary -> decimal
   Bit#(128) v;       // toDec: the binary value (low 96 bits used);
                      // else 32 BCD digits, digit 0 in bits 3:0
+  SauCvtSteps steps; // half (b): the passes (sauCvtNoSteps: not stepped)
 } CvtReq deriving (Bits, Eq, FShow);
 
 typedef struct {
@@ -500,6 +521,23 @@ function Bit#(8) sauSigDigitsAbove(Bit#(128) a, Bit#(8) top);
   return n;
 endfunction
 
+// Significant bits of a binary value / significant digits of a BCD one
+// (the position of the highest nonzero one, plus one; 0 for zero).
+function Bit#(16) sauSigBits(Bit#(128) v);
+  Bit#(16) n = 0;
+  for (Integer j = 0; j < 128; j = j + 1)
+    if (v[j] == 1) n = fromInteger(j + 1);
+  return n;
+endfunction
+function Bit#(16) sauSigDigits(Bit#(128) v);
+  Bit#(16) n = 0;
+  for (Integer j = 0; j < 32; j = j + 1) begin
+    Bit#(4) dg = v[4*j+3:4*j];
+    if (dg != 0) n = fromInteger(j + 1);
+  end
+  return n;
+endfunction
+
 interface SAU;
   method Action request(SauReq r);
   method Bool responseReady();
@@ -554,6 +592,11 @@ module mkSAU(SAU);
   // compare's w pass (sauStepCmpW).  Set at the request.
   Reg#(Bool)      rg_w[2]     <- mkCReg(2, False);
   Reg#(Bit#(8))   rg_wn[2]    <- mkCReg(2, 0);   // the literal w/r's count
+  // Step 5: a stepped conversion's passes so far (the field's and s, set
+  // at the request; u/8 added when the result is known), and whether the
+  // conversion is stepped.
+  Reg#(SauCvtSteps) rg_cst[2] <- mkCReg(2, sauCvtNoSteps);
+  Reg#(Bit#(16))  rg_cnp[2]   <- mkCReg(2, 0);
 
   Integer addClocks = sauDigits / sauAddDigits;
   Integer mulClocks = sauMulWidth / sauMulBits;
@@ -710,7 +753,15 @@ module mkSAU(SAU);
     end
     rg_a[0] <= s; rg_r[0] <= r;
     rg_ctr[0] <= rg_ctr[0] - 1;
-    if (rg_ctr[0] == 1) rg_state[0] <= SauDone;
+    if (rg_ctr[0] == 1) begin
+      rg_state[0] <= SauDone;
+      // Half (b) step 5: binary to decimal adds u/8 for CV / DCV, the
+      // result's digits two a pass; the time is never shorter than the
+      // datapath's own (decClocks).
+      Bit#(16) u8 = (rg_cst[0].accS && sauStepCvtAcc) ? (sauSigDigits(r) + 1) / 2 : 0;
+      Bit#(16) np = rg_cnp[0] + u8;
+      if (rg_cst[0].fixed != 0) rg_own[0] <= max(2 * np, fromInteger(decClocks));
+    end
   endrule
 
   // ... and decimal to binary: Horner, `sauCvtDigits` digits a clock off
@@ -724,7 +775,10 @@ module mkSAU(SAU);
     end
     rg_a[0] <= s; rg_r[0] <= r;
     rg_ctr[0] <= rg_ctr[0] - 1;
-    if (rg_ctr[0] == 1) rg_state[0] <= SauDone;
+    if (rg_ctr[0] == 1) begin
+      rg_state[0] <= SauDone;
+      if (rg_cst[0].fixed != 0) rg_own[0] <= max(2 * rg_cnp[0], fromInteger(binClocks));
+    end
   endrule
 
   // NO IMPLICIT CONDITIONS, for mkDivBox's reason.  A request starts the
@@ -750,6 +804,7 @@ module mkSAU(SAU);
         Bit#(128) bsum = d.a + bc + (d.sub ? 1 : 0);
         rg_cv[1]    <= d.binary ? (d.a ^ bc ^ bsum) : 0;
         rg_steps[1] <= d.steps;
+        rg_cst[1]   <= sauCvtNoSteps;
         rg_w[1]     <= !d.binary && ((d.a >> {d.steps.top, 2'b00}) != 0);
         rg_wn[1]    <= d.binary ? 0 : sauSigDigitsAbove(d.a, d.steps.top);
         rg_el[1]    <= 0;
@@ -761,6 +816,7 @@ module mkSAU(SAU);
         rg_a[1]     <= zeroExtend(m.mcand);
         rg_r[1]     <= zeroExtend(m.mpr);
         rg_steps[1] <= sauNoSteps;
+        rg_cst[1]   <= sauCvtNoSteps;
         rg_own[1]   <= 0;
         rg_el[1]    <= 0;
         rg_ctr[1]   <= fromInteger(mulClocks);
@@ -772,6 +828,14 @@ module mkSAU(SAU);
         rg_steps[1] <= sauNoSteps;
         rg_own[1]   <= 0;
         rg_el[1]    <= 0;
+        // Half (b) step 5: the field's passes and, for CV / DCV, s (binary:
+        // significant bits of the 96-bit source; decimal: its significant
+        // digits, Table 3's s/4).
+        Bit#(128) vs = v.toDec ? (v.v & ((128'd1 << 96) - 1)) : v.v;
+        Bit#(16)  sp = (v.steps.accS && sauStepCvtAcc)
+                     ? (v.toDec ? sauSigBits(vs) : sauSigDigits(vs)) : 0;
+        rg_cst[1]   <= v.steps;
+        rg_cnp[1]   <= v.steps.fixed + sp;
         rg_ctr[1]   <= fromInteger(v.toDec ? decClocks : binClocks);
         rg_state[1] <= v.toDec ? SauToDec : SauToBin;
       end
@@ -785,7 +849,7 @@ module mkSAU(SAU);
   method SauRsp response() = SauRsp { r: rg_r[1], carry: rg_carry[1] };
 
   method Maybe#(Bit#(16)) ownClocks() =
-    (rg_steps[1].passes != 0) ? tagged Valid rg_own[1] : tagged Invalid;
+    (rg_steps[1].passes != 0 || rg_cst[1].fixed != 0) ? tagged Valid rg_own[1] : tagged Invalid;
 endmodule
 
 // =====================================================================
@@ -1071,14 +1135,14 @@ module mkSauCvtTb(Empty);
 
   function CvtReq reqOf(Bit#(4) i) =
     case (i)
-      0: CvtReq { toDec: True,  v: 128'hFFFFFFFFFFFFFFFFFFFFFFFF };
-      1: CvtReq { toDec: True,  v: 0 };
-      2: CvtReq { toDec: True,  v: 1 };
-      3: CvtReq { toDec: True,  v: 128'hD3C21BCECCEDA1000000 };
-      4: CvtReq { toDec: True,  v: 128'hD3C21BCECCEDA0FFFFFF };
-      5: CvtReq { toDec: False, v: 128'h99999999999999999999999999999999 };
-      6: CvtReq { toDec: False, v: 1 };
-      default: CvtReq { toDec: False, v: 128'h1234 };
+      0: CvtReq { toDec: True,  v: 128'hFFFFFFFFFFFFFFFFFFFFFFFF, steps: sauCvtNoSteps };
+      1: CvtReq { toDec: True,  v: 0, steps: sauCvtNoSteps };
+      2: CvtReq { toDec: True,  v: 1, steps: sauCvtNoSteps };
+      3: CvtReq { toDec: True,  v: 128'hD3C21BCECCEDA1000000, steps: sauCvtNoSteps };
+      4: CvtReq { toDec: True,  v: 128'hD3C21BCECCEDA0FFFFFF, steps: sauCvtNoSteps };
+      5: CvtReq { toDec: False, v: 128'h99999999999999999999999999999999, steps: sauCvtNoSteps };
+      6: CvtReq { toDec: False, v: 1, steps: sauCvtNoSteps };
+      default: CvtReq { toDec: False, v: 128'h1234, steps: sauCvtNoSteps };
     endcase;
   function Bit#(128) wantOf(Bit#(4) i) =
     case (i)
@@ -1164,10 +1228,10 @@ module mkSauMixTb(Empty);
   function SauReq reqOf(Bit#(4) i) =
     case (i)
       0: tagged SauAdd DecReq { a: 128'h45623, b: 128'h53200, sub: True, binary: False, steps: sauNoSteps };
-      1: tagged SauCvt CvtReq { toDec: True, v: 128'hFFFFFFFFFFFFFFFFFFFFFFFF };
+      1: tagged SauCvt CvtReq { toDec: True, v: 128'hFFFFFFFFFFFFFFFFFFFFFFFF, steps: sauCvtNoSteps };
       2: tagged SauMul (tagged VflMul VflMulReq { mcand: 48'hFFFFFFFFFFFF, mpr: 48'hFFFFFFFFFFFF });
       3: tagged SauAdd DecReq { a: '1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
-      4: tagged SauCvt CvtReq { toDec: False, v: 128'h99999999999999999999999999999999 };
+      4: tagged SauCvt CvtReq { toDec: False, v: 128'h99999999999999999999999999999999, steps: sauCvtNoSteps };
       5: tagged SauAdd DecReq { a: 0, b: 0, sub: False, binary: False, steps: sauNoSteps };
       default: tagged SauMul (tagged VflMul VflMulReq { mcand: 48'h1, mpr: 48'h1 });
     endcase;
@@ -1269,6 +1333,13 @@ endmodule
 // STEP 4, DECIMAL SRD'S ROUND (SauStRnd):
 //  22  4447 + 5 at the digit below the field: the RSU and RND cycles,
 //      2 passes (sauRndPasses)                                       4
+// STEP 5, THE CONVERTERS (SauCvt requests with SauCvtSteps; r compared):
+//  23  CV B-D of 1: s = 1 bit, u/8 = 1, + 1: 3 passes               6
+//  24  CV B-D of 1000: s = 10, u/8 = 2 (4 digits), + 1: 13 passes  26
+//  25  CV D-B of 1234: s/4 = 4 digits, + 1: 5 passes               10
+//  26  DCV D-B of 1: s/4 = 1, + 2: 3 passes                         6
+//  27  LCV B-D (BU,8,8) of FF: x + u/8 + 1 = 8 + 2 + 1, from the
+//      field alone (no accumulator term): 11 passes                22
 // INJECTIONS, OBSERVED 2026-11-25 (each in a scratch copy of this file):
 //   * sauStepZ := False: vectors 1, 2, 3 and 5 FAIL on clocks (2, 2, 2, 4
 //     against 4, 8, 4, 6) -- the carry and borrow vectors -- and the rest
@@ -1283,8 +1354,10 @@ endmodule
 //   each); sauStepCmpEarly := False fails 20 (10 against 6) and 21 (8
 //   against 2); sauStepCmpWLiteral := True fails 18 (8 against 6); the
 //   rest pass.
+// STEP 4 (2026-11-26): sauRndPasses := 1 fails 22 (2 against 4); the rest
+//   pass.
 // ---------------------------------------------------------------------
-typedef 23 NStepVec;
+typedef 28 NStepVec;
 
 (* synthesize *)
 module mkSauStepTb(Empty);
@@ -1331,6 +1404,16 @@ module mkSauStepTb(Empty);
                                         mg: False, cls: SauStRnd, early: False } };
       default: DecReq { a: 128'h1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
     endcase;
+  // Step 5: vectors 23-27 are CONVERSIONS (SauCvt), compared on r alone.
+  function CvtReq cvtOf(Bit#(5) i) =
+    case (i)
+      23: CvtReq { toDec: True,  v: 128'h1,    steps: SauCvtSteps { fixed: 1, accS: True } };
+      24: CvtReq { toDec: True,  v: 128'h3E8,  steps: SauCvtSteps { fixed: 1, accS: True } };
+      25: CvtReq { toDec: False, v: 128'h1234, steps: SauCvtSteps { fixed: 1, accS: True } };
+      26: CvtReq { toDec: False, v: 128'h1,    steps: SauCvtSteps { fixed: 2, accS: True } };
+      default: CvtReq { toDec: True, v: 128'hFF, steps: SauCvtSteps { fixed: 11, accS: False } };
+    endcase;
+  function Bool isCvt(Bit#(5) i) = (i >= 23);
   function DecRsp wantOf(Bit#(5) i) =
     case (i)
       0: DecRsp { r: 128'h88,      carry: False };
@@ -1355,15 +1438,22 @@ module mkSauStepTb(Empty);
       20: DecRsp { r: 128'h4000,   carry: True };
       21: DecRsp { r: 128'h0,      carry: True };
       22: DecRsp { r: 128'h4452,   carry: False };
+      23: DecRsp { r: 128'h1,      carry: False };
+      24: DecRsp { r: 128'h1000,   carry: False };
+      25: DecRsp { r: 128'h4D2,    carry: False };
+      26: DecRsp { r: 128'h1,      carry: False };
+      27: DecRsp { r: 128'h255,    carry: False };
       default: DecRsp { r: 128'h2, carry: False };
     endcase;
   function Bit#(16) clocksOf(Bit#(5) i) =
     case (i) 0: 2; 1: 4; 2: 8; 3: 4; 4: 10; 5: 6; 6: 4; 7: 4; 8: 4;
              10: 4; 11: 10; 12: 4; 13: 8; 14: 2; 15: 8; 16: 18;
-             17: 4; 18: 6; 19: 4; 20: 6; 21: 2; 22: 4; default: 4; endcase;
+             17: 4; 18: 6; 19: 4; 20: 6; 21: 2; 22: 4;
+             23: 6; 24: 26; 25: 10; 26: 6; 27: 22; default: 4; endcase;
 
   rule rl_issue (!done && !issued);
-    box.request(tagged SauAdd reqOf(idx));
+    if (isCvt(idx)) box.request(tagged SauCvt cvtOf(idx));
+    else box.request(tagged SauAdd reqOf(idx));
     issued <= True;
     t0 <= clk;
   endrule
@@ -1374,7 +1464,8 @@ module mkSauStepTb(Empty);
     Bit#(16) took = clk - t0;
     Maybe#(Bit#(16)) own = box.ownClocks();
     Maybe#(Bit#(16)) wantOwn = (idx == 9) ? tagged Invalid : tagged Valid took;
-    if (got != want) begin
+    Bool wrong = isCvt(idx) ? (got.r != want.r) : (got != want);
+    if (wrong) begin
       $display("FAIL sau step[%0d]: r=%h carry=%0d, want r=%h carry=%0d",
                idx, got.r, got.carry, want.r, want.carry);
       fails <= fails + 1;

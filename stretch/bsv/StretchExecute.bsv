@@ -5110,7 +5110,8 @@ function VflArm vflConvertFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bit#(128) lcvIn = lcvToDec ? zeroExtend(lcvNumeric & lcvMask)
                                          : zeroExtend(lcvDg);
               if (cvtOf(boxResult) matches tagged Invalid) begin
-                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: lcvToDec, v: lcvIn });
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: lcvToDec, v: lcvIn,
+                                       steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, !lcvToDec), accS: False } });
                 needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
               end else begin
               CvtRsp cr = validValue(cvtOf(boxResult));
@@ -5273,7 +5274,8 @@ function VflArm vflConvertFamily(StretchStorage st, VflCtx cx, VflArm a0);
             Bit#(128) cvIn = (vi.m.decimal == 0) ? zeroExtend(cvSrc)
                            : zeroExtend(cvDigits & 64'h0FFFFFFFFFFFFFFF);
             if (cvtOf(boxResult) matches tagged Invalid) begin
-              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: cvIn });
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: cvIn,
+                                     steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, vi.m.decimal == 1), accS: True } });
               needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
             end else if (vi.m.decimal == 0) begin
               CvtRsp cr = validValue(cvtOf(boxResult));
@@ -5398,7 +5400,8 @@ function VflArm vflConvertTransitFamily(StretchStorage st, VflCtx cx, VflArm a0)
               match {.ltDg, .ltNd} = decFieldDigits(valRaw, numBits, bsz);
               Bit#(128) ltIn = (vi.m.decimal == 0) ? zeroExtend(valRaw) : zeroExtend(ltDg);
               if (cvtOf(boxResult) matches tagged Invalid) begin
-                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: ltIn });
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: ltIn,
+                                       steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, vi.m.decimal == 1), accS: False } });
                 needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
               end else begin
               CvtRsp cr = validValue(cvtOf(boxResult));
@@ -5521,7 +5524,17 @@ function VflArm vflConvertTransitFamily(StretchStorage st, VflCtx cx, VflArm a0)
                 ind = setResultIndicatorsF(ind, res);
               end
             end else begin
-              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: toDec, v: cvtIn });
+              // STEPPED (fidelity_plan.md A3 (b) step 5): B-D with Table 3's
+              // s and u/8 from the data.  D-B is NOT stepped from the data:
+              // its s/4 is held at the fitted 1 (3 passes with the
+              // equation's 2).  At the CHOSEN field above, the atlas's
+              // accumulator (+1 at offset 20, PDF 113) gives s/4 = 6 at the
+              // first DCV and more at each repetition, against PDF 139 /
+              // 166's flat 18 clocks at every field: MEASURED, 96 cells
+              // +55.8 away.  The field or the term is wrong; which is open.
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: toDec, v: cvtIn,
+                                     steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, !toDec) + (toDec ? 0 : 1),
+                                                          accS: toDec } });
               needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
             end
             end
@@ -9426,7 +9439,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                           ? tagged Valid boxKind : tagged Invalid;
   method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
                                 ? divBox.response().fpExtra : 0;
-  method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && boxKind == 1 && sau.responseReady())
+  method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && (boxKind == 1 || boxKind == 2) && sau.responseReady())
                                            ? sau.ownClocks() : tagged Invalid;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);
