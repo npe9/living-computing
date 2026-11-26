@@ -1186,7 +1186,25 @@ class Machine:
         # vector (PDSS emulate.c KL1B_MARK_ELEMENT; TR-733's "MRBを
         # オンにする").  It follows a guard vector_element whose
         # vector is used again.
+        #
+        # On a list cell (R9, 2026-11-26): Position 0 is the car's cell
+        # and 1 the cdr's.  HELD-SOURCE: PIMOS's own compiler emits
+        # `put_constant(0, Rpos), mark_element(Rlist, Rpos)` for a
+        # car(List) the body refers to, and the same with 1 for a
+        # cdr(List) (library/compiler/body.kl1:437-460,
+        # generate_add_ref_), so the list word is the instruction's
+        # operand.  A list's two cells are at its address with no
+        # header, as a short vector's are, and the firmware routine
+        # (30a9, docs/pseudo_pimm_microcode.md: 30aa reads, 30ab
+        # writes) is too short for a dispatch on the tag: INFERENCE
+        # that it is the same address + Position for both.  PDSS's emulator (emulate.c:2636) indexes
+        # a vector only, its compiler emitting it for vectors; VPIM
+        # deleted klb_mark_element (klb_mark.psl.c, 90.02.14): no
+        # source there.  Another Position on a list is refused.
         v, i = self.deref(self.reg[x]), self.deref(self.reg[y])
+        if v[0] & ~1 == LIST and i[0] & ~1 == INT and i[1] < 2:
+            self.taken(v[1] + i[1], mark=True)
+            return
         if self.vsize(v) is None or i[0] & ~1 != INT or not i[1] < self.vsize(v):
             raise Unimplemented('mark_element of %r, %r' % (v, i))
         self.taken(self.vbase(v) + i[1], mark=True)
