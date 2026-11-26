@@ -4759,6 +4759,32 @@ modules having failed nothing in the first run; "rest screen" is
 | C3 | the screen under the source's block not drawn back | copy only |
 | C4 | the source saved without `uncover/3` | copy only |
 
+### Window M8's stops resolved (2026-11-26)
+
+The owner's "do it" (2026-11-26) on `../docs/simpos/m8_stops.md`: its
+recommendations, in its §7 order, one commit a step.
+
+**Step 1: the held `draw_filled_ellipse` forms and `rough_dotted`.**
+- `/8` `(W, CX, CY, RX, RY, _, Pattern, Op)` (USAGE icotext
+  `imi_draw_win.esp:250-282`, `util_scroll.esp` forwarders) and `/6`
+  `(W, CX, CY, RX, RY, Op)`, pattern fix (USAGE gog `CGS_DEMO.ESP:416,
+  :424`). `/7` is kept, relabelled INFERENCE (only TM-785 p40's defective
+  vector). `execute_graphics_command/2`'s seven-element vector is `/8`;
+  the printed six-element vector stays refused, now because no held
+  method has that arity (m8_stops.md §6).
+- `rough_dotted` (kappa2 `pdim.esp:1094` and seven more held programs):
+  density INFERENCE (sparser than `dotted`: examds `sl_draw.win`'s
+  thresholds, paragraph `rmon.esp`'s order), dots OURS (`8888, 0, 2222,
+  0`). No held image shows it.
+- Neither held caller compiles under espc (icotext: 52 refused predicates;
+  gog `CGS_DEMO.ESP`: its macro bank `moji` is not held), so
+  `test_win_m8_stops_ellipse` replays their calls, transcribed.
+- Injections, OBSERVED (Window, `test_fep_bridge.py`, `test_kl0.py`):
+  S1 `/8` drawn with fix: stops_ellipse only; S2 `/6` drawn exclusive_or:
+  first NOTHING (drawn on white), then, the /6 drawn over a half-black
+  block, stops_ellipse only; S3 rough_dotted's rows swapped:
+  stops_ellipse and patterns.
+
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
 Injection P13 (the coordinator's own process held back like any writer)

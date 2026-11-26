@@ -607,6 +607,17 @@ named(light_paint, _, 16#"2222") :- !;
 named(dotted, 0, 16#"AAAA") :- !;
 named(dotted, 2, 16#"AAAA") :- !;
 named(dotted, _, 0) :- !;
+% rough_dotted (USAGE kappa2 user_if/pb/pdim.esp:1094 get_paint_pattern/2,
+% fcell.esp; paragraph g_window.esp, bar2_v.esp; kl1graph screen.esp;
+% added 2026-11-26, docs/simpos/m8_stops.md §4).  No held image shows a
+% dot of it.  Its DENSITY is INFERENCE: sparser than dotted, as the held
+% scales order them (examds diag/sl_draw.win: 0 < CL =< 0.2 rough_dotted,
+% 0.2 < CL =< 0.4 dotted; paragraph pmeter/rmon.esp make_pattern/2: 2 a
+% 2-in-128 pattern, 3 rough_dotted, 4 dotted).  Its dots are OURS: one in
+% 8, every 4 columns on every other row, the rows 2 columns apart.
+named(rough_dotted, 0, 16#"8888") :- !;
+named(rough_dotted, 2, 16#"2222") :- !;
+named(rough_dotted, _, 0) :- !;
 named(mesh, 0, 16#"FFFF") :- !;
 named(mesh, _, 16#"8888") :- !;
 named(small_mesh, 0, 16#"AAAA") :- !;

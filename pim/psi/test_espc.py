@@ -5151,7 +5151,9 @@ end."""
                       'mesh': [0xFFFF, 0x8888, 0x8888, 0x8888],
                       'small_mesh': [0xAAAA, 0x5555, 0xAAAA, 0x5555],
                       'left_hatch': [0x8888, 0x4444, 0x2222, 0x1111],
-                      'right_hatch': [0x1111, 0x2222, 0x4444, 0x8888]}
+                      'right_hatch': [0x1111, 0x2222, 0x4444, 0x8888],
+                      # window M8's stops (2026-11-26): density INFERENCE, dots OURS
+                      'rough_dotted': [0x8888, 0, 0x2222, 0]}
 
     def pattern_dot(self, p, x, y):
         # the reference: pattern P's dot at inside (X, Y), the tile
@@ -5578,6 +5580,85 @@ end."""
             with self.assertRaises(K.Refusal) as e:
                 self.send(m, w, *args)
             self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def test_win_m8_stops_ellipse(self):
+        # Window M8's stops, item 5 (docs/simpos/m8_stops.md §6, §7 step 1):
+        # the held draw_filled_ellipse forms and the rough_dotted pattern.
+        #   - /8 `(W, CX, CY, RX, RY, 0, fix, set|reset)`: the HELD icotext
+        #     imi_draw_win.esp:250-253 node, its two calls with
+        #     XX = 100, Y = 60, L = 3, FS = 16 transcribed (the class does
+        #     not compile under espc: 52 of its predicates are refused),
+        #     the shadow `set` 5 right and 3 down, the node `reset` over it;
+        #   - /6 `(W, CX, CY, RX, RY, Op)`: the HELD gog CGS_DEMO.ESP:416
+        #     form (its class needs gog's macro bank `moji`, not held), fix;
+        #   - /8 with rough_dotted, and a draw_filled_rectangle/8 with it:
+        #     pattern_dot's dots (density INFERENCE, dots OURS);
+        #   - kappa2 pdim.esp:1081-1101 get_paint_pattern/2's five names are
+        #     all patterns of the stand-in now (:pattern/2);
+        #   - execute_graphics_command/2 with a seven-element vector: the /8;
+        #   - TM-785 p40's six-element vector still refused loudly.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   S1 /8 drawn with fix whatever its pattern: this test FAILS,
+        #      nothing else.
+        #   S2 /6 drawn with exclusive_or whatever its op: first run, with
+        #      the /6 drawn on white: NOTHING failed (xor = set there); the
+        #      /6 is drawn over a half-black block since, and then this test
+        #      FAILS, nothing else (Window run).
+        #   S3 rough_dotted's rows 0 and 2 swapped: this test and
+        #      test_win_m8_patterns FAIL, nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        SET, RESET, FIX = A('set'), A('reset'), A('fix')
+
+        def drawn(sel, *args):
+            self.assertTrue(self.send(m, w, sel, *args), sel)
+            self.assertEqual(fr.rows, want.rows, sel)
+        # icotext's node: XX + L*FS/2 = 124, Y + FS/2 + 4 = 72, (L+1)*FS/2 = 32,
+        # (FS+L)/2 + 4 = 13
+        XX, Y, L, FS = 100, 60, 3, 16
+        cx, cy, rx, ry = XX + L * FS // 2, Y + FS // 2 + 4, (L + 1) * FS // 2, (FS + L) // 2 + 4
+        self.put_dots(want, cx + 5, cy + 3, self.shape_dots(rx, ry, 0))
+        drawn('draw_filled_ellipse', cx + 5, cy + 3, rx, ry, 0, FIX, SET)
+        X0, Y0 = self.GRAPHICS_AT
+        for dx, dy in self.shape_dots(rx, ry, 0):
+            want.rows[Y0 + cy + dy] &= ~(1 << (1279 - X0 - cx - dx))
+        drawn('draw_filled_ellipse', cx, cy, rx, ry, 0, FIX, RESET)
+        self.assertGreater(fr.count(), 0)
+        # gog's /6, set over a block that covers its left half (an op other
+        # than set shows there)
+        want.command(winfb.FILL << 4, [X0 + 250, Y0 + 30, 50, 61, 0, 0])
+        drawn('draw_filled_rectangle', 250, 30, 50, 61, SET)
+        self.put_dots(want, 300, 60, self.shape_dots(48, 24, 0))
+        drawn('draw_filled_ellipse', 300, 60, 48, 24, SET)
+        # rough_dotted
+        rd = A('rough_dotted')
+        for name in ('right_hatch', 'left_hatch', 'small_mesh', 'rough_dotted', 'dotted'):
+            m.reset()
+            self.assertTrue(K.call_class_method(m, 'simpos##window_pane', 'pattern', [A(name)]), name)
+        self.put_dots(want, 100, 200, self.shape_dots(60, 30, 0), rd)
+        drawn('draw_filled_ellipse', 100, 200, 60, 30, 1, rd, SET)
+        self.pattern_fill(want, rd, 250, 150, 70, 50)
+        drawn('draw_filled_rectangle', 250, 150, 70, 50, 1, rd, SET)
+        self.assertEqual(sum(self.pattern_dot(rd, x, y) for x in range(16) for y in range(4)), 8)
+        # execute_graphics_command/2: the seven-element vector is the /8
+        self.put_dots(want, 380, 230, self.shape_dots(30, 20, 0), A('small_mesh'))
+        drawn('execute_graphics_command',
+              K.Cons(K.Vec([A('draw_filled_ellipse'), K.Vec([380, 230, 30, 20, 1, A('small_mesh'), SET])]), K.NIL))
+        rows = list(fr.rows)
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, w, 'execute_graphics_command',
+                      K.Cons(K.Vec([A('draw_filled_ellipse'), K.Vec([200, 0, 100, 1, A('dotted'), SET])]), K.NIL))
+        self.assertIn('graphics_refused', str(e.exception.detail))
         self.assertEqual(fr.rows, rows)
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())

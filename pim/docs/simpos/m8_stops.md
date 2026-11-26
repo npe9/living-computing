@@ -385,6 +385,10 @@ as CY the shape is half above the window, so 0 is probably a corrupted value as 
 Each step changes the hardware contract, so each updates `window_hardware_plan.md` §1.2 and §2.4
 and the winfb/RTL lockstep bench, and records the change as OURS.
 
+**Status (2026-11-26, implementation):** the owner said "do it"; progress is recorded step by step
+in `../../psi/README.md` "Window M8's stops resolved".
+- Step 1 DONE: `/8`, `/6` and `rough_dotted` stood in (`test_win_m8_stops_ellipse`).
+
 ## 8. Sources read for this page
 
 - TM-785 PDF p19-20 (folios 14-15), p35 (folio 30), p40 (folio 35): page images.

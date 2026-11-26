@@ -379,10 +379,11 @@ attribute permission := out;
 % `(W, CX, CY, R, _, Pattern, Op)`, draw_filled_fan/9 `(W, CX, CY, R, A1,
 % A2, _, Pattern, Op)` (each PRINTED-INTERFACE TM-785 p40, the vector
 % data/2 gives, the arity INFERENCE from its length); draw_filled_circle/5
-% `(W, CX, CY, R, Op)` (USAGE gog DISPB2.ESP:94); draw_filled_ellipse/7
-% `(W, CX, CY, RX, RY, Pattern, Op)` (TM-785 p40 prints a six-element
-% vector `{200, 0, 100, 1, dotted, set}`, the filled circle's layout; the
-% order here is INFERENCE from the outline's); draw_graph/2 and
+% `(W, CX, CY, R, Op)` (USAGE gog DISPB2.ESP:94); draw_filled_ellipse/8
+% `(W, CX, CY, RX, RY, _, Pattern, Op)` (USAGE icotext) and /6 `(W, CX,
+% CY, RX, RY, Op)` (USAGE gog), and /7 `(W, CX, CY, RX, RY, Pattern, Op)`
+% (INFERENCE: TM-785 p40 prints a six-element vector `{200, 0, 100, 1,
+% dotted, set}`, one element short; the method's own comment); draw_graph/2 and
 % draw_polygon/2 `(W, [(X, Y), ...])` (USAGE kwic scrolls.esp:1135),
 % /9 `(W, Points, _, _, _, _, Width, Style, Op)` (TM-785 p40: elements 1-4
 % are unknown and ignored).  The angles are whole degrees, anticlockwise
@@ -445,8 +446,19 @@ attribute permission := out;
 :draw_filled_circle(W, CX, CY, R, Op) :- filled(W, CX, CY, R, R, all, fix, Op);
 :draw_filled_circle(W, CX, CY, R, _, Pt, Op) :- filled(W, CX, CY, R, R, all, Pt, Op);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
-% body OURS): draw_filled_ellipse.
+% body OURS): draw_filled_ellipse.  Window M8's stops resolved (2026-11-26,
+% docs/simpos/m8_stops.md §6): the held forms are /8 `(W, CX, CY, RX, RY,
+% _, Pattern, Op)` (USAGE icotext imi_draw_win.esp:250-282, six sites
+% `(...,0,fix,set|reset)`, and its util_scroll.esp:116-117, :315-316
+% forwarders), the element after RY unknown and ignored as the filled
+% circle's /7 ignores its own; and /6 `(W, CX, CY, RX, RY, Op)` (USAGE gog
+% CGS_DEMO.ESP:416, :424), pattern fix as draw_filled_circle/5.  The /7
+% `(W, CX, CY, RX, RY, Pattern, Op)` rests only on TM-785 p40's six-element
+% vector, one element short of the held /8 layout (m8_stops.md §6): its
+% order is INFERENCE, no held caller sends it, and it is kept.
+:draw_filled_ellipse(W, CX, CY, RX, RY, Op) :- filled(W, CX, CY, RX, RY, all, fix, Op);
 :draw_filled_ellipse(W, CX, CY, RX, RY, Pt, Op) :- filled(W, CX, CY, RX, RY, all, Pt, Op);
+:draw_filled_ellipse(W, CX, CY, RX, RY, _, Pt, Op) :- filled(W, CX, CY, RX, RY, all, Pt, Op);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_filled_fan.
 :draw_filled_fan(W, CX, CY, R, A1, A2, _, Pt, Op) :- angles(W, A1, A2), !,
@@ -684,10 +696,16 @@ command(W, draw_ellipse, 7, A) :- !,
         el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, Wd), el(A, 5, St), el(A, 6, Op),
         :draw_ellipse(W, CX, CY, RX, RY, Wd, St, Op);
 % TM-785 p40's printed draw_filled_ellipse vector {200, 0, 100, 1, dotted,
-% set} has six elements, the filled circle's layout with its `1`: read as
-% {CX, CY, RX, RY, Pattern, Op} it is an ellipse 1 dot high, read as the
-% circle's it is no ellipse.  Ambiguous, so refused loudly (OURS).
+% set} has six elements (read again at 600 dpi: not an OCR error), one
+% short of the held /8 layout {CX, CY, RX, RY, _, Pattern, Op}, and no
+% held method takes that arity (docs/simpos/m8_stops.md §6: none of the
+% 18 SIMPOS archives, cil, paragraph or the 5 CESP archives has a /7).
+% Which element was lost cannot be recovered, so it is refused loudly
+% (OURS).  The seven-element vector is the held /8's.
 command(W, draw_filled_ellipse, 6, _) :- !, :graphics_refused(W, draw_filled_ellipse);
+command(W, draw_filled_ellipse, 7, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, U), el(A, 5, Pt), el(A, 6, Op),
+        :draw_filled_ellipse(W, CX, CY, RX, RY, U, Pt, Op);
 command(W, draw_arc, 8, A) :- !,
         el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, A1), el(A, 4, A2), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
         :draw_arc(W, CX, CY, R, A1, A2, Wd, St, Op);
