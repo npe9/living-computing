@@ -14,8 +14,9 @@
 //   mkWinUartTx    the line out
 //   mkWinLinkRx    the frame receiver: hunt for A5, SEQ, LEN, 13 payload
 //                  bytes, CRC-16/CCITT-FALSE; commands and error records
-//   mkWinLinkTx    the record sender: statuses, the dump's data in records
-//                  of 64 words, error records and input event records
+//   mkWinLinkTx    the record sender: statuses, a dump's or a read's data
+//                  in records of at most 64 words (gathered first, so LEN
+//                  is the real count), error records and input event records
 //                  (H5/H7s: TYPE 3, WinInput.bsv's records; only between
 //                  records, after the box's answers and the errors)
 //   mkWinLink      the three behind one Client of the box
@@ -226,20 +227,36 @@ module mkWinLinkTx(WinLinkTx);
    Reg#(Bool) isData <- mkRegU;
    Reg#(Bool) isEvt <- mkReg(False);
    Reg#(UInt#(7)) wLeft <- mkRegU;            // data words still to send
+   // a data record's words are gathered first (at most 64), so that its
+   // LEN is known when the header goes out: a read (prim a) answers any
+   // number of words, not a multiple of 64 (before 2026-11-26 every record
+   // claimed 64 and a short read took the next answer's words)
+   FIFOF#(Bit#(16)) dBuf <- mkSizedFIFOF(64);
+   Reg#(UInt#(7)) dCnt <- mkReg(0);           // words in dBuf
    Reg#(Bool) loByte <- mkRegU;
    Reg#(Bit#(16)) crc <- mkRegU;
 
    function Action begin6(Vector#(6, Bit#(8)) h, UInt#(3) cnt, Bool d, Bool ev) =
       action
          busy <= True; ph <= THdr; hdr <= h; hN <= cnt; hI <= 0; isData <= d; isEvt <= ev;
-         wLeft <= 64; loByte <= False; crc <= 'hffff;
+         loByte <= False; crc <= 'hffff;
       endaction;
 
-   // a new record: the box's answer first, else an error
-   rule startData (!busy && rspQ.first.isData);
-      begin6(unpack({8'h0, 8'h0, 8'd128, 8'd1, seqQ.first, 8'h5a}), 4, True, False);
+   // gather the box's data words, outside a data record, up to 64
+   rule gather (!(busy && isData) && rspQ.first.isData && dCnt < 64);
+      dBuf.enq(rspQ.first.data); rspQ.deq;
+      dCnt <= dCnt + 1;
    endrule
-   rule startStatus (!busy && !rspQ.first.isData);
+
+   // a new record: the box's answer first, else an error.  A data record
+   // goes when 64 words are gathered or the answer's data has ended (its
+   // status is next); gather and startData are never enabled together.
+   (* descending_urgency = "startData, gather" *)
+   rule startData (!busy && dCnt != 0 && (dCnt == 64 || !rspQ.first.isData));
+      begin6(unpack({8'h0, 8'h0, {1'b0, pack(dCnt)} << 1, 8'd1, seqQ.first, 8'h5a}), 4, True, False);
+      wLeft <= dCnt; dCnt <= 0;
+   endrule
+   rule startStatus (!busy && dCnt == 0 && !rspQ.first.isData);
       WinFbRsp r = rspQ.first;
       rspQ.deq; seqQ.deq;
       begin6(unpack({8'h0, r.status, 8'd1, 8'd0, seqQ.first, 8'h5a}), 5, False, False);
@@ -267,13 +284,13 @@ module mkWinLinkTx(WinLinkTx);
       if (hI + 1 == hN) ph <= isData ? TData : (isEvt ? TEvt : TCrcH);
    endrule
    rule sendData (busy && ph == TData);
-      WinFbRsp r = rspQ.first;
-      Bit#(8) b = loByte ? r.data[7:0] : r.data[15:8];
+      Bit#(16) w = dBuf.first;
+      Bit#(8) b = loByte ? w[7:0] : w[15:8];
       outQ.enq(b);
       crc <= crc16Byte(crc, b);
       loByte <= !loByte;
       if (loByte) begin
-         rspQ.deq;
+         dBuf.deq;
          wLeft <= wLeft - 1;
          if (wLeft == 1) ph <= TCrcH;
       end

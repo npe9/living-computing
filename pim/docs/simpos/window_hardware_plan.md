@@ -439,14 +439,15 @@ The record format and every rule are OURS:
   by ±pitch (H3 had seen a variable multiply on a RAM address miss 25 MHz).
 - `bsv/WinFbBox.bsv` answers it in lockstep with the reference, checked by `bsv/run_win_tb.sh` on
   the read streams. The words leave as a dump's frame words do.
-- Open item: the host link does not carry them yet. Its TX (`bsv/WinLink.bsv` `sendData`) frames
-  data as 64-word records and takes 64 answers without looking at `isData`. So a read whose word
-  count is not a multiple of 64 would send its status, and later answers, as data words. This was
-  found by reading the rule; no read has been run through the link.
+- The host link carries them (fixed 2026-11-26). Its TX used to frame data as 64-word records
+  and take 64 answers without looking at `isData`, so a read whose word count is not a multiple
+  of 64 sent its status, and later answers, as data words (found by reading the rule). Now
+  `mkWinLinkTx` gathers up to 64 words first and sends a record with the real LEN (2N). The
+  `reads` and `targets` streams run through the link in `bsv/run_win_link.sh`, every data record
+  checked against `psi/winfb.py`'s `Frame.reads`; the old sender fails both (injections L7-L9).
 - `bsv/WinFbBox.bsv` runs the targets in lockstep too: the gen streams `targets`, `rand_x2_1..3`
   and the directed `bsv/win_streams/targets_stall.txt` (under +stall), with injections T1-T4 in
-  `bsv/run_win_tb.sh`'s header. No target record has been run through the host link
-  (`bsv/WinLink.bsv`).
+  `bsv/run_win_tb.sh`'s header.
 
 ### 2.5 Fonts
 
@@ -1046,7 +1047,8 @@ answers port A two cycles after a put, and the box waited a cycle on every frame
 **H6, the RTL half, built in Bluesim (2026-11-25).**
 - `../../tools/winlink.py` freezes the link (OURS). Down, one frame a command: `A5 SEQ LEN=13`, the
   104-bit record, then CRC-16/CCITT-FALSE. Up, records `5A SEQ TYPE LEN … CRC`: status, dump data
-  in 64-word records, and errors (CRC, LEN, SEQ).
+  in 64-word records (since 2026-11-26 a read's too, the last record short), and errors (CRC,
+  LEN, SEQ).
 - It also holds the receiver's model and the checker.
 - `../../bsv/WinLink.bsv` (`mkWinLink`: UART receiver and transmitter, frame receiver, record
   sender, each its own module) puts the box behind one `Client`.

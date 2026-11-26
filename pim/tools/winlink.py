@@ -24,8 +24,13 @@ UP, board to host:
     5A  SEQ  TYPE  LEN  PAYLOAD[LEN]  CRC_HI  CRC_LO      (CRC over SEQ..payload)
 
   TYPE 0 status   LEN 1: the box's status for command SEQ (winfb.py's codes)
-  TYPE 1 data     LEN 128: 64 frame words, big-endian, of command SEQ's dump
-                  (1,280 records a dump, in frame order, then its status)
+  TYPE 1 data     LEN 2N, N = 1..64: N words, big-endian, answered by command
+                  SEQ: a dump's frame (1,280 records of 64 words, in frame
+                  order) or a read's rectangle (prim a, psi/winfb.py's
+                  Frame.reads order: records of 64 words, the last one
+                  holding the rest), then the command's status.  Before
+                  2026-11-26 every record was 64 words, which misframed a
+                  read whose words are not a multiple of 64.
   TYPE 2 error    LEN 2: CODE, then the SEQ the receiver expected next
                   CODE 1 CRC: a frame's CRC was wrong; the frame is dropped
                   CODE 2 LEN: LEN was not 13; the frame is dropped
@@ -196,14 +201,38 @@ def check(inp, up):
         want.append((s, fr.command(op, a)))
     if stats != want:
         return 'statuses %r, expected %r' % (stats[:8], want[:8])
-    data = [p for s, t, p in recs if t == T_DATA]
-    dumps = sum(1 for _, op, _a in acc if op >> 4 == winfb.DUMP)
-    if len(data) != 1280 * dumps:
-        return '%d data records for %d dumps' % (len(data), dumps)
-    for k in range(dumps):
-        img = bytes(b for p in data[1280 * k:1280 * (k + 1)] for b in p)
-        if img != fr.dumps[k][-163840:]:
-            return 'dump %d differs from psi/winfb.py\'s frame' % k
+    data = [(s, p) for s, t, p in recs if t == T_DATA]
+    # the data records the reference implies, command by command: a dump's
+    # frame and a read's words, each cut into records of at most 64 words
+    want, what = [], []
+    fr = winfb.Frame(winfb.test_11())
+    nd = 0
+    for s, op, a in acc:
+        r0 = len(fr.reads)
+        fr.command(op, a)
+        if op >> 4 == winfb.DUMP:
+            img = fr.dumps[nd][-163840:]
+            words = [(img[i] << 8) | img[i + 1] for i in range(0, len(img), 2)]
+            tag = 'dump %d' % nd
+            nd += 1
+        elif op >> 4 == winfb.READ:
+            words = fr.reads[r0:]
+            tag = 'read SEQ %d' % s
+        else:
+            continue
+        for i in range(0, len(words), WORDS_PER_DATA):
+            want.append((s, [b for w in words[i:i + WORDS_PER_DATA] for b in (w >> 8, w & 0xff)]))
+            what.append(tag)
+    dumps = nd
+    if len(data) != len(want):
+        if all(t.startswith('dump') for t in what):
+            return '%d data records for %d dumps' % (len(data), dumps)
+        return '%d data records, expected %d' % (len(data), len(want))
+    for k, (g, w) in enumerate(zip(data, want)):
+        if g != w:
+            if what[k].startswith('dump'):
+                return '%s differs from psi/winfb.py\'s frame' % what[k]
+            return '%s: data record %d is %r..., expected %r...' % (what[k], k, g[1][:8], w[1][:8])
     return ''
 
 
@@ -245,7 +274,7 @@ def main(argv):
             return 1
         acc, errs = receive(read_hex(argv[1]))
         print('winlink check: %d commands accepted, %d link errors reported, '
-              'statuses and the dump = psi/winfb.py' % (len(acc), len(errs)))
+              'statuses, dumps and reads = psi/winfb.py' % (len(acc), len(errs)))
         return 0
     if argv == ['selftest']:
         selftest()

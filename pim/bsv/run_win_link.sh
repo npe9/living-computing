@@ -17,6 +17,11 @@
 # case's expected error records come from the model, so the check fails
 # if the board reports more, fewer or other errors, or draws a dropped
 # frame.
+#   3a. reads and targets (2026-11-26, the m8_stops extension's prim a and
+#      b, psi/winfb.py gen): a read answers any number of words, so its
+#      data records are of at most 64 words, the last one short (LEN 2N);
+#      winlink.py check compares every data record, a dump's and a read's,
+#      with psi/winfb.py (Frame.reads), SEQ and payload.
 #   4. H6's kl0 runs (2026-11-26): tools/win_kl0_link.py makes the streams
 #      of two live kl0 runs of psi/test_espc.py from their device logs:
 #      kl0_m1 (the Login PIMOS window's three stages in one stream, a dump
@@ -43,6 +48,14 @@
 #   L6 the hunt takes any byte as a frame start: drop, badlen (a LEN error
 #      at every byte until a frame lines up again); a clean stream never
 #      hunts, so the clean cases and flip (one whole bad frame) pass
+# The reads fix (OBSERVED 2026-11-26, the same way, WIN_LINK_KL0=0; every
+# other case passed): before it every data record claimed 64 words, which
+# misframes a read that is not a multiple of 64 (reported by the m8_stops
+# agent).
+#   L7 LEN always 128: reads (no end after 200000000 cycles), targets (the
+#      up records do not parse: winlink check raised, no message)
+#   L8 a short record never ended by the status: reads, targets (no end)
+#   L9 the sender before the fix, whole: reads, targets (no end)
 # The kl0 cases (OBSERVED 2026-11-26, the same way; the other 6 passed):
 #   K1 win_kl0_link.py puts each dump one command early: kl0_m1 and kl0_m4
 #      (pins: 5,120 and 2,560 data records for 3 and 1 pinned dumps)
@@ -82,7 +95,7 @@ if [ "${WIN_LINK_KL0:-1}" = 1 ]; then
   KL0="kl0_m1:@m1: kl0_m4:@m4:"
 fi
 # name:stream:encode options (@NAME: the kl0 stream $B/kl0/NAME.stream) (byte numbers: a frame is 18 bytes)
-CASES="glyphs:glyphs: lines:lines: xor_twice:xor_twice: drop:glyphs:--drop_100 flip:glyphs:--flip_300 badlen:glyphs:--flip_56 $KL0"
+CASES="glyphs:glyphs: lines:lines: xor_twice:xor_twice: reads:reads: targets:targets: drop:glyphs:--drop_100 flip:glyphs:--flip_300 badlen:glyphs:--flip_56 $KL0"
 status=0
 for c in $CASES; do
   name=${c%%:*}; rest=${c#*:}; stream=${rest%%:*}; opts=$(echo "${rest#*:}" | tr '_' ' ')
