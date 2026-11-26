@@ -1176,3 +1176,71 @@ pmi d6, a8; blt 41 with R != A.
 | paragraph `h.esp`:78-135, against `set_x_unit0/2` @208-252 | listing | CONFIRMED: every constant above 32767 is `pmi a8` plus an integer cell; every one below is a `pmi a7` |
 | `pimos_remote_login_server` `local_server_socket/2` @32-38 | listing | CONFIRMED: it fails while the slot is `none` (blt 65), so with no server running the requester writes `Network error.` |
 | `pimos_remote_login_socket_table` `add_at/3` @8c, `initiate/1` @11a | listing | CONFIRMED: `add_at` needs `is_initiated/1`; `initiate/1` is reached from the replier's `initiate/1` |
+
+## §13 Step 3n: the inferences of the wire to PIMOS (2026-11-25)
+
+Step 3n works under the same rule as §11 and §12. Held cells were read with `psi/fepread/ptfread.py` (pimfep,
+pimscsi, paragraph), held source by path and line. The tests are `psi/test_fep_bridge.py` (the assembler against
+`ref/pimm/fep.py`, a scripted PSI run, the live run's tape, and an opt-in live run) and the `psi/test_kl0.py` row
+tests (`Step3nRows`) and `psi/test_espc.py` (`test_step3n_exterminate`, `test_step3n_monogyny_list_index`).
+The path is in `boot_route.md` §4.6 and §6.5; the census effect is in `psi/README.md` "Step 3n".
+
+### §13.1 INFERENCE (and INTERPOLATED behaviour)
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | `substring/7` from 16 to 32 bits joins two elements, the high half first; 32 to 16 splits them the same way | `fep_message_assembler create_argument_string_list/5` @11d-126 (a string padded to an even length, @165-176, then re-read as 32-bit) and `take_argument/5` @183-18e (the reverse); the order is that of PIMOS's wire words (`ref/pimm/fep.py` `pack_message`) and of blt 36 (§12.1 row 12). The held assemble then equals `pack_message` byte for byte on five messages | `kl0.py` `op_substring_7` |
+| 2 | For 16 to 32 bits and back, U = 0 and V = N | `create_argument_string_list/5` @125-126 requires U == 0 and V == the length it passed; `take_argument/5` @18f takes the next argument's position as Pos + V. The 16/8 witnesses write `_` for both, so those stay unbound | `kl0.py` `op_substring_7` |
+| 3 | A 32-bit string element with its top bit set is read as a negative integer | `take_argument/5` @17b-17d compares a message's length word with the constant -1 (`ca`, cell ffffffff) to tell an integer argument; PIMOS writes -1 there (`scsi_fep.kl1`:429-445) | `kl0.py` `op_string_element` |
+| 4 | `get_integer`'s 16-bit immediate is sign-extended | the same clause then tests the register with `27 00 ffff`; read unsigned it could never succeed (as `put_integer`, step 3k) | `kl0.py` `op_get_integer` |
+| 5 | blt 0d `object/3` succeeds on an object (an instance or a class) and fails on anything else; its two outputs are left unbound | the name (witnessed on kappa2 `som.esp`:191-194, `object(Sheet,_,_)`, step 3f) and the other type tests. Every held source call has both outputs `_`. On this path it is met three times, at `pimos_scsi_front_end delete_remote_stream/2` @879, always on the atom `nil`, and fails (traced 2026-11-25): its success branch is not exercised by the run. `test_kl0.py` `Step3nRows.test_object` pins the inference on `scsi_dummy_handler initiate/2` (no source held) | `kl0_opcodes.tsv` (status INFERENCE), `kl0.py` `op_object` |
+| 6 | `subvector/4` (blt 30) gives a vector holding the same element terms | the row's witness (`except_unique/2` @1f3-209, `HLCCMPS.ESP`:169-176) fixes the operands; the front end's `create_device/4` (@432-447) reads the device's arguments from the result | `kl0.py` `op_subvector` |
+| 7 | `monogyny_list_index` is a `list_index` that holds one object per key: `put_at/3` replaces the key's object | the name, the selectors held programs send (`required/classes.tsv`), and `pimfep##simpos_user` `regist/4` (@4d-61) and `identify/4` (@66-72): `setup_process/4` (@7f-9e) tries identify first and regist when it fails | `standin/monogyny_list_index.esp` |
+| 8 | `world root_path/3` gives the full pathname of the directory a logical name denotes | its one held send, `simpos_user_device $or$3/2` (@ba-d6), whose result (through `remote_or_local/6`) answers PIMOS's `io(0, [len RN, len RP] ++ RN ++ RP)` with the user's directory; the clause's alternative answers `">"`. The lookup is `directory_retrieve`'s (TR-524 PDF p9) | `kl0.py` `world_root_path` |
+| 9 | `pathname remote_or_local/6` gives a local pathname as its own local part (the third argument) | held source callers cil `src/ds_fep.esp`:909 and cal-esp `deb2.12/init.esp`:314-318 (the local part then compared with `">sys>font>kanji_16.font"`); a remote one (`Node::`) is refused | `kl0.py` `pathname_remote_or_local` |
+| 10 | `tcpip_network_subsystem is_installed/1` fails on this PSI | the server's `create_socket/2` sends it first in its tcpip clause (@4ac) and has no alternative; the model has no Ethernet (OURS). The result, `{Id, 5}` to `io(0, "tcpip")`, is the answer `fep.py` chose (`../fep_services.md` §7.5), and PIMOS writes `CANNOT MAKE A TCPIP LOGIN SERVICE!!` | `standin/tcpip_network_subsystem.esp` |
+
+INTERPOLATED stand-in methods, each labelled in its file with the held send it comes from: `abort_handler create/2`
+and `abort/3`; `process set_area_limit_execution/7` and `set_package/2` (no-ops; the front end's `initiate/1`
+@21d-22e) and `exterminate/1` (the status nil; the front end's `exit_program/1` @4da-4e2); `stream grant_stream/2` (a
+no-op; @580-597); `string append/3` takes the first string's element size (`assemble/3` @56-75); `world
+default_logical_name/2`; `monogyny_list_index create/2`.
+
+KNOWN-PLAINTEXT rows added, each with its witness and held source: blt 30 `subvector` (`HLCCMPS.ESP`:169-176) and
+pmi 36 `get_vector_6` (paragraph `p_MAIN.esp`:202, `graph_status_element create/3` @19).
+
+### §13.2 CORRECTED
+
+- `list_index` kept its entries as terms `{Next, Object, Key}`. A failure-driven loop undoes a term's bindings, and
+  the held front end's main loop (`pimos_scsi_front_end $or$0/3` @946-960, a repeat) is one, so its device table
+  lost every entry. The entries are now heap vectors (`new_heap_vector/2`, `set_vector_element/3`), as the chain's
+  links already were. How SIMPOS's own index made its entries is not printed: OURS.
+- `string append/3` always made a 16-bit string. The held assembler appends 32-bit strings into a 32-bit message.
+- Step 3m's boot probe queued the user's keys at the boot. Against the real server, which PIMOS creates later, the
+  requester then writes `Network error.` The bridge gives the keys when both sides are quiet (OURS).
+
+### §13.3 OURS
+
+- The bridge (`psi/fep_bridge.py`): the routing (a device PIMOS makes by 601 is the PSI's; the rest, the shell's
+  window 104 among them, stays `fep.py`'s), the 32-bit packing of packets, the exchange order, the moment the user
+  types, and the boot probe `b3n_boot`.
+- The idle interrupt (`kl0.py` `Machine.interrupt`): when every PSI process waits, the bridge's packets are put on
+  the front end's input stream with the printed `stream:put/2`, on registers of their own.
+- The dispatcher's part of `exterminate/1`: a process that kills itself gives up the processor.
+- RP is `pmpsi`, the password the PSI user was registered with in step 3l (§12.3). `fep.py`'s LOGIN has `''`.
+  The held requester sends `:user_password` (§12.1 row 3), and the held `simpos_user_device` identifies with it,
+  so the PSI side is consistent. With RP `''` the boot probe's `simpos_user create/4` finds no such user and the
+  boot fails (tried 2026-11-25). Neither value is sourced, so RP stays `pmpsi`, labelled.
+
+### §13.4 What the bridged run shows that the pinned run does not
+
+`fep.py`'s pinned run and the bridged run agree on every text and on every answer the FEP gives: the replier's
+`[1, [ID]]` to each `io(1)` and `[1, ""]` to `io(2)`, and `[1, ">sys>user>pmpsi"]` to each simpos_user_device's
+`io(0)`. They differ in two places.
+- RP, `pmpsi` against `''`: in the NI and in both 601s of `simpos_user_device` and their `io(0)` (§13.3).
+- PIMOS sends the tcpip server (device 25) a 70 before its 60 in the bridged run, and not in the pinned one. The
+  bridged answers come when the PSI is idle, later in PIMOS's run than `fep.py`'s, which answers inside the SCSI
+  poll. INFERENCE: PIMOS's abort line for that device is bound by then (`../fep_services.md` U6). The cause was
+  not traced in `login.kl1`.
+
+PIMOS's instruction count at the end, 8,626,676, differs from the pinned 8,625,275 accordingly.

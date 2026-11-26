@@ -579,10 +579,45 @@ The basis, the injections and the census are in `../../psi/README.md`,
   `ref/pimm/fep.py`'s `login_record` for node `local`, RN `pmpsi`, RP
   `pmpsi`, UN `pimos`, UP `""`, ID 0 (§6.3).
 
-**Where the route stops now.** The login requester has done its work
-and waits for a key, and so does every other process. What is still
-missing is the wire: the real PIMOS on the far side of
-`fep_message_assembler`, in place of the probe (§6.4).
+**Where the route stopped after step 3m.** The login requester had done
+its work and waited for a key, and so did every other process. What was
+missing was the wire: the real PIMOS on the far side of
+`fep_message_assembler`, in place of the probe (§6.4). Step 3n added it
+(§4.6).
+
+### 4.6 The wire: the held requester logs into PIMOS (step 3n)
+
+The basis, the injections and the census are in `../../psi/README.md`,
+"Step 3n"; every inference is listed in `source_check_2026-11-24.md` §13.
+The path is §6.5.
+
+PIMOS runs on `ref/pimm/pimm.py` from the IPL's link checkpoint (a
+1.1 GB pickle, not in git). The PSI side is the held
+`pimos_scsi_front_end`, made with its class method `create/6`, with the
+held replier, server, `simpos_user_device` and `fep_message_assembler`
+behind it. `psi/fep_bridge.py` (OURS) carries PIMOS's packets for the
+devices it makes by 601 to the front end's input stream, and the front
+end's output back to PIMOS. The user selects "Login PIMOS" and types
+`local`, `pimos` and an empty password when both sides are quiet.
+
+The requester's window (`test_fep_bridge.py` `Tape`; live, 30 s):
+
+```
+Enter FEP node name--------->   local
+Enter your PIMOS user name-->   pimos
+Enter your PIMOS password--->   (not echoed)
+Your request is accepted.                (the held server)
+Login procedure starts.                  (PIMOS, login.kl1, through the replier)
+OK. Your initial program starts.<LF>     (PIMOS)
+Good luck!<LF>                           (PIMOS)
+(beep, beep: the requester waits for a key, as in step 3m)
+```
+
+PIMOS's shell window is still `fep.py`'s (§6.5). Its texts, with `pwd`
+typed there, are `Shell>> `, ` The value of task: directory is
+">sys>user>pmpsi" . <LF>` and `Shell>> `: the pinned shell run's
+(`ref/pimm/lockstep_shell.py` `APPS['pwd']`). The directory in that
+answer is the one the held `simpos_user_device` gave PIMOS.
 
 ### 4.6 The window drawn (window milestones M0, M3, M5; 2026-11-25)
 
@@ -624,11 +659,11 @@ The same run now draws. The basis, the injections and the census are in
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
 login run (§4.5). Open, in order:
 
-1. The wire from SIMPOS to PIMOS (§6.4): substring/7 from 16 to 32 bits
-   in `fep_message_assembler` (@122), then a 620 request through
-   `take_argument` in place of the probe's direct `io/4`.
-2. The FEP census side items: blt 0d (10 stops in each FEP census) and
-   blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
+1. DONE in step 3n (§4.6, §6.5): the wire from SIMPOS to PIMOS. Open
+   on it: the shell's window on the PSI (the PMACS editor is lost),
+   and lia / tcpip logins.
+2. The FEP census side items: blt 0d (DONE in step 3n as an INFERENCE,
+   `object/3`, outputs unbound) and blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s
    PCB word 15. (`create/3`'s `instance_array` entry was measured in
    step 3l: it breaks every census row that creates a process outside
@@ -655,7 +690,7 @@ would only turn the census's `retrieve` refusals into failures, which is
 not progress. A directory with entries would be OURS. So `directory`
 waits for the file system.
 
-## 6. SIMPOS to PIMOS (step 3m, 2026-11-25)
+## 6. SIMPOS to PIMOS (steps 3m and 3n, 2026-11-25)
 
 The connection is a local login, from the "Login PIMOS" item of the
 system menu to PIMOS's login task. It runs on the PSI as far as the
@@ -738,16 +773,80 @@ scope) was not changed.
 
 ### 6.4 What is missing
 
-- **The wire.** The probe calls the server's and the replier's held
-  `io/4` directly. On the real path PIMOS's 620 frames reach them
-  through `fep_message_assembler`. That path still stops at
-  `substring/7` taking 16-bit elements as 32-bit (@122, unwitnessed;
-  the recipes census's `get_title/3` row).
+- **The wire.** DONE in step 3n (§6.5). Until then the probe called the
+  server's and the replier's held `io/4` directly, and the path through
+  `fep_message_assembler` stopped at `substring/7` taking 16-bit
+  elements as 32-bit (@122).
 - **The clock.** No alarm fires (`alarm_watch` stand-in), so the
   requester's 120000 and the server's 60000 timeouts never happen.
 - **lia and tcpip.** Only `local_login` runs. `network_subsystem` is not
   installed (OURS), and the requester's `lia` and `tcpip` branches need
   `user_process_profile`, network groups and sockets that are lost.
-- **RP.** See §6.3.
-- **PIMOS itself.** The probe sends `login.kl1`'s texts in the order of
-  §7.3 for a login that succeeds. It checks nothing.
+- **RP.** See §6.3 and §6.5.
+- **PIMOS itself.** In step 3m the probe sent `login.kl1`'s texts in the
+  order of §7.3 for a login that succeeds, and checked nothing. Since
+  step 3n PIMOS itself answers (§6.5).
+
+### 6.5 The wire (step 3n, 2026-11-25)
+
+**Where the boundary sits.** The real PIM/m's FEP was a PSI running
+`pimfep`. PIMOS's SCSI packets reached `pimos_scsi_front_end` through
+the PSI's SCSI driver (`pimscsi`; its tie to the bus hardware is lost,
+and the bus is not modelled). `psi/fep_bridge.py` stands in for that
+driver and the bus, and for nothing else.
+- On the PIM/m side, a `ref/pimm/fep.py` `Fep` subclass (fep.py and
+  pimm.py are not changed) passes every message for a device PIMOS
+  made by 601 (`create_string_io`: the replier 23, the servers 24 and 25,
+  `simpos_user_device` 26 and 29) whole to the PSI, and queues the PSI's
+  answers for RECEIVE. Everything else stays `fep.py`'s: the files of
+  `pimos:` and `me:`, the timer, 240, the directory, and the shell's
+  window 28 (104 and its commands).
+- On the PSI side, packets go on the front end's input stream as 32-bit
+  strings, and its output is taken from its output stream's post queue.
+  Both happen in the idle interrupt (`kl0.py` `Machine.interrupt`, OURS),
+  when every PSI process waits.
+
+**The path, held throughout on the PSI.** For each packet the front
+end's loop (`$or$0/3`, a failure-driven repeat) takes it from the
+stream. `fep_message_assembler disassemble/3` decodes it with
+`take_argument/5` (32 to 16 bits, §13.1 rows 1-4). A 601 goes to
+`create_device/4` and `pimos_string_io_invoker create_string_io/10`.
+Each 620 goes to the device's `io/5`. `assemble/3` encodes the answer
+(16 to 32 bits), and `fep_scsi_output` puts it out. The held answers
+equal `fep.py`'s:
+
+| Device | PIMOS sends | The PSI answers | fep.py, pinned run |
+|---|---|---|---|
+| 23 replier | 601; `io(0, "")` | `[1]`; `[1, ""]` | the same |
+| 24 server | 601; `io(0, "local")`; `io(1, "  ")` | `[1]`; `[1, ""]`; after the login, NI | the same, NI with RP `''` |
+| 25 server | 601; `io(0, "tcpip")`; 70; 60 | `[1]`; `[5]`; nothing; `[1]` | no 70 (§13.4) |
+| 23 replier | `io(1, [0] ++ text)` x3; `io(2, [0])` | `[1, [0]]` each; `[1, ""]` | the same |
+| 26, 29 simpos_user_device | 601 (RN, RP); `io(0, [5, 5] ++ RN ++ RP)`; 70; 60 | `[1]`; `[1, ">sys>user>pmpsi"]`; nothing; `[1]` | the same, with RP `''` |
+
+`simpos_user_device`'s `io(0)` identifies the user (`simpos_user
+setup_process/4`: `identify/4`, else `regist/4`, through a
+`monogyny_list_index`). It then answers the default logical name's root
+path (`world default_logical_name/2`, `root_path/3`, `pathname
+remote_or_local/6`; §13.1 rows 7-9).
+
+**RP.** Its value is still unsourced on both sides. What the run does
+settle is where it comes from: the held requester sends its SIMPOS
+user's `:user_password`, and the held `simpos_user_device` identifies
+with it. Here that is `pmpsi`, registered in step 3l (OURS). An empty
+password only disagrees with that OURS registry: the probe's user is not
+found (§13.3). `fep.LOGIN`'s `''` is OURS too and was not changed.
+
+**Not on the PSI.** The shell's window. `pimos_window_editor`'s
+`putb/4` and `getl/3` run into the lost PMACS editor
+(`insert_string`, `input_region`, `get_interpreter/2`, the
+carriage-return demons), for which there is only a 37-line
+`standard_editor` stand-in. So `Shell>> ` and the shell's answers are
+`fep.py`'s window log, not the PSI's. The lines typed into the shell
+are `fep.py`'s too (`Fep(lines=..)`).
+
+**Runtime.** A live run (`fep_bridge.py live PKL --type pwd`) takes 30
+to 38 s and 15.2 to 15.5 GB resident: the pickle's machine. It makes 12
+exchanges. The tape (`psi/fep_bridge_tapes/login_pwd.json`, 5 KB)
+replays the PSI side alone in 2 s, in the suite. No new checkpoint was
+written. No PSI clock is needed: no PSI timer is on this path, and
+PIMOS's alarms are `longrun_ipl`'s `alarm_skip`.

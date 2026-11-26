@@ -125,4 +125,14 @@
             ;   :allow_interrupt(#process), !,
                 fail );
 
+    % INTERPOLATED (step 3n) :grant_stream(Stream, Process): one held
+    % send, pimfep##pimos_scsi_front_end local grant_stream/3 @580-597
+    % (cells read 2026-11-25): for a front end of a type other than
+    % remote_fep, test_scsi or test it gives the output stream it was
+    % made with to the process it starts for fep_scsi_output (initiate/1
+    % @264-287), the process that will put on it.  By the name, an
+    % ownership or access right; neither is modelled (any process may put
+    % and get here): it succeeds and does nothing (OURS).
+    :grant_stream(Stream, Process) ;
+
     end.

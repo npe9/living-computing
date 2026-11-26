@@ -101,7 +101,22 @@ attribute first := '$$void';
         put_pairs(List, Index);
 
 local
-add_last('$$void', Object, Key, {'$$void', Object, Key}) :- !;
+% Step 3n: an entry is a heap vector (new_heap_vector/2, set_vector_element/3:
+% not undone on backtracking, kl0_opcodes.tsv blt 19, 28), as the chain's
+% links already are (set_first/2).  Until step 3n it was the term
+% {'$$void', Object, Key}, whose elements a failure-driven loop undid: the
+% held pimfep##fep_device_table add_at/5, run from
+% pimos_scsi_front_end's loop $or$0/3 @946-960 (a repeat: get, command,
+% check_fep_end, back to the top), kept an entry with nothing in it.  OURS:
+% how SIMPOS's own index keeps its entries is not printed (KPPOOL.ESP reads
+% them with first/2, second/2 and vector_element/3 and does not show how
+% they are made); an index that loses its entries on backtracking could not
+% serve the held front end's loop.
+add_last('$$void', Object, Key, E) :- !,
+        new_heap_vector(E, 3),
+        set_vector_element(E, 0, '$$void'),
+        set_vector_element(E, 1, Object),
+        set_vector_element(E, 2, Key);
 add_last(E, Object, Key, E) :-
         first(E, Next),
         add_last(Next, Object, Key, Next1),
