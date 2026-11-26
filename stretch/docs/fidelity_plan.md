@@ -1007,8 +1007,13 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
         F219T-Y, Buchholz B.3, Problem 3.6) were run with and without
         the fix under STRETCH_HALT_REPORT=1. No halt moves (790, 400,
         836, 881, 986, 762 both ways), so no pin moves.
-      - Atlas: recorded in the docs commit after this one (the before/after
-        FP atlas was still running when this tree went to the suite).
+      - Atlas (PDF 42-101, 9,406 cells, its own build-atlas, run before and
+        after on the same tree): 76.8% / 94.6% within 1 / 3 both ways
+        (7,226 / 8,898 cells; the before run reproduces A4's step-3 figure
+        exactly). Compared cell by cell, exactly 8 cells move, all PDF 57
+        NEG `*+` ext columns ((N), A(N), (U), A(U), ni and ix), each by
+        -0.0002 clock: the one exact cancellation in 10,000 adds, 2
+        clocks / 10,000. Every other model time is identical.
   - **`*+` and the rule for done (item 2): HALF MET.**
     - Within 3 is met: 98.8%, against 88.8% before.
     - The median MISSES by 0.0014. It is -1.0014 before and after,
