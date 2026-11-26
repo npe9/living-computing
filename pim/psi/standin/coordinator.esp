@@ -134,8 +134,13 @@
 %     window, then send reshape/5 and the callback has_been_reshaped/1
 %     (window.md §2.1, §2.12: the reshape notifier calls it after the
 %     geometry is set).  Output to a covered window: permission `out`
-%     for every window (uncover/3, window_pane.esp's head).  Not
-%     modelled: the other permissions and the other eight items.
+%     for every window (uncover/3, window_pane.esp's head).
+% Window M7's rest (2026-11-26): EXPAND, MENU, PERMISSION and EXIT added
+% in TM-125 p8's order (ATTRIBUTE, HARDCOPY, SUPERIOR, INFERIOR not
+% offered: no choice window, printer or window hierarchy; psi/README.md
+% "Window M7's rest"); the four output permissions ("OUTPUT PERMISSION"
+% below); an open pop-up and a sweep's outline kept on top of a writing
+% window (uncover/3); has_been_selected/1 sent after a selection.
 % The windows' owners (the process that made each, `:self(#process, P)`
 % at add_window/3) and the programs started ([Name, P]) are kept for kill,
 % as lists (kl0 keeps a list's values in a slot; a vector would keep its

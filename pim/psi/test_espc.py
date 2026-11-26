@@ -4279,6 +4279,9 @@ end.
         #     with window 2 gone.
         # After each, save memory holds the windows' own areas only, every
         # command is OK and the stream replays to the frame.
+        # Window M7's rest (2026-11-26) moved this test's pins: the
+        # manipulator has eight items, so its height is 87 -> 151 and the
+        # `manip` screen changed; nothing else here moved.
         # Injections, OBSERVED (2026-11-26, at the final code; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
         # test_kl0.py run, test_kl0.py OK in each, all else OK):
@@ -4569,7 +4572,8 @@ end.
         #     (coordinator uncover/3, menu_pane lift/1, lay/1: a temporary
         #     window is "never hidden by an ordinary window" and saves
         #     what it covers, PROSE TM-125 p6-7);
-        #   - MOVE of window 1 is begun, its outline over window 2: the
+        #   - MOVE of window 1 is begun, its outline across window 2's
+        #     echo row (at (610, 540)): the
         #     frame equals the run where the outline is drawn after the
         #     echo (the outline is taken off around the write).
         # Injections, OBSERVED: see test_win_m7_items's header.
@@ -4588,9 +4592,9 @@ end.
         self.manip_check(m, closed, [self.MANIP_W1, self.MANIP_W2])
         m, plain, _ = self.later_run(login, two, late)
         self.assertEqual(closed.rows, plain.rows)
-        sweep = [L('m', 1100, 600), L('l', 1180, 676), K.Vec([K.Atom('move'), 600, 480])]
+        sweep = [L('m', 1100, 600), L('l', 1180, 676), K.Vec([K.Atom('move'), 610, 540])]
         m, a, _ = self.later_run(login, two, late + sweep)
-        self.assertEqual(self._walk(m.get_slot(C, 'outline')), [600, 480, 446, 121])
+        self.assertEqual(self._walk(m.get_slot(C, 'outline')), [610, 540, 446, 121])
         m, b, _ = self.later_run(login, two, late, sweep)
         self.assertEqual(a.rows, b.rows)
 
@@ -4614,7 +4618,29 @@ end.
         #     the frame of HIDE on window 2;
         #   - EXIT "exit from window manipulator": the frame before the
         #     manipulator opened.
-        # Injections, OBSERVED: filled in below.
+        # Injections, OBSERVED (2026-11-26, at the final code; each from a
+        # backup copy, restored by copy, cmp clean; Window,
+        # test_fep_bridge.py and test_kl0.py run, all else OK):
+        #   P1 wake/1 a no-op (a held-back writer never goes on):
+        #      test_win_m7_permissions FAILS, nothing else.
+        #   P2 held_back/3 lets `wait` write at once (as out):
+        #      test_win_m7_permissions FAILS, nothing else.
+        #   P3 held_back/3's `show` neither raises nor selects (it writes
+        #      as out): test_win_m7_permissions FAILS, nothing else.
+        #   P4 offer/1 never opens a notify window:
+        #      test_win_m7_permissions ERRORS, nothing else.
+        #   P5 uncover/3 leaves an open pop-up in place:
+        #      test_win_m7_popup_over_writer FAILS, nothing else.
+        #   P6 uncover/3 leaves the outline in place:
+        #      test_win_m7_popup_over_writer FAILS, nothing else (first
+        #      run with the outline at (600, 480): it crossed no echoed
+        #      text and nothing failed; moved to (610, 540), across the
+        #      echo row).
+        #   P7 EXPAND finds no obstacle: this test FAILS, nothing else.
+        #   P8 select_window/2 sends no has_been_selected/1:
+        #      test_win_m7_has_been_selected FAILS, nothing else.
+        #   P9 pmacs_window reshape/5 leaves the text size alone (M7's
+        #      way): test_win_m7_console_move FAILS, nothing else.
         import fep_bridge as FB
         import windev
         import winfb

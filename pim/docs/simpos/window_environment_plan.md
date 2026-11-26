@@ -596,6 +596,26 @@ M6's rest and M7's save areas"; tests `test_win_m7_save_areas`, `test_win_m6_dat
   (TM-225 p11). A selection brings its window to the top (INFERENCE, TM-225 p11).
 - Screens: `screens/window_manipulator.png`, `manipulator_hide.png`, `manipulator_reshape.png`.
 
+**Status (2026-11-26, window M7's rest: M7 done but three items)** (`../../psi/README.md` "Window
+M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `test_win_m7_items`,
+`test_win_m7_has_been_selected`, and `test_win_m7_console_move` changed):
+- **Output permission**, all four (PROSE TM-125 p5-6, TM-225 p10-11; Fig. 4's `out / wait / show /
+  notify`): by the held `permission(P)` option, `set_permission/2`, or the manipulator's PERMISSION
+  item. `wait` holds the writer's process back until the window is uncovered. `show` raises and
+  selects the window. `notify` opens a temporary window at the mouse offering `wait` and `show`
+  (its look is OURS). The default stays `out` (OURS; TM-225's default is ① wait).
+- **A pop-up over a writing window**: the pop-up is lifted first and laid back last, so the output
+  goes into its save area. A sweep's outline is taken off around the write.
+- **The manipulator's items**, in TM-125 p8's order: EXPAND (OURS order of the edges), MENU (the
+  windows by title, OURS), PERMISSION, EXIT are added. Not offered: ATTRIBUTE (a choice window, M9),
+  HARDCOPY (no printer), SUPERIOR/INFERIOR (no window hierarchy).
+- **`has_been_selected/1`** is sent after a selection (the select notifier's callback; the
+  stand-ins' primary does nothing, OURS).
+- **Pmacs RESHAPE** sets the text size to the cells that fit (INFERENCE from the held
+  `set_inside_size/5`), and the buffer is drawn again at that width.
+- Screens: `screens/manipulator_expand.png`, `manipulator_menu.png`, `notify_window.png`;
+  `window_manipulator.png` re-rendered (eight items).
+
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like
@@ -610,8 +630,10 @@ step 3l did):
 - the menu geometry: item height = font line height + 2;
 - the save-area allocation (first fit) and the date's clock (fep.py's day, time 0);
 - that the create/kill pop-up comes only for a program already shown;
-- the manipulator on the middle button, its four items, the order of MOVE's copies, and type-ahead
-  to the next selected window;
+- the manipulator on the middle button, the order of MOVE's copies, and type-ahead to the next
+  selected window;
+- EXPAND's order of the edges, MENU's titles, the notify window's look, and `out` as the default
+  permission;
 - Pmacs's default bindings.
 
 ---

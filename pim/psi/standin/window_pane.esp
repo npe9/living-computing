@@ -44,8 +44,8 @@
 % are saved before it is drawn (save_memory.esp, the save areas of TM-225
 % p10 and TM-126 p5, PROSE, window.md §4.1) and restored when it is
 % erased, so a window killed over another leaves the other's dots as they
-% were when it was covered (what the covered window wrote meanwhile is
-% lost: no output permission is modelled, OURS).  Since the pane is not
+% were when it was covered (until the output permission `out`, what the
+% covered window wrote meanwhile was lost).  Since the pane is not
 % clipped, the selected window's block cursor (drawn by exclusive_or) is
 % taken off before a new pane is drawn (coordinator cursor_aside/1, OURS),
 % so it is neither saved under the new pane nor later toggled over it.
@@ -56,7 +56,9 @@
 % covered part goes into the save areas above and only the shown part
 % appears: TM-225 p10-11's ② and TM-125 p6's OUTPUT, the held
 % `permission(out)` (63 USAGE sites, window.md §4.1).  That every window
-% has this permission is OURS (TM-225's default is ①, wait).
+% has this permission is OURS (TM-225's default is ①, wait).  Since
+% window M7's rest the window's own permission decides (wait, show and
+% notify too; coordinator.esp "OUTPUT PERMISSION"), `out` the default.
 % Window M7 (2026-11-25): restacking.  A pane can be lifted off (its own
 % dots saved, what was under it drawn back), laid back on top and moved
 % (lift/1, lay/1, move_to/3); the coordinator orders them (coordinator.esp
