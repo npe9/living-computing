@@ -542,12 +542,20 @@ HALF (b), STEP 2 DONE 2026-11-26: THE DECIMAL M+ FAMILY (M+, M+MG, M+1)
   cases). Each run is in a frozen copy with `--rebuild`. A first `all`
   run reused the relocation's simulator, because rsync keeps the source
   mtime, and showed no moves. It was discarded.
+  - CORRECTED 2026-11-26 (step 3). The `all` run recorded at commit
+    fee9be22 was ALSO partly stale. bsc's `-u` reused a `.bo` compiled
+    with `sauStepOneComp` off, so that run equals a fresh run with that
+    switch off, case for case.
+  - The table below is the fresh re-measurement: `meas.sh` touches the
+    synced sources, and the tree is 6af7078f plus step 3, which touches
+    no M+ path.
 
   | step | within 1 before -> after | within 3 before -> after | toward | away |
   |---|---|---|---|---|
   | relocation, with M+1's unlike x/y (`sauStepMemRecomp`, `...OneCarry`, `...OneComp` off) | 572 -> 630 | 984 -> 1,046 | 151 | 75 |
-  | + all three switches on (every move is M+ / M+MG: the recomplement) | 630 -> 732 | 1,046 -> 1,157 | 240 | 2 |
-  | all against batch55 | 572 -> 732 | 984 -> 1,157 | 381 | 59 |
+  | + all three switches on | 630 -> 738 | 1,046 -> 1,157 | 271 | 13 |
+  | of which `sauStepOneComp` (the M+1 complement; the rest is M+ / M+MG's recomplement) | 732 -> 738 | 1,157 -> 1,157 | 31 | 11 |
+  | all against batch55 | 572 -> 738 | 984 -> 1,157 | 396 | 54 |
 
   - **Relocation.** M+1's unlike signs now cost .6(x/y). This takes PDF
     126's INVERT (D,32..64,4) from -10..-26 to within 0.4 (121 toward for
@@ -573,9 +581,24 @@ HALF (b), STEP 2 DONE 2026-11-26: THE DECIMAL M+ FAMILY (M+, M+MG, M+1)
       is not explained.
     - The term is KEPT: 240 toward, 2 away. The 2 away are M+ (DU,64,4),
       both inside 0.05 of the same magnitude on the other side.
-  - **M+1's c and complement terms** move no atlas case. With the atlas's
-    operand +1, no M+1 repetition carries out of a digit or recomplements
-    in the model. `mkSauStepTb` carries them.
+  - **M+1's c term** moves no atlas case (a fresh `sauStepOneCarry :=
+    False` run is identical case for case). With the atlas's operand +1,
+    no M+1 repetition carries out of a digit. `mkSauStepTb` carries it.
+  - **M+1's complement term** moves the unsigned INVERT rows (PDF 126,
+    153): 31 toward, 11 away.
+    - Toward: for example PDF 153 (DU,16,4) ni_ext goes from -1.83 to
+      +0.94, and (DU,8,4) ni_ibox from -2.23 to +0.23.
+    - Away, 5 cases: (DU,4,4) and (DU,8,4) cells that move by 0.5 to 3
+      clocks, all still within 1.7.
+    - Away, 6 cases: PDF 153's INTERNAL columns at (DU,32..64,4), which
+      go from about 0 to +9..+17. Every one of those cells' operands is
+      the oracle's own CHOSEN value: the accumulator's left word, which M+1
+      rewrites at each repetition (`atlas_oracle.py`, "The operand is
+      whatever the accumulator set-up left there ... CHOSEN"). At the same
+      fields, the external and I-box columns, whose operand the page
+      gives, do not move and stay within 1.
+    - The term is KEPT on its source (Table 3's comment column). The
+      large excess is in cells the page does not define.
 - `mkSauStepTb`: vectors 10-16 (literal sums and clocks). Injections, each
   in a frozen copy:
   - `sauStepMemRecomp := False` fails 11 (4 against 10);
@@ -660,6 +683,25 @@ HALF (b), STEP 3 DONE 2026-11-26: THE DECIMAL K FAMILY (K, KE, KR, KF, KFE, KFR)
   unchanged from step 2.
 - Binary K is computed inline and does not reach the unit. Its rows did
   not move.
+
+HALF (b), STEP 4 DONE 2026-11-26: DECIMAL SRD'S ROUND (`SauStRnd`, `sauRndPasses`)
+- Sources:
+  - Fig. 3.11.11 Part 2 (R23-9732 PDF 265; `sau_pau_spec.md`) draws the
+    round as two cycles before the store loop: [TOF HK TON RSU] and [TOF
+    RSU TON RND].
+  - Table 3 (Vol. 1 printed p.3-7, PDF 25) charges SRD a pre-execution of
+    3.0 us against ST's 1.8: 1.2 us, two 0.6 us cycles.
+  - The two sources agree with each other and with eboxClocks' 4-clock
+    `srdRound`.
+- The decimal round (nonzero offset) is now a stepped request of two
+  passes, and the row's SRD arm is R - 4 + u (`sauRowWithUnit`).
+- No pin moves: `vfl_srd.strap` stays at CYCLES=1294 and the reproducer
+  passes. No atlas page times SRD at a nonzero offset, so there is no
+  atlas table.
+- `mkSauStepTb` vector 22. Injection observed: `sauRndPasses := 1` fails
+  22 alone (2 against 4).
+- MCP boot sections: every check passes, and the halt clocks are
+  unchanged from step 2.
 
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and

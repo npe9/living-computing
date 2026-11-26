@@ -275,6 +275,14 @@ Bool sauStepCmpW     = True;
 // 3); False is the model.
 Bool sauStepCmpWLiteral = False;
 Bool sauStepCmpEarly = True;
+// STEP 4 (2026-11-26), DECIMAL SRD'S ROUND (SauStRnd): TWO passes.  Fig.
+// 3.11.11 Part 2 (R23-9732 PDF 265; sau_pau_spec.md) draws the round as
+// two cycles before the store loop: [TOF HK TON RSU] (BAAB moved a digit
+// below the field, ADD 4 TO BAAB) and [TOF RSU TON RND] (the digit read
+// out with a hot 4 & 1, the carry saved).  Table 3 (printed p.3-7)
+// charges SRD a pre-execution of 3.0 us against ST's 1.8: 1.2 us = two
+// 0.6 us cycles.  The two agree, and are eboxClocks' 4-clock srdRound.
+Integer sauRndPasses = 2;
 Bool sauStepMemRecomp = True;
 Bool sauStepOneCarry  = True;
 Bool sauStepOneComp   = True;
@@ -1258,6 +1266,9 @@ endmodule
 //      data pass, w: 3 passes (not 4 + 1)                           6
 //  21  K (DU,16,4) 4444 : 4444 decided at the signs, unsigned, no w:
 //      one data pass                                                 2
+// STEP 4, DECIMAL SRD'S ROUND (SauStRnd):
+//  22  4447 + 5 at the digit below the field: the RSU and RND cycles,
+//      2 passes (sauRndPasses)                                       4
 // INJECTIONS, OBSERVED 2026-11-25 (each in a scratch copy of this file):
 //   * sauStepZ := False: vectors 1, 2, 3 and 5 FAIL on clocks (2, 2, 2, 4
 //     against 4, 8, 4, 6) -- the carry and borrow vectors -- and the rest
@@ -1273,7 +1284,7 @@ endmodule
 //   against 2); sauStepCmpWLiteral := True fails 18 (8 against 6); the
 //   rest pass.
 // ---------------------------------------------------------------------
-typedef 22 NStepVec;
+typedef 23 NStepVec;
 
 (* synthesize *)
 module mkSauStepTb(Empty);
@@ -1315,6 +1326,9 @@ module mkSauStepTb(Empty);
       19: DecReq { a: 128'h4444, b: 128'h44, sub: True, binary: False, steps: fs(2, 2, SauStCmpF, False) };
       20: DecReq { a: 128'h4444, b: 128'h444, sub: True, binary: False, steps: fs(4, 3, SauStCmp, True) };
       21: DecReq { a: 128'h4444, b: 128'h4444, sub: True, binary: False, steps: fs(4, 4, SauStCmp, True) };
+      22: DecReq { a: 128'h4447, b: 128'h5, sub: False, binary: False,
+                   steps: SauAddSteps { passes: fromInteger(sauRndPasses), top: 0, osb: 0, b0: 0,
+                                        mg: False, cls: SauStRnd, early: False } };
       default: DecReq { a: 128'h1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
     endcase;
   function DecRsp wantOf(Bit#(5) i) =
@@ -1340,12 +1354,13 @@ module mkSauStepTb(Empty);
       19: DecRsp { r: 128'h4400,   carry: True };
       20: DecRsp { r: 128'h4000,   carry: True };
       21: DecRsp { r: 128'h0,      carry: True };
+      22: DecRsp { r: 128'h4452,   carry: False };
       default: DecRsp { r: 128'h2, carry: False };
     endcase;
   function Bit#(16) clocksOf(Bit#(5) i) =
     case (i) 0: 2; 1: 4; 2: 8; 3: 4; 4: 10; 5: 6; 6: 4; 7: 4; 8: 4;
              10: 4; 11: 10; 12: 4; 13: 8; 14: 2; 15: 8; 16: 18;
-             17: 4; 18: 6; 19: 4; 20: 6; 21: 2; default: 4; endcase;
+             17: 4; 18: 6; 19: 4; 20: 6; 21: 2; 22: 4; default: 4; endcase;
 
   rule rl_issue (!done && !issued);
     box.request(tagged SauAdd reqOf(idx));

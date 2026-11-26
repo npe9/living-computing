@@ -4161,7 +4161,11 @@ function VflArm vflStoreFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool decAsk = decRound && !isValid(decOf(boxResult));
               DecRsp decRsp = validValue(decOf(boxResult));
               Maybe#(BoxReq) decReq = tagged Valid (tagged BoxDec DecReq {
-                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False, steps: sauNoSteps });
+                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False,
+                // STEPPED (fidelity_plan.md A3 (b) step 4): the round's
+                // cycles, StretchSAU's sauRndPasses.
+                steps: SauAddSteps { passes: fromInteger(sauRndPasses), top: 0, osb: 0, b0: 0,
+                                     mg: False, cls: SauStRnd, early: False } });
               Bit#(128) decAccU = acc.mag >> offDec;
               Bit#(128) decAcc = (decRound ? decRsp.r : acc.mag) >> offDec;
               Bit#(7) decNumLen = (vi.m.unsign == 1) ? len_

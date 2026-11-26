@@ -798,7 +798,7 @@ function Bit#(16) budgetClocks(DecodedInstr d, Bool taken) =
 //     rows print 16 + 2b from (DU,16,4) up, Table 3's "true result"
 //     .6(x/y) over a fixed 16.
 //   (The K arm below takes effect from step 3, 2026-11-26, the SRD arm
-//   when SRD's round sends passes.)
+//   from step 4.)
 //   * SRD (decimal, nonzero offset): the row's 4-clock round (srdRound
 //     in eboxClocks) is the unit's: R - 4 + u.
 //   * K, KE, KR, KF, KFE, KFR (not immediate): KF's own fixed part, 8
