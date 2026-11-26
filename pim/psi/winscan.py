@@ -128,10 +128,21 @@ def totals(m):
 
 
 # ------------------------------------------------------------ timing
+_LC = {}
+
+
 def line_ctrl(m, vy):
-    """The per-clock (de, C1C0 of channel 0) of line vy, as two lists."""
+    """The per-clock (de, C1C0 of channel 0) of line vy, as two lists
+    (memoised per mode and line kind: active/blank, vsync or not)."""
     ht, _vt = totals(m)
     vact = m['va'] + m['vf'] <= vy < m['va'] + m['vf'] + m['vs']
+    key = (tuple(sorted((k, v) for k, v in m.items())), vy < m['va'], vact)
+    if key not in _LC:
+        _LC[key] = _line_ctrl(m, vy, vact, ht)
+    return _LC[key]
+
+
+def _line_ctrl(m, vy, vact, ht):
     vlev = vact if m['vpos'] else not vact
     de, c = [], []
     for hx in range(ht):
@@ -445,7 +456,7 @@ def decode_check(m, pan, rows, cur, shapes, extra, move, words):
                     raise Fail('line %d x %d: pixel %02x, the view has %02x '
                                '(frame %d)' % (vy, hx, d[0], lev[hx], f))
                 for i in range(3):
-                    disp[i] += T.disparity(s[i])
+                    disp[i] += T.DISP[s[i]]
                     worst = max(worst, abs(disp[i]))
                 de_px += 1
             else:

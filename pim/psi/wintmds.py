@@ -129,6 +129,7 @@ def enc_table(cnt):
 # active and blanking decode tables over all 1,024 characters
 DEC_DATA = [decode(q, True)[1] for q in range(1024)]
 DEC_CTRL = [CTRL_OF.get(q) for q in range(1024)]
+DISP = [disparity(q) for q in range(1024)]
 
 
 def main(argv):
