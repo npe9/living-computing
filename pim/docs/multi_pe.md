@@ -250,7 +250,7 @@ packet bytes and hardware-assembled 40-bit words.
 | Rung | Observable | Oracle | Needs |
 |---|---|---|---|
 | M1 | N PEs; `current_node` gives (k, N) on PE k; `Goal@node(K)` with K another PE sends `%throw_goal` and the goal runs on K; an unbound argument is exported and the importer's body unification of it with an atomic value sends `%unify` home, which binds it and wakes its waiters | `seqgc:go/0` and `gc:go/0` (§2) on 1, 2, 4 PEs, under two schedules | the reference model only |
-| M2 | Reading an external reference: a guard or `wait` on an imported cell sends `%read`, the goal waits on an `RHOOK`, `%answer_value` brings a level-1 copy; structures exported at level 0 (a list one cons at a time); a reference coming home resolves to the local cell | KL1 programs whose answer must not depend on placement: the pkl1 samples of R8 with `@node` added (OURS), KLIC 2.002 as the answer; the primer's `sample9` | M1 |
+| M2 | Reading an external reference: a guard or `wait` on an imported cell sends `%read`, the reader's goals wait on a variable of its own, the exporter hooks a reply record (VPIM's `RHOOK`) on its variable if unbound, `%answer_value` brings a level-1 copy and the import is given back with `%release`; structures exported at level 0 (a list one cons at a time); a reference coming home resolves to the local cell | PIMOS's own `h_monitor` and `x_h_monitor` (the paragraph profiler's heap meters) on 1, 2, 4 PEs, homes 0 and N-1, against what their source fixes; bench cases on their `reverse/2,3` and `out/2` (§5) | M1 |
 | M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release`, the exported variable retagged `EUNDF`/`EHOOK` (TM-1044), the tables at fixed addresses and as roots of the collector | an injected leak or double release failing a check; a collection with live exports | M2 |
 | M4 | The shoen across PEs: foster parents (`FPREC`), WTC (`wtctu`, `wtcsu`), `%terminated`, `%ready`, resource messages, exceptions for a bad node number | the manual's `range_overflow`/`illegal_input`; a shoen spread over nodes terminating once | M3 |
 | M5 | PIMOS boots on N PEs (its 113 `@node` sites), and the shell's `cn`, `gc`, `seqgc`, `set node` run | `cn.kl1`'s printout; §2's collection counts through the shell | M4; code fetch by module identifier |
@@ -301,10 +301,8 @@ the whole `m1_gc.py` run):
 Not reached, open:
 
 - On the core: M7 (above).
-- `current_processor` and `unbound` refuse on more than one PE
-  (unsourced there); `to_processor` with another PE is written (the
-  same dispatch as `enqueue_goal_to_processor`) but no program of M1
-  runs it.
+- (Done at M2, below: `current_processor`, `unbound` and
+  `to_processor` with another PE; structure arguments.)
 - An `EX` cell in a collection is not exercised: `seqgc` sends its
   `%unify` before the collection, and a collection with live exports
   is refused loudly (`pimm_gc.py` refuses the tag). M3.
@@ -317,5 +315,118 @@ Not reached, open:
   node-0 one only where c is not 0.
 - The bare run's loaded code is not a collector root (the node-0
   injection shows it); in PIMOS the module table is. M5.
-- Exports are of atomic values and unbound variables only; a
-  structure argument is refused. M2.
+- (Done at M2: structures are exported.)
+
+**M2 reached on the reference model, 2026-11-26.** `ref/pimm/pimm_pe.py`
+(reading, answering, releasing, structures at levels 0 and 1) and
+`ref/pimm/m2_read.py` (the check, in `run_tests.sh`, after `m1_gc.py`).
+`pimm.py` and `pimm_gc.py` are unchanged; `m1_gc.py` still passes.
+
+What is modelled, and from where:
+
+- **Level 0** (a thrown goal's arguments, a level-1 value's elements):
+  an integer, an atom or `{}` as it is; anything else exported, an
+  unbound variable as `EXREF`, a list, vector or string as `EXVAL`
+  (VPIM `f_GetLogicalPacketData_W_*Group`), the tag's low bit the
+  path's MRB (PIMOS `tagtbl.kl1` 32h-35h). An imported ID going back to
+  its owner goes as it is; to a third PE it is exported again (an
+  indirect export, OURS for every path: VPIM forwards the ID itself
+  on a white path, `f_Put_EX_inLogicalPacket_Sub` "解放輸出", which
+  rung M3 takes up).
+- **Level 1** (`%unify`'s value, `%answer_value`'s): the list cell, a
+  short vector, a long vector with its length, each element at level
+  0 (VPIM `f_int_cl_msg_type` section 4 (3)); a string as its
+  descriptor and words (OURS: VPIM's table says it is undecided).
+- **`%read`** `{6, ID, reply ID}`: the first goal to wait on an
+  external cell sends it once; the reader's waiters hook on a fresh
+  variable V of its own, exported as the reply ID. The owner answers at
+  once if the data is bound, else hooks a reply record on its variable
+  (VPIM `f_int_cl_recv_read`: an `RHOOK`; here a goal record with no
+  code, OURS, so that hook, wake and collection need nothing new); a
+  reply record woken with its variable bound to another variable waits
+  again on that one.
+- **`%answer_value`** `{7, reply ID, value}` binds V; the external cell
+  becomes a reference to V and the import is given back with
+  `%release {8, ID}` (VPIM `f_ReceiveAnswerValue_Body`, the RDHOK case:
+  OURS that every read keeps its import this way).
+- **`%unify`** as at M1, now with a structure value at level 1; a
+  unification of an external cell with a variable of this PE makes
+  the variable a reference to the cell (VPIM
+  `f_Send_IntClMsg_Unify_Sub` (1)). With a read pending, the value is
+  also unified with V. Each white export entry gets exactly one
+  `%unify` or `%release` (OURS: M2 treats MRB-on and MRB-off alike).
+- **`current_processor(^C, ^X, ^Y)`** gives (k, N, 1): PIMOS's
+  `mdlib#current_cluster(Cluster, Total)` is `current_processor(Cluster,
+  X, Y), Total := X*Y` (`pimos.vmac` 378-381, HELD-SOURCE); N x 1 is
+  OURS. **`unbound/2`** gives `{k, Address, X}` (VPIM `kblt_b_unbound`,
+  its cluster number); of an external reference VPIM throws a goal to
+  the owner: refused. **`get_heap_size(^Size, ^Used)`** (22:FE): Size
+  half of the cells from the heap's start to the end of memory (VPIM:
+  "one half of the copying collector's heap"), Used the cells in use;
+  the values OURS, logged for the check.
+
+The oracle programs are PIMOS's: `h_monitor` and `x_h_monitor` of
+`pimm_debugger360E.sav` (HELD-SOURCE `debugger/paragraph/processor/
+hmonitor.kl1`, `x_hmonitor.kl1`), the profiler's heap meters. Each
+throws `pe_profile` to every node and, per `profile` on its stream,
+collects each node's `get_heap_size` as a list of `{Used, UnUsed}`
+node 0 first: `h` by binding each node's stream from the home, `x`
+by all nodes reading one stream and binding their own back. They are
+loaded by `ipl_loader:load/4` and found by their predicate heads,
+checked against the source's predicate order. On (N, c) = (1,0),
+(2,0), (2,1), (4,0), (4,3), three rounds each, both quotas: every
+answer is each PE's own logged heap, each PE asked three times, the
+message counts and what is left the same under both quotas, every
+import left naming a live entry. Messages (throw, read, answer,
+release, unify): `h` N=2 1/8/7/7/3, N=4 3/24/21/21/9; `x` N=2
+1/14/13/12/1, N=4 3/42/39/36/3. What is left is the monitors' own
+waiting (each node's goal on its stream, the home's on the answers),
+with the imports and entries those goals hold.
+
+Bench cases (OURS, on h_monitor's `reverse/2,3` and `out/2`, N = 2
+and 4, both quotas): a list of six read across one cons at a time and
+reversed back (`rev`), the same with the node a variable bound later
+(`node`), with the goal sent on by way of PE 1 (`third`: back home on
+2 PEs, on to PE 2 on 4, an indirect export), an ID coming home through
+`%unify` (`home`), a reply record that waits again (`chain`), a
+variable of the reader bound to an external cell and a `%unify` with
+a read pending (`alias`), and `out/2`'s `wait(String)` reading a
+string and a vector of seven at level 1 (`wait`). Each pins the
+answer, the messages by kind and what is left. Every path the PE code
+marks must run (14 of them). `m2 read: PASS (52 runs)`; loading the
+file is about 90 s of it, which `M2_CACHE=PATH` saves between runs.
+
+Observed fault injections (each on a private copy of `pimm_pe.py`,
+the whole `m2_read.py` run):
+
+| Injection | Observed |
+|---|---|
+| no `%read` sent | 107 FAIL lines: every N>1 monitor case (each PE asked three times, the answers), every bench answer, message count and table, `PE 1 has S`, the path list |
+| a woken reply record not hooked again | 12: `chain` (R, messages, tables) only |
+| an ID going home exported again | raises `RuntimeError: heap full` (the reads chase each other round the PEs) |
+| no `%release` after `%answer_value` | 44: messages and tables of `rev`, `chain`, `wait`, `node`, `third` |
+| `%release` sent twice | 478: `release of a free entry` in every case, bench messages |
+| `%unify` keeps the export entry | 30: the tables of every bench case |
+| the external cell not made the value after `%unify` | raises `KeyError` (a later read of the given-up import) |
+| every `@node` made local | 33: the monitors' asked/answers, the path list (level 1 vector never ran) |
+| `current_processor` gives Y = N | 1: builtins |
+| `unbound/2` gives node 0 | 1: builtins |
+| `%read` frees the entry | raises `Unimplemented: %unify to a released export entry` |
+| `%answer_value` keeps the pending read | 502: `pending read has no reply entry` everywhere, bench tables |
+| `%unify` keeps the import | 135: `import .. dangles` in every N>1 case, `release of a free entry`, tables, paths |
+| delivery LIFO instead of FIFO | nothing: PASS. No case depends on the order within a pair; not caught |
+
+Never fired: `the two schedules differ` (M1's no-wake injection is the
+one that showed why both quotas are run), `messages in flight`,
+`alias`'s two preconditions, and the refusal of `unbound/2` of an
+external reference.
+
+Not reached at M2, open:
+
+- MRB-on paths are handled as white ones; WEC, black tables, the
+  white-path forward of an ID, the exported variable retagged, and a
+  collection with live tables: rung M3.
+- The pkl1 samples and the primer's `sample9` with `@node` need the
+  PIMOS compiler run from a prompt checkpoint; the oracles here are
+  programs already compiled in the held image.
+- `unbound/2` of an external reference (VPIM throws it to the owner).

@@ -150,6 +150,18 @@ their source fixes. `pimm.Machine.run` calls the same `goal_switch()`
 the PEs call; one machine's traces are byte-identical to before.
 Reference only: the core is one PE (rung M7).
 
+Rung M2 (2026-11-26): reading across PEs. A goal waiting on an
+external cell sends `%read`; the owner answers with `%answer_value` at
+once or from a reply record hooked on its variable; the reader binds
+its own variable and gives the import back with `%release`.
+Structures go at level 0 (exported) and level 1 (the list cell or
+vector, the elements at level 0); `current_processor`, `unbound/2` and
+`get_heap_size` on the PEs. `python3 ref/pimm/m2_read.py` (in the
+suite, after `m1_gc.py`) runs PIMOS's own compiled heap monitors
+(`h_monitor`, `x_h_monitor` of `pimm_debugger360E.sav`) on 1, 2 and 4
+PEs under two quotas, and bench cases on their `reverse` and `out`;
+`M2_CACHE=PATH` keeps the loaded machine between runs.
+
     python3 ref/pimm/test_jtoa.py
 
 runs module `jis_to_ascii` from the image against an oracle built from
