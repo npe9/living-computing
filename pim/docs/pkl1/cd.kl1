@@ -1,0 +1,13 @@
+/*----------------------------------------------------------- 
+%   (C)1992 Institute for New Generation Computer Technology 
+%       (Read COPYRIGHT for detailed information.) 
+-----------------------------------------------------------*/
+:- module(top).
+top :-	builtin:readint(N),
+	builtin:start_measure,
+	count_down:count_down(N),
+	builtin:report_measure(_).
+
+:- module(count_down).
+count_down(0).
+count_down(N) :- N > 0, N1 := N - 1 | count_down(N1).

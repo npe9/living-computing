@@ -59,3 +59,39 @@ Their output is `oracle.out` and `oracle_go9.out`, in this order:
 
 The build is 64-bit, so an integer has 60 bits. On a 32-bit host of
 the period an integer had 28 bits, and fact(12) would not fit.
+
+## R8's second half (2026-11-26)
+
+The same build, made again in scratch from the same recipe, and run on
+`tak`, `cd`, `lips` and `life`, and on the samples' own larger inputs
+(APPS `pkl1_tak`, `pkl1_cd`, `pkl1_lips`, `pkl1_life`, `pkl1_nrev30`,
+`pkl1_qsort50`).
+
+This time KLIC is given exactly the text the FEP serves PIMOS: each
+`NAME_r8.kl1` is `docs/pkl1/NAME.kl1` with `longrun_ipl.PKL1_ADAPT`'s
+edits made (`longrun_ipl.adapted`), `:- public` lines and all. KLIC
+2.002 accepts the `:- public` lines and life's `display_console` guard,
+so there is no separate KLIC edit: the oracle and PIMOS compile the
+same source. (The first half's `main.kl1` used its own trimmed modules;
+their answers are the same.)
+
+KLIC keeps a predicate database (`klic.db`) in the directory it builds
+in, so two programs with a module of the same name (`top` is in lips,
+life and kkqueen) must be built in directories of their own:
+
+    klic -o o main_life.kl1 life_r8.kl1 && ./o
+    klic -o o main_lips.kl1 lips_r8.kl1 && ./o
+    klic -o o main_cd.kl1 cd_r8.kl1 && ./o
+    klic -o o main_r8b.kl1 tak_r8.kl1 nrev_r8.kl1 qsort_r8.kl1 && ./o
+
+Their output, with each exit status, is `oracle_r8b.out`:
+
+- life(5,6,6,2,2) and its count N = 19
+- lips: make_list(30), repeat(3) of nrev on it, then its nrev
+- cd: `done`, exit 0. count_down binds nothing, so the line only shows
+  that the program ran to its end. The control is count_down(-1),
+  which no clause takes: KLIC's runtime stops with a fatal error and
+  exit 255 (it tries to open its tracer on /dev/tty).
+- tak(9,6,3) 6 and tak(18,12,6) 7
+- nrev of nrev.kl1's own 30 ([30..1] reversed)
+- qsort of qsort.kl1's own list50

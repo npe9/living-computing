@@ -9,8 +9,9 @@ files the FEP serves, in a format of OURS.
         kernel's files, as ref/pimm/longrun_ipl.kernel_file serves them:
         pimos.conf, pimos.logins, pimos.groups, ...), and the home
         directory's (longrun_ipl.HOME_FILES: the primer's sample1.kl1
-        and, since R8, four pkl1 samples and their NAME_r8.kl1
-        adaptations; each with its pathname and attributes)
+        and, since R8, the pkl1 samples (four, then all eight on
+        2026-11-26) and their NAME_r8.kl1 adaptations; each with its
+        pathname and attributes)
     python3 tools/mkfepcard.py OUT.img --made-up NAME [NAME ...]
         ref/pimm/ref_scsi.py's made-up pimos.ipl listing these .sav files,
         and the files (what ref_scsi.py's parts use)

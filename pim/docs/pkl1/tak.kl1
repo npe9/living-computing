@@ -1,0 +1,35 @@
+/*----------------------------------------------------------- 
+%   (C)1992 Institute for New Generation Computer Technology 
+%       (Read COPYRIGHT for detailed information.) 
+-----------------------------------------------------------*/
+:- module(top).
+
+top :-
+	builtin:print('repetition?'),
+	builtin:readint(Rep),
+	builtin:print('base?'),
+	builtin:readint(N),
+	N2 := N*2,
+	N3 := N*3,
+	builtin:start_measure,
+	loop(Rep, N3, N2, N),
+	builtin:report_measure(_).
+
+loop(0, _, _, _).
+loop(Rep, N3, N2, N) :- Rep > 0 |
+	tak:tak(N3, N2, N, _),
+	Rep1 := Rep - 1,
+	loop(Rep1, N3, N2, N).
+
+:- module(tak).
+
+tak(X, Y, Z, A) :- X > Y,
+     X1 := X-1,
+     Y1 := Y-1,
+     Z1 := Z-1 |
+     tak(X1, Y, Z, A1),
+     tak(Y1, Z, X, A2),
+     tak(Z1, X, Y, A3),
+     tak(A1, A2, A3, A).
+otherwise.
+tak(X, Y, Z, A) :- A = Z.

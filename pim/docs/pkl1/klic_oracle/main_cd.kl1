@@ -1,0 +1,10 @@
+% [oracle, OURS] KLIC entry point for cd_r8.kl1: the Listener's goal of
+% APPS pkl1_cd, count_down(1000), which binds nothing.  The two goals
+% run concurrently, so `done` does not show that count_down ended; what
+% does is that the program exits 0 with no failure message (a reduction
+% failure is reported by KLIC's runtime and the exit is not 0; checked
+% with count_down(-1), which no clause takes: see README.md)
+:- module main.
+main :-
+	count_down:count_down(1000),
+	io:outstream([print(done), nl]).

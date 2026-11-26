@@ -1,0 +1,15 @@
+% [oracle, OURS] KLIC entry point for tak_r8.kl1, nrev_r8.kl1 and
+% qsort_r8.kl1: the Listener's goals of APPS pkl1_tak (and tak(9,6,3)),
+% pkl1_nrev30 (nrev.kl1's own make_list(30), typed as a list) and
+% pkl1_qsort50 (qsort.kl1's own list50)
+:- module main.
+main :-
+	tak:tak(9,6,3,T1),
+	tak:tak(18,12,6,T2),
+	nrev:nrev([30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1],R),
+	qsort:qsort([27,74,17,33,94,18,46,83,65, 2,
+	32,53,28,85,99,47,28,82, 6,11,
+	55,29,39,81,90,37,10, 0,66,51,
+	 7,21,85,27,31,63,75, 4,95,99,
+	11,28,61,74,18,92,40,53,59, 8], Q),
+	io:outstream([print(T1), nl, print(T2), nl, print(R), nl, print(Q), nl]).

@@ -100,12 +100,13 @@ default case.
 
 ## What this means for PIMOS
 
-*2026-11-25:* this page describes the bench model `PimKL1B` only. PIMOS
+*2026-11-25, 2026-11-26:* this page describes the bench model `PimKL1B` only. PIMOS
 itself runs on the PIM/m core (`bsv/PimmCore.bsv`, `ref/pimm/pimm.py`),
-which is a different path: there the roadmap stands at R8
-(`pimos_roadmap.md`): four pkl1 samples compiled by PIMOS's own
+which is a different path: there the roadmap has reached R8
+(`pimos_roadmap.md`): all eight pkl1 samples compiled by PIMOS's own
 compiler and run through the Listener in lockstep on both models
-(`bsv/README.md`, "R8"). The paragraph below is the bench model's
+(`bsv/README.md`, "R8" and "R8's second half"; 2026-11-26), and R9
+(MGTP/G, IFS No.22) is started. The paragraph below is the bench model's
 state and is unchanged.
 
 The model can execute a hand-assembled KL1-B program that builds heap
