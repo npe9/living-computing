@@ -158,7 +158,11 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   default reverse, in `pim/psi/librarian.py`.
 - **Cut.**
   - An after-demon may prune the remaining primary alternatives with `relative_cut(1)`.
-  - `!` = `relative_cut(0)`, and cut prunes only to the enclosing OR, unlike Prolog (TM-388 ch.4).
+  - `!` = `relative_cut(0)`, and cut prunes only to the enclosing OR, unlike Prolog (TM-388 §4.6
+    p.111, Example 2; App. G pp.161-162). kl0 has done this since 2026-11-26; before, a `$or$` kept
+    its caller's barrier. The nesting is MEASURED on the held rows, which the manual does not state:
+    `(A ; B) ; C` is two ORs and `A ; (B ; C)` is one (`psi/README.md` "Nested disjunctions and the
+    cut in a `$or$`").
   - TH p.244: PSI-II/III compile a method as `m :- load_choice_point(C), p(C)`, and a cut inside a
     primary becomes `method_cut(C)`. It must prune the *other classes'* primaries too.
 - **Call forms.**
