@@ -30,6 +30,9 @@ python3 asm/pimm_stubs.py --check
 python3 asm/psdpim.py --check
 python3 asm/mekbn.py --check
 
+echo "=== held KL1 microprogram executed (ref/pu, rung U1 of docs/pu_microcode_plan.md) ==="
+python3 ref/pu/check_pu.py
+
 echo "=== PSI side: the Librarian's loader, .ptf templates to class objects (TM-388 cases, known plaintext) ==="
 python3 -I psi/test_librarian.py
 

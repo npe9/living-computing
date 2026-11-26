@@ -344,6 +344,35 @@ The current model is in `bsv/PimTypes.bsv`, `bsv/PimStages.bsv`,
 already label most invented fields as `MODEL`. The following separates what
 the sources confirm from what they contradict.
 
+*2026-11-26, the held microprogram executed.* `ref/pu/` runs the
+Pseudo PIM/m KL1 microprogram (`pimm.MEkbn` image 2, the PU's own
+microcode by TM-862) word by word and matches `ref/pimm/pimm.py` on 19
+KL1-B instructions (rung U1 of `pu_microcode_plan.md`). What that means
+for the model:
+
+- The E stage is the microprogram; the hardware to model is the D/A/R/S
+  stages (nano-code driven), the two-phase E datapath of section 2, the
+  condition flag COND, the micro stack, and the tag-dispatch RAM. The
+  hand-written KL1-B sequencer `mkPimmExec` (`bsv/PimmStages.bsv`) and
+  the hand-assembled bench microcode of `bsv/PimStages.bsv` are both to
+  be replaced by that PU with the WCS loaded from the held image (rung
+  U4). The boxes stay only where the hardware had separate units (NU,
+  CU caches, FPP).
+- Registers named by the held words agree with section 6's list:
+  R10 is CGP (goal arguments are R10 + n), R19/R1a/R1b the free
+  variable, list and goal-record pointers FVP/FLP/FGP, R1f HP, R14 GSP
+  (`rassy`'s register names, `binary_reverse_engineering.md` section 3);
+  the free pools are lists threaded through the cells, refilled from HP
+  in 16-word chunks (INFERENCE, `ref/pu/README.md`).
+- Two choices of the hand-written models are answered by the firmware:
+  `write_variable` writes a reference to a new cell, not the variable
+  in the element, and `put_list`/`put_vector_N` give the pointer MRB
+  off (`ref/pu/README.md`).
+- The microword reading changes in two places: JMPF bit 26 is the
+  conditional bit of the jumps, and CNDF forms COND for a later word
+  (thesis p.130), as section 7's two-cycle tag branch implies
+  (`pseudo_pimm_microcode.md` section 22).
+
 ### Model-defined routing, packet format and arbitration
 
 `M92` p. 427 documents the mechanism: a 9-bit packet byte (8 data bits

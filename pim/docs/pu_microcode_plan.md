@@ -187,3 +187,17 @@ differs from a PIM/m PE, and so what the simulator stands in:
 
 - 2026-11-26: plan written. U1 and U2 are the first task (`ref/pu/`);
   status lines are added below as rungs are reached.
+- 2026-11-26: **U1 reached.** `ref/pu/check_pu.py` (in `run_tests.sh`):
+  19 instructions agree with `pimm.py`, 34 held microinstructions
+  executed (the free-list pops of `set_variable`, `write_variable`,
+  `put_variable`, `put_list`, `put_vector_1/2`; the stamps of `set_nil`,
+  `write_nil`; and eleven one-word routines that only test the
+  plumbing), and four last-cell cases reach the refill (17 more words).
+  Nine INFERENCE rules, each with the microaddress that decided it, and
+  six observed fault injections: `ref/pu/README.md`. **U2 not reached.**
+  The first routines that would not run: the free-list refill
+  (`3365`-`337f`, at `3378` on AS1F 3) and the allocator for three cells
+  and more (`3331`, the list-head table at R05 and the SC2F `b`
+  immediate). Needed for U2 after them: `execute`, `proceed`,
+  `try_me_else`, the `get_*`/`wait_*` tables (the tag-dispatch RAM, not
+  held in `pimm.MEkbn`), and CCF read as a coded field.

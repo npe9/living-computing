@@ -29,6 +29,7 @@ for c in gen_isa_table census namemap kbn kbndis inventory bltdir pimm_stubs \
          psdpim mekbn; do
     run python3 "asm/$c.py" --check
 done
+run python3 ref/pu/check_pu.py
 run python3 asm/fep_services/savpreds.py --check
 run python3 asm/ptfdump.py --check
 run python3 psi/fepread/check.py
