@@ -27,14 +27,19 @@ Each screen is a live kl0 run, the same run test_espc.py Window pins:
     window 2, moved clear of window 1, grown by EXPAND; the
     manipulator's MENU submenu listing the windows (test_win_m7_items);
     the notify window of window 2, covered by window 1 as it echoes
-    (test_win_m7_permissions).
+    (test_win_m7_permissions);
+  - graphics (window M8): a window of 40 x 20 cells with a filled block,
+    the HELD paragraph icon box drawn by execute_graphics_command/2, a
+    slanted line, a string, a clipped fill and a transfer
+    (test_win_m8_graphics).
 The PNG is the whole device frame, 1,280 x 1,024 dots, one bit a dot
 (psi/windev.py png_bytes, stdlib zlib only); the frame's PBM sha256 is
 printed beside it and must equal the test's pin.
 
 Use:  python3 -I psi/winshot.py OUTDIR [STAGE ...]   (stages: name,
       password, login, bridged, console, menu, over, popup, sweep, manip,
-      hidden, reshaped, expand, windows, notify; all when none is given)
+      hidden, reshaped, expand, windows, notify, graphics; all when none
+      is given)
 """
 import os
 import sys
@@ -45,7 +50,8 @@ sys.path.insert(0, HERE)
 NAMES = {'console': 'pimos_console', 'menu': 'system_menu', 'over': 'menu_over_window',
          'popup': 'create_kill_popup', 'sweep': 'rubber_band', 'manip': 'window_manipulator',
          'hidden': 'manipulator_hide', 'reshaped': 'manipulator_reshape',
-         'expand': 'manipulator_expand', 'windows': 'manipulator_menu', 'notify': 'notify_window'}
+         'expand': 'manipulator_expand', 'windows': 'manipulator_menu', 'notify': 'notify_window',
+         'graphics': 'window_graphics'}
 
 
 def main(argv):
@@ -62,7 +68,7 @@ def main(argv):
     t = T.Window('test_win_m5_login_screen')
     stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep',
                                                    'manip', 'hidden', 'reshaped', 'expand', 'windows',
-                                                   'notify']
+                                                   'notify', 'graphics']
     bad = 0
     for stage in stages:
         if stage == 'bridged':
@@ -76,6 +82,9 @@ def main(argv):
             _m, frame = t.menu_run(FB.mouse('rr', *FB.MENU_AT),
                                    K.Vec([K.Atom('move')] + list(FB.LOGIN_ITEM_AT)))
             want = T.Window.MENU_PINS['boxed']
+        elif stage == 'graphics':
+            _m, frame = t.graphics_run()
+            want = T.Window.GRAPHICS_PIN
         elif stage in T.Window.SHOT_PINS:
             _m, frame, _stop = t.later_run(*T.Window.shot_events()[stage]())
             want = T.Window.SHOT_PINS[stage]

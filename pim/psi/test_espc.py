@@ -1446,7 +1446,10 @@ end.''', 'simpos')
         # The editor's set_font/4 moves its stop from opcode blt 69 to
         # not_equal_string on the census's unbound font name.
         # 821 / 239 / 406
-        self.assertEqual((len(rows), out), (1483, {'success': 821, 'failure': 239, 'refused': 406, 'exception': 16,
+        # window M7's rest (2026-11-26): 1,483 -> 1,485 rows, pmacs_window's
+        # set_permission/2 and has_been_selected/1 inherited by
+        # pimos_window, both success; no other row changes.  823 / 239 / 406
+        self.assertEqual((len(rows), out), (1485, {'success': 823, 'failure': 239, 'refused': 406, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1571,7 +1574,9 @@ end.''', 'simpos')
         # the console's path: pimos_window_editor getl/3 (getl_from_buffer
         # on the editor_text_buffer stand-in) and carriage_return/1
         # (standard_editor's primary, INFERENCE).  852 / 241 / 373
-        self.assertEqual((len(rows), out), (1483, {'success': 852, 'failure': 241, 'refused': 373,
+        # window M7's rest: + set_permission/2, has_been_selected/1 in
+        # pimos_window (success), as in test_fep_census
+        self.assertEqual((len(rows), out), (1485, {'success': 854, 'failure': 241, 'refused': 373,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -1800,7 +1805,7 @@ end.''', 'simpos')
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
             # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
             # M4/M6: 15 (test_fep_census)
-            self.assertEqual(len(fwd), 1483)
+            self.assertEqual(len(fwd), 1485)    # window M7's rest: two inherited methods
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
@@ -3547,7 +3552,8 @@ class Window(unittest.TestCase):
                           ('manipulator_reshape', self.SHOT_PINS['reshaped']),
                           ('manipulator_expand', self.SHOT_PINS['expand']),
                           ('manipulator_menu', self.SHOT_PINS['windows']),
-                          ('notify_window', self.SHOT_PINS['notify'])):
+                          ('notify_window', self.SHOT_PINS['notify']),
+                          ('window_graphics', self.GRAPHICS_PIN)):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -4729,6 +4735,151 @@ end."""
         self.assertEqual(click(1100, 600), (1, False))
         self.assertEqual(click(200, 150), (2, True))
         self.assertEqual(click(200, 150), (2, True))
+
+    # window M8, graphics (standard_io_window.esp and window_pane.esp
+    # "Window M8"): a window of 40 x 20 cells made at (100, 100) after the
+    # Login PIMOS run (OURS harness, as test_win_m7_has_been_selected),
+    # activated, not selected (so no cursor); its inside's top-left is
+    # (103, 120), 440 x 280 dots
+    GRAPHICS_AT = (103, 120)
+
+    def graphics_window(self):
+        m, _fr, _ = self.later_run(self.manip_events()['login'])
+        m.reset()
+        opts = K.Cons(K.Vec([K.Atom('position'), 100, 100]),
+                      K.Cons(K.Vec([K.Atom('size'), K.Vec([K.Atom('ch'), 40]), K.Vec([K.Atom('ch'), 20])]),
+                             K.NIL))
+        ((_o, w),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, w, 'activate'))
+        return m, w
+
+    def held_draw_box(self, m, w, x, y, wd, ht):
+        # the HELD paragraph##type_switch_icon local draw_box/5
+        # (p_icon.esp:177-186: six draw_line commands in one
+        # execute_graphics_command/2, widths 2 and 1, ops reset and set),
+        # run on the compiled .ptf
+        cid = 'paragraph##type_switch_icon'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        m.reset()
+        return sum(1 for _ in m.solve((m.code(cid), ps[('draw_box', 5)].offset), [w, x, y, wd, ht]))
+
+    def graphics_run(self):
+        # the screen of psi/winshot.py's `graphics` stage: a black block,
+        # the held icon box carved and drawn on it, a slanted line, a
+        # string, a clipped fill and a transfer.  -> (machine, frame)
+        import windev
+        m, w = self.graphics_window()
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 10, 10, 40, 60, K.Atom('set')))
+        self.assertEqual(self.held_draw_box(m, w, 60, 10, 19, 37), 1)
+        self.assertTrue(self.send(m, w, 'draw_line', 100, 10, 199, 59))
+        self.assertTrue(self.send(m, w, 'draw_string', 100, 80, K.Str('window M8')))
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 430, 270, 50, 50, K.Atom('set')))
+        self.assertTrue(self.send(m, w, 'transfer', 60, 10, 220, 10, 19, 37, K.Atom('copy')))
+        return m, windev.device(m).frame
+
+    def test_win_m8_graphics(self):
+        # M8, graphics (window.md §2.5; the plan's M8 row).  Each drawing
+        # is checked against a frame built from winfb commands in Python:
+        #   - draw_filled_rectangle/6 with set (a 40 x 60 block at (10,
+        #     10) of the inside);
+        #   - the HELD paragraph##type_switch_icon draw_box/5 at (60, 10),
+        #     19 x 37 (p_icon.esp:177-186, the compiled .ptf run through
+        #     execute_graphics_command/2): first over the black block
+        #     (its two width-2 `reset` lines carve white, its four width-1
+        #     `set` lines draw nothing new), then on white (the four set
+        #     lines only: (19 + 18 + 37 + 35) dots);
+        #   - draw_line/5 (1 dot, solid, exclusive_or: TM-125 p17's
+        #     defaults), slanted: 100 dots; drawn twice, the frame is back
+        #     (the plan's "XOR twice erases");
+        #   - draw_string/4 at (100, 80): read back as text;
+        #   - a fill at (430, 270), 50 x 50, cut to the inside: 10 x 10;
+        #   - transfer/8 (copy) of the box to (220, 10);
+        #   - get_mouse_position/3 after a move to (150, 160): (47, 40);
+        #   - refused loudly: a dotted line, the light_paint pattern, a
+        #     slanted line leaving the inside, an unknown command.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   G1 draw_line/5's default op `set` instead of exclusive_or (the plan's
+        #      injection): this test FAILS, nothing else.
+        #   G2 no clipping of fills to the inside: this test FAILS, nothing else.
+        #   G3 execute_graphics_command/2 skips each command: this test FAILS,
+        #      nothing else.
+        #   G4 a horizontal line's width ignored: this test FAILS, nothing else.
+        import windev
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+
+        def fill(x, y, wd, ht, r):
+            want.command(winfb.FILL << 4 | r, [X0 + x, Y0 + y, wd, ht, 0, 0])
+
+        def box(x, y, wd, ht, carve):
+            if carve:
+                fill(x, y + 1, wd, 2, 1)
+                fill(x, y, 2, ht, 1)
+            fill(x, y + ht - 1, wd, 1, 0)
+            fill(x + 1, y + ht - 2, wd - 1, 1, 0)
+            fill(x + wd - 1, y, 1, ht, 0)
+            fill(x + wd - 2, y + 2, 1, ht - 2, 0)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 10, 10, 40, 60, K.Atom('set')))
+        fill(10, 10, 40, 60, 0)
+        self.assertEqual(fr.rows, want.rows)
+        self.assertEqual(self.held_draw_box(m, w, 10, 10, 19, 37), 1)
+        box(10, 10, 19, 37, True)
+        self.assertEqual(fr.rows, want.rows)
+        n0 = fr.count()
+        self.assertEqual(self.held_draw_box(m, w, 60, 10, 19, 37), 1)
+        box(60, 10, 19, 37, False)
+        self.assertEqual(fr.rows, want.rows)
+        self.assertEqual(fr.count() - n0, 19 + 18 + 37 + 35 - 4)     # the columns cross the two rows
+        # the slanted line, exclusive_or: once 100 dots, twice none
+        n0 = fr.count()
+        self.assertTrue(self.send(m, w, 'draw_line', 100, 10, 199, 59))
+        self.assertEqual(fr.count() - n0, 100)
+        self.assertTrue(self.send(m, w, 'draw_line', 100, 10, 199, 59))
+        self.assertEqual(fr.rows, want.rows)
+        # a string, its first letter's top-left at (100, 80)
+        self.assertTrue(self.send(m, w, 'draw_string', 100, 80, K.Str('window M8')))
+        self.assertEqual(windev.read_cells(fr, X0 + 100, Y0 + 80, 9, 1), ['window M8'])
+        self.assertTrue(self.send(m, w, 'draw_string', 100, 80, K.Str('window M8')))
+        self.assertEqual(fr.rows, want.rows)
+        # a fill cut to the inside (440 x 280)
+        n0 = fr.count()
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 430, 270, 50, 50, K.Atom('set')))
+        self.assertEqual(fr.count() - n0, 100)
+        fill(430, 270, 10, 10, 0)
+        self.assertEqual(fr.rows, want.rows)
+        # transfer/8: the box copied to (220, 10)
+        self.assertTrue(self.send(m, w, 'transfer', 60, 10, 220, 10, 19, 37, K.Atom('copy')))
+        want.command(winfb.COPY << 4 | 3, [X0 + 60, Y0 + 10, 19, 37, X0 + 220, Y0 + 10])
+        self.assertEqual(fr.rows, want.rows)
+        # the mouse
+        K.call_class_method(m, 'simpos##coordinator', 'event', [K.Vec([K.Atom('move'), 150, 160])])
+        m.reset()
+        xy = [K.Var(), K.Var()]
+        self.assertTrue(any(True for _ in m.solve_send(w, 'get_mouse_position', xy + [w])))
+        self.assertEqual([K.resolve(v) for v in xy], [47, 40])
+        # loud refusals; the frame unchanged
+        for sel, args in (('draw_line', [0, 0, 10, 0, 1, K.Atom('dotted'), K.Atom('set')]),
+                          ('draw_filled_rectangle', [0, 0, 5, 5, 0, K.Atom('light_paint'), K.Atom('set')]),
+                          ('draw_line', [400, 0, 460, 30]),
+                          ('execute_graphics_command', [K.Cons(K.Vec([K.Atom('draw_arc'), K.Vec([1, 2])]),
+                                                               K.NIL)])):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, sel, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail), sel)
+        self.assertEqual(fr.rows, want.rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+        # the screen (psi/winshot.py `graphics`)
+        m, fr = self.graphics_run()
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.GRAPHICS_PIN)
+
+    GRAPHICS_PIN = ('f365619e8a6e34594abfe468efdd48d76fda56cc26068335ff1a4c5201154552', 107429)
 
 if __name__ == '__main__':
     unittest.main()

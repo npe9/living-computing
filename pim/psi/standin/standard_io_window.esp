@@ -282,6 +282,71 @@ attribute permission := out;
 % the head comment.
 :status_name(W, "standard_io_window", N) :- N = W!number;
 
+% Window M8 (2026-11-26), GRAPHICS (window.md §2.5, owner `as_graphics`,
+% INFERENCE; the plan's M8).  The selectors and argument forms are
+% window.md §2.5's, each cited there: draw_line/5 and /8
+% (PRINTED-INTERFACE TM-125 p17, TM-785 p40), /6 (VARIANT: paragraph's Op,
+% gog's Width; an integer is taken as the width), /7 (USAGE gog
+% KE_WINDOW.ESP:454); draw_rectangle/5, /7, /8 (TM-125 p17; IPSJ 36239 p5
+% `...,1,filled,exclusive_or`); draw_filled_rectangle/6 and /8 (USAGE
+% paragraph, TM-785 p40; the /8's sixth argument is unknown and ignored);
+% draw_string/4, /5 (VARIANT: 1985's Op, the held Font; an op name is taken
+% as the op), /6 (USAGE paragraph c_p_meter); transfer/8 (USAGE cil
+% es_gin.esp:855); execute_graphics_command/2, a list of {Name, {Args}}
+% (USAGE paragraph p_icon.esp:61, :176); get_mouse_position/3 (SCREENSHOT
+% IPSJ 36239 p5; USAGE).  The default op is exclusive_or ("default is
+% exclusive or", PRINTED-INTERFACE TM-125 p17); the default line is 1 dot,
+% solid.  OURS bodies, drawn by the pane (window_pane.esp "Window M8").
+% Refused loudly (graphics_refused/2 is no method, OURS): a line style
+% other than solid, a rectangle style other than solid or filled, a fill
+% pattern other than fix (light_paint and the TM-785 patterns have no
+% printed look), a command execute_graphics_command/2 does not know, and
+% drawing on a window that is not on the screen.
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_line.
+:draw_line(W, X1, Y1, X2, Y2) :- line(W, X1, Y1, X2, Y2, 1, solid, exclusive_or);
+:draw_line(W, X1, Y1, X2, Y2, A) :- integer(A), !,
+        line(W, X1, Y1, X2, Y2, A, solid, exclusive_or);
+:draw_line(W, X1, Y1, X2, Y2, Op) :- line(W, X1, Y1, X2, Y2, 1, solid, Op);
+:draw_line(W, X1, Y1, X2, Y2, Wd, St) :- line(W, X1, Y1, X2, Y2, Wd, St, exclusive_or);
+:draw_line(W, X1, Y1, X2, Y2, Wd, St, Op) :- line(W, X1, Y1, X2, Y2, Wd, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_rectangle.
+:draw_rectangle(W, X, Y, Wd, Ht) :- rectangle(W, X, Y, Wd, Ht, 1, solid, exclusive_or);
+:draw_rectangle(W, X, Y, Wd, Ht, L, St) :- rectangle(W, X, Y, Wd, Ht, L, St, exclusive_or);
+:draw_rectangle(W, X, Y, Wd, Ht, L, St, Op) :- rectangle(W, X, Y, Wd, Ht, L, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_filled_rectangle.
+:draw_filled_rectangle(W, X, Y, Wd, Ht, Op) :- pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+:draw_filled_rectangle(W, X, Y, Wd, Ht, _, fix, Op) :- !,
+        pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+:draw_filled_rectangle(W, _, _, _, _, _, Pattern, _) :- :graphics_refused(W, Pattern);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_string.
+:draw_string(W, X, Y, S) :- pane_of(W, P), :string_in(P, X, Y, S, 0, exclusive_or);
+:draw_string(W, X, Y, S, Op) :- op_name(Op), !, pane_of(W, P), :string_in(P, X, Y, S, 0, Op);
+:draw_string(W, X, Y, S, Font) :- pane_of(W, P), :string_in(P, X, Y, S, Font, exclusive_or);
+:draw_string(W, X, Y, S, Font, Op) :- pane_of(W, P), :string_in(P, X, Y, S, Font, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): transfer.
+:transfer(W, SX, SY, DX, DY, Wd, Ht, Op) :-
+        pane_of(W, P), :transfer_in(P, SX, SY, DX, DY, Wd, Ht, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): execute_graphics_command.
+:execute_graphics_command(W, []) :- !;
+:execute_graphics_command(W, [{Name, Args} | Cs]) :-
+        stack_vector(Args, N), !,
+        command(W, Name, N, Args),
+        :execute_graphics_command(W, Cs);
+:execute_graphics_command(W, _) :- :graphics_refused(W, command);
+% the mouse in the window's inside, in dots (the window's units: no
+% set_inside_units/3 is stood in)
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): get_mouse_position.
+:get_mouse_position(W, X, Y) :-
+        pane_of(W, P), C = #coordinator,
+        value(C!mouse_x - P!left, X), value(C!mouse_y - P!top, Y);
+
 local
 
 % the window's own queue first, then the window's own input stream (M7:
@@ -352,6 +417,59 @@ cells(N, C, 1) :- N < C + C, !;
 cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
 
 value(V, V);
+
+% window M8 (OURS, see "Window M8" above)
+pane_of(W, P) :- P = W!pane, P \== 0, !;
+pane_of(W, _) :- :graphics_refused(W, not_shown);
+
+line(W, X1, Y1, X2, Y2, Wd, solid, Op) :- !,
+        pane_of(W, P), :draw_line_in(P, X1, Y1, X2, Y2, Wd, Op);
+line(W, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
+
+rectangle(W, X, Y, Wd, Ht, L, solid, Op) :- !,
+        pane_of(W, P), :frame_in(P, X, Y, Wd, Ht, L, Op);
+rectangle(W, X, Y, Wd, Ht, _, filled, Op) :- !,
+        pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+rectangle(W, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
+
+op_name(set);
+op_name(reset);
+op_name(exclusive_or);
+op_name(copy);
+op_name(reverse);
+
+% one command of execute_graphics_command/2: the method of that name
+% with the vector's elements, sent to the window itself
+command(W, draw_line, 4, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2),
+        :draw_line(W, X1, Y1, X2, Y2);
+command(W, draw_line, 5, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2), el(A, 4, B),
+        :draw_line(W, X1, Y1, X2, Y2, B);
+command(W, draw_line, 6, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2), el(A, 4, Wd),
+        el(A, 5, St),
+        :draw_line(W, X1, Y1, X2, Y2, Wd, St);
+command(W, draw_line, 7, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2), el(A, 4, Wd),
+        el(A, 5, St), el(A, 6, Op),
+        :draw_line(W, X1, Y1, X2, Y2, Wd, St, Op);
+command(W, draw_rectangle, 4, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht),
+        :draw_rectangle(W, X, Y, Wd, Ht);
+command(W, draw_rectangle, 7, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, L),
+        el(A, 5, St), el(A, 6, Op),
+        :draw_rectangle(W, X, Y, Wd, Ht, L, St, Op);
+command(W, draw_filled_rectangle, 5, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, Op),
+        :draw_filled_rectangle(W, X, Y, Wd, Ht, Op);
+command(W, draw_string, 3, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, S),
+        :draw_string(W, X, Y, S);
+command(W, Name, _, _) :- :graphics_refused(W, Name);
+
+el(A, I, V) :- vector_element(A, I, V);
 
 reverse([], L, L);
 reverse([X | R], L0, L) :- reverse(R, [X | L0], L);

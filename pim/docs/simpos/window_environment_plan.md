@@ -616,6 +616,19 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - Screens: `screens/manipulator_expand.png`, `manipulator_menu.png`, `notify_window.png`;
   `window_manipulator.png` re-rendered (eight items).
 
+**Status (2026-11-26, window M8: lines, rectangles, strings, transfers; shapes, images and markers
+open)** (`../../psi/README.md` "Window M8"; test `test_win_m8_graphics`):
+- `draw_line/5-8`, `draw_rectangle/5,7,8`, `draw_filled_rectangle/6,8` (pattern `fix`),
+  `draw_string/4-6`, `transfer/8`, `execute_graphics_command/2` and `get_mouse_position/3` are
+  stood in on `standard_io_window`. The held paragraph `type_switch_icon` `draw_box/5` draws
+  through `execute_graphics_command/2` on them, and gives pinned frames. A slanted line drawn twice
+  with the default exclusive_or erases itself.
+- Only winfb's frozen primitives are used. No new primitive was needed, so the hardware contract
+  (§4.1) is unchanged.
+- Open: circles, arcs, ellipses, polygons, fill patterns other than `fix`, `copy/9`, `paint/5`,
+  images, and the markers. Each refuses loudly or is not stood in.
+- Screen: `screens/window_graphics.png`.
+
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like

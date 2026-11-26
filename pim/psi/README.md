@@ -4515,6 +4515,78 @@ by copy, `cmp` clean; `test_espc.py` Window, `test_fep_bridge.py` and
 | P8 | no `has_been_selected/1` | has_been_selected only |
 | P9 | Pmacs `reshape/5` keeps the text size | console move only |
 
+### Window M8: graphics (2026-11-26)
+
+`standard_io_window` gains the drawing methods of window.md §2.5, drawn
+by new `window_pane` methods (`draw_line_in/7`, `fill_in/6`,
+`frame_in/7`, `string_in/6`, `transfer_in/8`). The selectors and argument
+forms are window.md's, each cited there; the bodies are OURS:
+- `draw_line/5-8` (TM-125 p17, TM-785 p40; `/6` is a VARIANT, an integer
+  taken as the width, an atom as the op);
+- `draw_rectangle/5`, `/7`, `/8` (the outline, its width inward; style
+  `filled` fills, IPSJ 36239 p5);
+- `draw_filled_rectangle/6`, `/8` (pattern `fix` only);
+- `draw_string/4-6` (`/5` is a VARIANT: an op name is taken as the op,
+  anything else as the font);
+- `transfer/8`;
+- `execute_graphics_command/2`, a list of `{Name, {Args}}` sent to the
+  window's own methods (USAGE paragraph p_icon.esp);
+- `get_mouse_position/3`.
+
+Defaults are TM-125 p17's: exclusive_or, 1 dot, solid. Coordinates are
+dots from the inside's top-left. Every method goes through `uncover/3`,
+so drawing obeys the window's output permission, and the block cursor is
+taken off around it. Only the frozen winfb primitives are used (`fill`,
+`line` with a width, `glyph`, `copy`); none was added.
+
+Clipping (OURS):
+- a fill is cut to the inside, and so is a horizontal or vertical line or
+  a rectangle;
+- a slanted line is drawn only when it lies wholly inside;
+- a glyph is drawn only when its cell lies wholly inside;
+- a transfer's two areas must lie inside.
+
+Refused loudly (a send of `graphics_refused/2`, which no class has):
+- a slanted line leaving the inside;
+- a line style other than solid;
+- a fill pattern other than `fix` (`light_paint` and TM-785's patterns
+  have no printed look);
+- an unknown command in a batch;
+- drawing on a window not on the screen.
+
+Not done, for want of a held caller on the route or a printed look:
+circles, arcs, ellipses, polygons, `copy/9` between windows, `paint/5`,
+images (`restore_image`), and the markers of window.md §2.6. The
+paragraph icons' `restore/7` reads image classes and colour tables, which
+is a step of its own.
+
+**Test** `test_win_m8_graphics`. A 40 x 20 window is made at (100, 100)
+after the Login PIMOS run. Each drawing is compared with a frame built
+from winfb commands in Python:
+- the HELD `paragraph##type_switch_icon` local `draw_box/5`
+  (p_icon.esp:177-186, run from the compiled .ptf), over a black block
+  (its width-2 `reset` lines carve white) and on white (105 dots);
+- a slanted `draw_line/5` gives 100 dots, and drawn twice it erases (the
+  plan's pin);
+- `draw_string/4` is read back as text;
+- a fill is cut to the inside;
+- `transfer/8` copies;
+- `get_mouse_position/3` is pinned;
+- four loud refusals.
+
+Screen: `../docs/simpos/screens/window_graphics.png` (`winshot.py`
+stage `graphics`).
+
+**Injections, OBSERVED** (2026-11-26; each from a backup copy, restored
+by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run):
+
+| | injection | fails |
+|---|---|---|
+| G1 | `draw_line/5` defaults to `set` (the plan's injection) | M8 only |
+| G2 | fills not cut to the inside | M8 only |
+| G3 | `execute_graphics_command/2` skips each command | M8 only |
+| G4 | a horizontal line's width ignored | M8 only |
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window
@@ -4647,8 +4719,9 @@ test_kappa2's exact count).
   window hierarchy); the look of the notify window (none printed; OURS
   now); TM-225's default permission ① wait (the stand-ins default to
   `out`); Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the
-  census's dump_log/1 stops there). Sections "Window M7's rest" and
-  "Window M8".
+  census's dump_log/1 stops there); M8's shapes beyond lines,
+  rectangles and strings, images and markers. Sections "Window M7's rest"
+  and "Window M8".
 - **espc drops a refused stand-in predicate silently: FIXED 2026-11-25**
   (section "Window M6's rest and M7's save areas"). The related gap, a
   clause body with no head (a comment line ate the head) compiled
