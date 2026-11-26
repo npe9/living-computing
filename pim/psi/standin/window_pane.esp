@@ -613,6 +613,22 @@ attribute surface := 0, pitch := 0;
         string_element(S, 0, Wd), bit(0, Wd, V);
 :point_in(Pane, _, _, _) :- :graphics_refused(Pane, point);
 
+% :magnify_in(Pane, Q, SX, SY, Width, Height, DX, DY, A, E) -- window M8's
+% stops, step 4 (selector and body OURS; standard_io_window.esp "THE
+% MATRIX FORM"): Q's Width x Height dots at (SX, SY) read (read_in/6),
+% each source dot made A x E dots (nearest dot), drawn opaque at Pane's
+% (DX, DY) a row at a time (image_in/6).  Both rectangles must lie inside,
+% or the method refuses loudly.
+% INTERPOLATED (selector and body OURS): magnify_in; basis above.
+:magnify_in(Pane, Q, SX, SY, W, H, DX, DY, A, E) :-
+        inside(Q, SX, SY, W, H), value(W * A, W2), value(H * E, H2),
+        inside(Pane, DX, DY, W2, H2), !,
+        value((W + 15) / 16, N), value(N * H, Size), new_string(S, Size, 16),
+        :read_in(Q, S, SX, SY, W, H),
+        value((W2 + 15) / 16, N2), new_string(R, N2, 16),
+        magnified(Pane, S, N, W, R, N2, W2, A, E, DX, DY, 0, H);
+:magnify_in(Pane, _, _, _, _, _, _, _, _, _) :- :graphics_refused(Pane, matrix_copy);
+
 % :paint_in(Pane, X, Y, Pattern, Op) -- INTERPOLATED (selector OURS) from
 % window.md §2.5 paint/5 (USAGE kappa2 user_if/pb/pdim.esp:606
 % `:paint(OPicon1, 1, 1, Pattern1, set)`, gog DISPPBMS.esp:117, cil
@@ -730,6 +746,56 @@ painted(Pane, Spans, Y, Pt, Op) :-
 spans(_, 0, _, _, _) :- !;
 spans(_, [], _, _, _) :- !;
 spans(Pane, [{L, R} | Ss], Y, Pt, Op) :- span(Pane, L, R, Y, Pt, Op), spans(Pane, Ss, Y, Pt, Op);
+
+% window M8's stops, step 4 (OURS, see magnify_in/10): source row J
+% spread into R, then R drawn E times
+magnified(_, _, _, _, _, _, _, _, _, _, _, J, H) :- J >= H, !;
+magnified(Pane, S, N, W, R, N2, W2, A, E, DX, DY, J, H) :-
+        zeroed(R, 0, N2),
+        value(J * N, Base),
+        spread(S, Base, 0, W, A, R),
+        value(DY + J * E, Y),
+        rows_of(Pane, R, DX, Y, W2, 0, E),
+        magnified(Pane, S, N, W, R, N2, W2, A, E, DX, DY, J + 1, H);
+
+zeroed(_, K, N) :- K >= N, !;
+zeroed(R, K, N) :- set_string_element(R, K, 0), zeroed(R, K + 1, N);
+
+spread(_, _, I, W, _, _) :- I >= W, !;
+spread(S, Base, I, W, A, R) :-
+        value(I / 16, K), string_element(S, Base + K, Wd),
+        value(I - K * 16, B), bit(B, Wd, 1), !,
+        value(I * A, X), dots_set(R, X, X + A),
+        spread(S, Base, I + 1, W, A, R);
+spread(S, Base, I, W, A, R) :- spread(S, Base, I + 1, W, A, R);
+
+dots_set(_, X, E) :- X >= E, !;
+dots_set(R, X, E) :-
+        value(X / 16, K), value(X - K * 16, B), weight(B, P),
+        string_element(R, K, Old), value(Old + P, New), set_string_element(R, K, New),
+        dots_set(R, X + 1, E);
+
+rows_of(_, _, _, _, _, I, E) :- I >= E, !;
+rows_of(Pane, R, X, Y, W, I, E) :-
+        :image_in(Pane, R, X, Y + I, W, 1), rows_of(Pane, R, X, Y, W, I + 1, E);
+
+% the weight of dot B of a word (0 = its MSB)
+weight(0, 16#"8000") :- !;
+weight(1, 16#"4000") :- !;
+weight(2, 16#"2000") :- !;
+weight(3, 16#"1000") :- !;
+weight(4, 16#"0800") :- !;
+weight(5, 16#"0400") :- !;
+weight(6, 16#"0200") :- !;
+weight(7, 16#"0100") :- !;
+weight(8, 16#"0080") :- !;
+weight(9, 16#"0040") :- !;
+weight(10, 16#"0020") :- !;
+weight(11, 16#"0010") :- !;
+weight(12, 16#"0008") :- !;
+weight(13, 16#"0004") :- !;
+weight(14, 16#"0002") :- !;
+weight(15, 1);
 
 % window M8's rest, images (OURS, see image_in/6)
 image_rows(_, _, _, _, _, _, J, H) :- J >= H, !;

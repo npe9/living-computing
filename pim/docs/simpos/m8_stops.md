@@ -402,6 +402,13 @@ in `../../psi/README.md` "Window M8's stops resolved".
   - paragraph `make/3` runs go1-go6, but its images do NOT match the held ones (every word
     differs: line geometry and pattern phase, OURS; open in `psi/README.md`);
   - icotext's 2000 x 2000 canvas refuses loudly (H8).
+- Step 4 DONE (`test_win_m8_stops_matrix`): the axis-aligned whole-scale matrix `copy/9`, nearest
+  dot, above the line (a read, then rows drawn as images). Rotation, shear, offsets and fractional
+  scales refuse. `magnify`/`expand/9` are not stood in.
+- All four steps are done. Open:
+  - the paragraph images differ from the held ones;
+  - paint is dot by dot;
+  - the host link does not carry reads (`WinLink.bsv`).
 
 ## 8. Sources read for this page
 

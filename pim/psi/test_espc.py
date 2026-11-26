@@ -5819,6 +5819,76 @@ end."""
         self.assertEqual(again.pbm(), fr.pbm())
         self.assertEqual(again.save, fr.save)
 
+    def test_win_m8_stops_matrix(self):
+        # Window M8's stops, step 4 (docs/simpos/m8_stops.md §5): copy/9's
+        # matrix form `(W, DX, DY, Src, SX, SY, Width, Height, {A, B, C, D,
+        # E, F})` (USAGE icotext util_scroll.esp:218-224; the row-major
+        # 2 x 3 layout INFERENCE), whole scales only, nearest dot, opaque
+        # (window_pane.esp magnify_in/10, OURS):
+        #   - icotext's {2,0,0,0,2,0}: a 30 x 20 block of the graphics
+        #     window (a disc and a line) drawn 60 x 40 at (200, 100), each
+        #     destination dot the source dot (x'/2, y'/2), the rest of the
+        #     frame unchanged;
+        #   - {3,0,0,0,1,0} from a second window into the graphics window;
+        #   - refused loudly, the frame unchanged: shear {1,1,0,0,1,0}, an
+        #     offset {2,0,5,0,2,0}, a scale 0, a destination leaving the
+        #     inside.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   M5 spread/6 sets dots X+1 .. X+A (one dot right): this test
+        #      FAILS, nothing else.
+        #   M6 each source row drawn once, not E times: this test FAILS,
+        #      nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        SET = A('set')
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        self.assertTrue(self.send(m, w, 'draw_filled_circle', 12, 10, 8, SET))
+        self.assertTrue(self.send(m, w, 'draw_line', 0, 19, 29, 0, 1, A('solid'), SET))
+
+        def dot(rows, x, y):
+            return (rows[y] >> (1279 - x)) & 1
+
+        def magnified(before, sx, sy, wd, ht, dx, dy, a, e):
+            want = list(before)
+            for j in range(ht * e):
+                for i in range(wd * a):
+                    bit = 1 << (1279 - dx - i)
+                    if dot(before, sx + i // a, sy + j // e):
+                        want[dy + j] |= bit
+                    else:
+                        want[dy + j] &= ~bit
+            return want
+        before = list(fr.rows)
+        self.assertGreater(sum(dot(before, X0 + i, Y0 + j) for i in range(30) for j in range(20)), 150)
+        self.assertTrue(self.send(m, w, 'copy', 200, 100, w, 0, 0, 30, 20, K.Vec([2, 0, 0, 0, 2, 0])))
+        self.assertEqual(fr.rows, magnified(before, X0, Y0, 30, 20, X0 + 200, Y0 + 100, 2, 2))
+        opts = K.Cons(K.Vec([A('position'), 700, 100]),
+                      K.Cons(K.Vec([A('size'), K.Vec([A('ch'), 10]), K.Vec([A('ch'), 3])]), K.NIL))
+        ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, v, 'activate'))
+        self.assertTrue(self.send(m, v, 'draw_filled_rectangle', 3, 2, 9, 5, SET))
+        V = m.get_slot(v, 'pane')
+        L, T_ = m.get_slot(V, 'left'), m.get_slot(V, 'top')
+        before = list(fr.rows)
+        self.assertTrue(self.send(m, w, 'copy', 300, 200, v, 0, 0, 20, 10, K.Vec([3, 0, 0, 0, 1, 0])))
+        self.assertEqual(fr.rows, magnified(before, L, T_, 20, 10, X0 + 300, Y0 + 200, 3, 1))
+        rows = list(fr.rows)
+        for mat in ([1, 1, 0, 0, 1, 0], [2, 0, 5, 0, 2, 0], [0, 0, 0, 0, 2, 0]):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, 'copy', 10, 10, w, 0, 0, 10, 10, K.Vec(mat))
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, w, 'copy', 400, 10, w, 0, 0, 30, 20, K.Vec([2, 0, 0, 0, 2, 0]))
+        self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
     def test_win_m8_stops_read(self):
         # Window M8's stops, step 2 (docs/simpos/m8_stops.md §3, §4, §7):
         # reading dots back on winfb's read (the 2026-11-26 extension, OURS
@@ -6002,7 +6072,8 @@ end."""
         #     source: the fourth's dots unchanged, the copy cleared;
         #   - refused loudly, the frame unchanged: the other held form
         #     (an integer second argument: util_scroll.esp:218's matrix
-        #     copy), a source not shown (util_scroll's hide_window), an
+        #     copy, here a rotation: step 4 stands in only scales), a
+        #     source not shown (util_scroll's hide_window), an
         #     area leaving the inside, a colour (integer) op.
         # paint/5 (USAGE kappa2 pdim.esp:606) with an integer (colour) op is
         # refused loudly too (it was a STOP until step 2 of m8_stops.md;
@@ -6076,7 +6147,7 @@ end."""
         self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), [0] * 40)
         rows = list(fr.rows)
         (_o, hidden), = K.call_class_method(m, 'simpos##standard_io_window', 'create', [K.NIL, K.Var()])
-        for args in [('copy', 0, 0, w, 0, 0, 60, 40, K.Vec([2, 0, 0, 0, 2, 0])),
+        for args in [('copy', 0, 0, w, 0, 0, 60, 40, K.Vec([0, 1, 0, 1, 0, 0])),
                      ('copy', hidden, 0, 0, 20, 20, 60, 40, A('copy')),
                      ('copy', w, 0, 0, 200, 20, 60, 40, A('copy')),
                      ('copy', w, 0, 0, 20, 20, 60, 40, 1),

@@ -4904,6 +4904,25 @@ bodies).**
   the line semantics re-derived from these images, which is not done
   here.
 
+**Step 4: copy/9's matrix form, whole scales.** `(W, DX, DY, Src, SX,
+SY, Width, Height, {A, B, C, D, E, F})` (USAGE icotext
+`util_scroll.esp:218-224`). The matrix is read as a row-major 2 x 3
+affine map (INFERENCE, m8_stops.md §5).
+- Stood in (`window_pane.esp` `magnify_in/10`): whole scales A, E >= 1,
+  B = C = D = F = 0. Each source dot becomes A x E dots (nearest dot,
+  OURS), drawn opaque. It runs above the device line: a read of the
+  source (step 2), then rows drawn as images. No RTL was needed.
+- Refused loudly: rotation and shear, an offset, scales that are not
+  whole (the held `Min/Max`, the commented-out 0.8 and 1.5), a
+  destination leaving the inside.
+- `magnify` and `expand/9` are not stood in: no source fixes their
+  arguments (euod's layout is INFERENCE only).
+- icotext's own call still refuses, because its source is the 2000 x 2000
+  canvas (`bitmap_memory`, H8).
+- `test_win_m8_stops_matrix` covers {2,0,0,0,2,0} and {3,0,0,0,1,0}
+  against a dot-by-dot reference, and the refusals. Its header records
+  the injections.
+
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
 Injection P13 (the coordinator's own process held back like any writer)
