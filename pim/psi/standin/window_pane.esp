@@ -428,16 +428,20 @@ attribute surface := 0, pitch := 0;
 
 % :string_in(Pane, X, Y, String, Font, Op) -- INTERPOLATED (selector and
 % body OURS) from window.md §2.5 draw_string/4-6: the string's first
-% letter's top-left at (X, Y) (PRINTED-INTERFACE TM-125 p17), one cell of
-% the font a letter; Font 0 is the pane's font.
-:string_in(Pane, X, Y, S, Font, Op) :-
-        font_of(Pane, Font, Id, Cw, Ch),
-        :uncover(#coordinator, Pane, Lifted),
-        cursor_off(Pane),
-        string(S, N, _),
-        letters(Pane, S, 0, N, X, Y, Id, Cw, Ch, Op),
-        cursor_on(Pane),
-        :unpeel(#coordinator, Lifted);
+% letter's cell top-left at (X, Y) (PRINTED-INTERFACE TM-125 p17), one
+% cell of the font a letter; Font 0 is the pane's font.  The stand-ins'
+% own cell text (standard_choice_window.esp) is drawn so.  A letter whose
+% glyph would leave the inside is not drawn.
+:string_in(Pane, X, Y, S, Font, Op) :- string_drawn(Pane, X, Y, S, Font, Op, cell);
+
+% :draw_string_in(Pane, X, Y, String, Font, Op) -- 2026-11-26 (selector
+% OURS): draw_string/4-6, as string_in/6 but each glyph lies its record's
+% bias rows below Y (f822 word 6, 3 for test_11; windev bias/4).
+% INFERENCE: the HELD profiler_icon_image1, 2 and
+% profiler_mono_selector_image hold test_11's glyphs 3 rows below the
+% draw_string Y of p_imag.esp draw_label/5 and p_v_imag.esp box/6, so the
+% printed "top-left" is the font's line top, the glyph cell below it.
+:draw_string_in(Pane, X, Y, S, Font, Op) :- string_drawn(Pane, X, Y, S, Font, Op, line);
 
 % :transfer_in(Pane, SX, SY, DX, DY, Width, Height, Op) -- INTERPOLATED
 % (selector and body OURS) from window.md §2.5 transfer/8 (USAGE cil
@@ -448,9 +452,11 @@ attribute surface := 0, pitch := 0;
         cursor_off(Pane),
         :copy(#bitmap_display, Pane!left + SX, Pane!top + SY, W, H,
               Pane!left + DX, Pane!top + DY, Op),
+        white_xor(Pane, DX, DY, W, H, Op),
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
 :transfer_in(Pane, _, _, _, _, _, _, _) :- :graphics_refused(Pane, transfer);
+
 
 % :pattern_in(Pane, X, Y, Width, Height, Pattern, Op) -- window M8's rest
 % (2026-11-26), INTERPOLATED (selector and body OURS) from window.md §2.5
@@ -481,8 +487,10 @@ attribute surface := 0, pitch := 0;
 % draws the image string S at (X, Y), Width x Height dots, ceil(Width/16)
 % words a row, MSB leftmost (the held image classes: profiler_icon_image3
 % is 112 words for its 16 x 112, p_m_image3.esp and p_imag.esp h3 := 112;
-% the row order and the bit order are INFERENCE: the frame's own).  OURS
-% look: the image is opaque (the area reset, then the 1 dots set); each
+% the row order and the bit order are INFERENCE: the frame's own).  A 1
+% in the string is a WHITE dot (INFERENCE, 2026-11-26: read_in/6 and
+% psi/README.md "The PSI's line geometry"), the frame's 0.  OURS look:
+% the image is opaque (the area set, then the 1 dots reset); each
 % row is sent as styled lines of the frozen device line (windev line/8),
 % one for each run of equal non-zero words.  The image must lie wholly
 % inside and S hold its words, or the method refuses loudly.
@@ -491,7 +499,7 @@ attribute surface := 0, pitch := 0;
         string(S, L, _), value(H * N, Need), L >= Need, !,
         :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
-        fill_cut(Pane, X, Y, W, H, reset),
+        fill_cut(Pane, X, Y, W, H, set),
         image_rows(Pane, S, X, Y, W, N, 0, H),
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
@@ -614,7 +622,13 @@ attribute surface := 0, pitch := 0;
 % read (psi/windev.py read/7, winfb's 2026-11-26 extension, OURS and
 % owner-approved: docs/simpos/m8_stops.md §3, §4).  Each read goes through
 % uncover/3 and unpeel/2 and takes the block cursor off, as a drawing does,
-% so the dots read are the window's own.  1 = black (the frame's).
+% so the dots read are the window's own.  The device reads 1 = black (the
+% frame's); the words given to the program are 1 = WHITE (INFERENCE,
+% 2026-11-26, psi/README.md "The PSI's line geometry": the HELD
+% profiler_icon_image1..6 and profiler_mono_selector_image were saved by
+% save_image/6 from drawings whose `set` lines, `set` strings and `reset`
+% fills are known; in all seven the `set` dots are 0 and the `reset` dots
+% 1), so each word read is inverted (its pad dots stay 0).
 %
 % :read_in(Pane, S, X, Y, Width, Height) -- INTERPOLATED (selector and body
 % OURS) from window.md §2.5 save_image/6 (USAGE paragraph p_imag.esp:198,
@@ -629,8 +643,31 @@ attribute surface := 0, pitch := 0;
         cursor_off(Pane),
         :read(#bitmap_display, Pane!left + X, Pane!top + Y, W, H, S, _),
         cursor_on(Pane),
-        :unpeel(#coordinator, Lifted);
+        :unpeel(#coordinator, Lifted),
+        rem16(W, R), last_mask(R, M),
+        white_rows(S, N, M, 0, H);
 :read_in(Pane, _, _, _, _, _) :- :graphics_refused(Pane, read);
+
+% :save_image_in(Pane, S, X, Y, Width, Height) and
+% :restore_image_in(Pane, S, X, Y, Width, Height) -- 2026-11-26 (selectors
+% OURS): save_image/6 and restore_image/6's (X, Y) are taken from the
+% pane's IMAGE ORIGIN, not its inside's top-left.  MEASURED on the HELD
+% profiler_icon_image1..6: their windows (standard_io_window, label,
+% margin and border off, never shown, p_imag.esp go1-go6) saved at
+% (X + 4, Y + 8) the dots drawn at (X + 1, Y), so the origin lies 3 dots
+% left of and 8 rows above the inside (the cause unknown).  INFERENCE
+% that the image methods address the window's outer rectangle: the HELD
+% profiler_mono_selector_image, saved at (0, 0) of a titled window, holds
+% the title strip, its inside starting 24 rows down, and p_imag.esp
+% adjust_pos/3 moves a restore by get_label_height/2 - 24.  Here a surface
+% pane (never shown) has the measured origin (3, 8); a shown pane's is its
+% inside's top-left (OURS: the shown frame's layout is OURS, and the held
+% type_switch_icon draw/6 places its image against draw_box/5 lines by
+% that layout, test_win_m8_images).
+:save_image_in(Pane, S, X, Y, W, H) :-
+        image_origin(Pane, OX, OY), :read_in(Pane, S, X - OX, Y - OY, W, H);
+:restore_image_in(Pane, S, X, Y, W, H) :-
+        image_origin(Pane, OX, OY), :image_in(Pane, S, X - OX, Y - OY, W, H);
 
 % :point_in(Pane, X, Y, ^Value) -- INTERPOLATED (selector OURS) from TM-125
 % p17's get_point_value/4 (PRINTED-INTERFACE: "the value (0/1) of the
@@ -826,6 +863,41 @@ weight(13, 16#"0004") :- !;
 weight(14, 16#"0002") :- !;
 weight(15, 1);
 
+% exclusive_or between two areas acts on the PSI's dots, 1 = white
+% (INFERENCE, 2026-11-26: paragraph p_imag.esp draw_label/5's mono path,
+% copy, light_paint reset, then exclusive_or, gives the HELD
+% profiler_icon_image1 and 2 only so: psi/README.md "The PSI's line
+% geometry").  On the frame (1 = black) that is the complement of the
+% device's exclusive_or, so the destination is inverted after it.  The
+% other ops between areas are the device's (OURS: no held dot decides
+% them).
+white_xor(Pane, DX, DY, W, H, exclusive_or) :- !,
+        :fill(#bitmap_display, Pane!left + DX, Pane!top + DY, W, H, exclusive_or);
+white_xor(_, _, _, _, _, _);
+
+% the words read, inverted to 1 = white (see read_in/6): each full word
+% from 16#"FFFF", a row's last word from M, the mask of its R dots
+last_mask(0, 16#"FFFF") :- !;
+last_mask(R, M) :- value(R - 1, R1), weight(R1, B), value(16#"FFFF" - B + 1, M);
+
+white_rows(_, _, _, J, H) :- J >= H, !;
+white_rows(S, N, M, J, H) :-
+        value(J * N, Base), white_words(S, Base, N, M, 0),
+        white_rows(S, N, M, J + 1, H);
+
+white_words(S, Base, N, M, K) :- K + 1 >= N, !,
+        value(Base + K, I), string_element(S, I, W), value(M - W, V),
+        set_string_element(S, I, V);
+white_words(S, Base, N, M, K) :-
+        value(Base + K, I), string_element(S, I, W), value(16#"FFFF" - W, V),
+        set_string_element(S, I, V),
+        white_words(S, Base, N, M, K + 1);
+
+% a pane's image origin (see save_image_in/6): (3, 8) above-left of a
+% surface pane's inside (MEASURED), the inside's top-left on the screen
+image_origin(Pane, 3, 8) :- Pane!surface = [_, _, _], !;
+image_origin(_, 0, 0);
+
 % window M8's rest, images (OURS, see image_in/6)
 image_rows(_, _, _, _, _, _, J, H) :- J >= H, !;
 image_rows(Pane, S, X, Y, W, N, J, H) :-
@@ -842,7 +914,7 @@ image_runs(Pane, S, X, Y, W, N, Base, K) :-
         run_end(S, Base, N, K, Wd, E),
         value(X + K * 16, X1), value(X + E * 16 + 15, X2a), low_end(X2a, X + W - 1, X2),
         :line(#bitmap_display, Pane!left + X1, Pane!top + Y, Pane!left + X2,
-              Pane!top + Y, 1, Wd, set),
+              Pane!top + Y, 1, Wd, reset),
         image_runs(Pane, S, X, Y, W, N, Base, E + 1);
 
 run_end(S, Base, N, K, Wd, E) :- K + 1 < N, string_element(S, Base + K + 1, Wd), !,
@@ -903,19 +975,20 @@ turned(W, R) :- value(W + W, R);
 % light_paint's dots are HELD-DERIVED: paragraph's image classes were made
 % by filling a window `fix, set`, then `light_paint, reset`, drawing on it
 % and save_image/6 (p_imag.esp go1/1 :175-198, p_v_imag.esp :151-152,
-% :228), so their background words are the complement of light_paint:
-% profiler_mono_selector_image (saved at the inside's (0, 0)) has 16#"7777"
-% on every even row and 16#"DDDD" on every odd one, that is light_paint =
-% 16#"8888", 16#"2222" (MEASURED on the held .ptf, test_win_m8_images).
-% The icon images (saved at (52, 58) and others) show the same lattice, a
-% dot every 4 columns, the rows 2 columns apart, at another phase; so the
-% anchor is not the inside's top-left in every window (INFERENCE: the
-% screen's, with the windows' places unknown), and the phase here, the
-% selector's at the inside's top-left, is OURS.  The other names' looks
-% are OURS: no source shows a dot of them.
-named(light_paint, 0, 16#"8888") :- !;
-named(light_paint, 2, 16#"8888") :- !;
-named(light_paint, _, 16#"2222") :- !;
+% :228).  The saved words are 1 for white (INFERENCE, 2026-11-26, from
+% the same images: read_in/6), so their background words ARE light_paint:
+% profiler_mono_selector_image has 16#"7777" on every even row of its
+% inside and 16#"DDDD" on every odd one (MEASURED on the held .ptf,
+% test_win_m8_images), and profiler_icon_image1..6 show the same lattice
+% anchored at the inside's top-left once their image origin (3, 8) is
+% taken off (save_image_in/6).  So light_paint is anchored at the inside's
+% top-left (INFERENCE: both windows agree) and covers 3 dots in 4.  Until
+% 2026-11-26 it was the complement, 8888 and 2222, read with the saved
+% words taken as 1 = black.  The other names' looks are OURS: no source
+% shows a dot of them.
+named(light_paint, 0, 16#"7777") :- !;
+named(light_paint, 2, 16#"7777") :- !;
+named(light_paint, _, 16#"DDDD") :- !;
 named(dotted, 0, 16#"AAAA") :- !;
 named(dotted, 2, 16#"AAAA") :- !;
 named(dotted, _, 0) :- !;
@@ -998,20 +1071,46 @@ on_screen(_, _, _, 0);
 
 value(V, V);
 
-% window M8 (OURS, see "Window M8" above)
+% window M8 (see "Window M8" above).  The PSI's line geometry, re-derived
+% 2026-11-26 from the HELD profiler_icon_image1..6 (paragraph p_imag.esp
+% go1-go6) and checked on the HELD profiler_mono_selector_image
+% (psi/README.md "The PSI's line geometry"):
+%   - both end points are drawn (INFERENCE, image 4);
+%   - a slanted line's dots are the nearest to the true line, and a dot
+%     exactly half-way between two rounds TOWARD THE FIRST END POINT
+%     (INFERENCE: image 4's eight slope-1/2 lines, all four directions, and
+%     the selector's y-major triangles).  The device's line (winfb, the
+%     frozen command set) rounds a tie away from its first end point, so
+%     the line is sent from (X2, Y2) to (X1, Y1);
+%   - a line Wd dots wide is Wd single lines side by side, going UP from
+%     an x-major line (horizontal included) and RIGHT from a y-major one
+%     (INFERENCE, images 4-6 and the selector: every wide line there is
+%     axis-aligned, drawn left to right or top to bottom, so a line drawn
+%     the other way is OURS, and "left of the direction drawn" fits too).
+%     The device widens an x-major line downward, so it gets Y - Wd + 1.
 line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :- Y1 == Y2, !,
-        low_span(X1, X2, X, W), fill_cut(Pane, X, Y1, W, Wd, Op);
+        low_span(X1, X2, X, W), fill_cut(Pane, X, Y1 - Wd + 1, W, Wd, Op);
 line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :- X1 == X2, !,
         low_span(Y1, Y2, Y, H), fill_cut(Pane, X1, Y, Wd, H, Op);
 line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :-
-        :line(#bitmap_display, Pane!left + X1, Pane!top + Y1,
-              Pane!left + X2, Pane!top + Y2, Wd, Op);
+        x_major(X1, Y1, X2, Y2), !,
+        :line(#bitmap_display, Pane!left + X2, Pane!top + Y2 - Wd + 1,
+              Pane!left + X1, Pane!top + Y1 - Wd + 1, Wd, Op);
+line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :-
+        :line(#bitmap_display, Pane!left + X2, Pane!top + Y2,
+              Pane!left + X1, Pane!top + Y1, Wd, Op);
+
+x_major(X1, Y1, X2, Y2) :-
+        low_span(X1, X2, _, W), low_span(Y1, Y2, _, H), W >= H;
 
 drawable(_, _, Y1, _, Y2, _) :- Y1 == Y2, !;
 drawable(_, X1, _, X2, _, _) :- X1 == X2, !;
 drawable(Pane, X1, Y1, X2, Y2, Wd) :-
+        low_span(X1, X2, X, W), low_span(Y1, Y2, Y, H), W >= H, !,
+        inside(Pane, X, Y - Wd + 1, W, H + Wd - 1);
+drawable(Pane, X1, Y1, X2, Y2, Wd) :-
         low_span(X1, X2, X, W), low_span(Y1, Y2, Y, H),
-        inside(Pane, X, Y, W + Wd - 1, H + Wd - 1);
+        inside(Pane, X, Y, W + Wd - 1, H);
 
 low_span(A, B, A, W) :- A =< B, !, value(B - A + 1, W);
 low_span(A, B, B, W) :- value(A - B + 1, W);
@@ -1037,13 +1136,27 @@ inside(Pane, X, Y, W, H) :-
 font_of(Pane, 0, Id, Cw, Ch) :- !, Id = Pane!font, Cw = Pane!cw, Ch = Pane!ch;
 font_of(_, Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;
 
-letters(_, _, I, N, _, _, _, _, _, _) :- I >= N, !;
-letters(Pane, S, I, N, X, Y, Id, Cw, Ch, Op) :- inside(Pane, X, Y, Cw, Ch), !,
-        string_element(S, I, C),
-        :glyph(#bitmap_display, Id, C, Pane!left + X, Pane!top + Y, Op),
-        letters(Pane, S, I + 1, N, X + Cw, Y, Id, Cw, Ch, Op);
-letters(Pane, S, I, N, X, Y, Id, Cw, Ch, Op) :-
-        letters(Pane, S, I + 1, N, X + Cw, Y, Id, Cw, Ch, Op);
+string_drawn(Pane, X, Y, S, Font, Op, Place) :-
+        font_of(Pane, Font, Id, Cw, Ch),
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        string(S, N, _),
+        letters(Pane, S, 0, N, X, Y, Id, Cw, Ch, Op, Place),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+letters(_, _, I, N, _, _, _, _, _, _, _) :- I >= N, !;
+letters(Pane, S, I, N, X, Y, Id, Cw, Ch, Op, Place) :-
+        string_element(S, I, C), drop(Place, Id, C, B),
+        inside(Pane, X, Y + B, Cw, Ch), !,
+        :glyph(#bitmap_display, Id, C, Pane!left + X, Pane!top + Y + B, Op),
+        letters(Pane, S, I + 1, N, X + Cw, Y, Id, Cw, Ch, Op, Place);
+letters(Pane, S, I, N, X, Y, Id, Cw, Ch, Op, Place) :-
+        letters(Pane, S, I + 1, N, X + Cw, Y, Id, Cw, Ch, Op, Place);
+
+% rows from Y to the glyph: none for cell text, the bias for draw_string
+drop(cell, _, _, 0) :- !;
+drop(line, Id, C, B) :- :bias(#bitmap_display, Id, C, B);
 
 % the rectangle set, its inside reset (a 2-dot border), the rule under
 % the label strip

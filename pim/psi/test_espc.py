@@ -5376,7 +5376,7 @@ end."""
 
         def box(x, y, wd, ht, carve):
             if carve:
-                fill(x, y + 1, wd, 2, 1)
+                fill(x, y, wd, 2, 1)        # width 2 goes up from Y + 1
                 fill(x, y, 2, ht, 1)
             fill(x, y + ht - 1, wd, 1, 0)
             fill(x + 1, y + ht - 2, wd - 1, 1, 0)
@@ -5399,9 +5399,9 @@ end."""
         self.assertEqual(fr.count() - n0, 100)
         self.assertTrue(self.send(m, w, 'draw_line', 100, 10, 199, 59))
         self.assertEqual(fr.rows, want.rows)
-        # a string, its first letter's top-left at (100, 80)
+        # a string at (100, 80): its glyphs test_11's bias, 3 rows, lower
         self.assertTrue(self.send(m, w, 'draw_string', 100, 80, K.Str('window M8')))
-        self.assertEqual(windev.read_cells(fr, X0 + 100, Y0 + 80, 9, 1), ['window M8'])
+        self.assertEqual(windev.read_cells(fr, X0 + 100, Y0 + 83, 9, 1), ['window M8'])
         self.assertTrue(self.send(m, w, 'draw_string', 100, 80, K.Str('window M8')))
         self.assertEqual(fr.rows, want.rows)
         # a fill cut to the inside (440 x 280)
@@ -5436,7 +5436,7 @@ end."""
         m, fr = self.graphics_run()
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.GRAPHICS_PIN)
 
-    GRAPHICS_PIN = ('f365619e8a6e34594abfe468efdd48d76fda56cc26068335ff1a4c5201154552', 107429)
+    GRAPHICS_PIN = ('56bd48789b55238193356e26a60a04889eb66fb6d74f39d8babc315b68359678', 107429)
 
     def test_win_m8_forms(self):
         # M8, the other argument forms of window.md §2.5 (each beside the
@@ -5494,7 +5494,7 @@ end."""
         self.assertEqual(drawn('draw_rectangle', 90, 10, 30, 20, 1, K.Atom('filled')), -600)
         # lines: draw_line/6's two readings, draw_line/7
         self.assertEqual(drawn('draw_line', 10, 50, 59, 50, 3), 150)
-        fill(10, 50, 50, 3, 2)
+        fill(10, 48, 50, 3, 2)                  # width going up
         self.assertEqual(fr.rows, want.rows)
         self.assertEqual(drawn('draw_line', 10, 60, 59, 60, K.Atom('set')), 50)
         self.assertEqual(drawn('draw_line', 10, 60, 59, 60, K.Atom('set')), 0)
@@ -5510,12 +5510,12 @@ end."""
         ((_n, font),) = K.call_class_method(m, 'simpos##font', 'create', [K.Str('font:test_11.font'), K.Var()])
         self.assertTrue(self.send(m, w, 'draw_string', 10, 100, K.Str('by op'), K.Atom('set')))
         self.assertTrue(self.send(m, w, 'draw_string', 10, 100, K.Str('by op'), K.Atom('set')))
-        self.assertEqual(windev.read_cells(fr, X0 + 10, Y0 + 100, 5, 1), ['by op'])
+        self.assertEqual(windev.read_cells(fr, X0 + 10, Y0 + 103, 5, 1), ['by op'])
         self.assertTrue(self.send(m, w, 'draw_string', 10, 120, K.Str('by font'), font))
-        self.assertEqual(windev.read_cells(fr, X0 + 10, Y0 + 120, 7, 1), ['by font'])
+        self.assertEqual(windev.read_cells(fr, X0 + 10, Y0 + 123, 7, 1), ['by font'])
         self.assertTrue(self.send(m, w, 'draw_string', 10, 120, K.Str('by font'), font))
         self.assertTrue(self.send(m, w, 'draw_string', 10, 140, K.Str('both'), font, K.Atom('exclusive_or')))
-        self.assertEqual(windev.read_cells(fr, X0 + 10, Y0 + 140, 4, 1), ['both'])
+        self.assertEqual(windev.read_cells(fr, X0 + 10, Y0 + 143, 4, 1), ['both'])
         self.assertTrue(self.send(m, w, 'draw_string', 10, 140, K.Str('both'), font, K.Atom('exclusive_or')))
         self.assertTrue(self.send(m, w, 'draw_string', 10, 100, K.Str('by op'), K.Atom('reset')))
         self.assertEqual(fr.rows, want.rows)
@@ -5527,8 +5527,8 @@ end."""
         (dl,) = [K.resolve(dl) for _ in m.solve((m.code(cid), ps[('draw_list', 8)].offset),
                                                 [10, 200, 1, K.Cons(42, K.Cons(7, K.NIL)), dl, font, 30, 280])]
         self.assertTrue(self.send(m, w, 'execute_graphics_command', dl))
-        self.assertEqual(windev.read_cells(fr, X0 + 21, Y0 + 200, 4, 1), ['1 42'])
-        self.assertEqual(windev.read_cells(fr, X0 + 21, Y0 + 218, 4, 1), ['2 7'])
+        self.assertEqual(windev.read_cells(fr, X0 + 21, Y0 + 203, 4, 1), ['1 42'])
+        self.assertEqual(windev.read_cells(fr, X0 + 21, Y0 + 221, 4, 1), ['2 7'])
         # the covered window's refused line
         m, w = self.graphics_window()
         opts = K.Cons(K.Vec([K.Atom('position'), 300, 200]), K.NIL)
@@ -5548,7 +5548,7 @@ end."""
 
     # window M8's rest: the named patterns' looks (OURS, window_pane.esp
     # named/3), a word for each of 4 rows
-    NAMED_PATTERNS = {'light_paint': [0x8888, 0x2222, 0x8888, 0x2222], 'dotted': [0xAAAA, 0, 0xAAAA, 0],
+    NAMED_PATTERNS = {'light_paint': [0x7777, 0xDDDD, 0x7777, 0xDDDD], 'dotted': [0xAAAA, 0, 0xAAAA, 0],
                       'mesh': [0xFFFF, 0x8888, 0x8888, 0x8888],
                       'small_mesh': [0xAAAA, 0x5555, 0xAAAA, 0x5555],
                       'left_hatch': [0x8888, 0x4444, 0x2222, 0x1111],
@@ -5650,7 +5650,9 @@ end."""
             ref = winfb.Frame()
             self.pattern_fill(ref, p, 10, y + 3, 17, 11)
             self.assertEqual(region(fr, 10, y + 3, 17, 11), region(ref, 10, y + 3, 17, 11), i)
-            self.assertEqual(windev.read_cells(fr, X0 + 33, Y0 + y, 1, 1), [str(i + 1)])
+            # the glyph lies test_11's bias, 3 rows, below the string's Y
+            # (since 2026-11-26), so its cell top meets the bar's
+            self.assertEqual(windev.read_cells(fr, X0 + 33, Y0 + y + 3, 1, 1), [str(i + 1)])
         # the named patterns, and one cut at the left edge
         m, w = self.graphics_window()
         fr = windev.device(m).frame
@@ -5685,16 +5687,17 @@ end."""
 
     def image_ref(self, want, codes, x, y, wd, ht):
         # the reference restore_image/6: WD x HT dots at inside (X, Y),
-        # ceil(WD/16) words a row, MSB leftmost, opaque
+        # ceil(WD/16) words a row, MSB leftmost, opaque, a 1 white (the
+        # saved words' sense since 2026-11-26)
         X0, Y0 = self.GRAPHICS_AT
         n = (wd + 15) // 16
         for j in range(ht):
             for i in range(wd):
                 bit = 1 << (1279 - X0 - x - i)
                 if (codes[j * n + i // 16] >> (15 - i % 16)) & 1:
-                    want.rows[Y0 + y + j] |= bit
-                else:
                     want.rows[Y0 + y + j] &= ~bit
+                else:
+                    want.rows[Y0 + y + j] |= bit
 
     def test_win_m8_images(self):
         # M8's rest, images (window.md §2.5; standard_io_window.esp
@@ -5704,9 +5707,10 @@ end."""
         #     its color_check2/1) is 1, the monochrome path;
         #   - light_paint MEASURED: the HELD profiler_mono_selector_image
         #     (p_v_imag.esp:151-152, :228: fix set, light_paint reset, saved
-        #     at the inside's (0, 0)) has 16#"7777" only on even rows and
-        #     16#"DDDD" only on odd ones, the complement of window_pane.esp's
-        #     light_paint (8888, 2222);
+        #     at (0, 0)) has 16#"7777" only on even rows and 16#"DDDD" only
+        #     on odd ones: window_pane.esp's light_paint, the saved words
+        #     being 1 = white (since 2026-11-26; it was read as the
+        #     complement, 8888 and 2222, before);
         #   - restore_image/6 of the HELD profiler_icon_image3 (16 x 112)
         #     over a black block: opaque, equal to the reference; twice,
         #     the same frame;
@@ -5745,7 +5749,7 @@ end."""
                 rows[c].add((i // 24) % 2)
         self.assertEqual(rows, {0x7777: {0}, 0xDDDD: {1}})
         lp = self.NAMED_PATTERNS['light_paint']
-        self.assertEqual([0xffff & ~0x7777, 0xffff & ~0xDDDD], lp[:2])
+        self.assertEqual([0x7777, 0xDDDD], lp[:2])
         # restore_image/6, opaque over black
         img3 = image('paragraph##profiler_icon_image3')
         self.assertEqual(len(img3), 112)
@@ -5844,15 +5848,20 @@ end."""
 
     def put_line(self, want, x1, y1, x2, y2, wd, op=0):
         # draw_line_in/7's line, op OP (0 set, 2 exclusive_or): a fill when level or upright, else
-        # the device line (windev line/7, style all ones)
+        # the device line (windev line/7, style all ones).  The PSI's geometry
+        # (psi/README.md "The PSI's line geometry", since 2026-11-26): an
+        # x-major line widens upward (the device's downward, so it is sent
+        # Wd - 1 rows up), and a slanted line is sent from its second end
+        # point, so the device's Bresenham rounds ties toward the first
         import winfb
         X0, Y0 = self.GRAPHICS_AT
         if y1 == y2:
-            want.command(winfb.FILL << 4 | op, [X0 + min(x1, x2), Y0 + y1, abs(x2 - x1) + 1, wd, 0, 0])
+            want.command(winfb.FILL << 4 | op, [X0 + min(x1, x2), Y0 + y1 - wd + 1, abs(x2 - x1) + 1, wd, 0, 0])
         elif x1 == x2:
             want.command(winfb.FILL << 4 | op, [X0 + x1, Y0 + min(y1, y2), wd, abs(y2 - y1) + 1, 0, 0])
         else:
-            want.command(winfb.LINE << 4 | op, [X0 + x1, Y0 + y1, X0 + x2, Y0 + y2, wd, 0xffff])
+            up = wd - 1 if abs(x2 - x1) >= abs(y2 - y1) else 0
+            want.command(winfb.LINE << 4 | op, [X0 + x2, Y0 + y2 - up, X0 + x1, Y0 + y1 - up, wd, 0xffff])
 
     def test_win_m8_shapes(self):
         # M8's rest, shapes (window.md §2.5; standard_io_window.esp
@@ -6082,11 +6091,6 @@ end."""
             todo += [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         return seen
 
-    # MEASURED 2026-11-26, NOT A TARGET: words of each paragraph image
-    # (save_image/6 of go1-go6) that differ from the held
-    # profiler_icon_image1..6 (see test_win_m8_stops_surface)
-    PARAGRAPH_GAP = {1: 84, 2: 56, 3: 112, 4: 140, 5: 80, 6: 56}
-
     def test_win_m8_stops_surface(self):
         # Window M8's stops, step 3 (docs/simpos/m8_stops.md §2, §7):
         # windows drawn on before they are shown, or never shown, draw into
@@ -6101,13 +6105,11 @@ end."""
         #     bitmap memory holds no area afterwards, and each image has the
         #     held image's length.  Its :write/4 is replaced by a harness
         #     model that keeps the string (OURS: the files are not wanted).
-        #     THE IMAGES DO NOT MATCH the held profiler_icon_image1..6:
-        #     every word differs (PARAGRAPH_GAP, MEASURED).  Image 5 (lines
-        #     only) shows why: the light_paint phase is 3 dots off (OURS
-        #     anchor at the inside), and the boxes' lines lie about 8 rows
-        #     higher and are drawn black where the held image is white, so
-        #     the draw_line geometry and ops of the stand-in (OURS) differ
-        #     from the PSI's; not tuned here (psi/README.md, open item);
+        #     EACH IMAGE EQUALS the held profiler_icon_image1..6 word for
+        #     word (since 2026-11-26: the PSI's line geometry, the saved
+        #     words' 1 = white, light_paint, the image origin (3, 8), the
+        #     glyph bias and exclusive_or between areas, re-derived from
+        #     these images: psi/README.md "The PSI's line geometry");
         #   - kappa2 pdim.esp:579-606's order: a 61 x 64 window painted at
         #     (1, 1) before activate (light_paint), then activated: the shown
         #     inside holds the painted dots (cut to the cells that fit);
@@ -6132,6 +6134,13 @@ end."""
         #      nothing else.
         #   Q4 kill/1 does not free a surface: this test ERRORS (INFERENCE,
         #      not checked: six 12,800-word areas outgrow 65,536), nothing else.
+        #   L1 (2026-11-26) the tie-break flipped: line_in/7 sends a slanted
+        #      line from (X1, Y1), so ties round away from the first end
+        #      point: this test FAILS at image 4, 60 dots differing (the
+        #      eight slope-1/2 arrow lines), test_win_m8_shapes FAILS (its
+        #      put_line reference sends lines reversed) and
+        #      test_win_m8_rest_screen FAILS (the pin), nothing else in
+        #      Window (only Window run).
         import windev
         import winfb
         A = K.Atom
@@ -6165,14 +6174,13 @@ end."""
                 c = K.deref(c.args[1])
             return out
         self.assertEqual([i for i in ids() if i < 0], [])     # no surface left
-        gap = {}
         for i in range(1, 7):
             ((h,),) = K.call_class_method(m, 'paragraph##profiler_icon_image%d' % i, 'get', [K.Var()])
             held = h.codes()
             mine = got['profiler_icon_image%d' % i]
             self.assertEqual(len(mine), len(held), i)
-            gap[i] = sum(1 for a, b in zip(mine, held) if a != b)
-        self.assertEqual(gap, self.PARAGRAPH_GAP)
+            # differing dots per image: none
+            self.assertEqual(sum(bin(a ^ b).count('1') for a, b in zip(mine, held)), 0, i)
         # kappa2's order: paint before activate
         opts = K.Cons(K.Vec([A('size'), 61, 64]),
                       K.Cons(K.Vec([A('position'), 700, 500]), K.NIL))
@@ -6302,7 +6310,10 @@ end."""
         #     line; again while another window covers part of it: the same
         #     words (uncover/3), the frame unchanged;
         #   - get_point_value/4 on a black and a white dot; set_point_value/4
-        #     1 then 0 (TM-125 p17, PRINTED-INTERFACE: 0/1);
+        #     0 then 1 (TM-125 p17, PRINTED-INTERFACE: 0/1); since
+        #     2026-11-26 the words and values are 1 = white (INFERENCE from
+        #     the held paragraph images, psi/README.md "The PSI's line
+        #     geometry");
         #   - paint/5: gog DISPPBMS.esp:116-118's filled triangle
         #     (draw_polygon/2, then `:paint(W, X+10, Y+10, fix, set)`) and
         #     cil es_gin.esp:1752-1762's draw_triangle (three 1-dot lines,
@@ -6329,7 +6340,8 @@ end."""
         #   P3 point_in/4 takes the word's last dot: this test FAILS,
         #      nothing else.
         #   P4 set_point_value 0 draws with set: this test FAILS, nothing
-        #      else.
+        #      else (P4 predates the 1 = white sense, under which 0 does
+        #      draw with set; the inverse injection is the one that applies).
         #   P5 winfb's read sets each row's last pad dot: test_winfb
         #      test_read_words and test_read_clip and this test FAIL
         #      (test_winfb and Window run).
@@ -6351,7 +6363,8 @@ end."""
             n = (wd + 15) // 16
             out = []
             for j in range(ht):
-                v = (fr.rows[Y0 + y + j] >> (1280 - X0 - x - wd)) & ((1 << wd) - 1)
+                # the words are 1 = white (since 2026-11-26), pads 0
+                v = ~(fr.rows[Y0 + y + j] >> (1280 - X0 - x - wd)) & ((1 << wd) - 1)
                 v <<= 16 * n - wd
                 out += [(v >> (16 * (n - 1 - k))) & 0xffff for k in range(n)]
             return out
@@ -6379,17 +6392,18 @@ end."""
         K.call_class_method(m, 'simpos##coordinator', 'select_window', [w])
         # points
         V = K.Var()
+        # values in the saved words' sense, 1 = white (since 2026-11-26)
         self.assertTrue(self.send(m, w, 'get_point_value', 30, 20, V))
-        self.assertEqual(K.deref(V), 1)
-        V = K.Var()
-        self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
         self.assertEqual(K.deref(V), 0)
-        self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 1))
-        self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 1)
         V = K.Var()
         self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
         self.assertEqual(K.deref(V), 1)
         self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 0))
+        self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 1)
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
+        self.assertEqual(K.deref(V), 0)
+        self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 1))
         self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 0)
 
         def painted(x, y, sel_args):
@@ -6603,7 +6617,7 @@ end."""
         m, fr = self.graphics_rest_run()
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.GRAPHICS_REST_PIN)
 
-    GRAPHICS_REST_PIN = ('54cf1490c64bc06f167057ab9c5800652588eece19c56c45f5a861f695ca1512', 110989)
+    GRAPHICS_REST_PIN = ('f1a01c2bab6d3269f237199081421492cfcbb4e0464b3be45737941c61bb3e60', 113666)
 
     def choice_run(self):
         # the screen of psi/winshot.py's `choice` stage (window M9): the
