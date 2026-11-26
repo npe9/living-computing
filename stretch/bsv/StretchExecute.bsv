@@ -2896,10 +2896,16 @@ function Tuple2#(Word64, FpCommit)
         // with normalization" of the sum.
         // The product is the FP box's (StretchPAU.bsv), unnormalized as
         // p.99 says; the addition below is still this arm's.
-        fpc.fpReq = tagged Valid (tagged FpMul FpMulReq { a: opnd, b: ftv,
-                      normalized: False, noisy: False, dbl: True });
+        // SINCE fidelity_plan.md A4 step 3 (2026-11-26) THE ADDITION IS
+        // THE UNIT'S TOO: one chained request (FpMulAdd), and fpAns is the
+        // sum.  `pauChainMulAdd := False` restores the arm's fpAddDouble.
+        FpMulReq  mq = FpMulReq { a: opnd, b: ftv, normalized: False, noisy: False, dbl: True };
+        fpc.fpReq = tagged Valid (pauChainMulAdd
+                      ? tagged FpMulAdd FpMulAddReq { mul: mq, acc: da,
+                                                      normalized: normalized, noisy: noisy }
+                      : tagged FpMul mq);
         FpdResult m = fpRspDouble(fpAns);
-        FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
+        FpdResult r = pauChainMulAdd ? m : fpAddDouble(da, m.res, normalized, noisy, False);
         fpc.accLeft = tagged Valid fpdAccLeft(r.res);
         fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         // The sign byte takes the sum's sign and the ACCUMULATOR's
@@ -9249,8 +9255,13 @@ interface EBox;
   // depend on the operands (pre-shifts, reduction loops, remainder
   // complement, D/'s remainder normalization), over and above
   // eboxClocks' zero-divisor floor.  The divide box computes it
-  // (mkPAU's divide walk, StretchPAU.bsv); 0 for every other instruction, including
-  // the VFL divide, whose time is eboxClocks' fit.
+  // (mkPAU's divide walk, StretchPAU.bsv); 0 for the VFL divide, whose
+  // time is eboxClocks' fit.  SINCE 2026-11-26 (fidelity_plan.md A4 step
+  // 3) also the floating-point class's Table 2 add terms -- pre-shift,
+  // normalization, recomplement, forced zero -- for `*+`'s sum and the
+  // plain adds, and `*+`'s Fig. 3.8.13 "accumulator exponent smaller"
+  // path: mkPAU.fpExtra, behind StretchPAU.bsv's switches.  0 for every
+  // other instruction.
   method Bit#(16) boxCharge();
   // THE SERIAL UNIT'S OWN TIME (fidelity_plan.md A3 (b), 2026-11-25),
   // read in the same clock as boxClocks: Valid when the held instruction
@@ -9439,7 +9450,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   method Maybe#(Bit#(3)) laBoxWaiting() = (isValid(held) && boxWait && owner == OwnerLA)
                                           ? tagged Valid boxKind : tagged Invalid;
   method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && pau.responseReady())
-                                ? pauDivRsp(pau.response()).fpExtra : 0;
+                                ? pauDivRsp(pau.response()).fpExtra
+                                : (boxWait && boxKind == 4 && pau.responseReady())
+                                  ? pau.fpExtra() : 0;
   method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && (boxKind == 1 || boxKind == 2) && sau.responseReady())
                                            ? sau.ownClocks() : tagged Invalid;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();

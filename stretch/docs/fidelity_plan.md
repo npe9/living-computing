@@ -923,6 +923,130 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
     - The move is SAU byte assembly, then a PAU request, then an SAU
       unload, which is the shape the VFL divide already has.
     - It changes no time while only one instruction is in the E-box.
+- **Step 3, STEPPING `*+`'s SUM (done; the plain add measured, held
+  off).** `*+` is now one chained `FpMulAdd` request: four multiply
+  passes, then an add pass on `rg_ab`'s product (`pauChainMulAdd`).
+  The answers are unchanged; `mkPauStepTb` checks them bit for bit
+  against the arm's old `fpAddDouble`.
+  - Table 2's `*+` execution terms (printed p.3-4, PDF 22) come from
+    that pass's own counts and are charged through `fpExtra` and
+    `mkEBox.boxCharge`, the divide's route:
+    - "1 cycle for each additional pre-shift of 4" (`pauMaPreshift`);
+    - "2 cycles for each additional norm. of 6" (`pauMaNorm`);
+    - "2 cycles if recomplement is necessary" (`pauMaRecomp`).
+  - A further term is CHARTED but OFF: Fig. 3.8.13's "IF ACCUMULATOR
+    EXPONENT IS SMALLER USE THIS TIMING", three periods
+    (`pauMaAccSmaller`). That path is the accumulator going through the
+    pre-shifter, which Table 2's pre-shift term already charges. The
+    chart's periods are not Table 2's cycles, and the only cells it
+    moves are moved away (below).
+  - Atlas, PDF 57/88 (`*+`, 320 cells), one term at a time:
+
+    | terms on | `*+` within 1 | within 3 | median | the cells that move |
+    |---|---|---|---|---|
+    | none (base; chain on is within 0.05 of it everywhere) | 23.8% | 88.8% | -1.00 | |
+    | + pre-shift | 25.0% | 98.8% | -1.00 | 40 toward, 0 away |
+    | + normalization | 25.0% | 98.8% | -1.00 | NEG `int` 43.0 -> 63.0 (printed 56) |
+    | + recomplement (shipped) | 25.0% | 98.8% | -1.00 | NEG `int` 63.0 -> 65.0 |
+    | + acc-smaller (not shipped) | 25.0% | 98.8% | -1.00 | NEG `int` 65.0 -> 68.0, away |
+
+  - WHY THE PRE-SHIFT TERM MOVES THE NORMALIZED ROWS (worked, not
+    fitted):
+    - The atlas runs 10,000 `*+` into one accumulator (BODY_COPIES x
+      LOOP_COUNT), so the accumulator counts 1, 2, 3, ... The product
+      1 x 1 is .01 x 2^2, unnormalized (p.99), so the shift is
+      e(acc) - 2.
+    - ceil((s-3)/4) is 1 for acc in [32, 512), 2 for [512, 8192) and 3
+      for [8192, 10001]. The mean is (480 + 2 x 7680 + 3 x 1809) /
+      10000 = 2.13 clocks, which is the printed (N) - (U) difference
+      exactly (7.24 us - 6.60 us = 24.13 - 22.00 clocks). The model
+      moves 21.00 -> 23.13.
+    - (U) does not move, and neither does IBM's: an unnormalized sum
+      loses its carry (the LC indicator), so the exponent stays at 2.
+    - Reading "each additional ... of 4" as a floor gives 1.57 and
+      misses this, so the ceiling is kept.
+  - WHAT REMAINS on `*+`:
+    - Every ext/ibox row is -1.00. That is Table 2's "1 cycle if
+      immediate next operation is floating point". The model charges
+      this term on NO instruction: the D* and `/` calibrations carry a
+      removal clock where it would be (NEXT.md "FP DIVIDE TIME"). It
+      is recorded, not built: charged on `*+` alone, the same term
+      would contradict D+/DL/D*, whose cells already sit at 0 without
+      it.
+    - The −28 tail is PDF 88's NEG `int` cells. Their internal operand
+      `$R` is a CHOSEN set-up inside the accumulator's low half, so
+      NEG `*+` cancels to a residue and each later add aligns it 62
+      places and normalizes it back. With the three shipped terms the
+      tail is +9 (65 against 56); it is not resolved.
+  - **`*+` now meets the rule for done** (item 2): median -1.00
+    (within 1), and 98.8% within 3 against 88.8%.
+  - **Whole FP atlas, PDF 42-101, 9,406 cells:**
+    - before: 76.8% within 1 (7,222), 94.3% within 3 (8,866);
+    - after: 76.8% within 1 (7,226), 94.6% within 3 (8,898).
+    - Only the 320 `*+` cells can move, because pauAddStep is off and a
+      plain add's fpExtra is then 0.
+  - **The plain add's terms (`pauAddStep`; also the forced zero,
+    `pauAddForcedZero`, Table 2 printed p.3-3, PDF 21), measured and
+    held OFF.** Over the `*+` step, the whole atlas goes from 76.8% to
+    77.3% within 1 and from 94.6% to 95.1% within 3.
+    - Toward:
+      - D+: 81.2% -> 88.8% within 1, 98.8% -> 100% within 3.
+      - D+'s −37 tail (PDF 74/78 NEG `int`, 13.0 -> 49.99 against the
+        printed 50.03) is reproduced exactly, by 15 + 20 + 2 under the
+        ceiling reading.
+      - `+`: 89.1% -> 91.6% within 1.
+    - Away (274 cells in all):
+      - M+ / M+MG already run long (median +0.78, for a reason in the
+        store path rather than this unit), and their median goes to
+        +0.82 / +2.69.
+      - +MG's NEG rows go from -1.0 to +3.0. The forced-zero and
+        recomplement terms are the candidates; this was not traced.
+    - It waits for the M+ store path. D+ already meets the rule
+      (median -0.02, 98.8% within 3).
+  - **Suite: GREEN** (2026-11-26). The only FAIL lines are the two
+    expected `UNREPRODUCED` p359 ones, and no pin moved. Six
+    STRETCH_HALT_REPORT halts moved, of 386; every other halt is
+    identical, in order, to the base.
+    - Each moved deck was re-run in a scratch copy:
+      - (A) with every step-3 switch off (pauChainMulAdd and pauMa*),
+        which gives every base value back;
+      - (B) with the chain on and the terms off.
+    - Each deck header records its own:
+
+    | deck | base | (A) | (B) | shipped | cause |
+    |---|---|---|---|---|---|
+    | F216B | 774 | 774 | 790 | 790 | the chain |
+    | F216C | 399 | 399 | 399 | 400 | the terms |
+    | F216D | 834 | 834 | 836 | 836 | the chain |
+    | F219T-Y | 867 | 867 | 867 | 881 | the terms |
+    | Buchholz B.3 | 980 | 980 | 986 | 986 | the chain |
+    | Problem 3.6 | 480 | 480 | 480 | 762 | the terms |
+
+    - The chain's add pass makes the unit answer `*+` in 5 clocks, not
+      4. Box clocks come off the budget, so the cost shows only in the
+      hold behind a `*+`. That is the open hold-cost mechanism (NEXT.md
+      "ONE PARALLEL-UNIT MULTIPLIER"), not a sourced time.
+    - Problem 3.6's +282: its accumulator holds 2^80, and each of its
+      sixteen `*+` aligns a small product about 75 places, 18 Table 2
+      cycles each.
+  - Unit bench `mkPauStepTb`, 10 vectors (`tests/run_paustep_test.sh`):
+    - literal clocks: 5 chained, 4 when the preparation answers, 1 for
+      a plain add;
+    - literal terms.
+    - Each switch was injected in a scratch copy, and each failed
+      exactly the vectors recorded in its header. mkPauFpTb,
+      mkPauDivTb, mkFpDivSketchTb and mkPauMixTb passed every time.
+- **COMPARE and the SQUARE ROOT: left undone, with the reasons.**
+  - COMPARE (K, KMG, KR, KMGR) already meets the rule: 96-98% within
+    1, 100% within 3, median 0.00. The atlas's operands have exponents
+    +1 and -1 (`atlas_oracle.py` FP_BLOCKS), so their difference is at
+    most 2, under Table 2's "pre shift <= 3", and nothing an unchanged
+    compare does adds a term.
+    Moving `fpCompare` into the unit is structure with no measurable
+    time, and is left for the E-box arm work.
+  - SRT meets the rule (60.0% within 1, 100% within 3). Fig. 3.8.10
+    gives no countable time. Table 2's 2 + 106 is already charged, and
+    its "+1 if begun on a B pulse" is a phase the model does not track.
 
 **A5. `ebusy` becomes response readiness; the look-ahead's `Whole`
 entries split** (`ebox_roadmap.md` steps 5 and 7).

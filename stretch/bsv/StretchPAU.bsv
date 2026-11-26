@@ -25,6 +25,20 @@
 // 14.12).  So every instruction's time is what it was; fidelity_plan.md A4
 // records the run that shows it.
 //
+// >>> SINCE STEP 3 (2026-11-26): THE ADD'S DATA-DEPENDENT TIME. <<<  Two
+// changes, each behind a switch (THE STEPPING SWITCHES, below):
+//   * `*+`'s sum is the unit's.  One FpMulAdd request runs the four
+//     multiply passes and then an add pass on rg_ab's product, so the
+//     E-box arm no longer calls fpAddDouble (pauChainMulAdd).
+//   * Table 2's add-class terms are charged from the add pass's own
+//     shift, normalization count, recomplement and forced zero: 1 cycle
+//     a further pre-shift of 4, 2 a further normalization of 6, 2 for a
+//     recomplement, 2 for a forced zero.  They go through `fpExtra`,
+//     which mkEBox.boxCharge reads as it reads the divide's, onto `*+`
+//     (pauMa*) and onto the plain adds (pauAddStep, pauAddForcedZero).
+// The answers are unchanged (mkPauStepTb checks them bit for bit).
+// fidelity_plan.md A4 records the atlas before and after each.
+//
 // >>> THE REGISTERS (Buchholz p.208; R23-9732 3.8.x). <<<  p.208: "The two
 // units use the same arithmetic registers, namely a double-length
 // accumulator of 128 bits (the left part being called register A and the
@@ -51,7 +65,8 @@
 //
 // >>> WHAT IS NOT SHARED YET <<<
 //   * The FP add's whole request (alignment shift, sum, normalization in
-//     one clock), as mkFpBox had it.
+//     one clock), as mkFpBox had it.  The shifter is not walked a step a
+//     clock; its time is charged from the counts (step 3).
 //   * The remainder register and the divide's reduction-loop walk.
 //   * THE VFL MULTIPLIER, still mkSAU's `rl_mul` (StretchSAU.bsv).  The
 //     sources make it THIS unit's (docs/sau_pau_spec.md §6;
@@ -372,21 +387,96 @@ typedef struct {
   Bool     dbl;
 } FpAddReq deriving (Bits, Eq, FShow);
 
+// MULTIPLY AND ADD (`*+`) AS ONE CHAINED REQUEST (A4 step 3, 2026-11-26):
+// the multiply as FpMul's (MULTIPLY DOUBLE's, unnormalized: p.99), then,
+// in the unit, ADD DOUBLE of the accumulator and the product -- the
+// preparation (fpAddDoublePrep), and on the datapath path one add pass.
+// R23-9732 Fig. 3.8.13 (PDF 237, printed 8-13/8-14) draws exactly that
+// sequence in the parallel unit: the multiply ring (MR1, MR2, MC) and then
+// the add's pre-shift and normalize (T2, T3, END OPN), with no hand-back
+// between them.  `acc` is the accumulator as ADD DOUBLE takes it.
+typedef struct {
+  FpMulReq mul;
+  FpDouble acc;
+  Bool     normalized;
+  Bool     noisy;
+} FpMulAddReq deriving (Bits, Eq, FShow);
+
 typedef union tagged {
-  FpMulReq FpMul;
-  FpAddReq FpAdd;
+  FpMulReq    FpMul;
+  FpAddReq    FpAdd;
+  FpMulAddReq FpMulAdd;
 } FpReq deriving (Bits, Eq, FShow);
+
+// >>> THE STEPPING SWITCHES (fidelity_plan.md A4 step 3). <<<
+// pauChainMulAdd: `*+`'s sum is the unit's (one FpMulAdd request) rather
+// than the E-box arm's fpAddDouble.  The answer is the same either way
+// (mkPauFpTb's m-vectors check it); the unit spends ONE MORE CLOCK, the add
+// pass, so the hold is 5 clocks, not 4.
+Bool pauChainMulAdd = True;
+// The time terms of `*+`'s add, charged on top of eboxClocks' 20 through
+// mkEBox.boxCharge (the divide's fpExtra route).  Perf. Char. Vol. 1 Table 2,
+// printed p.3-4 (PDF 22), the *+ row's execution column: "17 cycles (pre
+// shift <= 3 and norm <= 6) / 1 cycle for each additional pre-shift of 4 /
+// 2 cycles for each additional norm. of 6 / 2 cycles if recomplement is
+// necessary - note 1".
+Bool pauMaPreshift = True;
+Bool pauMaNorm     = True;
+Bool pauMaRecomp   = True;
+// R23-9732 Fig. 3.8.13's alternative path: "IF ACCUMULATOR EXPONENT IS
+// SMALLER USE THIS TIMING", END OPN at period 13 against the main path's
+// 10 -- three periods.  Table 2 has no such term.  OFF (2026-11-26): the
+// alternative path is the route by which the ACCUMULATOR, not the product,
+// goes through the pre-shifter, and Table 2's pre-shift term already
+// charges that shift, so both would count it twice; and the chart's periods
+// are not Table 2's cycles.  The atlas sees the switch only on PDF 88's
+// `int` columns of NEG *+ (a CHOSEN internal operand), where it moves the
+// row away: 65 -> 68 clocks against the printed 56 (fidelity_plan.md A4).
+Bool pauMaAccSmaller = False;
+// The same three terms on the PLAIN add class (+, +MG, M+, M+MG, D+, D+MG,
+// F+, the add requests mkEBox makes).  Table 2, printed p.3-3 (PDF 21), the
+// add row: "4 cycles (pre shift <= 3) / 1 cycle for each additional
+// pre-shift of 4" pre-execution and "1 cycle (norm <= 6) / 2 cycles for
+// each additional norm. of 6 / 2 cycles if recomplement / 2 cycles if forced
+// zero" execution.  Each term follows its pauMa switch above; this switch
+// turns the plain add's charge on or off as a whole.  OFF (2026-11-26):
+// measured on the FP atlas it helps D+, + and the totals (76.8% -> 77.3%
+// within 1, 94.6% -> 95.1% within 3 over the `*+` step) but moves 274
+// cells away, mostly M+ / M+MG, which already run long (+0.78 median) for a
+// reason outside this unit, and +MG's NEG rows, by the forced zero
+// (fidelity_plan.md A4).  It waits for the M+ store path.
+Bool pauAddStep = False;
+// Table 2's "2 cycles if forced zero": the forced zero of ADD TO MAGNITUDE
+// (Ref. Manual p.83; FpAddSum.forcedZero).  Only +MG, M+MG and D+MG can
+// reach it, so it never moves `*+`.
+Bool pauAddForcedZero = True;
+
+// Table 2's add-class terms for one add pass: the pre-shift loop's
+// repeats (the shifter moves four places right at a time, Buchholz printed
+// p.210), the normalization's (six left at a time, two cycles each), and
+// the recomplement.
+function Bit#(16) pauAddTerms(FpAddDp d, FpAddSum s, Bool recomp);
+  Bit#(16) sh = zeroExtend(pack(d.shift));
+  Bit#(16) ps = (sh > 3) ? (sh - 3 + 3) / 4 : 0;
+  Bit#(16) nl = (s.adj < 0) ? zeroExtend(pack(-s.adj)) : 0;
+  Bit#(16) nm = (nl > 6) ? 2 * ((nl - 6 + 5) / 6) : 0;
+  return (pauMaPreshift ? ps : 0) + (pauMaNorm ? nm : 0)
+       + ((pauMaRecomp && recomp) ? 2 : 0)
+       + ((pauAddForcedZero && s.forcedZero) ? 2 : 0);
+endfunction
 
 // THE BOX'S ADDER (see the header): 1s complement with end-around carry
 // on the pre-shifted operand, then the forced-zero rule and the
 // normalization exactly as fpAddSumRef applies them.
-function FpAddSum fpBoxAddSum(FpAddDp d);
+function Tuple2#(FpAddSum, Bool) fpBoxAddSumR(FpAddDp d);
   // The alignment: the smaller-exponent fraction moves right.
   Bit#(96) fsh = d.fs >> d.shift;
   Bool     sub = (d.bigSign != d.smlSign);
   Bit#(97) t   = zeroExtend(d.fb) + zeroExtend(sub ? ~fsh : fsh);
   Bit#(97) sum;
   Bit#(1)  sign;
+  // Whether this add recomplemented (Table 2 note 1).
+  Bool     recomp = sub && t[96] == 0;
   if (!sub) begin
     sum = t; sign = d.bigSign;
   end else if (t[96] == 1) begin
@@ -406,9 +496,11 @@ function FpAddSum fpBoxAddSum(FpAddDp d);
     forcedZero = True; sum = 0; sign = d.okSign;
   end
   let {f96, adj, lostCarry} = fpNormalize96Wide(sum[96], sum[95:0], d.normalized, d.noisy);
-  return FpAddSum { frac: f96, adj: adj, lc: lostCarry, zero: (sum == 0),
-                    sign: sign, forcedZero: forcedZero };
+  return tuple2(FpAddSum { frac: f96, adj: adj, lc: lostCarry, zero: (sum == 0),
+                           sign: sign, forcedZero: forcedZero }, recomp);
 endfunction
+
+function FpAddSum fpBoxAddSum(FpAddDp d) = tpl_1(fpBoxAddSumR(d));
 
 // The answer: MULTIPLY's FpResult or MULTIPLY DOUBLE's FpdResult, tagged
 // by which was asked.
@@ -726,6 +818,7 @@ endfunction
 interface PAU;
   method Action request(PauReq r);
   method Bool responseReady();
+  method Bit#(16) fpExtra();
   // A VALUE, NOT AN ActionValue: taking the answer changes nothing in
   // the unit.  The caller knows whether it is waiting (mkEBox's
   // `boxWait`), so the unit needs no "idle again" state, and `request`
@@ -784,6 +877,15 @@ module mkPAU(PAU);
   Reg#(FpMulReq)  rg_mul[2]   <- mkCReg(2, unpack(0));
   Reg#(FpAddReq)  rg_add[2]   <- mkCReg(2, unpack(0));
   Reg#(FpRsp)     rg_rsp[2]   <- mkCReg(2, unpack(0));
+  // `*+` (FpMulAdd): the accumulator and the add's modes, written by
+  // request and read by rl_mul; whether the add pass charges Table 2's
+  // terms; and the time over eboxClocks' 20 (fpExtra).
+  Reg#(Bool)      rg_chain    <- mkReg(False);
+  Reg#(FpDouble)  rg_acc      <- mkReg(unpack(0));
+  Reg#(Bool)      rg_maNorm   <- mkReg(False);
+  Reg#(Bool)      rg_maNoisy  <- mkReg(False);
+  Reg#(Bool)      rg_terms[2] <- mkCReg(2, False);
+  Reg#(Bit#(16))  rg_fpX[2]   <- mkCReg(2, 0);
 
   // The divide's own: the partial remainder.
   Reg#(Bit#(49))  rg_rem[2]   <- mkCReg(2, 0);
@@ -824,7 +926,23 @@ module mkPAU(PAU);
     Bit#(96) np = truncate({s, lo} >> fpMulBitsPerCycle);
     rg_ab[0]  <= np;
     rg_ctr[0] <= rg_ctr[0] - 1;
-    if (rg_ctr[0] == 1) begin
+    if (rg_ctr[0] == 1 && rg_chain) begin
+      // `*+`: the product, then ADD DOUBLE's preparation against the
+      // accumulator.  Flagged operands and a difference over 95 are
+      // answered here; anything else takes the add pass.
+      FpdResult  pr = fpMulDoubleProd(m.a, m.b, m.normalized, m.noisy, np);
+      FpdAddPrep p  = fpAddDoublePrep(rg_acc, pr.res, rg_maNorm, rg_maNoisy, False);
+      if (p.viaDp) begin
+        rg_add[0]   <= FpAddReq { dp: p.dp, ctx: p.ctx, dbl: True };
+        rg_terms[0] <= True;
+        Bool accSmaller = fpExp(fpdHead(rg_acc)) < fpExp(fpdHead(pr.res));
+        rg_fpX[0]   <= (pauMaAccSmaller && accSmaller) ? 3 : 0;
+        rg_state[0] <= PauAddPass;
+      end else begin
+        rg_rsp[0]   <= tagged FpRspDouble p.early;
+        rg_state[0] <= PauDone;
+      end
+    end else if (rg_ctr[0] == 1) begin
       rg_rsp[0] <= m.dbl
         ? tagged FpRspDouble fpMulDoubleProd(m.a, m.b, m.normalized, m.noisy, np)
         : tagged FpRspSingle fpMulProd(m.a, m.b, m.normalized, m.noisy, np);
@@ -835,7 +953,8 @@ module mkPAU(PAU);
   // THE ADD: one pass, Table 2's one execution cycle (mkFpBox's header).
   rule rl_add (rg_state[0] == PauAddPass);
     FpAddReq q = rg_add[0];
-    FpAddSum sm = fpBoxAddSum(q.dp);
+    match {.sm, .rc} = fpBoxAddSumR(q.dp);
+    if (rg_terms[0]) rg_fpX[0] <= rg_fpX[0] + pauAddTerms(q.dp, sm, rc);
     rg_rsp[0] <= q.dbl ? tagged FpRspDouble fpAddDoubleFinish(q.ctx, sm)
                        : tagged FpRspSingle fpAddFinish(q.ctx, sm);
     rg_state[0] <= PauDone;
@@ -893,11 +1012,14 @@ module mkPAU(PAU);
     case (q) matches
       tagged PauFp .f: begin
         rg_isDiv    <= False;
+        rg_fpX[1]   <= 0;
         // A divide abandoned mid-walk must not hold this answer back:
         // responseReady waits on the walk (see the header).
         rg_wBusy[1] <= False;
         case (f) matches
           tagged FpMul .m: begin
+            rg_chain    <= False;
+            rg_terms[1] <= False;
             rg_mul[1]   <= m;
             rg_ab[1]    <= zeroExtend(m.a.frac);
             rg_cd       <= m.b.frac;
@@ -905,8 +1027,23 @@ module mkPAU(PAU);
             rg_state[1] <= PauMulPass;
           end
           tagged FpAdd .ar: begin
+            rg_chain    <= False;
+            // Table 2's add-class terms on a plain add (pauAddStep).
+            rg_terms[1] <= pauAddStep;
             rg_add[1]   <= ar;
             rg_state[1] <= PauAddPass;
+          end
+          tagged FpMulAdd .ma: begin
+            rg_chain    <= True;
+            rg_terms[1] <= False;
+            rg_acc      <= ma.acc;
+            rg_maNorm   <= ma.normalized;
+            rg_maNoisy  <= ma.noisy;
+            rg_mul[1]   <= ma.mul;
+            rg_ab[1]    <= zeroExtend(ma.mul.a.frac);
+            rg_cd       <= ma.mul.b.frac;
+            rg_ctr[1]   <= fromInteger(passes);
+            rg_state[1] <= PauMulPass;
           end
         endcase
       end
@@ -938,6 +1075,10 @@ module mkPAU(PAU);
   endmethod
 
   method Bool responseReady() = (rg_state[1] == PauDone) && !rg_wBusy[1];
+
+  // `*+`'s time over eboxClocks' 20 (0 for every other request); read
+  // with the answer, as the divide's fpExtra is.
+  method Bit#(16) fpExtra() = rg_fpX[1];
 
   method PauRsp response();
     Bit#(48) rem = rg_rem[1][47:0];
@@ -1783,6 +1924,158 @@ module mkPauMixTb(Empty);
       t0 <= clk;
       idx <= idx + 1;
     end
+  endrule
+
+  rule rl_finish (done);
+    if (fails == 0) $display("ALL TESTS PASSED");
+    else $display("%0d TEST(S) FAILED", fails);
+    $finish(0);
+  endrule
+endmodule
+
+// ---------------------------------------------------------------------
+// mkPauStepTb (fidelity_plan.md A4 step 3, 2026-11-26): MULTIPLY AND ADD
+// (`*+`) as one chained request, and the time terms of its add.  Each
+// vector is an FpMulAdd request (the multiply as the `*+` arm asks it:
+// MULTIPLY DOUBLE, unnormalized, noisy off), checked three ways:
+//   (a) the whole answer, bit for bit, against the arm's old one-step
+//       form, fpAddDouble(acc, fpMulDouble(opnd, factor).res, ...) --
+//       fpAddSumRef, a different adder from the unit's;
+//   (b) the LITERAL clocks: 5 on the datapath path (four multiply passes
+//       and the add pass), 4 when the preparation answers (flagged);
+//   (c) the LITERAL fpExtra, worked by hand from Table 2 (printed p.3-4)
+//       and Fig. 3.8.13's alternative path, one term per vector:
+//   0  acc 1 (.1 x 2^1) + 1 x 1 (product .01 x 2^2): acc exponent smaller
+//      (shift 1): extra 0 with pauMaAccSmaller off (the default), 3 with
+//      it on (Fig. 3.8.13's alternative path); sum .1 x 2^2 (literal)
+//   1  acc 4096 (.1 x 2^13) + 1 x 1: shift 11, ceil((11-3)/4) = 2 extra
+//      pre-shift cycles: extra 2
+//   2  acc -(.001 x 2^2) + 1 x 1, equal exponents: the unshifted fraction
+//      is the smaller, so the add recomplements: extra 2; sum .001 x 2^2
+//      normalized to .1 x 2^0, positive (literal)
+//   3  acc -((.01 - 2^-12) x 2^2) + 1 x 1, normalized: recomplements and
+//      the difference 2^-12 normalizes 11 places, one additional pass of
+//      six: extra 2 + 2 = 4
+//   4  vector 3 unnormalized (U): no normalization: extra 2
+//   5  acc XPFN (flagged): the preparation answers, no add pass: extra 0,
+//      4 clocks
+//   6  acc .1 x 2^-10 + 1 x 1: shift 12, ceil(9/4) = 3 pre-shift cycles:
+//      extra 3 (6 with pauMaAccSmaller on: the acc is the smaller)
+//   7  a plain MULTIPLY after them (mkPauFpTb vector 0): extra 0, 4 clocks
+// and two PLAIN ADDS (FpAdd, single, normalized; pauAddStep), 1 clock:
+//   8  ADD, acc 4096 (.1 x 2^13) + 1: shift 12, ceil((12-3)/4) = 3 extra
+//      pre-shift cycles: terms 3; sum 4097 (checked against fpAdd)
+//   9  ADD TO MAGNITUDE (+MG), acc 1 + (-2): shift 1, no recomplement
+//      (the larger-exponent fraction is the minuend), and the negative sum
+//      is forced to zero (Ref. Manual p.83): terms 2
+//   For 8 and 9 the terms are checked as pauAddTerms' literal value, and
+//   the unit's fpExtra as 0: pauAddStep is off, so the plain add is not
+//   charged (with it on, fpExtra is the terms, 3 and 2).
+// INJECTIONS, OBSERVED 2026-11-26: each switch set False in a scratch copy
+// of this file, with mkPauStepTb, mkPauFpTb, mkPauDivTb, mkFpDivSketchTb and
+// mkPauMixTb run on each copy (copy deleted after):
+//   pauMaPreshift    step 1 (0, want 2), 6 (0, want 3), 8 (terms 0, want 3)
+//   pauMaNorm        step 3 (2, want 4)
+//   pauMaRecomp      step 2 (0, want 2), 3 (2, want 4), 4 (0, want 2)
+//   pauMaAccSmaller  (default off; injected ON) step 0 (3, want 0),
+//                    6 (6, want 3)
+//   pauAddStep       (default off; injected ON) step 8 (fpExtra 3, want
+//                    0), 9 (fpExtra 2, want 0)
+//   pauAddForcedZero step 9 (terms 0, want 2)
+// The other four were each set False.  Each injection fails
+// exactly those vectors; every other bench passes each time.
+// (pauChainMulAdd is the E-box arm's choice, not this unit's: the atlas
+// run with every term off and the chain on matches the base on PDF 57/88
+// within 0.05 clock on all 320 rows, fidelity_plan.md A4.)
+// ---------------------------------------------------------------------
+typedef 10 NPauStepVec;
+
+(* synthesize *)
+module mkPauStepTb(Empty);
+  PAU            box    <- mkPAU;
+  Reg#(Bit#(4))  idx    <- mkReg(0);
+  Reg#(Bit#(8))  fails  <- mkReg(0);
+  Reg#(Bool)     issued <- mkReg(False);
+  Reg#(Bool)     done   <- mkReg(False);
+  Reg#(Bit#(16)) clk    <- mkReg(0);
+  Reg#(Bit#(16)) t0     <- mkReg(0);
+
+  rule rl_clk; clk <= clk + 1; endrule
+
+  FpNum one = FpNum { ef: 0, em: 1, es: 0, frac: 48'h800000000000, sign: 0, flags: 3'b000 };
+  function FpDouble dd(Bit#(1) ef, Bit#(10) em, Bit#(1) es, Bit#(96) f, Bit#(1) sg) =
+    FpDouble { ef: ef, em: em, es: es, frac: f, sign: sg, flags: 3'b000 };
+  function FpDouble accOf(Bit#(4) i) =
+    case (i)
+      0: dd(0, 1, 0, 96'h800000000000_000000000000, 0);
+      1: dd(0, 13, 0, 96'h800000000000_000000000000, 0);
+      2: dd(0, 2, 0, 96'h200000000000_000000000000, 1);
+      3, 4: dd(0, 2, 0, 96'h3FF000000000_000000000000, 1);
+      5: dd(1, 1, 1, 96'h800000000000_000000000000, 0);
+      default: dd(0, 10, 1, 96'h800000000000_000000000000, 0);
+    endcase;
+  function Bool nrmOf(Bit#(4) i) = (i != 4);
+  FpMulReq mq = FpMulReq { a: one, b: one, normalized: False, noisy: False, dbl: True };
+  FpMulReq m0 = FpMulReq { a: one, b: one, normalized: True, noisy: False, dbl: False };
+  FpNum    big  = FpNum { ef: 0, em: 13, es: 0, frac: 48'h800000000000, sign: 0, flags: 3'b000 };
+  FpNum    mtwo = FpNum { ef: 0, em: 2, es: 0, frac: 48'h800000000000, sign: 1, flags: 3'b000 };
+  FpNum    addA = (idx == 8) ? big : one;
+  FpNum    addB = (idx == 8) ? one : mtwo;
+  Bool     addM = (idx == 9);
+  FpAddPrep ap  = fpAddPrep(addA, addB, True, False, addM, False);
+  Bool     plain = (idx == 7);
+  Bool     isAdd = (idx == 8 || idx == 9);
+  FpReq    req  = isAdd ? tagged FpAdd FpAddReq { dp: ap.dp, ctx: ap.ctx, dbl: False }
+                : plain ? tagged FpMul m0
+                        : tagged FpMulAdd FpMulAddReq { mul: mq, acc: accOf(idx),
+                                                        normalized: nrmOf(idx), noisy: False };
+  FpRsp    want = isAdd ? tagged FpRspSingle fpAdd(addA, addB, True, False, addM, False)
+                : plain ? tagged FpRspSingle fpMul(one, one, True, False)
+                        : tagged FpRspDouble fpAddDouble(accOf(idx), fpMulDouble(one, one, False, False).res,
+                                                         nrmOf(idx), False, False);
+  function Bit#(16) extraOf(Bit#(4) i) =
+    case (i) 1: 2; 2: 2; 3: 4; 4: 2; 6: 3; default: 0; endcase;
+  // Vectors 8 and 9: Table 2's terms of the add itself, literal.
+  match {.tSum, .tRc} = fpBoxAddSumR(ap.dp);
+  Bit#(16) termsGot  = pauAddTerms(ap.dp, tSum, tRc);
+  Bit#(16) termsWant = (idx == 8) ? 3 : 2;
+  function Bit#(16) clocksOf(Bit#(4) i) = (i == 8 || i == 9) ? 1 : (i == 5 || i == 7) ? 4 : 5;
+
+  rule rl_issue (!done && !issued);
+    box.request(tagged PauFp req);
+    issued <= True;
+    t0 <= clk;
+  endrule
+
+  rule rl_collect (!done && issued && box.responseReady());
+    FpRsp    got  = pauFpRsp(box.response());
+    Bit#(16) x    = box.fpExtra();
+    Bit#(16) took = clk - t0;
+    FpdResult g   = fpRspDouble(got);
+    Bool litOk = True;
+    if (idx == 0) litOk = (g.res.frac == 96'h800000000000_000000000000 && g.res.em == 2 && g.res.sign == 0);
+    if (idx == 2) litOk = (g.res.frac == 96'h800000000000_000000000000 && g.res.em == 0 && g.res.sign == 0);
+    if (pack(got) != pack(want)) begin
+      $display("FAIL pau step[%0d]: got ", idx, fshow(got));
+      $display("               want ", fshow(want));
+      fails <= fails + 1;
+    end else if (!litOk) begin
+      $display("FAIL pau step[%0d]: literal wrong: ", idx, fshow(got));
+      fails <= fails + 1;
+    end else if (took != clocksOf(idx)) begin
+      $display("FAIL pau step[%0d] clocks = %0d, want %0d", idx, took, clocksOf(idx));
+      fails <= fails + 1;
+    end else if (x != extraOf(idx)) begin
+      $display("FAIL pau step[%0d] fpExtra = %0d, want %0d", idx, x, extraOf(idx));
+      fails <= fails + 1;
+    end else if (isAdd && termsGot != termsWant) begin
+      $display("FAIL pau step[%0d] terms = %0d, want %0d", idx, termsGot, termsWant);
+      fails <= fails + 1;
+    end else
+      $display("PASS pau step[%0d] in %0d clocks, fpExtra %0d", idx, took, x);
+    issued <= False;
+    if (idx == fromInteger(valueOf(NPauStepVec) - 1)) done <= True;
+    else idx <= idx + 1;
   endrule
 
   rule rl_finish (done);

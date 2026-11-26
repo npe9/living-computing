@@ -10536,6 +10536,14 @@ run "FLOATING-POINT BOX (multiply and add; against the one-step reference, liter
 # is abandoned mid-walk under a multiply.  Injections: bsv/StretchPAU.bsv
 # at mkPauMixTb.
 run "PAU MIXED CLASSES (FP and divide back to back; an abandoned divide)" "$TESTS_DIR/run_paumix_test.sh"
+# 2026-11-26 (fidelity_plan.md A4 step 3): mkPauStepTb.  `*+` as ONE
+# chained request (multiply passes, then the add pass), its answer bit for
+# bit against the arm's old fpAddDouble, its literal clocks, and the literal
+# Table 2 terms of its add (pre-shift, normalization, recomplement; printed
+# p.3-4, PDF 22).  Also the plain add's terms (pre-shift, forced zero; p.3-3,
+# PDF 21) as pauAddTerms' values while pauAddStep is off.  Each switch's
+# injection and its observed failure set are in StretchPAU.bsv at the bench.
+run "PAU STEPPING (*+ chained; Table 2 add terms, literal)" "$TESTS_DIR/run_paustep_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block

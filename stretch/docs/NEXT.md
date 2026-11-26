@@ -249,6 +249,16 @@ STILL OPEN, in order:
 
 ## THE FP BOX'S REMAINING CLASSES -- open, 2026-11-19
 
+**2026-11-26 (fidelity_plan.md A4 step 3):**
+- Item 1 is DONE. `*+` is one chained `FpMulAdd` request to `mkPAU`, and
+  its Table 2 add terms are charged from the add pass. The atlas `*+`
+  family goes from 88.8% to 98.8% within 3.
+- Items 2 and 3 are left undone, with the reasons in the plan. Both
+  families already meet the rule, and no countable time moves them.
+- "The add's data-dependent time" below is now BUILT behind
+  `pauAddStep` and measured, but held off: it reproduces D+'s -37 tail
+  exactly, and moves M+/M+MG further away.
+
 `mkFpBox` holds the FP multiply (plan §1c step 5f stage 1) and, since stage
 2, the add's datapath for `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG`, `F+`, at
 Table 2's one execution cycle. Still in `fpArithClass`, in this order:
