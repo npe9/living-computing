@@ -8,7 +8,9 @@ project's concurrent logic-programming kernel language. The first model
 for this directory is **PIM/m**: a microprogrammable CISC processing
 element compatible with Multi-PSI, connected as a two-dimensional mesh
 of as many as 256 processing elements. The other four variants remain
-comparative sources until PIM/m is reproduced.
+comparative sources until PIM/m is reproduced. What survives of them
+and of Multi-PSI, a verdict for each, and the proposed Multi-PSI rungs
+are in [`docs/other_pims.md`](docs/other_pims.md) (2026-11-26).
 
 Bluespec implementation: `bsv/` (in progress; the one-PE Bluesim smoke
 test passes as of 2026-11-19). The model must match the original block

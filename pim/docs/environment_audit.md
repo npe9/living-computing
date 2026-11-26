@@ -523,6 +523,13 @@ work (`psi_acquisition.md` §8).
 
 ### L. The other PIM machines and Multi-PSI
 
+**Searched 2026-11-26: `other_pims.md`** runs the searches this area
+and §5 items 9, 10 and 18 listed. It gives the per-machine held,
+documented and lost tables, a verdict and oracle per machine, the rank
+(Multi-PSI/V2 first, then PIM/p, PIM/i, PIM/c, PIM/k), and rungs MP0..MP6
+for Multi-PSI/V2. Where it and the rows below differ, it is newer. The
+statuses below are updated where it changed them.
+
 The two families (`literature_gaps.md` "The other PIMs", quoting `OV92`
 p. 61): PIM/m and PIM/c interpret KL1-B by horizontal microprogram;
 PIM/p, PIM/i and PIM/k run code below KL1-B. By runtime, Multi-PSI/V2
@@ -572,9 +579,9 @@ system found on Multi-PSI" (same, quoting PDSS `README`).
 | Multi-PSI/V2 | hardware (64 PSI-II PEs, 8x8 mesh, 200 ns) | lineage; L phase | TR-715, TM-696, TM-306 and others (`nonlocal/lit/trtm/`; TM-306 and TM-696 added by P0, `psi_acquisition.md` §5) | behaviour, costs, packet format, free lists, GC; no record field orders (`literature_gaps.md` "The other PIMs" table, Appendix A) | PARTIAL | none | |
 | Multi-PSI/V2 | KL1 microcode (`.mbn` CLEAR/INIT/IMPL, `kl1kp.kbn`, `kl1pat.com`) and Pseudo Multi-PSI for PSI-II | L phase | none | primer (read) names the files | LOST (`icot_software_survey.md` §4, "Not found"; the 23,910-path mirror search used `kbn`, `micro`, `firm`, `csp`, `fep` among its patterns, survey §4) | — | the held `psdpim` is for PSI-III; its `mpsicspR.ptf` is the remote half of a Multi-PSI CSP |
 | Multi-PSI/V2 | CSP and its manual | L phase | none | manual CITED-ONLY | LOST / CITED-ONLY | — | |
-| Multi-PSI/V2 | PIMOS build | L phase | source branches `mpsi` (above); no Multi-PSI object set | — | PARTIAL (source); objects NOT-SEARCHED beyond the IFS tree's file names (see §5) | none | PIMOS 1.x-2.5 ran here first (survey §2.4); that code is LOST |
+| Multi-PSI/V2 | PIMOS build | L phase | source branches `mpsi` (above); `pimos.h` `case(mpsi)` (1995 copy, `archive_search_notes.md` Task 3): `machine_type mpsi` as PIM/m, `fep_interface kl1_network`, `ipl_parameter no`, `extended_floating_point no`; every module the `kl1_network` branches name is in the tree; no Multi-PSI object set | — | HELD-SOURCE (configuration and branches); objects not in any held file (IFS byte grep of all 307 archives for `mpsi_*.sav/.kbn/.mbn`, 2026-11-26, matched only the 3.0 manual naming them); outside sources open (§5 item 12); rebuildable (`other_pims.md` §2.1, rung MP1) | none | PIMOS 1.x-2.5 ran here first (survey §2.4); that code is LOST |
 | Multi-PSI/V2 | simulator | L phase | PDSS (compatible KL1, not a machine simulator) | — | HELD-SOURCE (PDSS) | `ref/pdss/` builds | |
-| Multi-PSI/V1 | hardware and KL1 | lineage | TR-237 (held, unread); TR-439, TR-390 mention it | up to 6 PSI-I PEs; no inter-PE GC (`literature_gaps.md` line 1883) | CITED-ONLY (hardware); software NOT-SEARCHED | none | |
+| Multi-PSI/V1 | hardware and KL1 | lineage | TR-237 (read 2026-11-26, `other_pims.md` §3); TR-439, TR-390 mention it | up to 6 PSI-I PEs; no inter-PE GC (`literature_gaps.md` line 1883); KL1 written in ESP on SIMPOS (TR-237 §4.1) | DOCUMENTED (outline); software not in any held file, outside not searched (it would need SIMPOS, P4) | none | |
 | PIM/p (Fujitsu) | hardware | L phase | TR-577, TR-453, TM-1067, TM-1257, TM-1320, FGCS'92 pp. 414-424, FGCS'94 pp. 80-89 (`literature_gaps.md` "detail" §1; held in `lit/`) | instruction and pipeline level | DOCUMENTED (as far as published) | none | MRB bit position not published |
 | PIM/p | KL1 native code generator, macro library, firmware | L phase | none | — | LOST (`literature_gaps.md` "detail" §8; `icot_software_survey.md` §2.6) | — | |
 | PIM/p | PIMOS build | L phase | `case(pimp)` branches (timer units in usec, float limits); no object set | — | PARTIAL (source); objects NOT-SEARCHED | none | |
@@ -586,10 +593,10 @@ system found on Multi-PSI" (same, quoting PDSS `README`).
 | PIM/c | PIMOS build | L phase | `case(pimc)` (`pimos.vmac:432`, timer unit `usec15`); no object set | — | PARTIAL; objects NOT-SEARCHED | none | |
 | PIM/i (Oki) | hardware | L phase | TR-675, TM-1017, TM-1264 | instruction list and formats; tag layout (lock, GC, MRB, 5-bit type) | PARTIAL | none | |
 | PIM/i | native code, library | L phase | none | — | LOST | — | |
-| PIM/i | PIMOS build | L phase | `case(pimi)` in `scsi.vmac:14` only; it names modules `pimi_scsi`, `pim_scsi` absent from the source tree | — | PARTIAL; the missing modules NOT-SEARCHED elsewhere | none | |
+| PIM/i | PIMOS build | L phase | `case(pimi)` in `scsi.vmac:14` only; it names modules `pimi_scsi`, `pim_scsi` absent from the source tree; `pimos.h` `case(pimi)` | — | PARTIAL; the missing modules not in any held file (VPIM, the 1995 dpool PIMOS and all 307 IFS archives searched 2026-11-26, `other_pims.md` §1); outside sources open (§5 item 12) | none | 3.6 has no `pimi` timer branch (INFERENCE: not buildable as released) |
 | PIM/k (Toshiba) | hardware | L phase | TR-767, TR-768, TR-769, TM-766, TM-1260 | cache hierarchy, processor chip name (IP1704) | PARTIAL | none | |
 | PIM/k | runtime (VPIM hand-ported), native code | L phase | none beyond VPIM | — | LOST | — | |
-| PIM/k | PIMOS build | L phase | no `case(pimk)` anywhere in the 3.6 source (this audit) | — | NOT-SEARCHED elsewhere | none | either PIM/k used a generic (`vpim`/`default`) branch or its build is not in this release (INFERENCE) |
+| PIM/k | PIMOS build | L phase | no `case(pimk)` in the 3.6 source; `pimos.h` (1995) has `case(pimk)` (`machine_type vpim`) | — | configuration HELD; 3.6 branches missing (`other_pims.md` §2.5) | none | the 3.6 timer macro has no `pimk` case (INFERENCE: not buildable as released) |
 | all four | cluster shared memory and its cache-coherence protocols | L phase | papers | `OV92` p. 63 Table 4 ("write-back coherent protocols", via `pim_architecture.md` §6); per machine in `literature_gaps.md` "detail" | PARTIAL | none | the PIM/m caution of §1.1 applies: none of this is PIM/m |
 
 ## 4. What is lost and must be reconstructed, ranked
@@ -631,6 +638,9 @@ reconstructed whether or not the binary is ever read in full.
 | 8 | **A PSI emulator** (ZEUS; none found, searched 2026-11-23, `psi_acquisition.md` §4) | a shortcut for P2 | — | not needed if P2 is built |
 
 ### 4.3 The other PIM machines and Multi-PSI
+
+Per-machine verdicts and the rank of the machines themselves:
+`other_pims.md` §3 (2026-11-26). This table ranks lost items.
 
 | Rank | Lost item | Blocks | A reconstruction would rest on | Attainable fidelity |
 |---|---|---|---|---|
@@ -679,11 +689,14 @@ an item may turn out to be in a document already held.
 8. Rebuilding any `.sav` from source (no attempt on record): needs
    PIMOS's compiler running somewhere.
 9. `pimi_scsi`, `pim_scsi` and any `case(pimk)` in other held KL1
-   (VPIM `src/`, the IFS PIMOS packages): this audit searched only the
-   PIMOS source tree.
+   (VPIM `src/`, the IFS PIMOS packages): **searched 2026-11-26**
+   (`other_pims.md` §1). `case(pimk)` is only in the 1995 `pimos.h`;
+   neither module is in any held file.
 10. VPIM's per-machine conditionals (which parts are PIM/p-, /c-, /i-,
-    /k-specific): not searched; this audit only confirmed by `grep -l`
-    that some VPIM files mention the machines.
+    /k-specific): **searched** (`archive_search_notes.md` Task 3;
+    `other_pims.md` §2.6). There are none; the machines appear in
+    comments only. 74 of the 79 virtual-hardware primitives have no
+    held body.
 
 **Outside (with where to look):**
 
@@ -719,8 +732,8 @@ an item may turn out to be in a document already held.
 17. The FGCS'92 PIM/m benchmark programs as files (roadmap §6 R9
     candidates): the IFS tree and contest sources were not searched for
     them by name.
-18. Multi-PSI/V1 software: nothing on record; TR-237 (held since P0)
-    not read.
+18. Multi-PSI/V1 software: TR-237 **read 2026-11-26** (`other_pims.md`
+    §3): KL1 in ESP on SIMPOS on PSI-I; no file held.
 19. Former ICOT and vendor staff for the IPL, FEP and CSP sources
     (survey §5.2 item 1): no contact on record.
 
