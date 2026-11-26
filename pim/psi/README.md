@@ -3867,9 +3867,10 @@ run's final screen.
 compiled `Pane!h`'s sum from a register that `put r0, w` (the slot name
 of the assignment before it) had just overwritten: espc kept `Ih` cached
 in r0 after the slot-name put reused r0. kl0 refused (`add on w`), so it
-was not silent here; the pane passes the sizes through a local instead.
+was not silent here; the pane passed the sizes through a local instead.
 The fault was in `espc.py`'s register cache; it is fixed in the section
-after this one.
+after this one, and `create/7` now assigns the sizes directly (the local
+`sizes/3` is gone; the screens' pins are unchanged).
 
 **Injections, observed** (2026-11-25; each from a backup copy, restored
 by copy, `cmp` clean; the full test_espc.py and test_kl0.py run each
