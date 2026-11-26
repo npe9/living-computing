@@ -16,8 +16,9 @@ labelled there.  In brief:
   mdlib#current_cluster(Cluster, Total) is current_processor(Cluster,
   X, Y), Total := X*Y on Multi-PSI and PIM/m (pimos.vmac 378-381,
   HELD-SOURCE); N = N x 1 is OURS.  unbound/2 gives {k, Address, X}
-  (VPIM kblt_b_unbound, the cluster number); of an external reference
-  VPIM throws a goal to its owner: refused.
+  (VPIM kblt_b_unbound, the cluster number); of an external variable
+  the goal unbound(X, Result) is thrown to its owner, as VPIM does
+  (rung M5), and of an external value (EXVAL) it gives {X} at once.
 - Goal@node(K) (enqueue_goal_to_processor, 23:65; PIMOS compiler
   newnorm.kl1:842-905) with K this PE makes the goal here; with K
   another PE it sends %throw_goal (VPIM's cluster branch, klb_fork.psl.c
@@ -283,8 +284,27 @@ class PE(pimm.Machine):
 
     def i_unbound(self, pc, x, y, z, c16):
         v = self.deref(self.reg[x])
+        if self.is_ex(v) and self.mem[v[1]][0] & ~1 == EXVAL:
+            # an exported VALUE (a list, vector or string: EXVAL) is never
+            # a variable, so {X} at once, no message (OURS from the tag's
+            # meaning, TM-1044 9.2; rung M5, the Listener printing an
+            # answer whose cells are on other PEs)
+            self.ran('unbound/2 of an external value')
+            w, a = self.vnew(1)
+            self.mem[a] = v
+            self.reg[y] = w
+            return
         if self.is_ex(v):
-            raise Unimplemented('unbound/2 of an external reference (VPIM throws it to the owner)')
+            # an exported variable: as VPIM's kblt_b_unbound, the goal
+            # unbound(X, Result) is thrown to X's owner (the image's stub
+            # for the built-in, pimm_stubs), which answers there; Result
+            # is a fresh variable here, bound by that PE's %unify
+            self.ran('unbound/2 thrown to the owner')
+            r = self.new_var()
+            k = id_pe(self.imports[self.mem[v[1]][1]]['id'])
+            self.throw(k, self.stubs['unbound']['addr'], [v, r])
+            self.reg[y] = r
+            return
         if self.unbound(v):
             w, a = self.vnew(3)
             self.mem[a], self.mem[a + 1], self.mem[a + 2] = (INT, self.pe), (INT, v[1]), v
@@ -345,10 +365,11 @@ class PE(pimm.Machine):
         if n > 11:
             raise Unimplemented('enqueue_goal_to_processor, %d arguments' % n)
         code = pc + 2 + sx16(c16)
-        self.system.placed.append((self.pe, k, code))
         if k == self.pe:
+            self.system.placed.append((self.pe, self.pe, code))
             self.record(pimm.READY, code, self.argv[1:n + 1])
         else:
+            self.system.placed.append((self.pe, k, code))
             self.throw(k, code, self.argv[1:n + 1])
         return pc + 2
 
@@ -360,10 +381,11 @@ class PE(pimm.Machine):
             return pimm.Machine.i_to_processor(self, pc, x, y, z, c16)
         k = self.node_number(w)
         code = self.reg[y][1] - self.load
-        self.system.placed.append((self.pe, k, code))
         if k == self.pe:
+            self.system.placed.append((self.pe, self.pe, code))
             self.record(pimm.READY, code, self.reg[:z])
         else:
+            self.system.placed.append((self.pe, k, code))
             self.throw(k, code, self.reg[:z])
         return None
 
@@ -1484,7 +1506,7 @@ class System:
         self.log = []               # ('gc', pe), ('ask', pe), ('send', kind, src, dst), in order
         self.sent = {}              # kind -> count
         self.anomalies = []         # what a check must find empty
-        self.placed = []            # (PE, node, code) of each @node goal, in order
+        self.placed = []            # (PE, the node it is made on or sent to, code) of each @node goal
 
     def send(self, src, dst, packet):
         self.queues[(src, dst)].append(packet)

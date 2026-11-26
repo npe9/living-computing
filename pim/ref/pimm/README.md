@@ -190,6 +190,20 @@ module word in the heap goes between PEs as its module's number and
 offset. The loaded modules are roots of a PE's collector, and a
 module made later (a compiled one) is fetched by the PE that needs it.
 
+Rung M5 (2026-11-26): PIMOS boots on N PEs.
+
+    M5_CACHE=PATH python3 ref/pimm/m5_boot.py LINK.pkl [--n N ...] [--quota Q ...] [--app sample9|qsort ...]
+
+LINK.pkl is the checkpoint `longrun_ipl.py --reference --save` writes.
+The runner collects it once with Loaded as a root (to 1,016,836 live
+cells; the one-PE boot from it is unchanged, 8,595,408 instructions to
+the prompt). It boots PIMOS on a System of N PEs, with the boot goal
+and the FEP on PE 0. At the prompt it compiles and runs the primer's
+`sample9` (placement order 0,1,2,3,0,1,2,3 on 4 PEs) or R8's qsort
+with `@node`, and compares the console and window with the one-PE
+run's. Its last line is `m5 boot: PASS (12 runs)`, after about 7
+minutes. It is a long runner, not in the suite: docs/multi_pe.md 5, M5.
+
     python3 ref/pimm/test_jtoa.py
 
 runs module `jis_to_ascii` from the image against an oracle built from

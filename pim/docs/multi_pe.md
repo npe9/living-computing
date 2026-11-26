@@ -419,7 +419,8 @@ the whole `m2_read.py` run):
 Never fired: `the two schedules differ` (M1's no-wake injection is the
 one that showed why both quotas are run), `messages in flight`,
 `alias`'s two preconditions, and the refusal of `unbound/2` of an
-external reference.
+external reference (since M5 not refused: thrown to the owner, or
+`{X}` of an exported value; the `builtins` case checks both).
 
 Not reached at M2, open:
 
@@ -731,3 +732,101 @@ Not reached at M4, open:
   parents, are not read (OURS above).
 - The loaded modules as roots are not checked by any suite run (the
   last injection row).
+
+**M5 reached on the reference model, 2026-11-26** (the boot and two
+programs from the prompt; the shell's `cn`, `gc`, `seqgc` and `set
+node` are not yet run). `ref/pimm/m5_boot.py` is a long runner, NOT in
+`run_tests.sh`. It needs the link checkpoint that `longrun_ipl.py
+--reference --save` writes (1.1 GB on disk, 14 GB loaded, not in git),
+and a full run is about 7 minutes.
+
+What it does:
+
+1. **Slim.** The checkpoint is collected once on its one machine with
+   Loaded (load/4's answer: atoms, the 480 modules, comments, entry
+   code) a root. The IPL's file data dies and the modules live: from
+   73,594,186 heap cells to 1,016,836, a 17 MB pickle (`M5_CACHE`).
+   Two checks show the collection is sound. `longrun_ipl.py --load
+   SLIM --go --fep` is the same run as from the checkpoint: 8,595,408
+   instructions, the same console and FEP conversation, 1,218 goals
+   waiting. A `System(1)` of the slim machine gives the same numbers.
+2. **The boot on N PEs.** Every PE is a copy. `top:go_pimos1(Loaded,
+   BootInfo)` and `ipl:make_boot_info(BootInfo)` are made on PE 0, the
+   boot PE (the console's `$GO/PIMos` "throws a boot goal to the boot
+   PE", §1.1; that it is PE 0 is OURS). The FEP device is on PE 0, the
+   cluster BootInfo names. When the System is quiet, the steps are
+   longrun_ipl's: the FEP's waiting commands, then every armed alarm
+   (each PE has its own clock: OURS), then the FEP's next scripted
+   event.
+3. **Two programs typed at the prompt**, each in a boot of its own
+   (`compile`, `!package work`, the file, `!exit`, `listener`,
+   `default_package(work).`, the goal):
+   - `sample9`: the primer's `sample9` (`primer25.tex`:1138-1155, as
+     printed), `sample9:distribute(8).`
+   - `qsort`: R8's `qsort_r8.kl1` with its second recursive call
+     placed by its pivot, `qsort(L2, R1, R0)@node(X mod Nodes)` (OURS,
+     the least change that spreads the work).
+
+Results on N = 1, 2, 4 under quota 1 and quota 1,000,000:
+`m5 boot: PASS (12 runs)`.
+
+- The console and the whole window text equal the N=1 run's. `qsort`
+  answers ` R =[2,17,18,27,33,46,65,74,83,94]` on every N, which is
+  also the R8 pin.
+- `sample9`'s `job_ext` goals go to nodes 0,1,2,3,0,1,2,3 on 4 PEs,
+  the primer's printed order, and to 0,1,0,1,... on 2.
+- No anomaly. Every run ends with nothing left to run.
+- Goals waiting at the end (1 PE / each other PE): 1,605 / 14. These
+  are the boot's and the Listener's own waiting goals, printed, not
+  pinned.
+- Messages, N=4, quota 1,000,000:
+
+  | Program | Messages |
+  |---|---|
+  | `sample9` | throw 15, ready 9, terminated 3, read 15, answer 3, release 3, unify 3, supply_wtc 9, return_wtc 3 |
+  | `qsort` | throw 23, ready 15, terminated 9, read 40, answer 28, release 28, unify 19, request_resource 3 |
+
+  PIMOS's boot itself places goals on every node, so these counts
+  include the boot's.
+- Instructions, N=4, quota 1,000,000: PE 0 10,182,092 and 459 on each
+  other PE (`sample9`); 10,537,685, 584, 653, 702 (`qsort`).
+- The other PEs never call `new_atom` (each PE's counter is printed;
+  only PE 0's moves), so a per-PE atom counter is not yet tested.
+
+What M5 needed in `pimm_pe.py`:
+
+- The module fetch (M4 above): `sample9` is compiled on PE 0 after the
+  split, and its `job_ext` code goes to the other PEs by its number.
+- `unbound/2` of an external reference, which the Listener's printer
+  calls on the answer's cells:
+  - of an exported value (`EXVAL`, never a variable) it gives `{X}`
+    at once (OURS from the tag's meaning);
+  - of an exported variable the goal `unbound(X, Result)` (the
+    built-in's own stub) is thrown to X's owner, as VPIM's
+    `kblt_b_unbound` does, and Result comes back by `%unify`.
+
+Observed fault injections (each on a private copy of `pimm_pe.py`,
+`m5_boot.py` run):
+
+| Injection | Observed |
+|---|---|
+| no module fetch (the code word taken as the sender's address) | 12 FAIL lines: every N>1 run of both programs raises `KeyError` (the module is not in that PE's memory), so its window and stop differ from N=1 |
+| `unbound/2` of an external variable answered here as unbound | 1 FAIL line, `qsort` N=2: the window shows ` R =[2,17,18\|B]` |
+| `unbound/2` of an exported value sent to the owner too | nothing: PASS. The owner's answer is the same, so both paths are right |
+| every `Goal@node` made local | 1 FAIL line: `sample9` N=4 placement order all 0. `qsort`'s answer is the same, as KL1 says it must be |
+| `current_node` gives node 0 on every PE | nothing: PASS. Only PE 0 calls it in these programs |
+
+Not reached at M5, open:
+
+- The shell's `cn`, `gc`, `seqgc` and `set node` from the prompt, with
+  `cn.kl1`'s printout as the oracle.
+- MGTP (R9) with `@node`; the other R8 samples.
+- The fetch is a copy made at once, with no messages; PIM/m's code
+  fetch messages are not modelled.
+- Each PE's own `new_atom` counter (OURS) would collide if two PEs
+  made atoms. It is untested, since only PE 0 makes them.
+- The boot PE as PE 0 and the FEP on it are OURS. The real system's
+  IPL loads pimos.ipl over the network, which is not modelled: the
+  link checkpoint is made on one machine and copied.
+- The run takes minutes and the checkpoint is not in git, so it is
+  not in the suite.

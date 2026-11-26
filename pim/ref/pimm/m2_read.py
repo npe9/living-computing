@@ -120,7 +120,9 @@ lines by check, both quotas; rung M3's are in m3_gc.py):
                              the order within a pair; not caught)
 Never fired: `the two schedules differ`, `messages in flight`, alias's
 `Y refers to the external cell` and `PE 1 reads one import`, and the
-refusal of unbound/2 of an external reference.
+refusal of unbound/2 of an external reference (since rung M5 not a
+refusal: the builtins case checks that of an external variable the
+goal is thrown to its owner, and of an external value it gives {X}).
 """
 import os
 import pickle
@@ -533,11 +535,18 @@ def check_builtins(blob):
     if got != [(INT, 1), (INT, v[1]), v]:
         bad.append(('unbound', got))
     p1.reg[1] = p1.import_id((pimm_pe.EXREF, pimm_pe.ext_id(0, 1)))
-    try:
-        p1.i_unbound(0, 1, 2, 0, 0)
-        bad.append(('unbound of an external reference not refused',))
-    except pimm.Unimplemented:
-        pass
+    # rung M5: of an external variable, the goal unbound(X, Result) is
+    # thrown to its owner (PE 0) and Result is a fresh variable here
+    throws = system.sent.get(0, 0)
+    p1.i_unbound(0, 1, 2, 0, 0)
+    if system.sent.get(0, 0) != throws + 1 or not p1.unbound(p1.deref(p1.reg[2])):
+        bad.append(('unbound of an external variable thrown to its owner', system.sent, p1.reg[2]))
+    # ... and of an external value it is {X} at once
+    p1.reg[1] = x = p1.import_id((pimm_pe.EXVAL, pimm_pe.ext_id(0, 2)))
+    p1.i_unbound(0, 1, 2, 0, 0)
+    w = p1.reg[2]
+    if system.sent.get(0, 0) != throws + 1 or p1.vsize(w) != 1 or p1.mem[p1.vbase(w)] != p1.deref(x):
+        bad.append(('unbound of an external value', w))
     return bad
 
 
