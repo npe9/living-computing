@@ -9,7 +9,12 @@
 // 11).
 //
 //   request        collect_garbage (the exec stage): a collection is
-//                  asked for; the guard succeeds
+//                  asked for; the guard succeeds.  Stage 5 (2026-11-25):
+//                  the goal box's heapLow asks too, an allocation past
+//                  the heap limit less the insurance (pimm_gc.py, "When
+//                  memory runs out"); a collection that leaves the live
+//                  heap past that is fatal after its K line ("gc: memory
+//                  shortage")
 //   collect        at the next goal switch (PimmCore pick_or_fire, before
 //                  the alarm): the from-space is [lo, hp), the to-space
 //                  starts at the heap's first cell when hp - lo fits below
@@ -504,8 +509,16 @@ module mkPimmGcBox#(MemPort mem, PimmGBox gbox, PimmTBox tbox, PimmScsiBox scsi)
       endaction
     endseq
     $display("K gc %0d %0d %0d %0d %08x", lo, hp, to, top, h);
+    // stage 5 (pimm_gc.py, "When memory runs out"): the live heap leaves
+    // no room under the limit, the Pseudo PIM/m's "Copying GC Memory
+    // Shortage"
     action
-      gbox.gcSet(nRq, nMq, nMwH, nMwT, top, nCur);
+      Addr lim = gbox.limitOf;
+      Addr ins = fromInteger(heapInsurance);
+      if (lim != 0 && top - to > (lim > ins ? lim - ins : 0)) fatal("gc: memory shortage");
+    endaction
+    action
+      gbox.gcSet(nRq, nMq, nMwH, nMwT, top, nCur, to);
       lo <= to;
       over <= True;
     endaction
@@ -515,7 +528,9 @@ module mkPimmGcBox#(MemPort mem, PimmGBox gbox, PimmTBox tbox, PimmScsiBox scsi)
   method Action request;
     asked <= True;
   endmethod
-  method Bool requested = asked;
+  // asked by collect_garbage, or (stage 5) by an allocation past the
+  // heap limit less the insurance (PimmGBox heapLow)
+  method Bool requested = asked || gbox.heapLow;
   method Action collect if (!running && mainF.done);
     asked <= False;
     running <= True;

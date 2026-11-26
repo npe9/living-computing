@@ -3,7 +3,7 @@
 end of the IPL's link or from the shell's prompt, through the lines
 typed, compared line by line with the reference model.
 
-    python3 ref/pimm/lockstep_shell.py make PKL DIR [--type LINE ...]
+    python3 ref/pimm/lockstep_shell.py make PKL DIR [--type LINE ...] [--heap-limit CELLS]
         DIR/heap.hex     the saved machine's heap, for the bench's memory
         DIR/script.hex   the RESTORE operations, then RUN and POLL as
                          longrun_ipl.py go() runs, then the device tape
@@ -166,6 +166,14 @@ PINNED = {
     ('prompt', ('gc',)): (368543, 89179),
     ('prompt', ('gc', 'compile', '!package work', 'sample1', '!exit', 'gc', 'listener',
                 'default_package(work).', 'sample1:sieve([1,2,3],E,O).')): (7880429, 1752873),
+    # R7G stage 5 (2026-11-25), a collection when memory runs out: keyed
+    # (kind, typed, the heap limit), LIMITS
+    ('prompt', ('compile', '!package work', 'sample1', '!exit', 'listener',
+                'default_package(work).', 'sample1:sieve([1,2,3],E,O).'), 2952727): (7144911, 1575086),
+    ('prompt', ('echo("a b c") | cat | lc',), 2000000): (2123508, 501560),
+    ('prompt', ('ts', ''), 2050000): (705106, 160945),
+    ('prompt', ('ts', ''), 1900000): (431779, 135590),
+    ('prompt', ('ts', ''), 2000000): (445203, 135785),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -328,6 +336,67 @@ APPS = {
                      'default_package(work).', 'sample1:sieve([1,2,3],E,O).'),
         ('Shell>> ', '** KL1 Compiler **\n', 'COMPILE> ', 'Package : work\n!WARNING! not included in the working packages : work\n', 'COMPILE> ', 'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n', "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n", '=>  :- module sample1 .\n', 'Compile Succeeded : sample1\n\n', '"work:: sample1" Loaded\n', 'Total Number of Warning : 1\n', 'COMPILE> ', 'Shell>> ', 'Shell>> ', '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n', '[1] ', '\n', '[2] ', ' E =[2]\n O =[1,3]\n\n', '[3] ')),
 }
+# R7G stage 5 (2026-11-25), a collection when memory runs out: the APPS
+# run with a heap limit (pimm.Machine.heap_limit, RESTORE 5; pimm_gc.py
+# "When memory runs out"), name -> cells.  Their windows are APPS's; the
+# pins are keyed (kind, typed, limit)
+LIMITS = {'listener_sieve_limit': 2952727, 'pipe_three_limit': 2000000, 'ts_limit': 2050000,
+          'ts_short': 1900000, 'ts_heap_full': 2000000}
+# ... and the collector's paths (pimm_gc.Collector.counts, summed over
+# the run's collections) each such run must take on the reference: the
+# core takes the same, its trace being identical, K lines included.
+# Observed injections (2026-11-25, each a copy of bsv/ with one line
+# changed, run against a kept work directory; bsv/README.md "R7G stage
+# 5" and "R7G stage 6"):
+#   GBox low <= True dropped          ts_limit FAIL line 4107 (no K gc)
+#   GBox heapLo <= nlo dropped        ts_limit FAIL line 4220 (heap full)
+#   GBox insurance 0                  ts_limit FAIL line 514442 (no 2nd K)
+#   GBox hard-limit fatal dropped     ts_heap_full FAIL, the trace goes on
+#   GcBox shortage fatal dropped      ts_short FAIL, the trace goes on
+#   RESTORE 5 dropped (DROPPED)       ts_limit FAIL line 4107
+#   GcBox parked SH_GOAL not moved    pipe_three_limit FAIL line 675002
+#   GcBox to_processor code not moved ts_short FAIL line 150833
+#   GcBox alarm setWakeup dropped     ts_limit FAIL line 523673
+#   GcBox nMq <= gbox.mqOf            listener_sieve_limit FAIL line 2388104
+#   GcBox nMwH <= gbox.mwHOf          pipe_three_limit FAIL line 675004
+GC_PATHS = {'listener_sieve_limit': ('mq', 'to_processor'), 'pipe_three_limit': ('parked', 'mwh'),
+            'ts_limit': ('alarm',), 'ts_short': ('alarm', 'to_processor')}
+# R7G stage 5: listener_sieve with a heap of 2,952,727 cells.  Every
+# collection is the limit's (none is asked for): the first at the first
+# goal switch with an allocation (the third), the boot's 77.86M cells
+# being past the limit; then four more as the compile and the Listener
+# run, the heap alternating above and at its first cell.  The run is
+# listener_sieve's, instruction for instruction (compare checks it
+# against that pin: the same instructions, its lines and one K line a
+# collection).  The limit is chosen so that the second collection falls
+# at a goal switch where the merger's list holds goals and a goal of
+# to_processor waits (item 2 of R7G's "Not run").  How it was placed: a
+# reference run without the limit, recording at each goal switch k the
+# heap allocated so far A[k] and which of those roots are non-empty; the
+# first collection falls at the first switch with A > 0 (c1), leaving
+# live1 = 1,868,250 cells, and L = live1 + 4096 + (A[k-1] - A[c1]) + 1
+# puts the second at switch k.  It is the first session in which those
+# roots are moved.  The 3,000,000 of the
+# first measurement gives four collections and neither path
+# (measured 2026-11-25 on both models: 7,144,910 lines, PASS)
+APPS['listener_sieve_limit'] = APPS['listener_sieve']
+# pipe_three with 2,000,000: eleven collections, the second with a goal
+# parked in a shoen (a shoen with no resource left, R7L) and goals made
+# ready since the last pickup (the merger's mwh)
+APPS['pipe_three_limit'] = APPS['pipe_three']
+# ts with 2,050,000: three collections, the second while set_timer's
+# alarm is armed (its variable a root)
+APPS['ts_limit'] = APPS['ts']
+# ts with 1,900,000: the live heap grows until a collection leaves no
+# room under the limit, the machine's end after its K line (the eleventh,
+# `gc: memory shortage`), the window empty; on the way the alarm's and a
+# to_processor goal's paths
+APPS['ts_short'] = (APPS['ts'][0], ())
+# ts with 2,000,000: after the first collection one reduction takes the
+# heap past the limit itself before the next goal switch (the warning is
+# 4096 cells, VPIM's; one SCSI buffer is 4097): `heap full: past the
+# heap limit`, the window empty
+APPS['ts_heap_full'] = (APPS['ts'][0], ())
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
 
@@ -416,6 +485,8 @@ def restore_ops(m):
     R(2, (0, m.steps // pimm.INSTRUCTIONS_PER_TICK))
     R(3, (0, m.steps % pimm.INSTRUCTIONS_PER_TICK))
     R(4, (0, m.scsi_commands & pimm.M32))
+    if m.heap_limit:
+        R(5, (0, m.heap_limit))     # R7G stage 5: the heap limit (PimmCore.restore)
     for c in m.scsi_waiting:
         for which, cell in ((16, (pimm.INT, c['unit'] & pimm.M32)),
                             (17, (pimm.INT, c['lun'] & pimm.M32)),
@@ -512,13 +583,20 @@ def play(m, loaded, kind, lines, sink, stats=None):
         stop = 'Fail %s' % e
     except fepm.FepError as e:
         stop = 'FepError: %s' % e
+    except RuntimeError as e:
+        # R7G stage 5: the heap past its limit, or a collection that left
+        # no room under it (pimm.py alloc, pimm_gc.py), the machine's end
+        stop = 'RuntimeError: %s' % e
     return ops, events, stop, dev
 
 
-def record(m, loaded, kind, lines, out, before, gaps):
+def record(m, loaded, kind, lines, out, before, gaps, limit=0):
     """Play the lines on m and write the window's files to out: the
-    reference's trace, the script and want.json (heap.hex apart)."""
+    reference's trace, the script and want.json (heap.hex apart).
+    limit: the heap limit (R7G stage 5, pimm.Machine.heap_limit), 0 none."""
     os.makedirs(out, exist_ok=True)
+    m.heap_limit = limit
+    m.gc_paths = None
     tape0 = len(m.scsi_tape)
     log0 = len(m.fep.log) if m.fep is not None else 0
     stats = dict(splices=0, onto_nonempty=0)
@@ -533,7 +611,8 @@ def record(m, loaded, kind, lines, out, before, gaps):
                 operations=len(ops), tape=len(m.scsi_tape) - tape0, events=events,
                 console=cons.console(sink.kept), stop=stop, heap_gaps=gaps,
                 fep_messages=len(dev.messages), held=dev.held,
-                window=[t for _d, t in dev.log[log0:]], **stats)
+                window=[t for _d, t in dev.log[log0:]], heap_limit=limit,
+                gc_count=getattr(m, 'gc_count', 0), gc_paths=m.gc_paths, **stats)
     with open(os.path.join(out, 'want.json'), 'w') as f:
         json.dump(want, f, indent=1, default=str)
     say('made: %r' % (want,))
@@ -548,7 +627,8 @@ def make(argv):
     m.ahead = '--ahead' in argv
     gaps = write_heap(m, os.path.join(out, 'heap.hex'))
     before = info.get('prompt', {}).get('instructions', 0)
-    record(m, loaded, kind, lines, out, before, gaps)
+    limit = int(argv[argv.index('--heap-limit') + 1]) if '--heap-limit' in argv else 0
+    record(m, loaded, kind, lines, out, before, gaps, limit)
     return 0
 
 
@@ -575,7 +655,7 @@ def apps(argv):
         pid = os.fork()
         if pid == 0:
             try:
-                record(m, loaded, kind, list(APPS[n][0]), d, before, gaps)
+                record(m, loaded, kind, list(APPS[n][0]), d, before, gaps, LIMITS.get(n, 0))
                 os.symlink(os.path.join('..', '..', 'heap.hex'), os.path.join(d, 'heap.hex'))
             finally:
                 os._exit(0 if os.path.exists(os.path.join(d, 'heap.hex')) else 1)
@@ -611,27 +691,50 @@ def compare(argv):
             recent = (recent + [w.rstrip('\n')])[-6:]
             n += 1
     extra = got.readline() if n else first
-    if extra and not (extra.strip() == 'E unimp' and want['stop'].startswith('refused')
-                      and not got.readline()):
+    ended = extra.strip()
+    if extra and not (ended == 'E unimp' and want['stop'].startswith('refused')
+                      and not got.readline()) \
+            and not (ended.startswith('E error: ') and want['stop'].startswith(
+                'RuntimeError: ' + ended[len('E error: '):]) and not got.readline()):
         # (2026-11-25) a run the reference ends refusing (Unimplemented,
         # no trace line) passes only if the core ends there refusing
-        # too, its one last line `E unimp`
+        # too, its one last line `E unimp`; R7G stage 5: one the
+        # reference ends at the heap limit (RuntimeError) only if the
+        # core ends there with the same words, `E error: heap full: past
+        # the heap limit` or `E error: gc: memory shortage`
         print('%s: FAIL, the Bluespec trace goes on: %s' % (name, extra.strip()))
         return 1
     if n != want['lines'] or ins != want['instructions']:
         print('%s: FAIL, %d lines, %d instructions; the reference made %d, %d'
               % (name, n, ins, want['lines'], want['instructions']))
         return 1
-    pin = PINNED.get((want['kind'], tuple(want['typed'])))
+    limit = want.get('heap_limit', 0)
+    key = (want['kind'], tuple(want['typed'])) + ((limit,) if limit else ())
+    pin = PINNED.get(key)
     if pin is not None and pin != (n, ins):
         print('%s: FAIL, %d lines, %d instructions, pinned %r' % (name, n, ins, pin))
         return 1
-    app = [k for k, (t, _w) in APPS.items() if tuple(t) == tuple(want['typed'])]
+    free = PINNED.get(key[:2]) if limit and not want['stop'].startswith('RuntimeError') else None
+    asked = list(want['typed']).count('gc')       # the shell's gc: a collection either way
+    if free is not None and (free[1] != ins or free[0] - asked + want.get('gc_count', 0) != n):
+        # R7G stage 5: a run with a heap limit is the run without one,
+        # instruction for instruction, with one K line a collection
+        print('%s: FAIL, %d lines, %d instructions with the limit %d; without it %r, and %d '
+              'collections' % (name, n, ins, limit, free, want.get('gc_count', 0)))
+        return 1
+    app = [k for k, (t, _w) in APPS.items() if tuple(t) == tuple(want['typed'])
+           and LIMITS.get(k, 0) == limit]
     if want['kind'] == 'prompt' and app and APPS[app[0]][1] is not None \
             and want.get('window') != list(APPS[app[0]][1]):
         print('%s: FAIL, the window %r; APPS %r has %r'
               % (name, want.get('window'), app[0], APPS[app[0]][1]))
         return 1
+    if app and app[0] in GC_PATHS:
+        paths = want.get('gc_paths') or {}
+        missed = [k for k in GC_PATHS[app[0]] if not paths.get(k)]
+        if missed:
+            print('%s: FAIL, the collector did not take %r (its paths %r)' % (name, missed, paths))
+            return 1
     print('%s: PASS (instructions %d to %d of go(), %d trace lines identical to the reference '
           'model; console %r; window %r; %s; %.0f s to the compare%s)'
           % (name, want['from_instruction'], want['to_instruction'], n, want['console'],
@@ -667,6 +770,9 @@ DROPPED = {
     ('pwd', 16): 1, ('pwd', 17): 1, ('pwd', 18): 1, ('pwd', 19): 1,
     ('pwd', 20): 1, ('pwd', 21): 1, ('pwd', 22): 12, ('pwd', 23): 4,
     ('pwd', 24): 4101, ('pwd', 25): 4102, ('pwd', 26): 4103,
+    # R7G stage 5: the heap limit; without it the core makes no
+    # collection where the reference's first K line is
+    ('ts_limit', 5): 4107,
 }
 
 

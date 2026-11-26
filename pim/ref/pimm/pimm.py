@@ -14,8 +14,9 @@ records, the ready queue, suspension records and hooked variables are
 cells on the heap (layouts in docs/pimm_semantics.md "Runtime state";
 they are this project's design, the firmware being lost).  One
 processor, a LIFO ready queue without priorities, 8- and 16-bit
-strings.  Garbage collection only when collect_garbage asks for it
-(R7G, pimm_gc.py, INFERENCE/OURS; otherwise the heap only grows); the MRB is
+strings.  Garbage collection when collect_garbage asks for it, and
+(R7G stage 5) when the heap reaches Machine.heap_limit, if one is set
+(pimm_gc.py, INFERENCE/OURS; otherwise the heap only grows); the MRB is
 kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
 it; the shoen in its first two stages only (create_shoen,
 start_shoen, termination, shoen_statistics, remove_shoen: "the shoen"
@@ -80,7 +81,7 @@ SHREC = 0x38
 INSTRUCTIONS_PER_TICK = 423
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
-                         MEMORY_CELLS, HEAP)
+                         MEMORY_CELLS, HEAP, HEAP_INSURANCE)
 from pimm_layout import (SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT,  # noqa: E402
                          SH_GOAL, SH_SIZE, DORMANT, STARTED, TERMINATED,
                          REPORT_STARTED, REPORT_TERMINATED)
@@ -246,10 +247,28 @@ class Machine:
         self._sp = a
         self.sp_single = False
 
+    # R7G stage 5 (2026-11-25): the heap limit, in cells, 0 for none (the
+    # memory alone bounds the heap).  INFERENCE/OURS, the rule in
+    # pimm_gc.py's header ("When memory runs out"): an allocation that
+    # takes the heap past the limit less HEAP_INSURANCE asks for a
+    # collection, as collect_garbage does (VPIM b_IfHeapLimitWarning, the
+    # _PAGE_ALLOC_FAIL_EVENT, f_RequestLocalGC at the next goal switch);
+    # once the heap has been collected, one past the limit itself is the
+    # end (VPIM's "PANIC Heap Overflow").  A class default: a machine
+    # pickled before it has none.  The core's: PimmGBox.bsv take, RESTORE 5
+    heap_limit = 0
+
     def alloc(self, n):
         a = self.hp
         if a + n >= self.load + self.size:
             raise RuntimeError('heap full')
+        if self.heap_limit:
+            lo = getattr(self, 'heap_lo', None)
+            used = a + n - (lo or self.load + HEAP)
+            if lo and used > self.heap_limit:
+                raise RuntimeError('heap full: past the heap limit')
+            if used > self.heap_limit - HEAP_INSURANCE:
+                self.gc_request = True
         self.hp += n
         return a
 

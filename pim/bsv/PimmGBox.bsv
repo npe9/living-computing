@@ -57,7 +57,15 @@
 //               exception's handler; answered through done
 //   takenGoal   the record of the goal the last pickup took
 //
-// The heap only grows; running out of memory stops the simulation.
+// The heap only grows between collections (PimmGcBox.bsv); running out
+// of memory stops the simulation.  R7G stage 5 (2026-11-25), the heap
+// limit (ref/pimm/pimm_gc.py, "When memory runs out", INFERENCE/OURS):
+// with a limit set (setLimit, RESTORE 5; 0 none), an allocation that
+// takes hp - lo past the limit less heapInsurance (VPIM's
+// _HEAP_END_INSURANCE_OFST) sets heapLow, which asks the collector for a
+// collection at the next goal switch as collect_garbage does; once the
+// heap has been collected (gcSet), one past the limit itself stops the
+// simulation ("heap full: past the heap limit", VPIM's panic).
 package PimmGBox;
 
 import FIFO::*;
@@ -90,6 +98,11 @@ interface PimmGBox;
   // a checkpoint (ref/pimm/lockstep_shell.py): the heap pointer of the
   // machine saved, between runs, the queues empty
   method Action setHp(Addr a);
+  // R7G stage 5: the heap limit in cells (RESTORE 5), and the request an
+  // allocation past it less the insurance makes
+  method Action setLimit(Addr a);
+  method Addr limitOf;
+  method Bool heapLow;
   // R7G, the garbage collector (PimmGcBox.bsv), at a goal switch: the
   // roots it moves, and what it gives back
   method Addr hpOf;
@@ -97,7 +110,7 @@ interface PimmGBox;
   method Addr mqOf;
   method Addr mwHOf;
   method Addr mwTOf;
-  method Action gcSet(Addr nrq, Addr nmq, Addr nmwH, Addr nmwT, Addr nhp, Addr ncur);
+  method Action gcSet(Addr nrq, Addr nmq, Addr nmwH, Addr nmwT, Addr nhp, Addr ncur, Addr nlo);
 endinterface
 
 typedef union tagged {
@@ -126,6 +139,12 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)   mwH <- mkReg(0);                       // goals of merge_in woken since the last
   Reg#(Addr)   mwT <- mkReg(0);                       // pickup: the first and the last, or 0
   Reg#(Bool)   fromMq <- mkReg(False);                // the goal picked is the merger list's
+  // R7G stage 5: the heap limit (0 none), the heap's first live cell as
+  // the last collection left it, whether there was one, the request
+  Reg#(Addr)   limit <- mkReg(0);
+  Reg#(Addr)   heapLo <- mkReg(fromInteger(heapStart));
+  Reg#(Bool)   collected <- mkReg(False);
+  Reg#(Bool)   low <- mkReg(False);
 
   Reg#(GState)  st    <- mkReg(GIdle);
   Reg#(Cell)    ugA   <- mkRegU;
@@ -180,6 +199,13 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
       Bit#(TAdd#(AddrBits, 1)) next = zeroExtend(hp) + zeroExtend(cells);
       if (next[valueOf(AddrBits)] == 1) fatal("heap full");
       hp <= truncate(next);
+      if (limit != 0) begin
+        Bit#(TAdd#(AddrBits, 1)) used = next - zeroExtend(heapLo);
+        Bit#(TAdd#(AddrBits, 1)) lim = zeroExtend(limit);
+        Bit#(TAdd#(AddrBits, 1)) ins = fromInteger(heapInsurance);
+        if (collected && used > lim) fatal("heap full: past the heap limit");
+        if (used > (lim > ins ? lim - ins : 0)) low <= True;
+      end
     endaction
   endfunction
 
@@ -644,7 +670,15 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   method Addr mqOf = mq;
   method Addr mwHOf = mwH;
   method Addr mwTOf = mwT;
-  method Action gcSet(Addr nrq, Addr nmq, Addr nmwH, Addr nmwT, Addr nhp, Addr ncur) if (st == GIdle);
+  method Action setLimit(Addr a) if (st == GIdle);
+    limit <= a;
+  endmethod
+  method Addr limitOf = limit;
+  method Bool heapLow = low;
+  method Action gcSet(Addr nrq, Addr nmq, Addr nmwH, Addr nmwT, Addr nhp, Addr ncur, Addr nlo) if (st == GIdle);
+    heapLo <= nlo;
+    collected <= True;
+    low <= False;
     rq <= nrq;
     mq <= nmq;
     mwH <= nmwH;

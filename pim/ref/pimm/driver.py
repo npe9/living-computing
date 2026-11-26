@@ -51,7 +51,9 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
                          has it): a = 0 the heap pointer, 1 new_atom's
                          counter, 2 the clock's ticks, 3 the instructions
                          since the last tick, 4 the SCSI commands so
-                         far, 16..26 a waiting SCSI command's fields,
+                         far, 5 the heap limit in cells (R7G stage 5,
+                         pimm.Machine.heap_limit; given only when one
+                         is set), 16..26 a waiting SCSI command's fields,
                          31 that command onto the waiting list.  Only
                          lockstep_shell.py's scripts, on the bench
                          mkPimmShellTb, whose heap is the saved
