@@ -34,14 +34,28 @@
 //             then codes 0-0x1f and 0xffff, each the record number + 1
 //             (0 = none).  Built at reset by the font-scan rules from the
 //             records (plan §2.5's index, OURS).
-//   - the blit engine (rules blit*): one destination word per step, a
-//             16-bit funnel from two source words, edge masks; fill,
+//   - the memory stages (WinMemPipe.bsv, H3 follow-up): every RAM the
+//             engines stream through has a pipelined front, mkWinMemPipe,
+//             with reads in flight under credits and two in-order
+//             response ports (0: a source stream, 1: read-modify-write).
+//             The frame's, fp, takes every port A access.
+//   - the blit engine, two stages: the source stream (rules sIssue*:
+//             one token a cycle, the row's first source word and then
+//             one a destination word, each with its source read) and the
+//             funnel (rule sCollect: each source word paired with the
+//             carried one, a 16-bit funnel at a constant offset); fill,
 //             copy, save, restore and glyph are all blits (a fill's
 //             source is a constant 1).  Direction is chosen for
 //             overlapping frame-to-frame copies: rows bottom-up when
 //             dy > sy, words right to left when dy = sy and dx > sx.
-//   - the line engine (rules line*): Bresenham, one read-modify-write
-//             per pen dot.
+//   - the line engine, two stages: Bresenham (rule lGen, one pen dot a
+//             cycle) and the merge (rule lMerge: consecutive dots of one
+//             word become one item).
+//   - the read-modify-write stage (rules rPass, rRead*, w*), shared by
+//             the blit and the line: reads a destination word when it
+//             is needed, writes ropf of it, waits while an earlier item
+//             still has to write the word it reads (mkWinPendQ), and ends
+//             the command with the last write.
 //   - the dump engine (rules dump*), on port A (H3 moved it from port
 //             B, which is now the pixel domain's; port A is idle while a
 //             dump runs).
@@ -54,21 +68,30 @@
 //             commands wait until both finish.
 //
 // Cycles (no timing is claimed for the PSI).  H3 registered the frame's
-// port A request (latency 2, WinFrame.bsv) to reach the board's clock,
-// so every frame read now waits one more cycle (register fWait).  Per
-// destination word: a fill 1 (set/reset/copy/reverse, a whole word) or
-// 3 (xor, or an edge word); a blit from the frame 5.  A line dot is 5
-// cycles, a dump word 3.  MEASURED 2026-11-25 in WinFbBoxTb, one command
-// over an empty stream less the empty stream's own count (H1 figures,
-// one-cycle reads, in brackets): clear 1280x984 78,721 (78,721; plan
-// §2.4 estimate 78,720); xor fill 1280x984 236,161 (157,441); scroll
-// 1280x964 by 20 lines 384,637 (231,361; plan ~157,000); 100 glyphs
-// 12,140 (9,772; plan ~64 each); a 1,280-dot diagonal 6,401 (5,121;
-// plan ~2,560); save + restore 400x300 62,102 (46,502).  On the board the
-// box runs on the 25 MHz oscillator (WinUlx3s.bsv), so a full-screen
-// scroll is ~15 ms.  A carried funnel
-// word and pipelined frame reads (several in flight) would bring copies
-// to ~1-2 a word; that is not scheduled (H4 is the owner's board step).
+// port A request (latency 2, WinFrame.bsv) to reach the board's clock;
+// the box first waited a cycle on every frame read, then (H3 follow-up)
+// the stages above were put in to keep several reads in flight, so port
+// A is busy every cycle.  Per destination word: a fill 1 (set/reset/copy/
+// reverse, a whole word) or 2 (xor, or an edge word); a frame-to-frame
+// copy 2 (3 for an edge word), plus one source read a row; save and
+// restore about 1 (the bitmap is another RAM).  A line: 2 a word it
+// touches (consecutive dots in one word are one read and one write), at
+// most one dot a cycle.  A dump word
+// 2 (the bench's drain).  MEASURED 2026-11-25 in WinFbBoxTb, one command
+// over an empty stream less the empty stream's own count; the H3 figures
+// (a wait on every frame read) and then the H1 figures (one-cycle reads,
+// no pipelining) in brackets:
+//   clear 1280x984 (fill 0 40 1280 984 set)        78,724 (78,721; 78,721)
+//   xor fill 1280x984                             157,443 (236,161; 157,441)
+//   scroll 1280x964 by 20 lines (copy 0 60 ...)   155,205 (384,637; 231,361)
+//   100 glyphs 'A' (16#2341, x = 11i, y = 20)       6,680 (12,140; 9,772)
+//   a 1,280-dot diagonal (0,0)-(1279,1023)          2,196 (6,401; 5,121)
+//   save + restore 400x300                         16,514 (62,102; 46,502)
+//   the empty stream (reset and the final dump)   163,846 (327,683)
+// The plan's §2.4 estimates were 78,720, ~157,000, ~64 a glyph and ~2,560.
+// On the board the box runs on the 25 MHz oscillator (WinUlx3s.bsv), so a
+// full-screen scroll is ~6.2 ms.  The streams are in bsv/win_measure/,
+// measured by bsv/win_measure.sh.
 
 // Unimplemented cases fail loud: a font that is not f822 or has more
 // than 255 records stops the simulation at reset.
@@ -80,6 +103,7 @@ import GetPut::*;
 import ClientServer::*;
 import Vector::*;
 import WinFrame::*;
+import WinMemPipe::*;
 export WinFrame::*;
 export WinFbBox::*;
 
@@ -117,8 +141,35 @@ Bit#(8) stNOSAVE = 5;
 
 typedef enum { MInit, MIdle, MBlit, MGlyph, MLine, MDump } Mode deriving (Bits, Eq);
 typedef enum { SConst, SFrame, SSave, SFont } SrcKind deriving (Bits, Eq);
-typedef enum { PSrc0, PSrc1, PDst, PWr } BPhase deriving (Bits, Eq);
-typedef enum { LDot, LWr, LStep } LPhase deriving (Bits, Eq);
+
+// a token of the blit's source stream (WinFbBox's stage 1 -> stage 2)
+typedef struct {
+   Bool load;                   // the row's first source word: only carried
+   Bool mem;                    // the word is read (else it is 0)
+   Bool last;                   // the blit's last destination word
+   Bit#(20) addr;               // the destination word
+   Bit#(16) mask;
+   Bool needsDst;               // its old value is needed
+} SrcTok deriving (Bits);
+
+// a word for the read-modify-write stage
+typedef struct {
+   Bool word;                   // False: no word (a line's end only)
+   Bool needsDst;
+   Bool last;                   // the command ends with it
+   Bit#(20) addr;
+   Bit#(16) mask;
+   Bit#(16) src;                // the source bits under the mask
+} RmwItem deriving (Bits);
+function Bit#(20) rmwKey(RmwItem x) = x.addr;
+
+// a line pen dot (or only the line's end)
+typedef struct {
+   Bool dot;
+   Bit#(20) addr;
+   Bit#(16) bits;
+   Bool last;
+} LineDot deriving (Bits);
 
 typedef struct {
    Bit#(16) x; Bit#(16) y; Bit#(16) w; Bit#(16) h; Bit#(16) base;
@@ -182,6 +233,16 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    BRAM_PORT#(Bit#(12), Bit#(16)) font <- mkBRAMCore1Load(4096, False, fontFile, False);
    BRAM_PORT#(Bit#(14), Bit#(8)) index <- mkBRAMCore1(valueOf(IndexSize), False);
 
+   // the pipelined fronts of the three RAMs the engines stream through
+   // (WinMemPipe.bsv): every frame port A access goes through fp; the
+   // font's header and index reads at reset and in the glyph lookup use
+   // the font RAM directly (other modes, never both in one cycle)
+   WinMemPipe fp <- mkWinMemPipe(frame.a, valueOf(WinFrameLatA), 4, "WinFbBox frame");
+   WinMemPipe bp <- mkWinMemPipe(bitmap, 1, 4, "WinFbBox bitmap");
+   WinMemPipe np <- mkWinMemPipe(font, 1, 4, "WinFbBox font");
+   Bit#(1) pSrc = 0;                      // response port of a source stream
+   Bit#(1) pDst = 1;                      // of a read-modify-write
+
    FIFOF#(WinFbCmd) cmdQ <- mkFIFOF;
    FIFOF#(WinFbRsp) rspQ <- mkFIFOF;
 
@@ -200,28 +261,38 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    // ---- save slots ------------------------------------------------------
    Reg#(Vector#(SaveSlots, Maybe#(SaveSlot))) slots <- mkReg(replicate(tagged Invalid));
 
-   // ---- blit engine ----------------------------------------------------
+   // ---- the command's raster op and status, and its destination RAM
+   // (the read-modify-write stage's; set by the blit and the line) -------
+   Reg#(Bit#(4)) rRop <- mkRegU;
+   Reg#(Bit#(8)) rStatus <- mkRegU;
+   Reg#(Bool) bDstSave <- mkRegU;          // False = frame
+
+   // ---- blit engine: the geometry ---------------------------------------
    Reg#(SrcKind) bSrc <- mkRegU;
    Reg#(Bit#(8)) bSrcPitch <- mkRegU;
    Reg#(Bit#(16)) bSrcX <- mkRegU;
-   Reg#(Bool) bDstSave <- mkRegU;          // False = frame
    Reg#(Bit#(8)) bDstPitch <- mkRegU;
    Reg#(Bit#(16)) bDstX <- mkRegU;
    Reg#(Bit#(16)) bW <- mkRegU;
    Reg#(Bit#(16)) bH <- mkRegU;
-   Reg#(Bit#(4)) bRop <- mkRegU;
    Reg#(Bool) bUp <- mkRegU;               // rows bottom-up
    Reg#(Bool) bRtl <- mkRegU;              // words right to left
-   Reg#(Bit#(16)) bRow <- mkRegU;          // rows done
-   Reg#(Bit#(20)) bDstRow <- mkRegU;
-   Reg#(Bit#(20)) bSrcRow <- mkRegU;
-   Reg#(Bit#(12)) bK <- mkRegU;            // destination word in its row
    Reg#(Bit#(12)) bKFirst <- mkRegU;
    Reg#(Bit#(12)) bKLast <- mkRegU;
-   Reg#(BPhase) bPh <- mkRegU;
-   Reg#(Bit#(16)) bSa <- mkRegU;
-   Reg#(Bit#(16)) bSb <- mkRegU;
-   Reg#(Bit#(8)) bStatus <- mkRegU;
+   Reg#(Bit#(4)) bSOff <- mkRegU;          // the funnel's offset (a constant)
+   // the source stream's position
+   Reg#(Bool) sOn <- mkReg(False);         // tokens still to issue
+   Reg#(Bool) sFirst <- mkRegU;            // next: the row's first source word
+   Reg#(Bit#(16)) sRow <- mkRegU;          // rows done
+   Reg#(Bit#(20)) sDstRow <- mkRegU;
+   Reg#(Bit#(20)) sSrcRow <- mkRegU;
+   Reg#(Bit#(12)) sK <- mkRegU;            // destination word in its row
+   Reg#(Bit#(16)) sCarry <- mkRegU;        // the funnel's carried source word
+   FIFOF#(SrcTok) tokQ <- mkSizedFIFOF(4);
+
+   // ---- the read-modify-write stage -------------------------------------
+   FIFOF#(RmwItem) rmwQ <- mkFIFOF;
+   WinPendQ#(RmwItem) pq <- mkWinPendQ(rmwKey);
 
    // ---- glyph lookup -----------------------------------------------------
    Reg#(Bit#(3)) gPh <- mkRegU;
@@ -250,24 +321,21 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Reg#(Bit#(4)) lI <- mkRegU;
    Reg#(Bit#(16)) lWidth <- mkRegU;
    Reg#(Bit#(16)) lK <- mkRegU;
-   Reg#(Bit#(4)) lRop <- mkRegU;
-   Reg#(LPhase) lPh <- mkRegU;
+   Reg#(Bool) lGenOn <- mkReg(False);
+   FIFOF#(LineDot) dotQ <- mkFIFOF;
+   // the word being merged: consecutive pen dots in one word
+   Reg#(Bool) mHas <- mkReg(False);
+   Reg#(Bit#(20)) mAddr <- mkRegU;
+   Reg#(Bit#(16)) mMask <- mkRegU;         // the dots drawn
 
    // ---- dump engine -----------------------------------------------------
-   Reg#(Bit#(17)) dA <- mkRegU;
-   Reg#(Bool) dWait <- mkRegU;
-
-   // ---- the frame's port A answers two cycles after a put (WinFrame.bsv,
-   // H3): a rule that reads the frame sets fWait, and the engines stand
-   // still for the one cycle in between ------------------------------------
-   Reg#(Bool) fWait <- mkReg(False);
-   rule frameWait (fWait);
-      fWait <= False;
-   endrule
+   Reg#(Bit#(17)) dA <- mkRegU;            // next read
+   Reg#(Bool) dIss <- mkReg(False);
+   Reg#(Bit#(17)) dB <- mkRegU;            // next word out
 
    // =====================================================================
    rule initClear (mode == MInit && !clearDone);
-      frame.a.put(True, clearA, 0);
+      fp.write(zeroExtend(clearA), 0);
       if (clearA == fromInteger(valueOf(FbWords) - 1)) clearDone <= True;
       clearA <= clearA + 1;
    endrule
@@ -326,72 +394,101 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    endrule
 
    // =====================================================================
-   // the blit engine
-   // the current row's first word, destination and source: registers
-   // stepped by the pitch at each row end (H3: computing base + row x
-   // pitch here put a multiplier on the path to the 80 frame banks'
-   // address pins, and the system clock missed 25 MHz)
-   Bit#(20) dstRow = bDstRow;
-   Bit#(20) srcRow = bSrcRow;
-   // the source bit under the destination word's first dot, signed
-   Int#(20) q0 = unpack((zeroExtend(bK) << 4) - zeroExtend(bDstX) + zeroExtend(bSrcX));
+   // the blit engine, stage 1: the source stream.  One token a cycle: the
+   // row's first source word (load), then one a destination word, each
+   // with its source word's read (when the word is inside the source;
+   // else the word is 0).  The tokens carry the destination word's
+   // address, mask and whether its old value is needed.  The current
+   // row's first word, destination and source, are registers stepped by
+   // the pitch at each row end (H3: computing base + row x pitch here put
+   // a multiplier on the path to the 80 frame banks' address pins, and the
+   // system clock missed 25 MHz).
+   //
+   // Reading ahead of the writes is safe because of the copy's direction
+   // (rows bottom-up when dy > sy, words right to left when dy = sy and
+   // dx > sx): in that order no source word is read after the blit has
+   // written it, so issuing the reads earlier changes nothing they see.
+   Int#(20) q0 = unpack((zeroExtend(sK) << 4) - zeroExtend(bDstX) + zeroExtend(bSrcX));
    Int#(20) jA = q0 >> 4;
-   Bit#(4) sOff = truncate(pack(q0));
    Int#(20) jLo = unpack(zeroExtend(bSrcX >> 4));
    Int#(20) jHi = unpack(zeroExtend((bSrcX + bW - 1) >> 4));
    function Bool jValid(Int#(20) j) = bSrc != SConst && j >= jLo && j <= jHi;
-   Bit#(16) mask = maskOf(bK, bDstX, bW);
-   Bit#(16) srcBits = funnel(bSrc == SConst, bSa, bSb, sOff);
-
-   function Action srcRead(Int#(20) j);
-      action
-         Bit#(20) a = srcRow + pack(j);
-         case (bSrc)
-            SFrame: begin frame.a.put(False, truncate(a), ?); fWait <= True; end
-            SSave:  bitmap.put(False, truncate(a), ?);
-            SFont:  font.put(False, truncate(a), ?);
-         endcase
-      endaction
-   endfunction
-   Bit#(16) srcData =
-      case (bSrc)
-         SFrame: frame.a.read;
-         SSave:  bitmap.read;
-         default: font.read;
-      endcase;
-   function Action dstPut(Bool wr, Bit#(16) d);
-      action
-         Bit#(20) a = dstRow + zeroExtend(bK);
-         if (bDstSave) bitmap.put(wr, truncate(a), d);
-         else begin
-            frame.a.put(wr, truncate(a), d);
-            if (!wr) fWait <= True;
-         end
-      endaction
-   endfunction
-   Bit#(16) dstData = bDstSave ? bitmap.read : frame.a.read;
-
+   // left to right a destination word takes source words jA, jA + 1; the
+   // row's first token reads jA, every word then reads jA + 1.  Right to
+   // left the first reads jA + 1 and every word jA.
+   Int#(20) jTok = (sFirst != bRtl) ? jA : jA + 1;
+   Bool tokMem = jValid(jTok);
+   Bit#(20) tokSrcA = sSrcRow + pack(jTok);
+   Bit#(16) mask = maskOf(sK, bDstX, bW);
    Bool needsDst =
-      !(mask == 'hffff && (bRop == 3 || bRop == 4 ||
-                           (bSrc == SConst && (bRop == 0 || bRop == 1))));
+      !(mask == 'hffff && (rRop == 3 || rRop == 4 ||
+                           (bSrc == SConst && (rRop == 0 || rRop == 1))));
+   Bool rowEnd = sK == (bRtl ? bKFirst : bKLast);
+   Bool lastRow = sRow + 1 == bH;
+   SrcTok tok = SrcTok { load: sFirst, mem: tokMem, last: !sFirst && rowEnd && lastRow,
+                         addr: sDstRow + zeroExtend(sK), mask: mask, needsDst: needsDst };
 
-   // the next destination word, or the end of the blit
-   Action advance =
+   Action sAdvance =
       action
-         Bool rowEnd = bK == (bRtl ? bKFirst : bKLast);
-         if (rowEnd) begin
-            if (bRow + 1 == bH) begin
-               rspQ.enq(WinFbRsp { isData: False, status: bStatus, data: 0 });
-               mode <= MIdle;
-            end
-            bRow <= bRow + 1;
-            bDstRow <= bUp ? bDstRow - zeroExtend(bDstPitch) : bDstRow + zeroExtend(bDstPitch);
-            bSrcRow <= bUp ? bSrcRow - zeroExtend(bSrcPitch) : bSrcRow + zeroExtend(bSrcPitch);
-            bK <= bRtl ? bKLast : bKFirst;
+         tokQ.enq(tok);
+         if (sFirst) sFirst <= False;
+         else if (rowEnd) begin
+            if (lastRow) sOn <= False;
+            sRow <= sRow + 1;
+            sDstRow <= bUp ? sDstRow - zeroExtend(bDstPitch) : sDstRow + zeroExtend(bDstPitch);
+            sSrcRow <= bUp ? sSrcRow - zeroExtend(bSrcPitch) : sSrcRow + zeroExtend(bSrcPitch);
+            sK <= bRtl ? bKLast : bKFirst;
+            sFirst <= bSrc != SConst;
          end
-         else bK <= bRtl ? bK - 1 : bK + 1;
-         bPh <= (bSrc == SConst) ? PDst : PSrc0;
+         else sK <= bRtl ? sK - 1 : sK + 1;
       endaction;
+
+   // one rule a source RAM, so a read of the font or the save areas can go
+   // in the same cycle as a write to the frame
+   rule sIssueNone (mode == MBlit && sOn && !tokMem);
+      sAdvance;
+   endrule
+   rule sIssueFrame (mode == MBlit && sOn && tokMem && bSrc == SFrame && fp.canRead(pSrc));
+      fp.read(pSrc, tokSrcA); sAdvance;
+   endrule
+   rule sIssueSave (mode == MBlit && sOn && tokMem && bSrc == SSave && bp.canRead(pSrc));
+      bp.read(pSrc, tokSrcA); sAdvance;
+   endrule
+   rule sIssueFont (mode == MBlit && sOn && tokMem && bSrc == SFont && np.canRead(pSrc));
+      np.read(pSrc, tokSrcA); sAdvance;
+   endrule
+
+   // stage 2: pair each source word with the carried one (the funnel) and
+   // pass the destination word on to the read-modify-write stage
+   Bool srcRdy = case (bSrc)
+                    SFrame: fp.rsp[pSrc].notEmpty;
+                    SSave:  bp.rsp[pSrc].notEmpty;
+                    SFont:  np.rsp[pSrc].notEmpty;
+                    default: False;
+                 endcase;
+   Bit#(16) srcWord = case (bSrc)
+                         SFrame: fp.rsp[pSrc].first;
+                         SSave:  bp.rsp[pSrc].first;
+                         default: np.rsp[pSrc].first;
+                      endcase;
+   Action srcDeq = case (bSrc)
+                      SFrame: fp.rsp[pSrc].deq;
+                      SSave:  bp.rsp[pSrc].deq;
+                      default: np.rsp[pSrc].deq;
+                   endcase;
+   rule sCollect (mode == MBlit && (!tokQ.first.mem || srcRdy));
+      SrcTok t = tokQ.first;
+      tokQ.deq;
+      Bit#(16) w = t.mem ? srcWord : 0;
+      if (t.mem) srcDeq;
+      sCarry <= w;
+      if (!t.load) begin
+         Bit#(16) a = bRtl ? w : sCarry;
+         Bit#(16) b = bRtl ? sCarry : w;
+         rmwQ.enq(RmwItem { word: True, needsDst: t.needsDst, last: t.last, addr: t.addr,
+                            mask: t.mask, src: funnel(bSrc == SConst, a, b, bSOff) });
+      end
+   endrule
 
    function Action startBlit(SrcKind src, Bit#(20) sBase, Bit#(8) sPitch, Bit#(16) sX,
                              Bool dSave, Bit#(20) dBase, Bit#(8) dPitch, Bit#(16) dX,
@@ -407,43 +504,62 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
             Bit#(12) kl = truncate((dX + w - 1) >> 4);
             bSrc <= src; bSrcPitch <= sPitch; bSrcX <= sX;
             bDstSave <= dSave; bDstPitch <= dPitch; bDstX <= dX;
-            bW <= w; bH <= h; bRop <= r; bUp <= up; bRtl <= rtl;
-            bRow <= 0; bK <= rtl ? kl : kf; bKFirst <= kf; bKLast <= kl;
+            bW <= w; bH <= h; rRop <= r; bUp <= up; bRtl <= rtl;
+            bKFirst <= kf; bKLast <= kl;
+            bSOff <= truncate(sX - dX);
             Bit#(20) last = zeroExtend(h - 1);
-            bDstRow <= dBase + (up ? last * zeroExtend(dPitch) : 0);
-            bSrcRow <= sBase + (up ? last * zeroExtend(sPitch) : 0);
-            bPh <= (src == SConst) ? PDst : PSrc0;
-            bStatus <= st;
+            sOn <= True; sFirst <= src != SConst;
+            sRow <= 0; sK <= rtl ? kl : kf;
+            sDstRow <= dBase + (up ? last * zeroExtend(dPitch) : 0);
+            sSrcRow <= sBase + (up ? last * zeroExtend(sPitch) : 0);
+            rStatus <= st;
             mode <= MBlit;
          end
       endaction
    endfunction
 
-   rule blitSrc0 (mode == MBlit && bPh == PSrc0 && !fWait);
-      if (jValid(jA)) srcRead(jA);
-      bPh <= PSrc1;
+   // =====================================================================
+   // the read-modify-write stage (the blit's destination words and the
+   // line's pen words): read the old word when it is needed, then write
+   // ropf of it.  An item whose word an earlier item still has to write
+   // waits (pq.has).  The last item's write ends the command.
+   Bool rmwOn = mode == MBlit || mode == MLine;
+   RmwItem ri = rmwQ.first;
+   Bool riRead = ri.word && ri.needsDst;
+   rule rPass (rmwOn && !riRead);
+      rmwQ.deq; pq.enq(ri);
    endrule
-   rule blitSrc1 (mode == MBlit && bPh == PSrc1 && !fWait);
-      bSa <= jValid(jA) ? srcData : 0;
-      if (jValid(jA + 1)) srcRead(jA + 1);
-      bPh <= PDst;
+   rule rReadFrame (rmwOn && riRead && !bDstSave && fp.canRead(pDst) && !pq.has(ri.addr));
+      fp.read(pDst, ri.addr); rmwQ.deq; pq.enq(ri);
    endrule
-   rule blitDst (mode == MBlit && bPh == PDst && !fWait);
-      Bit#(16) sb = (bSrc != SConst && jValid(jA + 1)) ? srcData : 0;
-      bSb <= sb;
-      if (needsDst) begin
-         dstPut(False, ?);
-         bPh <= PWr;
-      end
-      else begin
-         // every bit of the word is replaced and none depends on the frame
-         dstPut(True, ropf(bRop, funnel(bSrc == SConst, bSa, sb, sOff), 0, 'hffff));
-         advance;
-      end
+   rule rReadSave (rmwOn && riRead && bDstSave && bp.canRead(pDst) && !pq.has(ri.addr));
+      bp.read(pDst, ri.addr); rmwQ.deq; pq.enq(ri);
    endrule
-   rule blitWr (mode == MBlit && bPh == PWr && !fWait);
-      dstPut(True, ropf(bRop, srcBits, dstData, mask));
-      advance;
+
+   RmwItem pi = pq.first;
+   Bool piRead = pi.word && pi.needsDst;
+   Action retire =
+      action
+         if (pi.last) begin
+            rspQ.enq(WinFbRsp { isData: False, status: rStatus, data: 0 });
+            mode <= MIdle;
+         end
+      endaction;
+   (* descending_urgency = "wFrame, rReadFrame, sIssueFrame" *)
+   rule wFrame (rmwOn && !bDstSave && (!piRead || fp.rsp[pDst].notEmpty));
+      pq.deq;
+      Bit#(16) d = piRead ? fp.rsp[pDst].first : 0;
+      if (piRead) fp.rsp[pDst].deq;
+      if (pi.word) fp.write(pi.addr, ropf(rRop, pi.src, d, pi.mask));
+      retire;
+   endrule
+   (* descending_urgency = "wSave, rReadSave, sIssueSave" *)
+   rule wSave (rmwOn && bDstSave && (!piRead || bp.rsp[pDst].notEmpty));
+      pq.deq;
+      Bit#(16) d = piRead ? bp.rsp[pDst].first : 0;
+      if (piRead) bp.rsp[pDst].deq;
+      if (pi.word) bp.write(pi.addr, ropf(rRop, pi.src, d, pi.mask));
+      retire;
    endrule
 
    // =====================================================================
@@ -506,33 +622,30 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    endrule
 
    // =====================================================================
-   // line: Bresenham; the pen is lWidth dots across the major axis
+   // line: Bresenham; the pen is lWidth dots across the major axis.
+   // Stage 1 (lGen): one pen dot a cycle, the Bresenham step taken with
+   // the pen's last dot; stage 2 (lMerge): consecutive dots in one word
+   // become one read-modify-write item (mask = src = the dots); then the
+   // read-modify-write stage.  One item for several dots equals the
+   // reference's one read-modify-write a dot because a line never draws a
+   // dot twice: a step's pen dots differ in k, and every Bresenham step
+   // moves the major coordinate (checked by brute force over all lines
+   // with endpoints in 0..11 x 0..11, 2026-11-25), so xor is the same.
    Int#(20) lPx = lXMajor ? lX : lX + unpack(zeroExtend(lK));
    Int#(20) lPy = lXMajor ? lY + unpack(zeroExtend(lK)) : lY;
    Bool lOn = lStyle[15 - lI] == 1;
    Bit#(20) lAddr = pack(lPy) * 80 + (pack(lPx) >> 4);
    Bit#(16) lBit = 'h8000 >> pack(lPx)[3:0];
 
-   rule lineDot (mode == MLine && lPh == LDot && !fWait);
-      if (!lOn || lK == lWidth)
-         lPh <= LStep;
-      else if (lPx < fromInteger(fbW) && lPy < fromInteger(fbH)) begin
-         frame.a.put(False, truncate(lAddr), ?);
-         fWait <= True;
-         lPh <= LWr;
-      end
-      else lK <= lK + 1;
-   endrule
-   rule lineWr (mode == MLine && lPh == LWr && !fWait);
-      frame.a.put(True, truncate(lAddr), ropf(lRop, lBit, frame.a.read, lBit));
-      lK <= lK + 1;
-      lPh <= LDot;
-   endrule
-   rule lineStep (mode == MLine && lPh == LStep && !fWait);
-      if (lX == lX2 && lY == lY2) begin
-         rspQ.enq(WinFbRsp { isData: False, status: stOK, data: 0 });
-         mode <= MIdle;
-      end
+   rule lGen (mode == MLine && lGenOn);
+      Bool onScr = lPx < fromInteger(fbW) && lPy < fromInteger(fbH);
+      Bool penDone = !lOn || lK + 1 == lWidth;
+      Bool atEnd = lX == lX2 && lY == lY2;
+      Bool last = penDone && atEnd;
+      if ((lOn && onScr) || last)
+         dotQ.enq(LineDot { dot: lOn && onScr, addr: lAddr, bits: lBit, last: last });
+      if (!penDone) lK <= lK + 1;
+      else if (atEnd) lGenOn <= False;
       else begin
          Int#(20) e2 = 2 * lErr;
          Int#(20) err = lErr;
@@ -547,25 +660,53 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
          lErr <= err;
          lI <= lI + 1;
          lK <= 0;
-         lPh <= LDot;
+      end
+   endrule
+
+   rule lMerge (mode == MLine);
+      LineDot d = dotQ.first;
+      if (d.dot && mHas && mAddr != d.addr) begin
+         // a dot in another word: the merged word goes on, and the dot
+         // starts the next (the line's last dot waits a cycle: its word
+         // and the end go on together)
+         rmwQ.enq(RmwItem { word: True, needsDst: True, last: False, addr: mAddr,
+                            mask: mMask, src: mMask });
+         if (d.last) mHas <= False;
+         else begin
+            dotQ.deq;
+            mAddr <= d.addr; mMask <= d.bits;
+         end
+      end
+      else begin
+         dotQ.deq;
+         Bool h = mHas || d.dot;
+         Bit#(20) a = mHas ? mAddr : d.addr;
+         Bit#(16) m = !d.dot ? mMask : (mHas ? (mMask | d.bits) : d.bits);
+         if (d.last) begin
+            rmwQ.enq(RmwItem { word: h, needsDst: True, last: True, addr: a, mask: m, src: m });
+            mHas <= False;
+         end
+         else begin
+            mHas <= h; mAddr <= a; mMask <= m;
+         end
       end
    endrule
 
    // =====================================================================
-   // dump, on port B: put an address, then pass the word on
-   rule dumpReq (mode == MDump && !dWait && !fWait);
-      frame.a.put(False, dA, ?);
-      fWait <= True;
-      dWait <= True;
+   // dump: a stream of frame reads, each word passed on as it comes
+   rule dumpReq (mode == MDump && dIss && fp.canRead(pSrc));
+      fp.read(pSrc, zeroExtend(dA));
+      if (dA == fromInteger(valueOf(FbWords) - 1)) dIss <= False;
+      dA <= dA + 1;
    endrule
-   rule dumpRsp (mode == MDump && dWait && !fWait);
-      rspQ.enq(WinFbRsp { isData: True, status: stOK, data: frame.a.read });
-      dWait <= False;
-      if (dA == fromInteger(valueOf(FbWords) - 1)) begin
+   rule dumpRsp (mode == MDump && fp.rsp[pSrc].notEmpty);
+      rspQ.enq(WinFbRsp { isData: True, status: stOK, data: fp.rsp[pSrc].first });
+      fp.rsp[pSrc].deq;
+      if (dB == fromInteger(valueOf(FbWords) - 1)) begin
          // the status follows the data; a FIFOF of 2 holds both
          mode <= MIdle;
       end
-      dA <= dA + 1;
+      dB <= dB + 1;
    endrule
    Reg#(Bool) dTail <- mkReg(False);
    rule dumpEnd (mode == MIdle && dTail);
@@ -608,8 +749,9 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                   lDx <= dx; lDy <= dy; lErr <= dx + dy;
                   lSxNeg <= !(x1 < x2); lSyNeg <= !(y1 < y2);
                   lXMajor <= dx >= -dy;
-                  lStyle <= a[5]; lI <= 0; lWidth <= a[4]; lK <= 0; lRop <= r;
-                  lPh <= LDot;
+                  lStyle <= a[5]; lI <= 0; lWidth <= a[4]; lK <= 0;
+                  rRop <= r; rStatus <= stOK; bDstSave <= False;
+                  lGenOn <= True; mHas <= False;
                   mode <= MLine;
                end
             end
@@ -658,7 +800,7 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                else reply(stNOSAVE);
             end
          7: begin // dump
-               dA <= 0; dWait <= False; dTail <= True;
+               dA <= 0; dB <= 0; dIss <= True; dTail <= True;
                mode <= MDump;
             end
       endcase

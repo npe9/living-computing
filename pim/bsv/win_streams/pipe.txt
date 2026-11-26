@@ -1,0 +1,86 @@
+# pipe.txt: directed stream for the box's pipelined stages (WinFbBox.bsv,
+# WinMemPipe.bsv; OURS, 2026-11-25).  psi/winfb.py asm format; run by
+# run_win_tb.sh against psi/winfb.py like the gen streams.
+# 1. a varied picture: glyphs and xor fills over words and word edges
+glyph 0 0x2341 200 100 set
+glyph 0 0x2342 211 107 set
+glyph 0 0x2367 222 114 set
+glyph 0 0x2121 233 100 set
+glyph 0 0x2125 244 107 set
+glyph 0 0x2330 255 114 set
+glyph 0 0x2339 266 100 set
+glyph 0 0x235a 277 107 set
+glyph 0 0x2341 288 114 set
+glyph 0 0x2342 299 100 set
+glyph 0 0x2367 310 107 set
+glyph 0 0x2121 321 114 set
+glyph 0 0x2125 332 100 set
+glyph 0 0x2330 343 107 set
+glyph 0 0x2339 354 114 set
+glyph 0 0x235a 365 100 set
+glyph 0 0x2341 376 107 set
+glyph 0 0x2342 387 114 set
+glyph 0 0x2367 398 100 set
+glyph 0 0x2121 409 107 set
+glyph 0 0x2125 420 114 set
+glyph 0 0x2330 431 100 set
+glyph 0 0x2339 442 107 set
+glyph 0 0x235a 453 114 set
+fill 190 95 23 17 xor
+fill 227 100 32 17 xor
+fill 264 105 41 17 xor
+fill 301 110 50 17 xor
+fill 338 115 59 17 xor
+fill 375 120 68 17 xor
+dump
+# 2. overlapping copies by less than a word, a word, and more, each way
+copy 200 98 300 40 203 98 copy
+copy 200 98 300 40 195 98 copy
+copy 200 98 300 40 216 98 copy
+copy 200 98 300 40 184 98 copy
+copy 200 98 300 40 217 98 copy
+copy 200 98 300 40 200 99 copy
+copy 200 98 300 40 200 97 copy
+copy 200 98 300 40 202 99 copy
+copy 200 98 300 40 197 97 copy
+copy 200 98 300 40 215 100 copy
+copy 200 98 300 40 199 101 copy
+dump
+# narrow copies (one word or less) at every offset kind, xor so each read counts
+copy 205 100 1 20 207 101 xor
+copy 230 100 1 20 228 100 xor
+copy 205 100 7 20 208 101 xor
+copy 230 100 7 20 228 100 xor
+copy 205 100 15 20 206 101 xor
+copy 230 100 15 20 229 100 xor
+copy 205 100 16 20 207 101 xor
+copy 230 100 16 20 228 100 xor
+copy 205 100 17 20 208 101 xor
+copy 230 100 17 20 227 100 xor
+copy 205 100 33 20 209 101 xor
+copy 230 100 33 20 229 100 xor
+dump
+# 3. lines: horizontal runs (merged words), wide x-major pens (a word read
+# again while its write is pending), wide y-major pens, one-word lines
+line 100 300 700 300 1 0xffff xor
+line 100 302 700 303 1 0xf0f0 xor
+line 101 310 699 318 5 0xffff xor
+line 100 330 600 345 3 0xffff set
+line 700 300 100 360 4 0xffff xor
+line 120 400 130 700 6 0xffff xor
+line 140 400 160 700 17 0xcccc xor
+line 300 420 305 420 1 0xffff xor
+line 306 420 300 421 2 0xffff xor
+line 400 420 400 420 9 0xffff xor
+dump
+# 4. save areas: save, restore at once, xor restore, a save over a copy
+save 1 195 95 300 60 0
+fill 195 95 300 60 xor
+restore 1 copy
+restore 1 xor
+restore 1 xor
+copy 195 95 300 60 197 96 copy
+save 2 197 96 33 9 20000
+restore 2 reverse
+dump
+end

@@ -757,10 +757,26 @@ and the dump. It imports only standard libraries. The display hardware
 is undocumented, so all of it is OURS scaffolding. The command format is
 frozen in the header of `../psi/winfb.py`, the Python reference.
 `WinFbBoxTb.bsv` (hand-written, committed) reads a command stream and
-writes P4 PBM frames plus status files. `run_win_tb.sh` runs 11 streams
+writes P4 PBM frames plus status files. `run_win_tb.sh` runs 12 streams
 on both the box and the Python layer and `cmp`s every frame and status
-file. Its header lists the injected faults and which streams catch each.
-Measured cycle counts are in the box header.
+file: `winfb.py`'s 11, and `win_streams/pipe.txt` with the bench
+refusing responses 3 cycles in 8 (`+stall`). Its header lists the
+injected faults and which streams catch each.
+
+Since the H3 follow-up, the box's engines are stages. `WinMemPipe.bsv`
+holds `mkWinMemPipe`, a pipelined RAM front with reads in flight under
+credits and two in-order response ports, and `mkWinPendQ`, the
+read-modify-write interlock. The stages are:
+- the blit's source stream;
+- the funnel, with a carried source word;
+- a shared read-modify-write stage;
+- the line's dot generator and its merge of each word's dots;
+- the dump stream.
+
+Port A is busy every cycle. A full-screen scroll takes 155,205 cycles
+(384,637 at H3, 231,361 at H1), and an xor fill 157,443. The box header
+has the table, and `win_measure.sh` remeasures it from
+`win_measure/*.txt` after a `run_win_tb.sh` build.
 
 **The scan-out (`WinScanOut.bsv`, H2).** `mkWinScanOut#(box.scan)` reads
 the frame through the box's scan port (port B, in the pixel clock's
@@ -822,15 +838,34 @@ and `../tools/win_fpga_check.py`, which fails the build if a clock
 misses its frequency, the DP16KD count is not 156, the serializer's 11
 replicated flag flops were merged, or the pclk -> sclk transfer exceeds
 2.70 ns (nextpnr 0.6 reports cross-domain paths but
-cannot constrain them). Measured results (2026-11-25, seeds 1-3, all PASS:
-sclk 384.76-418.24 MHz at 370.10, pclk 74.53-79.43 at 74.00, system
-32.65-34.91 at 25; 9,671 TRELLIS_COMB, 3,612 FF, 156 DP16KD) are in the
-plan's §5.1 and its H3 status. A full run took about 7 minutes (2026-11-25). Output: `build-winfpga/ulx3s_win.bit` (gitignored). The
+cannot constrain them). Measured results, seeds 1-3, all PASS, are in the
+plan's §5.1 and its H3 status:
+
+| build | sclk at 370.10 | pclk at 74.00 | system at 25 | TRELLIS_COMB | FF | DP16KD |
+|---|---|---|---|---|---|---|
+| H3, 2026-11-25 | 384.76-418.24 | 74.53-79.43 | 32.65-34.91 | 9,671 | 3,612 | 156 |
+| H3 follow-up, 2026-11-26 | 412.71-417.54 | 77.26-82.59 | 34.66-36.50 | 10,639 | 4,277 | 156 |
+
+The follow-up is the pipelined box, plus the cursor lookup in two pixel
+clocks. A full run took about 7 minutes (2026-11-25). Output: `build-winfpga/ulx3s_win.bit` (gitignored). The
 owner programs it; no agent runs this:
 
 ```
 openFPGALoader -b ulx3s bsv/build-winfpga/ulx3s_win.bit   # from pim/, SRAM only
 ```
+
+**The host link (H6, RTL half, Bluesim only).** `WinLink.bsv` holds
+`mkWinLink#(div)`: the UART receiver and transmitter (8N1, `div` cycles a
+bit: 25 for 1 Mbaud on the board), the frame receiver and the record
+sender, with the box behind one `Client`. The frame format, the
+receiver's rules and the error codes are frozen in
+`../tools/winlink.py`'s header (OURS). That file also holds the encoder,
+the receiver's model and the checker. `WinLinkTb.bsv` puts a host on both
+lines. `run_win_link.sh` (called by `run_win_tb.sh`) runs 6 cases: three
+clean streams, a dropped byte, a flipped bit and a bad LEN. Every up
+record's CRC is checked, the error records must equal the model's, and the
+statuses and dumps must equal `psi/winfb.py` run on the accepted commands.
+The link is not in a board top yet.
 
 LEDs: 7 the PLL lock, 0 the self-test done, 1 a self-test error (a
 command status not OK), 2 toggles every 16 frames of the pixel domain

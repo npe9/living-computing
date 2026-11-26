@@ -3,7 +3,9 @@
 # device layer (psi/winfb.py), in Bluesim: docs/simpos/window_hardware_plan.md
 # H0 and H1; then the scan-out (WinScanOut.bsv, mkWinScanOut) against
 # psi/winscan.py and psi/wintmds.py, H2 (steps 5-8 below); then the board
-# design's core in three clock domains, H3 (step 9).  OURS scaffolding throughout (both file headers say why).
+# design's core in three clock domains, H3 (step 9); then the host link,
+# H6 (step 10, run_win_link.sh).  OURS scaffolding throughout (both file
+# headers say why).
 #
 #   1. python3 -I psi/test_winfb.py: the reference's own unit tests
 #      (hand-written bytes and dot counts, the 48-dot 'A' at 16#2341);
@@ -13,7 +15,12 @@
 #   4. for every stream `psi/winfb.py streams` names (directed ones and
 #      random ones with fixed seeds), the stream is run by both sides and
 #      the PBM files (one P4 image per `dump` and one at `end`) and the
-#      status files (one status a command) are compared with cmp.
+#      status files (one status a command) are compared with cmp; and so
+#      for each directed mnemonic stream win_streams/*.txt (assembled by
+#      psi/winfb.py asm), with the bench's +stall (it takes no response 3
+#      cycles in 8, so the box's queues and credits fill): pipe.txt drives
+#      the pipelined stages (H3 follow-up);
+#  10. run_win_link.sh (its own header).
 # Everything goes to bsv/build-win/ (WIN_BUILD to override; the root
 # .gitignore's build-*/ covers it).  BSC_BIN pins a compiler, as in
 # run_fepemu.sh.  WIN_PART=h2 skips step 4 (for scan-out injection runs).
@@ -143,7 +150,8 @@
 #  H3-5 port A's read mux select stuck at bank 0 (selA <= 0): all 11
 #    H0/H1 streams, all 17 scan cases (the frame dump), ulx3s frame and
 #    ulx3s scan
-#  H3-6 the line engine's frame-read wait dropped (no fWait in lineDot):
+#  H3-6 (SUPERSEDED by P8 below: the wait is gone since the H3 follow-up)
+#    the line engine's frame-read wait dropped (no fWait in lineDot):
 #    lines, rand_h1_1, rand_h1_2, all 17 scan cases (their streams draw
 #    lines), ulx3s frame and scan (self-test done 1,914 cycles early)
 #  H3-7 the pixel domain drops the cursor-shape command (SShape ->
@@ -160,6 +168,37 @@
 # built) and on the pclk -> sclk budget (WIN_XDOM_NS=1.0).
 # "The cursor drawn into the frame" cannot be injected: the scan-out has
 # only the read port; the second dump is the check that it stays out.
+# H3 follow-up INJECTED FAULTS (the pipelined engines, WinMemPipe.bsv and
+# WinFbBox.bsv), each in a private copy of pim/bsv, pim/psi and pim/tools
+# (the tree's files never edited); OBSERVED 2026-11-26 at the final tree,
+# everything not listed `same`.  "link" cases are step 10's (run_win_link.sh):
+#  P1 a frame response dropped (a read's tag lost when another read follows
+#    the next cycle): all 12 box streams, then the first scan case
+#    (mode0) never ends: the 1500 s timeout (exit 124), as the scan bench
+#    has no watchdog
+#  P2 the two response ports swapped: all 12 box streams, then as P1 (scan
+#    mode0 never ends, exit 124)
+#  P3 the read-modify-write address interlock removed (rReadFrame without
+#    !pq.has): rand_h1_1, rand_h1_2, pipe; scan rand1, 2, 3, 5, 6, 7, 9, 11
+#  P4 the credit limit one high (cnt <= depth): pipe (only under +stall,
+#    which is why the bench stalls its reader) and link glyphs, lines,
+#    xor_twice, drop, flip, badlen (the UART back-pressures the box; drop,
+#    flip and badlen end in the pipe's own "read on port 0 without a credit")
+#  P5 the row's first source word not loaded (the carry runs on from the
+#    previous row): copy_overlap, save_restore, rand_h0_1-3, glyphs,
+#    rand_h1_1-2, pipe; all 17 scan; ulx3s frame and scan; link glyphs,
+#    drop, flip, badlen
+#  P6 no drain (the command ends when its last word enters the
+#    read-modify-write stage): fill_edges, copy_overlap,
+#    save_restore, rand_h0_1-3, rand_h1_1-2; scan mode0-3, mode2_nocursor,
+#    rand1-4; the 1500 s timeout came during scan rand5
+#  P7 right to left, the carried word's role not flipped: copy_overlap,
+#    rand_h1_2, pipe
+#  P8 the frame pipe's latency one short (supersedes H3-6): all 12 box
+#    streams; all 17 scan; ulx3s frame and scan; all 6 link cases
+#  P9 the line merge drops each dot merged into a word after its first
+#    (mHas ? mMask : d.bits): lines, rand_h1_1, rand_h1_2, pipe;
+#    all 17 scan; ulx3s frame and scan; link lines
 set -eu
 cd "$(dirname "$0")"
 
@@ -194,13 +233,20 @@ FLAGS="-steps-warn-interval 4000000 -bdir $B -simdir $B -info-dir $B"
 
 status=0
 H01=$(python3 -I "$WINFB" streams | awk '{print $1}')
+# and the directed mnemonic streams of this directory (f:NAME = win_streams/NAME.txt)
+H01="$H01 $(cd win_streams && ls *.txt | sed 's/^/f:/; s/\.txt$//')"
 [ "${WIN_PART:-}" = h2 ] && H01=          # WIN_PART=h2: the scan-out only (injection runs)
 for name in $H01; do
-  python3 -I "$WINFB" gen "$name" > "$B/$name.hex"
+  case $name in
+    f:*) name=${name#f:}; args=+stall
+         python3 -I "$WINFB" asm "win_streams/$name.txt" "$B/$name.hex" ;;
+    *)   args=
+         python3 -I "$WINFB" gen "$name" > "$B/$name.hex" ;;
+  esac
   python3 -I "$WINFB" run "$B/$name.hex" "$B/$name.py.pbm" "$B/$name.py.status"
   cp "$B/$name.hex" "$B/run/win_stream.hex"
   rm -f "$B/run/win_frame.pbm" "$B/run/win_status.txt"
-  (cd "$B/run" && ./../sim_win > sim.log 2>&1) || { cat "$B/run/sim.log"; status=1; continue; }
+  (cd "$B/run" && ./../sim_win $args > sim.log 2>&1) || { cat "$B/run/sim.log"; status=1; continue; }
   cp "$B/run/win_frame.pbm" "$B/$name.bsv.pbm"
   cp "$B/run/win_status.txt" "$B/$name.bsv.status"
   n=$(grep -c . "$B/$name.py.status" || true)
@@ -312,6 +358,17 @@ if (cd "$U" && ./../sim_ulx3s > sim.log 2>&1) && grep -q "^WinUlx3sTb: self-test
   fi
 else
   echo "   DIFFERS ulx3s bench: $(grep -v '^Warning' "$U/sim.log" | head -2)"; status=1
+fi
+
+# ---- H6: the host link (WinLink.bsv) against tools/winlink.py
+if [ "${WIN_PART:-}" != h2 ]; then
+  echo "== run_win_link.sh: mkWinLink + the box, UART 8N1 at 4 cycles a bit"
+  if WIN_BUILD="$B" ./run_win_link.sh > "$B/run_win_link.log" 2>&1; then
+    grep -E "^   same" "$B/run_win_link.log"
+  else
+    grep -E "DIFFERS|FAIL" "$B/run_win_link.log" || tail -5 "$B/run_win_link.log"
+    status=1
+  fi
 fi
 
 if [ $status -ne 0 ]; then
