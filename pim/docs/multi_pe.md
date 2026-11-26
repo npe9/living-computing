@@ -51,7 +51,8 @@ line numbers below are of that tool's output) and the compiled ESP with
   and PIMOS's own `gc` and `seqgc` commands, whose collections over
   the nodes follow from their source. MGTP/G (R9) is not a multi-PE
   oracle; MGTP-N (IFS No. 91, "only executable on PIM/m") is a later
-  one.
+  one: its manual prints a 1-PE run's statistics and the goals for 64
+  and 256 PEs, but no per-PE figure (§1.5).
 - **Rungs M1..M7** are in §4. M1: N separate machines,
   `current_node`, `Goal@node(K)` as a `%throw_goal`, and the `%unify`
   that binds an exported variable, checked by PIMOS's own compiled
@@ -194,8 +195,20 @@ packet bytes and hardware-assembled 40-bit words.
   read further).
 - Any per-PE figure for a PIM/m run that the model could match: the
   FGCS'92 PIM/m figures are times; MGTP/G's manual prints reductions
-  for one engine and no node count; MGTP-N's manual (IFS No. 91) was
-  not read for figures.
+  for one engine and no node count. MGTP-N's English manual
+  (`MGTP-N-KL1/mgtp-manual-E.ps.gz` in IFS No. 91, read 2026-11-26 as
+  text, page by its `%%Page` number) prints one run in full on the
+  **1-PE** configuration, `mgtp:do([{0,0}],[{0,0}],...,S,0)@node(0)`:
+  its `distribute`/`store`/`reach` progress lines, the statistics
+  `S=[..., model:1758, kept:1753, tested:1757, keptG:61, distr:1797,
+  distrG:183, ...]` and `65247574 reductions 729807 msec` (p. 57,
+  PRINTED); then only the goals for 64 and 256 PIM/m PEs and 32 and
+  128 PIM/p PEs (`...@node(63)`, `@node(254)`), with no output printed
+  for them (p. 57, PRINTED). Its CMGTP chapter gives a speedup only as
+  a ratio of times (256 PEs against 62: 3.97, limited-branch scheme;
+  the per-scheme run-time monitors are figures 6.8-6.10, pictures; p.
+  72, PRINTED). So no per-PE count is printed; the 1-PE statistics are
+  an answer a multi-PE run must reproduce (M6).
 
 ## 2. Oracles for the multi-PE rungs
 
@@ -206,7 +219,7 @@ packet bytes and hardware-assembled 40-bit words.
 | KL1's semantics | placement does not change an answer: every multi-PE run's results equal the one-PE run's and KLIC 2.002's | the language |
 | The primer's `sample9` | the placement order 0,1,2,3,0,1,2,3 for `distribute(8)` on 4 nodes | PRINTED |
 | The manual's exception rules | an atom node is `illegal_input`, an out-of-range one `range_overflow` | PRINTED |
-| MGTP-N (IFS No. 91), STB/MLB, Distributed Pool | larger programs written for several nodes | HELD-SOURCE; answers as KLIC's or the papers' |
+| MGTP-N (IFS No. 91), STB/MLB, Distributed Pool | larger programs written for several nodes; for MGTP-N the manual's 1-PE run, whose model statistics (`model:1758`, `kept:1753`, ...) a run on more PEs must give again (§1.5); no per-PE figure printed | HELD-SOURCE; PRINTED (MGTP-N manual p. 57); others as KLIC's or the papers' |
 
 ## 3. Choices that are ours
 
@@ -241,7 +254,7 @@ packet bytes and hardware-assembled 40-bit words.
 | M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release`, the exported variable retagged `EUNDF`/`EHOOK` (TM-1044), the tables at fixed addresses and as roots of the collector | an injected leak or double release failing a check; a collection with live exports | M2 |
 | M4 | The shoen across PEs: foster parents (`FPREC`), WTC (`wtctu`, `wtcsu`), `%terminated`, `%ready`, resource messages, exceptions for a bad node number | the manual's `range_overflow`/`illegal_input`; a shoen spread over nodes terminating once | M3 |
 | M5 | PIMOS boots on N PEs (its 113 `@node` sites), and the shell's `cn`, `gc`, `seqgc`, `set node` run | `cn.kl1`'s printout; §2's collection counts through the shell | M4; code fetch by module identifier |
-| M6 | A period multi-node program: MGTP-N, STB/MLB, Distributed Pool | its answer (KLIC's, the manual's) | M5 |
+| M6 | A period multi-node program: MGTP-N, STB/MLB, Distributed Pool | its answer (KLIC's; for MGTP-N the 1-PE statistics its manual prints, p. 57) | M5 |
 | M7 | The Bluespec core: N cores on `PimMesh.bsv`, or one core whose network port is answered from a recorded tape (as `lockstep_scsi.py` answers the SCSI port), in lockstep with the reference | the reference's per-PE traces | M1 on the reference (the tape) |
 
 **Why M1 is not on the core in this step.** The core is one PE. In
@@ -295,6 +308,13 @@ Not reached, open:
 - An `EX` cell in a collection is not exercised: `seqgc` sends its
   `%unify` before the collection, and a collection with live exports
   is refused loudly (`pimm_gc.py` refuses the tag). M3.
+- Every check of `m1_gc.py` fired under at least one injection (tally
+  of the observed FAIL lines: request order, throw order, one
+  request/throw per node, one collection per node, messages, node c
+  asks after every `%unify` (no-`%unify` and no-wake), PE k left
+  (the same two), the two schedules differ (no-wake)). The node-0 and
+  no-import injections are caught by a raise, not by a check, and the
+  node-0 one only where c is not 0.
 - The bare run's loaded code is not a collector root (the node-0
   injection shows it); in PIMOS the module table is. M5.
 - Exports are of atomic values and unbound variables only; a

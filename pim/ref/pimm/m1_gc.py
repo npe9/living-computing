@@ -58,6 +58,9 @@ whole script run, 2026-11-26; docs/multi_pe.md 5):
                               N>1 case FAILS and the schedules differ
   no import (raw word)        Unimplemented: a second unification of
                               external cell (50, 16777217)
+Every check fired under at least one of these (the "c asks after every
+%unify" and "PE k left" checks under no-%unify and no-wake); node 0 and
+no-import are caught by a raise, not a check, node 0 only where c!=0.
 """
 import os
 import pickle
