@@ -32,6 +32,10 @@ UP, board to host:
                   CODE 3 SEQ: a good frame out of sequence (a frame was
                          lost before it); it is reported, then drawn, and the
                          receiver expects its SEQ + 1 next
+  TYPE 3 event    LEN 10: an input event record (H5/H7s, tools/wininput.py's
+                  header: KIND, A, B, C, FLAGS, T); SEQ counts event records
+                  mod 256.  Not an answer: a host's flow control counts only
+                  TYPE 0 and TYPE 2 records.
   An error record is never placed inside another record.
 
 THE RECEIVER (the board's; `receive` below is its model, byte for byte):
@@ -68,7 +72,7 @@ import winfb  # noqa: E402  (the drawing reference, read only)
 
 SYNC_DOWN, SYNC_UP = 0xa5, 0x5a
 LEN = 13
-T_STATUS, T_DATA, T_ERROR = 0, 1, 2
+T_STATUS, T_DATA, T_ERROR, T_EVENT = 0, 1, 2, 3
 E_CRC, E_LEN, E_SEQ = 1, 2, 3
 WORDS_PER_DATA = 64
 

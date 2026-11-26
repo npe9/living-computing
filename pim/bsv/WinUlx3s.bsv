@@ -34,6 +34,10 @@
 // the design under test of bsv/WinUlx3sTb.bsv, which runs the three
 // clocks in Bluesim and checks the picture against the Python view.
 //
+// H5 (2026-11-26): the PS/2 keyboard on US2 (mkWinInput, WinInput.bsv):
+// usb_fpga_bd_dp the clock, usb_fpga_bd_dn the data (INFERENCE: the passive
+// USB-PS/2 adapter's usual wiring), its events up the link as TYPE 3
+// records.  The composition is mkWinBoardCore, shared with WinLiveTb.
 // H6 (2026-11-26): once the self-test is done, the box is the host link's
 // (WinLink.bsv mkWinLink, 1 Mbaud: 25 clocks a bit at 25 MHz) on the FTDI
 // UART: ftdi_txd (M1) in, ftdi_rxd (L4) out.  The host sees the
@@ -55,6 +59,7 @@ import Vector::*;
 import WinFbBox::*;
 import WinScanOut::*;
 import WinLink::*;
+import WinInput::*;
 import Connectable::*;
 
 typedef union tagged {
@@ -71,6 +76,7 @@ interface WinScanPix;
    method Action cmd(WinScanCmd c);       // system domain
    method WinTmdsOut out;                 // pixel domain
    method Bool tog;                       // pixel domain
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video;   // pixel domain
 endinterface
 
 module mkWinScanPix#(WinFbScan fb, Clock pclk, Reset prst)(WinScanPix);
@@ -93,6 +99,7 @@ module mkWinScanPix#(WinFbScan fb, Clock pclk, Reset prst)(WinScanPix);
    method Action cmd(WinScanCmd c) = cq.enq(c);
    method WinTmdsOut out = scan.out;
    method Bool tog = scan.tog;
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video = scan.video;
 endmodule
 
 // ======================================================================
@@ -103,6 +110,7 @@ interface WinCore;
    method WinTmdsOut out;                 // pixel domain
    method Bool tog;
    method Bool blink;
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video;
 endinterface
 
 module mkWinCore#(String fontFile, String progFile, String cfgFile,
@@ -226,6 +234,48 @@ module mkWinCore#(String fontFile, String progFile, String cfgFile,
    method WinTmdsOut out = pix.out;
    method Bool tog = pix.tog;
    method Bool blink = frames[4] == 1;
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video = pix.video;
+endmodule
+
+// ======================================================================
+// The board's composition (H6, H5, H7s): the core, the host link and the
+// input box, the link's event records fed from the input box.  BDPI-free,
+// so the board top (mkWinUlx3s) and the Bluesim live bench
+// (WinLiveTb.bsv) instantiate the same module: what is simulated is what
+// is synthesized.  div: the link's clocks a bit; filt, timeout, msDiv:
+// mkWinInput's.
+interface WinBoardCore;
+   (* always_ready, always_enabled *) method Action uart(Bit#(1) rxd);
+   method Bit#(1) txd;
+   (* always_ready, always_enabled *) method Action kbd(Bit#(1) clk, Bit#(1) dat);
+   (* always_ready, always_enabled *) method Action mouse(Bit#(1) clk, Bit#(1) dat);
+   method Bool done;
+   method Bool err;
+   method WinTmdsOut out;                 // pixel domain
+   method Bool tog;
+   method Bool blink;
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video;
+endinterface
+
+module mkWinBoardCore#(String fontFile, String progFile, String cfgFile,
+                       Integer div, Integer filt, Integer timeout, Integer msDiv,
+                       Clock pclk, Reset prst)(WinBoardCore);
+   WinCore core <- mkWinCore(fontFile, progFile, cfgFile, pclk, prst);
+   WinLink link <- mkWinLink(div);
+   WinInput inp <- mkWinInput(filt, timeout, msDiv);
+   mkConnection(link.box, core.dbg);
+   mkConnection(inp.events, link.events);
+
+   method Action uart(Bit#(1) b) = link.rxd(b);
+   method Bit#(1) txd = link.txd;
+   method Action kbd(Bit#(1) c, Bit#(1) d) = inp.kbd(c, d);
+   method Action mouse(Bit#(1) c, Bit#(1) d) = inp.mouse(c, d);
+   method Bool done = core.done;
+   method Bool err = core.err;
+   method WinTmdsOut out = core.out;
+   method Bool tog = core.tog;
+   method Bool blink = core.blink;
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video = core.video;
 endmodule
 
 // ======================================================================
@@ -233,6 +283,8 @@ endmodule
 // (bsv/WinUlx3sTop.v); the default clock is the 25 MHz oscillator.
 interface WinUlx3s;
    (* always_ready, always_enabled, prefix = "" *) method Action uart((* port = "rxd" *) Bit#(1) b);
+   (* always_ready, always_enabled, prefix = "" *) method Action ps2((* port = "ps2_clk" *) Bit#(1) c,
+                                                       (* port = "ps2_dat" *) Bit#(1) d);
    (* always_ready *) method Bit#(1) txd;     // sys
    (* always_ready *) method Bit#(8) pins;   // lane i {D1, D0} at [2i+1:2i]; sclk
    (* always_ready *) method Bit#(2) led;    // {err, done}; sys
@@ -244,16 +296,21 @@ module mkWinUlx3s#(Clock pclk, Clock sclk)(WinUlx3s);
    Reset rst <- exposeCurrentReset;
    Reset prst <- mkAsyncReset(2, rst, pclk);
    Reset srst <- mkAsyncReset(2, rst, sclk);
-   WinCore core <- mkWinCore("win_font.hex", "win_stream.hex", "win_scan.hex", pclk, prst);
+   WinBoardCore core <- mkWinBoardCore("win_font.hex", "win_stream.hex", "win_scan.hex",
+                                       25, 8, 25000, 25000, pclk, prst);
    ReadOnly#(Vector#(3, Bit#(10))) wx <-
       mkNullCrossingWire(sclk, core.out.sym, clocked_by pclk, reset_by prst);
    ReadOnly#(Bool) tx <- mkNullCrossingWire(sclk, core.tog, clocked_by pclk, reset_by prst);
    WinTmdsSer ser <- mkWinTmdsSer(wx, tx, clocked_by sclk, reset_by srst);
-   WinLink link <- mkWinLink(25);
-   mkConnection(link.box, core.dbg);
+   // US2 is one port (plan R3): the keyboard; the mouse's receiver idle
+   (* fire_when_enabled, no_implicit_conditions *)
+   rule mouseIdle;
+      core.mouse(1, 1);
+   endrule
 
-   method Action uart(Bit#(1) b) = link.rxd(b);
-   method Bit#(1) txd = link.txd;
+   method Action uart(Bit#(1) b) = core.uart(b);
+   method Action ps2(Bit#(1) c, Bit#(1) d) = core.kbd(c, d);
+   method Bit#(1) txd = core.txd;
 
    method Bit#(8) pins = pack(ser.pins);
    method Bit#(2) led = {pack(core.err), pack(core.done)};

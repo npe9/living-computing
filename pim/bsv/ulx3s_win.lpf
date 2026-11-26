@@ -57,3 +57,17 @@ LOCATE COMP "ftdi_rxd" SITE "L4";
 IOBUF PORT "ftdi_rxd" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 LOCATE COMP "ftdi_txd" SITE "M1";
 IOBUF PORT "ftdi_txd" PULLMODE=UP IO_TYPE=LVCMOS33;
+
+# H5 (2026-11-26): US2's FPGA pins for a PS/2 keyboard through the OTG and
+# USB-PS/2 adapters (prjtrellis ulx3s_v20.lpf lines 191-203, cited in the
+# plan §3.1: usb_fpga_bd_dp D15 / usb_fpga_bd_dn E15 bidirectional,
+# usb_fpga_pu_dp B12 / usb_fpga_pu_dn C12 the pull-up controls).  D+ is
+# taken as the PS/2 clock and D- as the data: INFERENCE, unchecked here.
+LOCATE COMP "usb_fpga_bd_dp" SITE "D15";
+LOCATE COMP "usb_fpga_bd_dn" SITE "E15";
+IOBUF PORT "usb_fpga_bd_dp" PULLMODE=UP IO_TYPE=LVCMOS33;
+IOBUF PORT "usb_fpga_bd_dn" PULLMODE=UP IO_TYPE=LVCMOS33;
+LOCATE COMP "usb_fpga_pu_dp" SITE "B12";
+LOCATE COMP "usb_fpga_pu_dn" SITE "C12";
+IOBUF PORT "usb_fpga_pu_dp" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "usb_fpga_pu_dn" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;

@@ -606,6 +606,81 @@ It is not in the suite, and it **does not touch a board**.
 pipe, or the board through the UART). After each event step the two frames are compared by PBM
 hash. This is the M5-M8 tests run against the RTL.
 
+
+### 4.1 The screen, keyboard and mouse emulated in Bluesim (H7s, 2026-11-26)
+
+On 2026-11-26 the owner asked: "Figure out how to do emulate the mouse, keyboard and screen in
+bluesim." The same day: "It's okay to make an emulator to go with this so we can test look and
+feel". Both are built, and every piece is OURS.
+
+**The bench.** `../../bsv/WinLiveTb.bsv` runs `mkWinBoardCore`, the composition the board top
+synthesizes: the box, the scan-out, the host link and the input box. It runs in its system and
+pixel clock domains. `../../bsv/WinHostDev.bsv` and `WinHostDev.c` sit on its pins:
+- **The screen** is a virtual monitor on the scan-out's composed pixel: DE, the two sync levels and
+  the 8-bit level, taken before the TMDS encoders through a new `video` tap. The tap is unused in
+  the board top, so synthesis drops it. The monitor locks on hsync and vsync, and checks every
+  line's and every frame's timing against **its own** mode table: a line made from
+  `psi/winscan.py` MODES by `tools/win_kl0_host.py mode`, never the RTL's `winMode`. It checks:
+  - the line length, the hsync width and where the active part starts;
+  - where vsync's edges fall;
+  - the vsync, active and total lines, and the first active line;
+  - the border's level.
+  It then takes the window's dots as a frame. The TMDS lanes are not decoded here: that is
+  `WinUlx3sTb`'s and `WinScanOutTb`'s job.
+- **The keyboard and mouse** are two PS/2 device models (`mkWinPs2Dev`) driving the input box's
+  clock and data pins with the real 11-bit, device-clocked waveform.
+  - Host keys are USB HID usages, turned into set 2 make and break bytes (E0, F0, Pause's E1) by
+    `WinHostDev.c`'s HOST table. That table is checked against `tools/wininput.py`'s by
+    `wininput.py hostcheck` on the file's `-DWHD_DUMP` build. It is kept apart from §3.1's
+    table, which is the board's (`WinKeyTable.bsv`).
+  - Mouse motion and buttons become standard 3-byte packets.
+- **The host end of the link** is a UART pair on the board's lines. Up records are parsed there,
+  and the answers are counted for the link's flow control (8 unanswered at most). The input box's
+  records come up as TYPE 3 (`tools/winlink.py`'s header) and go to the kl0 host.
+- **The kl0 host** is `../../tools/win_kl0_host.py`, a child process. It turns raw records into
+  the coordinator stand-in's events. That adapter is OURS: double clicks within 400 ms, moves held
+  until a click carries the position, named keys to their control codes. Double-click
+  classification belongs to the handler process, so it is an **open item for `psi/`**. The host
+  then runs kl0 and sends the device log down. It has two routes:
+  - `--tape`: `fep_bridge`'s replay. The recovered script must equal the tape's.
+  - `--probe`: step 3m's B3M probes. kl0 is rerun from the boot at every pause, and only the new
+    part of the log is sent; that the new log extends the old is checked at run time.
+
+**Two back ends**, chosen by environment variable:
+- **Scripted, for the suite.** `tools/wininput.py expand` makes a host script from a high-level
+  one. Frames come out as PBM, and no display is needed.
+- **Interactive.** `WinHostDev.c` is a client of `../../tools/winview`, a standalone SDL2 viewer
+  on a Unix socket. Its protocol is `winview_protocol.md`, and `tools/winview_client.py` is a
+  stdlib client of it. Because the viewer is its own program, the software window stack can
+  drive it later. That hookup is a later agent's, and `psi/` is not touched.
+  The interactive path's code is the scripted path's, minus the socket.
+
+**Speed, MEASURED 2026-11-26** (`run_win_live.sh speed`, this Mac): mode 0 (1080p30 letterbox)
+runs at 0.94 frames/s (2.33 M pixel clocks/s, with the system domain); mode 3 (640×480, the 2:1
+view) at 4.76 frames/s (2.00 M/s). So `run_win_live.sh live` defaults to mode 3, at scale 2. The
+viewer's mouse coordinates are doubled into the frame. Mode 0 is available as `live 0`, at about
+one frame a second.
+
+**The runner** is `../../bsv/run_win_live.sh`, called by `run_win_tb.sh`. Its scripted cases:
+- `console` (H7s): the `console_pwd.json` tape's user typed at the PS/2 wire. The coordinator
+  script recovered from the input box's records equals the tape's, in both batches, and the PSI
+  side replays the tape to its end. The monitor's frame, drawn through the link, the box and the
+  scan-out, has `CONSOLE_PIN`'s sha256, imported at run time. There are 0 timing, link and input
+  errors.
+- `password`: the menu by the mouse, then `local`, `pimos` and an unended password on the probe
+  route. The monitor's frame equals the software frame of the same run.
+- `viewer`: the interactive path, headless. The viewer runs under `SDL_VIDEODRIVER=dummy` with
+  pushed SDL events. The kl0 host recovers exactly those events (JIS `a`, a left click at
+  (10, 20)), and the viewer's last frame equals the software frame after them.
+
+11 injections are in the runner's header, each observed caught (V1-V11). Three passed at
+first, and each led to a check being added: vsync a line late (the monitor's first-active-line
+check), make and break swapped (the independent `expect` model and a shifted password), and the
+viewer's mouse Y unnegated (the viewer case's event check).
+
+The owner's interactive run is `bsv/run_win_live.sh live` (the real-monitor check stays deferred
+with H7).
+
 ---
 
 ## 5. FPGA
@@ -967,6 +1042,15 @@ answers port A two cycles after a put, and the box waited a cycle on every frame
   - Host-to-device sending is not built, so a real mouse, which streams only after F4, is
     exercised in Bluesim only.
   - US2 is one port (R3), so the board top takes the keyboard there.
+
+**H7s built in Bluesim (2026-11-26), the stand-in for H7.** The Login PIMOS screen comes from kl0 on
+the host. The keys and mouse are typed at the PS/2 wire into H5's receivers, and the picture is
+taken by the virtual monitor (§4.1).
+- The board's composition is now one BDPI-free module, `mkWinBoardCore` in `WinUlx3s.bsv`.
+  `mkWinUlx3s` and `WinLiveTb` both instantiate it, so what is simulated is what is synthesized.
+- The board top takes the PS/2 keyboard on US2. `usb_fpga_bd_dp` is the clock and
+  `usb_fpga_bd_dn` the data, which is INFERENCE; the pull-ups are on. LED 4 shows the clock.
+- The real-monitor check stays deferred with H7.
 
 Not yet, and last by the owner's decision of 2026-11-26: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
 report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback

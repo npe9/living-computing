@@ -16,10 +16,14 @@
 #      with --timing-allow-fail only so that every figure is reported):
 #        - each clock's Fmax PASSes its constraint (the 25 MHz system
 #          clock, the 74 MHz pixel clock, the 370 MHz shift clock);
-#        - DP16KD = WIN_DP16KD (default 156, yosys's mapping MEASURED
+#        - DP16KD = WIN_DP16KD (default 157, yosys's mapping MEASURED
 #          2026-11-25: the frame's 80 banks of 1,024 x 16, the save areas'
 #          65,536 x 16, the font's 4,096 x 16, the index's 8,869 x 8, the
-#          self-test's 512 x 104 stream and 160 x 32 configuration), so a
+#          self-test's 512 x 104 stream and 160 x 32 configuration: 156;
+#          since H5 (2026-11-26) one more, the 157th, for the §3.1 key
+#          table, WinKeyTable.bsv's case, which proc_rom turns into a ROM
+#          with its registered address merged in: yosys.log "mapping
+#          memory ...proc_rom...do_switch... via $__ECP5_DP16KD_"), so a
 #          frame that is no longer banked by hand, or a RAM mapped to
 #          logic, fails;
 #        - THE SERIALIZER'S LOAD PHASE: nextpnr 0.6 times each PLL output
@@ -53,7 +57,7 @@ cd "$(dirname "$0")"
 BUILD=${WINFPGA_BUILD:-build-winfpga}
 SEEDS=${SEEDS:-"1 2 3"}
 XDOM_NS=${WIN_XDOM_NS:-2.70}
-WANT_DP16KD=${WIN_DP16KD:-156}
+WANT_DP16KD=${WIN_DP16KD:-157}
 die() { echo "run_win_fpga: $*" >&2; exit 1; }
 
 BSC=${BSC_BIN:-}

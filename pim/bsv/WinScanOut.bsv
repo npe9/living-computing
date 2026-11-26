@@ -468,6 +468,10 @@ interface WinScanOut;
    method Action cursorPlace(Bool on, Bit#(12) x, Bit#(11) y, Bit#(3) s);
    method WinTmdsOut out;
    method Bool tog;                      // flips every pixel clock (the serializer's phase)
+   // the composed pixel the encoders take (H7s, the virtual monitor's
+   // tap, bsv/WinHostDev.bsv): DE, the sync LEVELS {vsync, hsync}, the
+   // 8-bit level (00 a set dot, ff a clear one, 20 the border)
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video;
 endinterface
 
 typedef struct {
@@ -580,6 +584,10 @@ module mkWinScanOut#(WinFbScan fb)(WinScanOut);
       return WinTmdsOut { start: outStart, sym: map(symOf, enc) };
    endmethod
    method Bool tog = togR;
+   method Tuple3#(Bool, Bit#(2), Bit#(8)) video;
+      match {.pde, .pc0, .plev, .pfs} = px;
+      return tuple3(pde, pc0, plev);
+   endmethod
 endmodule
 
 endpackage

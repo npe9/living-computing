@@ -1002,6 +1002,27 @@ device models and compares every record with `../tools/wininput.py`'s
 model. It covers the keys, the mouse, line faults, and one case at the
 board's bit time. Its header lists 11 injections and what each failed.
 
+**The screen, keyboard and mouse emulated (H7s, Bluesim).** `WinLiveTb.bsv`
+runs `mkWinBoardCore` (`WinUlx3s.bsv`: the box, the scan-out, the link and the
+input box; the board top's own composition) with `WinHostDev.bsv`/`.c` on
+its pins:
+- a virtual monitor on the scan-out's composed pixel, which checks the timing
+  against `../psi/winscan.py`'s modes and takes the frame;
+- two PS/2 device models on the input box's pins;
+- the host UART on the link;
+- `../tools/win_kl0_host.py` (kl0) as the host.
+
+`run_win_live.sh` (from `run_win_tb.sh`) has three scripted cases:
+- `console`: the `console_pwd.json` tape's user typed at the wire; the frame is
+  `CONSOLE_PIN`;
+- `password`: the probe route;
+- `viewer`: the SDL viewer, headless.
+
+`run_win_live.sh live` is the owner's interactive run on `../tools/winview`
+(SDL2; protocol `../docs/simpos/winview_protocol.md`). Mode 3 (640×480) is
+the default, at 4.76 frames/s against mode 0's 0.94 (MEASURED).
+`run_win_live.sh speed` measures both.
+
 LEDs: 7 the PLL lock, 0 the self-test done, 1 a self-test error (a
 command status not OK), 2 toggles every 16 frames of the pixel domain
 (a period of about 1.07 s at 29.9 Hz), 3 the link's line in is low.
