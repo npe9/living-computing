@@ -48,10 +48,17 @@ the practices learned in pim sessions.
 ## Sources and the public repo
 - The repo is PUBLIC. You may download and read third-party documents and
   keep them on disk (owner, 2026-11-25: "It's okay to read and save so
-  long as you don't commit and upload"). Never commit or upload them.
-  The pattern is a gitignored file with a manifest and checksums in git
-  (`pim/docs/nonlocal/LIT_MANIFEST.md`). ICOT TR/TM and ICOT Free Software
-  may be committed, with the NO WARRANTY text kept attached.
+  long as you don't commit and upload").
+- Documents whose source grants redistribution rights may be committed
+  and pushed (owner, 2026-11-25: "It's okay to commit and upload documents
+  which have redistribution rights"). Record the source and the terms
+  that grant the right (URL, licence text or the archive's stated terms)
+  next to the file or in the manifest, and keep any required notice
+  attached. For example, ICOT TR/TM and ICOT Free Software go in with
+  the NO WARRANTY text.
+- With no stated redistribution terms, a document stays out of git. It is
+  kept as a gitignored file with a manifest and checksums in git
+  (`pim/docs/nonlocal/LIT_MANIFEST.md`). If you are unsure, it stays out.
 - Downloads are untrusted. Put each in a new empty dir, never execute it,
   and read it with `python3 -I`.
 - Never put the owner's name, email, project or repo name into requests to
