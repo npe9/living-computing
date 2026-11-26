@@ -362,6 +362,73 @@ end.''')
         self.assertEqual(K.resolve(r[1]), 1)
 
 
+class RegisterCache(unittest.TestCase):
+    """espc's register cache after a register is overwritten (2026-11-25).
+    A free register may still be recorded as holding a cached copy of a
+    permanent variable; a write into it that did not replace the record
+    left the cache naming the register, and a later read of the variable
+    took the new contents.  Two writers did that: slotset's put of the
+    slot name (found by window M5: window_pane create/7, `add on w`), and
+    a built-in's output register when the output is a constant (the
+    register is read, not bound, so the stale record was restored).  The
+    fix drops the record in Regs.lowest(), where every such register is
+    handed out.
+
+    In each clause below Z (A2) and the receiver O (A3) are permanent:
+    they live across ok/1.  ok3/3 is the next call, so A0-A2 are its
+    pending arguments and an arithmetic result goes to A3 or above.
+
+    Injections (2026-11-25, observed; each from a copy of espc.py,
+    restored by copy, cmp clean):
+    - the whole fix reverted (full test_espc.py and test_kl0.py runs):
+      test_slot_name_put ([3, 106, b]: `O!c := Z` stored the atom b, the
+      slot name of `O!b := X + 6`, put in the register that cached Z) and
+      test_builtin_output_to_constant ([0, 0, 5]: the element read into
+      W's register, where W is 3) FAIL, nothing else; test_kl0 OK.  (On
+      the same compiler `O!c := Z + 1` refused `add on b`, by a scratch
+      run; the test stops at name1.)
+    - only the eviction in Regs.lowest() removed, slotset's own record of
+      the name kept: only test_builtin_output_to_constant FAILS.
+      Slotset's record is then redundant with the eviction (removing it
+      alone fails nothing); it is kept so that the name's register is
+      recorded where it is written."""
+    T = '''class rc has
+instance
+attribute a := 0, b := 0, c := 0;
+:name1(O, X, Y, Z) :- ok(O), O!a := Z, O!b := X + 6, O!c := Z, ok3(O, X, Y);
+:name2(O, X, Y, Z) :- ok(O), O!a := Z, O!b := X + 6, O!c := Z + 1, ok3(O, X, Y);
+:elem(O, X, Y, Z) :- ok(O), W = Z, vector_element(Y, 0, 5), O!c := W, ok3(O, W, Y), ok(W);
+:get(O, A, B, C) :- A = O!a, B = O!b, C = O!c;
+local
+ok(_);
+ok3(_, _, _);
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        cls.t = compile_one(cls.T)
+        assert not cls.t.refusals, cls.t.refusals
+
+    def run_set(self, sel):
+        m = K.Machine(espc.library([self.t]))
+        cid = K.ClassRef('user##rc')
+        (o,) = [K.resolve(m.x[0]) for _ in m.solve_send(cid, 'new', [K.Var(), cid])]
+        m.reset()
+        n = sum(1 for _ in m.solve_send(o, sel, [100, K.Vec([5, 6]), 3, o]))
+        self.assertEqual(n, 1)
+        m.reset()
+        regs = [K.Var(), K.Var(), K.Var(), o]
+        (got,) = [[K.resolve(r) for r in regs[:3]] for _ in m.solve_send(o, 'get', regs)]
+        return got
+
+    def test_slot_name_put(self):
+        self.assertEqual(self.run_set('name1'), [3, 106, 3])
+        self.assertEqual(self.run_set('name2'), [3, 106, 4])
+
+    def test_builtin_output_to_constant(self):
+        self.assertEqual(self.run_set('elem'), [0, 0, 3])
+
+
 class Structure(unittest.TestCase):
     def test_counts(self):
         c = check()['counts']

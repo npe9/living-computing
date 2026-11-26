@@ -720,10 +720,26 @@ class Regs:
         return not self.live(r)
 
     def lowest(self, avoid=()):
+        """The lowest free register not in AVOID, for the caller to WRITE.
+        A free register may still be recorded as holding a cached Y copy
+        (or a temporary with no uses left): that record is dropped here,
+        since the register is about to be overwritten.  Before this
+        (2026-11-25) a caller that wrote the register without recording
+        what it put there left `where` pointing at it, and a later read
+        of the variable took the new contents: slotset's slot-name put
+        (window_pane create/7, `add on w`) and a built-in's output bound
+        to a constant (vector_element(V, 0, 5) gave W the element)."""
         r = 0
         while not self.free(r) or r in avoid:
             r += 1
+        self.evict(r)
         return r
+
+    def evict(self, r):
+        """R is about to be overwritten: forget a cached copy it holds."""
+        h = self.holder.get(r)
+        if h is not None and h[0] in ('perm', 'var') and not self.live(r):
+            self.set(r, None)
 
     def set(self, r, h):
         old = self.holder.get(r)
@@ -1353,9 +1369,11 @@ class ClauseCompiler:
             self.R.set(orr, ('val', 'o'))
             n = self.R.lowest()
             self.asm.atom('put', n, g.slot)
+            self.R.set(n, ('val', 'name'))
             self.R.set(vr, hv)
             self.R.set(orr, ho)
             self.asm.blt(0x2f, orr, n, vr)
+            self.R.drop(n)
             self.consume(g.value, vr)
             self.consume(g.obj, orr)
             return
@@ -1430,6 +1448,8 @@ class ClauseCompiler:
         if v[0] == 'var' and v[1] not in self.y and v[1] not in self.seen:
             t = self.targets.get(v[1])
             if t is not None and R.free(t):
+                # (bind_out records the fresh variable in T, replacing
+                # whatever cache entry T had)
                 return t
         return R.lowest(R.pending)
 
