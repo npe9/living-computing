@@ -346,10 +346,10 @@ attribute permission := out;
 :draw_filled_rectangle(W, _, _, _, _, _, Pattern, _) :- :graphics_refused(W, Pattern);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_string.
-:draw_string(W, X, Y, S) :- pane_of(W, P), :string_in(P, X, Y, S, 0, exclusive_or);
-:draw_string(W, X, Y, S, Op) :- op_name(Op), !, pane_of(W, P), :string_in(P, X, Y, S, 0, Op);
-:draw_string(W, X, Y, S, Font) :- pane_of(W, P), :string_in(P, X, Y, S, Font, exclusive_or);
-:draw_string(W, X, Y, S, Font, Op) :- pane_of(W, P), :string_in(P, X, Y, S, Font, Op);
+:draw_string(W, X, Y, S) :- pane_of(W, P), :draw_string_in(P, X, Y, S, 0, exclusive_or);
+:draw_string(W, X, Y, S, Op) :- op_name(Op), !, pane_of(W, P), :draw_string_in(P, X, Y, S, 0, Op);
+:draw_string(W, X, Y, S, Font) :- pane_of(W, P), :draw_string_in(P, X, Y, S, Font, exclusive_or);
+:draw_string(W, X, Y, S, Font, Op) :- pane_of(W, P), :draw_string_in(P, X, Y, S, Font, Op);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): transfer.
 :transfer(W, SX, SY, DX, DY, Wd, Ht, Op) :-
@@ -372,7 +372,7 @@ attribute permission := out;
 % reached on the 1-plane screen, bitmap.esp); save_image/6 is, below.
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): restore_image.
-:restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :image_in(P, S, X, Y, Wd, Ht);
+:restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :restore_image_in(P, S, X, Y, Wd, Ht);
 % INTERPOLATED (selector: window.md section 2.2, cited above; body OURS):
 % get_label_height.
 :get_label_height(W, H) :- pane_of(W, P), value(P!ch + 2, H);
@@ -384,18 +384,22 @@ attribute permission := out;
 % get_plane_count is 1 here, bitmap.esp), restore_image/6's layout;
 % get_point_value/4 `(W, X, Y, ^Value)` and set_point_value/4 `(W, X, Y,
 % Value)` (PRINTED-INTERFACE TM-125 p17: "the value (0/1) of the pixel";
-% set as a 1 x 1 fill, set for 1 and reset for 0, OURS; another value
-% refuses loudly).
+% the value is the saved images' sense, 1 = white, INFERENCE 2026-11-26,
+% window_pane.esp read_in/6; so set as a 1 x 1 fill, reset for 1 and set
+% for 0, OURS; another value refuses loudly).  save_image/6 and
+% restore_image/6 take (X, Y) from the pane's image origin
+% (window_pane.esp save_image_in/6: MEASURED (3, 8) above-left of the
+% inside of a window never shown).
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited
 % above; body OURS): save_image.
-:save_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :read_in(P, S, X, Y, Wd, Ht);
+:save_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :save_image_in(P, S, X, Y, Wd, Ht);
 % INTERPOLATED (selector and arguments: TM-125 p17, cited above; body
 % OURS): get_point_value.
 :get_point_value(W, X, Y, V) :- pane_of(W, P), :point_in(P, X, Y, V);
 % INTERPOLATED (selector and arguments: TM-125 p17, cited above; body
 % OURS): set_point_value.
-:set_point_value(W, X, Y, 1) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, set);
-:set_point_value(W, X, Y, 0) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, reset);
+:set_point_value(W, X, Y, 1) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, reset);
+:set_point_value(W, X, Y, 0) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, set);
 :set_point_value(W, _, _, _) :- :graphics_refused(W, point_value);
 % Window M8's rest (2026-11-26), SHAPES (window.md §2.5): draw_circle/7
 % `(W, CX, CY, R, Width, Style, Op)` (PRINTED WINCS p3), draw_ellipse/8
