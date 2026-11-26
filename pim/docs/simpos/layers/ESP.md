@@ -324,7 +324,9 @@ expression in a head becomes a fresh variable, unified after the last body goal.
 
   No predicate that matched exactly before stopped matching.
 - **Still refused.** `X * Y`, `X / Y` on two registers, `divide_with_remainder/4`,
-  `set_substring/4` and `->` have no row and are refused.
+  `set_substring/4` and `->` have no row and are refused. (Later: `X * Y` is blt 42
+  `multiply` since the step 3m row and is emitted since 2026-11-25, `../../../psi/README.md`
+  "espc's register cache after an overwrite".)
 - **Number conversion.** The stand-in symbolizer's `get_number/3` and
   `get_number_string/3` (INTERPOLATED) are written on the immediate forms with a register-held
   `#"0"`.
