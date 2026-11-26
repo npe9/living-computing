@@ -619,6 +619,44 @@ typed there, are `Shell>> `, ` The value of task: directory is
 (`ref/pimm/lockstep_shell.py` `APPS['pwd']`). The directory in that
 answer is the one the held `simpos_user_device` gave PIMOS.
 
+### 4.7 The window drawn (window milestones M0, M3, M5; 2026-11-25)
+
+The same run now draws. The basis, the injections and the census are in
+`../../psi/README.md`, "Window M0, M3, M5"; the plan is
+`window_environment_plan.md` §5.
+
+- **The font is read** (M0). `font:test_11.font`, which the held
+  requester names (`initiate/1` @b9), is the HELD file from psdpim's
+  FONT.DIR, placed under `font:` (directory and alias OURS) and decoded
+  by the display device.
+- **The window is drawn** (M3's core, M5). `standard_io_window`'s
+  methods hand the drawing to a pane (`standin/window_pane.esp`, OURS),
+  which sends device primitives (`simpos##bitmap_display`,
+  `../../psi/windev.py`, OURS) that run as winfb commands. The held
+  requester's own sends draw everything: its `create/3` size option
+  makes a 40×7-cell window, `set_title/2` puts `Pimos remote login N` in
+  the label strip, `putl/2` writes the prompts and the replies, the
+  echo writes the typed name, and the password draws nothing.
+- **The screen at the password prompt**, read back from the frame
+  (`test_win_m5_login_screen`; `screens/login_pimos_password.png`):
+
+  ```
+  +- Pimos remote login 3 -------------------+
+  | Enter FEP node name--------->            |
+  | local                                    |
+  | Enter your PIMOS user name-->            |
+  | pimos                                    |
+  | Enter your PIMOS password--->            |
+  | #   (the block cursor; "sec" typed)      |
+  +------------------------------------------+
+  ```
+
+  After the local login the requester's `clear/1` (@12c) empties it and
+  the four replies follow. On step 3n's bridged run (PIMOS replayed
+  from its tape, §4.6 and §6.5) they are PIMOS's own
+  `login.kl1` texts, and the window is pinned by
+  `test_win_m5_bridged_screen` (`screens/login_pimos_bridged.png`).
+
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local

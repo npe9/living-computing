@@ -2998,6 +2998,10 @@ SIMPOS_MODELS = {
     ('simpos##standard_input_file', 'instance', 'gett', 2): Machine.input_gett,
     ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
 }
+# window M0/M3/M5 (OURS): the display device's simpos##bitmap_display
+# selectors (psi/windev.py; the window stand-ins draw through them)
+import windev  # noqa: E402
+windev.install(SIMPOS_MODELS, sys.modules[__name__])
 
 
 # -- census recipes (step 3f) ----------------------------------------------

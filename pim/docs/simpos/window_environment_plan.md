@@ -479,8 +479,38 @@ Sizes are rough, counted in lines of ESP stand-in plus Python, and include the t
 
 **Status (2026-11-25):** M5's device layer exists as `../../psi/winfb.py` (framebuffer, the §4.1
 primitives as a frozen command stream, PBM P4, test_11 glyphs; tests `../../psi/test_winfb.py`),
-written first for the hardware plan's H0. It is not yet reached from `SIMPOS_MODELS`; M5's PNG
-writer, borders and status band are still to do.
+written first for the hardware plan's H0.
+
+**Status (2026-11-25, later): M0 done; M3's core and M5's window drawing done for the Login PIMOS
+window, from a live run** (`../../psi/README.md` "Window M0, M3, M5"; tests `test_espc.py` class
+`Window`):
+- **M0.** `../../psi/simpos_fs.py` places FONT.DIR's seven files in `>sys>font` with a system
+  alias `font` (the INSTALL line is HELD; the directory and alias are OURS). `font:create/3`
+  retrieves the file and the device decodes it. test_11's cell is 11×14 (its space character);
+  a missing file and a non-font file (`csp.icon`) fail `create/3`; test_11's 'A' is 48 dots.
+- **Where the window manager lives: ESP**, as §4.1 recommends and as the PSI/UX did. The new
+  stand-in `window_pane.esp` (OURS class) decides every rectangle, glyph position, scroll and
+  cursor, and sends only primitives. `../../psi/windev.py` (OURS) answers them as
+  `simpos##bitmap_display` `fill/6`, `glyph/6`, `copy/8`, `line/7`, `load_font/5`,
+  `default_font/4` and `get_size/3`, through the `SIMPOS_MODELS` hook. Each is one command of the
+  frozen winfb set on one frame per machine, and the device logs them, so **a live run's drawing
+  is a winfb command stream** that replays to the same frame (and so can drive
+  `bsv/WinFbBox.bsv`'s bench or, later, the UART of the hardware plan). Python stays below the
+  primitive line: it manages no window.
+- **M3's core.** `standard_io_window` draws: activate/show (border, label strip, rule), set_title
+  (the label), clear, putl (wrap, scroll, key#lf), the echo of typed codes (none for the
+  password), the block cursor of the selected window, kill. `pmacs_window`'s text protocol and
+  `get_interpreter/2`, `has_been_reshaped/1` are not on the live route (they need the PIMOS
+  console, M4).
+- **M5's window part.** The Login PIMOS window, 40×7 cells of test_11, titled `Pimos remote
+  login N` by the held requester, is pinned at three stages of the live run (after the node
+  name; at the password, typed and not echoed; after the local login's replies), each by its
+  text read back from the frame by glyph matching, the frame's PBM sha256 and dot count. PNGs at
+  1,280×1,024 (`windev.png_bytes`, stdlib zlib) are written by `../../psi/winshot.py`; two are
+  in `screens/`, the second from step 3n's bridged run (PIMOS's own replies, replayed from its
+  tape; `test_win_m5_bridged_screen`). The status band is not drawn yet.
+
+The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like
 SIMPOS, about 1,100. M8-M10 serve the IFS applications.

@@ -22,9 +22,13 @@ Labels of each part:
     `"me" := [ "user:pmpsi" ]`, and `user:` is `>sys>user` (INFERENCE from
     TM-143 p3 and every held home directory `>sys>user>NAME`,
     docs/simpos/subsystems/shell.md §4.1);
-  - `font:`: not placed.  Its directory is not named by any held line
-    (OURS: the seven FONT.DIR files are left out; nothing on the route
-    reads a font file);
+  - `font:` (window M0, 2026-11-25): the seven FONT.DIR files are placed
+    in `>sys>font` (OURS: the INSTALL line above names only the logical
+    name `font:`, and no held line says which directory it stands for)
+    and `font` := [">sys>font"] is a system alias every world sees (OURS,
+    beside `user`, in `mount`).  Their bytes are kept (`raw_of`), for the
+    display device's font_load (psi/windev.py); they are binary, so no
+    16-bit text `contents` is made for them;
   - the directories `>sys>csp>MPSI.DIR` and `>sys>csp>PIMOS.DIR` named by
     login.com's `define` are made empty (OURS: login.com names them; no
     held line says what they hold, and nothing on the route reads them);
@@ -49,6 +53,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TAR = os.path.join(HERE, '..', 'docs', 'nonlocal', 'psdpim.tar.Z')
 
 ME = '>sys>user>pmpsi'          # INFERENCE (module docstring)
+FONT = '>sys>font'              # OURS (module docstring)
 # HELD placement (psdpim/INSTALL): archive directory -> (target, selector)
 PLACEMENT = [
     ('PMPSI.DIR/pimm.MEkbn', '>sys>csp>PMPSI.DIR'),
@@ -56,6 +61,7 @@ PLACEMENT = [
     ('INSTALL.DIR/login.com', ME),
     ('SYSTEM.DIR/PIMM.*', '>sys>csp>SYSTEM.DIR'),
     ('SYSTEM.DIR/*.init', ME),
+    ('FONT.DIR/*', FONT),        # target OURS (docstring); the line HELD
 ]
 EMPTY_DIRS = ['>sys>csp>MPSI.DIR', '>sys>csp>PIMOS.DIR']    # OURS
 TEXT = ('login.com', 'boot.init', 'usercom.init')           # contents kept
@@ -76,6 +82,8 @@ def _match(pat, name):
     nd, nf = name.rsplit('/', 1) if '/' in name else ('', name)
     if d != nd:
         return False
+    if f == '*':
+        return True
     if f.startswith('*'):
         return nf.endswith(f[1:])
     if f.endswith('*'):
@@ -90,6 +98,7 @@ def codes_of(raw):
 
 
 _POP = None
+_RAW = {}
 
 
 def population():
@@ -103,8 +112,17 @@ def population():
                     base = name.rsplit('/', 1)[1]
                     raw = mem[name]
                     out.append((target + '>' + base, len(raw), codes_of(raw) if base in TEXT else None))
+                    if target == FONT:
+                        _RAW[target + '>' + base] = raw
         _POP = out
     return _POP
+
+
+def raw_of(path):
+    """The bytes of the placed binary file PATH (no version), or None:
+    only the `font:` files are kept (window M0)."""
+    population()
+    return _RAW.get(path)
 
 
 def text_of(codes):
@@ -159,7 +177,8 @@ def mount(m):
     # comment: name INFERENCE, password and rank OURS)
     if 'simpos##world' in m.lib.templates:
         m.set_slot(K.ClassRef('simpos##world'), 'system',
-                   K.Cons(K.Cons(K.Str('user'), K.Cons(K.Str('>sys>user'), K.NIL)), K.NIL))
+                   K.Cons(K.Cons(K.Str('user'), K.Cons(K.Str('>sys>user'), K.NIL)),
+                          K.Cons(K.Cons(K.Str('font'), K.Cons(K.Str(FONT), K.NIL)), K.NIL)))
     if 'simpos##user' in m.lib.templates:
         m.reset()
         U = K.ClassRef('simpos##user')

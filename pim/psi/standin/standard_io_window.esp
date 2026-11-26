@@ -59,6 +59,33 @@
 %     put, an integer a code echoed, the atom `beep` a beep, newest first
 %     (plain terms: kl0 copies the cells of a stored list, not of a
 %     vector, so a vector's bindings would be lost on backtracking).
+%
+% Window M3/M5 (2026-11-25): THE WINDOW IS DRAWN.  Beside the transcript
+% and history (kept: the step 3l/3m tests read them), the window owns a
+% `pane` (window_pane.esp, OURS), its part of the screen, made when the
+% window is first activated or shown; the pane draws on the display
+% device through simpos##bitmap_display (psi/windev.py).  What each
+% method draws, all OURS bodies under held selectors:
+%   - activate/1, show/1: the window appears (border, label strip, rule)
+%     at its size option in cells of its font, {size,{ch,C},{ch,R}} (the
+%     held option, @af-b4), placed by its position option; the held
+%     {position, manipulator} (the user sweeps the place, window.md
+%     §4.5; no mouse is modelled) centres it (OURS).  No size option:
+%     40 x 10 cells (OURS).  With no set_font/2 yet, the device's
+%     substitute for the default font_13 (OURS, psi/windev.py).  The
+%     label is drawn in the window's font (the held requester gives the
+%     same font to set_font/2 and set_label_font/2, @c2-c6; OURS
+%     otherwise);
+%   - show/1 also selects: the previously selected window's cursor goes,
+%     this window's block cursor appears (TM-126 p7, PROSE);
+%   - set_title/2: the title in the label strip;
+%   - putl/2: the line at the cursor, then a newline (window_pane.esp
+%     for wrap, scroll, key#lf);
+%   - an echoed code: drawn at the cursor; RETURN (13) as a newline
+%     (INFERENCE: getl/2's line ends there); the password, read with echo
+%     inhibited, draws nothing;
+%   - clear/1: the inside cleared, the cursor home;
+%   - kill/1: the window's rectangle cleared (OURS).
 
 class standard_io_window has
 
@@ -77,7 +104,7 @@ instance
 attribute options := [], font := 0, label_font := 0, title := 0,
           active := 0, shown := 0, transcript := [], input := 0,
           pending := [], echo := on, history := [], beeps := 0,
-          killed := 0;
+          killed := 0, pane := 0;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
 :set_font(W, F) :- W!font := F;
@@ -86,25 +113,30 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 :set_label_font(W, F) :- W!label_font := F;
 
 % INTERPOLATED (body OURS) from initiate/1 @cc.
-:set_title(W, T) :- W!title := T;
+:set_title(W, T) :- W!title := T, drawn_title(W);
 
 % INTERPOLATED (body OURS) from initiate/1 @d7.
-:activate(W) :- W!active := 1;
+:activate(W) :- W!active := 1, open(W);
 
 % INTERPOLATED (body OURS) from read/4 @e8: clear empties the transcript.
-:clear(W) :- W!transcript := [];
+:clear(W) :- W!transcript := [], drawn(W, clear);
 
 % INTERPOLATED (body OURS) from read/4 @eb: show marks the window shown;
 % step 3m: it selects the window (window.md §4.1, TM-225 p10-11: showing
 % a window "changes the selected window"; that show/1 always does is
 % OURS).
-:show(W) :- W!shown := 1, #coordinator!selected := W;
+:show(W) :-
+        W!shown := 1, open(W),
+        deselect(#coordinator!selected, W),
+        #coordinator!selected := W,
+        drawn(W, select);
 
 % :putl(W, Line) -- INTERPOLATED (body OURS) from read/4 @ef: the line
 % joins the transcript (and, step 3m, the history).
 :putl(W, Line) :-
         W!transcript := [Line | W!transcript],
-        W!history := [Line | W!history];
+        W!history := [Line | W!history],
+        drawn_line(W, Line);
 
 % :read(W, Code) -- step 3m, INTERPOLATED (body OURS) from read/4 @f3
 % and read_password/3: the next character code (see above); with none,
@@ -139,7 +171,12 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 :clear_buffer(W) :- W!pending := [];
 
 % step 3m, INTERPOLATED (body OURS) from exit_program/1 @28e.
-:kill(W) :- W!killed := 1, W!active := 0;
+:kill(W) :- W!killed := 1, W!active := 0, drawn(W, erase);
+
+% :deselect_window(W) -- window M5, INTERPOLATED (selector and body OURS)
+% from TM-126 p7 (PROSE, window.md §4.1): another window was selected,
+% so this one's cursor goes.
+:deselect_window(W) :- drawn(W, deselect);
 
 local
 
@@ -156,8 +193,53 @@ pop([C | R], C, R);
 append([], L, L);
 append([X | R], L, [X | T]) :- append(R, L, T);
 
-echo(W, Code) :- W!echo == on, !, W!history := [Code | W!history];
+echo(W, Code) :- W!echo == on, !, W!history := [Code | W!history],
+        drawn_code(W, Code);
 echo(_, _);
+
+% window M3/M5 (OURS, see the head comment): the pane, made once
+open(W) :- W!pane \== 0, !;
+open(W) :-
+        size(W!options, Cols, Rows),
+        position(W!options, X, Y),
+        :create(#window_pane, X, Y, Cols, Rows, W!font, P),
+        W!pane := P,
+        drawn_title(W);
+
+size(Options, 40, 10) :- unbound(Options), !;
+size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
+size([_ | Os], C, R) :- !, size(Os, C, R);
+size(_, 40, 10);
+
+position(Options, manipulator, 0) :- unbound(Options), !;
+position([{position, X, Y} | _], X, Y) :- !;
+position([{position, manipulator} | _], manipulator, 0) :- !;
+position([_ | Os], X, Y) :- !, position(Os, X, Y);
+position(_, manipulator, 0);
+
+drawn_title(W) :- W!pane \== 0, W!title \== 0, !, :set_title(W!pane, W!title);
+drawn_title(_);
+
+drawn(W, What) :- W!pane \== 0, !, pane_do(What, W!pane);
+drawn(_, _);
+
+pane_do(clear, P) :- :clear(P);
+pane_do(select, P) :- :select(P);
+pane_do(erase, P) :- :erase(P);
+pane_do(deselect, P) :- :deselect(P);
+
+drawn_line(W, Line) :- W!pane \== 0, !, :put_string(W!pane, Line), :new_line(W!pane);
+drawn_line(_, _);
+
+drawn_code(W, 13) :- W!pane \== 0, !, :new_line(W!pane);
+drawn_code(W, C) :- W!pane \== 0, !, :put_code(W!pane, C);
+drawn_code(_, _);
+
+% the window selected before loses its cursor (OURS: a window of another
+% class, or none, is left alone)
+deselect(S, W) :- S == W, !;
+deselect(0, _) :- !;
+deselect(S, _) :- :deselect_window(S);
 
 line(W, Codes) :- next_code(W, C), rest(W, C, Codes);
 rest(_, 13, []) :- !;
