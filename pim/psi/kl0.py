@@ -2254,6 +2254,23 @@ class Machine:
         self.x[c] = x // y
         self.nxt(code, off)
 
+    def op_divide_with_remainder(self, code, off, a, b, c, v):
+        # window M8: blt 44 (paragraph bar_v.esp:333 `N mod 6 = 0`, @212
+        # `44 00 02 02` + `03000000`, then A3 got as 0).  The quotient goes
+        # to the third byte's register, the remainder to the register in
+        # the next cell's high byte (INFERENCE from the witness); integers
+        # only, a negative or zero operand refused as divide's
+        x, y = self._int(self.x[a], 'divide_with_remainder'), self._int(self.x[b], 'divide_with_remainder')
+        if x < 0 or y <= 0:
+            raise Refusal('operand', 'divide_with_remainder %d / %d: a negative or zero operand is unwitnessed'
+                          % (x, y))
+        ext = self.operand(code, off)
+        if ext[1] != 0x00 or ext[3] & 0xffffff:
+            raise Refusal('code', '%s @%x: divide_with_remainder extension cell %r unwitnessed' % (code.id, off, ext))
+        self.x[c] = x // y
+        self.x[ext[3] >> 24] = x % y
+        self.nxt(code, off, 2)
+
     def op_add_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
         self.x[c] = self._int(self.x[a], 'add') + b

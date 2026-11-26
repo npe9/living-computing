@@ -24,6 +24,10 @@ argument order here is OURS, as the plan §4.1 says it would be):
   :glyph(#bitmap_display, Font, Code, X, Y, Op)     winfb `glyph`
   :copy(#bitmap_display, SX, SY, W, H, DX, DY, Op)  winfb `copy`
   :line(#bitmap_display, X1, Y1, X2, Y2, Wd, Op)    winfb `line`, solid
+  :line(#bitmap_display, X1, Y1, X2, Y2, Wd, St, Op) winfb `line`, style St
+                                                    (window M8's rest: the
+                                                    same frozen command,
+                                                    its style operand used)
   :save(#bitmap_display, Id, X, Y, W, H, Base)      winfb `save` (window M7)
   :restore(#bitmap_display, Id, Op)                 winfb `restore` (M7)
   :load_font(#bitmap_display, File, ^Id, ^W, ^H)    the plan's font_load
@@ -178,6 +182,14 @@ def install(models, K):
         check(device(m).run(winfb.LINE, op_of(m, 5, 'line/7'), a + [0xffff]), 'line/7')
         return m.proceed()
 
+    def styled(m):
+        # window M8's rest: the frozen line with its style operand (winfb
+        # `line`'s F, a 16-bit dash pattern; bsv/WinFbBox.bsv's lStyle):
+        # the stand-ins draw fill patterns and images as styled lines
+        a = ints(m, 6, 'line/8')
+        check(device(m).run(winfb.LINE, op_of(m, 6, 'line/8'), a), 'line/8')
+        return m.proceed()
+
     def save(m):
         a = ints(m, 6, 'save/7')
         check(device(m).run(winfb.SAVE, 0, a), 'save/7')
@@ -223,6 +235,7 @@ def install(models, K):
         (D, 'class', 'glyph', 6): glyph,
         (D, 'class', 'copy', 8): copy,
         (D, 'class', 'line', 7): line,
+        (D, 'class', 'line', 8): styled,
         (D, 'class', 'save', 7): save,
         (D, 'class', 'restore', 3): restore,
         (D, 'class', 'load_font', 5): load_font,

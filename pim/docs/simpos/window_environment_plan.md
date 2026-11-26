@@ -607,8 +607,8 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - **A pop-up over a writing window**: the pop-up is lifted first and laid back last, so the output
   goes into its save area. A sweep's outline is taken off around the write.
 - **The manipulator's items**, in TM-125 p8's order: EXPAND (OURS order of the edges), MENU (the
-  windows by title, OURS), PERMISSION, EXIT are added. Not offered: ATTRIBUTE (a choice window, M9),
-  HARDCOPY (no printer), SUPERIOR/INFERIOR (no window hierarchy).
+  windows by title, OURS), PERMISSION, EXIT are added. Not offered: ATTRIBUTE (a choice window, M9;
+  added since, see the M9 status), HARDCOPY (no printer), SUPERIOR/INFERIOR (no window hierarchy).
 - A writer held back is woken when its permission becomes `out` or `show`; a killed window's
   waiters are dropped (OURS) (`test_win_m7_permission_change`).
 - **`has_been_selected/1`** is sent after a selection (the select notifier's callback; the
@@ -618,8 +618,8 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - Screens: `screens/manipulator_expand.png`, `manipulator_menu.png`, `notify_window.png`;
   `window_manipulator.png` re-rendered (eight items).
 
-**Status (2026-11-26, window M8, partial: lines, rectangles, strings, transfers, markers; shapes,
-patterns and images open)** (`../../psi/README.md` "Window M8"; tests `test_win_m8_graphics`,
+**Status (2026-11-26, window M8, partial at merge 20efface: lines, rectangles, strings, transfers,
+markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m8_graphics`,
 `test_win_m8_forms`, `test_win_m8_markers`):
 - `draw_line/5-8`, `draw_rectangle/5,7,8`, `draw_filled_rectangle/6,8` (pattern `fix`),
   `draw_string/4-6`, `transfer/8`, `execute_graphics_command/2` and `get_mouse_position/3` are
@@ -635,6 +635,44 @@ patterns and images open)** (`../../psi/README.md` "Window M8"; tests `test_win_
   refuse), `copy/9`, `paint/5`, images, `get_marker_position/4` (UNSPECIFIED). Each refuses loudly
   or is not stood in.
 - Screen: `screens/window_graphics.png`.
+
+**Status (2026-11-26, window M8's rest: done but for `paint/5`, a STOP)** (`../../psi/README.md`
+"Window M8's rest"; tests `test_win_m8_patterns`, `test_win_m8_images`, `test_win_m8_shapes`,
+`test_win_m8_copy`, `test_win_m8_rest_screen`):
+- Fill patterns: the named ones (`light_paint` HELD-DERIVED from paragraph's saved images, the
+  others' looks OURS) and the held pattern strings (64 x 64 tiles, INFERENCE), so g_window's
+  bar views run. kl0 gained blt 44 `divide_with_remainder` for the held `set_pattern/2`.
+- Images: `restore_image/6`, `get_label_height/2`, a `bitmap` stand-in (`get_plane_count/2` = 1);
+  the held `type_switch_icon` `draw/6` runs through the held `restore/7`.
+- Shapes: circles, ellipses, arcs, elliptical arcs, fans, the filled forms with patterns,
+  graphs and polygons (TM-785 p40's vectors), their dots OURS and checked dot by dot.
+- `copy/9` between two shown windows, with screen copy, save and restore only. The held caller's
+  off-screen source (a 2000 x 2000 `hide_window`) and the scaled matrix form are refused.
+- **STOP: `paint/5`.** A seed fill needs the frame's dots, and no frozen primitive gives a dot's
+  value to the program, so it is refused loudly. `save_image/6` is not stood in for the same
+  reason.
+- Patterns and images are drawn as winfb's styled `line` (its style operand). No primitive was
+  added, so the hardware contract (§4.1) is unchanged.
+- Screen: `screens/window_graphics_rest.png`.
+
+**Status (2026-11-26, window M9: choice windows)** (`../../psi/README.md` "Window M9"; tests
+`test_win_m9_choice`, `test_win_m9_attribute`, `test_win_m9_choice_screen`):
+- A `standard_choice_window` stand-in serves the HELD pimfep superviser's error mode menu
+  (`create_error_mode_menu/1` on the .ptf, then `refute_sub_command/2`'s sends). Its fields are
+  label lines, text fields (shown, not edited: OURS), choose and boolean fields, with the current
+  value reversed (Fig. 4). It adds a do_it/abort row (INFERENCE). `read/2` gives
+  `[{Key, Value}]` or `abort`. The look is OURS.
+- The manipulator's ATTRIBUTE item opens a choice window with Fig. 4's PERMISSION field only
+  (OURS subset); do_it sets the permission.
+- The plan's injection (return the default for an edited field) at first failed nothing: the
+  test's one edit ended on the held default. The test now edits away from it.
+- Not done: the remaining menu kinds (W§2.9: `standard_temporary_menu`, the multiple-select and
+  multi-column menus), editing a text field, and the other choice-window classes
+  (`temporary_choice_window`, `..._with_no_execute`).
+- Screens: `screens/choice_window.png`, `screens/manipulator_attribute.png`.
+
+Also pinned (2026-11-26): the coordinator's own process is never held back (P13), by
+`test_win_m7_coordinator_writes`.
 
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 

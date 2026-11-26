@@ -4457,7 +4457,8 @@ SHOW, HIDE, RESHAPE, MOVE, EXPAND, MENU, PERMISSION, EXIT.
 
 Not offered, each for want of what it acts on:
 - ATTRIBUTE: TM-125 p7 Fig. 4's choice window, with typed values. Choice
-  windows are milestone M9.
+  windows are milestone M9 (offered since: "Window M9" below, with
+  PERMISSION only, and the manipulator has nine items).
 - HARDCOPY: no printer is modelled (window.md §2.2 `hardcopy/2
   (W,laser_printer)`, USAGE).
 - SUPERIOR and INFERIOR: they move the "editing base" along the window
@@ -4495,7 +4496,8 @@ own size, which gives back the same cells.
 | `test_win_m7_console_move` | (changed) RESHAPE of PIMOS's console to 351 x 251 dots gives 31 x 16 cells, its buffer wrapped at 31 columns |
 
 Pins moved, each accounted in the test's header:
-- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items);
+- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items;
+  167 with nine since window M9's ATTRIBUTE);
   its screen `window_manipulator.png`;
 - `test_win_m7_console_move`: RESHAPE's pane 523 x 219 -> 347 x 247;
 - the census pins (`test_fep_census`, `test_step3f_census_recipes`,
@@ -4575,18 +4577,14 @@ Clipping (OURS):
 Refused loudly (a send of `graphics_refused/2`, which no class has):
 - a slanted line leaving the inside;
 - a line style other than solid;
-- a fill pattern other than `fix` (`light_paint` and TM-785's patterns
-  have no printed look);
+- a fill pattern other than `fix` (until M8's rest: now an unknown
+  pattern only);
 - an unknown command in a batch;
 - drawing on a window not on the screen.
 
-**M8 is partial.** Not done, for want of a held caller on the route or a
-printed look: circles, arcs, ellipses, polygons, fill patterns other than
-`fix` (so g_window's bar views, whose `draw_filled_rectangle` carries a
-held pattern, refuse), `copy/9` between windows, `paint/5`, images
-(`restore_image`), and `get_marker_position/4`. The paragraph icons'
-`restore/7` reads image classes and colour tables, which is a step of
-its own.
+**M8 was partial at this merge** (20efface). Circles, arcs, ellipses,
+polygons, patterns, `copy/9`, `paint/5` and images followed in "Window
+M8's rest" below.
 
 **Test** `test_win_m8_graphics`. A 40 x 20 window is made at (100, 100)
 after the Login PIMOS run. Each drawing is compared with a frame built
@@ -4638,7 +4636,225 @@ by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run):
 | P10 | a changed permission does not wake the writer | permission change only |
 | P11 | a killed window's waiters kept | permission change only |
 | P12 | the `permission(P)` create option ignored | permission change only |
-| P13 | the coordinator's own process held back (bypass removed) | NOTHING: the bypass is unpinned, no run on the route reaches it |
+| P13 | the coordinator's own process held back (bypass removed) | NOTHING at this merge; since "Window M7's rest, pinned" below, `test_win_m7_coordinator_writes` only (ERROR) |
+
+### Window M8's rest: patterns, images, shapes, copy/9 (2026-11-26)
+
+M8 is done, except `paint/5` (a STOP, below), `save_image/6`, off-screen
+windows and `get_marker_position/4`. Only the frozen winfb primitives are
+used: patterns and images are drawn as winfb's styled `line` (its 16-bit
+style operand, MSB first), reached by a new kl0 model
+`simpos##bitmap_display` `line/8` (`windev.py`). No primitive was added,
+so the hardware contract is unchanged.
+
+**Fill patterns** (`draw_filled_rectangle/8`, the filled shapes):
+- the named patterns `light_paint`, `dotted`, `mesh`, `small_mesh`,
+  `left_hatch`, `right_hatch` (window.md §2.5), 4 rows of one word each
+  (`window_pane.esp` `named/3`). `light_paint` is HELD-DERIVED: the held
+  paragraph images were saved from a window filled `fix, set` and then
+  `light_paint, reset`, and `profiler_mono_selector_image` has 16#"7777"
+  on every even row and 16#"DDDD" on every odd one, so `light_paint` is
+  16#"8888" / 16#"2222" (measured in `test_win_m8_images`). Its phase,
+  and the other names' looks, are OURS;
+- a held pattern string (256 words, made by paragraph `bar_v.esp`
+  `set_pattern/2`, which writes each word four times) read as a 64 x 64
+  tile, 4 words a row (INFERENCE). The tile is anchored at the inside's
+  top-left (OURS). This needed kl0's **blt 44 `divide_with_remainder`**
+  (`kl0_opcodes.tsv`, KNOWN-PLAINTEXT: cil `cil_kl0.esp:119-120`; witness
+  `paragraph##bar_v` `set_pattern/2` @211-214). Its four census rows move
+  in `test_kl0.py` (each to the next refusal, accounted there).
+
+**Images**: `restore_image/6` draws a `double_bytes` string, ceil(W/16)
+words a row, MSB leftmost, opaque (the area reset, then the 1 dots set;
+OURS). `get_label_height/2` answers the label strip's height. A new
+stand-in class `bitmap` answers `get_plane_count/2` = 1, so the held
+image code takes its monochrome path. The held paragraph
+`type_switch_icon` `draw/6` runs from the .ptf: three held `draw_box`
+frames, then the icon through the held `restore/7` -> `adjust_pos` ->
+`restore_image/6`. The icon's place is the held `adjust_pos`'s (its Y is
+Y0 + the label height - 24), with OUR label height of 16
+(`get_label_height/2`, OURS: no source gives the strip's height).
+
+**Shapes**: `draw_circle/7` (PRINTED WINCS p3), `draw_ellipse/8`,
+`draw_arc/9`, `draw_elliptical_arc/10`, `draw_fan/9`,
+`draw_filled_circle/5` (USAGE gog) and `/7`, `draw_filled_ellipse/7`,
+`draw_filled_fan/9`, `draw_graph/2`, `/9`, `draw_polygon/2`, `/9`
+(TM-785 p40's vectors; the arity INFERENCE from their length), each also
+through `execute_graphics_command/2`. One printed vector is refused
+loudly: TM-785 p40's `draw_filled_ellipse` `{200, 0, 100, 1, dotted, set}`
+has six elements, the filled circle's layout with its `1`, so it reads
+either as an ellipse 1 dot high or as no ellipse (OURS: ambiguous). The dots are OURS
+(`window_pane.esp` `shape_in/9`): a disc is x*x + y*y =< R*R + R, an
+ellipse scales the disc's half-width, an outline is the shape less the
+shape W dots smaller, and a sector is tested by cross products with a
+rounded sine table (angles in whole degrees, anticlockwise from the
+right, per TM-785 p13-14's prose). Each row is drawn as spans that do not
+overlap, so exclusive_or draws each dot once. A fan is the arc and its two
+radii; a polygon is closed, a graph is not (OURS). Refused loudly: a style
+other than solid, a width under 1, an integer op (TM-785's colour
+numbers: the screen has none), a negative angle, an unknown pattern.
+
+**copy/9** `(W, Src, SX, SY, DX, DY, Width, Height, Op)` (USAGE icotext
+`util_scroll.esp:211`; the direction is INFERENCE) copies between two shown
+windows with the frozen screen copy, save and restore
+(`window_pane.esp` `copy_in/9`; a new `save_memory` `restore/3` draws a
+saved area through an op). Neither window's other dots change, whatever
+covers either (OURS). Refused loudly: the held matrix form
+`(W, DX, DY, Src, SX, SY, W, H, {Matrix})` (a scaled copy), a source not
+shown, an area outside an inside, an integer op. The held caller itself
+cannot run: its source is a 2000 x 2000 `hide_window` that is never shown.
+That is an off-screen bitmap, which the frozen device lacks (save memory
+holds 65,536 words; that image needs 250,000).
+
+**paint/5 is a STOP.** `(W, X, Y, Pattern, Op)` (USAGE kappa2 `pdim.esp:606`)
+is a seed fill (INFERENCE). Finding the region's edge needs the frame's
+dots, and no frozen primitive gives a dot's value to the program (fill,
+line, glyph and copy write; save and restore move dots unseen). It is
+refused loudly rather than given a new primitive.
+
+**Held caller that does not run**: kappa `make_copyright/2`
+(`MOPMANAGER.ESP:154`, `draw_circle(Window,16,22,10,1,solid,set)`) draws
+before its window is activated and uses `#font_13`. Its arguments are
+drawn on a shown window in `test_win_m8_shapes`.
+
+**Tests**:
+- `test_win_m8_patterns`: the held `g_window` `draw_list_b/8` bar views
+  (their pattern strings from the held `set_pattern/2`) against a
+  dot-by-dot reference; the named patterns; XOR; refusals.
+- `test_win_m8_images`: plane count; the held selector image's row
+  parity; `restore_image/6` opaque; the held `type_switch_icon` `draw/6`.
+- `test_win_m8_shapes`: each shape against a Python repeat of the rules,
+  dot by dot; the TM-785 vectors; XOR twice; refusals.
+- `test_win_m8_copy`: a block copied into a second window; with
+  exclusive_or; a covered destination and a covered source; refusals and
+  `paint/5`.
+- `test_win_m8_rest_screen`: the screen below, pinned.
+
+Screen: `../docs/simpos/screens/window_graphics_rest.png` (`winshot.py`
+stage `graphics_rest`): the held bar views and icon, and the shapes.
+
+**Injections, OBSERVED** (2026-11-26; each from a backup copy, restored
+by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run,
+then each rerun at the final code with the Window tests, the other two
+modules having failed nothing in the first run; "rest screen" is
+`test_win_m8_rest_screen`, whose pinned screen draws them all):
+
+| | injection | fails |
+|---|---|---|
+| E3 | the six-element `draw_filled_ellipse` vector drawn | shapes only |
+| G10 | a styled piece not turned by its column | patterns, shapes (the light_paint disc), rest screen |
+| G11 | a pattern string read one word a row | patterns, rest screen |
+| G12 | blt 44's quotient and remainder swapped | patterns, rest screen |
+| G13 | an image drawn transparent | images, rest screen |
+| G14 | `get_plane_count/2` answers 3 | images, rest screen (ERROR) |
+| G15 | the disc rule without + R | shapes, rest screen |
+| G16 | a sweep over 180 degrees taken as narrow | shapes, rest screen |
+| G17 | no inner ellipse (outlines filled) | shapes, rest screen |
+| G18 | the polygon not closed | shapes, rest screen |
+| G19 | `draw_fan/9` without its first radius | shapes only |
+| G20 | an outline's op not checked | shapes only |
+| G21 | the second quadrant's cosine not negated | shapes only |
+| C1 | `copy_in/9` does not draw the destination's dots back before Op (first run: NOTHING failed; the first copy is exclusive_or since) | copy only |
+| C2 | the copy drawn `copy` whatever Op | copy only |
+| C3 | the screen under the source's block not drawn back | copy only |
+| C4 | the source saved without `uncover/3` | copy only |
+
+### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
+
+Injection P13 (the coordinator's own process held back like any writer)
+failed nothing at merge 20efface: no run on the route made the
+coordinator write into a covered window whose permission is not `out`.
+`test_win_m7_coordinator_writes` now makes one. A test class (OURS
+harness, as `test_win_m7_has_been_selected`; kappa `pbwin.esp:72` is the
+held after-demon on `has_been_selected/1`) writes a line into its partner
+from that demon. The partner has `permission(wait)` and is covered. The
+probe is shown while `simpos##process`'s current process is the
+coordinator's (the direct send stands for the coordinator process's own
+`event/2`). The line goes in at once, the cover's dots are unchanged, and
+there is no waiter. From another process the same write waits (a waiter
+of kind `wait`). P13 now ERRORS that test (would suspend), nothing else.
+
+### Window M9: choice windows, and the manipulator's ATTRIBUTE (2026-11-26)
+
+A new stand-in `standard_choice_window` (window.md §2.10, §3.4) serves the
+HELD pimfep superviser's error mode menu. Its local
+`create_error_mode_menu/1` @48a creates the window with a `choice_list`
+of three label lines and a `choose` field (`error_mode`, on/off) and
+`label_flag(off)`. Then `refute_sub_command/2` @36c-3b0 sends
+`set_item_value/3`, `get_size/3`, `set_position/3`, `activate/1`,
+`read/2` (it expects `[{error_mode, V}]`) and `deactivate/1`.
+
+The fields:
+- label lines (7 elements);
+- text fields: shown with their default and read back as it. THE TEXT IS
+  NOT EDITED (OURS: no held caller on the route edits one);
+- `choose`: one of N, the current value in reverse video (SCREENSHOT
+  TM-125 p7 Fig. 4); a click on a Text makes it current;
+- `boolean`: as `choose`, with "yes" and "no" (OURS words).
+
+The bottom row holds `do_it` and `abort` (Fig. 4). The window adds them
+itself (INFERENCE: the held list has none, and the `..._with_no_execute`
+classes are the ones without do_it). `read/2` waits on the window's own
+stream: do_it gives `[{Key, Value}, ...]` for the keyed fields in item
+order, abort gives `abort`.
+
+The look is OURS: a `window_pane` of one row a field plus the button row,
+one cell wider than the widest row. The coordinator keeps the shown
+choice windows (`add_choice/2`, `remove_choice/2`), and a left click on one
+goes to its `choose/3`, not to a selection. Deactivating draws back what
+was under the sheet, and the selected window's cursor, which
+`cursor_aside/1` took off when the sheet was drawn. A choice window is
+not a window the user arranges (OURS): a middle click on one opens no
+manipulator, and MENU's submenu leaves it out. It has a `permission` of
+`out` and no title, the slots the coordinator reads of every window.
+
+**ATTRIBUTE** (TM-125 p8, between PERMISSION and EXIT) opens a choice
+window at the mouse, owned by the coordinator. It is made with
+`create/4`'s owner, and its ending arrives as `choice_done/3`, since the
+coordinator's process may not wait in `read/2`. Of Fig. 4's fields, only
+PERMISSION is offered (OURS): it is the one attribute the stand-ins keep
+that the sheet may set. do_it sets it (`set_permission/2`) and wakes the
+writers. The manipulator now has nine items, so EXIT is item 8, and the
+manipulator screens are re-rendered (their pins moved, each listed in
+`test_espc.py`).
+
+**Census.** pimfep superviser `error_mode_menu/2` goes from refused to
+success in both census tests. Before, its create/3 met a missing class.
+The row count is unchanged.
+
+**Tests**:
+- `test_win_m9_choice`: the held menu (made by the .ptf) is drawn and
+  read back as text, a click on `off` moves the reversal, and
+  do_it/`read/2` gives `[{error_mode, off}]`. Deactivate restores the
+  frame. Abort gives `abort`. An unknown key is refused.
+- `test_win_m9_attribute`: ATTRIBUTE on window 2 of the manipulator run,
+  PERMISSION `wait` clicked, then do_it: window 2's permission becomes
+  `wait` and the sheet is gone; with abort, it is unchanged. The sheet's
+  owner is the coordinator's own process (so manager/1's bypass is live
+  on this route); a middle click on it opens nothing; MENU lists the two
+  requester windows and not it.
+
+- `test_win_m9_choice_screen`: the menu's screen pinned; the committed
+  PNGs decode to their pins.
+
+Screens: `../docs/simpos/screens/choice_window.png` (stage `choice`),
+`manipulator_attribute.png` (stage `attribute`); `window_manipulator.png`
+re-rendered (nine items).
+
+**Injections, OBSERVED** (2026-11-26; as above, each rerun at the final
+code; M9 attribute is `test_win_m9_attribute`, whose sheet is a choice
+window too):
+
+| | injection | fails |
+|---|---|---|
+| M1 | a click on an option does not change the value | M9 choice, M9 attribute |
+| M2 | a click on a choice window goes to a selection | M9 choice (ERROR), M9 attribute |
+| M3 | deactivate does not give the cursor back | M9 choice, M9 attribute |
+| M4 | read/2 returns the defaults (the plan's injection; first run NOTHING failed, the one edit ended on the held default; an edit to `on` added) | M9 choice, M9 attribute |
+| A1 | ATTRIBUTE's do_it sets nothing | M9 attribute only |
+| E1 | a middle click on a choice window opens the manipulator on it | M9 attribute only |
+| E2 | MENU's submenu lists the choice windows | M9 attribute only |
+| P13 | (above) | coordinator writes only (ERROR) |
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

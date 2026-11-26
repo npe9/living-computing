@@ -1,0 +1,292 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_choice_window`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class body is lost (docs/simpos/subsystems/window.md §0.3).  Window
+% M9 (2026-11-26): the choice window (window.md §2.10), a sheet of
+% labelled fields.  The held caller it serves: pimfep##pimos_fep_superviser
+% local create_error_mode_menu/1 @48a (the .ptf):
+%     :create(#standard_choice_window,
+%             [choice_list([{"   ERROR Mode", string, no_select, no_select, 0, "", _},
+%                           {"", string, no_select, no_select, 0, "", _},
+%                           {"    ", choose, error_mode, [{"on", on}, {"off", off}], off, _},
+%                           {"", string, no_select, no_select, 0, "", _}]),
+%              label_flag(off)], Win)
+% and refute_sub_command/2 @36c-3b0's sends: set_item_value/3, get_size/3,
+% set_position/3, activate/1, read/2 (`R = [{error_mode, V}]`),
+% deactivate/1.
+%
+% The selectors and argument forms, each cited in window.md: create/3 with
+% choice_list(Items) (PRINTED-INTERFACE TM-125 p14-15; USAGE §3.4, ptf.md
+% W3), read/2 `(C, ^Result)`: `abort`, or `[{Key, Value}, ...]` for the
+% fields with a key (USAGE ifs_window.md §3), set_item_value/3,
+% activate/1, deactivate/1, kill/1, get_size/3, set_position/3 (USAGE, the
+% superviser's sends; window.md §2.10 and the census row
+% standard_choice_window).  The fields (window.md §3.4):
+%   - {Label, string, no_select, no_select, 0, "", _}: a line of text
+%     (ptf.md W2's 7-element label line);
+%   - {Label, string, Key, Width, Default, Doc}: a text field; shown with
+%     its Default and read back as it (THE TEXT IS NOT EDITED here: OURS,
+%     no held caller on the route edits one);
+%   - {Label, choose, Key, [{Text, Value}, ...], Default, Doc}: one of N,
+%     the current value in reverse video (SCREENSHOT TM-125 p7 Fig. 4); a
+%     click on a Text makes it current;
+%   - {Label, boolean, Key, _, Default, Doc}: as choose with "yes" true,
+%     "no" false (the words OURS).
+% The bottom row holds `do_it` and `abort` (SCREENSHOT TM-125 p7 Fig. 4,
+% PROSE TM-785 p10-26; window.md §2.10): a standard choice window adds them
+% itself (INFERENCE: the held error mode list has none, and the
+% `..._with_no_execute` classes are the ones without do_it).  do_it ends
+% read/2 with the fields' values, abort with `abort`.
+%
+% THE LOOK, OURS: a window_pane (window_pane.esp) of one text row a field
+% and the button row, as wide as the widest row plus one cell; each field
+% its Label then, for choose and boolean, each Text after a space; the
+% buttons ` do_it ` and ` abort ` from the first column.  The label strip
+% of the pane is drawn (empty) whatever label_flag says (OURS: the pane
+% has one layout).  The window registers with the coordinator as a shown
+% window (add_window/3) and as a choice window (coordinator.esp
+% add_choice/2), so a left click on it goes to choose/3, not to a
+% selection.  read/2 waits on the window's own stream for the click that
+% ends it (a do_it or abort clicked before read/2 is kept on the stream,
+% OURS).
+% Window M9 also lets the coordinator use a choice window for its own
+% dialogue (the manipulator's ATTRIBUTE, coordinator.esp): the window made
+% with create/4's owner gets the ending as `:choice_done(Owner, W, Result)`
+% instead of a read/2 (OURS: the coordinator's process may not wait).
+
+class standard_choice_window has
+
+% :create(#standard_choice_window, Options, W) -- INTERPOLATED (body OURS):
+% the choice_list's items kept, each keyed field's Default its value.
+:create(Class, Options, W) :- :create(Class, Options, 0, W);
+
+% :create(#standard_choice_window, Options, Owner, W) -- window M9 (selector
+% and body OURS): as create/3, the ending sent to Owner (see the head).
+:create(Class, Options, Owner, W) :-
+        :new(Class, W),
+        items(Options, Items),
+        W!items := Items,
+        defaults(Items, Vs),
+        W!values := Vs,
+        :create(#stream, S),
+        W!answers := S,
+        W!owner := Owner,
+        rows(Items, 0, R), value(R + 1, Rows), W!rows := Rows,
+        widest(Items, 14, C), value(C + 1, Cols), W!cols := Cols;
+
+instance
+
+% OURS representation (see above): the items, the keyed fields' current
+% values ([[Key, Value], ...], a list: kl0 keeps a list's values in a
+% slot), the answer stream, the owner (0: read/2), the size in cells, the
+% outer top-left ([] none given), the pane (0: not shown).
+attribute items := [], values := [], answers := 0, owner := 0,
+          rows := 0, cols := 0, at := [], pane := 0, number := 0;
+% OURS: the slots the coordinator reads of every shown window (uncover/3
+% its permission, MENU's named/2 its title): a sheet is written at once,
+% untitled.
+attribute permission := out, title := 0;
+
+% INTERPOLATED (selector and arguments: window.md section 2.10, cited
+% above; body OURS): set_item_value.
+:set_item_value(W, Key, V) :- keyed(W!values, Key), !,
+        replaced(W!values, Key, V, Vs),
+        W!values := Vs,
+        redrawn(W);
+:set_item_value(W, Key, _) :- :choice_refused(W, Key);
+
+% INTERPOLATED (selector: the superviser's send, cited above; body OURS):
+% get_size, the outer size in dots (window_pane.esp's layout).
+:get_size(W, Wd, Ht) :- :outer_size(#window_pane, W!cols, W!rows, 0, Wd, Ht);
+
+% INTERPOLATED (selector: the superviser's send, cited above; body OURS):
+% set_position, the outer top-left; a shown window moves there.
+:set_position(W, X, Y) :- W!at := [X, Y], moved_to(W, X, Y);
+
+% INTERPOLATED (selector and arguments: window.md section 2.10, cited
+% above; body OURS): activate, the window drawn and registered.
+:activate(W) :- W!pane \== 0, !;
+:activate(W) :-
+        place(W!at, X, Y),
+        :create(#window_pane, X, Y, W!cols, W!rows, 0, P),
+        W!pane := P,
+        :add_window(#coordinator, W, N),
+        W!number := N,
+        :add_choice(#coordinator, W),
+        drawn_items(W);
+
+% INTERPOLATED (selector and arguments: window.md section 2.10, cited
+% above; body OURS): read, the ending clicked (see the head).
+:read(W, R) :- :get(W!answers, A), result(W, A, R);
+
+% INTERPOLATED (selector and arguments: window.md section 2.10, cited
+% above; body OURS): deactivate, the window off the screen (what was under
+% it drawn back) and the selected window's cursor on again.
+:deactivate(W) :- W!pane == 0, !;
+:deactivate(W) :-
+        :take_off(#coordinator, W),
+        :remove_choice(#coordinator, W),
+        :remove_window(#coordinator, W),
+        W!pane := 0,
+        cursor_back;
+
+% INTERPOLATED (selector and arguments: window.md section 2.10, cited
+% above; body OURS): kill.
+:kill(W) :- :deactivate(W);
+
+% :choose(W, X, Y) -- window M9 (selector and body OURS): a left click at
+% screen (X, Y), given by the coordinator: a choose or boolean field's
+% Text becomes current, do_it or abort ends the reading; anywhere else
+% nothing.
+% INTERPOLATED (selector and body OURS): choose; basis above.
+:choose(W, X, Y) :-
+        P = W!pane, P \== 0,
+        value(X - P!left, DX), value(Y - P!top, DY),
+        DX >= 0, DY >= 0,
+        cell(DX, P!cw, 0, C), cell(DY, P!ch, 0, R),
+        clicked(W, R, C), !;
+:choose(_, _, _);
+
+% INTERPOLATED (selector and body OURS): contains, the coordinator's hit
+% test.
+:contains(W, X, Y) :- W!pane \== 0, :contains(W!pane, X, Y);
+
+% INTERPOLATED (selector and body OURS): status_name.
+:status_name(W, "standard_choice_window", N) :- N = W!number;
+
+local
+
+% the choice_list option (Options is a list of {Name, Value} vectors)
+items([{choice_list, L} | _], L) :- !;
+items([_ | R], L) :- items(R, L);
+items([], []);
+
+% the keyed fields' defaults, in item order
+defaults([], []);
+defaults([I | R], [[K, V] | Vs]) :- keyed_item(I, K, V), !, defaults(R, Vs);
+defaults([_ | R], Vs) :- defaults(R, Vs);
+
+keyed_item({_, string, K, _, V, _}, K, V) :- K \== no_select, !;
+keyed_item({_, choose, K, _, V, _}, K, V) :- !;
+keyed_item({_, boolean, K, _, V, _}, K, V);
+
+keyed([[K, _] | _], K) :- !;
+keyed([_ | R], K) :- keyed(R, K);
+
+replaced([[K, _] | R], K, V, [[K, V] | R]) :- !;
+replaced([X | R], K, V, [X | Rs]) :- replaced(R, K, V, Rs);
+
+current([[K, V] | _], K, V) :- !;
+current([_ | R], K, V) :- current(R, K, V);
+
+rows([], R, R);
+rows([_ | Is], R0, R) :- rows(Is, R0 + 1, R);
+
+% the widest row in cells (at least the button row's 14)
+widest([], C, C);
+widest([I | Is], C0, C) :- row_width(I, N), N > C0, !, widest(Is, N, C);
+widest([_ | Is], C0, C) :- widest(Is, C0, C);
+
+row_width(I, N) :- label_of(I, L), string(L, N0, _), options(I, Os), !,
+        texts_width(Os, N0, N);
+row_width(I, N) :- label_of(I, L), string(L, N0, _), text_of(I, T), !,
+        string(T, N1, _), value(N0 + N1, N);
+row_width(I, N) :- label_of(I, L), string(L, N, _);
+
+texts_width([], N, N);
+texts_width([{T, _} | Os], N0, N) :- string(T, K, _), texts_width(Os, N0 + K + 1, N);
+
+label_of(I, L) :- vector_element(I, 0, L);
+
+options({_, choose, _, Os, _, _}, Os) :- !;
+options({_, boolean, _, _, _, _}, [{"yes", true}, {"no", false}]);
+
+text_of({_, string, K, _, T, _}, T) :- K \== no_select, string(T, _, _);
+
+place([X, Y], X, Y) :- !;
+place(_, 0, 0);
+
+moved_to(W, _, _) :- W!pane == 0, !;
+moved_to(W, X, Y) :- :move_to(W!pane, X, Y);
+
+% the result of read/2: abort, or the keyed fields' values in item order
+result(_, abort, abort) :- !;
+result(W, do_it, R) :- pairs(W!values, R);
+
+pairs([], []);
+pairs([[K, V] | R], [{K, V} | Ps]) :- pairs(R, Ps);
+
+% the ending: on the stream, or to the owner
+ended(W, A) :- W!owner == 0, !, :put(W!answers, A);
+ended(W, A) :- result(W, A, R), :choice_done(W!owner, W, R);
+
+% the cell N dots in, of size S
+cell(N, S, K, K) :- N < S, !;
+cell(N, S, K0, K) :- cell(N - S, S, K0 + 1, K);
+
+% a click on row R, column C
+clicked(W, R, C) :- value(W!rows - 1, B), R == B, !, button(W, C);
+clicked(W, R, C) :- nth(W!items, R, I), options(I, Os), keyed_item(I, K, _),
+        label_of(I, L), string(L, N0, _),
+        hit(Os, N0, C, V), !,
+        replaced(W!values, K, V, Vs),
+        W!values := Vs,
+        redrawn(W);
+
+button(W, C) :- C < 7, !, ended(W, do_it);
+button(W, C) :- C < 14, ended(W, abort);
+
+% the option whose Text (after its space) covers column C
+hit([{T, V} | _], X, C, V) :- string(T, K, _), C > X, C =< X + K, !;
+hit([{T, _} | Os], X, C, V) :- string(T, K, _), hit(Os, X + K + 1, C, V);
+
+nth([I | _], 0, I) :- !;
+nth([_ | R], N, I) :- nth(R, N - 1, I);
+
+redrawn(W) :- W!pane == 0, !;
+redrawn(W) :- drawn_items(W);
+
+% the sheet: the inside cleared, each row, the buttons
+drawn_items(W) :-
+        P = W!pane,
+        :fill_in(P, 0, 0, P!iw, P!ih, reset),
+        drawn_rows(W, P, W!items, 0),
+        value((W!rows - 1) * P!ch, Y),
+        :string_in(P, 0, Y, " do_it  abort ", 0, copy);
+
+drawn_rows(_, _, [], _);
+drawn_rows(W, P, [I | Is], R) :-
+        drawn_row(W, P, I, R),
+        drawn_rows(W, P, Is, R + 1);
+
+drawn_row(W, P, I, R) :-
+        label_of(I, L), value(R * P!ch, Y),
+        :string_in(P, 0, Y, L, 0, copy),
+        string(L, N0, _),
+        rest(W, P, I, Y, N0);
+
+rest(W, P, I, Y, N0) :- options(I, Os), !, keyed_item(I, K, _),
+        current(W!values, K, V),
+        drawn_options(P, Os, Y, N0, V);
+rest(_, P, I, Y, N0) :- text_of(I, T), !, value(N0 * P!cw, X),
+        :string_in(P, X, Y, T, 0, copy);
+rest(_, _, _, _, _);
+
+drawn_options(_, [], _, _, _);
+drawn_options(P, [{T, V0} | Os], Y, X0, V) :-
+        string(T, K, _), value((X0 + 1) * P!cw, X),
+        :string_in(P, X, Y, T, 0, copy),
+        reversed(P, V0, V, X, Y, K),
+        drawn_options(P, Os, Y, X0 + K + 1, V);
+
+reversed(P, V, V, X, Y, K) :- !, value(K * P!cw, Wd),
+        :fill_in(P, X, Y, Wd, P!ch, exclusive_or);
+reversed(_, _, _, _, _, _);
+
+% the selected window's cursor, taken off when the sheet's pane was drawn
+% (coordinator cursor_aside/1), drawn again when the sheet goes (OURS)
+cursor_back :- C = #coordinator, S = C!selected, S \== 0, !, :selected(S);
+cursor_back;
+
+value(V, V);
+
+end.

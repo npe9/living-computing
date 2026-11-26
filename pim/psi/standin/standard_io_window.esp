@@ -295,15 +295,28 @@ attribute permission := out;
 % es_gin.esp:855); execute_graphics_command/2, a list of {Name, {Args}}
 % (USAGE paragraph p_icon.esp:61, :176; g_window.esp:141-142 the
 % five-element draw_string, :169 the seven-element draw_filled_rectangle
-% with a held pattern, which refuses: only fix); get_mouse_position/3 (SCREENSHOT
+% with a held pattern); get_mouse_position/3 (SCREENSHOT
 % IPSJ 36239 p5; USAGE).  The default op is exclusive_or ("default is
 % exclusive or", PRINTED-INTERFACE TM-125 p17); the default line is 1 dot,
 % solid.  OURS bodies, drawn by the pane (window_pane.esp "Window M8").
 % Refused loudly (graphics_refused/2 is no method, OURS): a line style
 % other than solid, a rectangle style other than solid or filled, a fill
-% pattern other than fix (light_paint and the TM-785 patterns have no
-% printed look), a command execute_graphics_command/2 does not know, and
-% drawing on a window that is not on the screen.
+% pattern that is neither fix, a named pattern nor a pattern string, a
+% command execute_graphics_command/2 does not know, and drawing on a
+% window that is not on the screen.
+% Window M8's rest (2026-11-26), PATTERNS: draw_filled_rectangle/8 takes,
+% beside fix, the named patterns light_paint, dotted, mesh, small_mesh,
+% left_hatch and right_hatch (window.md §2.5; light_paint's dots
+% HELD-DERIVED from paragraph's saved images, the others' looks OURS:
+% window_pane.esp named/3) and a held pattern string: paragraph bar_v.esp
+% set_pattern/2 makes one by new_string(S, 256, 16) and set_pattern1/4, /6,
+% /10, which write each word four times running (words N..N+3 the first,
+% N+4..N+7 the second, ...).  The string is read as a 64 x 64 tile, 4 words
+% a row, so every row repeats one word and the rows cycle through the
+% words given (INFERENCE: the 4-fold repeat is what makes a row of 64 dots;
+% read as 1 word a row, `16#"5555", 16#"AAAA"` would be stripes 4 rows
+% high, not the 50% mesh the pair is everywhere else).  Drawn by the pane
+% (window_pane.esp pattern_in/7) with styled lines of the frozen device.
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_line.
 :draw_line(W, X1, Y1, X2, Y2) :- line(W, X1, Y1, X2, Y2, 1, solid, exclusive_or);
@@ -322,6 +335,8 @@ attribute permission := out;
 :draw_filled_rectangle(W, X, Y, Wd, Ht, Op) :- pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
 :draw_filled_rectangle(W, X, Y, Wd, Ht, _, fix, Op) :- !,
         pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+:draw_filled_rectangle(W, X, Y, Wd, Ht, _, Pt, Op) :- :pattern(#window_pane, Pt), !,
+        pane_of(W, P), :pattern_in(P, X, Y, Wd, Ht, Pt, Op);
 :draw_filled_rectangle(W, _, _, _, _, _, Pattern, _) :- :graphics_refused(W, Pattern);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_string.
@@ -341,6 +356,109 @@ attribute permission := out;
         command(W, Name, N, Args),
         :execute_graphics_command(W, Cs);
 :execute_graphics_command(W, _) :- :graphics_refused(W, command);
+% Window M8's rest (2026-11-26), IMAGES: restore_image/6 `(W, S, X, Y,
+% Width, Height)` (USAGE paragraph p_imag.esp:22 restore/7, p_v_imag.esp
+% :19, :252) draws an image string, opaque (window_pane.esp image_in/6);
+% get_label_height/2 (USAGE paragraph p_imag.esp:619 adjust_pos/3, cil
+% ds_brs.esp:280; window.md §2.2) answers the label strip's height, the
+% font's cell plus 2 (window_pane.esp's layout, OURS).  save_image/6 and
+% restore_full_color_image/6 are not stood in (save_image reads the
+% frame's dots, which no frozen device primitive does; the colour form is
+% never reached on the 1-plane screen, bitmap.esp).
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): restore_image.
+:restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :image_in(P, S, X, Y, Wd, Ht);
+% INTERPOLATED (selector: window.md section 2.2, cited above; body OURS):
+% get_label_height.
+:get_label_height(W, H) :- pane_of(W, P), value(P!ch + 2, H);
+% Window M8's rest (2026-11-26), SHAPES (window.md §2.5): draw_circle/7
+% `(W, CX, CY, R, Width, Style, Op)` (PRINTED WINCS p3), draw_ellipse/8
+% `(W, CX, CY, RX, RY, Width, Style, Op)`, draw_arc/9 and draw_fan/9
+% `(W, CX, CY, R, A1, A2, Width, Style, Op)`, draw_elliptical_arc/10
+% `(W, CX, CY, RX, RY, A1, A2, Width, Style, Op)`, draw_filled_circle/7
+% `(W, CX, CY, R, _, Pattern, Op)`, draw_filled_fan/9 `(W, CX, CY, R, A1,
+% A2, _, Pattern, Op)` (each PRINTED-INTERFACE TM-785 p40, the vector
+% data/2 gives, the arity INFERENCE from its length); draw_filled_circle/5
+% `(W, CX, CY, R, Op)` (USAGE gog DISPB2.ESP:94); draw_filled_ellipse/7
+% `(W, CX, CY, RX, RY, Pattern, Op)` (TM-785 p40 prints a six-element
+% vector `{200, 0, 100, 1, dotted, set}`, the filled circle's layout; the
+% order here is INFERENCE from the outline's); draw_graph/2 and
+% draw_polygon/2 `(W, [(X, Y), ...])` (USAGE kwic scrolls.esp:1135),
+% /9 `(W, Points, _, _, _, _, Width, Style, Op)` (TM-785 p40: elements 1-4
+% are unknown and ignored).  The angles are whole degrees, anticlockwise
+% from the centre's right; the dots are window_pane.esp shape_in/9's,
+% fan_in/8's and lines_in/5's (OURS).  A polygon is closed, a graph is
+% not (OURS: the held draw_graph/2 caller closes its own marks).  The /2
+% forms are 1 dot, solid, exclusive_or (TM-125 p17's defaults).  Refused
+% loudly: a style other than solid, a width under 1, an op that is not an
+% op name (TM-785 p40's integer ops are colours; the screen has none),
+% a negative angle, a pattern that is neither fix nor a pattern.
+% Window M8's rest, COPY: copy/9 `(W, Src, SX, SY, DX, DY, Width, Height,
+% Op)` (USAGE icotext util_scroll.esp:211: from Src's (SX, SY) to W's
+% (DX, DY), the direction INFERENCE, window.md §2.5) between two shown
+% windows (window_pane.esp copy_in/9).  Refused loudly: Src not a shown
+% window (util_scroll's own source is a 2000 x 2000 `hide_window` never
+% shown: an off-screen bitmap, which the frozen device lacks -- its save
+% memory is 65,536 words, a 2000 x 2000 image 250,000), the other held
+% form `(W, DX, DY, Src, SX, SY, Width, Height, Matrix)` (util_scroll.esp
+% :218, :222: a scaled copy, which no device primitive does), an op that
+% is not an op name.
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): copy.
+:copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- integer(Src), !, :graphics_refused(W, matrix_copy);
+:copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- op_name(Op), !,
+        pane_of(W, P), pane_of(Src, Q), :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
+:copy(W, _, _, _, _, _, _, _, Op) :- :graphics_refused(W, Op);
+% Window M8's rest, PAINT, A STOP: paint/5 `(W, X, Y, Pattern, Op)` (USAGE
+% kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1, 1, Pattern1, set)`)
+% fills the region around (X, Y) (a seed fill: INFERENCE from the name and
+% the one-dot seed).  Finding the region's edge needs the frame's dots, and
+% no frozen device primitive gives a dot's value to the program
+% (psi/winfb.py: fill, line, glyph and copy write; save and restore move
+% dots between the frame and save memory unseen), so paint/5 is refused
+% loudly here and not stood in (psi/README.md "Window M8's rest").
+% INTERPOLATED (selector: window.md section 2.5, cited above; body OURS):
+% paint, refused.
+:paint(W, _, _, _, _) :- :graphics_refused(W, paint);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_circle.
+:draw_circle(W, CX, CY, R, Wd, St, Op) :- outline(W, CX, CY, R, R, Wd, all, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_ellipse.
+:draw_ellipse(W, CX, CY, RX, RY, Wd, St, Op) :- outline(W, CX, CY, RX, RY, Wd, all, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_arc.
+:draw_arc(W, CX, CY, R, A1, A2, Wd, St, Op) :- angles(W, A1, A2), !,
+        outline(W, CX, CY, R, R, Wd, {A1, A2}, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_elliptical_arc.
+:draw_elliptical_arc(W, CX, CY, RX, RY, A1, A2, Wd, St, Op) :- angles(W, A1, A2), !,
+        outline(W, CX, CY, RX, RY, Wd, {A1, A2}, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_fan.
+:draw_fan(W, CX, CY, R, A1, A2, Wd, solid, Op) :-
+        angles(W, A1, A2), drawing(W, Wd, Op), !,
+        pane_of(W, P), :fan_in(P, CX, CY, R, A1, A2, Wd, Op);
+:draw_fan(W, _, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_filled_circle.
+:draw_filled_circle(W, CX, CY, R, Op) :- filled(W, CX, CY, R, R, all, fix, Op);
+:draw_filled_circle(W, CX, CY, R, _, Pt, Op) :- filled(W, CX, CY, R, R, all, Pt, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_filled_ellipse.
+:draw_filled_ellipse(W, CX, CY, RX, RY, Pt, Op) :- filled(W, CX, CY, RX, RY, all, Pt, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_filled_fan.
+:draw_filled_fan(W, CX, CY, R, A1, A2, _, Pt, Op) :- angles(W, A1, A2), !,
+        filled(W, CX, CY, R, R, {A1, A2}, Pt, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_graph.
+:draw_graph(W, Ps) :- polyline(W, Ps, 0, 1, solid, exclusive_or);
+:draw_graph(W, Ps, _, _, _, _, Wd, St, Op) :- polyline(W, Ps, 0, Wd, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_polygon.
+:draw_polygon(W, Ps) :- polyline(W, Ps, 1, 1, solid, exclusive_or);
+:draw_polygon(W, Ps, _, _, _, _, Wd, St, Op) :- polyline(W, Ps, 1, Wd, St, Op);
 % the mouse in the window's inside, in dots (the window's units: no
 % set_inside_units/3 is stood in)
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
@@ -484,6 +602,29 @@ rectangle(W, X, Y, Wd, Ht, _, filled, Op) :- !,
         pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
 rectangle(W, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
 
+% window M8's rest, shapes (OURS, see "SHAPES" above)
+outline(W, CX, CY, RX, RY, Wd, As, solid, Op) :- drawing(W, Wd, Op), !,
+        pane_of(W, P), :shape_in(P, CX, CY, RX, RY, Wd, As, fix, Op);
+outline(W, _, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
+
+filled(W, CX, CY, RX, RY, As, Pt, Op) :- op_name(Op), fill_pattern(Pt), !,
+        pane_of(W, P), :shape_in(P, CX, CY, RX, RY, 0, As, Pt, Op);
+filled(W, _, _, _, _, _, Pt, _) :- :graphics_refused(W, Pt);
+
+fill_pattern(fix) :- !;
+fill_pattern(Pt) :- :pattern(#window_pane, Pt);
+
+drawing(W, Wd, Op) :- integer(Wd), Wd >= 1, op_name(Op), !;
+drawing(W, Wd, _) :- integer(Wd), Wd >= 1, !, :graphics_refused(W, op);
+drawing(W, _, _) :- :graphics_refused(W, width);
+
+angles(W, A1, A2) :- integer(A1), integer(A2), A1 >= 0, A2 >= 0, !;
+angles(W, _, _) :- :graphics_refused(W, angle);
+
+polyline(W, Ps, Close, Wd, solid, Op) :- drawing(W, Wd, Op), !,
+        pane_of(W, P), :lines_in(P, Ps, Close, Wd, Op);
+polyline(W, _, _, _, St, _) :- :graphics_refused(W, St);
+
 op_name(set);
 op_name(reset);
 op_name(exclusive_or);
@@ -529,6 +670,42 @@ command(W, draw_string, 4, A) :- !,
 command(W, draw_string, 5, A) :- !,
         el(A, 0, X), el(A, 1, Y), el(A, 2, S), el(A, 3, F), el(A, 4, Op),
         :draw_string(W, X, Y, S, F, Op);
+% window M8's rest: the shapes (TM-785 p40's vectors)
+command(W, draw_circle, 6, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, Wd), el(A, 4, St), el(A, 5, Op),
+        :draw_circle(W, CX, CY, R, Wd, St, Op);
+command(W, draw_filled_circle, 4, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, Op),
+        :draw_filled_circle(W, CX, CY, R, Op);
+command(W, draw_filled_circle, 6, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, U), el(A, 4, Pt), el(A, 5, Op),
+        :draw_filled_circle(W, CX, CY, R, U, Pt, Op);
+command(W, draw_ellipse, 7, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, Wd), el(A, 5, St), el(A, 6, Op),
+        :draw_ellipse(W, CX, CY, RX, RY, Wd, St, Op);
+% TM-785 p40's printed draw_filled_ellipse vector {200, 0, 100, 1, dotted,
+% set} has six elements, the filled circle's layout with its `1`: read as
+% {CX, CY, RX, RY, Pattern, Op} it is an ellipse 1 dot high, read as the
+% circle's it is no ellipse.  Ambiguous, so refused loudly (OURS).
+command(W, draw_filled_ellipse, 6, _) :- !, :graphics_refused(W, draw_filled_ellipse);
+command(W, draw_arc, 8, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, A1), el(A, 4, A2), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
+        :draw_arc(W, CX, CY, R, A1, A2, Wd, St, Op);
+command(W, draw_fan, 8, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, A1), el(A, 4, A2), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
+        :draw_fan(W, CX, CY, R, A1, A2, Wd, St, Op);
+command(W, draw_filled_fan, 8, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, R), el(A, 3, A1), el(A, 4, A2), el(A, 5, U), el(A, 6, Pt), el(A, 7, Op),
+        :draw_filled_fan(W, CX, CY, R, A1, A2, U, Pt, Op);
+command(W, draw_elliptical_arc, 9, A) :- !,
+        el(A, 0, CX), el(A, 1, CY), el(A, 2, RX), el(A, 3, RY), el(A, 4, A1), el(A, 5, A2), el(A, 6, Wd), el(A, 7, St), el(A, 8, Op),
+        :draw_elliptical_arc(W, CX, CY, RX, RY, A1, A2, Wd, St, Op);
+command(W, draw_graph, 8, A) :- !,
+        el(A, 0, Ps), el(A, 1, U1), el(A, 2, U2), el(A, 3, U3), el(A, 4, U4), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
+        :draw_graph(W, Ps, U1, U2, U3, U4, Wd, St, Op);
+command(W, draw_polygon, 8, A) :- !,
+        el(A, 0, Ps), el(A, 1, U1), el(A, 2, U2), el(A, 3, U3), el(A, 4, U4), el(A, 5, Wd), el(A, 6, St), el(A, 7, Op),
+        :draw_polygon(W, Ps, U1, U2, U3, U4, Wd, St, Op);
 command(W, Name, _, _) :- :graphics_refused(W, Name);
 
 el(A, I, V) :- vector_element(A, I, V);
