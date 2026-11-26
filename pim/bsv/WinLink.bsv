@@ -14,8 +14,11 @@
 //   mkWinUartTx    the line out
 //   mkWinLinkRx    the frame receiver: hunt for A5, SEQ, LEN, 13 payload
 //                  bytes, CRC-16/CCITT-FALSE; commands and error records
-//   mkWinLinkTx    the record sender: statuses, the dump's data in records
-//                  of 64 words, error records (only between records)
+//   mkWinLinkTx    the record sender: statuses, a dump's or a read's data
+//                  in records of at most 64 words (gathered first, so LEN
+//                  is the real count), error records and input event records
+//                  (H5/H7s: TYPE 3, WinInput.bsv's records; only between
+//                  records, after the box's answers and the errors)
 //   mkWinLink      the three behind one Client of the box
 // `div` is the clock cycles a bit: 25 for 1 Mbaud on the board's 25 MHz
 // (plan §3.4's target; 217 for 115,200), 4 in the bench.
@@ -32,6 +35,7 @@ import GetPut::*;
 import ClientServer::*;
 import Vector::*;
 import WinFbBox::*;
+import WinInput::*;
 
 function Bit#(16) crc16Byte(Bit#(16) c0, Bit#(8) b);
    Bit#(16) c = c0 ^ (zeroExtend(b) << 8);
@@ -195,12 +199,13 @@ module mkWinLinkRx(WinLinkRx);
 endmodule
 
 // ---------------------------------------------------------------------
-typedef enum { THdr, TData, TCrcH, TCrcL } TxPhase deriving (Bits, Eq);
+typedef enum { THdr, TData, TEvt, TCrcH, TCrcL } TxPhase deriving (Bits, Eq);
 
 interface WinLinkTx;
    interface Put#(Bit#(8)) seqs;              // the SEQ of each command sent to the box
    interface Put#(WinFbRsp) rsps;             // the box's answers
    interface Put#(LinkErr) errs;
+   interface Put#(WinEvent) events;
    interface Get#(Bit#(8)) bytes;
 endinterface
 
@@ -208,7 +213,11 @@ module mkWinLinkTx(WinLinkTx);
    FIFOF#(Bit#(8)) seqQ <- mkSizedFIFOF(16);
    FIFOF#(WinFbRsp) rspQ <- mkFIFOF;
    FIFOF#(LinkErr) errQ <- mkFIFOF;
+   FIFOF#(WinEvent) evQ <- mkFIFOF;
    FIFOF#(Bit#(8)) outQ <- mkFIFOF;
+   Reg#(Vector#(10, Bit#(8))) evB <- mkRegU;   // an event record's payload
+   Reg#(UInt#(4)) eI <- mkRegU;
+   Reg#(Bit#(8)) evSeq <- mkReg(0);           // event records counted mod 256
 
    Reg#(Bool) busy <- mkReg(False);           // inside a record
    Reg#(TxPhase) ph <- mkRegU;
@@ -216,30 +225,55 @@ module mkWinLinkTx(WinLinkTx);
    Reg#(UInt#(3)) hN <- mkRegU;               // how many
    Reg#(UInt#(3)) hI <- mkRegU;
    Reg#(Bool) isData <- mkRegU;
+   Reg#(Bool) isEvt <- mkReg(False);
    Reg#(UInt#(7)) wLeft <- mkRegU;            // data words still to send
+   // a data record's words are gathered first (at most 64), so that its
+   // LEN is known when the header goes out: a read (prim a) answers any
+   // number of words, not a multiple of 64 (before 2026-11-26 every record
+   // claimed 64 and a short read took the next answer's words)
+   FIFOF#(Bit#(16)) dBuf <- mkSizedFIFOF(64);
+   Reg#(UInt#(7)) dCnt <- mkReg(0);           // words in dBuf
    Reg#(Bool) loByte <- mkRegU;
    Reg#(Bit#(16)) crc <- mkRegU;
 
-   function Action begin6(Vector#(6, Bit#(8)) h, UInt#(3) cnt, Bool d) =
+   function Action begin6(Vector#(6, Bit#(8)) h, UInt#(3) cnt, Bool d, Bool ev) =
       action
-         busy <= True; ph <= THdr; hdr <= h; hN <= cnt; hI <= 0; isData <= d;
-         wLeft <= 64; loByte <= False; crc <= 'hffff;
+         busy <= True; ph <= THdr; hdr <= h; hN <= cnt; hI <= 0; isData <= d; isEvt <= ev;
+         loByte <= False; crc <= 'hffff;
       endaction;
 
-   // a new record: the box's answer first, else an error
-   rule startData (!busy && rspQ.first.isData);
-      begin6(unpack({8'h0, 8'h0, 8'd128, 8'd1, seqQ.first, 8'h5a}), 4, True);
+   // gather the box's data words, outside a data record, up to 64
+   rule gather (!(busy && isData) && rspQ.first.isData && dCnt < 64);
+      dBuf.enq(rspQ.first.data); rspQ.deq;
+      dCnt <= dCnt + 1;
    endrule
-   rule startStatus (!busy && !rspQ.first.isData);
+
+   // a new record: the box's answer first, else an error.  A data record
+   // goes when 64 words are gathered or the answer's data has ended (its
+   // status is next); gather and startData are never enabled together.
+   (* descending_urgency = "startData, gather" *)
+   rule startData (!busy && dCnt != 0 && (dCnt == 64 || !rspQ.first.isData));
+      begin6(unpack({8'h0, 8'h0, {1'b0, pack(dCnt)} << 1, 8'd1, seqQ.first, 8'h5a}), 4, True, False);
+      wLeft <= dCnt; dCnt <= 0;
+   endrule
+   rule startStatus (!busy && dCnt == 0 && !rspQ.first.isData);
       WinFbRsp r = rspQ.first;
       rspQ.deq; seqQ.deq;
-      begin6(unpack({8'h0, r.status, 8'd1, 8'd0, seqQ.first, 8'h5a}), 5, False);
+      begin6(unpack({8'h0, r.status, 8'd1, 8'd0, seqQ.first, 8'h5a}), 5, False, False);
    endrule
-   (* descending_urgency = "startData, startStatus, startErr" *)
+   (* descending_urgency = "startData, startStatus, startErr, startEvt" *)
    rule startErr (!busy);
       LinkErr e = errQ.first;
       errQ.deq;
-      begin6(unpack({e.expected, e.code, 8'd2, 8'd2, e.expected, 8'h5a}), 6, False);
+      begin6(unpack({e.expected, e.code, 8'd2, 8'd2, e.expected, 8'h5a}), 6, False, False);
+   endrule
+   rule startEvt (!busy);
+      WinEvent e = evQ.first;
+      evQ.deq;
+      begin6(unpack({8'h0, 8'h0, 8'd10, 8'd3, evSeq, 8'h5a}), 4, False, True);
+      evB <= unpack({e.t[7:0], e.t[15:8], e.flags, e.c[7:0], e.c[15:8], e.b[7:0], e.b[15:8],
+                     e.a[7:0], e.a[15:8], e.kind});
+      eI <= 0; evSeq <= evSeq + 1;
    endrule
 
    rule sendHdr (busy && ph == THdr);
@@ -247,19 +281,26 @@ module mkWinLinkTx(WinLinkTx);
       outQ.enq(b);
       if (hI != 0) crc <= crc16Byte(crc, b);
       hI <= hI + 1;
-      if (hI + 1 == hN) ph <= isData ? TData : TCrcH;
+      if (hI + 1 == hN) ph <= isData ? TData : (isEvt ? TEvt : TCrcH);
    endrule
    rule sendData (busy && ph == TData);
-      WinFbRsp r = rspQ.first;
-      Bit#(8) b = loByte ? r.data[7:0] : r.data[15:8];
+      Bit#(16) w = dBuf.first;
+      Bit#(8) b = loByte ? w[7:0] : w[15:8];
       outQ.enq(b);
       crc <= crc16Byte(crc, b);
       loByte <= !loByte;
       if (loByte) begin
-         rspQ.deq;
+         dBuf.deq;
          wLeft <= wLeft - 1;
          if (wLeft == 1) ph <= TCrcH;
       end
+   endrule
+   rule sendEvt (busy && ph == TEvt);
+      Bit#(8) b = evB[eI];
+      outQ.enq(b);
+      crc <= crc16Byte(crc, b);
+      eI <= eI + 1;
+      if (eI == 9) ph <= TCrcH;
    endrule
    rule sendCrcH (busy && ph == TCrcH);
       outQ.enq(crc[15:8]); ph <= TCrcL;
@@ -271,6 +312,7 @@ module mkWinLinkTx(WinLinkTx);
    interface seqs = toPut(seqQ);
    interface rsps = toPut(rspQ);
    interface errs = toPut(errQ);
+   interface events = toPut(evQ);
    interface bytes = toGet(outQ);
 endmodule
 
@@ -279,6 +321,7 @@ interface WinLink;
    (* always_ready, always_enabled *) method Action rxd(Bit#(1) b);
    (* always_ready *) method Bit#(1) txd;
    interface Client#(WinFbCmd, WinFbRsp) box;
+   interface Put#(WinEvent) events;           // up as TYPE 3 records
 endinterface
 
 module mkWinLink#(Integer div)(WinLink);
@@ -312,6 +355,7 @@ module mkWinLink#(Integer div)(WinLink);
       interface Get request = toGet(toBox);
       interface Put response = ltx.rsps;
    endinterface
+   interface events = ltx.events;
 endmodule
 
 endpackage

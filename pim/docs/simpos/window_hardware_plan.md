@@ -2,7 +2,9 @@
 
 The owner asked, after reading `window_environment_plan.md`, to "add a plan to actually implement
 this in hardware, simulation and the ulx3s". This page is that plan. H0-H3 are built (in Bluesim
-and through synthesis; the status follows §6's table); H4 onward is not. Section 5's first numbers
+and through synthesis; the status follows §6's table). By the owner's decision of 2026-11-26
+("Do H4 and H7 last. Fine to do on bluesim until we are ready to go.") the two board rungs, H4 and
+H7, come last, and the rest are carried in Bluesim and synthesis. Section 5's first numbers
 come from one throwaway synthesis run in a scratch directory (Appendix A); H3's are the BSV
 design's own (§5.1). **No board was touched:** no `openFPGALoader`, no serial port, no card.
 
@@ -105,7 +107,7 @@ then save areas in SDRAM and colour. In parallel: KL0 on our PU (c2: H11a-c), th
 
 **What the owner supplies** (§7): a monitor that takes 1080p30 over HDMI, a PS/2-capable USB
 keyboard with an OTG adapter, a USB mouse, and board time, since the ULX3S is running Linux Flute
-for another session.
+for another session. Board time is needed only at the end (H4, H7).
 
 ---
 
@@ -437,14 +439,15 @@ The record format and every rule are OURS:
   by ±pitch (H3 had seen a variable multiply on a RAM address miss 25 MHz).
 - `bsv/WinFbBox.bsv` answers it in lockstep with the reference, checked by `bsv/run_win_tb.sh` on
   the read streams. The words leave as a dump's frame words do.
-- Open item: the host link does not carry them yet. Its TX (`bsv/WinLink.bsv` `sendData`) frames
-  data as 64-word records and takes 64 answers without looking at `isData`. So a read whose word
-  count is not a multiple of 64 would send its status, and later answers, as data words. This was
-  found by reading the rule; no read has been run through the link.
+- The host link carries them (fixed 2026-11-26). Its TX used to frame data as 64-word records
+  and take 64 answers without looking at `isData`, so a read whose word count is not a multiple
+  of 64 sent its status, and later answers, as data words (found by reading the rule). Now
+  `mkWinLinkTx` gathers up to 64 words first and sends a record with the real LEN (2N). The
+  `reads` and `targets` streams run through the link in `bsv/run_win_link.sh`, every data record
+  checked against `psi/winfb.py`'s `Frame.reads`; the old sender fails both (injections L7-L9).
 - `bsv/WinFbBox.bsv` runs the targets in lockstep too: the gen streams `targets`, `rand_x2_1..3`
   and the directed `bsv/win_streams/targets_stall.txt` (under +stall), with injections T1-T4 in
-  `bsv/run_win_tb.sh`'s header. No target record has been run through the host link
-  (`bsv/WinLink.bsv`).
+  `bsv/run_win_tb.sh`'s header.
 
 ### 2.5 Fonts
 
@@ -650,6 +653,81 @@ It is not in the suite, and it **does not touch a board**.
 pipe, or the board through the UART). After each event step the two frames are compared by PBM
 hash. This is the M5-M8 tests run against the RTL.
 
+
+### 4.1 The screen, keyboard and mouse emulated in Bluesim (H7s, 2026-11-26)
+
+On 2026-11-26 the owner asked: "Figure out how to do emulate the mouse, keyboard and screen in
+bluesim." The same day: "It's okay to make an emulator to go with this so we can test look and
+feel". Both are built, and every piece is OURS.
+
+**The bench.** `../../bsv/WinLiveTb.bsv` runs `mkWinBoardCore`, the composition the board top
+synthesizes: the box, the scan-out, the host link and the input box. It runs in its system and
+pixel clock domains. `../../bsv/WinHostDev.bsv` and `WinHostDev.c` sit on its pins:
+- **The screen** is a virtual monitor on the scan-out's composed pixel: DE, the two sync levels and
+  the 8-bit level, taken before the TMDS encoders through a new `video` tap. The tap is unused in
+  the board top, so synthesis drops it. The monitor locks on hsync and vsync, and checks every
+  line's and every frame's timing against **its own** mode table: a line made from
+  `psi/winscan.py` MODES by `tools/win_kl0_host.py mode`, never the RTL's `winMode`. It checks:
+  - the line length, the hsync width and where the active part starts;
+  - where vsync's edges fall;
+  - the vsync, active and total lines, and the first active line;
+  - the border's level.
+  It then takes the window's dots as a frame. The TMDS lanes are not decoded here: that is
+  `WinUlx3sTb`'s and `WinScanOutTb`'s job.
+- **The keyboard and mouse** are two PS/2 device models (`mkWinPs2Dev`) driving the input box's
+  clock and data pins with the real 11-bit, device-clocked waveform.
+  - Host keys are USB HID usages, turned into set 2 make and break bytes (E0, F0, Pause's E1) by
+    `WinHostDev.c`'s HOST table. That table is checked against `tools/wininput.py`'s by
+    `wininput.py hostcheck` on the file's `-DWHD_DUMP` build. It is kept apart from §3.1's
+    table, which is the board's (`WinKeyTable.bsv`).
+  - Mouse motion and buttons become standard 3-byte packets.
+- **The host end of the link** is a UART pair on the board's lines. Up records are parsed there,
+  and the answers are counted for the link's flow control (8 unanswered at most). The input box's
+  records come up as TYPE 3 (`tools/winlink.py`'s header) and go to the kl0 host.
+- **The kl0 host** is `../../tools/win_kl0_host.py`, a child process. It turns raw records into
+  the coordinator stand-in's events. That adapter is OURS: double clicks within 400 ms, moves held
+  until a click carries the position, named keys to their control codes. Double-click
+  classification belongs to the handler process, so it is an **open item for `psi/`**. The host
+  then runs kl0 and sends the device log down. It has two routes:
+  - `--tape`: `fep_bridge`'s replay. The recovered script must equal the tape's.
+  - `--probe`: step 3m's B3M probes. kl0 is rerun from the boot at every pause, and only the new
+    part of the log is sent; that the new log extends the old is checked at run time.
+
+**Two back ends**, chosen by environment variable:
+- **Scripted, for the suite.** `tools/wininput.py expand` makes a host script from a high-level
+  one. Frames come out as PBM, and no display is needed.
+- **Interactive.** `WinHostDev.c` is a client of `../../tools/winview`, a standalone SDL2 viewer
+  on a Unix socket. Its protocol is `winview_protocol.md`, and `tools/winview_client.py` is a
+  stdlib client of it. Because the viewer is its own program, the software window stack can
+  drive it later. That hookup is a later agent's, and `psi/` is not touched.
+  The interactive path's code is the scripted path's, minus the socket.
+
+**Speed, MEASURED 2026-11-26** (`run_win_live.sh speed`, this Mac): mode 0 (1080p30 letterbox)
+runs at 0.94 frames/s (2.33 M pixel clocks/s, with the system domain); mode 3 (640×480, the 2:1
+view) at 4.76 frames/s (2.00 M/s). So `run_win_live.sh live` defaults to mode 3, at scale 2. The
+viewer's mouse coordinates are doubled into the frame. Mode 0 is available as `live 0`, at about
+one frame a second.
+
+**The runner** is `../../bsv/run_win_live.sh`, called by `run_win_tb.sh`. Its scripted cases:
+- `console` (H7s): the `console_pwd.json` tape's user typed at the PS/2 wire. The coordinator
+  script recovered from the input box's records equals the tape's, in both batches, and the PSI
+  side replays the tape to its end. The monitor's frame, drawn through the link, the box and the
+  scan-out, has `CONSOLE_PIN`'s sha256, imported at run time. There are 0 timing, link and input
+  errors.
+- `password`: the menu by the mouse, then `local`, `pimos` and an unended password on the probe
+  route. The monitor's frame equals the software frame of the same run.
+- `viewer`: the interactive path, headless. The viewer runs under `SDL_VIDEODRIVER=dummy` with
+  pushed SDL events. The kl0 host recovers exactly those events (JIS `a`, a left click at
+  (10, 20)), and the viewer's last frame equals the software frame after them.
+
+11 injections are in the runner's header, each observed caught (V1-V11). Three passed at
+first, and each led to a check being added: vsync a line late (the monitor's first-active-line
+check), make and break swapped (the independent `expect` model and a shifted password), and the
+viewer's mouse Y unnegated (the viewer case's event check).
+
+The owner's interactive run is `bsv/run_win_live.sh live` (the real-monitor check stays deferred
+with H7).
+
 ---
 
 ## 5. FPGA
@@ -822,7 +900,9 @@ group's header cites its source line range.
 ### 5.4 Board bring-up: the owner's steps, never run by an agent
 
 The ULX3S on this machine runs Linux Flute for another session. Loading any bitstream replaces it,
-so these steps wait for a window agreed with that session. **No agent runs them.**
+so these steps wait for a window agreed with that session. **No agent runs them.** By the owner's
+decision of 2026-11-26 they are the last rungs (H4, H7); until then every rung is Bluesim and
+synthesis.
 
 ```
 # from pim/, after bsv/run_win_fpga.sh has built bsv/build-winfpga/ulx3s_win.bit (H3)
@@ -851,25 +931,34 @@ link activity and a CRC error.
 
 Sizes are rough, in lines of BSV plus Python, tests included.
 
+**Owner decision, 2026-11-26, verbatim: "Do H4 and H7 last. Fine to do on bluesim until we are ready
+to go."** So H4 and H7, the real-board rungs, are at the end of the table, and every other rung is
+carried in Bluesim and synthesis only. Where a rung's oracle was a board observation (H5, H9,
+H11c, H13), it now has a Bluesim/RTL oracle, and the board observation is the deferred check, made
+with H4 and H7 when the owner is ready. H7's Bluesim stand-in is H7s. The owner's request of the
+same day, "Figure out how to do emulate the mouse, keyboard and screen in bluesim.", is
+to be built as `../../bsv/WinHostDev.bsv`.
+
 | # | milestone | test, and what it proves | mirrors | size |
 |---|---|---|---|---|
 | H0 | **The framebuffer box and PBM lockstep.** The Python device layer's primitive set frozen as a command format (written here if M5 has not landed); `mkWinFbBox` with `fb_fill` and an `fb_dump`; `WinFbBoxTb` | a fill stream gives a byte-identical PBM on both sides; injections (1) and (4) of §4 fail it | M5 (its primitive set) | ~600 |
 | H1 | **Glyphs and the rest of the drawing set.** Glyph cache from test_11 (`font_load`), `fb_glyph`, `fb_line`, `fb_copy`, `fb_save`/`fb_restore` in block RAM | the 'A' at 16#2341 = 48 dots (S§1.4, MEASURED there); a Login PIMOS prompt run in test_11; XOR twice erases; HIDE/SHOW restores dots exactly; injections (2) and (3) fail | M0, M5, M7, M8 (their dot-count tests) | ~1,200 |
 | H2 | **Video timing and TMDS in simulation.** `mkWinScanOut` (modes 0, 2, 640×480), cursor overlay, serializer; `WinScanOutTb`, `WinTmdsTb` | decoded TMDS equals the PBM; timing per mode table; the cursor composite equals the Python view's | M5 (the PNG view) | ~700 |
 | H3 | **Synthesis fit.** The board top `mkWinUlx3s` (H0-H2 plus a self-test drawing a test card) through `run_win_fpga.sh` | LUT/FF/DP16KD/Fmax recorded per clock, as §5.1 but for the BSV design; mode 0 PASS on 3 seeds | — | ~300 |
-| H4 | **Board scan-out (the owner runs it).** H4a 640×480 reduced; H4b 1080p30 letterbox; H4c mode 2 if the monitor takes it | a photo or the owner's note of the test card, recorded in `bsv/README.md` | — | (owner) |
-| H5 | **Keyboard and mouse.** PS/2 receiver on US2, the §3.1 table, `{move}`/`{mouse}` from a PS/2 mouse (or the mouse on the link); `WinInputTb` wire-level round trip | Bluesim: the script equals the events out; injection: make/break swapped fails. Board (owner): typed keys appear in the event log over the link | M1 (keyboard), M6 (mouse) | ~500 |
+| H5 | **Keyboard and mouse.** PS/2 receivers for US2 (`mkWinPs2Rx`, a keyboard decoder with the §3.1 table, a mouse decoder emitting `{move}`/`{mouse}`); `WinInputTb` wire-level round trip | Bluesim: the script equals the events out, clean and with bad frames (parity, stop bit, a truncated frame); injection: make/break swapped fails. **Board check deferred to the end** (owner, 2026-11-26): typed keys in the event log over the link | M1 (keyboard), M6 (mouse) | ~500 |
 | H6 | **The host link carrying kl0's drawing.** `mkWinLink`, `tools/winlink.py`; the device layer's tee mode | the M1/M4 runs of `../../psi/test_espc.py` drive Bluesim through a pipe with equal PBM hashes at every step; dropped-byte injection is caught by the CRC | M1-M5 run against the RTL | ~800 |
-| H7 | **The Login PIMOS screen on a real monitor.** kl0 on the host, Login PIMOS's three prompts, menus and the echo-less password drawn by the board, keys from the board's keyboard | owner: the screen as the M2 transcript predicts; the PBM read back over the link equals the Python layer's | M1, M2, M4 | ~200 + owner |
 | H7b | **PIMOS console from the FEP emulator, no KL0** (§1.4), in Bluesim first (`WinFepConsoleTb` on the `kernel` tape) | the 47×14 `PIMOS CONSOLE` with `Shell>> `, labelled as the FEP stand-in's | M4 (via fep.py) | ~400 |
+| H7s | **The Login PIMOS screen in Bluesim** (the stand-in for H7): kl0 on the host, the system menu, Login PIMOS's three prompts and the echo-less password drawn by the RTL through the link; keys and mouse typed through PS/2 device models into H5's receivers; the picture taken by a virtual monitor on the scan-out's pixel stream (`WinHostDev`) | the coordinator script recovered from the receivers equals the tape's; the monitor's frame equals the Python layer's (the pinned M4 console screen) | M1, M2, M4 | ~600 |
 | H8 | **Save areas in SDRAM**, through `Sdram_Controller` behind the box | M7's restore test on the RTL with 10 windows hidden (more than block RAM holds) | M7 | ~500 |
-| H9 | **Chrome, manipulator and graphics at speed**: vblank-synchronized drawing, fill patterns | M6-M8 tests on the board through the link | M6-M8 | ~400 |
+| H9 | **Chrome, manipulator and graphics at speed**: vblank-synchronized drawing, fill patterns | M6-M8 screens through the link RTL in Bluesim, PBM-equal to the Python layer, with drawing held to vblank; **board check deferred to the end** | M6-M8 | ~400 |
 | H10 | **Colour (PSI-II/PSI-UX)**: frame in SDRAM with a line buffer, palette RAM, colour-number ops | a TM-785-style colour-pair window; 1/4/8-plane modes | — (no software milestone yet) | ~1,000 |
 | H11a | **(c2) KL0 front end, first light** (Bluesim): decode of the KL0 instruction word, the cell encoding (OURS), control and unify instructions on the core's boxes (`PimmDBox`, `PimmHBox`, `PimmSBox`), backtracking state (choice points, trail, cut) | lockstep against `psi/kl0.py` per instruction (opcode, PC, dereferenced registers), on `paragraph` methods (`espc.py behave`'s oracle); injection: a wrong cut barrier fails the first cut | P3's goal on our hardware | ~2,000 |
 | H11b | **(c2) the FEP census in lockstep**: every method `census --fep --recipes` runs | the success/failure/refused split equal to kl0's (829/235/385 at S§2.1), and the traces equal | — | ~1,500 |
-| H11c | **(c2) the boot route and Login PIMOS on the KL0 PU**, the display boxes driven by it instead of the host | the M1/M4 screens, PBM-equal to the host run; then on the board (owner) | M1-M4 | ~800 |
+| H11c | **(c2) the boot route and Login PIMOS on the KL0 PU**, the display boxes driven by it instead of the host | the M1/M4 screens, PBM-equal to the host run; the board check deferred to the end (owner, 2026-11-26) | M1-M4 | ~800 |
 | H12 | **(c1) the microcoded PU**: `PimPU`'s datapath built to Fig. 3-25, its WCS loaded with `syspsi` and `sysidat`; each field settled in `asm/mekbn.py` first | rung P2 (`../pimos_roadmap.md` §9): the held microcode decodes KL0 instructions; then P3 against (c2)'s traces at instruction boundaries; then `pimm.MEkbn` (Pseudo PIM/m) on the same datapath | P1-P3 | open (large) |
-| H13 | **SIMPOS → FEP → PIMOS on one board**: a PU in KL0 mode running the stand-ins and held `pimfep`, linked by `PimmScsiBox` to a PU in KL1 mode running PIMOS (or one PU switching modes, as Pseudo PIM/m) | P5 on hardware: `pimfep` in place of `mkPimmFepEmu`; Login PIMOS → `Shell>> ` on the monitor | P5 | open; needs `mkPimmCore` synthesized and SDRAM-backed |
+| H13 | **SIMPOS → FEP → PIMOS on one board**: a PU in KL0 mode running the stand-ins and held `pimfep`, linked by `PimmScsiBox` to a PU in KL1 mode running PIMOS (or one PU switching modes, as Pseudo PIM/m) | P5 on hardware: `pimfep` in place of `mkPimmFepEmu`; Login PIMOS → `Shell>> ` on the monitor | P5 | open; needs `mkPimmCore` synthesized and SDRAM-backed; synthesis and Bluesim first, the board check deferred to the end |
+| H4 | **Board scan-out (the owner runs it; LAST, owner 2026-11-26).** H4a 640×480 reduced; H4b 1080p30 letterbox; H4c mode 2 if the monitor takes it | a photo or the owner's note of the test card, recorded in `bsv/README.md` | — | (owner) |
+| H7 | **The Login PIMOS screen on a real monitor (LAST, owner 2026-11-26; H7s is its Bluesim stand-in).** kl0 on the host, Login PIMOS's three prompts, menus and the echo-less password drawn by the board, keys from the board's keyboard | owner: the screen as the M2 transcript predicts; the PBM read back over the link equals the Python layer's | M1, M2, M4 | ~200 + owner |
 
 **Status (2026-11-25): H0 and H1 built in Bluesim.** `../../psi/winfb.py` (the Python reference; its
 header freezes the command format and every OURS choice), `../../bsv/WinFbBox.bsv` (`mkWinFbBox`: all
@@ -958,7 +1047,8 @@ answers port A two cycles after a put, and the box waited a cycle on every frame
 **H6, the RTL half, built in Bluesim (2026-11-25).**
 - `../../tools/winlink.py` freezes the link (OURS). Down, one frame a command: `A5 SEQ LEN=13`, the
   104-bit record, then CRC-16/CCITT-FALSE. Up, records `5A SEQ TYPE LEN … CRC`: status, dump data
-  in 64-word records, and errors (CRC, LEN, SEQ).
+  in 64-word records (since 2026-11-26 a read's too, the last record short), and errors (CRC,
+  LEN, SEQ).
 - It also holds the receiver's model and the checker.
 - `../../bsv/WinLink.bsv` (`mkWinLink`: UART receiver and transmitter, frame receiver, record
   sender, each its own module) puts the box behind one `Client`.
@@ -971,19 +1061,114 @@ answers port A two cycles after a put, and the box waited a cycle on every frame
   - So the plan's §4 injection "drop one byte: the CRC failure is reported, not drawn" is a
     passing case.
   - The RTL injections are in `run_win_link.sh`'s header.
-- Not done:
-  - the board top with the link at 1 Mbaud (divisor 25), and synthesis of it;
-  - the device layer's tee mode and the `test_espc.py` runs through a pipe. Those are in `psi/`
-    and belong to the window software's owner.
 
-Not yet: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
+**H6 done in Bluesim and synthesis (2026-11-26).**
+- The board top carries the link. `mkWinUlx3s` instantiates `mkWinLink(25)` (1 Mbaud on the
+  25 MHz clock) on the FTDI UART, `ftdi_txd` M1 in and `ftdi_rxd` L4 out, the pins copied from
+  `ulx3s_fep.lpf` into `../../bsv/ulx3s_win.lpf`. The link is connected to the box once the
+  self-test is done, so a host sees the test card first. LED 3 lights while the line in is low.
+- `run_win_fpga.sh`, MEASURED 2026-11-26, all three seeds PASS:
+
+  | seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+  |---|---|---|---|---|---|---|---|
+  | 1 | 12,161 / 83,640 | 5,167 | 156 / 208 | 33.94 PASS | 80.05 PASS | 411.02 PASS | 1.47 ns |
+  | 2 | 12,161 | 5,167 | 156 | 32.71 PASS | 86.27 PASS | 410.68 PASS | 1.48 ns |
+  | 3 | 12,161 | 5,167 | 156 | 30.74 PASS | 74.81 PASS | 402.74 PASS | 1.24 ns |
+
+  yosys's counts are 8,555 LUT4 (1,242 more than the H3 follow-up), 5,167 TRELLIS_FF, 156
+  DP16KD (the link's queues went to LUT RAM: 180 TRELLIS_DPR16X4, 38 more), 981 PFUMX and
+  27 L6MUX21. The link costs about 1,500 TRELLIS_COMB and 890 FF. The block-RAM count is
+  unchanged, so `WIN_DP16KD` stays at 156.
+- kl0's drawing goes through the link RTL. `../../tools/win_kl0_link.py` makes the M1 and M4
+  runs of `../../psi/test_espc.py` in the test's own way (the Window helpers, read only) and
+  turns their device logs into link streams. Its `pins` check imports the tests' pins at run
+  time; none is copied. `run_win_link.sh` runs two more cases:
+  - kl0_m1: the Login PIMOS window's three stages as one stream of 474 frames. The stages'
+    logs are prefixes of one another, which the tool checks. A dump follows the 312th command
+    (name), the 362nd (password) and the 471st (login).
+  - kl0_m4: the PIMOS console from the tape, 678 frames.
+  Every dump read back over the link equals its `Window.PINS` / `CONSOLE_PIN` sha256. The
+  statuses and error records equal `winlink.py check`'s. Both streams pass SEQ 255, so the
+  sequence wrap is exercised.
+- This is the bench equivalent of the device layer's tee mode: the log is replayed after the
+  run, not teed during it. The tee mode itself is in `psi/windev.py` and belongs to the window
+  software's owner, so it is an **open item** there (a hook that sends each primitive as it is
+  run). The plan's "PBM hashes at every step" is checked at the stage boundaries only: a dump is
+  1,280 data records up the link (about 171 kB, about 6.8 M bench cycles at 4 cycles a bit), so
+  a dump after every command would cost hours of Bluesim.
+
+**H5 built in Bluesim (2026-11-26).** The keyboard and mouse, at the wire level.
+- `../../tools/wininput.py` is the reference, and its header freezes what is OURS. It keeps two
+  tables apart:
+  - HOST, the keyboard's: a USB HID usage to its scan code set 2 make code (the break is F0
+    before the last byte). SDL2's scancodes are the same numbers.
+  - KEYS, §3.1's table: set 2 to the PSI's keys. It is generated into
+    `../../bsv/WinKeyTable.bsv` (`wininput.py bsv`, checked by `--check`), and its JIS for all
+    of printing ASCII equals `psi/kl0.py` Str's (`jischeck`).
+  It also freezes the event record (KIND, A, B, C, FLAGS, T; 10 bytes), the error codes, the
+  receivers' model, and a script format that is expanded to host actions and device bytes.
+- `../../bsv/WinInput.bsv` holds the box. `mkWinPs2Rx` is the pins: synchronizers, a clock
+  filter, 11 bits, parity and stop checked, a timeout for a cut frame. `mkWinKbdDec` decodes
+  E0/F0/E1 and Shift/Ctrl/Alt through the table. `mkWinMouseDec` turns 3-byte packets into an
+  absolute position, clamped, starting at the coordinator's (640, 472), with PS/2's Y inverted.
+  `mkWinInput` merges them with a millisecond stamp. `mkWinPs2Dev` is the benches' PS/2 device
+  model: it drives clock and data as a device does, and makes parity, stop, cut and clock-glitch
+  faults on request.
+- `../../bsv/WinInputTb.bsv` and `../../bsv/run_win_input.sh` (called by `run_win_tb.sh`) run
+  four cases, each checked record for record against the model:
+  - `keys`: every printing key both ways, the named keys, F1-F12, Shift-F1..F7 (pf#12-18),
+    Pause (abort), Ctrl-J (lf), Ctrl-G (bell), held keys repeating;
+  - `mouse`: moves past every edge, and each button;
+  - `faults`: on both receivers, between good input;
+  - `board`: `keys` at the board's bit time (2,000 cycles), filter and timeout.
+  11 injections are in the runner's header, including the plan's make/break swap. Two passed
+  the first scripts: the swap, until held keys were added, and a missing clock filter, until
+  clock glitches were added.
+- **OURS or INFERENCE, open for the board check deferred to the end:**
+  - US2's PS/2 wiring (D+ clock, D- data) is INFERENCE, from the usual passive adapter.
+  - Host-to-device sending is not built, so a real mouse, which streams only after F4, is
+    exercised in Bluesim only.
+  - US2 is one port (R3), so the board top takes the keyboard there.
+
+**H7s built in Bluesim (2026-11-26), the stand-in for H7.** The Login PIMOS screen comes from kl0 on
+the host. The keys and mouse are typed at the PS/2 wire into H5's receivers, and the picture is
+taken by the virtual monitor (§4.1).
+- The board's composition is now one BDPI-free module, `mkWinBoardCore` in `WinUlx3s.bsv`.
+  `mkWinUlx3s` and `WinLiveTb` both instantiate it, so what is simulated is what is synthesized.
+- The board top takes the PS/2 keyboard on US2. `usb_fpga_bd_dp` is the clock and
+  `usb_fpga_bd_dn` the data, which is INFERENCE; the pull-ups are on. LED 4 shows the clock.
+- The real-monitor check stays deferred with H7.
+- **Synthesis: the board top with the input box does NOT pass `run_win_fpga.sh` (MEASURED
+  2026-11-26). Open item.** H6's table holds for commit 859975f6 only. The measurements:
+  - yosys maps fine. The branch's top, merged with master ba41e458, is 10,263 LUT4, 6,057 FF,
+    221 DPR16X4 and 157 DP16KD. The 157th DP16KD is §3.1's key table, which `proc_rom` makes
+    into a ROM; `run_win_fpga.sh`'s check now expects 157.
+  - nextpnr 0.6 does not route it. On seeds 1, 2 and 3, router1 was still at about 59,000 of
+    67,258 arcs after 1,800 s each, rerouting about 66 arcs a second against a healthy run's
+    roughly 960. router2 (seed 1) stayed at about 12,000 overused wires to its 17th iteration.
+    The placed wirelength is about 200,000, against 130,000 for master's top.
+  - The control: master ba41e458's own top, without the input box, routes and passes on seeds
+    1-3 (231-301 s; pclk 78.06-87.17 MHz). Mapping the key table to logic (`proc -norom`, 156
+    DP16KD) does not help: none of the three seeds routes in 600 s.
+  - Before the merge, the top with the input box routed on seeds 2 and 3 (320 s and 460 s).
+    Seed 2 passed; seed 3 failed pclk, 71.39 MHz against 74. Seed 1 did not finish in 9 hours.
+  - So the input box's part of the top, or what `mkWinBoardCore` changed around it, takes
+    routing past what nextpnr 0.6 manages, though utilisation is about 16%. The likely next
+    steps, none tried: find which nets the router keeps ripping up; floorplan the PS/2 side
+    near its pins (US2 at D15/E15); or take the input box out of the board top until H7.
+  - `run_win_fpga.sh` now stops a seed that has not routed in `WIN_PNR_MAX_S` seconds (3600 by
+    default) and counts it as a FAIL, rather than hanging.
+
+Not yet, and last by the owner's decision of 2026-11-26: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
 report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback
 built (`run_win_fpga.sh` is mode 0 only), and mode 3's 640×480 is the fallback for H4a.
 
 **Order:**
-- H0-H3 are all Bluesim and synthesis. They need no board, and nothing from the owner but review.
-- H4, H5 and H7 need the board, a monitor and input devices.
-- H6 can go before H4: the link is checked in Bluesim through a pipe.
+- Everything but H4 and H7 is Bluesim and synthesis (owner, 2026-11-26: "Do H4 and H7 last. Fine to
+  do on bluesim until we are ready to go."). They need no board, and nothing from the owner but
+  review.
+- H4 and H7 need the board, a monitor and input devices, and come last; with them go the deferred
+  board checks of H5, H9, H11c and H13.
 - H11a-H11c, the KL0 PU, run in parallel with the display work and need no board until H11c. They
   touch `bsv/`'s core, so they are scheduled with whoever is working on `mkPimmCore`.
 
@@ -1020,7 +1205,8 @@ step 3l did:
 | Q3 | where the PSI's rasterop lived (controller or microcode) | S§1.5 INFERENCE; for route (c1), `syspsi`'s I/O microcode may show it (P1) | INFERENCE |
 
 **What the owner must supply:**
-1. **Board time**, arranged with the Linux Flute session (H4, H5, H7).
+1. **Board time**, arranged with the Linux Flute session, at the end (H4, H7, and the deferred board
+   checks of H5, H9, H11c, H13; owner, 2026-11-26).
 2. **A monitor or TV with HDMI or DVI input** that takes 1920×1080@30 (TVs commonly do), and, if
    possible, one that takes 1280×1024 at 50-60 Hz. Plus an HDMI cable to the GPDI connector.
 3. **A USB keyboard that also speaks PS/2** (a "combo" keyboard, per the ULX3S manual), with a

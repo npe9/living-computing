@@ -1,0 +1,21 @@
+# H7s: the user of psi/fep_bridge_tapes/console_pwd.json (its `script`),
+# typed at the PS/2 wire (tools/wininput.py's script format).  The kl0
+# host (tools/win_kl0_host.py --tape) recovers the coordinator's events
+# from the input box's records and requires them to equal the tape's.
+# login: the right button double-clicked at MENU_AT opens the system menu;
+# the left button on "Login PIMOS"; the requester's three answers
+click r 640 560
+click r 640 560
+click l 978 605
+type local
+key enter
+type pimos
+key enter
+key enter
+# a pause longer than the kl0 host's batch gap: the shell batch
+wait 1500
+click l 900 620
+wait 500
+click l 300 300
+type pwd
+key enter
