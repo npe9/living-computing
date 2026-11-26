@@ -797,8 +797,8 @@ function Bit#(16) budgetClocks(DecodedInstr d, Bool taken) =
 //     floor again holds: max(R, 15 + u).  15 = 16 - 1: PDF 126's INVERT
 //     rows print 16 + 2b from (DU,16,4) up, Table 3's "true result"
 //     .6(x/y) over a fixed 16.
-//   (The two arms below take effect when their classes send passes:
-//   SRD's round and the K family, steps 3 and 4.)
+//   (The K arm below takes effect from step 3, 2026-11-26, the SRD arm
+//   when SRD's round sends passes.)
 //   * SRD (decimal, nonzero offset): the row's 4-clock round (srdRound
 //     in eboxClocks) is the unit's: R - 4 + u.
 //   * K, KE, KR, KF, KFE, KFR (not immediate): KF's own fixed part, 8

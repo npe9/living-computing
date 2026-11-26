@@ -587,6 +587,80 @@ HALF (b), STEP 2 DONE 2026-11-26: THE DECIMAL M+ FAMILY (M+, M+MG, M+1)
   6,304,298, assign 6,322,787, past-move 6,339,189, p1deck 6,734,524. MCP
   runs no decimal M+.
 
+HALF (b), STEP 3 DONE 2026-11-26: THE DECIMAL K FAMILY (K, KE, KR, KF, KFE, KFR)
+(`StretchSAU.bsv`'s `SauStCmp` / `SauStCmpF`, `sauStepCmpW`, `sauStepCmpEarly`,
+`sauStepCmpWLiteral`; `StretchExecute.bsv`'s compare request):
+- Source: Table 3 (Vol. 1 printed p.3-8, PDF 26, read in the image). K, KE
+  and KR cost .6(x/y + w/r). KF, KFE and KFR cost .6(x/y). The glossary
+  (printed p.3-10, PDF 28) defines w as "the number of accumulator
+  significant bits greater than the field length".
+- The decimal compare is a stepped subtraction in mkSAU. The row's K arm
+  is 7 + u (`sauRowWithUnit`, from step 2). The immediate compares are
+  not stepped and keep half (a)'s contract.
+- **w.** It is stepped as ONE pass when the accumulator has a significant
+  digit beyond the field, and none when it has none. This is DERIVED: the
+  loop past the field ends at the first nonzero byte, which decides the
+  compare. PDF 127-129 print K exactly one byte over KF at every field
+  below 64 bits against the standard 64-bit operand, and no extra byte at
+  a whole unsigned word (w = 0).
+- **The literal w/r** counts every digit up to the accumulator's highest
+  significant one. It is kept as a switch and REJECTED by measurement.
+- **The early exit (the +28).** A compare that the signs decide (unlike
+  signs, neither one zero) takes the sign pass, one data pass and K's w
+  pass. PDF 127-132's INVERT SIGN blocks print 12 clocks unsigned and 14
+  signed at every length. The early exit is DERIVED from sau_pau_spec.md
+  section 5 (3 of the 9 paths of Fig. 3.11.12 reach TON SIR without
+  EOC1/EOC2). The pass count is read off the pages.
+- Atlas: the K pages (PDF 127-132; forwarding 154-159; immediate 177-182;
+  4,896 cases). Each run is in a frozen copy with `--rebuild`.
+  - A first `all` run was identical to the `w` run and was discarded.
+    The cause was not the testbench: `rsync -a` restored StretchSAU.bsv
+    with its old mtime, so bsc's `-u` reused the `.bo` compiled with the
+    switch off. `meas.sh` now touches the synced sources.
+  - The table's last column pair is toward / away.
+
+  | step | within 1 before -> after | within 3 before -> after | toward | away |
+  |---|---|---|---|---|
+  | relocation (K's 10 against KF's 8 taken out of the row; `sauStepCmpW`, `sauStepCmpEarly` off) | 2,114 -> 1,948 | 2,816 -> 2,830 | 268 | 492 |
+  | + w | 1,948 -> 2,114 | 2,830 -> 2,794 | 268 | 340 |
+  | + the early exit | 2,114 -> 2,264 | 2,794 -> 3,050 | 408 | 76 |
+  | all against batch55 | 2,114 -> 2,264 | 2,816 -> 3,050 | 410 | 258 |
+  | literal w/r instead (against all) | 2,264 -> 1,974 | 3,050 -> 2,676 | 32 | 560 |
+
+  - Per instruction, all against batch55: K and KR 106 toward / 62 away
+    each, KF and KFR 99 / 67 each. KE, KFE and the immediates do not
+    move.
+  - **w** (relocation plus w together equal batch55's within-1 count).
+    - The term is KEPT on the source (Table 3's w/r), not on the count.
+    - Its away cases are mostly WB XOVR columns already off the page,
+      which are A6's: for example +5 -> +8. The rest are (D,8,4) ix_ext,
+      -1.05 -> -2.05.
+  - **The early exit.**
+    - The decimal INVERT rows land on the page: for example K INVERT
+      (DU,16,4) ni_ext goes from +5.97 to -0.02.
+    - Of the 76 away:
+      - most are `_int_wbx` columns, which go to -9.1 (A6's WB XOVR
+        timing);
+      - the rest are ix_ext INVERT cells, which go to about -2.05. The
+        page prints 16.07 there, 2 clocks over the signed direct column
+        (14.0) and 4 over the unsigned (12.03); the model's indexed
+        column is 2 over its direct one. The missing clocks are in the
+        indexed path, not in the unit, so they are not attributed to this
+        term.
+    - The term is KEPT.
+- `mkSauStepTb`: vectors 17-21. Injections, each in a frozen copy:
+  - `sauStepCmpW := False` fails 18 and 20 (4 against 6 each);
+  - `sauStepCmpEarly := False` fails 20 (10 against 6) and 21 (8 against
+    2);
+  - `sauStepCmpWLiteral := True` fails 18 (8 against 6);
+  - nothing else fails.
+- Decks: every K deck and both pins pass unchanged (vfl_decimal_compare,
+  vfl_compare_field, vfl_compare_offset).
+- MCP boot sections: every check passes, and the halt clocks are
+  unchanged from step 2.
+- Binary K is computed inline and does not reach the unit. Its rows did
+  not move.
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).

@@ -3921,9 +3921,9 @@ function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool ah0 = (ind[63 - ind_AH] == 1);
               Bool skipCmp = condEq && !(ind[63 - ind_AE] == 1);
               if (vi.m.decimal == 1 && !skipCmp) begin
+                Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
+                Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
                 if (decOf(boxResult) matches tagged Valid .kr) begin
-                  Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
-                  Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
                   // magnitude order from the subtraction (a digit beyond
                   // the 32nd makes the storage operand the larger)
                   Cmp3 m = kHi ? CmpLow
@@ -3933,7 +3933,13 @@ function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
                     : (as_ == 0) ? m
                     : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
                 end else begin
-                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False, steps: sauNoSteps });
+                  // STEPPED (fidelity_plan.md A3 (b) step 3, 2026-11-25),
+                  // except the immediate compares, whose row takes the
+                  // address field's bytes out (eboxClocks) and keeps half
+                  // (a)'s contract.  `early`: the signs alone decide it.
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False,
+                                steps: immediate ? sauNoSteps
+                                     : vflDecFieldSteps(cx, fieldCmp ? SauStCmpF : SauStCmp, as_ != bs_) });
                   needsRead = tagged Valid 0;
                 end
               end

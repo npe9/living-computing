@@ -250,6 +250,31 @@ Bool sauStepRecomp = True;
 //   * sauStepOneComp: M+1's unlike signs, ".6(x/y) when true result or
 //     .6(2x/y + 1) when complement result" (Table 3's comment column).
 //     Off: the true-result count for both.
+// STEP 3 (2026-11-25), THE K FAMILY (SauStCmp, SauStCmpF):
+//   * sauStepCmpW: K / KE / KR's w/r, "the number of accumulator
+//     significant bits greater than the field length" (glossary printed
+//     p.3-10, PDF 28) over r.  STEPPED AS ONE PASS when the accumulator
+//     has any significant digit beyond the field, none when it has none:
+//     DERIVED, the loop past the field ends at the first nonzero byte,
+//     which decides the compare.  The literal count (every byte up to
+//     the highest significant one) is contradicted by PDF 127-129: K
+//     prints exactly one byte over KF at every field below 64 bits
+//     against the 64-bit standard operand, where w/r would be 12 bytes at
+//     (DU,16,4), and none at a whole unsigned word, where w = 0
+//     (fidelity_plan.md A3 (b) step 3 has both measured).
+//   * sauStepCmpEarly: the compare decided by the signs (unlike, neither
+//     a zero) ends early: the sign byte's pass, one data pass, and K's w
+//     pass.  The "+28" of fidelity_plan.md A3: PDF 127-132's INVERT SIGN
+//     blocks print 12 unsigned and 14 signed at every length.  DERIVED
+//     from sau_pau_spec.md section 5 (3 of 9 paths of Fig. 3.11.12 reach
+//     TON SIR without EOC1/EOC2); the pass count is read off the pages.
+Bool sauStepCmpW     = True;
+// THE LITERAL READING, kept as a switch so the measurement can be re-run:
+// w/r = the digits from the field's top up to the accumulator's highest
+// significant one.  MEASURED and REJECTED (fidelity_plan.md A3 (b) step
+// 3); False is the model.
+Bool sauStepCmpWLiteral = False;
+Bool sauStepCmpEarly = True;
 Bool sauStepMemRecomp = True;
 Bool sauStepOneCarry  = True;
 Bool sauStepOneComp   = True;
@@ -454,6 +479,19 @@ function Bit#(8) sauRun(Bit#(128) cv, Integer from, Bit#(8) to);
   return c;
 endfunction
 
+// The literal w/r (decimal): the digits of `a` from digit `top` up to its
+// highest nonzero one (0 if none).  sauStepCmpWLiteral only.
+function Bit#(8) sauSigDigitsAbove(Bit#(128) a, Bit#(8) top);
+  Bit#(8) n = 0;
+  for (Integer j = 0; j < 32; j = j + 1) begin
+    Bit#(4) dg = a[4*j+3:4*j];
+    Bit#(8) jj = fromInteger(j);
+    if (jj >= top && dg != 0)
+      n = jj + 1 - top;
+  end
+  return n;
+endfunction
+
 interface SAU;
   method Action request(SauReq r);
   method Bool responseReady();
@@ -504,6 +542,10 @@ module mkSAU(SAU);
   Reg#(Bit#(128)) rg_cv[2]    <- mkCReg(2, 0);
   Reg#(Bit#(16))  rg_el[2]    <- mkCReg(2, 0);
   Reg#(Bit#(16))  rg_own[2]   <- mkCReg(2, 0);
+  // Step 3: a significant digit of `a` beyond the field (`top` on), the
+  // compare's w pass (sauStepCmpW).  Set at the request.
+  Reg#(Bool)      rg_w[2]     <- mkCReg(2, False);
+  Reg#(Bit#(8))   rg_wn[2]    <- mkCReg(2, 0);   // the literal w/r's count
 
   Integer addClocks = sauDigits / sauAddDigits;
   Integer mulClocks = sauMulWidth / sauMulBits;
@@ -589,6 +631,16 @@ module mkSAU(SAU);
             np = !rg_sub[0]
                ? (sauStepOneCarry ? zeroExtend(sauRun(cv, 1, sp.top)) + 1 : 1)
                : ((sauStepOneComp && rcp) ? 2 * p16 + 1 : p16);
+          // K, KE, KR (with w) and KF, KFE, KFR: the field's passes, or
+          // on a decision at the signs the sign pass, one data pass and w
+          // (sauStepCmp*'s notes).
+          SauStCmp, SauStCmpF: begin
+            Bit#(16) w = (sp.cls != SauStCmp || !sauStepCmpW) ? 0
+                       : sauStepCmpWLiteral ? zeroExtend(rg_wn[0])
+                       : (rg_w[0] ? 1 : 0);
+            Bit#(16) s = zeroExtend(sp.passes - sp.b0);
+            np = (sauStepCmpEarly && sp.early) ? s + 1 + w : p16 + w;
+          end
           default: np = p16;
         endcase
         // AN UNSTEPPED REQUEST KEEPS HALF (a)'s TIME, 4 clocks or 8
@@ -690,6 +742,8 @@ module mkSAU(SAU);
         Bit#(128) bsum = d.a + bc + (d.sub ? 1 : 0);
         rg_cv[1]    <= d.binary ? (d.a ^ bc ^ bsum) : 0;
         rg_steps[1] <= d.steps;
+        rg_w[1]     <= !d.binary && ((d.a >> {d.steps.top, 2'b00}) != 0);
+        rg_wn[1]    <= d.binary ? 0 : sauSigDigitsAbove(d.a, d.steps.top);
         rg_el[1]    <= 0;
         rg_own[1]   <= 0;
         rg_ctr[1]   <= fromInteger(addClocks);
@@ -1196,6 +1250,14 @@ endmodule
 //  14  M+1 0444 + 1: c = 0, one pass                              2
 //  15  M+1 0005 - 1, unlike, true result: x/y = 4 passes          8
 //  16  M+1 0000 - 1, unlike, complement result: 2 x 4 + 1        18
+// STEP 3, THE K FAMILY (SauStCmp, SauStCmpF; the compare's subtraction):
+//  17  K (DU,8,4) 44 : 44, nothing of the accumulator beyond: w = 0  4
+//  18  K 4444 : 44, accumulator digits beyond the field: w = 1 pass  6
+//  19  KF, the same operands: no w                                   4
+//  20  K (D,16,4) 4444 : 444 decided at the signs: sign pass, one
+//      data pass, w: 3 passes (not 4 + 1)                           6
+//  21  K (DU,16,4) 4444 : 4444 decided at the signs, unsigned, no w:
+//      one data pass                                                 2
 // INJECTIONS, OBSERVED 2026-11-25 (each in a scratch copy of this file):
 //   * sauStepZ := False: vectors 1, 2, 3 and 5 FAIL on clocks (2, 2, 2, 4
 //     against 4, 8, 4, 6) -- the carry and borrow vectors -- and the rest
@@ -1203,8 +1265,15 @@ endmodule
 //   * sauStepRecomp := False: vector 4 FAILS on clocks (4 against 10) and
 //     vector 7 on ownClocks (the unit reports 2 while the datapath's
 //     recomplement takes 4); the rest pass.
+// STEP 2 (2026-11-26): sauStepMemRecomp := False fails 11 (4 against 10);
+//   sauStepOneCarry := False fails 13 (2 against 8); sauStepOneComp :=
+//   False fails 16 (8 against 18); the rest pass.
+// STEP 3 (2026-11-26): sauStepCmpW := False fails 18 and 20 (4 against 6
+//   each); sauStepCmpEarly := False fails 20 (10 against 6) and 21 (8
+//   against 2); sauStepCmpWLiteral := True fails 18 (8 against 6); the
+//   rest pass.
 // ---------------------------------------------------------------------
-typedef 17 NStepVec;
+typedef 22 NStepVec;
 
 (* synthesize *)
 module mkSauStepTb(Empty);
@@ -1241,6 +1310,11 @@ module mkSauStepTb(Empty);
       14: DecReq { a: 128'h0444, b: 128'h1, sub: False, binary: False, steps: fs(4, 4, SauStOne, False) };
       15: DecReq { a: 128'h0005, b: 128'h1, sub: True, binary: False, steps: fs(4, 4, SauStOne, False) };
       16: DecReq { a: 128'h0000, b: 128'h1, sub: True, binary: False, steps: fs(4, 4, SauStOne, False) };
+      17: DecReq { a: 128'h44, b: 128'h44, sub: True, binary: False, steps: fs(2, 2, SauStCmp, False) };
+      18: DecReq { a: 128'h4444, b: 128'h44, sub: True, binary: False, steps: fs(2, 2, SauStCmp, False) };
+      19: DecReq { a: 128'h4444, b: 128'h44, sub: True, binary: False, steps: fs(2, 2, SauStCmpF, False) };
+      20: DecReq { a: 128'h4444, b: 128'h444, sub: True, binary: False, steps: fs(4, 3, SauStCmp, True) };
+      21: DecReq { a: 128'h4444, b: 128'h4444, sub: True, binary: False, steps: fs(4, 4, SauStCmp, True) };
       default: DecReq { a: 128'h1, b: 128'h1, sub: False, binary: True, steps: sauNoSteps };
     endcase;
   function DecRsp wantOf(Bit#(5) i) =
@@ -1261,11 +1335,17 @@ module mkSauStepTb(Empty);
       14: DecRsp { r: 128'h445,    carry: False };
       15: DecRsp { r: 128'h4,      carry: True };
       16: DecRsp { r: 128'h1,      carry: False };
+      17: DecRsp { r: 128'h0,      carry: True };
+      18: DecRsp { r: 128'h4400,   carry: True };
+      19: DecRsp { r: 128'h4400,   carry: True };
+      20: DecRsp { r: 128'h4000,   carry: True };
+      21: DecRsp { r: 128'h0,      carry: True };
       default: DecRsp { r: 128'h2, carry: False };
     endcase;
   function Bit#(16) clocksOf(Bit#(5) i) =
     case (i) 0: 2; 1: 4; 2: 8; 3: 4; 4: 10; 5: 6; 6: 4; 7: 4; 8: 4;
-             10: 4; 11: 10; 12: 4; 13: 8; 14: 2; 15: 8; 16: 18; default: 4; endcase;
+             10: 4; 11: 10; 12: 4; 13: 8; 14: 2; 15: 8; 16: 18;
+             17: 4; 18: 6; 19: 4; 20: 6; 21: 2; default: 4; endcase;
 
   rule rl_issue (!done && !issued);
     box.request(tagged SauAdd reqOf(idx));
