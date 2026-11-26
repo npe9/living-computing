@@ -60,7 +60,7 @@ from it.
 | B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles the stand-ins (36 before step 3l; 48 files in `psi/standin/` after it, 50 after step 3m) | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
-| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Step 3o: the alarms `on_after` (303) and `on_at` (302) round-trip, the alarm at once (no clock is modelled; §4.9). Not reached: `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
+| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Step 3o: the alarm `on_after` (303), which already ran on the earlier stand-ins, is pinned, and `on_at` (302) runs since `on_at/2` was stood in; the alarm comes at once (no clock is modelled; §4.9). Not reached: `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE. **Step 3l:** `directory` (`retrieve/3,4` and the node methods, INTERPOLATED) over an OURS tree built from the HELD psdpim archive and its `INSTALL` placement; `node_full_name/3` (INFERENCE) | **DONE as a stand-in** (§4.4). The real file system is lost; the tree holds only what PIM/m installs. |
 | B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal. **Step 3l:** a coordinator process (OURS state and selectors, INTERPOLATED behaviour) reads `me:login.com` through `standard_input_file` (INTERPOLATED; reader OURS), applies its `define`, holds its `menu`, answers `information/3`; `standard_io_window` and `font` (OURS bodies, held selectors) | **The coordinator: DONE as a stand-in** (§4.4). The window system only as far as the login requester's first prompt: a window is a transcript and an input stream; no bitmap, no menu window (the menu is a list). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors. **Step 3l:** `user`, `world`, `password_list` (INTERPOLATED from the held sends; registry and password OURS); the held `create/4` and `setup_process/2` run to their ends | **DONE as a stand-in** (§4.4). |
@@ -481,7 +481,9 @@ not change it.
 - B4 runs for the FEP timer as a stand-in: its requests round-trip
   through its device process under the supervisor.
 - Not reached in B4:
-  - `on_after` (303) is the timer's alarm, and it needs an alarm process;
+  - `on_after` (303) is the timer's alarm, and it needs an alarm process
+    (step 3o: it does run, the alarm at once, on `alarm_watch`'s
+    stand-ins; no clock is modelled; §4.9);
   - `terminate_core`: blt 90 (`pcb`, read in `$or$5` @3bb) now has a
     row, its operands KNOWN-PLAINTEXT from kappa2 `LUUTIME.ESP`:107.
     But it reads word 15 of the PCB, which nothing on the route writes,
@@ -783,9 +785,11 @@ requester in the debugger's own process, and no prompt comes back
 The timer's alarms (B4, open item 2 below). The held `pimos_timer`
 `on_after/4` (@10c-131) and `on_at/4` (@136-) make an `alarm_watch` and
 a `time`, set the count, `wait/1`, and reply `{1, 9}`: 9 is `wake_up`,
-what PIMOS's waiter reads (`../fep_services.md` §2.4). Step 3o stood in
-`alarm_watch on_at/2` (INTERPOLATED, the held send @14e); both round-trip
-(`test_step3o_timer_alarms`), the alarm at once, since no clock is
+what PIMOS's waiter reads (`../fep_services.md` §2.4). 303 already ran
+this way on the stand-ins of steps 3d-3k (`alarm_watch on_after/2`,
+`wait/1`), untested until now; step 3o stood in `alarm_watch on_at/2`
+(INTERPOLATED, the held send @14e), so 302 runs too. Both are pinned by
+`test_step3o_timer_alarms`; the alarm comes at once, since no clock is
 modelled.
 
 **Where the route stops now.** Both of §1's top levels run as stand-ins,
@@ -816,11 +820,12 @@ login run (§4.5). Open, in order:
      window milestones (`pmacs_window.esp` since M4 and M7,
      `standard_io_window.esp` since M7; INTERPOLATED, bodies OURS).
      SIMPOS's own bodies are still not printed.
-   - The timer's alarms 303 and 302: they round-trip since step 3o (§4.9),
-     but the alarm comes at once. A delay needs a clock, which is not
-     modelled: OPEN. The held `on_after/4` waits in the device's own
-     process (`:self(#process, P)` @6c), so the "alarm process" would be
-     SIMPOS's clock inside `alarm_watch`, whose class is lost.
+   - The timer's alarms 303 and 302: 303 already ran (pinned in step 3o),
+     302 runs since step 3o (§4.9), but the alarm comes at once. A delay
+     needs a clock, which is not modelled: OPEN. The held `on_after/4`
+     waits in the device's own process (`:self(#process, P)` @6c), so the
+     "alarm process" would be SIMPOS's clock inside `alarm_watch`, whose
+     class is lost (INFERENCE).
    - `terminate_core`'s PCB word 15: re-examined in step 3o
      (`pimmcsp##pseudo_pe_process`, cells read with
      `psi/fepread/ptfread.py`). `terminate_core/1` @1d6 goes to `$or$4/2`

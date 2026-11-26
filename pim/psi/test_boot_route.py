@@ -64,6 +64,14 @@ test_espc.py and test_kl0.py stayed OK in all six):
      test_step3o_variables FAIL only.
   T1 alarm_watch.esp: on_at/2 fails: test_step3o_timer_alarms FAIL only
      (the census does not reach on_at/2: test_espc.py's census pins OK).
+  Then, this file only (2026-11-26, same method):
+  S1 debugger.esp: a send of goal/1 succeeds without running the goal:
+     test_step3o_subroutine_form ERROR (no requester window is made);
+     nothing else.
+  P1 debugger_window.esp putt/2 ends its line (a putl): test_step3o_dialogue
+     FAIL (the cells and the frame's sha); nothing else.
+  T2 alarm_watch.esp: on_after/2 fails: test_step3o_timer_alarms FAIL
+     only.
 """
 import os
 import sys
@@ -247,8 +255,10 @@ class Step3oTimer(unittest.TestCase):
     00 09`): the alarm `{Id, 1, 9}`, 9 = wake_up, which is what PIMOS's
     waiter reads (docs/fep_services.md §2.4, time_dvc.kl1:254-257).  No
     clock is modelled (standin/alarm_watch.esp: wait/1 returns at once), so
-    the alarm comes at once; on_at/2 is stood in by step 3o (until then 302
-    refused at simpos##alarm_watch:on_at/2, not in the stand-in)."""
+    the alarm comes at once.  303 already ran so on the stand-ins of steps
+    3d-3k and is pinned here for the first time; 302 is new: on_at/2 is
+    stood in by step 3o (until then 302 refused at
+    simpos##alarm_watch:on_at/2, not in the stand-in)."""
 
     @classmethod
     def setUpClass(cls):

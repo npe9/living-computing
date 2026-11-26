@@ -5022,7 +5022,7 @@ What step 3o adds is the listener. Every inference is in
 | TM-134 p71's three goals with the held `pimfep##pimos_login_requester` for the printed-in-part `hypocycloid_drawer`: `:activate` returns at once and the prompt comes back while the requester runs in `Proc`, a child of the debugger's process; its dialogue then equals the menu path's (`test_step3m_keyboard`) | PRINTED dialogue and prose; the requester HELD | `test_step3o_dialogue` |
 | `:create(#process,Proc).` again: `> Fail !!` (Proc keeps its value); a line that does not read: `> Syntax error !!` (OURS text); a new variable joins the Variable Window | INFERENCE / OURS | `test_step3o_variables` |
 | The subroutine form `:create(#c,R), :goal(R).` runs in the debugger's process: no prompt comes back | PROSE TM-134 PDF p69; TM-786 p5 | `test_step3o_subroutine_form` |
-| B4: `alarm_watch on_at/2`; the held `pimos_timer` alarms 303 and 302 round-trip, reply `{Id, 1, 9}` (9 = wake_up), at once (no clock) | INTERPOLATED from the held send @14e; the reply HELD (@12b-131) | `test_step3o_timer_alarms` |
+| B4: the held `pimos_timer` alarm 303 already ran on the earlier stand-ins and is pinned now; `alarm_watch on_at/2` is new, so 302 runs too; both reply `{Id, 1, 9}` (9 = wake_up), at once (no clock) | INTERPOLATED from the held send @14e; the reply HELD (@12b-131) | `test_step3o_timer_alarms` |
 
 The screen (`test_step3o_dialogue`, pinned by its PBM sha256;
 `../docs/simpos/screens/debugger_dialogue.png`, written by
@@ -5034,7 +5034,7 @@ password, showing `Network error.`.
 Open item 4 of step 3l (`boot_route.md` §5 item 2), where the sources
 allow: blt 0d was done in step 3n; `get_interpreter/2` and
 `has_been_reshaped/1` have been stood in since window M4 and M7 (recorded
-now in "Open"); 303 runs, but a delayed alarm needs a clock (open); blt
+now in "Open"); 303 ran already and is now pinned, 302 is new, but a delayed alarm needs a clock (open); blt
 a8 (9 held uses, all in pimscsi without source) and `terminate_core`'s
 PCB word 15 (read at `pseudo_pe_process` @3bb and given to
 `remove_only/2`, written by no held cell) stay blocked.
@@ -5052,7 +5052,14 @@ the worktree untouched; `test_boot_route.py`, `test_espc.py` and
 | D5 | a failed goal answered `> Success !!` | `_variables` |
 | T1 | `alarm_watch on_at/2` fails | `test_step3o_timer_alarms` |
 
-test_espc.py and test_kl0.py stayed OK in all six.
+test_espc.py and test_kl0.py stayed OK in all six. Then, with
+`test_boot_route.py` only:
+
+| | injection | fails |
+|---|---|---|
+| S1 | a send of goal/1 succeeds without running the goal | `_subroutine_form` (ERROR: no requester window) |
+| P1 | `putt/2` ends its line | `_dialogue` (the cells and the frame's sha) |
+| T2 | `alarm_watch on_after/2` fails | `test_step3o_timer_alarms` |
 
 **Census.** Unchanged: `test_espc.py`'s and `test_kl0.py`'s census pins
 pass with the two new classes and `on_at/2` (2026-11-26). No held class
