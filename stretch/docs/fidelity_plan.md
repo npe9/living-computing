@@ -473,10 +473,27 @@ HALF (b), FIRST STEP DONE 2026-11-25: THE ADDER TERMS OF L, LWF, + AND +MG
   its level 8 clocks, not 4) and `decks/dec_box_release.strap` CYCLES 859
   -> 868 (its decimal L and + likewise). The atlas's own L and + pages at
   those fields do not move; no page measures these sequences.
+- THE FULL SUITE, in the worktree after the merge of master (f69982ed),
+  private STRETCH_TAPE, STRETCH_HALT_REPORT=1, 2026-11-25 19:57-22:04:
+  "All regression tests passed"; the only FAIL lines are the two
+  `UNREPRODUCED, expected` p359 lines, twice each. Halt clocks that moved
+  (10 of 384 HALTREPORT lines; no read count moved): MCP-DECODE 6,304,300
+  -> 6,304,298; ASSIGN 6,322,789 -> 6,322,787; PAST T MOVE 6,339,173 ->
+  6,339,189; MCP p.1 IOD deck 6,734,459 -> 6,734,524; decimal-adder box
+  release 859 -> 868 (pinned); Figure 14 sign-modifier deck 162 -> 168;
+  MCP per-card path p.17 692 -> 694; +MG Figure 12 544 -> 548;
+  look-ahead L/+/ST/V+/CB loop 924 -> 916; Figure 7 progressive indexing
+  708 -> 694. None but the pinned one is pinned.
 - Unit test: `mkSauStepTb` (`tests/run_saustep_test.sh`), ten literal
   vectors. Injections, each in a scratch copy: `sauStepZ` off fails 1, 2,
   3, 5 (the carry and borrow vectors); `sauStepRecomp` off fails 4 and 7
   (7 on `ownClocks`, since the datapath's recomplement still takes 4).
+- LEFT for (b): the M+ family (Table 3: .6(x/y), unlike AB > CD .6(x/y +
+  1); M+1 .6(c + 1)), the K family (.6(x/y + w/r) and the early exit on an
+  inverted sign, the +28), decimal SRD's round (no page at a nonzero
+  offset: `vfl_srd.strap`'s pin and Table 3 decide it), then the
+  converter rows; the relocation's one-byte -1 (above) undiagnosed; the
+  byte-wide datapath (F1). The multiplier terms are A4's.
 
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
