@@ -776,6 +776,26 @@ HALF (b), STEP 5 DONE 2026-11-26: THE CONVERTERS (LCV, LTRCV, CV, DCV)
     each. That is assign's +20 exactly.
   - Past-move's memory reads go 599,504 -> 599,502.
 
+HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
+"LEFT for (b)" line under step 1.
+- Every class the plan named now steps in mkSAU: the adds (step 1), the
+  M+ family (2), the K family (3), SRD's round (4) and the converters (5).
+- BINARY M+, M+MG, M+1 and K are computed inline and do not reach the
+  unit. Their INVERT rows keep their residuals.
+- OPEN, undiagnosed:
+  - step 1's one-byte hold shift;
+  - M+'s unsigned INVERT half way (the alternating repetitions) and M+
+    (DU,64,4) INVERT at +17;
+  - M+1's complement on PDF 153's internal columns (the CHOSEN operand);
+  - the K ix_ext INVERT cells at -2 (the indexed path);
+  - DCV D-B's s/4 against the CHOSEN field (step 5);
+  - the WB XOVR columns, which are A6's.
+- NOT RE-MEASURED:
+  - mkSAU's F1 area;
+  - the full VFL atlas in one run (each step measured its own pages);
+  - z through the core (`sauStepZ` still moves no pinned deck).
+- The byte-wide datapath (F1) remains. The multiplier terms are A4's.
+
 **A4. `mkPAU`, the parallel arithmetic unit.**
 - `mkFpBox` and `mkDivBox` are absorbed into one unit with its A/B and
   C/D registers (Buchholz §14.4; CE 3.8.x).
