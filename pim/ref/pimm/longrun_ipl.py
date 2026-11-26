@@ -409,6 +409,46 @@ PKL1_ADAPT = {
 }
 for _n, _e in PKL1_ADAPT.items():
     HOME_FILES[_n[:-4] + '_r8.kl1'] = (os.path.join(PKL1, _n), None, None, PKL1_HEAD, _e)
+# R9 (2026-11-26): MGTP/G, IFS No.22 (ICOT Free Software, its
+# COPYRIGHT notice in each file's header, NO WARRANTY; held in git as
+# docs/nonlocal/ifs/solver-prover/pimos/MGTP/mgtp.tgz): its four KL1
+# files served whole, byte for byte as in the tgz (read from it at run
+# time; none has a TAB or a byte past 127), and the axioms files the
+# manual's procedure compiles (mgtp/manualE.tex, "Use of MGTP/G/MERC",
+# lines 86-128): q8.clause is the manual's 8-Queens axioms, its
+# verbatim block (manualE.tex lines 214-224) as printed; q6.clause is
+# the same cut to 6 (INFERENCE/OURS: the manual prints only 8, and
+# gives the reduction count for N = 6..10, manualE.tex 228-240), with
+# a comment line first saying so
+MGTP_TGZ = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'ifs', 'solver-prover', 'pimos',
+                        'MGTP', 'mgtp.tgz')
+MGTP_HEAD = '%'
+
+
+def mgtp_member(name):
+    """the text of mgtp/NAME in mgtp.tgz"""
+    import tarfile
+    with tarfile.open(MGTP_TGZ) as t:
+        return t.extractfile('mgtp/' + name).read().decode('ascii')
+
+
+def mgtp_queens(n):
+    """the lines of the N-Queens axioms: the manual's (8) as printed,
+    or cut to n (OURS)"""
+    lines = mgtp_member('manualE.tex').split('\n')[213:224]
+    assert lines[0].startswith('(q(1,1);') and lines[-1].endswith('q(X0,Y0),q(X1,Y1).'), lines
+    if n == 8:
+        return lines
+    rows = ['(' + ';'.join('q(%d,%d)' % (i, j) for j in range(1, n + 1)) + ')'
+            for i in range(1, n + 1)]
+    return (['%% %d-Queens: manualE.tex 214-224 cut to %d (OURS)' % (n, n)]
+            + [r + ',' for r in rows[:-1]] + [rows[-1] + ' :- true.'] + lines[8:])
+
+
+for _n in ('preotter.kl1', 'otter.kl1', 'prerotter.kl1', 'rotter.kl1'):
+    HOME_FILES[_n] = (('mgtp', _n), None, None, MGTP_HEAD, None)
+HOME_FILES['q8.clause'] = (('queens', 8), None, None, '(q(1,1);', None)
+HOME_FILES['q6.clause'] = (('queens', 6), None, None, '% 6-Queens', None)
 
 
 def adapted(lines, edits):
@@ -431,7 +471,16 @@ def home_file(name):
     if name not in _home:
         import subprocess
         src, first, last, head, tail = HOME_FILES[name]
-        if first is None:
+        if isinstance(src, tuple):
+            # MGTP/G (R9): a file of mgtp.tgz whole, or N-Queens axioms
+            if src[0] == 'mgtp':
+                text = mgtp_member(src[1])
+                assert text.endswith('\n'), src
+                lines = text[:-1].split('\n')
+            else:
+                lines = mgtp_queens(src[1])
+            assert lines[0].startswith(head), lines[0]
+        elif first is None:
             # a pkl1 sample (R8): the whole file
             with open(src, 'rb') as f:
                 text = f.read().decode('ascii')

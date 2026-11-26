@@ -123,7 +123,11 @@ spreads it) and `newm` (`ipl_module:load/4` builds five real modules
 as module objects, `new_module`; every cell checked against the file
 and the layout of the image's own modules) and `melem`
 (`module_element` on three image modules, against `asm/kbndis.py`'s
-table, and on a `new_module`'s; rules `modElem1`, `modElem2`) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
+table, and on a `new_module`'s; rules `modElem1`, `modElem2`) and `mklist`
+(`mark_element` on a list cell, R9: Position 0 the car's cell, 1 the
+cdr's, an already marked car and an unbound cdr not written, Position
+2 refused; the vector box `PimmVBox.bsv` takes a list as a structure
+of two elements) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
 whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
@@ -399,7 +403,7 @@ is not loadable: make it again with the two commands above):
 | pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
 | pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
 | pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
-| ls (R7; R8b's home) | `ls` | 186,304 | 877,733 | 36 |
+| ls (R7; R9's home) | `ls` | 194,035 | 909,279 | 36 |
 | gc (R7G) | `gc` | 89,179 | 368,543 | 18 |
 | gc_listener (R7G) | `gc`, the compile_work lines, `gc`, the listener_sieve lines | 1,752,873 | 7,880,429 | 283 |
 | listener_sieve_limit (R7G 5) | listener_sieve's, heap limit 2,952,727 | 1,575,086 | 7,144,911 | 249 |
@@ -419,6 +423,9 @@ is not loadable: make it again with the two commands above):
 | pkl1_life (R8b) | ... `life_r8` ..., `top:life(5,6,6,2,2,L), top:count_1(L,N).` | 7,106,868 | 26,192,690 | 270 |
 | pkl1_nrev30 (R8b) | ... `nrev_r8` ..., `print_length(40).`, `nrev:nrev([30,...,1],R).` | 1,559,564 | 7,294,046 | 270 |
 | pkl1_qsort50 (R8b) | ... `qsort_r8` ..., `print_length(60).`, `qsort:qsort(list50,R).` | 1,975,036 | 8,733,588 | 270 |
+| mgtp_q6 (R9) | `compile`, `!package work`, `preotter`, `otter`, `!attach clause clause_trans_o`, `q6.clause`, `!exit`, `relink(hyper_o)`, `relink(work::hyper_o)`, `listener`, `default_package(work).`, `statistics.`, `print_depth(10).`, `print_length(100).`, `hyper_o:do(20,M).` | 26,598,077 | 94,329,837 | 581 |
+| mgtp_q8 (R9) | mgtp_q6's, `q8.clause` for `q6.clause` | 36,549,912 | 127,552,240 | 617 |
+| mgtp_pf6 (R9) | mgtp_q6's with `prerotter`, `rotter`, `clause_trans_r`, `hyper_r` | 67,790,829 | 234,936,778 | 602 |
 
 R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
 1.4, "R7P, the pipe"): the four rows above, measured on both models
@@ -492,6 +499,44 @@ pipe_three_limit FAIL at line 675,004 (`G 79850166` for `G 33042`).
 (Dropping the `nMq`/`nMwH` assignment altogether fails at the first
 collection, line 4,108, whatever the lists hold, so it does not test
 the path; the injections above do.)
+
+R9 (2026-11-26, `../docs/binary_reverse_engineering.md` 1.4, "R9,
+MGTP/G"): MGTP/G (IFS No.22, the held `mgtp.tgz`) run by its manual's
+own procedure (`manualE.tex` 86-178: compile `preotter` and `otter`,
+attach the clause translator, compile the axioms, relink, then
+`hyper_o:do(20,M).` at the Listener with statistics on), on MERC with
+the manual's 8-Queens axioms (`manualE.tex` 214-224, `q8.clause`) and
+the same cut to 6 (`q6.clause`, OURS), and on MERC/PF with 6. Compiling
+the axioms needed one instruction case new to both models:
+`mark_element` on a list cell (PIMOS's own compiler emits it for car
+and cdr, `library/compiler/body.kl1`:437-460; rule `accept`'s list
+branch in `PimmVBox.bsv`, `lockstep_mklist.py`). The answers: 4 models
+for 6, 92 for 8, each an N-Queens solution and every solution once
+(checked against a brute-force count in `lockstep_shell.py`); 21,497
+reductions for MERC 6 and 438,279 for MERC 8 (the manual,
+`manualE.tex` 228-240: 18,759 and 384,567), 11,048 for PF 6 (10,949).
+The difference is not tuned (an open item: our merger stub's
+`merge_in` counts as a reduction, 3,801 of MERC 6's). The held PIMOS
+refuses the manual's two `relink` lines (`non existent module :
+hyper_o`, `undefined module : pimos:: mgtp`: `relink.kl1` get_module
+looks in the default package `pimos`), and neither is needed, the
+load having linked `hyper_o`; the rows keep them, as the manual types
+them. The home directory has twenty-three files, so `ls` was
+re-measured (194,035 instructions, 909,279 lines) and the FEP card
+(`tools/mkfepcard.py --held`) has 78 entries, the home directory's
+54-76. All three rows and `ls` were measured on the reference from a
+prompt checkpoint made afresh from the link checkpoint (8,595,408
+instructions) and then run on both models, every line identical.
+As a control the 34 other rows without a heap limit were re-run on
+the reference from the new checkpoint (`r9_mgtp_probe.py`, each in its
+own fork), each matching its pin and its window; the five limit rows
+were not re-run.
+Observed injections on the core (copies of `PimmStages.bsv` and
+`PimmVBox.bsv` in scratch, the driver bench rebuilt from them, run on
+`lockstep_mklist.py`): the car's Position for every list fails at
+part 2 (cdr), a no-op on lists at part 1 (car), Position 2 taken at
+part 5 (the refusal); each at line 36, the lines in the test's
+header. The worktree's files were never touched (`git diff`).
 
 R8's second half (R8b in the table; 2026-11-26,
 `../docs/binary_reverse_engineering.md` 1.4, "R8, the other four"):

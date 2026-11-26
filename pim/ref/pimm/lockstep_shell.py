@@ -104,6 +104,7 @@ below, run by run_pimm_apps.sh INJECT=1 or --inject WORK.)
 """
 import json
 import os
+import re
 import pickle
 import sys
 import time
@@ -132,6 +133,25 @@ LISTENER_POOLS = (
 # measured on both models 2026-11-24 (bsv/run_pimm_shell.sh), with the
 # login ID 0 (fep.py LOGIN, P-f3; the link row was 20107047, 8766339
 # with the ID 1, the prompt rows the same)
+# R9's rows (APPS mgtp_*, below): the lines typed, MGTP/G's manual's
+# procedure (mgtp/manualE.tex 86-178)
+MGTP_STAT = ('listener', 'default_package(work).', 'statistics.', 'print_depth(10).',
+             'print_length(100).')
+
+
+def mgtp_names(pf):
+    """the preprocessor's file, the prover's file, their modules"""
+    return (('prerotter', 'rotter', 'clause_trans_r', 'hyper_r') if pf else
+            ('preotter', 'otter', 'clause_trans_o', 'hyper_o'))
+
+
+def mgtp_typed(pf, axioms):
+    pre, main, trans, hyper = mgtp_names(pf)
+    return (('compile', '!package work', pre, main, '!attach clause ' + trans, axioms, '!exit',
+             'relink(%s)' % hyper, 'relink(work::%s)' % hyper) + MGTP_STAT
+            + ('%s:do(20,M).' % hyper,))
+
+
 PINNED = {
     ('prompt', ('shutdown', 'yes')): (912901, 180147),
     ('prompt', ('cat <= file("pimos:pimos.groups")',)): (778956, 174057),
@@ -192,7 +212,9 @@ PINNED = {
     # reference, then on both models by bsv/run_pimm_apps.sh; ls
     # re-measured for the eight new home files (was 768488, 164287), and
     # again for R8's second half's eight (2026-11-26; was 804300, 174299)
-    ('prompt', ('ls',)): (877733, 186304),
+    # R9 (2026-11-26): twenty-three home files (was 877733, 186304 with
+    # seventeen, measured on the reference and on both models)
+    ('prompt', ('ls',)): (909279, 194035),
     ('prompt', ('compile', '!package work', 'nrev', '!exit')): (6138452, 1275047),
     ('prompt', ('compile', '!package work', 'fact_r8', '!exit', 'listener',
                 'default_package(work).', 'fact:fact(10,R).')): (6328026, 1335291),
@@ -225,12 +247,20 @@ PINNED = {
                 'qsort:qsort([27,74,17,33,94,18,46,83,65,2,32,53,28,85,99,47,28,82,6,11,55,29,39,'
                 '81,90,37,10,0,66,51,7,21,85,27,31,63,75,4,95,99,11,28,61,74,18,92,40,53,59,8],'
                 'R).')): (8733588, 1975036),
+    # R9 (2026-11-26): MGTP/G by its manual's procedure (APPS mgtp_*),
+    # measured on the reference from the prompt checkpoint (8,595,408
+    # instructions), then on both models
+    ('prompt', mgtp_typed(False, 'q6.clause')): (94329837, 26598077),
+    ('prompt', mgtp_typed(False, 'q8.clause')): (127552240, 36549912),
+    ('prompt', mgtp_typed(True, 'q6.clause')): (234936778, 67790829),
 }
 # R7 ls: the home directory's listing (longrun_ipl.HOME_FILES, name order)
 _LS = ''.join(' >sys>user>pmpsi>%s.1\n' % n for n in (
     'cd.kl1', 'cd_r8.kl1', 'fact.kl1', 'fact_r8.kl1', 'kkqueen.kl1', 'kkqueen_r8.kl1',
     'life.kl1', 'life_r8.kl1', 'lips.kl1', 'lips_r8.kl1', 'nrev.kl1', 'nrev_r8.kl1',
-    'qsort.kl1', 'qsort_r8.kl1', 'sample1.kl1', 'tak.kl1', 'tak_r8.kl1'))
+    # R9 (2026-11-26): MGTP/G's four files and the two axioms files
+    'otter.kl1', 'preotter.kl1', 'prerotter.kl1', 'q6.clause', 'q8.clause',
+    'qsort.kl1', 'qsort_r8.kl1', 'rotter.kl1', 'sample1.kl1', 'tak.kl1', 'tak_r8.kl1'))
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
 # the manual print): name -> (the lines typed at the prompt, the window's
@@ -370,7 +400,9 @@ APPS = {
     # also the four pkl1 samples and their adaptations (OURS,
     # longrun_ipl.PKL1_ADAPT), nine files in the name order; since R8's
     # second half (2026-11-26) all eight samples and their adaptations,
-    # seventeen files.  Injection
+    # seventeen files; since R9 (2026-11-26) MGTP/G's four files and
+    # the two axioms files too, twenty-three (687 characters, still two
+    # parts).  Injection
     # (OBSERVED 2026-11-25, before R8, the one file): home_listing
     # without the version (".1") gives ' >sys>user>pmpsi>sample1.kl1>'
     # (taken for a directory) and the counts (768817, 164311): FAIL
@@ -564,6 +596,125 @@ APPS['pkl1_nrev30'] = _pkl1b('nrev_r8', _one('nrev_r8', 'nrev'),
 APPS['pkl1_qsort50'] = _pkl1b('qsort_r8', _one('qsort_r8', 'qsort'),
                               (('print_length(60).', '\n'),
                                ('qsort:qsort(%s,R).' % LIST50, ' R =%s\n\n' % SORTED50)))
+# R9 (2026-11-26): MGTP/G, IFS No.22 (longrun_ipl MGTP_TGZ, served whole
+# as home files), by its manual's own procedure (mgtp/manualE.tex
+# 86-128 for MGTP/G/MERC, 132-178 for MGTP/G/MERC/PF): compile the
+# preprocessor and the prover in the shell's compiler (into the package
+# work, as R8), `!attach clause clause_trans_o` (the preprocessor for
+# the .clause suffix), compile the axioms (the module mgtp), back to the
+# shell, relink(hyper_o), then hyper_o:do(N,^M) in the Listener.  The
+# axioms are the manual's 8-Queens (q8.clause, manualE.tex 214-224 as
+# printed) and the same cut to 6 (q6.clause, OURS); their models are
+# the N-Queens solutions, 4 for 6 and 92 for 8, each a list of N
+# q(Row,Column) with the second argument [] ("all components ...
+# nil", manualE.tex 120).  The Listener's statistics are on
+# (`statistics.`, debugger/listener/task_mon.kl1 display_statistics,
+# " N reductions" after the answer) for the manual's reduction counts
+# (manualE.tex 228-240: 18,759 for N = 6 on MERC, 384,567 for 8, 10,949
+# for 6 on PF); print_depth and print_length raised so the models print
+# whole (INFERENCE: the manual does not say how it printed them).
+# The held PIMOS refuses both relinks typed at the shell, for causes in
+# its source, and is not patched: `relink(hyper_o)`, the manual's text,
+# is ` non existent module : hyper_o` (library/utility/relink.kl1
+# get_module/6 looks an atom up in the shell's default package, pimos;
+# the module is work::hyper_o), and `relink(work::hyper_o)` finds it but
+# resolves its references from pimos (` undefined module : pimos::
+# mgtp`).  Neither is needed: loading mgtp already linked hyper_o to it
+# (the compiler's `"work:: hyper_o" Loaded` before `"work:: mgtp"
+# Loaded`, the loader relinking the module that referred to the missing
+# one).  MGTP/G/MERC/PF's models print a variable for the second
+# argument: rotter.kl1:23-25 builds mdl(HBGL,TBGL) with TBGL a variable
+# of that clause alone (its head names tbgl(Max,TBGLV)), the held
+# program's own text.  Observed on both models: see
+# docs/binary_reverse_engineering.md 1.4, "R9, MGTP/G".
+def _mgtp(pf, axioms, models, red, msec):
+    """an R9 row: MGTP/G/MERC (pf False) or MGTP/G/MERC/PF on AXIOMS,
+    the Listener's answer MODELS (the text after ' M ='), RED
+    reductions in MSEC msec, and the statistics of the three commands
+    before it (MSEC[1:])"""
+    pre, main, trans, hyper = mgtp_names(pf)
+    typed = mgtp_typed(pf, axioms)
+    f = lambda n: 'Compile File : PSI::>sys>user>pmpsi>%s.1\n' % n       # noqa: E731
+    pre_done = (('Compile Succeeded : clause_trans_r\n\n!WARNING! register shortage in the guard '
+                 '1 time(s) : clause2kl1_a_sntnc/ 15\n', '"work:: clause_trans_r" Loaded\n',
+                 'Total Number of Warning : 1\n') if pf else
+                ('Compile Succeeded : clause_trans_o\n\n', '"work:: clause_trans_o" Loaded\n',
+                 'Compilation(s) Succeeded\n'))
+    d, c = ('df1', 'cf1') if pf else ('d', 'c')
+    win = (('** KL1 Compiler **\n', 'COMPILE> ',
+            'Package : work\n!WARNING! not included in the working packages : work\n',
+            'COMPILE> ', f(pre + '.kl1'), '[%s.kl1@0] Compile Module : %s\n' % (pre, trans),
+            '=>  :- module %s .\n' % trans) + pre_done
+           + ('COMPILE> ', f(main + '.kl1'), '[%s.kl1@0] Compile Module : %s\n' % (main, hyper),
+              '=>  :- module %s .\n' % hyper, 'Compile Succeeded : %s\n\n' % hyper,
+              '!ERROR! undefined module : work:: mgtp (referred from : work:: %s)\n' % hyper,
+              'Total Number of Error : 1\n', 'COMPILE> ',
+              'Preprocess : clause => pkl1 : %s\n' % trans, 'COMPILE> ', f(axioms),
+              '[%s] Compile Module : mgtp\n' % axioms,
+              'Compile Succeeded : mgtp\n\n!WARNING! register shortage in the guard 1 time(s) : '
+              '%s/ 4\n!WARNING! register shortage in the guard 2 time(s) : %s/ 4\n' % (d, c),
+              '"work:: %s" Loaded\n"work:: mgtp" Loaded\n' % hyper,
+              'Total Number of Warning : 2\n', 'COMPILE> ', 'Shell>> ',
+              '!ERROR! non existent module : %s\n' % hyper, 'Total Number of Error : 1\n',
+              'Shell>> ',
+              '!ERROR! undefined module : pimos:: mgtp (referred from : pimos:: %s)\n' % hyper,
+              'Total Number of Error : 1\n', 'Shell>> ',
+              '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\n'
+              'CURRENT DIRECTORY : >sys>user>pmpsi\n\n', '[1] ', '\n'))
+    for i, (r, t) in enumerate(zip((20, 15, 15), msec[1:])):
+        win += ('[%d] ' % (i + 2), ' %d reductions\n %d msec\n\n' % (r, t))
+    # the answer, in the window's pieces of 490 characters (as ls's)
+    ans = ' M =%s\n %d reductions\n %d msec\n\n' % (models, red, msec[0])
+    return typed, win + ('[5] ',) + tuple(ans[i:i + 490] for i in range(0, len(ans), 490)) + (
+        '[6] ',)
+
+
+
+
+def queens(n):
+    """the N-Queens solutions, each as the columns of rows n..1, by brute
+    force: the oracle for the models (independent of both models)"""
+    import itertools
+    return {''.join(str(p[r]) for r in range(n - 1, -1, -1))
+            for p in itertools.permutations(range(1, n + 1))
+            if len({p[i] - i for i in range(n)}) == n and len({p[i] + i for i in range(n)}) == n}
+
+
+def merc_models(cols):
+    """MGTP/G/MERC's answer: the models in the order the Listener printed
+    them (observed), each the columns of rows N..1; they must be every
+    solution, once (queens)"""
+    sols = cols.split()
+    n = len(sols[0])
+    assert len(sols) == len(set(sols)) and set(sols) == queens(n), 'not the %d-Queens' % n
+    return '[' + ','.join('mdl([%s],[])' % ','.join('q(%d,%s)' % (n - i, ch) for i, ch in
+                                                    enumerate(c)) for c in sols) + ']'
+
+
+Q6_MODELS = '531642 415263 362514 246135'
+Q8_MODELS = ('42736851 52473861 35286471 36428571 57138642 46831752 36814752 53847162 57413862 '
+             '41586372 36418572 47531682 64285713 64718253 17468253 68241753 62714853 47185263 '
+             '58417263 48157263 27581463 17582463 25741863 42751863 57142863 64158273 51468273 '
+             '52617483 63728514 27368514 73168524 51863724 15863724 36815724 63175824 75316824 '
+             '73825164 53172864 25713864 36258174 61528374 83162574 28613574 57263184 36275184 '
+             '62713584 37286415 63724815 42736815 71386425 16837425 38471625 63741825 74286135 '
+             '46827135 26174835 24683175 36824175 63184275 84136275 48136275 26831475 72631485 '
+             '36271485 47382516 48531726 35841726 42857136 57248136 74258136 82417536 72418536 '
+             '51842736 41582736 52814736 37285146 31758246 82531746 35281746 35714286 52468317 '
+             '63581427 58413627 42586137 46152837 63185247 53168247 42861357 63571428 64713528 '
+             '47526138 57263148')
+# MGTP/G/MERC/PF's answer for 6, as printed: the same four solutions
+# (checked below), each list in its own order, and the second argument
+# a variable (rotter.kl1:23-25, above)
+PF6_MODELS = ('[mdl([q(5,3),q(4,1),q(6,5),q(3,6),q(2,4),q(1,2)],B),'
+              'mdl([q(6,4),q(5,1),q(4,5),q(3,2),q(2,6),q(1,3)],C),'
+              'mdl([q(6,3),q(5,6),q(4,2),q(3,5),q(2,1),q(1,4)],D),'
+              'mdl([q(5,4),q(4,6),q(6,2),q(3,1),q(2,3),q(1,5)],E)]')
+assert sorted(''.join(c for _r, c in sorted(re.findall(r'q\((\d),(\d)\)', m), reverse=True))
+              for m in PF6_MODELS.split('mdl(')[1:]) == sorted(queens(6))
+APPS['mgtp_q6'] = _mgtp(False, 'q6.clause', merc_models(Q6_MODELS), 21497, (61, 0, 1, 2))
+APPS['mgtp_q8'] = _mgtp(False, 'q8.clause', merc_models(Q8_MODELS), 438279, (1258, 1, 2, 2))
+APPS['mgtp_pf6'] = _mgtp(True, 'q6.clause', PF6_MODELS, 11048, (34, 1, 2, 2))
 # R7G stage 5 (2026-11-25), a collection when memory runs out: the APPS
 # run with a heap limit (pimm.Machine.heap_limit, RESTORE 5; pimm_gc.py
 # "When memory runs out"), name -> cells.  Their windows are APPS's; the

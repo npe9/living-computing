@@ -1142,6 +1142,112 @@ the device are given it again whenever the machine runs dry.
     no order to put a prompt before a read. Neither is the samples'
     own code running, so the entry points stay unrun and the goals are
     typed at the Listener instead.
+  - **R9, MGTP/G** (2026-11-26; APPS `mgtp_q6`, `mgtp_q8`, `mgtp_pf6`).
+    MGTP/G, IFS No.22 (`docs/nonlocal/ifs/solver-prover/pimos/MGTP/
+    mgtp.tgz`, held in git, ICOT Free Software, each file's COPYRIGHT
+    header), run by its manual's own procedure on PIMOS's own tools
+    (`mgtp/manualE.tex`:86-128 for MGTP/G/MERC, 132-178 for
+    MGTP/G/MERC/PF): its four `.kl1` files are home files served whole
+    from the tgz (`longrun_ipl.MGTP_TGZ`), and so are the axioms: the
+    manual's 8-Queens (`q8.clause`, `manualE.tex`:214-224 as printed)
+    and the same cut to 6 (`q6.clause`, OURS, its first line saying
+    so). Typed at the prompt: `compile`, `!package work` (as R8),
+    `preotter`, `otter`, `!attach clause clause_trans_o`, the axioms,
+    `!exit`, `relink(hyper_o)`, `relink(work::hyper_o)`, `listener`,
+    `default_package(work).`, `statistics.`, `print_depth(10).`,
+    `print_length(100).`, `hyper_o:do(20,M).` (PF: `prerotter`,
+    `rotter`, `clause_trans_r`, `hyper_r`).
+    *What it needed:* compiling the axioms first stopped the reference
+    at `refused: mark_element of (5, ...), (0, 0)` (20,191,261
+    instructions): `mark_element` on a list cell. PIMOS's own compiler
+    emits it so, `put_constant(0, Rpos), mark_element(Rlist, Rpos)` for
+    a car the body refers to and 1 for a cdr (HELD-SOURCE,
+    `library/compiler/body.kl1`:437-460, `generate_add_ref_`); PDSS's
+    emulator indexes a vector only (`emulate.c`:2636, its compiler
+    emitting it for vectors) and VPIM deleted the instruction
+    (`klb_mark.psl.c`, "削除 90.02.14"). Both models now take a list
+    as a structure of two cells at its address, the car and the cdr,
+    as a short vector's (INFERENCE from the firmware routine `30a9`,
+    a read and a write with no room for a tag dispatch,
+    `pseudo_pimm_microcode.md`), and refuse another Position
+    (`pimm.py` `i_mark_element`, `PimmVBox.bsv` rule `accept`, the
+    stage's `op_mark_element`; `lockstep_mklist.py`). Nothing else was
+    refused. In the whole 6-Queens run the list case is met once,
+    Position 0, and writes nothing (the car already marked).
+    *The answers* (the Listener's, on both models; the models checked
+    against a brute-force N-Queens solver in `lockstep_shell.py`,
+    `queens`, independent of both models):
+
+    | Row | Axioms | Models | Reductions (the Listener's `statistics`) | The manual (`manualE.tex`:228-240) | Instructions | Trace lines |
+    |---|---|---|---|---|---|---|
+    | mgtp_q6 | 6-Queens (OURS) | 4, the 6-Queens solutions, each `mdl([q(6,C6),...,q(1,C1)],[])` | 21,497 | 18,759 | 26,598,077 | 94,329,837 |
+    | mgtp_q8 | 8-Queens (the manual's) | 92, every 8-Queens solution once | 438,279 | 384,567 | 36,549,912 | 127,552,240 |
+    | mgtp_pf6 | 6-Queens, MGTP/G/MERC/PF | 4, the same solutions | 11,048 | 10,949 | 67,790,829 | 234,936,778 |
+
+    `do(6,M)` and `do(100,M)` give the 6-Queens answer and count that
+    `do(20,M)` gives (the probe, `ref/pimm/r9_mgtp_probe.py`).
+    *The reduction counts differ from the manual's, and the cause is
+    partly ours.* The Listener prints half the shoen's statistics,
+    i.e. its reductions (`debugger/listener/task_mon.kl1`
+    `display_statistics`, `listener_utility:half`). Counted by kind
+    inside the query's shoen (the probe's `R9_TALLY`): on MERC 6,
+    17,695 reductions of KL1 code, 3,801 of our merger stub `merge_in`
+    and 1 of `apply`; on PF 6, 9,959 of KL1 code, 214 `merge_in`, 534
+    `b_add` and 340 `set_vector_element` (our stubs for a waiting body
+    built-in) and 1 `apply`. The merger stub is OURS (the machine's
+    merger is a cell acting at unification, `asm/pimm_stubs.py`
+    MERGE_IN), and each of its runs is counted as a reduction
+    (`pimm.py` `end_reduction`: one per execute and proceed, the
+    manual's definition, `e-shoen.tex`:388-395): without it MERC 6 is
+    17,696 (the manual's 18,759 is 6.0% more) and PF 6 is 10,834 (the
+    manual's 10,949 is 1.1% more). The rest of the difference has no
+    source: the manual does not say which machine, PIMOS version or
+    compiler it measured on (MGTP's README names PSI-II, PSI-III and
+    Multi-PSI). The counts are pinned as observed and not tuned; not
+    counting the stubs' runs would change every APPS row's resource
+    accounting and is left as an open item (`pimos_roadmap.md` R9).
+    *Where the held PIMOS refuses the manual's step:* `relink(hyper_o)`
+    at the shell is ` !ERROR! non existent module : hyper_o`:
+    `library/utility/relink.kl1` `go/1` → `get_module/6` looks an atom
+    up in the shell's default package, `pimos`, and the module is
+    `work::hyper_o` (the manual has no `!package`; compiled into
+    `pimos` a module is not registered, APPS `compile_sample1`).
+    `relink(work::hyper_o)` finds the module but resolves its
+    references from `pimos`: ` undefined module : pimos:: mgtp
+    (referred from : pimos:: hyper_o)`. (`relink(work,work::hyper_o,
+    [work::mgtp])`, the three-argument form of the usage text, was
+    tried on the reference: ` non existent module : mgtp`; not in the
+    rows.) Neither relink is needed: loading `mgtp` already linked
+    `hyper_o` to it (the compiler's `"work:: hyper_o" Loaded` before
+    `"work:: mgtp" Loaded`), and `hyper_o:do` runs. PIMOS is not
+    patched. The PF models print a variable as their second argument
+    (`B`, `C`, `D`, `E`): `rotter.kl1`:23-25 builds `mdl(HBGL,TBGL)`
+    with `TBGL` a variable of that clause alone (the head names
+    `tbgl(Max,TBGLV)`): the held program's own text. The compile prints
+    `register shortage in the guard` for the generated `d/4` and `c/4`
+    (`df1`, `cf1` on PF), warnings only.
+    *Checks proven discriminating* (2026-11-26). `lockstep_mklist.py`
+    (in the suite) runs the list case on a code of the bench's (OURS:
+    a head of arity 2, `mark_element 0,1`, `proceed`, applied as
+    `lockstep_apply.py` applies its no-argument code); 6 parts, 210
+    lines. On the reference (a patch of `i_mark_element` in the test's
+    process): the car marked whatever the Position fails `cdr` and
+    `unbound` (the cells' MRBs and a write after the instruction);
+    nothing marked fails `car` and `cdr`; Position 2 taken fails
+    `refused`. On the core (private copies of `bsv/`, each built
+    alone): `PimmStages.bsv` passing Position 0 for a list: FAIL at part
+    2 (cdr), line 36, `M 32791 05e0008004` / `M 32790 05e0008004`;
+    the list case made a no-op: FAIL at part 1 (car), line 36, `M 32774
+    05e0008004` / `I 32771 2360000000`; `PimmVBox.bsv` taking Position 2
+    (`n <= 3`): FAIL at part 5 (the refusal), line 36, `E unimp` / `I
+    32771 2360000000`. The MGTP rows themselves cannot catch the first
+    two, the one list mark of the run writing nothing.
+    The home directory has twenty-three files (`ls` re-measured,
+    909,279 lines, 194,035 instructions, was 877,733 and 186,304; its
+    text, 687 characters, still in two writes) and the FEP emulator's
+    held card 78 entries, the home directory's 54-76 (otter.kl1 66,
+    preotter.kl1 67, prerotter.kl1 68, q6.clause 69, q8.clause 70 and
+    rotter.kl1 73 are the new six; the directory entry 77).
   - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
     `add_bignum` in on both models (VPIM's edges, `pimm.py`
     `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs
