@@ -4388,7 +4388,7 @@ the tape's script is fixed). MOVE of `pimfep##pimos_window` sends
 its new place with a new pane, and the frame equals the replay's with the
 console's dots moved. RESHAPE moves it and keeps its size.
 
-**Open:**
+**Open** (all five done the next day, in the next section):
 - the other output permissions (wait, show, notify) and a per-window
   choice of permission;
 - a pop-up menu over a covered window that writes: the lifted windows'
@@ -4397,6 +4397,248 @@ console's dots moved. RESHAPE moves it and keeps its size.
 - the manipulator's other eight TM-125 p8 items;
 - a `pmacs_window` RESHAPE that changes its text size (it moves only);
 - `has_been_selected/1` is not sent.
+
+### Window M7's rest: output permission, the other items, has_been_selected/1, Pmacs RESHAPE (2026-11-26)
+
+**Output permission** (`coordinator.esp` "OUTPUT PERMISSION"). A window
+now has one of the four permissions of TM-125 p5-6 and TM-225 p10-11
+(PROSE; the ATTRIBUTE dialogue lists `out / wait / show / notify`,
+SCREENSHOT TM-125 p7 Fig. 4). It is set by the held create option
+`permission(P)` (read by `standard_io_window` only: `pmacs_window` reads
+no options, and no held Pmacs caller gives one, OURS), by
+`set_permission/2` (both stand-ins; USAGE, window.md §2.2, §4.1), or by
+the manipulator's PERMISSION item. Each output method of
+`window_pane` asks `uncover/3` first. While the window is covered (a
+window above overlaps it):
+- `out` (②): writes at once; the windows above are lifted (M7's case);
+- `wait` (①): the writer's process waits on a stream of its own, held
+  in the coordinator's `waiters`, until the window is uncovered or its
+  permission becomes `out` or `show`. Every event, selection and kill
+  wakes the writers that may now write (`wake/1`);
+- `show` (③): the window is raised and selected, then writes. This
+  changes the selected window (TM-125 p6), so the next key goes to it;
+- `notify` (④): the writer waits, and a temporary window opens at the
+  mouse (TM-125 p6-7: the system's "NOTIFY WINDOW"; a temporary window
+  appears at the mouse cursor). It offers `wait` and `show` (TM-225's
+  "the user chooses ① or ③ by mouse"). Its title is the window's title
+  (OURS). Only one pop-up is open at a time: while another is open, or
+  a sweep is under way, it waits for the next quiet moment (OURS).
+
+The default stays `out` (OURS, as in M7). TM-225 makes ① wait the
+default, but the held FEP route never sets a permission, and `out` keeps
+every earlier pin. The coordinator's own process never waits: its
+redraws (`has_been_reshaped/1`, a selection's cursor) would deadlock
+(OURS). A killed window's waiters are dropped (`remove_window/2`, OURS):
+its writer stays suspended, since its output has no pane to go to, and
+no notify window is offered for it, so `show` can never select a dead
+window.
+
+**A pop-up over a writing window** (README "Open" until now). `uncover/3`
+lifts an open pop-up first, when it overlaps the pane or a window being
+lifted (`menu_pane` `lift/1`, `lay/1`), and lays it back last. So output
+under a menu goes into the menu's save area: a temporary window "is never
+hidden by an ordinary window" and saves what it covers (PROSE TM-125
+p6-7). A sweep's exclusive_or outline is taken off around the write and
+drawn again after it, so no text lands in it (OURS).
+
+**The manipulator's items**, in TM-125 p8's order (PRINTED-INTERFACE):
+SHOW, HIDE, RESHAPE, MOVE, EXPAND, MENU, PERMISSION, EXIT.
+- EXPAND "expand the window size as large as possible but not hide
+  another fully shown window". The obstacles are the fully shown
+  windows it does not overlap now. The edges go out left, right, up,
+  down, each to the nearest obstacle or the screen's edge (OURS order).
+  Then it is raised, selected and reshaped as by RESHAPE.
+- MENU "select the window using the submenu of windows list": a pop-up
+  titled `WINDOWS` (OURS), each window by its title, top first. The
+  chosen window is selected (and so raised).
+- PERMISSION "reset the window output permission by sub-menu": `out`,
+  `wait`, `show`, `notify`.
+- EXIT "exit from window manipulator": closes it.
+
+Not offered, each for want of what it acts on:
+- ATTRIBUTE: TM-125 p7 Fig. 4's choice window, with typed values. Choice
+  windows are milestone M9.
+- HARDCOPY: no printer is modelled (window.md §2.2 `hardcopy/2
+  (W,laser_printer)`, USAGE).
+- SUPERIOR and INFERIOR: they move the "editing base" along the window
+  hierarchy. Every window here is the screen's inferior, with none of
+  its own.
+
+**`has_been_selected/1`.** `select_window/2` sends it after a window
+becomes the selected one, and not again while it stays selected. It is
+the select notifier's callback (window.md §2.1, §2.12): kappa `pbwin`'s
+after-demon on it proves a SIMPOS primary, and paragraph
+`profiler_view_window` defines its own. The stand-ins' primary does
+nothing (OURS). A send with no method refuses in kl0, so both window
+stand-ins define it.
+
+**Pmacs RESHAPE changes the text size.** `pmacs_window` `reshape/5` with
+a size in dots sets the text size to the cells of the window's font
+that fit, at least 1 x 1. `has_been_reshaped/1` then draws the window
+again at that size, its buffer wrapped to the new width. This is an
+INFERENCE: the held `pimos_window_editor` `set_inside_size/5` sets the
+text size (@26e) before `has_been_reshaped/1` (@271). PIMOS's own 127
+(reshape/7: `set_position/3` and `set_text_size/3`, `$or$1/5` @479-48e)
+does not pass through it. `manipulator` in place of the size (the held
+`reshape_by_mouse/1`) leaves the text size alone. MOVE sends the pane's
+own size, which gives back the same cells.
+
+**Tests** (`test_espc.py` `Window`):
+
+| test | what it pins |
+|---|---|
+| `test_win_m7_permissions` | the PERMISSION submenu's place and items; each permission set on window 2; with window 2 echoing while a click raises window 1: `wait` gives the frame without the echo, the writer held back, and SHOW then gives the frame of the keys typed on top; `show` gives that frame at once, window 2 selected, the next line its own; `notify` opens the pop-up (place, title, items, pinned screen), `show` gives the typed frame, `wait` the frame without the echo |
+| `test_win_m7_popup_over_writer` | the system menu opened in the same batch as the covered echo: the frame equals the menu opened after the echo, and after closing it equals the run without the menu; MOVE's outline over the writing window: the frame equals the outline drawn after the echo |
+| `test_win_m7_items` | EXPAND of window 2 moved clear of window 1: (0, 0)-(1280, 544), 115 x 37 cells, the frame outside it composed; MENU's pop-up (place, title, items by title), choosing window 1 equals HIDE of window 2; EXIT gives back the frame |
+| `test_win_m7_has_been_selected` | a test class with an after-demon on `has_been_selected/1`: one call on show/1, none on another window's selection, one more on its own, none on a second click |
+| `test_win_m7_permission_change` | a writer held back under `wait`, woken when PERMISSION sets `out` (the frame of `out` set before the echo, window 1 still on top) or `show` (window 2 raised and selected); a killed window's waiter dropped, no notify window; the create option `permission(wait)` held, an unknown one gives `out` |
+| `test_win_m7_console_move` | (changed) RESHAPE of PIMOS's console to 351 x 251 dots gives 31 x 16 cells, its buffer wrapped at 31 columns |
+
+Pins moved, each accounted in the test's header:
+- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items);
+  its screen `window_manipulator.png`;
+- `test_win_m7_console_move`: RESHAPE's pane 523 x 219 -> 347 x 247;
+- the census pins (`test_fep_census`, `test_step3f_census_recipes`,
+  `test_step3i_census_order`): 1,483 -> 1,485 rows (success 821 -> 823,
+  recipes 852 -> 854), because `pimos_window` inherits `pmacs_window`'s
+  new `set_permission/2` and `has_been_selected/1`, both success. This
+  fix landed one commit after the M7 commit (d632c677 alone fails the
+  three census tests; 906c6ff1 carries it).
+
+No other pin moved. The two tape replays are unchanged, and no exchange
+changed, so no live bridge run was made. New screens (`psi/winshot.py`
+stages `expand`, `windows`, `notify`):
+`../docs/simpos/screens/manipulator_expand.png`,
+`manipulator_menu.png`, `notify_window.png`.
+
+**Injections, OBSERVED** (2026-11-26; each from a backup copy, restored
+by copy, `cmp` clean; `test_espc.py` Window, `test_fep_bridge.py` and
+`test_kl0.py` run; the list is in `test_win_m7_items`'s head):
+
+| | injection | fails |
+|---|---|---|
+| P1 | `wake/1` a no-op | permissions only |
+| P2 | `wait` writes at once | permissions only |
+| P3 | `show` neither raises nor selects | permissions only |
+| P4 | no notify window | permissions only (ERROR) |
+| P5 | the pop-up not lifted | pop-up over writer only |
+| P6 | the outline not taken off | pop-up over writer only (after the outline was moved across the echo row: at first it crossed no text and nothing failed) |
+| P7 | EXPAND finds no obstacle | items only |
+| P8 | no `has_been_selected/1` | has_been_selected only |
+| P9 | Pmacs `reshape/5` keeps the text size | console move only |
+
+### Window M8: graphics (2026-11-26)
+
+`standard_io_window` gains the drawing methods of window.md §2.5, drawn
+by new `window_pane` methods (`draw_line_in/7`, `fill_in/6`,
+`frame_in/7`, `string_in/6`, `transfer_in/8`). The selectors and argument
+forms are window.md's, each cited there; the bodies are OURS:
+- `draw_line/5-8` (TM-125 p17, TM-785 p40; `/6` is a VARIANT, an integer
+  taken as the width, an atom as the op);
+- `draw_rectangle/5`, `/7`, `/8` (the outline, its width inward; style
+  `filled` fills, IPSJ 36239 p5);
+- `draw_filled_rectangle/6`, `/8` (pattern `fix` only);
+- `draw_string/4-6` (`/5` is a VARIANT: an op name is taken as the op,
+  anything else as the font);
+- `transfer/8`;
+- `execute_graphics_command/2`, a list of `{Name, {Args}}` sent to the
+  window's own methods (USAGE paragraph p_icon.esp; the five-element
+  `draw_string` and seven-element `draw_filled_rectangle` of g_window.esp
+  :141, :169);
+- `get_mouse_position/3`;
+- the markers (window.md §2.6, PRINTED-INTERFACE TM-125 p17):
+  `create_marker/2` (and `/7`, the CESP substitute's form, an analogy),
+  `draw_marker/2`, `erase_marker/2`, `move_marker/4`, `set_marker_type/3`
+  (`box`, `line`; `reverse` from the CESP substitute), `set_marker_size/4`,
+  `get_marker_list/2`, on a new stand-in class `marker` (`marker.esp`).
+  The look is OURS: drawn with exclusive_or (TM-125 p17's default op), a
+  box is the 1-dot outline, a line the diagonal from the top-left, reverse
+  inverts the area; moving, retyping or resizing a drawn marker takes it
+  off and draws it again. `get_marker_position/4` is UNSPECIFIED (window.md
+  §2.6) and not stood in.
+
+Defaults are TM-125 p17's: exclusive_or, 1 dot, solid. Coordinates are
+dots from the inside's top-left. Every method goes through `uncover/3`,
+so drawing obeys the window's output permission, and the block cursor is
+taken off around it. Only the frozen winfb primitives are used (`fill`,
+`line` with a width, `glyph`, `copy`); none was added.
+
+Clipping (OURS):
+- a fill is cut to the inside, and so is a horizontal or vertical line or
+  a rectangle;
+- a slanted line is drawn only when it lies wholly inside, and the check
+  comes before `uncover/3`, so a refusal on a covered window leaves no
+  window lifted;
+- a glyph is drawn only when its cell lies wholly inside;
+- a transfer's two areas must lie inside.
+
+Refused loudly (a send of `graphics_refused/2`, which no class has):
+- a slanted line leaving the inside;
+- a line style other than solid;
+- a fill pattern other than `fix` (`light_paint` and TM-785's patterns
+  have no printed look);
+- an unknown command in a batch;
+- drawing on a window not on the screen.
+
+**M8 is partial.** Not done, for want of a held caller on the route or a
+printed look: circles, arcs, ellipses, polygons, fill patterns other than
+`fix` (so g_window's bar views, whose `draw_filled_rectangle` carries a
+held pattern, refuse), `copy/9` between windows, `paint/5`, images
+(`restore_image`), and `get_marker_position/4`. The paragraph icons'
+`restore/7` reads image classes and colour tables, which is a step of
+its own.
+
+**Test** `test_win_m8_graphics`. A 40 x 20 window is made at (100, 100)
+after the Login PIMOS run. Each drawing is compared with a frame built
+from winfb commands in Python:
+- the HELD `paragraph##type_switch_icon` local `draw_box/5`
+  (p_icon.esp:177-186, run from the compiled .ptf), over a black block
+  (its width-2 `reset` lines carve white) and on white (105 dots);
+- a slanted `draw_line/5` gives 100 dots, and drawn twice it erases (the
+  plan's pin);
+- `draw_string/4` is read back as text;
+- a fill is cut to the inside;
+- `transfer/8` copies;
+- `get_mouse_position/3` is pinned;
+- four loud refusals.
+
+**Test** `test_win_m8_forms`: the other argument forms, against
+winfb-built frames and dot counts: `draw_rectangle/5` (twice erases),
+`/8` with Line 2 and `set`, `/7` `filled`; both readings of `draw_line/6`
+(an integer width, an atom op) and `draw_line/7`;
+`draw_filled_rectangle/8` with `fix`; both readings of `draw_string/5` and
+`draw_string/6`, with the held test_11 font; the HELD
+`paragraph##g_window` local `draw_list/8` (g_window.esp:130-158, the mono
+list) run from the .ptf and its list given to
+`execute_graphics_command/2`, read back as "1 42" and "2 7"; and a slanted
+line leaving the inside of a covered window refused with the frame and
+save memory unchanged.
+
+**Test** `test_win_m8_markers`: create, list, draw (60 dots; a second draw
+changes nothing), move, retype to `line`, resize, erase (the frame back),
+`create_marker/7` `reverse`, an unknown type refused.
+
+Screen: `../docs/simpos/screens/window_graphics.png` (`winshot.py`
+stage `graphics`).
+
+**Injections, OBSERVED** (2026-11-26; each from a backup copy, restored
+by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run):
+
+| | injection | fails |
+|---|---|---|
+| G1 | `draw_line/5` defaults to `set` (the plan's injection) | M8 only |
+| G2 | fills not cut to the inside | M8 only |
+| G3 | `execute_graphics_command/2` skips each command | M8 only |
+| G4 | a horizontal line's width ignored | M8 only |
+| G5 | `draw_marker/2` draws a drawn marker again | markers only |
+| G6 | `move_marker/4` does not take it off first | markers only |
+| G7 | the five-element `draw_string` command unknown | forms only (ERROR) |
+| G8 | a slanted line checked after `uncover/3` (the code before the fix) | forms only |
+| G9 | `draw_line/6` takes every argument as the op | forms only (ERROR) |
+| P10 | a changed permission does not wake the writer | permission change only |
+| P11 | a killed window's waiters kept | permission change only |
+| P12 | the `permission(P)` create option ignored | permission change only |
+| P13 | the coordinator's own process held back (bypass removed) | NOTHING: the bypass is unpinned, no run on the route reaches it |
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
@@ -4525,13 +4767,14 @@ test_kappa2's exact count).
   `substring(S, H, T - H, P)`, `O!a := X + O!b` and `X = O!a + X` with
   head arguments compile; no failing shape was found, but none is proven
   absent.
-- **The window environment after M7's manipulator:** output permission
-  beyond `out` (wait, show, notify), the manipulator's other TM-125 p8 items (EXPAND,
-  MENU, PERMISSION, ATTRIBUTE, HARDCOPY, SUPERIOR, INFERIOR, EXIT), a
-  `pmacs_window` RESHAPE that changes its text size (it moves only), and
-  Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the census's
-  dump_log/1 stops there). Section "Window M7: the manipulator and
-  keyboard focus".
+- **The window environment after M7:** the manipulator's ATTRIBUTE (a
+  choice window, M9), HARDCOPY (no printer) and SUPERIOR/INFERIOR (no
+  window hierarchy); the look of the notify window (none printed; OURS
+  now); TM-225's default permission ① wait (the stand-ins default to
+  `out`); Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the
+  census's dump_log/1 stops there); M8's shapes beyond lines,
+  rectangles and strings, images and markers. Sections "Window M7's rest"
+  and "Window M8".
 - **espc drops a refused stand-in predicate silently: FIXED 2026-11-25**
   (section "Window M6's rest and M7's save areas"). The related gap, a
   clause body with no head (a comment line ate the head) compiled

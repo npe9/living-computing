@@ -100,6 +100,19 @@ attribute editor := 0, interpreter := 0, pane := 0, number := 0;
 % sets it to 1 after creating the window; meaning UNKNOWN.
 attribute activity := 0;
 
+% Window M7, the output permission (as standard_io_window.esp's; `out`
+% unless set_permission/2 sets another: OURS).
+attribute permission := out;
+
+% :set_permission(W, P) -- window M7, INTERPOLATED (body OURS), as
+% standard_io_window.esp's.
+:set_permission(Window, P) :- permission_name(P), Window!permission := P;
+
+% :has_been_selected(W) -- window M7, INTERPOLATED (body OURS), as
+% standard_io_window.esp's: the select notifier's callback, sent by the
+% coordinator after a selection; this default primary does nothing.
+:has_been_selected(Window);
+
 % INTERPOLATED from: window.md §2.11 `:get_editor(W, E)`.
 :get_editor(Window, Editor) :-
         Editor = Window!editor;
@@ -156,10 +169,19 @@ attribute x := 0, y := 0, width := 0, height := 0,
 :get_size(Window, W, H) :-
         W = Window!width, H = Window!height;
 % INTERPOLATED from: window.md §2.1 reshape/5 `(W,X,Y,Wd,Ht)`, "move and
-% resize at once" (USAGE cal-esp cpwindow.esp:85).
+% resize at once" (USAGE cal-esp cpwindow.esp:85).  Window M7: a size in
+% dots also sets the text size to the cells of the window's font that
+% fit inside it (border 2, margin 1, the label strip: window_pane.esp's
+% layout), at least 1 x 1, so the window drawn again by
+% has_been_reshaped/1 has the new size (INFERENCE: the text size is the
+% inside size in characters, as the held pimos_window_editor's
+% set_inside_size/5 sets the text size, @26e, before has_been_reshaped/1,
+% @271).  `manipulator` in place of the size (the held reshape_by_mouse/1,
+% $or$16/1 @56d) leaves the text size alone.
 :reshape(Window, X, Y, W, H) :-
         Window!x := X, Window!y := Y,
-        Window!width := W, Window!height := H;
+        Window!width := W, Window!height := H,
+        text_fits(Window, W, H);
 % INTERPOLATED from: window.md §2.1 set_text_size/3 `(W,Cols,Rows)`
 % (USAGE pimfep device reshape/7).
 :set_text_size(Window, C, R) :-
@@ -247,6 +269,28 @@ editor_option(Option, _) :- unbound(Option), !, fail;
 editor_option({editor, Class}, Class);
 
 buffer(Window, B) :- I = Window!interpreter, B = I!original_buffer;
+
+% window M7: the text size that fits W x H dots (reshape/5)
+text_fits(Window, W, H) :- integer(W), integer(H), !,
+        metrics(Window!font, Cw, Ch),
+        cells(W - 6, Cw, C), cells(H - Ch - 9, Ch, R),
+        Window!columns := C, Window!rows := R;
+text_fits(_, _, _);
+
+metrics(0, Cw, Ch) :- !, :default_font(#bitmap_display, _, Cw, Ch);
+metrics(Font, Cw, Ch) :- Cw = Font!width, Ch = Font!height;
+
+% the cells of size C that fit in N dots, at least 1 (as
+% standard_io_window.esp's)
+cells(N, C, 1) :- N < C + C, !;
+cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
+
+value(V, V);
+
+permission_name(out);
+permission_name(wait);
+permission_name(show);
+permission_name(notify);
 
 % window M4 (OURS, see the head comment): the pane, made once.  A window
 % not made by create/3 (no interpreter, so no text: an instance made by

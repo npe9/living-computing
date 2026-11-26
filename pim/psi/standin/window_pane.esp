@@ -44,8 +44,8 @@
 % are saved before it is drawn (save_memory.esp, the save areas of TM-225
 % p10 and TM-126 p5, PROSE, window.md §4.1) and restored when it is
 % erased, so a window killed over another leaves the other's dots as they
-% were when it was covered (what the covered window wrote meanwhile is
-% lost: no output permission is modelled, OURS).  Since the pane is not
+% were when it was covered (until the output permission `out`, what the
+% covered window wrote meanwhile was lost).  Since the pane is not
 % clipped, the selected window's block cursor (drawn by exclusive_or) is
 % taken off before a new pane is drawn (coordinator cursor_aside/1, OURS),
 % so it is neither saved under the new pane nor later toggled over it.
@@ -56,7 +56,9 @@
 % covered part goes into the save areas above and only the shown part
 % appears: TM-225 p10-11's ② and TM-125 p6's OUTPUT, the held
 % `permission(out)` (63 USAGE sites, window.md §4.1).  That every window
-% has this permission is OURS (TM-225's default is ①, wait).
+% has this permission is OURS (TM-225's default is ①, wait).  Since
+% window M7's rest the window's own permission decides (wait, show and
+% notify too; coordinator.esp "OUTPUT PERMISSION"), `out` the default.
 % Window M7 (2026-11-25): restacking.  A pane can be lifted off (its own
 % dots saved, what was under it drawn back), laid back on top and moved
 % (lift/1, lay/1, move_to/3); the coordinator orders them (coordinator.esp
@@ -252,6 +254,89 @@ attribute under := 0, image := 0;
         :restore(#save_memory, Pane!under),
         Pane!under := 0;
 
+% Window M8 (2026-11-26): GRAPHICS in the pane's inside (window.md §2.5,
+% the plan's M8).  Coordinates are dots from the inside's top-left
+% (PRINTED-INTERFACE TM-125 p17, window.md §2.5 "coordinates are dots in
+% the inside area"); the ops are the device's (set, reset, exclusive_or,
+% copy, reverse; psi/windev.py).  Each method goes through uncover/3 and
+% unpeel/2 like the text methods, so a covered window's drawing obeys its
+% output permission, and takes the block cursor off around the drawing.
+% Clipping to the inside (OURS): a fill, and so a horizontal or vertical
+% line and a rectangle, is cut to the inside; a slanted line is drawn only
+% when it lies wholly inside, and refuses loudly otherwise (the device's
+% line has no clip of its own but the frame's); a glyph is drawn only
+% when its cell lies wholly inside; a transfer's two areas must lie
+% inside, or it refuses loudly.  graphics_refused/2 is not a method of
+% any class (OURS), so such a send is refused "not in the stand-in",
+% never silently dropped.
+
+% :draw_line_in(Pane, X1, Y1, X2, Y2, Width, Op) -- INTERPOLATED
+% (selector and body OURS) from window.md §2.5 draw_line/8 (TM-125 p17,
+% TM-785 p40): a solid line Width dots wide.  A horizontal or vertical
+% line is a fill, its width going down or right (as the device's line,
+% psi/winfb.py: the extra dots along the minor axis).
+% A slanted line leaving the inside is refused BEFORE uncover/3, as
+% transfer_in/8's areas are, so a covered window's lifted panes are never
+% left lifted by the refusal.
+:draw_line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :-
+        drawable(Pane, X1, Y1, X2, Y2, Wd), !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        line_in(Pane, X1, Y1, X2, Y2, Wd, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:draw_line_in(Pane, _, _, _, _, _, _) :- :graphics_refused(Pane, line);
+
+% :fill_in(Pane, X, Y, Width, Height, Op) -- INTERPOLATED (selector and
+% body OURS) from window.md §2.5 draw_filled_rectangle/6: the rectangle
+% filled, cut to the inside.
+:fill_in(Pane, X, Y, W, H, Op) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        fill_cut(Pane, X, Y, W, H, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :frame_in(Pane, X, Y, Width, Height, Line, Op) -- INTERPOLATED
+% (selector and body OURS) from window.md §2.5 draw_rectangle/8: the
+% rectangle's outline, Line dots wide inward (OURS), as four fills that
+% do not overlap (so exclusive_or draws each dot once).
+:frame_in(Pane, X, Y, W, H, L, Op) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        fill_cut(Pane, X, Y, W, L, Op),
+        fill_cut(Pane, X, Y + H - L, W, L, Op),
+        fill_cut(Pane, X, Y + L, L, H - L - L, Op),
+        fill_cut(Pane, X + W - L, Y + L, L, H - L - L, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :string_in(Pane, X, Y, String, Font, Op) -- INTERPOLATED (selector and
+% body OURS) from window.md §2.5 draw_string/4-6: the string's first
+% letter's top-left at (X, Y) (PRINTED-INTERFACE TM-125 p17), one cell of
+% the font a letter; Font 0 is the pane's font.
+:string_in(Pane, X, Y, S, Font, Op) :-
+        font_of(Pane, Font, Id, Cw, Ch),
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        string(S, N, _),
+        letters(Pane, S, 0, N, X, Y, Id, Cw, Ch, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :transfer_in(Pane, SX, SY, DX, DY, Width, Height, Op) -- INTERPOLATED
+% (selector and body OURS) from window.md §2.5 transfer/8 (USAGE cil
+% es_gin.esp:855): a block moved inside the window.
+:transfer_in(Pane, SX, SY, DX, DY, W, H, Op) :-
+        inside(Pane, SX, SY, W, H), inside(Pane, DX, DY, W, H), !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        :copy(#bitmap_display, Pane!left + SX, Pane!top + SY, W, H,
+              Pane!left + DX, Pane!top + DY, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:transfer_in(Pane, _, _, _, _, _, _, _) :- :graphics_refused(Pane, transfer);
+
 local
 
 moved(Pane, X, Y) :- X == Pane!x, Y == Pane!y, !;
@@ -298,6 +383,53 @@ on_screen(_, W, S, V) :- S >= W, !, value(S - W, V);
 on_screen(_, _, _, 0);
 
 value(V, V);
+
+% window M8 (OURS, see "Window M8" above)
+line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :- Y1 == Y2, !,
+        low_span(X1, X2, X, W), fill_cut(Pane, X, Y1, W, Wd, Op);
+line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :- X1 == X2, !,
+        low_span(Y1, Y2, Y, H), fill_cut(Pane, X1, Y, Wd, H, Op);
+line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :-
+        :line(#bitmap_display, Pane!left + X1, Pane!top + Y1,
+              Pane!left + X2, Pane!top + Y2, Wd, Op);
+
+drawable(_, _, Y1, _, Y2, _) :- Y1 == Y2, !;
+drawable(_, X1, _, X2, _, _) :- X1 == X2, !;
+drawable(Pane, X1, Y1, X2, Y2, Wd) :-
+        low_span(X1, X2, X, W), low_span(Y1, Y2, Y, H),
+        inside(Pane, X, Y, W + Wd - 1, H + Wd - 1);
+
+low_span(A, B, A, W) :- A =< B, !, value(B - A + 1, W);
+low_span(A, B, B, W) :- value(A - B + 1, W);
+
+fill_cut(Pane, X, Y, W, H, Op) :-
+        cut(X, X + W, Pane!iw, X1, W1), cut(Y, Y + H, Pane!ih, Y1, H1),
+        W1 > 0, H1 > 0, !,
+        :fill(#bitmap_display, Pane!left + X1, Pane!top + Y1, W1, H1, Op);
+fill_cut(_, _, _, _, _, _);
+
+% [V, E) cut to [0, M): its low end and length
+cut(V, E, M, Lo, L) :- low(V, Lo), high(E, M, Hi), value(Hi - Lo, L);
+
+low(V, 0) :- V < 0, !;
+low(V, V);
+
+high(E, M, M) :- E > M, !;
+high(E, _, E);
+
+inside(Pane, X, Y, W, H) :-
+        X >= 0, Y >= 0, X + W =< Pane!iw, Y + H =< Pane!ih;
+
+font_of(Pane, 0, Id, Cw, Ch) :- !, Id = Pane!font, Cw = Pane!cw, Ch = Pane!ch;
+font_of(_, Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;
+
+letters(_, _, I, N, _, _, _, _, _, _) :- I >= N, !;
+letters(Pane, S, I, N, X, Y, Id, Cw, Ch, Op) :- inside(Pane, X, Y, Cw, Ch), !,
+        string_element(S, I, C),
+        :glyph(#bitmap_display, Id, C, Pane!left + X, Pane!top + Y, Op),
+        letters(Pane, S, I + 1, N, X + Cw, Y, Id, Cw, Ch, Op);
+letters(Pane, S, I, N, X, Y, Id, Cw, Ch, Op) :-
+        letters(Pane, S, I + 1, N, X + Cw, Y, Id, Cw, Ch, Op);
 
 % the rectangle set, its inside reset (a 2-dot border), the rule under
 % the label strip

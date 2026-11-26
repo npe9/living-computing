@@ -134,8 +134,13 @@
 %     window, then send reshape/5 and the callback has_been_reshaped/1
 %     (window.md §2.1, §2.12: the reshape notifier calls it after the
 %     geometry is set).  Output to a covered window: permission `out`
-%     for every window (uncover/3, window_pane.esp's head).  Not
-%     modelled: the other permissions and the other eight items.
+%     for every window (uncover/3, window_pane.esp's head).
+% Window M7's rest (2026-11-26): EXPAND, MENU, PERMISSION and EXIT added
+% in TM-125 p8's order (ATTRIBUTE, HARDCOPY, SUPERIOR, INFERIOR not
+% offered: no choice window, printer or window hierarchy; psi/README.md
+% "Window M7's rest"); the four output permissions ("OUTPUT PERMISSION"
+% below); an open pop-up and a sweep's outline kept on top of a writing
+% window (uncover/3); has_been_selected/1 sent after a selection.
 % The windows' owners (the process that made each, `:self(#process, P)`
 % at add_window/3) and the programs started ([Name, P]) are kept for kill,
 % as lists (kl0 keeps a list's values in a slot; a vector would keep its
@@ -157,6 +162,11 @@ attribute windows := [], count := 0, mouse_x := 640, mouse_y := 472,
 % first) and the windows' owners ([W, P]).
 attribute dialogue := [], outline := [], placement := [], programs := [],
           owners := [];
+% Window M7, output permission (OURS, see the head comment): the writers
+% held back, [W, S, Kind] (Kind the window's permission when it asked:
+% wait or notify; notified once its notify window was shown), each
+% waiting on its stream S.
+attribute waiters := [];
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
 % window (standard_io_window.esp) until window M7, since then holding only
@@ -200,22 +210,7 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 
 % :event(#coordinator, Event) -- INTERPOLATED (OURS selector): one event,
 % as the coordinator process takes it from its stream.
-:event(Class, invoke_system_menu) :- !,
-        open_menu(Class);
-:event(Class, {key, Code}) :- !,
-        key(Class!selected, Code, Class);
-:event(Class, {select, Label}) :- !,
-        Class!shown \== 0,
-        find_item(Class!shown, Label, Name),
-        close_menu(Class),
-        start(Class, Name);
-% window M6 (OURS, see the head comment)
-:event(Class, {mouse, Button, X, Y}) :- !,
-        Class!mouse_x := X, Class!mouse_y := Y,
-        click(Class, Button, X, Y);
-:event(Class, {move, X, Y}) :- !,
-        Class!mouse_x := X, Class!mouse_y := Y,
-        moved(Class, Class!menu_pane, Class!dialogue, X, Y);
+:event(Class, Event) :- handle(Class, Event), !, settled(Class);
 
 % :select_window(#coordinator, W) -- window M4/M6 (selector and body
 % OURS; see the head comment): W becomes the selected window.
@@ -224,7 +219,8 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 :select_window(Class, W) :-
         S = Class!selected, S == W, !,
         raise(Class, W),
-        :selected(W);
+        :selected(W),
+        wake(Class);
 :select_window(Class, W) :-
         deselect(Class!selected),
         raise(Class, W),
@@ -232,7 +228,9 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
         :selected(W),
         :status_name(W, Kind, N),
         :show_selected(#status_band, Kind, N),
-        type_ahead(Class, W);
+        type_ahead(Class, W),
+        :has_been_selected(W),
+        wake(Class);
 
 % :add_window(#coordinator, W, N) -- window M4/M6 (selector and body
 % OURS): W is drawn; N its number.
@@ -246,7 +244,11 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
         Class!owners := [[W, P] | Class!owners];
 
 % :remove_window(#coordinator, W) -- window M4/M6 (selector and body
-% OURS): W has left the screen; if it was selected, none is.
+% OURS): W has left the screen; if it was selected, none is.  Its held-back
+% writers are dropped from the waiters (OURS): never woken (a dead
+% window's output has no pane to go to; the writer stays suspended on its
+% stream), never offered in a notify window, so `show` can never select
+% a dead window.
 % INTERPOLATED (selector and body OURS): remove_window; basis above and in
 % the head comment.
 :remove_window(Class, W) :-
@@ -254,6 +256,8 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
         Class!windows := Ws,
         disowned(Class!owners, W, Os),
         Class!owners := Os,
+        unwaited(Class!waiters, W, Vs),
+        Class!waiters := Vs,
         unselect(Class, W);
 
 % :cursor_aside(#coordinator) -- window M6/M7 (selector and body OURS):
@@ -275,7 +279,8 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
         above(Class!windows, W, Above),
         peel(W!pane, Above, Lifted),
         :erase(W!pane),
-        unpeel(Lifted);
+        unpeel(Lifted),
+        wake(Class);
 
 % :peel(#coordinator, W, Lifted) and :unpeel(#coordinator, Lifted) --
 % window M7 (selectors and bodies OURS): every window above W lifted, top
@@ -288,6 +293,8 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
         lift_all(Lifted);
 % INTERPOLATED (selector and body OURS): unpeel; basis above and in the
 % head comment.
+:unpeel(Class, {M, O, Lifted}) :- !,
+        unpeel(Lifted), menu_on(M), outline_on(O);
 :unpeel(Class, Lifted) :- unpeel(Lifted);
 
 % :uncover(#coordinator, Pane, Lifted) -- window M7 (selector and body
@@ -297,11 +304,17 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 % window (not yet added, or a census instance) lifts nothing.
 % INTERPOLATED (selector and body OURS): uncover; basis above and in the
 % head comment.
-:uncover(Class, Pane, Lifted) :-
+:uncover(Class, Pane, {M, O, Lifted}) :-
         owner(Class!windows, Pane, W), !,
+        permitted(Class, W),
         above(Class!windows, W, Above),
-        peel(Pane, Above, Lifted);
-:uncover(_, _, []);
+        lifting(Pane, Above, Lifted),
+        outline_off(Class, O),
+        menu_off(Class, Pane, Lifted, M),
+        lift_all(Lifted);
+:uncover(Class, Pane, {M, O, []}) :-
+        outline_off(Class, O),
+        menu_off(Class, Pane, [], M);
 
 % :placement(#coordinator, X, Y) -- window M6 (selector and body OURS,
 % see the head comment): the top-left of the outline swept for the next
@@ -321,6 +334,27 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 local
 
 value(V, V);
+
+% one event (since window M7's permissions, :event/2 then wakes the
+% writers that may now write and offers a pending notify window)
+handle(Class, invoke_system_menu) :- !,
+        open_menu(Class);
+handle(Class, {key, Code}) :- !,
+        key(Class!selected, Code, Class);
+handle(Class, {select, Label}) :- !,
+        Class!shown \== 0,
+        find_item(Class!shown, Label, Name),
+        close_menu(Class),
+        start(Class, Name);
+% window M6 (OURS, see the head comment)
+handle(Class, {mouse, Button, X, Y}) :- !,
+        Class!mouse_x := X, Class!mouse_y := Y,
+        click(Class, Button, X, Y);
+handle(Class, {move, X, Y}) :- !,
+        Class!mouse_x := X, Class!mouse_y := Y,
+        moved(Class, Class!menu_pane, Class!dialogue, X, Y);
+
+settled(Class) :- wake(Class), offer(Class);
 
 start(Class, Name) :-
         :get_class_object(#library, Name, Program_class),
@@ -364,6 +398,23 @@ menu_click(Class, [manipulator, W], X, Y) :-
         close_menu(Class),
         Class!dialogue := [],
         manipulate(Class, Item, W);
+% window M7: the manipulator's PERMISSION and MENU submenus, and a
+% notify window's choice
+menu_click(Class, [permission, W], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, Permission), !,
+        close_menu(Class),
+        Class!dialogue := [],
+        :set_permission(W, Permission);
+menu_click(Class, [windows], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, W), !,
+        close_menu(Class),
+        Class!dialogue := [],
+        :select_window(Class, W);
+menu_click(Class, [notify, W], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, Choice), !,
+        close_menu(Class),
+        Class!dialogue := [],
+        notified(Class, Choice, W);
 menu_click(Class, _, _, _) :- close_menu(Class), Class!dialogue := [];
 
 chosen(Class, Label, Name, X, Y) :-
@@ -541,7 +592,8 @@ manipulator(Class, Ws, X, Y) :- under_mouse(Ws, X, Y, W), !,
         close_menu(Class),
         :create(#menu_pane, "WINDOW MANIPULATOR",
                 [[{"SHOW", show}, {"HIDE", hide}, {"RESHAPE", reshape},
-                  {"MOVE", move}]], X, Y, M),
+                  {"MOVE", move}, {"EXPAND", expand}, {"MENU", menu},
+                  {"PERMISSION", permission}, {"EXIT", exit}]], X, Y, M),
         Class!menu_pane := M,
         Class!dialogue := [manipulator, W];
 manipulator(_, _, _, _);
@@ -553,7 +605,189 @@ manipulate(Class, show, W) :- !, :select_window(Class, W);
 manipulate(Class, hide, W) :- !, hide(Class, W);
 manipulate(Class, reshape, W) :- !, Class!dialogue := [reshape, W];
 manipulate(Class, move, W) :- !, Class!dialogue := [move, W];
+manipulate(Class, expand, W) :- !, expand(Class, W);
+manipulate(Class, menu, _) :- !,
+        listed(Class!windows, Items),
+        submenu(Class, "WINDOWS", Items, [windows]);
+manipulate(Class, permission, W) :- !,
+        submenu(Class, "PERMISSION",
+                [{"out", out}, {"wait", wait}, {"show", show},
+                 {"notify", notify}], [permission, W]);
+manipulate(_, exit, _) :- !;
 manipulate(_, _, _);
+
+% a submenu at the mouse (TM-125 p8: MENU "select the window using the
+% submenu of windows list", PERMISSION "reset the window output
+% permission by sub-menu"; a pop-up as the manipulator's, OURS)
+submenu(Class, Title, Items, Dialogue) :-
+        :create(#menu_pane, Title, [Items], Class!mouse_x, Class!mouse_y, M),
+        Class!menu_pane := M,
+        Class!dialogue := Dialogue;
+
+% MENU's items: each window by its title (its status name's class when
+% it has none), top first (OURS)
+listed([], []);
+listed([W | Ws], [{T, W} | Is]) :- named(W, T), listed(Ws, Is);
+
+named(W, T) :- T = W!title, string(T, N, _), N > 0, !;
+named(W, Kind) :- :status_name(W, Kind, _);
+
+% EXPAND "expand the window size as large as possible but not hide
+% another fully shown window" (TM-125 p8).  OURS: the fully shown windows
+% that it does not overlap now are the obstacles; the left edge goes out
+% to the nearest obstacle (or the screen's edge) beside the window's rows,
+% then the right edge; then the top and the bottom, beside the new
+% columns.  The window is then raised, selected and reshaped as by
+% RESHAPE.
+expand(Class, W) :-
+        Q = W!pane,
+        obstacles(Class, Class!windows, W, Q, Os),
+        :get_size(#bitmap_display, Sw, Sh),
+        value(Q!y + Q!h, Y1), value(Q!x + Q!w, X1),
+        left(Os, Q!y, Y1, Q!x, 0, L),
+        right(Os, Q!y, Y1, X1, Sw, R),
+        up(Os, L, R, Q!y, 0, U),
+        down(Os, L, R, Y1, Sh, D),
+        reshape(Class, W, L, U, R - L, D - U);
+
+obstacles(_, [], _, _, []);
+obstacles(Class, [U | Us], W, Q, Os) :- U == W, !, obstacles(Class, Us, W, Q, Os);
+obstacles(Class, [U | Us], W, Q, [P | Os]) :-
+        on_screen(U), P = U!pane, apart(P, Q), shown(Class, U), !,
+        obstacles(Class, Us, W, Q, Os);
+obstacles(Class, [_ | Us], W, Q, Os) :- obstacles(Class, Us, W, Q, Os);
+
+apart(P, Q) :- :overlaps(P, Q), !, fail;
+apart(_, _);
+
+shown(Class, U) :- covered(Class, U), !, fail;
+shown(_, _);
+
+left([], _, _, _, L, L);
+left([O | Os], Y0, Y1, X0, L0, L) :-
+        O!y < Y1, Y0 < O!y + O!h, value(O!x + O!w, E), E =< X0, E > L0, !,
+        left(Os, Y0, Y1, X0, E, L);
+left([_ | Os], Y0, Y1, X0, L0, L) :- left(Os, Y0, Y1, X0, L0, L);
+
+right([], _, _, _, R, R);
+right([O | Os], Y0, Y1, X1, R0, R) :-
+        O!y < Y1, Y0 < O!y + O!h, O!x >= X1, O!x < R0, !,
+        right(Os, Y0, Y1, X1, O!x, R);
+right([_ | Os], Y0, Y1, X1, R0, R) :- right(Os, Y0, Y1, X1, R0, R);
+
+up([], _, _, _, U, U);
+up([O | Os], L, R, Y0, U0, U) :-
+        O!x < R, L < O!x + O!w, value(O!y + O!h, E), E =< Y0, E > U0, !,
+        up(Os, L, R, Y0, E, U);
+up([_ | Os], L, R, Y0, U0, U) :- up(Os, L, R, Y0, U0, U);
+
+down([], _, _, _, D, D);
+down([O | Os], L, R, Y1, D0, D) :-
+        O!x < R, L < O!x + O!w, O!y >= Y1, O!y < D0, !,
+        down(Os, L, R, Y1, O!y, D);
+down([_ | Os], L, R, Y1, D0, D) :- down(Os, L, R, Y1, D0, D);
+
+% window M7, OUTPUT PERMISSION (see the head comment).  A window's
+% output waits, is shown or notifies only while the window is covered (a
+% window above it overlaps it); `out` writes at once into the covered
+% window (uncover/3 lifts the windows above).  The coordinator's own
+% process never waits (its redraws: has_been_reshaped/1, a selection's
+% cursor; OURS), so a writer is always another process.
+permitted(Class, W) :- covered(Class, W), !, held_back(Class, W, W!permission);
+permitted(_, _);
+
+covered(Class, W) :- above(Class!windows, W, Above), overlapped(W!pane, Above);
+
+held_back(_, _, out) :- !;
+held_back(Class, _, _) :- manager(Class), !;
+held_back(Class, W, show) :- !,
+        :select_window(Class, W),
+        permitted(Class, W);
+held_back(Class, W, Kind) :-
+        :create(#stream, S),
+        append(Class!waiters, [[W, S, Kind]], Ws),
+        Class!waiters := Ws,
+        offer(Class),
+        :get(S, _),
+        permitted(Class, W);
+
+manager(Class) :- P = Class!process, P \== 0, :self(#process, Q), P == Q;
+
+% the writers that may write now (not covered, or their permission
+% changed to out or show) are woken, in the order they asked
+wake(Class) :- Class!waiters == [], !;
+wake(Class) :- woken(Class, Class!waiters, Ws), Class!waiters := Ws;
+
+woken(_, [], []);
+woken(Class, [[W, S, _] | R], Ws) :- free(Class, W), !,
+        :put(S, go),
+        woken(Class, R, Ws);
+woken(Class, [X | R], [X | Ws]) :- woken(Class, R, Ws);
+
+free(_, W) :- P = W!permission, P == out, !;
+free(_, W) :- P = W!permission, P == show, !;
+free(Class, W) :- covered(Class, W), !, fail;
+free(_, _);
+
+% NOTIFY: a temporary window at the mouse (TM-125 p6-7: "NOTIFY WINDOW",
+% prepared by the system; a temporary window appears at the mouse
+% cursor), titled with the window's title (OURS), offering `wait` and
+% `show` (TM-225 p11 ④: the user chooses ① or ③ by mouse; the words are
+% the ATTRIBUTE dialogue's, TM-125 p7 Fig. 4).  One at a time, and only
+% when no other pop-up or sweep is open (OURS): it waits for the next
+% quiet moment (offer/1 after every event).  `show` raises and selects
+% the window, whose writer then goes on; `wait` (or a click off the
+% items) leaves the writer waiting until the window is uncovered.
+offer(Class) :- Class!menu_pane == 0, Class!dialogue == [],
+        notices(Class!waiters, W, Ws), !,
+        Class!waiters := Ws,
+        named(W, T),
+        :create(#menu_pane, T, [[{"wait", wait}, {"show", show}]],
+                Class!mouse_x, Class!mouse_y, M),
+        Class!menu_pane := M,
+        Class!dialogue := [notify, W];
+offer(_);
+
+notices([[W, S, notify] | R], W, [[W, S, notified] | R]) :- !;
+notices([X | R], W, [X | T]) :- notices(R, W, T);
+
+unwaited([], _, []);
+unwaited([[X, _, _] | R], W, Vs) :- X == W, !, unwaited(R, W, Vs);
+unwaited([V | R], W, [V | Vs]) :- unwaited(R, W, Vs);
+
+notified(Class, show, W) :- member(W, Class!windows), !,
+        :select_window(Class, W);
+notified(_, _, _);
+
+% window M7: what lies over a pane while it writes.  The windows above
+% it that overlap it are lifted (lifting/3, then lift_all/1); an open
+% pop-up (a temporary window: "never hidden by an ordinary window", it
+% saves what it covers, TM-125 p6-7) lies over every window, so it is
+% lifted first when it overlaps the pane or a window lifted, and laid
+% back last (its lift/1, lay/1); a sweep's outline (exclusive_or) is
+% taken off before anything and drawn again after, so no text is drawn
+% into it.  OURS order.
+lifting(P, Above, Above) :- overlapped(P, Above), !;
+lifting(_, _, []);
+
+menu_off(Class, P, Lifted, M) :- M = Class!menu_pane, M \== 0,
+        menu_over(M, P, Lifted), !,
+        :lift(M);
+menu_off(_, _, _, 0);
+
+menu_over(M, P, _) :- :overlaps(P, M), !;
+menu_over(M, _, [U | _]) :- :overlaps(U!pane, M), !;
+menu_over(M, P, [_ | Us]) :- menu_over(M, P, Us);
+
+menu_on(0) :- !;
+menu_on(M) :- :lay(M);
+
+outline_off(Class, [X, Y, W, H]) :- Class!outline = [X, Y, W, H], !,
+        rect(X, Y, W, H);
+outline_off(_, []);
+
+outline_on([]) :- !;
+outline_on([X, Y, W, H]) :- rect(X, Y, W, H);
 
 % HIDE: the selected window loses its cursor while it is still on top;
 % once it is lowered the new top window is selected (INFERENCE: TM-225

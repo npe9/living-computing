@@ -121,7 +121,9 @@ class standard_io_window has
         :new(Class, W),
         W!options := Options,
         :create(#stream, Input),
-        W!input := Input;
+        W!input := Input,
+        permission(Options, P),
+        W!permission := P;
 
 instance
 
@@ -135,6 +137,11 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 % window M7, OURS: the rectangle given by reshape/5 ([X, Y, Wd, Ht]; []
 % none).
 attribute place := [];
+% window M7, the output permission (out, wait, show or notify; window.md
+% §4.1, coordinator.esp "OUTPUT PERMISSION"): the held create option
+% `permission(P)` (USAGE: 63 `out`, 13 `show`) or set_permission/2; `out`
+% when neither is given (OURS: TM-225 p11 makes ① wait the default).
+attribute permission := out;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
 :set_font(W, F) :- W!font := F;
@@ -235,6 +242,22 @@ attribute place := [];
         reselect(W);
 :has_been_reshaped(_);
 
+% :set_permission(W, P) -- window M7, INTERPOLATED (body OURS) from
+% window.md §2.2 `set_permission/2 (W,out|show|...)` (USAGE gog-esp
+% DISPB3.ESP:377) and the four permissions of TM-125 p6 and the ATTRIBUTE
+% dialogue (out, wait, show, notify; TM-125 p7 Fig. 4): fails on any
+% other.
+:set_permission(W, P) :- permission_name(P), W!permission := P;
+
+% :has_been_selected(W) -- window M7, INTERPOLATED (body OURS): the
+% select notifier's callback (window.md §2.1, §2.12: kappa pbwin's
+% after-demon on it proves a SIMPOS primary; paragraph
+% profiler_view_window defines its own).  The coordinator sends it after
+% a window is selected (select_window/2).  This default primary does
+% nothing (OURS); a held subclass's own method or demon runs instead or
+% after it.
+:has_been_selected(W);
+
 % :deselect_window(W) -- window M5, INTERPOLATED (selector and body OURS)
 % from TM-126 p7 (PROSE, window.md §4.1): another window was selected,
 % so this one's cursor goes.
@@ -258,6 +281,123 @@ attribute place := [];
 % INTERPOLATED (selector and body OURS): status_name; basis above and in
 % the head comment.
 :status_name(W, "standard_io_window", N) :- N = W!number;
+
+% Window M8 (2026-11-26), GRAPHICS (window.md §2.5, owner `as_graphics`,
+% INFERENCE; the plan's M8).  The selectors and argument forms are
+% window.md §2.5's, each cited there: draw_line/5 and /8
+% (PRINTED-INTERFACE TM-125 p17, TM-785 p40), /6 (VARIANT: paragraph's Op,
+% gog's Width; an integer is taken as the width), /7 (USAGE gog
+% KE_WINDOW.ESP:454); draw_rectangle/5, /7, /8 (TM-125 p17; IPSJ 36239 p5
+% `...,1,filled,exclusive_or`); draw_filled_rectangle/6 and /8 (USAGE
+% paragraph, TM-785 p40; the /8's sixth argument is unknown and ignored);
+% draw_string/4, /5 (VARIANT: 1985's Op, the held Font; an op name is taken
+% as the op), /6 (USAGE paragraph c_p_meter); transfer/8 (USAGE cil
+% es_gin.esp:855); execute_graphics_command/2, a list of {Name, {Args}}
+% (USAGE paragraph p_icon.esp:61, :176; g_window.esp:141-142 the
+% five-element draw_string, :169 the seven-element draw_filled_rectangle
+% with a held pattern, which refuses: only fix); get_mouse_position/3 (SCREENSHOT
+% IPSJ 36239 p5; USAGE).  The default op is exclusive_or ("default is
+% exclusive or", PRINTED-INTERFACE TM-125 p17); the default line is 1 dot,
+% solid.  OURS bodies, drawn by the pane (window_pane.esp "Window M8").
+% Refused loudly (graphics_refused/2 is no method, OURS): a line style
+% other than solid, a rectangle style other than solid or filled, a fill
+% pattern other than fix (light_paint and the TM-785 patterns have no
+% printed look), a command execute_graphics_command/2 does not know, and
+% drawing on a window that is not on the screen.
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_line.
+:draw_line(W, X1, Y1, X2, Y2) :- line(W, X1, Y1, X2, Y2, 1, solid, exclusive_or);
+:draw_line(W, X1, Y1, X2, Y2, A) :- integer(A), !,
+        line(W, X1, Y1, X2, Y2, A, solid, exclusive_or);
+:draw_line(W, X1, Y1, X2, Y2, Op) :- line(W, X1, Y1, X2, Y2, 1, solid, Op);
+:draw_line(W, X1, Y1, X2, Y2, Wd, St) :- line(W, X1, Y1, X2, Y2, Wd, St, exclusive_or);
+:draw_line(W, X1, Y1, X2, Y2, Wd, St, Op) :- line(W, X1, Y1, X2, Y2, Wd, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_rectangle.
+:draw_rectangle(W, X, Y, Wd, Ht) :- rectangle(W, X, Y, Wd, Ht, 1, solid, exclusive_or);
+:draw_rectangle(W, X, Y, Wd, Ht, L, St) :- rectangle(W, X, Y, Wd, Ht, L, St, exclusive_or);
+:draw_rectangle(W, X, Y, Wd, Ht, L, St, Op) :- rectangle(W, X, Y, Wd, Ht, L, St, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_filled_rectangle.
+:draw_filled_rectangle(W, X, Y, Wd, Ht, Op) :- pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+:draw_filled_rectangle(W, X, Y, Wd, Ht, _, fix, Op) :- !,
+        pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+:draw_filled_rectangle(W, _, _, _, _, _, Pattern, _) :- :graphics_refused(W, Pattern);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): draw_string.
+:draw_string(W, X, Y, S) :- pane_of(W, P), :string_in(P, X, Y, S, 0, exclusive_or);
+:draw_string(W, X, Y, S, Op) :- op_name(Op), !, pane_of(W, P), :string_in(P, X, Y, S, 0, Op);
+:draw_string(W, X, Y, S, Font) :- pane_of(W, P), :string_in(P, X, Y, S, Font, exclusive_or);
+:draw_string(W, X, Y, S, Font, Op) :- pane_of(W, P), :string_in(P, X, Y, S, Font, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): transfer.
+:transfer(W, SX, SY, DX, DY, Wd, Ht, Op) :-
+        pane_of(W, P), :transfer_in(P, SX, SY, DX, DY, Wd, Ht, Op);
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): execute_graphics_command.
+:execute_graphics_command(W, []) :- !;
+:execute_graphics_command(W, [{Name, Args} | Cs]) :-
+        stack_vector(Args, N), !,
+        command(W, Name, N, Args),
+        :execute_graphics_command(W, Cs);
+:execute_graphics_command(W, _) :- :graphics_refused(W, command);
+% the mouse in the window's inside, in dots (the window's units: no
+% set_inside_units/3 is stood in)
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
+% body OURS): get_mouse_position.
+:get_mouse_position(W, X, Y) :-
+        pane_of(W, P), C = #coordinator,
+        value(C!mouse_x - P!left, X), value(C!mouse_y - P!top, Y);
+
+% Window M8, MARKERS (window.md §2.6, owner `as_markers`, INFERENCE): the
+% selectors and arguments are PRINTED-INTERFACE TM-125 p17 (create_marker/2
+% `(W,^M)`, draw_marker/2, erase_marker/2, move_marker/4 `(W,M,X,Y)`,
+% set_marker_type/3 `(W,M,box|line)`, set_marker_size/4, get_marker_list/2);
+% create_marker/7 `(W,X,Y,Width,Height,Type,^M)` is the CESP substitute's
+% form (linguist with_marker.esp:21-25, an analogy only).  The bodies are
+% OURS: a marker is drawn with exclusive_or (TM-125 p17's default op), so
+% drawing it twice takes it off and what was under it comes back -- a box
+% is the rectangle's 1-dot outline (draw_rectangle/5), a line runs from
+% the marker's top-left to its bottom-right corner (draw_line/5), reverse
+% inverts the area; create_marker/2 makes a 16 x 16 box at (0, 0) (OURS);
+% a marker is made not drawn; moving, retyping or resizing a drawn marker
+% takes it off and draws it again.  get_marker_position/4 (UNSPECIFIED,
+% window.md §2.6) is not stood in.
+attribute markers := [];
+
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): create_marker.
+:create_marker(W, M) :- :create_marker(W, 0, 0, 16, 16, box, M);
+:create_marker(W, X, Y, Wd, Ht, Type, M) :- marker_type(Type), !,
+        :create(#marker, W, X, Y, Wd, Ht, Type, M),
+        append(W!markers, [M], Ms),
+        W!markers := Ms;
+:create_marker(W, _, _, _, _, Type, _) :- :graphics_refused(W, Type);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): draw_marker.
+:draw_marker(W, M) :- M!shown == 1, !;
+:draw_marker(W, M) :- marker_drawn(W, M), M!shown := 1;
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): erase_marker.
+:erase_marker(W, M) :- M!shown == 0, !;
+:erase_marker(W, M) :- marker_drawn(W, M), M!shown := 0;
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): move_marker.
+:move_marker(W, M, X, Y) :- S = M!shown,
+        :erase_marker(W, M), M!x := X, M!y := Y, again(W, M, S);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): set_marker_type.
+:set_marker_type(W, M, Type) :- marker_type(Type), !, S = M!shown,
+        :erase_marker(W, M), M!type := Type, again(W, M, S);
+:set_marker_type(W, _, Type) :- :graphics_refused(W, Type);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): set_marker_size.
+:set_marker_size(W, M, Wd, Ht) :- S = M!shown,
+        :erase_marker(W, M), M!w := Wd, M!h := Ht, again(W, M, S);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): get_marker_list, the window's markers in the order
+% made.
+:get_marker_list(W, Ms) :- Ms = W!markers;
 
 local
 
@@ -293,6 +433,17 @@ size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
 size([_ | Os], C, R) :- !, size(Os, C, R);
 size(_, 40, 10);
 
+% the held option permission(P) (window M7); out when none
+permission(Options, out) :- unbound(Options), !;
+permission([{permission, P} | _], P) :- permission_name(P), !;
+permission([_ | Os], P) :- !, permission(Os, P);
+permission(_, out);
+
+permission_name(out);
+permission_name(wait);
+permission_name(show);
+permission_name(notify);
+
 position(Options, manipulator, 0) :- unbound(Options), !;
 position([{position, X, Y} | _], X, Y) :- !;
 position([{position, manipulator} | _], manipulator, 0) :- !;
@@ -318,6 +469,85 @@ cells(N, C, 1) :- N < C + C, !;
 cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
 
 value(V, V);
+
+% window M8 (OURS, see "Window M8" above)
+pane_of(W, P) :- P = W!pane, P \== 0, !;
+pane_of(W, _) :- :graphics_refused(W, not_shown);
+
+line(W, X1, Y1, X2, Y2, Wd, solid, Op) :- !,
+        pane_of(W, P), :draw_line_in(P, X1, Y1, X2, Y2, Wd, Op);
+line(W, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
+
+rectangle(W, X, Y, Wd, Ht, L, solid, Op) :- !,
+        pane_of(W, P), :frame_in(P, X, Y, Wd, Ht, L, Op);
+rectangle(W, X, Y, Wd, Ht, _, filled, Op) :- !,
+        pane_of(W, P), :fill_in(P, X, Y, Wd, Ht, Op);
+rectangle(W, _, _, _, _, _, St, _) :- :graphics_refused(W, St);
+
+op_name(set);
+op_name(reset);
+op_name(exclusive_or);
+op_name(copy);
+op_name(reverse);
+
+% one command of execute_graphics_command/2: the method of that name
+% with the vector's elements, sent to the window itself
+command(W, draw_line, 4, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2),
+        :draw_line(W, X1, Y1, X2, Y2);
+command(W, draw_line, 5, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2), el(A, 4, B),
+        :draw_line(W, X1, Y1, X2, Y2, B);
+command(W, draw_line, 6, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2), el(A, 4, Wd),
+        el(A, 5, St),
+        :draw_line(W, X1, Y1, X2, Y2, Wd, St);
+command(W, draw_line, 7, A) :- !,
+        el(A, 0, X1), el(A, 1, Y1), el(A, 2, X2), el(A, 3, Y2), el(A, 4, Wd),
+        el(A, 5, St), el(A, 6, Op),
+        :draw_line(W, X1, Y1, X2, Y2, Wd, St, Op);
+command(W, draw_rectangle, 4, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht),
+        :draw_rectangle(W, X, Y, Wd, Ht);
+command(W, draw_rectangle, 7, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, L),
+        el(A, 5, St), el(A, 6, Op),
+        :draw_rectangle(W, X, Y, Wd, Ht, L, St, Op);
+command(W, draw_filled_rectangle, 5, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, Op),
+        :draw_filled_rectangle(W, X, Y, Wd, Ht, Op);
+command(W, draw_filled_rectangle, 7, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, U),
+        el(A, 5, Pt), el(A, 6, Op),
+        :draw_filled_rectangle(W, X, Y, Wd, Ht, U, Pt, Op);
+command(W, draw_string, 3, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, S),
+        :draw_string(W, X, Y, S);
+command(W, draw_string, 4, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, S), el(A, 3, B),
+        :draw_string(W, X, Y, S, B);
+command(W, draw_string, 5, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, S), el(A, 3, F), el(A, 4, Op),
+        :draw_string(W, X, Y, S, F, Op);
+command(W, Name, _, _) :- :graphics_refused(W, Name);
+
+el(A, I, V) :- vector_element(A, I, V);
+
+% markers (OURS, see "MARKERS" above)
+marker_type(box);
+marker_type(line);
+marker_type(reverse);
+
+marker_drawn(W, M) :- T = M!type, T == box, !,
+        :draw_rectangle(W, M!x, M!y, M!w, M!h);
+marker_drawn(W, M) :- T = M!type, T == line, !,
+        value(M!x + M!w - 1, X2), value(M!y + M!h - 1, Y2),
+        :draw_line(W, M!x, M!y, X2, Y2);
+marker_drawn(W, M) :-
+        :draw_filled_rectangle(W, M!x, M!y, M!w, M!h, exclusive_or);
+
+again(W, M, 1) :- !, :draw_marker(W, M);
+again(_, _, _);
 
 reverse([], L, L);
 reverse([X | R], L0, L) :- reverse(R, [X | L0], L);
