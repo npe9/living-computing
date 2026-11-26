@@ -567,6 +567,33 @@ and stand-in `simpos##` classes. In order:
      - Plain FEP has 1,466 rows (46 added, all stand-in): 801 / 233 /
        415. With recipes, 826 / 234 / 389. No held row changed outcome.
        Six packages are unchanged.
+   - *2026-11-25, steps 3k to 3m* (`../../psi/README.md`, "Step 3k" to
+     "Step 3m"; `boot_route.md` §4.3 to §4.5): B4 for the FEP timer, B5
+     to B8 as stand-ins, the login requester's dialogue and a local login
+     to the held server, with a probe standing in for PIMOS.
+   - *2026-11-25, step 3n* (`../../psi/README.md`, "Step 3n";
+     `boot_route.md` §4.6 and §6.5; `source_check_2026-11-24.md` §13):
+     - The held requester logs into the real PIMOS. PIMOS runs on
+       `ref/pimm/pimm.py` from the IPL's link checkpoint. The PSI side
+       is the held `pimos_scsi_front_end`, its assembler, the replier,
+       the server and `simpos_user_device`, on kl0. The bridge
+       (`../../psi/fep_bridge.py`, OURS) stands in for the SCSI driver
+       and the bus only.
+     - The requester's window shows PIMOS's `Login procedure starts.`,
+       `OK. Your initial program starts.` and `Good luck!`. The shell's
+       window is still `fep.py`'s (the PMACS editor is lost). With `pwd`
+       typed there it shows the pinned shell run's answer,
+       `">sys>user>pmpsi"`, the directory the held `simpos_user_device`
+       gave PIMOS.
+     - kl0 gained substring/7 between 16 and 32 bits, signed 32-bit
+       elements and a sign-extended `get_integer` (INFERENCE), rows blt
+       30 and pmi 36 (KNOWN-PLAINTEXT) and blt 0d (INFERENCE), and an
+       idle interrupt (OURS). There are three new stand-in classes, five
+       new methods in existing stand-ins, and two kl0 models.
+     - Census: six packages 322 / 12 / 195, plain FEP 810 / 238 / 403,
+       with recipes 837 / 239 / 375. Two held rows really move (the
+       front end's `create/6`, the replier's `io/5`); the rest is census
+       probing, as listed there.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

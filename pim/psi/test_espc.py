@@ -441,10 +441,11 @@ class Behaviour(unittest.TestCase):
         # wshell_buffer's put_contents_with_key/2 now compile and succeed
         # on both sides.  Step 3e's pmi ca (kl0): 94 / 86 / 40 / 7 before;
         # array_index_buffer's and wshell_buffer's set_all_at/2 and
-        # reset_all_at/2 now run the held code too, and agree
-        self.assertEqual(dict(self.r['census']), {'same outcome': 98, 'both refused': 86,
-                                                  'refused compiled only': 40,
-                                                  'refused held only': 3})
+        # reset_all_at/2 now run the held code too, and agree.  Step 3n
+        # (pmi 36 rowed): graph_status_element create/3, get/2 and set/2
+        # run the held code too and agree: 'refused held only' 3 -> 0
+        self.assertEqual(dict(self.r['census']), {'same outcome': 101, 'both refused': 86,
+                                                  'refused compiled only': 40})
 
 
 class MacroBank(unittest.TestCase):
@@ -589,19 +590,20 @@ class Standins(unittest.TestCase):
 
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
-            'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
+            'simpos##abort_handler', 'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
             'simpos##binary_file', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##coordinator',
             'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
             'simpos##e_string', 'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
-            'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
+            'simpos##message', 'simpos##monogyny_list_index', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name', 'simpos##network_subsystem',
             'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
-            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
+            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer',
+            'simpos##tcpip_network_subsystem', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
             'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
@@ -1293,7 +1295,24 @@ end.''', 'simpos')
         # Two held rows change outcome, refused -> success, both past
         # class_object/2 (kl0 dispatch, INTERPOLATED): replier io/4 and
         # scsi_handler exit/1.  Six rows move their stop.  806 / 234 / 411
-        self.assertEqual((len(rows), out), (1468, {'success': 806, 'failure': 234, 'refused': 411, 'exception': 16,
+        # step 3n (row by row against 2eda555c): 15 rows change.  Real:
+        # pimos_scsi_front_end create/6 refused -> success (abort_handler,
+        # set_area_limit_execution/7, set_package/2, grant_stream/2 stood
+        # in, the path of the bridged run).  blt 0d object/3 rowed
+        # (INFERENCE): its 10 rows go on, 3 to success (remote_stream
+        # set_keepalive_option/1, scsi_handler class_deletion_hook/1,
+        # scsi_load_test close/1) and 1 to failure (set_receive_timer/2);
+        # traced, object/3 meets only a slot's initial value in these rows
+        # (the atoms none and nil, or a census slot constant) and fails
+        # on it: census artifacts, not progress; the other 6 go on to the
+        # next stop.
+        # monogyny_list_index stood in: simpos_user identify/4, regist/4
+        # and setup_process/4 refused -> failure (identify/4: no user in a
+        # census row's empty index; regist/4 and so setup_process/4 fail
+        # too, the cause not traced).  exterminate_fep/1 moves to the
+        # census's missing ready queue (exterminate/1 stood in).
+        # 810 / 238 / 403
+        self.assertEqual((len(rows), out), (1468, {'success': 810, 'failure': 238, 'refused': 403, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1396,10 +1415,17 @@ end.''', 'simpos')
         # scsi_handler exit/1 refused -> success (class_object/2); the
         # replier's io/4 moves to substring/7 16 -> 32 bits and to
         # set_string_element on an unbound argument.  832 / 235 / 384
-        self.assertEqual((len(rows), out), (1468, {'success': 832, 'failure': 235, 'refused': 384,
+        # step 3n (row by row against 2eda555c): 17 rows change: the 15
+        # of test_fep_census, the same way, and substring/7 16 <-> 32 bits
+        # (INFERENCE): the replier's io/5 refused -> success (a real move:
+        # assemble/3 is the path of the bridged run), and the editor's
+        # get_title/3 moves to put/2 on the window's unset output stream
+        # (a slot constant, the step 3g artifact).  837 / 239 / 375
+        self.assertEqual((len(rows), out), (1468, {'success': 837, 'failure': 239, 'refused': 375,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 110)   # step 3l: 107 -> 110, as in test_fep_census
+        # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3
+        self.assertEqual(slot_const, 111)
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -1418,8 +1444,10 @@ end.''', 'simpos')
         self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
                          ('refused', 'would suspend'))
         self.assertIn('stream', by[('pimos_timer', 'instance', 'loop_main/1')][2])
-        # 17, and since step 3h pimos_tcpip_socket loop_main/1: 18
-        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 18)
+        # 17, and since step 3h pimos_tcpip_socket loop_main/1: 18; step
+        # 3n: 19, the front end's exterminate_fep/1 (exterminate/1 stood
+        # in, then the census's missing ready queue)
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 19)
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
@@ -1449,9 +1477,12 @@ end.''', 'simpos')
         # and blt 48 R != A, the reply's assembly stops at blt 36;
         # set_size/3 at the has_been_reshaped/1 callback.  Step 3m: blt 36
         # rowed (substring/7); the assembler asks it for a 16-bit string
-        # read as 32-bit elements (fep_message_assembler @122), unwitnessed
+        # read as 32-bit elements (fep_message_assembler @122), unwitnessed.
+        # Step 3n: 16 to 32 bits inferred; the reply is assembled and put on
+        # the window's output stream, unset in a census row (a slot
+        # constant, the step 3g artifact)
         self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')],
-                         ('refused', 'built-in', 'substring/7 from 16 to 32 bits (0 elements): unwitnessed'))
+                         ('refused', 'receiver a slot constant', 'send put/2 to 0 (a slot constant)'))
         self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
 
@@ -1740,6 +1771,84 @@ attribute stream, seen_p, seen_top, seen_parent;
     Obj!seen_p := P, Obj!seen_top := Top, Obj!seen_parent := P!parent_process,
     :put(Obj!stream, created);
 end.'''
+
+    B3N_EXTERMINATE = '''class b3n_x_boot has
+nature as_boot_program;
+instance
+attribute got, child, child_program, after_seen := none, child_status;
+:goal(Prog) :-
+    :create(#boot_process, B),
+    :activate(B, Prog),
+    :create(#stream, S),
+    :create(#b3n_x_child, C, S),
+    :create(#process, P, [free,free,free,free]),
+    :activate(P, C),
+    :get(S, X),
+    Prog!got := X, Prog!child := P, Prog!child_program := C,
+    Prog!after_seen := C!after, Prog!child_status := P!status;
+end.
+class b3n_x_child has
+nature as_program;
+:create(Class, Obj, S) :- :create(Class, Obj), Obj!stream := S;
+instance
+attribute stream, after := 0;
+:goal(Obj) :- :put(Obj!stream, created),
+    :self(#process, P), :exterminate(P),
+    Obj!after := yes;
+end.'''
+
+    def test_step3n_exterminate(self):
+        # step 3n: a process that exterminates itself (as the held
+        # pimos_scsi_front_end exit_program/1 @4da-4e2 does: `:self(#process,
+        # P), :exterminate(P)`) is dead (status nil, standin/process.esp,
+        # INTERPOLATED) and gives up the processor at once (kl0's
+        # dispatcher, OURS): the goal after the exterminate never runs, and
+        # the boot process, made ready by the child's put, runs on.  The
+        # probes are OURS, in the shape of B3_PROBES.
+        # Injection, observed (2026-11-25; kl0.py from a backup, restored
+        # by copy, cmp clean): F10, kl0 'ifdead' does not give the
+        # processor away: this test FAIL, and test_fep_census,
+        # test_step3f_census_recipes and test_step3h_children FAIL (their
+        # exterminate rows move); psi/test_fep_bridge.py stays OK.
+        ts, failed = espc.compile_text(self.B3N_EXTERMINATE, 'simpos')
+        self.assertFalse(failed)
+        lib = K.load_six()
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib)
+        sl = lambda o: {e.name: K.deref(v) for e, v in zip(m.lib.build(o.cid).instance_slots, o.slots)}
+        m.reset()
+        sols = []
+        v = K.Var()
+        for _ in m.solve_send(K.ClassRef('simpos##b3n_x_boot'), 'create', [v, K.ClassRef('simpos##b3n_x_boot')]):
+            sols.append(K.deref(v))
+            break
+        (prog,) = sols
+        m.reset()
+        self.assertEqual(sum(1 for _ in m.solve_send(prog, 'invoke', [prog])), 1)
+        s = sl(prog)
+        self.assertEqual(s['got'], K.Atom('created'))
+        self.assertEqual(s['after_seen'], 0)
+        self.assertEqual(s['child_status'], K.Atom('nil'))
+
+    def test_step3n_monogyny_list_index(self):
+        # step 3n: monogyny_list_index (INFERENCE: a list_index holding one
+        # object per key; pimfep##simpos_user regist/4 @4d-61 put_at/3,
+        # identify/4 @66-72 get_at/3).  A second put_at/3 under a key
+        # replaces the first; get_at/3 fails on a key never put.
+        # Injection, observed (2026-11-25; standin/monogyny_list_index.esp
+        # from a backup, restored by copy, cmp clean): M1, put_at/3 without
+        # the removal: this test FAIL, nothing else in this file.
+        m = self.m
+        m.reset()
+        ((i,),) = K.call_class_method(m, 'simpos##monogyny_list_index', 'create', [K.Var()])
+        a, b = K.Str('pmpsi'), K.Str('pmpsi')
+        self.assertEqual(len(self.send(i, 'put_at', K.Atom('first'), a)), 1)
+        self.assertEqual(len(self.send(i, 'put_at', K.Atom('second'), b)), 1)
+        self.assertEqual(repr(self.send(i, 'get_contents_with_key', K.Var())),
+                         "[[[{second,string#'pmpsi'}]]]")
+        self.assertEqual(repr(self.send(i, 'get_at', K.Var(), K.Str('pmpsi'))), "[[second, string#'pmpsi']]")
+        self.assertEqual(self.send(i, 'get_at', K.Var(), K.Str('other')), [])
 
     def test_step3j_supervisor(self):
         # step 3j, docs/simpos/boot_route.md B3: the boot process comes under
@@ -2767,11 +2876,18 @@ end.'''
             # no children: exit/1 succeeds (its fep_type is the template
             # constant 0, which create/6 overwrites, @50: no shutdown branch)
             self.assertEqual(exit1(), 'success')
-            # one child: the loop sends it exterminate/1 (not stood in)
+            # one child: the loop sends it exterminate/1 (not stood in
+            # until step 3n).  Step 3n: exterminate/1 is stood in
+            # (INTERPOLATED, standin/process.esp) and the child here is the
+            # running census process itself: it becomes dead (nil) and the
+            # dispatcher, giving the processor away, finds no supervisor
+            st = m.get_slot(proc, 'status')
             self.assertEqual(len(self.send(kids, 'add_last', proc)), 1)
-            self.assertIn('exterminate/1', exit1())
+            self.assertEqual(exit1(), 'no ready queue (0 (a slot constant)): the supervisor is not started')
+            self.assertEqual(m.get_slot(proc, 'status'), K.Atom('nil'))
         finally:
             self.send(kids, 'clear')
+            m.set_slot(proc, 'status', st)
 
     def test_step3h_scsi_mode(self):
         # step 3h: the six pimscsi failures of step 3g, traced.  cmt and scsi

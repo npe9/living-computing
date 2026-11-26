@@ -52,4 +52,11 @@ attribute aliases := [], default := 0;
 % default directory used when none is given").
 :set_default_logical_name(W, Name) :- W!default := Name;
 
+% :default_logical_name(W, Name) -- INTERPOLATED (step 3n) from its held
+% send, pimfep##simpos_user_device $or$3/2 @ba-c0 (then `:append(#string,
+% [Name, ":"], LN)` and `:root_path(W, LN, Root)`): the name set by
+% set_default_logical_name/2.  root_path/3 is kl0's (Python,
+% Machine.world_root_path), as the lookup is.
+:default_logical_name(W, Name) :- Name = W!default;
+
 end.

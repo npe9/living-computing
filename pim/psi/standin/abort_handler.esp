@@ -1,0 +1,34 @@
+% SCAFFOLDING stand-in for SIMPOS's class `abort_handler`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no code of
+% `abort_handler` is printed or held.  Step 3n (2026-11-25), for the
+% held pimfep##pimos_scsi_front_end on the bridge's path
+% (psi/fep_bridge.py).  Each method is INTERPOLATED (labelled) from:
+%   - docs/simpos/required/classes.tsv (row `abort_handler`): sent by
+%     pimfep and pimmcsp, as a simpos## class;
+%   - pimfep##pimos_scsi_front_end create/6 @5d-65 (cells read
+%     2026-11-25): `:create(#abort_handler, AH)`, then
+%     `:set_abort_handler(FE, AH)`;
+%   - docs/fep_services.md §6.7: the front end's {Id, 70} runs
+%     abort_device/4, which sends `:abort(AbortHandler, pimos_abort,
+%     DeviceProcess)`; the device process runs each interruptible
+%     request under tag_catch/9 with the tag pimos_abort.
+% Model (OURS): an abort handler has no state.  abort/3 does nothing,
+% as no throw is modelled (process.esp tag_catch/9 runs its goal and
+% never its abort goal).  On the bridge's path every 70 comes with
+% nothing outstanding on its device (PIMOS's simpos_user_device, after
+% its 620 is answered: fep_services.md §7.1 "abort, nothing
+% outstanding": the FEP owes nothing), so a throw would have nothing
+% to interrupt.
+
+class abort_handler has
+
+% INTERPOLATED from: the front end's create/6 @5d-61.
+:create(Class, Handler) :- :new(Class, Handler);
+
+instance
+
+% INTERPOLATED from: fep_services.md §6.7 (abort_device/4's send).
+% No throw is modelled: it succeeds and does nothing.
+:abort(Handler, Tag, Process) ;
+
+end.
