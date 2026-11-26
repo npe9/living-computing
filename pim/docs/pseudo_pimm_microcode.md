@@ -1331,8 +1331,11 @@ under the rules above (rung U1 of `pu_microcode_plan.md`), and
 `ref/pu/check_pu.py` (in `run_tests.sh`) compares 22 KL1-B instructions
 with `ref/pimm/pimm.py`: 44 held microinstructions executed and matched
 (three instructions held out), plus 17 in four cases that take a free
-list's last cell and must enter the refill. The rules it adds to these
-sections, each INFERENCE with the microaddress that decided it, are in
+list's last cell and must enter the refill, plus the free-variable
+allocator `3320` called as a microsubroutine (4 words, EXECUTED: it
+returns `{REF, cell}` in W1c, unlinks the cell the way `pimm.py`'s
+`new_var` allocates it, and leaves the link in R19). The rules it adds to these
+sections, each INFERRED with the microaddress that decided it, are in
 `ref/pu/README.md`; the counts behind them are pinned by
 `ref/pu/measure.py`. Three of them change readings above:
 
@@ -1360,7 +1363,7 @@ And one conflict: a write with bit 59 stores MDR2 at `31d7` (CCF `12`)
 but the refill loop `3367` (CCF `16`) must write MDR1; CCF is likely the
 coded field `rassy` says it is. `rassy`'s register names
 (`binary_reverse_engineering.md` section 3), read as select `10 | n`
-(WRBF clear) = register-file entry n (INFERENCE: `rassy` gives names and
+(WRBF clear) = register-file entry n (INFERRED: `rassy` gives names and
 numbers, not the select encoding), agree with the registers these
 sections found: R10 `cgp`, R12 `cpr`, R13 `cfpp` (the foster
 parent, section 18), R14 `gsp`, R19 `fvp`, R1a `flp`, R1b `fgp`, R1f

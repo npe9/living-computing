@@ -22,12 +22,16 @@ terminal.
 
 **U1 reached; U2 not reached.**
 
-- 26 cases, all PASS: 22 compared against `pimm.py` (44 held
-  microinstructions executed and matched: 33 in multi-word routines, 11
-  in one-word ones), and 4 that take the last cell of a free list and
-  must enter the refill (17 held words executed up to the refill, where
-  they stop, as they should). `measure.py`'s pins (the counts behind the
-  rules) are checked in the same run.
+- 28 cases, all PASS (69 held microinstructions executed): 22 compared
+  against `pimm.py` (44 executed and matched: 33 in multi-word
+  routines, 11 in one-word ones); 4 that take the last cell of a free
+  list and must enter the refill (17 words executed up to the refill,
+  where they stop, as they should); and the one-cell allocator `3320`
+  called as a microsubroutine (EXECUTED, 4 words: W1c = `{REF, cell}`,
+  the cell `UNDF 0` as `pimm.py`'s `new_var` makes it, R19 left holding
+  the link, one memory write; its last-cell arm stops at `3324` on R05,
+  as it should). `measure.py`'s pins (the counts behind the rules) are
+  checked in the same run.
 - Multi-word routines that run as held: `set_nil`, `write_nil` (2
   words: a stamp, then a write and a structure-pointer step),
   `set_variable`, `write_variable` (3: a pop from the one-cell list, the
@@ -66,7 +70,7 @@ MEASURED rules are `asm/mekbn.py`'s and pinned by `mekbn.py --check`
 (field positions; JMPF kinds; the strobes 61/62/60; 58/59 as MAR2/MDR2;
 SD1F/ADF/AS1F numbering; SC2F 8/9 immediates; TGIF 1/2 stamps; "one
 word later"; a write stores the MDR as it stood before its word).
-These are used as they stand. The INFERENCE rules added here, with the
+These are used as they stand. The INFERRED rules added here, with the
 microaddress that decided each (all in `pu.py` `RULES` / `COND_RULES`
 and `setup.py`):
 
@@ -80,6 +84,7 @@ and `setup.py`):
 | CNDF 9: COND := tag of the ALU's first input = EM1; CNDF b: = EM2 | `31fa`, `31d1` (EM1 `ATOMo`), `318c`, `3196`, `31d6` (EM2 `ATOMo`), each tested by the conditional end that follows | "Conditions" below; the refill writes `{ATOMo, 0}` as the last link (`3368`) |
 | A conditional JMPF 1 with EM bit 0 set is taken when COND is false | `31fb`, `31d2`, `318f`, `31d8` (a pop's end, taken unless the link was the end marker) | one fit; the opposite pairing (COND true when the link is a cell, bit 0 = taken on true) is not told apart by these words. EM bit 0 clear: raises |
 | ODPF 1: the S stage loads R(10 or EMO1) into MAR2 (ODSF 0) or MAR1 (ODSF 1) | `318b` (`set_variable`), `31d0` (`put_list`) | predicted for `put_variable`, `put_vector_1/2`, `write_variable` (run); read for `proceed`, `collect_list`, the marked forms (`setup.py` header). Nano-code field positions are Fig. 3-22 right-aligned on the entry's 56 bits; only ODPF, ODSF, EMO1, EMO2 are used |
+| AS1F 3 with AS2F 0: the first ALU input is the constant EM2 (the result tag from AS2) | `3321` (the allocator loads R03, `rassy`'s `lc`, with EM2 13), `3378` | thesis p.144 (AS1F modifies AS2F's meaning for constants). The value is not compared with any oracle: the evidence is arithmetic, EM2 13 beside the one-cell list (`3321`, `3378`) and 5 beside the two-cell list (`332f`, `337b`), 16 - 3 and 16 / 2 - 3, a 16-word refill chunk. The injection `as1f3_off` shows only that the rule is needed at `3321` |
 | R06 = R07 = 0 | `31d6` (`{UNDF, R07}` where `pimm.py` writes `UNDF 0`) | `{ATOMo, R06}` stands where a nil does (section 17) |
 
 **Conditions.** `measure.py` (pinned, run by `check_pu.py`). The word
@@ -98,7 +103,7 @@ end and never a return (96 to 107 ends in image 2, 125 to 119 in
 `syspsi`). The call/return separation improves; `mekbn.py` and its
 pins are not changed. In image 2, 22 of the 23 self-jumping words carry
 MCF with EM1 `10`, 20 of them with CNDF 6 (two b; `281f` has CNDF 2 and
-no MCF): INFERENCE, a counted loop on the loop counter (`rassy`
+no MCF): INFERRED, a counted loop on the loop counter (`rassy`
 names register 3 of the second bank `lc`, and `3378` loads R03 before
 the refill's loop). CNDF 9 words leave EM1 free (TGIF 0 in 448 of 453)
 and their EM1 values are tags (`ATOMo` 105, `INTo` 94, `REFo` 32,
@@ -114,7 +119,7 @@ condition, not run.
   a goal argument at R10 + argument number (R10 = `cgp` in `rassy`'s
   register names, M92 p.428 "CGP to locate a goal argument"), a
   structure element at R02. Reading the select `10 | n` with WRBF clear
-  as `rassy`'s register-file entry n is INFERENCE: it fits every register
+  as `rassy`'s register-file entry n is INFERRED: it fits every register
   the routines run here use (R10 `cgp`, R19 `fvp`, R1a `flp`, R1f `hp`)
   and those sections 17-18 found (R13 `cfpp`, R14 `gsp`); `rassy` gives
   names and numbers, not the select encoding.
@@ -133,26 +138,54 @@ condition, not run.
 | `w59_mdr1` (a bit-59 write stores MDR1) | `put_variable`, `put_marked_variable` FAIL (no cell with `UNDF`) |
 | `write_same_word` (a write stores the MDR as loaded in its own word) | `set_variable`, `write_variable` and their marked forms FAIL |
 | `opd_a_is_z` (select `a` = z) | `set_variable`, `put_variable` and their marked forms FAIL (wrong register written) |
-| `cnd_em_swapped` (CNDF 9 against EM2, b against EM1) | the four last-cell cases FAIL (the pop ends without entering the refill); the 22 compared cases still pass, which is why the last-cell cases exist |
+| `cnd_em_swapped` (CNDF 9 against EM2, b against EM1) | the four last-cell cases FAIL (the pop ends without entering the refill) and the allocator run FAILs (W1c `06:f2000000`); the 22 compared cases still pass, which is why the last-cell cases exist |
 | `odsf_swapped` (ODSF 0 = MAR1, 1 = MAR2) | 13 cases STOP (MAR2 / MAR1 never set): every pop |
+| `as1f3_off` (AS1F 3 unmodelled) | both allocator runs STOP at `3321`; nothing else (the refill cases stop on R1f before reaching AS1F 3) |
 
 ## First routine that would not run
 
 **The free-list refill, `3365`-`337f`**, entered at `3378` (one-cell
 list) or `337d` (two-cell list) when a pop takes the last cell. It
 stops at once on R1f (the heap pointer, `rassy`'s `hp`), which no case
-sets; given one it stops at `3378` on **AS1F 3**, whose meaning is not
-known. Read, not run, the routine also needs: MCF with EM1 `10` and
-CNDF 6 (the counted loop `3367`; the count fits 16-word chunks: EM2 of
-`3378` is 13 and of `337b` is 5, and 13 + 3 single writes = 16 cells,
-5 + 3 = 8 two-cell blocks, if AS1F 3 is "the constant EM2"); W0d; and
-the write data of CCF `16`, which conflicts with the bit-59 rule above.
+sets. Given one (a scratch probe, not in the check), AS1F 3 now runs
+(the rule above) and the routine stops at `3365` on a read of work
+register W0d, never set. R1f and W0d are boot-time state (`PIMM.PARAM`,
+PIMOS boot), so the refill waits on that initialisation or on an OURS
+value for each. Read, not run, it also needs: MCF with EM1 `10` and
+CNDF 6 (the counted loop `3367`, 13 or 5 iterations) and the write data
+of CCF `16`, which conflicts with the bit-59 rule above.
 
 **The allocator for three cells and more, `3331`-`3347`**
 (`put_vector_3`..`_6`, `new_vector`, `suspend`): stops at `3331` on
 R05, the base of a table of list heads in memory whose contents are set
 at boot, and then needs SC2F `b` (the "wide" immediate, layout not
 read) and the `pass_as2` addressing at `3343`.
+
+## The step interface (for a harness)
+
+`pu.py` is importable on its own (`sys.path` to `ref/pu` and `asm`).
+
+    p = PU(fw)                 # fw: asm/mekbn.Firmware(); state empty
+    p.ir = (tag, value)        # the instruction cell (the opd selects read it)
+    p.an[i], p.r[n], p.w[n]    # argument registers, register file, work registers
+    p.wr[...]                  # XR, YR, MAR1, MAR2, MDR1, MDR2
+    p.mem[addr] = (tag, value) # memory, a dict; a read of an absent cell raises
+    rec = p.evaluate(upc)      # one microcycle from the OLD state; changes nothing
+    nxt = p.commit(rec)        # applies rec at once; returns rec['next']
+    nxt = p.step(upc)          # evaluate + commit
+    n = p.run(upc)             # to the routine's end; returns words executed
+    n = p.call(upc)            # a microsubroutine, to its return
+    setup.setup(p, name)       # OURS: the D/A/R/S stand-in; returns the start address
+
+Each record (`rec`, also appended to `p.cycles`) has `cycle`, `micro_pc`,
+`microword`, `reg_reads`, `reg_writes`, `wr`, `mem_reads`, `mem_writes`,
+`cond`, `push`, `pop`, `next` (`None` at an end, `-1` a return to a
+`call`); the format is in `docs/pu_microcode_plan.md` "The trace". Any
+field value not modelled raises `Unmodelled(upc, what)`, with
+`.words` the words executed before it when raised from `run`/`call`.
+The decoded rules are module dictionaries, `RULES` and `COND_RULES`, so
+a harness can change one (as `check_pu.py --inject` does) without
+editing the file.
 
 ## Next, for U2
 

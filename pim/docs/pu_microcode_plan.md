@@ -12,11 +12,58 @@ the core (`bsv/PimmStages.bsv` `mkPimmExec`) and the reference
 (`ref/pimm/pimm.py`) interpret KL1-B directly, by hand.
 
 The goal of the rungs below is that the PU executes the held words and
-the hand-written interpreter goes away. Labels as in the rest of `pim/`:
-HELD (a held microinstruction executed as it stands), MEASURED,
-INFERENCE (a field-value meaning inferred; every one names the
-microaddress and the trace line that decided it), OURS (a stand-in for
-hardware or environment that the held words do not give).
+the hand-written interpreter goes away.
+
+## Three targets
+
+One chip does not mean one machine. TM-862's "the same PU" says nothing
+about the memory controller, the peripherals, the I/O bus or the native
+firmware around the chip, and those are what differ:
+
+1. **PSI-III with `syspsi`** (the ESP/KL0 control store, image 1 and the
+   upper store; `sysidat`, `sysinit`): the workstation SIMPOS runs on.
+   Rung U5.
+2. **Pseudo PIM/m**: `pimm.MEkbn` (image 2, the KL1 microprogram) on
+   PSI-III-compatible hardware: the PSI-III board's memory, TLB and I/O
+   (thesis p.146). **This is the first target**, because it is the
+   firmware that is held. Rungs U1-U3.
+3. **Native PIM/m PE**: the same KL1 microprogram on the PIM/m board
+   (16 Mw local memory, NU to the mesh, SCSI to the FEP; `M92`
+   pp.426-427). No native firmware image is held; where the Pseudo
+   PIM/m's board differs (the table under "Pseudo PIM/m against a PIM/m
+   PE"), what the native firmware did is UNKNOWN, not assumed equal.
+   Rung U4 and the multi-PE sub-rung.
+
+## Evidence labels
+
+Every recovered feature (a field value's meaning, a register's role, a
+routine's behaviour) carries one label, the strongest that holds:
+
+- **DOCUMENTED**: a primary source states it (thesis, `M92`, TR/TM, the
+  `rassy` tables), cited by page.
+- **CORROBORATED**: two independent sources agree (a document and a
+  whole-image measurement, `asm/mekbn.py --check` or `ref/pu/measure.py`).
+- **INFERRED**: fitted from consistency with `pimm.py` or with the held
+  words' use, naming the microaddress and the trace line that decided it
+  (this project's earlier label INFERENCE).
+- **EXECUTED**: a held routine ran under the simulator and matched the
+  oracle (`ref/pu/check_pu.py`).
+- **VERIFIED**: proved against a stated contract (a property over all
+  inputs, not a set of cases).
+- **UNKNOWN**: no source and no fit; a run that needs it stops.
+
+Stand-ins for hardware or environment the held words do not give are
+**OURS**, whatever their label. Where two documents disagree, both stay
+as competing hypotheses until execution decides: TR-733 fig. 4 and
+Nakashima Fig. 3-25 differ in the microword's field layout
+(`pim_architecture.md`, the field table after line 200: TR-733 prints
+ALF as 28-26 and JMPF as 25-23, AS2F at 33-32, and leaves 63 and 57
+unnamed). `ref/pu/` runs Fig. 3-25's layout, the one under which
+`mekbn --check`'s whole-image pins hold. The sharpest open case is bit
+26: Fig. 3-25 makes it JMPF's top bit, TR-733 ALF's third bit;
+`ref/pu/` uses it as the jumps' conditional bit (INFERRED, the
+successor counts pinned by `ref/pu/measure.py`), which fits Fig. 3-25.
+A held routine that only TR-733's layout makes run would reopen it.
 
 ## The rule that holds for every rung
 
@@ -32,7 +79,7 @@ hardware or environment that the held words do not give).
   memory and I/O of the board. Each stand-in is a small table, labelled.
 - **Fail loud.** A field value whose meaning is not modelled, met on an
   executed path, raises with the microaddress. That is how "the first
-  routine that would not run" is found, and how each INFERENCE enters:
+  routine that would not run" is found, and how each INFERRED enters:
   one at a time, with the address that forced it.
 - **A field rule never bends to reproduce a `pimm.py` design choice.**
   Where a fit contradicts a pin of `asm/mekbn.py --check` (which rests
@@ -62,13 +109,61 @@ and the comparison is defined as:
 3. **Projections.** `pimm.py` `argv[i]` corresponds to the firmware
    cell `R10 + i` (the goal record being built); `pimm.py` `sp`
    corresponds to `R02` (the structure pointer). Each projection is
-   INFERENCE and is listed with its evidence.
+   INFERRED and is listed with its evidence.
 4. **Firmware-only writes** (free-list links, freed cells, goal record
    trailers, refill) are listed as expected differences, with the
    firmware as the authority: they are what the hand-written models do
    not do, not errors.
 
 ## Rungs
+
+U1-U5 are the large rungs. Inside them, the owner's milestones are the
+sub-rungs, in this order (not M-numbered: M is taken by the multi-PE and
+window rungs):
+
+| Sub-rung | Milestone | In rung | State (2026-11-26) |
+|---|---|---|---|
+| U1a | straight-line held code executes | U1 | EXECUTED (one-word and multi-word routines) |
+| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED for JMPF 1/3/4/6/b/c/e and MCF EM1 `20`; JMPF 2/a, 8/9/d/f raise |
+| U1c | the free-list allocator `3320`-`3324` on memory | U1 | EXECUTED (4 words); its last-cell arm reads R05 (UNKNOWN) |
+| U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
+| U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; reading not reached |
+| U2b | tag dispatch | U2 | UNKNOWN: the TGT RAM is not held; JMPF 1 with EM bit 2 raises |
+| U2c | one unification instruction | U2 | blocked on U2b |
+| U2d | `proceed` / `execute` | U2 | not reached |
+| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | not reached |
+| U3a | suspend | U3 | not reached |
+| U3b | bind and resume | U3 | not reached |
+| U3c | several goals (the ready structure, goal switch) | U3 | not reached |
+| U3d | a compiled KL1 program to its answer | U3 | not reached |
+| U3e | PIMOS boot | U3 | not reached |
+| U4a | Bluespec PU in lockstep with `ref/pu/` | U4 | not reached |
+| U4b | several PEs | U4 | not reached |
+
+### The trace: one record per microcycle
+
+`ref/pu/pu.py` `PU.evaluate` returns, and `PU.commit` appends to
+`PU.cycles`, one record per microcycle, the format the Bluespec PU's
+lockstep comparison (U4a) will read:
+
+| Field | Meaning |
+|---|---|
+| `cycle` | microcycle number since the PU was made |
+| `micro_pc` | the microaddress executed |
+| `microword` | the 64-bit held word |
+| `reg_reads` | `[(select name, value)]`, every register-file or work-register read |
+| `reg_writes` | `[(select name, value)]`, the register-file write (DSTF) |
+| `wr` | work-register writes (MAR1/2, MDR1/2, XR, YR) |
+| `mem_reads`, `mem_writes` | `[(address, (tag, value))]` |
+| `cond` | COND after the word |
+| `push`, `pop` | micro-stack activity |
+| `next` | the next micro_pc (`None` at an end, `-1` a return to the caller) |
+
+The step is decode, evaluate everything from the OLD state, then commit
+all at once, as hardware does; an unmodelled field value raises
+`Unmodelled(upc, what)` naming the microaddress and the field, never a
+default.
+
 
 ### U1: one KL1-B instruction's micro-routine executes
 
@@ -218,7 +313,7 @@ Honest, and in sessions of the length that reached U1.
   `set_variable`, `write_variable`, `put_variable` and their marked
   forms, held out, `put_list`, `put_vector_1/2`; the stamps of `set_nil`,
   `write_nil`; 11 in one-word routines that only test the plumbing), and
-  four last-cell cases reach the refill (17 more words). Nine INFERENCE
+  four last-cell cases reach the refill (17 more words). Nine INFERRED
   rules, each with the microaddress that decided it, the counts behind
   them pinned (`ref/pu/measure.py`), and six observed fault injections:
   `ref/pu/README.md`. **U2 not reached.**
@@ -228,3 +323,13 @@ Honest, and in sessions of the length that reached U1.
   immediate). Needed for U2 after them: `execute`, `proceed`,
   `try_me_else`, the `get_*`/`wait_*` tables (the tag-dispatch RAM, not
   held in `pimm.MEkbn`), and CCF read as a coded field.
+- 2026-11-26: the step split into evaluate and commit (the per-cycle
+  record above); **U1c**: the allocator `3320` called as a
+  microsubroutine EXECUTED (4 words: `{REF, cell}` in W1c, the cell
+  `pimm.py`'s `new_var` gives, the link left in R19). AS1F 3 (constant
+  EM2 on the first ALU input) INFERRED at the refill's `3378`. The
+  refill now stops at `3378` reading R1f (HP), never set; with an HP
+  given (a probe, not in the check) it runs on to `3365` and stops
+  reading work register W0d. Both are boot-time state (`PIMM.PARAM`,
+  PIMOS boot): the refill waits on U3's initialisation, or on an OURS
+  value for each, labelled.

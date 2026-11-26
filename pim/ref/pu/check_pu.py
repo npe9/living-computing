@@ -25,14 +25,17 @@ discriminates the condition rules.
 Prints one line per case and a total; exit status 1 on any FAIL.
   python3 ref/pu/check_pu.py [-v] [--inject NAME]
 
-Observed 2026-11-26: PASS, 26 cases, 61 held microinstructions (44 in
-the 22 compared cases; the three *_marked_variable cases held out).
+Observed 2026-11-26: PASS, 28 cases, 69 held microinstructions (44 in
+the 22 compared cases; the three *_marked_variable cases held out; 17
+in the four last-cell cases; 8 in the two allocator 3320 runs).
 Injections (INJECT below; observed in full in ref/pu/README.md):
 tgif3_em1 FAILs write_nil only; w59_mdr1 put_variable and
 put_marked_variable; write_same_word set_/write_variable and their marked
 forms; opd_a_is_z set_/put_variable and their marked forms;
-cnd_em_swapped the four last-cell cases only; odsf_swapped STOPs the 13
-pop cases.
+cnd_em_swapped the four last-cell cases and the allocator run;
+odsf_swapped STOPs the 13 pop cases; as1f3_off STOPs both allocator runs
+(the rule is needed there; its value, EM2 = 13, is not compared with an
+oracle).
 
 The firmware is read from docs/nonlocal/psdpim.tar.Z (not in git).
 """
@@ -118,7 +121,7 @@ CASES = [
     ('put_list', (6, 0, 0), {}, ('exhaust', 'mrb')),
     ('put_vector_N[01]', (6, 0, 0), {}, ('exhaust', 'mrb')),
 ]
-REFILL = range(0x3365, 0x3380)
+REFILL = set(range(0x3365, 0x3380)) | {0x3324, 0x3329, 0x3330}   # the refill and the allocators' arms into it
 CTX = {}
 
 
@@ -274,6 +277,7 @@ INJECT = {
     'cnd_em_swapped': lambda: PU.COND_RULES.update({9: PU._cnd_tag_eq('EM2'),
                                                     0xb: PU._cnd_tag_eq('EM1')}),
     'odsf_swapped': lambda: setattr(SU, 'ODSF_MAR', {0: 'MAR1', 1: 'MAR2'}),
+    'as1f3_off': lambda: PU.RULES.update(as1f3_em2=False),
 }
 
 
@@ -312,9 +316,39 @@ def main(argv):
             print('ok   %-20s %d words%s%s' % (name, n, ', firmware-only writes %d' % len(only)
                                                 if only else '',
                                                 ', declared: ' + '; '.join(notes) if notes else ''))
+    # Sub-rung "the allocator": the one-cell allocator 3320-3324 run as a
+    # microsubroutine on memory, against pimm.py's new_var (one new cell,
+    # UNDF 0, and a REF to it).  Its last-cell arm must reach the refill.
+    for n in (NFREE, 1):
+        total += 1
+        p = PU.PU(CTX['fw'])
+        seed_lists(p, n)
+        p.r[0x1f] = (PU.REF, 0xf4000000)       # hp, OURS (read at 3322)
+        m = pimm.Machine(CTX['image'])
+        ref = m.new_var()
+        try:
+            k = p.call(0x3320)
+        except PU.Unmodelled as e:
+            if n == 1 and e.upc in REFILL:
+                print('ok   alloc 3320         last cell: stops in the refill, %s' % e)
+                words += e.words
+            else:
+                bad += 1
+                print('STOP alloc 3320         at %s' % e)
+            continue
+        w1c = p.w.get(0x1c)
+        good = (n > 1 and w1c == (pimm.REF, FREE1) and p.mem[FREE1] == m.mem[ref[1]]
+                and p.r[0x19][1] == FREE1 + 1 and [a for _, a, _ in p.writes] == [FREE1])
+        words += k
+        if good:
+            print('ok   alloc 3320         %d words: W1c {REFo, cell}, cell UNDF 0, R19 the link'
+                  % k)
+        else:
+            bad += 1
+            print('FAIL alloc 3320         %d words: W1c %s, writes %s' % (k, fmt(w1c), p.writes))
     import measure
     pins = measure.check(quiet=True)
-    print('measure.py pins (the counts behind the INFERENCE rules): %s'
+    print('measure.py pins (the counts behind the INFERRED rules): %s'
           % ('ok' if pins else 'FAIL'))
     if not pins:
         bad += 1

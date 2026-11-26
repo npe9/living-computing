@@ -363,7 +363,7 @@ for the model:
   variable, list and goal-record pointers FVP/FLP/FGP, R1f HP, R14 GSP
   (`rassy`'s register names, `binary_reverse_engineering.md` section 3);
   the free pools are lists threaded through the cells, refilled from HP
-  in 16-word chunks (INFERENCE, `ref/pu/README.md`).
+  in 16-word chunks (INFERRED, `ref/pu/README.md`).
 - Two choices of the hand-written models are answered by the firmware:
   `write_variable` writes a reference to a new cell, not the variable
   in the element, and `put_list`/`put_vector_N` give the pointer MRB
@@ -372,6 +372,13 @@ for the model:
   conditional bit of the jumps, and CNDF forms COND for a later word
   (thesis p.130), as section 7's two-cycle tag branch implies
   (`pseudo_pimm_microcode.md` section 22).
+- Memory allocation is a firmware service, not a bump pointer: the
+  one-cell allocator `3320` runs as a microsubroutine and matches
+  `pimm.py`'s `new_var` (EXECUTED), and the refill needs HP (R1f) and
+  work register W0d, set by boot code not yet run. So the Bluespec PU
+  needs the boot-time register state (or the boot microcode) before any
+  long run, and its lockstep comparison reads the per-microcycle record
+  of `pu_microcode_plan.md` "The trace".
 
 ### Model-defined routing, packet format and arbitration
 

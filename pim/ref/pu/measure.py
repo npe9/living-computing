@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The measurements behind ref/pu's INFERENCE rules, pinned.
+"""The measurements behind ref/pu's INFERRED rules, pinned.
 
 Counts only (no microinstruction is printed).  Each number is over the
 whole of image 2 of pimm.MEkbn and, where it says so, the PSI-III's

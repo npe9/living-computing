@@ -10,7 +10,7 @@ branch set-up; docs/psi_microword.md 3a).  The held entries carry those
 bits (asm/psdpim.py reads the table), but only some of their meanings
 are decoded.  So:
 
-  NANO_ODPF1 (INFERENCE, generic): an entry whose nano-code field at
+  NANO_ODPF1 (INFERRED, generic): an entry whose nano-code field at
   Fig. 3-22's ODPF position is 1 pops a free list: the S stage loads the
   head register R(10 | EMO1) into MAR2 when ODSF is 0 and into MAR1 when
   ODSF is 1.  Fitted on set_variable (318b reads [MAR2], EMO1 9, ODSF 0)

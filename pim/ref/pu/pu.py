@@ -16,8 +16,8 @@ KL1-B instruction in the E stage.  What is stood in is hardware the
 microprogram does not give:
 
   - the D/A/R/S stages, which the decode entry's nano-code drives
-    (setup.py, OURS per operand form, one nano-code rule INFERENCE);
-  - the condition multiplexer behind CNDF (COND_RULES, INFERENCE each);
+    (setup.py, OURS per operand form, one nano-code rule INFERRED);
+  - the condition multiplexer behind CNDF (COND_RULES, INFERRED each);
   - memory (a dict of 40-bit cells, OURS).
 
 Anything met on an executed path whose meaning is not modelled raises
@@ -59,17 +59,17 @@ RULES = {
     # Operand-register selects (WRBF clear): 8 = the register in the
     # opcode's low bits, 9 = x, a = y, b = z.  8/9: MEASURED by mekbn
     # (put_atom/put_integer differ in one bit, section 10).  a = y,
-    # b = z: INFERENCE, decided at 318f (set_variable writes its REF to
+    # b = z: INFERRED, decided at 318f (set_variable writes its REF to
     # opda, pimm.py i_set_variable reg[y]) and 31d7 (put_variable,
     # reg[y]); b at 3a69 (add's result to opdb, pimm.py i_add reg[z]).
     'opd_fields': {8: 'op', 9: 'x', 0xa: 'y', 0xb: 'z'},
     # TGIF: 1 stamps the tag immediate on what SD1 loads, 2 on the ALU
-    # result (mekbn, VERIFIED / DERIVED).  3: INFERENCE, both stamps with
+    # result (mekbn, VERIFIED / DERIVED).  3: INFERRED, both stamps with
     # the tag taken from EM2 (thesis p.144: "EM2 can also be the DST-Bus
     # tag immediate"), decided at 3193 (write_nil: EM1 = 20, EM2 = 02,
     # and the cell written must be ATOM 0, pimm.py i_write_nil).
     'tgif3_tag': 'EM2',
-    # A write with bit 59 set stores MDR2.  INFERENCE (section 16 left it
+    # A write with bit 59 set stores MDR2.  INFERRED (section 16 left it
     # open): decided at 31d7 (put_variable: the cell must get the UNDF
     # that 31d6 put in MDR2; MDR1 holds the link just read) and 3001
     # (collect_value: the old head stamped VECT0x is in MDR2).
@@ -78,7 +78,7 @@ RULES = {
     # WRITE_SAME_WORD False; section 16, VERIFIED on new_vector).
     'write_old_mdr': True,
     # MCF (bit 18) with EM1 = 20 steps the structure pointer R02 by one.
-    # INFERENCE, decided at 31c7 (write_integer: one word, MCF, EM1 20;
+    # INFERRED, decided at 31c7 (write_integer: one word, MCF, EM1 20;
     # pimm.py i_write_integer _sp += 1; set_integer 3182 has neither and
     # does not move sp) and 3193 (write_nil).
     'mcf_20_sp': True,
@@ -91,11 +91,11 @@ RULES = {
     'cnd9_link': True,
     # R06 and R07 hold zero: {ATOMo, R06} is written where nil stands
     # (section 17), {UNDF, R07} where pimm.py writes UNDF 0 (31d6).
-    # INFERENCE (OURS as initial state).
+    # INFERRED (OURS as initial state).
     'zero_regs': (0x06, 0x07),
     # JMPF bit 26 (codes b, c, e) makes a page-relative or relative jump
     # conditional; codes 3, 4, 6 jump unconditionally whatever CNDF holds,
-    # and their CNDF only forms COND for a later word.  INFERENCE from a
+    # and their CNDF only forms COND for a later word.  INFERRED from a
     # measurement (ref/pu/README.md "Conditions"): the word after a JMPF
     # 3/4/6 word is zero or an explicit target in 47-83% of cases with or
     # without CNDF (image 2 and syspsi alike), after a b/c/e word in
@@ -108,10 +108,18 @@ RULES = {
     # way a conditional b/c/e jump goes on COND is not decided: raises.
     'bit26_cond': True,
     # A conditional JMPF 1 (EM bit 1) with EM bit 0 set is taken when
-    # COND is false.  INFERENCE, decided at 31fb/31d2/318f/31d8: the
+    # COND is false.  INFERRED, decided at 31fb/31d2/318f/31d8: the
     # pop's end must be taken when the link is not the end marker.  With
     # EM bit 0 clear: not decided, raises.
     'j1_bit0_false': True,
+    # AS1F 3 with AS2F 0: the AS1 bus carries the constant EM2.  INFERRED
+    # (thesis p.144: "AS1F modifies AS2F's meaning for constants"; open in
+    # mekbn).  Decided at 3321 (the one-cell allocator loads R03 with it);
+    # the words that load R03 (rassy's lc) this way carry EM2 13 beside
+    # the one-cell list (3321, 3378) and 5 beside the two-cell list (332f,
+    # 337b): 16 / 1 - 3 and 16 / 2 - 3, the refill's loop count for a
+    # 16-word chunk (README "First routine that would not run").
+    'as1f3_em2': True,
 }
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
@@ -130,7 +138,7 @@ def _cnd_tag_eq(which):
 
 
 # CNDF 9: tag of the ALU's AS1 input == EM1.  CNDF b: == EM2.
-# INFERENCE.  Evidence: CNDF 9 words leave EM1 free (TGIF 0 in 448 of
+# INFERRED.  Evidence: CNDF 9 words leave EM1 free (TGIF 0 in 448 of
 # 453, image 2) and their EM1 values are tags (ATOMo 105, INTo 94,
 # REFo 32, VDESC 26, FPREC 24, SHREC 20, MOD 17, ...); CNDF b words often
 # use EM1 for a stamp (TGIF non-zero in 24 of 56) and their EM2 values are
@@ -154,6 +162,9 @@ class PU:
         self.ir = None          # the KL1-B instruction (tag, value) in the E stage
         self.trace = []         # (upc, word)
         self.writes = []        # (upc, address, (tag, value))
+        self.cycles = []        # one record per microcycle (README "Trace format")
+        self.tgt = None         # the tag-dispatch RAM (TGT): not held
+        self._reads = []
         for z in RULES['zero_regs']:
             self.r[z] = (0, 0)
 
@@ -178,6 +189,7 @@ class PU:
         store = {'W': self.w, 'A': self.an, 'R': self.r}[f]
         if n not in store:
             raise Unmodelled(upc, 'read of %s%02x, never set' % (f, n))
+        self._reads.append(('%s%02x' % (f, n), store[n]))
         return store[n]
 
     def write_sel(self, x, sel, v, out):
@@ -200,6 +212,8 @@ class PU:
         as1, as2 = mekbn.alu_in(x)
         a = {0: (0, 0), XR: old[XR], MDR1: old[MDR1], MDR2: old[MDR2],
              MAR1: old[MAR1], MAR2: old[MAR2]}.get(as1, 'open')
+        if as1 == 3 and as2 == 0 and RULES['as1f3_em2']:
+            a = (0, field(x, 'EM2'))
         if a == 'open':
             raise Unmodelled(upc, 'AS1F %d' % as1)
         b = {0: (0, 0), 1: old['YR'], 2: old[MDR1], 3: old[MDR2]}[as2]
@@ -223,25 +237,35 @@ class PU:
                 v = a[1] ^ b[1]
             else:
                 raise Unmodelled(upc, 'ALU operation %s' % op)
-        tag = a[0] if as1 else b[0]
+        tag = a[0] if as1 and as1 != 3 else b[0]
         if field(x, 'TGIF') & 2:
             tag = self.stamp_tag(x)
         return (tag, v & M32)
 
     def step(self, upc):
-        """Execute the word at upc; return the next upc or None at the
-        end of the machine instruction."""
+        """One microcycle: evaluate every operation of the word at upc from
+        the OLD state, then commit them together.  Returns the next upc,
+        or None at the end of the machine instruction."""
+        cyc = self.evaluate(upc)
+        self.commit(cyc)
+        return cyc['next']
+
+    def evaluate(self, upc):
+        """The microcycle's effects, as a record (TRACE FORMAT in README):
+        nothing in the machine state changes here.  Any field value the
+        simulator does not model raises Unmodelled(upc, field)."""
         if upc >= len(self.img):
-            raise Unmodelled(upc, 'outside image 2 (syspsi upper control store)')
+            raise Unmodelled(upc, 'micro_pc outside image 2 (syspsi upper control store)')
         x = self.img[upc]
         if not x:
             raise Unmodelled(upc, 'zero microinstruction')
-        self.trace.append((upc, x))
+        self._reads = []
         old = dict(self.wr)
-        new = {}            # work register -> value
-        regw = []           # register-file writes
+        new = {}            # phase-2 register -> value
+        regw = []           # phase-1 register-file writes ((file, n), value)
+        memw, memr = [], []
         if bit(x, 63):
-            raise Unmodelled(upc, 'DBGF')
+            raise Unmodelled(upc, 'DBGF set')
         # phase 1: S1 bus (SC1F -> SD1F), S2 bus (SC2F -> SD2F)
         sc1, sd1 = field(x, 'SC1F'), field(x, 'SD1F')
         if sd1:
@@ -259,7 +283,7 @@ class PU:
                 v = self.read_sel(upc, x, sc2)
             d = {1: 'YR', 2: MDR1, 3: MDR2}[sd2]
             if d in new:
-                raise Unmodelled(upc, 'S1 and S2 load one register')
+                raise Unmodelled(upc, 'SD1F and SD2F load one register')
             new[d] = v
         # phase 2: the ALU, to ADF and DSTF
         dst, d = field(x, 'ADF'), field(x, 'DSTF')
@@ -284,43 +308,39 @@ class PU:
                 regw.append((('R', 2), (sp[0], (sp[1] + 1) & M32)))
             else:
                 raise Unmodelled(upc, 'MCF with EM1 %02x' % field(x, 'EM1'))
-        # memory: bit 61 read, 62 write, 60 step; 58 MAR2, 59 MDR2
+        # memory (CCF): bit 61 read, 62 write, 60 step; 58 MAR2, 59 MDR2
         rd, wr = bit(x, mekbn.RD_BIT), bit(x, mekbn.MEM_BIT)
         if rd or wr:
             mar = MAR2 if bit(x, mekbn.MAR_SEL_BIT) else MAR1
             mdr = MDR2 if bit(x, mekbn.MDR_SEL_BIT) else MDR1
             if old[mar] is None:
-                raise Unmodelled(upc, '%s never set' % WNAME[mar])
+                raise Unmodelled(upc, 'CCF: %s never set' % WNAME[mar])
             addr = old[mar][1]
             if rd and wr:
-                raise Unmodelled(upc, 'read and write in one word')
+                raise Unmodelled(upc, 'CCF %02x: read and write in one word' % field(x, 'CCF'))
             if wr:
                 if mdr == MDR2 and not RULES['w59_mdr2']:
-                    raise Unmodelled(upc, 'write with bit 59 (data register open)')
+                    raise Unmodelled(upc, 'CCF %02x: write data register' % field(x, 'CCF'))
                 if mdr == MDR2 and RULES['w59_mdr2'] == 'MDR1':
                     mdr = MDR1          # injection only
                 data = old[mdr] if RULES['write_old_mdr'] else {**old, **new}[mdr]
                 if data is None:
-                    raise Unmodelled(upc, 'write of %s, never set' % WNAME[mdr])
-                self.mem[addr] = data
-                self.writes.append((upc, addr, data))
+                    raise Unmodelled(upc, 'CCF: write of %s, never set' % WNAME[mdr])
+                memw.append((addr, data))
             if rd:
                 if addr not in self.mem:
-                    raise Unmodelled(upc, 'read of memory %x, never written' % addr)
+                    raise Unmodelled(upc, 'CCF: read of memory %x, never written' % addr)
                 if mdr in new:
-                    raise Unmodelled(upc, 'read data and a load meet in %s' % WNAME[mdr])
+                    raise Unmodelled(upc, 'CCF: read data and a load meet in %s' % WNAME[mdr])
                 new[mdr] = self.mem[addr]
+                memr.append((addr, self.mem[addr]))
             if bit(x, mekbn.INC_BIT):
                 if mar in new:
-                    raise Unmodelled(upc, 'step and a load meet in %s' % WNAME[mar])
+                    raise Unmodelled(upc, 'CCF: step and a load meet in %s' % WNAME[mar])
                 new[mar] = (old[mar][0], (addr + 1) & M32)
         elif bit(x, mekbn.INC_BIT):
-            raise Unmodelled(upc, 'bit 60 without a strobe')
-        # commit (a register loaded in a word is seen by the next word)
-        self.wr.update(new)
-        for (f, n), v in regw:
-            {'W': self.w, 'A': self.an, 'R': self.r}[f][n] = v
-        # condition formed by this word, for the next
+            raise Unmodelled(upc, 'CCF: bit 60 without a strobe')
+        # condition generation (from the old state) and use
         kind, target, falls = flow(upc, x)
         # flow()'s third item is "can fall through": for a jump, end or
         # return that is "conditional"; a call returns, a branch is
@@ -328,17 +348,16 @@ class PU:
         conditional = falls if kind in ('jump', 'end', 'return') else kind == 'branch'
         jf, cnd, em = field(x, 'JMPF'), field(x, 'CNDF'), field(x, 'EM')
         prev_cond = self.cond
-        own = cnd and mekbn.jk(x) != 1
-        if own:
+        cond_new = prev_cond
+        if cnd and mekbn.jk(x) != 1:
             rule = COND_RULES.get(cnd)
             if rule is None:
                 raise Unmodelled(upc, 'CNDF %x (condition not known)' % cnd)
-            self.cond = rule(self, upc, x, self.as1_seen)
+            cond_new = rule(self, upc, x, self.as1_seen)
         # sequencing
         if kind == 'jmpf2':
-            raise Unmodelled(upc, '4-bit JMPF 2')
+            raise Unmodelled(upc, 'JMPF 2 (4-bit; kind not known)')
         if jf in (8, 9, 0xd, 0xf):
-            # bit 26 on a fall-through, JMPF 1, or a call: meaning open
             raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
         if kind == 'branch':
             raise Unmodelled(upc, 'JMPF %x conditional branch (polarity not decided)' % jf)
@@ -351,35 +370,76 @@ class PU:
         taken = True
         if mekbn.jk(x) == 1 and kind in ('jump', 'end', 'return'):
             if kind == 'jump' and em & 4:
-                raise Unmodelled(upc, 'JMPF 1 jump with EM bit 2 (dispatch)')
+                # the tag multiway branch (case_tag_setup / TGT, thesis
+                # p.131): the table is not in pimm.MEkbn
+                if self.tgt is None:
+                    raise Unmodelled(upc, 'JMPF 1 EM bit 2: tag dispatch, TGT contents not held')
+                raise Unmodelled(upc, 'JMPF 1 EM bit 2: tag dispatch not modelled')
             if conditional:
                 if not em & 1 or not RULES['j1_bit0_false']:
-                    raise Unmodelled(upc, 'conditional JMPF 1 with EM bit 0 clear')
+                    raise Unmodelled(upc, 'JMPF 1 conditional with EM bit 0 clear')
                 if prev_cond is None:
-                    raise Unmodelled(upc, '%s? with no condition formed' % kind)
+                    raise Unmodelled(upc, 'JMPF 1 %s? with no condition formed' % kind)
                 taken = not prev_cond
             elif em & 1:
                 raise Unmodelled(upc, 'JMPF 1 %s with EM bit 0' % kind)
         elif conditional:
             raise Unmodelled(upc, 'conditional %s (not decided)' % kind)
+        push = pop = False
         if not taken:
-            return upc + 1              # the other arm is the next word
-        if kind == 'branch':
-            raise Unmodelled(upc, 'JMPF 2 branch')
-        if kind == 'next':
-            return upc + 1
-        if kind == 'jump':
-            return target
-        if kind == 'call':
-            self.mstk.append(upc + 1)
-            return target
-        if kind == 'return':
+            nxt = upc + 1               # the other arm is the next word
+        elif kind == 'next':
+            nxt = upc + 1
+        elif kind == 'jump':
+            nxt = target
+        elif kind == 'call':
+            nxt, push = target, True
+        elif kind == 'return':
             if not self.mstk:
-                raise Unmodelled(upc, 'return with an empty micro stack')
-            return self.mstk.pop()
-        if kind == 'end':
-            return None
-        raise Unmodelled(upc, 'flow kind %s' % kind)
+                raise Unmodelled(upc, 'JMPF 1 return with an empty micro stack')
+            nxt, pop = self.mstk[-1], True
+        elif kind == 'end':
+            nxt = None
+        else:
+            raise Unmodelled(upc, 'flow kind %s' % kind)
+        return {'cycle': len(self.trace), 'micro_pc': upc, 'microword': x,
+                'reg_reads': list(self._reads), 'wr': new, 'reg_writes': regw,
+                'mem_reads': memr, 'mem_writes': memw,
+                'cond': cond_new, 'push': upc + 1 if push else None, 'pop': pop,
+                'next': nxt}
+
+    def commit(self, c):
+        """All of a microcycle's state changes at once."""
+        self.wr.update(c['wr'])
+        for (f, n), v in c['reg_writes']:
+            {'W': self.w, 'A': self.an, 'R': self.r}[f][n] = v
+        for a, d in c['mem_writes']:
+            self.mem[a] = d
+            self.writes.append((c['micro_pc'], a, d))
+        self.cond = c['cond']
+        if c['push'] is not None:
+            self.mstk.append(c['push'])
+        if c['pop']:
+            self.mstk.pop()
+        self.trace.append((c['micro_pc'], c['microword']))
+        self.cycles.append(c)
+
+    def call(self, upc, limit=2000):
+        """Run a microsubroutine from upc to its return, as a call word
+        would (sub-rung "the allocator": 3320)."""
+        self.mstk.append(-1)
+        n0 = len(self.trace)
+        try:
+            while upc != -1:
+                if upc is None:
+                    raise Unmodelled(self.trace[-1][0], 'end inside a microsubroutine')
+                if len(self.trace) - n0 >= limit:
+                    raise Unmodelled(upc, 'micro step limit')
+                upc = self.step(upc)
+        except Unmodelled as e:
+            e.words = len(self.trace) - n0
+            raise
+        return len(self.trace) - n0
 
     def run(self, upc, limit=2000):
         """Run from upc to the end of the machine instruction."""
@@ -390,10 +450,8 @@ class PU:
                     raise Unmodelled(upc, 'micro step limit')
                 upc = self.step(upc)
         except Unmodelled as e:
-            # held words completed before the stop (the stopping word's
-            # entry in the trace is not counted)
-            e.words = len(self.trace) - n0 - (1 if self.trace and self.trace[-1][0] == e.upc
-                                              else 0)
+            # held words completed (committed) before the stop
+            e.words = len(self.trace) - n0
             raise
         if self.mstk:
             raise Unmodelled(self.trace[-1][0], 'end with %d return(s) pending' % len(self.mstk))
