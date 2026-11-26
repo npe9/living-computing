@@ -3663,8 +3663,13 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 # only I, and the written-minus "M-MG" is witnessed for the
 # floating-point operation alone.  docs/NEXT.md carries it.
 
+# CYCLES=168 (2026-11-25, fidelity_plan.md A3 (b)): MODEL behaviour, pinned
+# because it is the suite's one check of mkSAU's stepped RECOMPLEMENT through
+# the core (its `-` of A < B, Table 3's "unlike signs CD > AB").  Observed:
+# sauStepRecomp := False gives 162; sauStepZ := False leaves 168 (this deck
+# does not pin z).  The deck's header has the same note.
 run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_program.sh ../decks/fig14_sign_modifiers.strap StretchFig14Tb \
-    "PC=2062" \
+    "PC=2062" "CYCLES=168+-0" \
     "fig14_note1_a_minus_b:1774=0xaaaaaaaaaa00c808" \
     "fig14_notes234:1775=0xc80000c80800c8"
 # Reference Manual printed p.64, Figure 14 "Sign Modifier Example",
@@ -5468,8 +5473,12 @@ run "*, VFL Multiply -- the product at the PAU's own offset 20" ./run_program.sh
 # copied code that never ran -- and MCP's own multiply, printed p.72
 # line 19, is a 24-bit field.  Exchanging the two prefetch slots
 # fails this check ALONE, at 0, with the other eight unmoved.
+# CYCLES=548 (2026-11-25, fidelity_plan.md A3 (b)): MODEL behaviour, pinned
+# as the core-level check of +MG's stepped "CD > AB" pass (Table 3: .6, the
+# cleared result).  Observed: sauStepRecomp := False gives 546; sauStepZ :=
+# False leaves 548.  The deck's header has the same note.
 run "+MG, Add to Magnitude -- Reference Manual Figure 12" ./run_program.sh ../decks/plus_mg.strap StretchPlusMgTb \
-    "PC=2086" \
+    "PC=2086" "CYCLES=548+-0" \
     "pmg_fig12_x_minus_y:1064=70" \
     "pmg_fig12_larger_is_x:1065=100" \
     "pmg_fig12_forced_zero:1066=0" \
