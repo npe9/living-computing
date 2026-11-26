@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PIM/m with more than one PE, on the reference model: rungs M1 to M4.
+"""PIM/m with more than one PE, on the reference model: rungs M1 to M5.
 
 docs/multi_pe.md is the plan and the evidence; every choice below is
 labelled there.  In brief:
@@ -7,10 +7,13 @@ labelled there.  In brief:
 - A System holds N PEs.  Each PE is a pimm.Machine of its own (its own
   memory, heap, registers, ready queue): PIM/m has one memory per PE
   (M92 p. 430).  The PEs are made by copying one loaded machine, so a
-  code address means the same on every PE (OURS scaffolding; PIM/m
-  sends a module's global identifier and fetches it, M92 pp. 430-431).
-  After a PE has collected, its modules have moved: a goal thrown from
-  or to it with code in the heap is refused (rung M5, code fetch).
+  loaded module is at the same address on every PE (OURS scaffolding).
+  A code or module word in the heap goes in a message as its module's
+  number and offset (CODE_ID, MODULE_ID), each PE taking its own copy
+  of that module; one made after the split is fetched, copied from the
+  PE that has it (PIM/m sends a module's global identifier and fetches
+  it, M92 pp. 430-431; the copy without messages is OURS).  The modules
+  a PE has are roots of its collector.
 - current_node gives (k, N) on PE k (PIMOS manual e-builtin.tex
   current_node).  current_processor gives (k, N, 1): PIMOS's
   mdlib#current_cluster(Cluster, Total) is current_processor(Cluster,
@@ -127,7 +130,7 @@ labelled there.  In brief:
   parent's %terminated and every %return_wtc is back.  On the goal's
   PE a FOSTER PARENT is made (VPIM f_Get_FP_Ptr): a record of the
   shoen layout, parent 0, mask 0, report INT 0, with %ready {1, ID,
-  PE} to the shoen, which answers %supply_wtc (wtcsu 0x1000000;
+  WTC, PE} to the shoen, which answers %supply_wtc (wtcsu 0x1000000;
   %stop or %abort first if the shoen is stopped or ended).  The
   foster parent throws on with its own WTC (asking %request_wtc when
   it has less than 0x403, the goal queued), asks %request_resource
@@ -1423,6 +1426,8 @@ class PECollector(pimm_gc.Collector):
         # VPIM's collector, f_GCPreProcedure_Sub, keeps the code area),
         # so a goal thrown here later finds its module (code_in)
         pe.mods = [a and self.module(a) for a in pe.mods]
+        if pe.mods:
+            pe.ran('modules kept at a collection')
         pe.mod_gid = {a: g for g, a in enumerate(pe.mods) if a}
         for e in sorted(pe.exports):
             pe.exports[e] = self.word(pe.exports[e])
@@ -1469,6 +1474,29 @@ class PECollector(pimm_gc.Collector):
 
 
 PE.Collector = PECollector
+
+
+def shoen_accounting(system):
+    """At quiescence: every shoen with goals elsewhere has its WTC
+    (its entry's WEC = minus what its foster parents hold), its
+    resource out and its foster parents accounted for; what is not."""
+    s, bad = system, []
+    if any(s.queues.values()):
+        return [('messages in flight',)]
+    for pe in s.pes:
+        for sh, h in pe.homes.items():
+            sid = ext_id(pe.pe, h['e'])
+            fps = [(o.pe, o.fpi[o.fps[sid]]) for o in s.pes if sid in o.fps]
+            held = sum(i['wtc'] for _k, i in fps)
+            if pe.wec[h['e']] + held:
+                bad.append(('WTC not accounted for', pe.pe, pe.wec[h['e']], held))
+            out = sum(i['given'] - i['reported'] for _k, i in fps)
+            if h['adv'] != out:
+                bad.append(('resource out', pe.pe, h['adv'], out))
+            live = sorted(k for k, n in h['fps'].items() if n)
+            if live != sorted(k for k, _i in fps):
+                bad.append(('foster parents known', pe.pe, live, [k for k, _i in fps]))
+    return bad
 
 
 def dumps(machine):

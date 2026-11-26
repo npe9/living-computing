@@ -57,7 +57,10 @@ line numbers below are of that tool's output) and the compiled ESP with
   `current_node`, `Goal@node(K)` as a `%throw_goal`, and the `%unify`
   that binds an exported variable, checked by PIMOS's own compiled
   `seqgc` and `gc` modules from `pimm_shell360E.sav` on 1, 2 and 4 PEs
-  under two schedules. Its status is in §5.
+  under two schedules. M2 and M3 add reading across PEs and the
+  white/black tables, M4 the shoen across PEs, and M5 PIMOS booted on
+  1, 2 and 4 PEs running the primer's `sample9` and R8's qsort with
+  `@node` from its prompt (a long runner). Their status is in §5.
 
 ## 1. What the held sources say
 
@@ -226,10 +229,12 @@ packet bytes and hardware-assembled 40-bit words.
 - **Separate memories.** Each PE is its own `pimm.Machine`, heap and
   registers its own (PIM/m: one memory per PE, `M92`).
 - **The same code on every PE.** The modules are loaded once and the
-  loaded machine copied to every PE, so a code address means the same
-  on each and a thrown goal carries it as `{COD, address}`. OURS
-  scaffolding: PIM/m sends the module's global identifier and fetches
-  the module on demand (`M92` pp. 430-431); that is a later rung.
+  loaded machine copied to every PE (OURS scaffolding). Since M4/M5 a
+  code or module word in the heap goes as its module's number and
+  offset, each PE taking its own copy, and a module made after the
+  split is fetched (§5, M4): PIM/m sends the module's global
+  identifier and fetches the module on demand (`M92` pp. 430-431).
+  Until then a thrown goal carried it as `{COD, address}`.
 - **Messages are VPIM's logical packets** (§1.3), one word per item,
   fields we do not model sent as 0. The kind codes are the console's
   (§1.1). No PIM/m byte format is invented.
@@ -241,9 +246,9 @@ packet bytes and hardware-assembled 40-bit words.
   the unit). Every M1 check is run with two quotas, 1 and 1,000,000,
   and must give the same answer under both: what the pins hold is the
   program's, not the scheduler's.
-- **Node numbers are absolute** for goals of the root (no shoen); the
-  relative numbering of a shoen's node range (`e-shoen.tex`:428) waits
-  for the shoen rung.
+- **Node numbers are absolute**, for goals of the root and of a shoen
+  alike: the relative numbering of a shoen's node range
+  (`e-shoen.tex`:428) is not modelled (open at M4, §5).
 
 ## 4. The rungs
 
@@ -675,6 +680,9 @@ The check, `m4_shoen.py`, has seven parts on M1's machine
   the image's `top:bios_monitor/3`.
 - `resource`: a shoen funded with 16. It is low and not terminated,
   then it is funded.
+- `collected`: every PE collects before anything runs, so the loaded
+  modules move and live only as the collector's roots; then `home`'s
+  `gc:go/0`. The bench keeps its code by module number.
 
 What is checked:
 
@@ -691,7 +699,7 @@ What is checked:
   answers.
 - Every M4 path marked in `pimm_pe.py` runs.
 
-`m4 shoen: PASS (70 runs)`, about 4 1/2 minutes on a shared machine
+`m4 shoen: PASS (80 runs)`, about 5 minutes on a shared machine
 with `M4_CACHE`; loading the sav takes about another 90 s without it.
 Messages at N=4, c=0, quota 1:
 
@@ -710,13 +718,13 @@ line):
 | Injection | Observed |
 |---|---|
 | no extra count while WTC is out (the shoen may terminate with goals elsewhere) | 104 FAIL lines: `spread` and `resource` (shoen tables and goals left, one `%terminated` per `%ready`, low but not terminated), `abort`'s order, `exception` (the report, the two schedules differ, `KeyError: 0`), `nested` (the inner shoen, the monitor, PEs left); `stop` raises `start_shoen of a shoen that is not dormant or stopped` |
-| `%terminated` gives back no WTC | 368: every part with N>1 (WTC not accounted for, tables and goals left, never terminated) |
+| `%terminated` gives back no WTC | 416: every part with N>1 (WTC not accounted for, tables and goals left, never terminated) |
 | stopped not sent to the foster parents | 8: each N>1 `stop` run raises `start_shoen of a shoen that is not dormant or stopped` (the foster parent ran on and is sent start): caught by the model's refusal, not a check |
-| the consumption in `%terminated` not charged | 96: statistics and `return_resource` in `spread`, `home`, `stop`, `exception`, `nested`, `resource` |
+| the consumption in `%terminated` not charged | 112: statistics and `return_resource` in `spread`, `home`, `stop`, `exception`, `nested`, `resource`, `collected` |
 | a goal to an existing foster parent loses its WTC | 160: `stop` and `abort` (WTC, tables, goals left, terminated) |
 | a foster parent never asks for resource | 104: `spread` and `resource` (low but not terminated, one `%terminated` per `%ready`, tables, goals left) |
 | M1's `current_node` gives node 0, re-run in `m1_gc.py` with the module roots and code by module number | 18 FAIL lines (request order, throw order, node c asks after every `%unify`, messages): caught by the checks, where at M1 it raised `KeyError` |
-| the loaded modules not roots | nothing: `m1_gc.py` and `m4_shoen.py` PASS. No check throws a goal to a PE after it collected; the M1 node-0 run above is the one that does |
+| the loaded modules not roots | `collected`: each of its 10 runs raises `KeyError` (the code the bench and the thrown goals name is gone); before that part was added, `m1_gc.py` and `m4_shoen.py` passed |
 
 Never run: `ready while stopped`, `ready while aborted` (a first goal
 reaching a PE after the shoen was stopped or ended), `aborted foster
@@ -730,8 +738,6 @@ Not reached at M4, open:
   node numbers are absolute.
 - VPIM's control WTC and its abort, which waits for the foster
   parents, are not read (OURS above).
-- The loaded modules as roots are not checked by any suite run (the
-  last injection row).
 
 **M5 reached on the reference model, 2026-11-26** (the boot and two
 programs from the prompt; the shell's `cn`, `gc`, `seqgc` and `set
@@ -758,6 +764,8 @@ What it does:
    longrun_ipl's: the FEP's waiting commands, then every armed alarm
    (each PE has its own clock: OURS), then the FEP's next scripted
    event.
+   The boot goal is made on PE 0 directly, not sent there as a
+   `%throw` from the FEP as the console's `$GO/PIMos` does (OURS).
 3. **Two programs typed at the prompt**, each in a boot of its own
    (`compile`, `!package work`, the file, `!exit`, `listener`,
    `default_package(work).`, the goal):
@@ -776,6 +784,16 @@ Results on N = 1, 2, 4 under quota 1 and quota 1,000,000:
 - `sample9`'s `job_ext` goals go to nodes 0,1,2,3,0,1,2,3 on 4 PEs,
   the primer's printed order, and to 0,1,0,1,... on 2.
 - No anomaly. Every run ends with nothing left to run.
+- To the prompt: `longrun_ipl.go` on the slim machine and `System(1)`
+  give the same instructions (8,595,408), stop, console and FEP
+  messages.
+- The prompt alone on each N is the baseline for what is left. On 2
+  PEs the boot leaves 2 shoens on PE 0 with goals on PE 1 and 2
+  foster parents there (on 4 PEs the same on each other PE: PIMOS's
+  own per-node goals). After each app the same tables are left, so
+  the app's shoens and foster parents are gone. At every end every
+  shoen's WTC, resource and foster parents are accounted for
+  (`pimm_pe.shoen_accounting`, `m4_shoen.py`'s invariants).
 - Goals waiting at the end (1 PE / each other PE): 1,605 / 14. These
   are the boot's and the Listener's own waiting goals, printed, not
   pinned.

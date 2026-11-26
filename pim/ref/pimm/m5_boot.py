@@ -40,9 +40,15 @@ Checked, per (N, quota):
   - the console is the one-PE run's (the banner, LOCAL LOGIN SERVICE
     STARTS, CANNOT MAKE A TCPIP LOGIN SERVICE!!) and the window shows
     "Shell>> "; each app's window text is the one-PE run's;
-  - for N = 1: the instruction count, the goals waiting and the FEP's
-    messages are the pimm.Machine run's (8,595,408 at the prompt);
-  - no anomaly; the shoen tables and WTC as m4_shoen.py checks them;
+  - the one-machine run (longrun_ipl.go on the slim machine) and
+    System(1) to the prompt: the same instructions, stop, console
+    and FEP messages;
+  - for each N, the prompt alone: the window ends "Shell>> ", no
+    anomaly, every shoen's WTC, resource and foster parents accounted
+    for (pimm_pe.shoen_accounting, m4_shoen.py's invariants); what it
+    leaves (shoen tables and foster parents per PE) is the baseline;
+  - after each app: no anomaly, the same accounting, and the same
+    tables as the baseline (the app's shoens and foster parents gone);
   - sample9's job_ext placements are 0,1,..,N-1,0,1,.. (the primer's
     printed order, primer25.tex:1166-1168, for distribute(8) on 4).
 Printed, not pinned: instructions per PE, messages by kind, goals
@@ -192,6 +198,11 @@ def boot(blob, loaded, n, quota, lines):
     return s, dev, stop
 
 
+def tables(s):
+    """(shoens with goals elsewhere, foster parents) on each PE."""
+    return [(len(pe.homes), len(pe.fps)) for pe in s.pes]
+
+
 def window(dev):
     return [t for _d, t in dev.log]
 
@@ -219,12 +230,33 @@ def main(argv):
     blob, loaded, _info = slim(argv[1])
     say('slim machine: %d bytes pickled' % len(blob))
     bad = []
-    # the prompt alone on one PE: the pimm.Machine run's numbers
+    # the prompt alone on one machine (longrun_ipl.go on the slim
+    # machine), and on a System(1): the same run
+    m = pickle.loads(blob)
+    lbad, linfo = [], {}
+    lr.go(m, loaded, linfo, lbad, True)
+    one = linfo['go']
+    del m
     s, dev, stop = boot(blob, loaded, 1, quotas[0], [])
     instr = s.pes[0].tr.instructions
-    say('prompt, System(1): %d instructions, stop %s' % (instr, stop))
-    if (instr, stop) != PROMPT:
-        bad.append(('System(1) to the prompt', instr, stop, PROMPT))
+    say('prompt, pimm.Machine: %d instructions, stop %s; System(1): %d, stop %s' % (
+        one['instructions'], one['stop'], instr, stop))
+    if (instr, stop) != PROMPT or (one['instructions'], one['stop']) != PROMPT or lbad:
+        bad.append(('to the prompt', instr, stop, one['instructions'], one['stop'], PROMPT, lbad))
+    if cons.console(s.pes[0].tr) != one['console'] or dev.messages != one['fep']['messages']:
+        bad.append(('System(1) console or FEP messages differ from pimm.Machine',))
+    # the prompt on each N: what the boot leaves (foster parents and
+    # shoen tables per PE), the baseline for what an app may leave
+    base = {}
+    for n in ns:
+        s, dev, stop = boot(blob, loaded, n, quotas[0], [])
+        base[n] = tables(s)
+        acc = pimm_pe.shoen_accounting(s)
+        say('prompt N=%d: instructions %r, stop %s, homes/foster parents %r, messages %r' % (
+            n, [pe.tr.instructions for pe in s.pes], stop, base[n],
+            {pimm_pe.KIND_NAMES.get(k, k): v for k, v in sorted(s.sent.items())}))
+        if acc or s.anomalies or window(dev)[-1:] != ['Shell>> '] or not stop.startswith('nothing'):
+            bad.append(('prompt', n, acc, s.anomalies[:3], window(dev)[-1:], stop))
     runs = 0
     for app in apps:
         ref = None
@@ -250,6 +282,11 @@ def main(argv):
                     say('  placed 8 times: %r' % (pl,))
                     if [i % n for i in range(8)] not in pl:
                         bad.append((app, n, q, 'sample9 placement order', pl))
+                acc = pimm_pe.shoen_accounting(s)
+                if acc:
+                    bad.append((app, n, q, 'shoen accounting', acc[:5]))
+                if tables(s) != base[n]:
+                    bad.append((app, n, q, 'left: homes/foster parents per PE', tables(s), base[n]))
                 if s.anomalies:
                     bad.append((app, n, q, 'anomalies', s.anomalies[:5]))
                 if any(others):

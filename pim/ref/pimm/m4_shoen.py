@@ -40,6 +40,10 @@ Parts (k = (c + 1) mod N, the node the work goes to; on one PE k = c):
              it, the image's top:bios_monitor/3 at the home reads its
              Report (each element read across) and closes its Control
              after terminated; then the bench binds X.
+  collected  every PE collects before anything runs (the loaded
+             modules move, kept only as the collector's roots), then
+             home's gc:go/0: the bench's code and the thrown goals'
+             found by module number.
   resource   seqgc at node k, the shoen funded with only 16 (8
              reductions): its resource runs out (on several PEs the
              foster parents' too: they ask, %request_resource, and the
@@ -75,23 +79,24 @@ A part that raises is that run's FAIL line (`raised`), the other runs
 going on.
 
 Observed fault injections (each on a private copy of pimm_pe.py, this
-whole script run, 2026-11-26; docs/multi_pe.md 5, M4):
+whole script run on the final tree, 2026-11-26; docs/multi_pe.md 5, M4):
   - no extra goal count while WTC is out: 104 FAIL lines (spread,
     resource: tables and goals left, one %terminated per %ready, low
     not terminated; abort's order; exception: report, the two
     schedules differ, KeyError; nested; stop raises start_shoen ...
     not dormant or stopped)
-  - %terminated gives back no WTC: 368 (every N>1 part: WTC not
+  - %terminated gives back no WTC: 416 (every N>1 part: WTC not
     accounted for, tables, goals left, never terminated)
   - stopped not sent to the foster parents: 8 (each N>1 stop run
     raises start_shoen of a shoen that is not dormant or stopped)
-  - %terminated's consumption not charged: 96 (statistics and
-    return_resource in spread, home, stop, exception, nested, resource)
+  - %terminated's consumption not charged: 112 (statistics and
+    return_resource in spread, home, stop, exception, nested, resource,
+    collected)
   - a goal to an existing foster parent loses its WTC: 160 (stop and
     abort: WTC, tables, goals left, terminated)
   - a foster parent never asks for resource: 104 (spread, resource)
-  - the loaded modules not collector roots: nothing (PASS); no part
-    throws a goal to a PE after it collected.
+  - the loaded modules not collector roots: 10 (each `collected` run
+    raises KeyError; before that part was added the script passed)
 """
 import os
 import pickle
@@ -112,7 +117,7 @@ FILE = 'pimm_shell360E.sav'
 CASES = [(1, 0), (2, 0), (2, 1), (4, 0), (4, 3)]
 QUOTAS = (1, 1000000)
 FUND = (0x3FFFFFFF, 0xFFFFFFFF)
-PARTS = ('spread', 'home', 'stop', 'abort', 'exception', 'nested', 'resource')
+PARTS = ('spread', 'home', 'stop', 'abort', 'exception', 'nested', 'resource', 'collected')
 
 
 def loaded_machine():
@@ -168,7 +173,13 @@ class Bench:
         self.n, self.c, self.quota = n, c, quota
         self.k = (c + 1) % n
         self.home = self.sys.pes[c]
-        self.code = code
+        # the bench's code by module number and offset, so that it is
+        # found again after a collection moved the modules (PE.mods)
+        h = self.home
+        self.code = {}
+        for name, rel in code.items():
+            base = h.module_base(COD, h.load + rel)
+            self.code[name] = (h.mod_gid[base], h.load + rel - base)
         im = self.home.im
         self.atoms = {name: num for num, name in im.sym.items()}
         self.names = dict(im.sym)
@@ -178,6 +189,10 @@ class Bench:
 
     def A(self, name):
         return (ATOM, self.atoms[name])
+
+    def cod(self, name):
+        g, off = self.code[name]
+        return (COD, self.home.mods[g] + off)
 
     def vec(self, *ws):
         if not ws:
@@ -208,7 +223,7 @@ class Bench:
         gl = self.lst([self.vec(*g) for g in goals], pimm.NIL)
         argv = self.vec(gl)
         h.spawn(pimm.predicate(h.im, 'shoen', 'execute/4'),
-                [(COD, h.load + self.code['prof']), argv, control, report])
+                [self.cod('prof'), argv, control, report])
         h.roots['report'] = report
         return self.hold('tail', tail)
 
@@ -351,11 +366,16 @@ def part(name, blob, code, n, c, q):
     b = Bench(blob, code, n, c, q)
     k = b.k
     A, P, vec = b.A, b.P, b.vec
+    if name == 'collected':
+        # every PE collects first: the loaded modules move, and live
+        # only as the collector's roots (PE.mods)
+        for pe in b.sys.pes:
+            pe.collect()
     start = [A('start'), b.fund(*((0, 16) if name == 'resource' else FUND))]
     out = {}
-    if name in ('spread', 'home', 'resource'):
-        prog, node = ('gc', c) if name == 'home' else ('seqgc', k)
-        tail = b.shoen([((COD, b.home.load + code[prog]), vec(), (INT, node))], start)
+    if name in ('spread', 'home', 'resource', 'collected'):
+        prog, node = ('gc', c) if name in ('home', 'collected') else ('seqgc', k)
+        tail = b.shoen([(b.cod(prog), vec(), (INT, node))], start)
         b.run()
         if name == 'resource':
             rep = b.reports()
@@ -496,7 +516,8 @@ M4_PATHS = ('throw from a shoen', 'throw from a foster parent', 'goal came home 
             'abort to the foster parents', 'foster parent aborted',
             'statistics asked of the foster parents', 'statistics answered',
             'exception to the shoen', 'foster parent asks for resource',
-            'resource supplied', 'resource_low for a foster parent')
+            'resource supplied', 'resource_low for a foster parent',
+            'modules kept at a collection')
 
 
 def main(argv):
