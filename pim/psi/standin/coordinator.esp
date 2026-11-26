@@ -170,6 +170,9 @@ attribute waiters := [];
 % Window M9, OURS: the shown choice windows (standard_choice_window.esp),
 % whose left clicks go to their choose/3, not to a selection.
 attribute choices := [];
+% Window M9, OURS: the manipulator's open ATTRIBUTE sheet ([W, Sheet]; []
+% none).
+attribute sheet := [];
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
 % window (standard_io_window.esp) until window M7, since then holding only
@@ -327,6 +330,19 @@ attribute choices := [];
 :add_choice(Class, W) :- Class!choices := [W | Class!choices];
 % INTERPOLATED (selector and body OURS): remove_choice; basis above.
 :remove_choice(Class, W) :- without(Class!choices, W, Cs), Class!choices := Cs;
+
+% :choice_done(#coordinator, Sheet, Result) -- window M9 (selector and
+% body OURS): the ATTRIBUTE sheet ended (standard_choice_window.esp
+% create/4's owner): it is killed, and on do_it the window takes the
+% permission chosen (set_permission/2), then the waiting writers that may
+% now write are woken.
+% INTERPOLATED (selector and body OURS): choice_done; basis above.
+:choice_done(Class, M, R) :- Class!sheet = [W, S], S == M, !,
+        Class!sheet := [],
+        :kill(M),
+        attribute_set(W, R),
+        wake(Class);
+:choice_done(_, M, _) :- :kill(M);
 
 % :placement(#coordinator, X, Y) -- window M6 (selector and body OURS,
 % see the head comment): the top-left of the outline swept for the next
@@ -605,7 +621,8 @@ manipulator(Class, Ws, X, Y) :- under_mouse(Ws, X, Y, W), !,
         :create(#menu_pane, "WINDOW MANIPULATOR",
                 [[{"SHOW", show}, {"HIDE", hide}, {"RESHAPE", reshape},
                   {"MOVE", move}, {"EXPAND", expand}, {"MENU", menu},
-                  {"PERMISSION", permission}, {"EXIT", exit}]], X, Y, M),
+                  {"PERMISSION", permission}, {"ATTRIBUTE", attribute},
+                  {"EXIT", exit}]], X, Y, M),
         Class!menu_pane := M,
         Class!dialogue := [manipulator, W];
 manipulator(_, _, _, _);
@@ -625,6 +642,26 @@ manipulate(Class, permission, W) :- !,
         submenu(Class, "PERMISSION",
                 [{"out", out}, {"wait", wait}, {"show", show},
                  {"notify", notify}], [permission, W]);
+% window M9: ATTRIBUTE (TM-125 p8: the window's attributes, set through
+% the choice window of Fig. 4): a standard_choice_window at the mouse, owned by the coordinator (its ending comes as choice_done/3).
+% OURS: of Fig. 4's fields only PERMISSION (out / wait / show / notify,
+% the window's own current, set after create/4: the items are a constant,
+% espc building no 6-element vector in a body) is offered, the one
+% attribute the stand-ins keep that the sheet may set; SIZE, POSITION, MARGIN, BORDER, the fonts,
+% LABEL_POSITION and BACKGROUND are not (RESHAPE and MOVE set the first
+% two; the rest are fixed by window_pane.esp's layout).
+manipulate(Class, attribute, W) :- !,
+        :create(#standard_choice_window,
+                [{choice_list,
+                  [{"WINDOW ATTRIBUTE", string, no_select, no_select, 0, "", 0},
+                   {"PERMISSION", choose, permission,
+                    [{"out", out}, {"wait", wait}, {"show", show}, {"notify", notify}],
+                    out, 0}]}],
+                Class, M),
+        :set_item_value(M, permission, W!permission),
+        :set_position(M, Class!mouse_x, Class!mouse_y),
+        Class!sheet := [W, M],
+        :activate(M);
 manipulate(_, exit, _) :- !;
 manipulate(_, _, _);
 
@@ -832,6 +869,9 @@ reshape(Class, W, X, Y, Wd, Ht) :-
 visit(_, [], _, _);
 visit(Class, [W | _], X, Y) :- :contains(W, X, Y), !, clicked(Class, W, X, Y);
 visit(Class, [_ | Ws], X, Y) :- visit(Class, Ws, X, Y);
+
+attribute_set(_, abort) :- !;
+attribute_set(W, [{permission, P}]) :- :set_permission(W, P);
 
 % window M9: a click on a choice window is its choice (OURS), on any other
 % window a selection

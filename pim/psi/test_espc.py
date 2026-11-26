@@ -3561,7 +3561,10 @@ class Window(unittest.TestCase):
                           ('manipulator_expand', self.SHOT_PINS['expand']),
                           ('manipulator_menu', self.SHOT_PINS['windows']),
                           ('notify_window', self.SHOT_PINS['notify']),
-                          ('window_graphics', self.GRAPHICS_PIN)):
+                          ('window_graphics', self.GRAPHICS_PIN),
+                          ('window_graphics_rest', self.GRAPHICS_REST_PIN),
+                          ('choice_window', self.CHOICE_PIN),
+                          ('manipulator_attribute', self.SHOT_PINS['attribute'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -3931,7 +3934,10 @@ end.
                             Window.manip_events()['expand']),
             windows=lambda: (login, Window.manip_events()['two'], Window.manip_events()['windows']),
             notify=lambda: (login, Window.manip_events()['two'], Window.permission('notify'),
-                            Window.manip_events()['late']))
+                            Window.manip_events()['late']),
+            # window M9 (test_win_m9_attribute): the manipulator's
+            # ATTRIBUTE sheet open on window 2
+            attribute=lambda: (login, Window.manip_events()['two'], Window.manip_events()['attribute']))
 
     # PERMISSION's submenu items (manip_events' `permission`), for window 2
     @staticmethod
@@ -3945,13 +3951,16 @@ end.
         'popup': ('42bfaa7dd1c4e7d2fc1c703be0569243e5cfc96cf639edd3081db31832c26058', 102627),
         'sweep': ('d329f4fbb05d319a26922c63e309efdc7313863c96e978b88ecddfea82d2b6a9', 101796),
         # window M7, the manipulator (test_win_m7_manip)
-        'manip': ('e7201fee4db6fdf28af78876142391d0f8191e31bf13751c5012c1164ed1cf00', 106491),
+        # (window M9: nine items, ATTRIBUTE added; was e7201fee..., 106,491)
+        'manip': ('ff9467b90860916c1fa447c7c9a7163a70d611e2476ffd32228212064aa3c074', 106916),
         'hidden': ('4501d0323c4d5dcd0fbb9e66972aea3c0072c7e282a1e0e3d41c5eb118cedcd9', 104313),
         'reshaped': ('01b2c46048cf3292391a76cb071dce2b527c0daec656a96eab736ecdaeb0c42b', 105062),
         # window M7's other items and the notify window
         'expand': ('1e84d97537038def372a351fd19b69de090fcbfdf32403058e42daa3cda632f1', 110862),
         'windows': ('271d1a6f63b3952dfd10746b6bffc9dd425b8143c09cc3716031933fe0173d2a', 105702),
         'notify': ('ac6f26d394a276c57554e9281d85eca391f45f59a7385ae39a737fc5cf9cafcb', 106513),
+        # window M9, the manipulator's ATTRIBUTE sheet (test_win_m9_attribute)
+        'attribute': ('c0dcc0832e2713c91e461067b401756ea5b0a9dce6af38b701b438827d53f752', 106884),
     }
 
     def test_win_m6_create_kill(self):
@@ -4169,9 +4178,16 @@ end.
             # submenu; EXIT
             expand=[L('m', 200, 150), L('l', 280, 171 + 7 + 16 * 4)],
             windows=[menu, item(5)],
-            exit=[menu, item(7)],
+            exit=[menu, item(8)],        # window M9: ATTRIBUTE is item 7
             # PERMISSION's submenu at (700, 684): out, wait, show, notify
             permission=[menu, item(6)],
+            # window M9: ATTRIBUTE's sheet at (700, 700) (inside (703, 720),
+            # cells 11 x 14): PERMISSION's `wait` (row 1, column 16),
+            # do_it (row 2, column 2), abort (row 2, column 10)
+            attribute=[menu, item(7)],
+            attribute_wait=[L('l', 703 + 16 * 11 + 5, 720 + 14 + 7)],
+            attribute_do_it=[L('l', 703 + 2 * 11 + 5, 720 + 28 + 7)],
+            attribute_abort=[L('l', 703 + 10 * 11 + 5, 720 + 28 + 7)],
             # window 1 raised by a click while window 2 echoes `local`
             late=Standins.keys('local') + [L('l', 1100, 600)],
             # create/kill's `kill`: the newest requester (window 2)
@@ -4343,9 +4359,10 @@ end.
         self.assertEqual(stop.cause, 'would suspend')
         P = m.get_slot(C, 'menu_pane')
         self.assertEqual([K.resolve(m.get_slot(P, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
-                         [620, 560, 224, 151, 581])
+                         [620, 560, 224, 167, 581])     # window M9: 151 -> 167, ATTRIBUTE added
         self.assertEqual(windev.read_cells(menu, 633, 563, 18, 1), ['WINDOW MANIPULATOR'])
-        for i, label in enumerate(('SHOW', 'HIDE', 'RESHAPE', 'MOVE', 'EXPAND', 'MENU', 'PERMISSION', 'EXIT')):
+        for i, label in enumerate(('SHOW', 'HIDE', 'RESHAPE', 'MOVE', 'EXPAND', 'MENU', 'PERMISSION',
+                                   'ATTRIBUTE', 'EXIT')):
             n = len(label)
             self.assertEqual(windev.read_cells(menu, 622 + (220 - 11 * n) // 2, 582 + 16 * i, n, 1), [label])
         self.assertEqual((windev.pbm_sha256(menu), menu.count()), self.SHOT_PINS['manip'])
@@ -5658,9 +5675,120 @@ end."""
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
 
+    def graphics_rest_run(self):
+        # the screen of psi/winshot.py's `graphics_rest` stage (window M8's
+        # rest): in the 40 x 20 graphics window, the HELD g_window bar
+        # views (draw_list_b/8 with the held set_pattern/2 strings), the
+        # HELD type_switch_icon draw/6 (boxes and its image), and the
+        # shapes: a circle outline, an arc, a light_paint fan, a filled
+        # ellipse, a polygon.  -> (machine, frame)
+        import windev
+        A = K.Atom
+        m, w = self.graphics_window()
+        pats = self.held_patterns(m)
+        cid = 'paragraph##g_window'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        ((_n, font),) = K.call_class_method(m, 'simpos##font', 'create', [K.Str('font:test_11.font'), K.Var()])
+        items = K.NIL
+        for i in reversed(range(6)):
+            items = K.Cons(pats[i], K.Cons(i + 1, items))
+        m.reset()
+        dl = K.Var()
+        (dl,) = [K.resolve(dl) for _ in m.solve((m.code(cid), ps[('draw_list_b', 8)].offset),
+                                                [10, 10, 1, items, dl, font, 30, 280])]
+        self.assertTrue(self.send(m, w, 'execute_graphics_command', dl))
+        ic = K.make_instance(m, 'paragraph##type_switch_icon')
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(ic, 'draw', [300, 20, 20, 84, w, ic])))
+        S, SET = A('solid'), A('set')
+        self.assertTrue(self.send(m, w, 'draw_circle', 380, 60, 40, 2, S, SET))
+        self.assertTrue(self.send(m, w, 'draw_arc', 380, 60, 28, 280, 40, 3, S, SET))
+        self.assertTrue(self.send(m, w, 'draw_filled_fan', 360, 200, 50, 30, 300, 1, A('light_paint'), SET))
+        self.assertTrue(self.send(m, w, 'draw_filled_ellipse', 250, 230, 40, 20, A('fix'), SET))
+        pts = K.NIL
+        for x, y in reversed([(220, 130), (290, 130), (255, 180)]):
+            pts = K.Cons(K.Vec([A(','), x, y]), pts)
+        self.assertTrue(self.send(m, w, 'draw_polygon', pts, 0, 0, 400, 400, 2, S, SET))
+        return m, windev.device(m).frame
+
+    def test_win_m8_rest_screen(self):
+        # the pinned frame of graphics_rest_run (psi/winshot.py
+        # `graphics_rest`, docs/simpos/screens/window_graphics_rest.png)
+        import windev
+        m, fr = self.graphics_rest_run()
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.GRAPHICS_REST_PIN)
+
+    GRAPHICS_REST_PIN = ('54cf1490c64bc06f167057ab9c5800652588eece19c56c45f5a861f695ca1512', 110989)
+
+    def choice_run(self):
+        # the screen of psi/winshot.py's `choice` stage (window M9): the
+        # HELD pimfep superviser's error mode menu (error_mode_menu/2 on
+        # the .ptf), error_mode set on, at (300, 200), activated, after the
+        # Login PIMOS run.  -> (machine, frame, menu)
+        import windev
+        m, fr, _ = self.later_run(self.manip_events()['login'])
+        m.reset()
+        sup = K.make_instance(m, 'pimfep##pimos_fep_superviser')
+        v = K.Var()
+        self.assertTrue(self.send(m, sup, 'error_mode_menu', v))
+        menu = K.resolve(v)
+        self.assertTrue(self.send(m, menu, 'set_item_value', K.Atom('error_mode'), K.Atom('on')))
+        self.assertTrue(self.send(m, menu, 'set_position', 300, 200))
+        self.assertTrue(self.send(m, menu, 'activate'))
+        return m, fr, menu
+
+    CHOICE_PIN = ('0633597d7e5c582173f43f37130de60beea360634ad5fe5bbf6a61940374eb5e', 103105)
+
+    def test_win_m9_choice_screen(self):
+        # the pinned frame of choice_run (psi/winshot.py `choice`,
+        # docs/simpos/screens/choice_window.png); the committed PNGs
+        # decode to their pins (assert_shots)
+        import windev
+        m, fr, _menu = self.choice_run()
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.CHOICE_PIN)
+        self.assert_shots()
+
     # the error mode menu's outer size: 15 x 5 cells of the default font
     # (11 x 14 dots), window_pane.esp's layout (OURS)
     CHOICE_SIZE = (171, 93)
+
+    def test_win_m9_attribute(self):
+        # M9, the manipulator's ATTRIBUTE (TM-125 p8; Fig. 4's sheet;
+        # coordinator.esp manipulate/3, choice_done/3): in the run of two
+        # requester windows, the manipulator opened on window 2 and its
+        # ATTRIBUTE item clicked: a choice window at the mouse, owned by
+        # the coordinator, its PERMISSION field (OURS: Fig. 4's one field
+        # the stand-ins keep) showing window 2's own `out` reversed.
+        # `wait` clicked, then do_it: window 2's permission is wait, the
+        # sheet is gone, and the frame is the run's before the
+        # manipulator (the selected window's cursor back).  `wait`, then
+        # abort: the permission stays out.  The events are the run's own
+        # (later_run batches through the coordinator's stream).
+        # Injections, OBSERVED: see test_win_m9_choice's header (A1).
+        E = self.manip_events()
+        C = K.ClassRef('simpos##coordinator')
+        login, two = E['login'], E['two']
+        m, base, _ = self.later_run(login, two)
+        m, sheet, _ = self.later_run(login, two, E['attribute'])
+        M = K.resolve(m.get_slot(C, 'sheet'))
+        (w2, s), = [self._walk(M)]
+        self.assertEqual(s.cid, 'simpos##standard_choice_window')
+        self.assertEqual(self._walk(m.get_slot(C, 'choices')), [s])
+        P = m.get_slot(s, 'pane')
+        self.assertEqual([m.get_slot(P, k) for k in ('x', 'y', 'left', 'top')], [700, 700, 703, 720])
+        import windev
+        self.assertEqual(windev.read_cells(sheet, 703, 720, 16, 1), ['WINDOW ATTRIBUTE'])
+        self.assertEqual(windev.read_cells(sheet, 703 + 15 * 11, 734, 4, 1), ['wait'])
+        self.assertEqual((windev.pbm_sha256(sheet), sheet.count()), self.SHOT_PINS['attribute'])
+        m, done, _ = self.later_run(login, two, E['attribute'], E['attribute_wait'], E['attribute_do_it'])
+        w2 = self.manip_check(m, done, [self.MANIP_W2, self.MANIP_W1])[0]
+        self.assertEqual(m.get_slot(w2, 'permission'), K.Atom('wait'))
+        self.assertEqual((m.get_slot(C, 'sheet'), self._walk(m.get_slot(C, 'choices'))), (K.NIL, []))
+        self.assertEqual(done.rows, base.rows)
+        m, kept, _ = self.later_run(login, two, E['attribute'], E['attribute_wait'], E['attribute_abort'])
+        w2 = self.manip_check(m, kept, [self.MANIP_W2, self.MANIP_W1])[0]
+        self.assertEqual(m.get_slot(w2, 'permission'), K.Atom('out'))
+        self.assertEqual(kept.rows, base.rows)
 
     def test_win_m9_choice(self):
         # M9, the choice window (window.md §2.10, §3.4;
@@ -5698,6 +5826,8 @@ end."""
         #      plan's injection): first run, NOTHING failed (the one edit
         #      ended on the held default, off); with the edit to `on`
         #      added, this test FAILS, nothing else.
+        #   A1 ATTRIBUTE's do_it sets nothing (attribute_set/2 ignores the
+        #      result): test_win_m9_attribute FAILS, nothing else.
         import fep_bridge as FB
         import windev
         A = K.Atom
