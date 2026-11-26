@@ -4834,6 +4834,28 @@ contract, OURS, owner-approved).**
   its status, and the answers after it, sent as data words. This is from
   reading the rule; it has not been run.
 
+**Step 3a: drawing targets in the winfb contract (the same extension,
+OURS, owner-approved).** Python and RTL only; no stand-in uses them yet.
+- `winfb.py` prim `b`, `target which kind base pitch w h`, sets the
+  destination (which 0) or the source (1) surface: the frame (kind 0) or
+  an area of the 65,536-word bitmap memory (kind 1). BADSURF (6) refuses
+  an area that memory cannot hold, and a copy between two different areas
+  that share words. fill, line and glyph draw on the destination; copy
+  and read take dots from the source. save, restore and dump stay on the
+  frame. Bitmap memory is 0 at reset. The rules are in
+  `../docs/simpos/window_hardware_plan.md` §2.4.
+  - The 11 frozen streams and `reads`, `rand_r_1`, `rand_r_2` give the
+    same output as before.
+  - New gen streams: `targets`, `rand_x2_1..3`. New directed stream:
+    `bsv/win_streams/targets_stall.txt`.
+- `bsv/WinFbBox.bsv` runs them in lockstep. It has the surface registers,
+  a setup cycle for base + row x pitch (`blitSetup`, `lSetup`), and a
+  line engine stepped by the pitch, with no per-dot multiply. It clears
+  the bitmap RAM at reset beside the frame. Injections T1-T4 are in
+  `run_win_tb.sh`'s header; synthesis is in the plan's §5.1.
+- Next is step 3b: the stand-in's hidden windows draw into areas. That
+  makes paragraph's `p_imag.esp` runnable.
+
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
 Injection P13 (the coordinator's own process held back like any writer)

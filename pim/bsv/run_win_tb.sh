@@ -19,7 +19,8 @@
 #      for each directed mnemonic stream win_streams/*.txt (assembled by
 #      psi/winfb.py asm), with the bench's +stall (it takes no response 3
 #      cycles in 8, so the box's queues and credits fill): pipe.txt drives
-#      the pipelined stages (H3 follow-up);
+#      the pipelined stages (H3 follow-up), reads_stall.txt the read and
+#      targets_stall.txt the drawing targets (the 2026-11-26 extension);
 #  10. run_win_link.sh (its own header).
 # Everything goes to bsv/build-win/ (WIN_BUILD to override; the root
 # .gitignore's build-*/ covers it).  BSC_BIN pins a compiler, as in
@@ -63,6 +64,27 @@
 # ones caught them: save_restore saved at x = y, copy_overlap had no
 # source ending on a word's first dot); both streams were then changed
 # and every injection re-run, giving the sets above.
+# The drawing targets (prim b, the same extension): gen streams targets
+# and rand_x2_1..3, and win_streams/targets_stall.txt.  OBSERVED
+# 2026-11-26, each in a private copy of pim/bsv and pim/psi (the tree's
+# files never edited), the stream loop of step 4 on the final RTL;
+# every stream not listed stayed `same` (the 11 frozen and the read
+# streams in every run):
+#  T1 the area clip uses the frame's W (the fill's cut: w1 = fw, not dW):
+#       targets, rand_x2_1, rand_x2_2, rand_x2_3, targets_stall
+#  T2 the BADSURF overlap check off by one (<= for <: adjacent areas
+#       refused): targets_stall only.  No gen stream has two areas that
+#       touch; targets_stall's C and D [4000, 4040) and [4040, 4080) were
+#       put in for this before the first pass, which caught it.
+#  T3 the line steps its rows by 80, not the area's pitch: targets,
+#       rand_x2_1, rand_x2_2, rand_x2_3, targets_stall
+#  T4 a same-area overlapping copy always top-down (up = False when both
+#       surfaces are areas): targets (read file only), rand_x2_2,
+#       targets_stall
+#  U0 (the undefined-contents choice) the bitmap RAM not cleared at reset
+#       (Bluesim's mkBRAMCore1 does not start at 0): targets,
+#       rand_x2_1, rand_x2_2, rand_x2_3, targets_stall.  So the streams
+#       do read words they never wrote, and the reset clear is needed.
 #
 # H2, the scan-out (WinScanOut.bsv; plan §2.2, §2.6, §4):
 #   5. python3 -I psi/test_winscan.py: the TMDS and scan-out references'

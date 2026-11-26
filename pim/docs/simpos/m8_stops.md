@@ -393,6 +393,9 @@ in `../../psi/README.md` "Window M8's stops resolved".
   - on top of it `save_image/6`, `get_point_value/4`, `set_point_value/4`, and `paint/5` as a
     4-connected seed fill (`test_win_m8_stops_read`).
   - The held paragraph run waits for step 3: it draws into windows that are never shown.
+- Step 3a DONE: drawing targets (prim `b`) in the winfb contract, in `psi/winfb.py` and
+  `bsv/WinFbBox.bsv` in lockstep, with bitmap memory 0 at reset (`window_hardware_plan.md` §2.4).
+  The stand-in's use of them (hidden windows drawn in areas) is step 3b.
 
 ## 8. Sources read for this page
 

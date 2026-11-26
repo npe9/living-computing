@@ -51,13 +51,14 @@ its low nibble the raster op R:
   7     dump                          -     -     -     -     -      -
   8, 9  reserved; answered BADOP
   a     read  x y w h                 x     y     w     h     -      -
-  b-f   reserved; answered BADOP
+  b     target which kind base pitch w h  which kind base pitch w     h
+  c-f   reserved; answered BADOP
 
-  (a is the 2026-11-26 EXTENSION of the frozen set, OURS and owner-
-  approved: docs/simpos/m8_stops.md §7, window_hardware_plan.md §2.4
-  "The 2026-11-26 extension", and the section of that name below.  8 and
-  9 stay reserved so that the streams written before it, which use 0x90
-  and 0x93 as reserved records, mean what they meant.)
+  (a and b are the 2026-11-26 EXTENSION of the frozen set, OURS and
+  owner-approved: docs/simpos/m8_stops.md §7, window_hardware_plan.md
+  §2.4 "The 2026-11-26 extension", and the section of that name below.
+  8 and 9 stay reserved so that the streams written before it, which use
+  0x90 and 0x93 as reserved records, mean what they meant.)
 
   R: 0 set (d | s), 1 reset (d & ~s), 2 xor (d ^ s), 3 copy (s),
      4 reverse (~s); 5-f answered BADOP, nothing drawn, for every
@@ -77,7 +78,9 @@ status file; the bench writes the same file):
   drawn in place of a code it lacks, so a gap is never silent; with no
   0xffff record nothing is drawn), 04 BADSAVE (id >= 16, or the area
   would pass the end of bitmap memory), 05 NOSAVE (restore of an id
-  never saved).  Whatever the status, a refused command draws nothing.
+  never saved), 06 BADSURF (the extension: a target area that bitmap
+  memory cannot hold, or a copy between two different areas that share
+  words).  Whatever the status, a refused command draws nothing.
 
 Coordinates and clipping (OURS).  All operands are unsigned, so only the
 right and bottom edges clip (the plan's §2.4: the box clips only to the
@@ -117,14 +120,44 @@ screen; windows are clipped by the stand-in window manager).
     through R (normally copy).  The entry stays, so restore can repeat.
 
 THE 2026-11-26 EXTENSION (OURS, owner-approved; docs/simpos/m8_stops.md):
-reading dots back.  Basis: TM-125 p17 (PRINTED-INTERFACE: get_point_value/4
-reads a dot), TM-115 p82 (PROSE: 1.0's bitmap areas are loaded from and
-saved to strings).  The command format and every rule below are OURS.
-  - read x y w h: the rectangle of the frame, cut as a fill is cut, is
-    answered as data words (as a dump's frame is), ceil(w'/16) words a
-    row, row-major, each row's dots from bit 15 of its first word and the
-    pad dots of its last word 0; then its status (OK).  A cut rectangle
-    with no dots answers no words.  R is ignored (but 5-f are BADOP).
+drawing targets and reading dots back.  Basis: TM-225 p10 (PROSE: a
+hidden window's image lives in a save area of the display's bitmap
+memory, and output to a hidden window writes that area), TM-125 p17
+(PRINTED-INTERFACE: get_point_value/4 reads a dot), TM-115 p82 (PROSE:
+1.0's bitmap areas loaded from strings).  The command format, the
+operands and every rule below are OURS.
+  - A SURFACE is the frame (1,280 x 1,024, as above) or an AREA of bitmap
+    memory (base, pitch, w, h): w x h dots, row j's dots from bit 15 of
+    word base + j * pitch (MSB leftmost, as a save area's rows).  The box
+    has two surface registers, the DESTINATION (where fill, line, glyph
+    and copy draw) and the SOURCE (where copy and read take dots from);
+    both are the frame at reset.  save, restore and dump are unchanged:
+    they always move dots between the frame and bitmap memory.  The host
+    allocates areas and save areas (OURS) so that they share no words.
+    Bitmap memory is all 0 at reset, as the frame is (OURS): an area or
+    a pad word reads 0 until it is written.  bsv/WinFbBox.bsv clears its
+    bitmap RAM at reset beside the frame, inside the frame's 81,920
+    cycles, so reset takes no longer (window_hardware_plan.md §2.4).
+  - target which kind base pitch w h: which 0 sets the destination, 1 the
+    source; kind 0 is the frame (base..h ignored), 1 an area.  BADOP if
+    which > 1 or kind > 1; BADSURF (the register unchanged) if kind 1 and
+    w = 0, h = 0, pitch = 0, pitch > 255, pitch < ceil(w / 16) or
+    base + pitch * h > 65,536.  R is ignored.
+  - On an area every primitive clips to the area's w x h as it clips to
+    the frame's 1,280 x 1,024 (the right and bottom edges); a row's dots
+    past w (its last word's pad) are never written.
+  - copy runs from the source surface to the destination surface:
+    nothing if sx >= the source's w or dx >= the destination's w (sy, dy
+    likewise); else w := min(w, sw - sx, dw - dx), h likewise.  The
+    source is read whole before anything is written (as before).  BADSURF,
+    nothing drawn, when both are areas, not the same area (equal base and
+    pitch), and their words [base, base + pitch * h) meet: the RTL's
+    scan-order rule for an overlapping copy needs one coordinate system.
+  - read x y w h: the rectangle of the SOURCE surface, cut as a fill is
+    cut, is answered as data words (as a dump's frame is), ceil(w'/16)
+    words a row, row-major, each row's dots from bit 15 of its first word
+    and the pad dots of its last word 0; then its status (OK).  A cut
+    rectangle with no dots answers no words.  R is ignored.
   - The reference keeps the read words in `Frame.reads`, in order; `run`
     writes them to a fourth file, one word a line in 4 hex digits, which
     the bench writes too (win_read.txt).
@@ -156,14 +189,14 @@ SAVE_WORDS = 65536          # OURS
 SAVE_SLOTS = 16             # OURS
 
 END, FILL, LINE, GLYPH, COPY, SAVE, RESTORE, DUMP = range(8)
-READ = 10                       # the 2026-11-26 extension (the header)
+READ, TARGET = 10, 11           # the 2026-11-26 extension (the header)
 PRIMS = ['end', 'fill', 'line', 'glyph', 'copy', 'save', 'restore', 'dump',
-         None, None, 'read']
-NARGS = [0, 4, 6, 4, 6, 6, 1, 0, 0, 0, 4]
+         None, None, 'read', 'target']
+NARGS = [0, 4, 6, 4, 6, 6, 1, 0, 0, 0, 4, 6]
 HAS_ROP = [False, True, True, True, True, False, True, False, False, False,
-           False]
+           False, False]
 ROPS = ['set', 'reset', 'xor', 'copy', 'reverse']
-OK, BADOP, BADFONT, MISSING, BADSAVE, NOSAVE = range(6)
+OK, BADOP, BADFONT, MISSING, BADSAVE, NOSAVE, BADSURF = range(7)
 PBM_HEADER = b'P4\n%d %d\n' % (W, H)
 
 
@@ -245,10 +278,9 @@ class Frame:
         self.font = font
         self.dumps = []              # PBM images, one per dump / end
         self.status = []
-        # the 2026-11-26 extension: the surfaces drawn on and read from
-        # (None = the frame: the only surface until the target command;
-        # the helpers below already take one) and the words answered by
-        # read
+        # the 2026-11-26 extension: the destination and source surfaces
+        # (None = the frame, else an area (base, pitch, w, h)) and the
+        # words answered by read
         self.dst = None
         self.src = None
         self.reads = []
@@ -322,6 +354,11 @@ class Frame:
 
     def copy(self, sx, sy, w, h, dx, dy, r):
         S, D = self.src, self.dst
+        if S is not None and D is not None and S[:2] != D[:2]:
+            s0, s1 = S[0], S[0] + S[1] * S[3]
+            d0, d1 = D[0], D[0] + D[1] * D[3]
+            if s0 < d1 and d0 < s1:
+                return BADSURF
         (sw, sh), (dw, dh) = self.dims(S), self.dims(D)
         if sx >= sw or dx >= dw or sy >= sh or dy >= dh:
             return OK
@@ -432,6 +469,22 @@ class Frame:
                 self.reads.append((v >> (16 * (pitch - 1 - k))) & 0xffff)
         return OK
 
+    def target(self, which, kind, base, pitch, w, h):
+        if which > 1 or kind > 1:
+            return BADOP
+        if kind == 0:
+            s = None
+        elif (w == 0 or h == 0 or pitch == 0 or pitch > 255 or
+              16 * pitch < w or base + pitch * h > SAVE_WORDS):
+            return BADSURF
+        else:
+            s = (base, pitch, w, h)
+        if which == 0:
+            self.dst = s
+        else:
+            self.src = s
+        return OK
+
     # -- the stream ------------------------------------------------------
     def command(self, op, a):
         """Run one decoded command; returns its status (None for end)."""
@@ -439,7 +492,7 @@ class Frame:
         if prim == END:
             self.dumps.append(self.pbm())
             return None
-        if prim > READ or prim in (8, 9) or r > 4:
+        if prim > TARGET or prim in (8, 9) or r > 4:
             st = BADOP
         elif prim == FILL:
             st = self.fill(a[0], a[1], a[2], a[3], r)
@@ -455,6 +508,8 @@ class Frame:
             st = self.restore(a[0], r)
         elif prim == READ:
             st = self.read(a[0], a[1], a[2], a[3])
+        elif prim == TARGET:
+            st = self.target(*a)
         else:
             self.dumps.append(self.pbm())
             st = OK
@@ -719,7 +774,7 @@ def _rand_stream(seed, n, prims):
     return '\n'.join(L)
 
 
-# the 2026-11-26 extension's streams (read; the header)
+# the 2026-11-26 extension's streams (read and target; the header)
 def s_reads(_seed):
     """Reads of the frame: every alignment of a row's first and last dot,
     widths 1, 15, 16, 17, 33, clipped at both edges, empty, and a read of
@@ -733,6 +788,41 @@ def s_reads(_seed):
     L += ['read 0 0 100 30', 'read 60 0 11 14', 'read 1270 1015 64 64',
           'read 1279 1023 5 5', 'read 1280 0 4 4', 'read 0 1024 4 4',
           'read 10 10 0 4', 'read 10 10 4 0', 'dump', 'end']
+    return '\n'.join(L)
+
+
+def s_targets(_seed):
+    """Drawing on areas of bitmap memory and copying between surfaces."""
+    L = [  # an area 70 x 30 at word 1000, pitch 5 (80 dots; 10 pad dots)
+         'target 0 1 1000 5 70 30', 'fill 0 0 70 30 set', 'fill 3 2 50 7 xor',
+         'line 0 0 69 29 1 65535 reset', 'line 60 0 10 25 3 52428 xor',
+         'glyph 0 9025 20 12 copy', 'glyph 0 9026 65 20 set',     # cut at the right
+         'fill 66 25 40 40 xor',                                  # cut on two sides
+         'target 1 1 1000 5 70 30', 'read 0 0 70 30', 'read 63 27 20 20',
+         # the area onto the frame, frame to area, then area to area
+         'target 0 0 0 0 0 0', 'copy 0 0 70 30 101 201 copy',
+         'copy 5 5 70 30 300 300 xor', 'dump',
+         'target 1 0 0 0 0 0', 'target 0 1 3000 3 40 20',
+         'fill 0 0 40 20 reset', 'copy 98 199 40 20 0 0 copy',
+         'target 1 1 3000 3 40 20', 'read 0 0 40 20',
+         'target 0 1 1000 5 70 30', 'copy 0 0 40 20 13 4 reverse',
+         'target 1 1 1000 5 70 30', 'read 0 0 70 30',
+         # one area onto itself: the scan order of an overlapping copy
+         'target 0 1 1000 5 70 30', 'copy 0 0 60 25 3 2 copy',
+         'copy 4 3 60 25 0 0 copy', 'copy 0 0 60 25 9 0 copy', 'read 0 0 70 30',
+         # areas that share words: BADSURF, nothing drawn
+         'target 1 1 1003 5 70 30', 'copy 0 0 10 10 0 0 copy', 'read 0 0 70 30',
+         # refused targets (the registers unchanged)
+         'target 0 1 0 0 16 4', 'target 0 1 0 1 17 4', 'target 0 1 0 256 4 4',
+         'target 0 1 65530 4 64 2', 'target 0 1 0 4 0 4', 'target 0 1 0 4 4 0',
+         'target 2 0 0 0 0 0', 'target 0 2 0 0 0 0',
+         'fill 0 0 4 4 set', 'read 0 0 16 1',
+         'target 0 1 65532 4 64 1', 'fill 0 0 64 1 set', 'target 1 1 65532 4 64 1',
+         'read 0 0 64 1',
+         # a save area and an area: save and restore stay frame <-> memory
+         'target 1 0 0 0 0 0', 'target 0 0 0 0 0 0',
+         'save 0 101 201 70 30 2000', 'fill 100 200 80 40 xor', 'restore 0 copy',
+         'target 1 1 2000 5 70 30', 'read 0 0 70 30', 'end']
     return '\n'.join(L)
 
 
@@ -813,6 +903,10 @@ def s_rand_r(seed):
     return _rand_x(seed, False)
 
 
+def s_rand_x2(seed):
+    return _rand_x(seed, True)
+
+
 # name -> (builder, seed, milestone)
 STREAMS = {
     'fill_edges': (s_fill_edges, 0, 'H0'),
@@ -826,10 +920,14 @@ STREAMS = {
     'lines': (s_lines, 0, 'H1'),
     'rand_h1_1': (s_rand_h1, 11, 'H1'),
     'rand_h1_2': (s_rand_h1, 12, 'H1'),
-    # the 2026-11-26 extension: read X1 (milestone labels OURS)
+    # the 2026-11-26 extension: read X1, target X2 (milestone labels OURS)
     'reads': (s_reads, 0, 'X1'),
     'rand_r_1': (s_rand_r, 31, 'X1'),
     'rand_r_2': (s_rand_r, 32, 'X1'),
+    'targets': (s_targets, 0, 'X2'),
+    'rand_x2_1': (s_rand_x2, 21, 'X2'),
+    'rand_x2_2': (s_rand_x2, 22, 'X2'),
+    'rand_x2_3': (s_rand_x2, 23, 'X2'),
 }
 
 
