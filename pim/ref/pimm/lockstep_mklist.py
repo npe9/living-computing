@@ -34,8 +34,8 @@ read from the reference's memory after the run (check):
             after it)
 
 Observed fault injections (2026-11-26):
-  reference (pimm.py i_mark_element patched, --reference; the same
-  patches are r9_mgtp_probe.py's R9_INJECT):
+  reference (pimm.py i_mark_element patched, --reference; car, none
+  and pos2 are r9_mgtp_probe.py's R9_INJECT, always a one-off patch):
     car     (the car marked whatever the Position): fails cdr, unbound
     none    (nothing marked on a list): fails car, cdr
     pos2    (Position 2 taken too): fails refused
