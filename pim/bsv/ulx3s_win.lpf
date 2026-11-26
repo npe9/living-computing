@@ -1,0 +1,51 @@
+# ulx3s_win.lpf -- pins for the window hardware (WinUlx3sTop.v), plan
+# docs/simpos/window_hardware_plan.md H3 and §5.3.  A copy, not an edit:
+#
+# The clock, FIRE1 and the LEDs: ulx3s_fep.lpf (this directory), itself
+# a copy of ulx3s_85f.lpf's lines.  The 25 MHz oscillator is G2.
+#
+# GPDI: ~/src/ulx3s-experiments/flute-lx50/constraints/ulx3s_85f.lpf
+# lines 74-83 (read only), verified on this board model by that project
+# (its 640x480 DVI); the same sites as prjtrellis
+# examples/ulx3s/ulx3s_v20.lpf lines 298-306.  From that file's comment:
+# LVCMOS33D drives each gpdi_dp pin and its paired _dn pin (B16, C14,
+# A13, B18) as the complement.
+
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+
+LOCATE COMP "clk_25mhz" SITE "G2";
+IOBUF PORT "clk_25mhz" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "clk_25mhz" 25 MHZ;
+
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+LOCATE COMP "BTN1" SITE "R1";
+IOBUF PORT "BTN1" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+
+LOCATE COMP "led[7]" SITE "H3";
+LOCATE COMP "led[6]" SITE "E1";
+LOCATE COMP "led[5]" SITE "E2";
+LOCATE COMP "led[4]" SITE "D1";
+LOCATE COMP "led[3]" SITE "D2";
+LOCATE COMP "led[2]" SITE "C1";
+LOCATE COMP "led[1]" SITE "C2";
+LOCATE COMP "led[0]" SITE "B2";
+IOBUF PORT "led[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[4]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[5]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[6]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[7]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+
+# GPDI (HDMI connector) as DVI
+LOCATE COMP "gpdi_dp[0]" SITE "A16";   # blue
+LOCATE COMP "gpdi_dp[1]" SITE "A14";   # green
+LOCATE COMP "gpdi_dp[2]" SITE "A12";   # red
+LOCATE COMP "gpdi_dp[3]" SITE "A17";   # clock
+IOBUF PORT "gpdi_dp[0]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[1]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[2]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[3]" IO_TYPE=LVCMOS33D DRIVE=4;

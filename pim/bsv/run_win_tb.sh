@@ -2,7 +2,8 @@
 # The window framebuffer box (WinFbBox.bsv, mkWinFbBox) against the Python
 # device layer (psi/winfb.py), in Bluesim: docs/simpos/window_hardware_plan.md
 # H0 and H1; then the scan-out (WinScanOut.bsv, mkWinScanOut) against
-# psi/winscan.py and psi/wintmds.py, H2 (steps 5-8 below).  OURS scaffolding throughout (both file headers say why).
+# psi/winscan.py and psi/wintmds.py, H2 (steps 5-8 below); then the board
+# design's core in three clock domains, H3 (step 9).  OURS scaffolding throughout (both file headers say why).
 #
 #   1. python3 -I psi/test_winfb.py: the reference's own unit tests
 #      (hand-written bytes and dot counts, the 48-dot 'A' at 16#2341);
@@ -55,9 +56,12 @@
 #   6. WinTmdsEncTb: mkWinTmdsEnc on psi/winscan.py `encvec 1` (every byte
 #      from every disparity state, constant runs, random data with blanking
 #      bursts), each character = wintmds.encode, running disparity <= 8;
-#   7. WinTmdsSerTb: mkWinTmdsSer, the pixel clock = the bench clock / 5;
-#      every lane carries the encoders' characters at the clock lane's
-#      boundary and one latency;
+#   7. WinTmdsSerTb: mkWinTmdsSer, the pixel clock = the bench clock / 5
+#      with offset K, built for K = 0..4 (H3: the five alignments of the
+#      pixel clock to the shift clock), the pixel word and `tog` through
+#      WinCrossModel (garbage when sampled on the shift edge where the word
+#      changes or on the one before the next change); every lane carries the encoders'
+#      characters at the clock lane's boundary and one latency;
 #   8. WinScanOutTb, for every `winscan.py cases` case: the stream drawn,
 #      the frame dumped (= the Python layer's PBM), one frame + 2-3 lines
 #      captured from the frame-start mark, the frame dumped again (= the
@@ -101,10 +105,59 @@
 # 14 serializer samples the pixel word on ph[4], not ph[2]: NOTHING fails.
 #    With ideal phase-locked clocks every sample phase gives a consistent
 #    stream; only a timing constraint (H3) can see a sample on the edge
-#    where the word changes.  Recorded, not caught.
+#    where the word changes.  Recorded, not caught (H2).  CAUGHT since H3:
+#    see injections H3-1 and H3-8 below, and the pclk -> sclk check of
+#    run_win_fpga.sh.
 # 15 serializer shifts 1 bit a shift clock, not 2: ser
 # 16 one lane's load flag a shift clock late (lane 1 from ph[4]; the
 #    plan's "a lane's load phase off by one"): ser
+#
+# H3, the board design (WinFrame.bsv, WinUlx3s.bsv; plan §5):
+#   9. WinUlx3sTb: mkWinCore (the box with the banked two-clock frame, the
+#      scan-out behind a sync FIFO in the pixel domain, the self-test FSM
+#      drawing winscan.py's mode 0 stream from a load file) on three
+#      clocks (system period 27, pixel 10, shift 2), the serializer behind
+#      null crossings and WinCrossModel; checks the self-test's frame
+#      dumped through the debug port (= the Python PBM), one whole mode 0
+#      frame of characters (winscan.py check), and lines 58-60 of serial
+#      bits (sercheck).
+# H3 INJECTED FAULTS, each in a private copy of pim/bsv and pim/psi in a
+# scratch directory (the tree's files never edited); OBSERVED 2026-11-25,
+# everything not listed `same`:
+#  H3-1 serializer sample enable from phase bit 1 (WinSerSmp = 1, sample
+#    age 4) or bit 2 (age 0, the edge where the word changes), WIN_PART=h2:
+#    ser K=0..4 and ulx3s serializer ("the logged characters appear at 0
+#    latencies"); bits 0 and 3 (ages 1-3 are safe) PASS, as predicted
+#  H3-2 free-running phase (e ignored: phn = rotate ph), WIN_PART=h2: ser
+#    K=0..4 and ulx3s serializer ("0 boundaries give a steady clock
+#    character": the un-reset phase starts at Bluesim's 'hAA.. pattern,
+#    not one-hot, and nothing restarts it)
+#  H3-2b free-running phase that starts one-hot (ph given the reset):
+#    ser K=0 and K=1 and ulx3s serializer fail ("0 latencies"), K=2, 3, 4
+#    pass: the K sweep separates good alignments from bad ones
+#  H3-3 port B latency claimed 5, not 4 (WinFrameLatB), WIN_PART=h2: all
+#    scan cases but rand1 (no ink in its window) and ulx3s scan
+#  H3-4 port B's second mux level from the wrong address bits (h[bk1[6:3]]
+#    for h[bk2]), WIN_PART=h2: mode0-3, mode2_nocursor, rand4, rand7,
+#    rand8, rand9, rand12, ulx3s scan
+#  H3-5 port A's read mux select stuck at bank 0 (selA <= 0): all 11
+#    H0/H1 streams, all 17 scan cases (the frame dump), ulx3s frame and
+#    ulx3s scan
+#  H3-6 the line engine's frame-read wait dropped (no fWait in lineDot):
+#    lines, rand_h1_1, rand_h1_2, all 17 scan cases (their streams draw
+#    lines), ulx3s frame and scan (self-test done 1,914 cycles early)
+#  H3-7 the pixel domain drops the cursor-shape command (SShape ->
+#    noAction in mkWinScanPix's dispatch): ulx3s scan only (the H2 bench
+#    drives mkWinScanOut directly)
+#  H3-8 = H3-1 (bit 1) with WinCrossModel's `unsafe` forced False: PASS.
+#    Without the crossing model nothing sees the sample phase; the model is
+#    the check, and run_win_fpga.sh's pclk -> sclk delay check is what
+#    justifies its window (a sample at age 1-3 is safe when the delay is
+#    under one shift period).
+# run_win_fpga.sh's checker (tools/win_fpga_check.py) was seen to fail on
+# a clock below its frequency (sclk 367.11 at 370.10, seed 2, during the
+# build-up), on a DP16KD count other than the expected (157 expected, 156
+# built) and on the pclk -> sclk budget (WIN_XDOM_NS=1.0).
 # "The cursor drawn into the frame" cannot be injected: the scan-out has
 # only the read port; the second dump is the check that it stays out.
 set -eu
@@ -166,7 +219,7 @@ echo "== psi/test_winscan.py (the TMDS and scan-out references' unit tests)"
 python3 -I ../psi/test_winscan.py 2> "$B/test_winscan.log" || { cat "$B/test_winscan.log"; exit 1; }
 tail -1 "$B/test_winscan.log"
 WINSCAN=../psi/winscan.py
-for tb in mkWinTmdsEncTb:WinTmdsEncTb.bsv:sim_enc mkWinTmdsSerTb:WinTmdsSerTb.bsv:sim_ser mkWinScanOutTb:WinScanOutTb.bsv:sim_scan; do
+for tb in mkWinTmdsEncTb:WinTmdsEncTb.bsv:sim_enc mkWinTmdsSerTb:WinTmdsSerTb.bsv:sim_ser mkWinScanOutTb:WinScanOutTb.bsv:sim_scan mkWinUlx3sTb:WinUlx3sTb.bsv:sim_ulx3s; do
   top=${tb%%:*}; rest=${tb#*:}; src=${rest%%:*}; exe=${rest#*:}
   echo "== bsc: $top"
   "$BSC" -sim -u -g "$top" $FLAGS "$src" > "$B/bsc_$exe.log" 2>&1 || { cat "$B/bsc_$exe.log"; exit 1; }
@@ -182,13 +235,27 @@ if r=$(python3 -I "$WINSCAN" enccheck "$B/enc/win_tmds_in.hex" "$B/enc/win_tmds_
 else
   echo "   DIFFERS tmds encoder: $r"; status=1
 fi
-(cd "$B/ser" && ./../sim_ser > sim.log 2>&1) || { cat "$B/ser/sim.log"; status=1; }
-grep -q "^WinTmdsSerTb: [0-9]* shift clocks" "$B/ser/sim.log" || { echo "   DIFFERS serializer bench:"; cat "$B/ser/sim.log"; status=1; }
-if r=$(python3 -I "$WINSCAN" sercheck "$B/ser/win_ser_px.hex" "$B/ser/win_ser.bin"); then
-  echo "   same  serializer: $r"
-else
-  echo "   DIFFERS serializer: $r"; status=1
-fi
+BABS=$(cd "$B" && pwd)
+for k in 0 1 2 3 4; do
+  # K: the pixel clock's offset against the shift clock (all five
+  # alignments of a phase that runs free from time 0 to the pixel clock);
+  # K = 0 is the sim_ser built above
+  SER="$BABS/sim_ser"
+  if [ $k -ne 0 ]; then
+    mkdir -p "$B/serk$k"
+    "$BSC" -sim -u -g mkWinTmdsSerTb -D SER_K=$k -steps-warn-interval 4000000 -p "$BABS:+" \
+      -bdir "$B/serk$k" -simdir "$B/serk$k" -info-dir "$B/serk$k" WinTmdsSerTb.bsv > "$B/serk$k/bsc.log" 2>&1 || { cat "$B/serk$k/bsc.log"; exit 1; }
+    (cd "$B/serk$k" && "$BSC" -sim -e mkWinTmdsSerTb -p "$BABS:+" -bdir . -simdir . -o sim_ser > link.log 2>&1) || { cat "$B/serk$k/link.log"; exit 1; }
+    SER="$BABS/serk$k/sim_ser"
+  fi
+  (cd "$B/ser" && "$SER" > sim.log 2>&1) || { cat "$B/ser/sim.log"; status=1; }
+  grep -q "^WinTmdsSerTb: [0-9]* shift clocks" "$B/ser/sim.log" || { echo "   DIFFERS serializer bench:"; cat "$B/ser/sim.log"; status=1; }
+  if r=$(python3 -I "$WINSCAN" sercheck "$B/ser/win_ser_px.hex" "$B/ser/win_ser.bin"); then
+    echo "   same  serializer K=$k: $r"
+  else
+    echo "   DIFFERS serializer K=$k: $r"; status=1
+  fi
+done
 
 for name in $(python3 -I "$WINSCAN" cases); do
   python3 -I "$WINSCAN" stream "$name" > "$B/scan_$name.hex"
@@ -213,6 +280,39 @@ for name in $(python3 -I "$WINSCAN" cases); do
     echo "   DIFFERS scan $name: $r"; status=1
   fi
 done
+
+# ---- H3: the board design's core in three clock domains (WinUlx3sTb)
+echo "== WinUlx3sTb: mkWinCore + mkWinTmdsSer, sys / pclk / sclk (the board's self-test, mode0)"
+U="$B/ulx3s"
+mkdir -p "$U"
+cp "$B/run/win_font.hex" "$U/win_font.hex"
+python3 -I "$WINSCAN" stream mode0 > "$U/win_stream.hex"
+python3 -I "$WINSCAN" config mode0 > "$U/win_scan.hex"
+python3 -I "$WINFB" run "$U/win_stream.hex" "$U/py.pbm" "$U/py.status"
+# the serializer window: 3 lines from line 58 (frame rows 30-32: the
+# test card's non-periodic dots, both edges and the diagonals)
+printf '%08x\n%08x\n' $((58 * 2200)) $((3 * 2200)) > "$U/win_ulx3s_tb.hex"
+rm -f "$U/win_frame.pbm" "$U/win_tmds.bin" "$U/win_ser.bin" "$U/win_ser_px.hex"
+if (cd "$U" && ./../sim_ulx3s > sim.log 2>&1) && grep -q "^WinUlx3sTb: self-test done .* error 0, 81920 words" "$U/sim.log"; then
+  echo "   $(grep '^WinUlx3sTb:' "$U/sim.log")"
+  if cmp -s "$U/py.pbm" "$U/win_frame.pbm"; then
+    echo "   same  ulx3s frame: the self-test's frame = the Python layer's PBM"
+  else
+    echo "   DIFFERS ulx3s frame: cmp $U/py.pbm $U/win_frame.pbm"; status=1
+  fi
+  if r=$(python3 -I "$WINSCAN" check mode0 "$U/py.pbm" "$U/win_tmds.bin"); then
+    echo "   same  ulx3s scan $r"
+  else
+    echo "   DIFFERS ulx3s scan: $r"; status=1
+  fi
+  if r=$(python3 -I "$WINSCAN" sercheck "$U/win_ser_px.hex" "$U/win_ser.bin"); then
+    echo "   same  ulx3s serializer: $r"
+  else
+    echo "   DIFFERS ulx3s serializer: $r"; status=1
+  fi
+else
+  echo "   DIFFERS ulx3s bench: $(grep -v '^Warning' "$U/sim.log" | head -2)"; status=1
+fi
 
 if [ $status -ne 0 ]; then
   echo "run_win_tb: FAIL"
