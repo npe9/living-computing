@@ -749,6 +749,10 @@ HALF (b), STEP 5 DONE 2026-11-26: THE CONVERTERS (LCV, LTRCV, CV, DCV)
     up to 80 significant bits (10^24) and now take their s and u. The
     cause is MEASURED: `sauStepCvtAcc := False` gives 1027 again, with
     every value check passing.
+  - `cwf_df_fetch_type.strap` CYCLES 6110 -> 6164, re-pinned after the
+    first full suite run caught it. Its CV(BU) and DCV(B) cases take
+    their s and u. The cause is MEASURED: `sauStepCvtAcc := False` gives
+    6110 / 581 again, with every check passing.
   - `vfl_convert.strap` (CV and LTRCV, MCP's time conversion) has no
     cycle pin. It now reads 616 (598 at batch55) and passes.
 - `mkSauStepTb` vectors 23-27 (conversions, compared on r and clocks).

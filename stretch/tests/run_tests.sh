@@ -2709,9 +2709,12 @@ run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./
 # after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
 # landing checked: the counter is the instruction right after the level.
 # Injection numbers above this note were observed at the old pin.
+# RE-PINNED 2026-11-26, CYCLES 6110 -> 6164 (fidelity_plan.md A3 (b) step 5):
+# the CV(BU) and DCV(B) cases now take Table 3's B-D s and u/8 from their
+# accumulator.  Cause MEASURED: sauStepCvtAcc := False gives 6110/581 again.
 run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" ./run_program.sh ../decks/cwf_df_fetch_type.strap StretchCwfDfTypeTb \
     "PC=5043" \
-    "CYCLES=6110+-0" \
+    "CYCLES=6164+-0" \
     "MEMREADS=581" \
     "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
     "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
