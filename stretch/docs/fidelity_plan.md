@@ -894,6 +894,11 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
       of the base (e9c4b96b).
     - The FP atlas (PDF 42-101, 9,406 cases) at the base is 76.8% /
       94.3% within 1 / 3, which is the plan's baseline reproduced.
+    - The relocated tree's own atlas was not run, to save machine time.
+      What stands in for it is the step-3 tree's atlas: that tree
+      contains the relocation, and on it every one of the 9,086 cells
+      off the `*+` pages has a model time identical to the base (largest
+      difference 0.0).
 - **Step 2, ONE MULTIPLIER OR TWO: ONE (settled from the sources).**
   The sources were re-read for A4, and the answer is one multiplier,
   with the divider shared the same way. Decision 3 below and
@@ -948,7 +953,12 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
     | + pre-shift | 25.0% | 98.8% | -1.00 | 40 toward, 0 away |
     | + normalization | 25.0% | 98.8% | -1.00 | NEG `int` 43.0 -> 63.0 (printed 56) |
     | + recomplement (shipped) | 25.0% | 98.8% | -1.00 | NEG `int` 63.0 -> 65.0 |
-    | + acc-smaller (not shipped) | 25.0% | 98.8% | -1.00 | NEG `int` 65.0 -> 68.0, away |
+    | + acc-smaller (not shipped) | 26.2%* | 98.8% | -1.00 | NEG `int` 65.0 -> 68.0, away |
+
+    \* Only the four NEG `int` cells differ in charge from the row
+    above. The other four of the 84 cross the within-1 line by
+    run-to-run noise: cells sit at -1.000 +- 0.001, and the line is
+    exactly 1.
 
   - WHY THE PRE-SHIFT TERM MOVES THE NORMALIZED ROWS (worked, not
     fitted):
@@ -978,8 +988,25 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
       NEG `*+` cancels to a residue and each later add aligns it 62
       places and normalizes it back. With the three shipped terms the
       tail is +9 (65 against 56); it is not resolved.
-  - **`*+` now meets the rule for done** (item 2): median -1.00
-    (within 1), and 98.8% within 3 against 88.8%.
+    - OPEN, found after the green run: the recomplement test on exact
+      cancellation.
+      - Table 2 Note 1 (printed p.3-6, PDF 24; `spec_timing.md`):
+        "Recomplementing will only occur if the complemented (following
+        pre-shift) fraction is larger in magnitude than unshifted
+        fraction."
+      - `fpBoxAddSumR`'s `recomp = sub && t[96] == 0` is also true when
+        the two magnitudes are EQUAL, so an exact cancellation is
+        charged 2 clocks that the note excludes.
+      - On the atlas this happens about once in 10,000 adds (the first
+        NEG `*+`). The fix is `&& d.fb != fsh` plus a bench vector,
+        and it needs its own suite run.
+  - **`*+` and the rule for done (item 2): HALF MET.**
+    - Within 3 is met: 98.8%, against 88.8% before.
+    - The median MISSES by 0.0014. It is -1.0014 before and after,
+      printed -1.00 to two places, and the rule's test is |median| <= 1.
+    - The missing clock is the uncharged "1 cycle if immediate next
+      operation is floating point" (above). Charging it would put the
+      median at 0, but it is not built, for the reason given there.
   - **Whole FP atlas, PDF 42-101, 9,406 cells:**
     - before: 76.8% within 1 (7,222), 94.3% within 3 (8,866);
     - after: 76.8% within 1 (7,226), 94.6% within 3 (8,898).

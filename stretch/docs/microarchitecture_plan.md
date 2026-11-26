@@ -5909,6 +5909,13 @@ Staged, each step green and committed:
      | C22-6578 Problem 3.4 Method 1 | 1449 | 1533 | +84 |
      | C22-6578 Problem 3.4 Method 2 | 2378 | 2462 | +84 |
 
+     (2026-11-26, fidelity_plan.md A4 step 3: a further data point for
+     this hold cost.  `*+` became one chained request to mkPAU,
+     multiply then add pass, so the box answers in 5 clocks, not 4.
+     The halts moved: F216B 774 -> 790, F216D 834 -> 836 and B.3
+     980 -> 986, each measured as the chain's by a switch-off run.  The
+     mechanism is still not traced.)
+
      CAUSE: THE SCALING IS MEASURED, THE MECHANISM IS NOT TRACED. With
      the box at 24 bits a pass (2 clocks, a scratch edit of
      `FpMulGroup`, since reverted and confirmed with cmp) ZM's normalized
