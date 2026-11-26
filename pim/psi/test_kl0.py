@@ -328,8 +328,10 @@ class Table(unittest.TestCase):
         # and blt 0d (INFERENCE), 156 before window M4's blt 69
         # (not_equal_string, KNOWN-PLAINTEXT on kappa2 KP_UPT.ESP), 157
         # before window M8's rest's blt 44 (divide_with_remainder,
-        # KNOWN-PLAINTEXT on paragraph bar_v.esp:333)
-        self.assertEqual(len(rows), 158)
+        # KNOWN-PLAINTEXT on paragraph bar_v.esp:333), 158 before pmi db
+        # (relative_cut_and_fail, KNOWN-PLAINTEXT on kappa2 pb/hash.esp and
+        # KP_MDMART.ESP, 2026-11-26)
+        self.assertEqual(len(rows), 159)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run

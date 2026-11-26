@@ -45,7 +45,9 @@ comparison macros, immediate arithmetic, and the constant macros `#C`,
 `#"c"` and `R#"digits"`, and `with_macro` banks' plain clause-level rules
 `Pattern => Expansion` (TM-388 §3.7.3; see "macro banks" below).  Not
 compiled (refused by name): bank rules with when/where/with/by/`:-`, `==>`
-and inserta/insertz (refused per predicate, 'macro rule'), `->`,
+and inserta/insertz (refused per predicate, 'macro rule'), a bare
+`(C -> T)` outside a disjunction (`->` inside `;` compiles, as `C, !, T`
+in its own $or$ clause), `relative_cut_and_fail(L)` for L other than 1,
 `not`/`\\+`, `Class:m(...)` and `:Class:m(...)`, other constant macros
 (`key#`, `mouse#`, ...), floats.
 
@@ -259,6 +261,45 @@ def alternatives(t):
         out.append(t[2][0])
         t = t[2][1]
     return out + [t]
+
+
+def if_then(t):
+    """An alternative `C -> T` of a disjunction -> `C, !, T`.  `->` is an
+    operator of TM-388 (App. B p.142, xfy 1040, below `;` at 1150), whose
+    meaning the manual does not print (§5.2 pp.119-120 says ESP has no IF
+    THEN ELSE and writes it `Q :- P, !, S1; Q :- S2`).  The held code
+    gives it: the $or$ clause is C, a cut, T, e.g. kappa2 IXMRSRHV.ESP
+    `(Status = found -> Set_position = @rsr_mini_set_posi ; true)` is held
+    point_forward_or_backward_RSR/8.11#1: e4 / get found / d0 / put 2047
+    / f0 / e0 / f0.  The cut is local to the $or$ (kl0's own barrier), so
+    it removes the later alternatives and C's own.  A chain `C1 -> T1 ;
+    C2 -> T2 ; E` is one $or$ of three clauses (held kappaBFM_MDB_manager
+    delete_buffer_object_1/5.11#1: c4 .. d0 .. c2 .. d0 .. c0).  Anything
+    else is returned as it is."""
+    if t[0] == 'cmp' and t[1] == '->' and len(t[2]) == 2:
+        c, th = t[2]
+        return ['cmp', ',', [c, ['cmp', ',', [['atom', '!'], th]]]]
+    return t
+
+
+# the tests the held compiler compiles as a test-and-branch (blt f0/f2 ==,
+# f4 <, f5 >=, e0 atom/1, e1 integer/1, e6 unbound/1, and their mirrors)
+BRANCH_TESTS = {'==', '\\==', '<', '>', '=<', '>=', 'atom', 'integer', 'unbound'}
+
+
+def peels_into_caller(t):
+    """True when the held compiler (MEASURED on kappa2, psi/README.md
+    "If-then-else") inlines disjunction T into its caller: T is the last
+    goal of its clause and its first alternative is `C -> Then` with C a
+    single test that has a test-and-branch form.  The test then branches
+    in the caller, Then follows it inline, and the else is the rest
+    (a $or$ when two or more alternatives remain).  espc still compiles
+    the $or$; check() does not pair the caller's disjunctions."""
+    a = alternatives(t)[0]
+    if not (a[0] == 'cmp' and a[1] == '->' and len(a[2]) == 2):
+        return False
+    c = flat(a[2][0])
+    return len(c) == 1 and c[0][0] == 'cmp' and c[0][1] in BRANCH_TESTS
 
 
 def vars_of(t, acc=None):
@@ -949,6 +990,17 @@ class ClauseCompiler:
             elif k == 'fail':
                 self.asm.pmi(0xfe)
                 return
+            elif k == 'relative_cut_and_fail':
+                # pmi db (kl0_opcodes.tsv): the Level put into A0, db, and
+                # the clause's proceed after it, as the held code has it
+                # (kappa2 hash.esp:166-168 is pb_hash_stack
+                # search_and_get/5.11#1 `a7 00 00 01, db 00 00 00, f0`;
+                # KP_MDMART.ESP:58 ends `a7 00 00 01, db, f1 0b`)
+                if not last:
+                    raise CompileRefusal('relative_cut_and_fail/1', 'only as the last goal witnessed')
+                self.asm.pmi16(0xa7, 0, 1)
+                self.asm.pmi(0xdb)
+                return self.finish_proceed()
             elif k == 'true':
                 if last:
                     return self.finish_proceed()
@@ -1828,6 +1880,7 @@ class ClassCompiler:
         self.or_names = {}
         self.or_path = {}
         self.or_count = collections.Counter()
+        self.peeled = set()                        # parents of an inlined `->` (number_ors)
         self.refs = []
         self.refusals = []                         # (pred key or None, construct, detail)
         self.locals_ = set()
@@ -1893,6 +1946,10 @@ class ClassCompiler:
         if f in COMPARE and len(args) == 2:
             l, r = classify(args[0], u), classify(args[1], u)
             return [Goal('compare', op=f, left=l, right=r, vars=self.vcount([l, r]))]
+        if f == 'relative_cut_and_fail' and len(args) == 1:
+            if num_value(args[0]) != 1:
+                raise CompileRefusal('relative_cut_and_fail/1', 'only Level 1 witnessed')
+            return [Goal('relative_cut_and_fail', vars={})]
         if f in UNWITNESSED_GOALS:
             raise CompileRefusal('comparison %s' % f, 'no witness of what it compiles to')
         if f == ':=' and len(args) == 2:
@@ -1922,11 +1979,14 @@ class ClassCompiler:
             value_vars(v, c)
         return c
 
-    def number_ors(self, t, parent):
+    def number_ors(self, t, parent, last=True):
         """Number the body's disjunctions in source order, outer first
         (MEASURED: has_icon_window :read/2's outer disjunction is $or$0/2,
         the inner one $or$1/4), before anything can be refused, so a
-        refused clause does not shift the numbers of the later ones."""
+        refused clause does not shift the numbers of the later ones.
+        LAST: T is the last goal of its clause.  A disjunction that the
+        held compiler inlines into its caller (peels_into_caller) puts its
+        parent in .peeled, for check()."""
         if t[0] == 'cmp' and t[1] == ';' and len(t[2]) == 2:
             name = '$or$%d' % self.nor
             self.or_names[id(t)] = name
@@ -1935,11 +1995,13 @@ class ClassCompiler:
             # numbering is not the source's (see canonical())
             self.or_count[parent] += 1
             path = self.or_path[name] = '%s#%d' % (parent, self.or_count[parent])
+            if last and peels_into_caller(t):
+                self.peeled.add(parent)
             for alt in alternatives(t):
                 self.number_ors(alt, path)
-        elif t[0] == 'cmp' and t[1] == ',' and len(t[2]) == 2:
-            for x in t[2]:
-                self.number_ors(x, parent)
+        elif t[0] == 'cmp' and t[1] in (',', '->') and len(t[2]) == 2:
+            self.number_ors(t[2][0], parent, False)
+            self.number_ors(t[2][1], parent, last)
 
     def disjunction(self, t, outside, body):
         """(A ; B ; ...) -> a call of a new local $or$N (kind 0x12) whose
@@ -1952,10 +2014,13 @@ class ClassCompiler:
         self.locals_.add((name, len(shared)))
         self.preds[pred.key] = pred
         head = [('var', v) for v in shared]
+        # `C -> T` as the last alternative: when C fails the disjunction
+        # succeeds, as if `; true` followed (MEASURED, psi/README.md
+        # "If-then-else")
+        if alts[-1][0] == 'cmp' and alts[-1][1] == '->' and len(alts[-1][2]) == 2:
+            alts = alts + [['atom', 'true']]
         for alt in alts:
-            if alt[0] == 'cmp' and alt[1] == '->':
-                raise CompileRefusal('if-then-else ->', 'not modelled')
-            pred.clauses.append(Clause(head, self.goals(alt, list(shared)), alt))
+            pred.clauses.append(Clause(head, self.goals(if_then(alt), list(shared)), alt))
         vals = [('var', v) for v in shared]
         return Goal('call', name=name, args=vals, vars=self.vcount(vals))
 
@@ -1992,11 +2057,18 @@ class ClassCompiler:
                 if v[0] == 'vec':
                     return ('vec', [lift(x) for x in v[1]])
                 return v
+            unlifted = vals
             vals = [lift(v) for v in vals]
             if body is not None:
                 self.number_ors(body, '%s/%d.%02x' % (name, len(head_terms), kind))
+            # the variables of a lifted head expression are used by its
+            # unification after the body, so a disjunction shares them:
+            # kappa2 REPDB.ESP `count_element(CFT,..,[P1|PR],No1 + No2) :-
+            # (and(CFT,P1,0),!, No1 = 0 ; No1 = 1), ...` is held
+            # count_element/5.11#1 of arity 3, No1 in A1.  Before, No1 was
+            # left out and the $or$ bound a variable of its own.
             head_vars = []
-            for v in vals:
+            for v in unlifted + vals:
                 for nm in value_vars(v, collections.Counter()):
                     if nm not in head_vars:
                         head_vars.append(nm)
@@ -2479,12 +2551,10 @@ STANDIN = os.path.join(HERE, 'standin')
 # showed only at run time, as kl0's "not in the stand-in" (found when
 # date_time get_value/8 used `/ 3600000`, an immediate espc has no
 # witnessed opcode for).  These are HELD-SOURCE bodies copied as they are:
-# if-then-else is not modelled and set_substring/4 has no witnessed opcode;
-# a send to them still refuses at run time.
+# set_substring/4 has no witnessed opcode; a send to them still refuses at
+# run time.  (e_string's and name's sorts, refused at partition/4's
+# if-then-else, compile since `->` did, 2026-11-26.)
 KNOWN_STANDIN_REFUSALS = {
-    ('simpos##e_string', 'string_sort', 3), ('simpos##e_string', 'string_sort', 2),
-    ('simpos##e_string', 'qsort', 3), ('simpos##e_string', 'partition', 4),
-    ('simpos##name', 'sort', 3), ('simpos##name', 'qsort', 3), ('simpos##name', 'partition', 4),
     ('simpos##pathname', 'append_names', 3), ('simpos##pathname', 'set_names', 3),
 }
 
@@ -2820,8 +2890,18 @@ def check(program, held_lib=None):
         refused = {(k[0], k[1]) for k, p in cc_.preds.items() if p.refusal}
         c['disjunctions held'] += sum(1 for p in ht.locals if p.kind == 0x12)
         c['disjunctions source'] += len(cc_.or_names)
+        peeled = tuple(par + '#' for par in cc_.peeled)
+        refused_k = tuple('%s/%d.%02x#' % k for k, p in cc_.preds.items() if p.refusal)
         for k in sorted(set(hs) | set(cs), key=repr):
             label = '%s %02x' % k
+            if peeled and '#' in k[0] and k[0].startswith(peeled) and (
+                    k in cs or not k[0].startswith(refused_k)):
+                # the held compiler inlined a `->` of this caller, so its
+                # $or$s are numbered apart from ours and are not paired (a
+                # held $or$ of a refused predicate keeps that cause)
+                c['pred under an inlined ->'] += 1
+                rows.append((cid, label, 'under an inlined ->', ''))
+                continue
             if k not in cs:
                 root = re.match(r'(.*)/(\d+)(?:\.[0-9a-f]{2})?(?:#|$)', k[0])
                 nm = [root.group(1), root.group(2)] if root else [k[0]]
@@ -2878,6 +2958,7 @@ def summary(program, r):
                    c['pred refused'], c['pred $or$ of a refused predicate'],
                    c['pred held $or$ with no compiled counterpart'], c['pred unparsed source'],
                    c['pred held only'], c['pred compiled only']))
+    out.append('  $or$s under a caller whose `->` the held compiler inlined: %d' % c['pred under an inlined ->'])
     out.append('  disjunctions: %d held, %d in the source; %d paired with another arity; key collisions %d' % (
         c['disjunctions held'], c['disjunctions source'], c['$or$ paired with another arity'],
         c['key collisions']))

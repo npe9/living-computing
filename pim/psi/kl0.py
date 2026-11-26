@@ -301,6 +301,20 @@ class Barrier:
         return '<barrier %d>' % self.b
 
 
+class Level(int):
+    """A predicate's entry barrier (the choice-point stack height, as an
+    int) that also keeps its caller's, `up`: the chain of call levels that
+    TM-388 4.6 p.112 relative_cut(Level) counts back along ("the depth of
+    levels backward from the current level").  A last call is a level of
+    its own (OURS: TM-388 does not say how level/1 counts a last call).
+    OURS representation."""
+
+    def __new__(cls, b, up):
+        x = int.__new__(cls, b)
+        x.up = up
+        return x
+
+
 def deref(t):
     while isinstance(t, Var) and t.ref is not None:
         t = t.ref
@@ -676,7 +690,7 @@ class Machine:
 
     def enter_pred(self, p):
         """A predicate's entry barrier: in B0, and in register A_arity."""
-        self.b0 = len(self.stack)
+        self.b0 = Level(len(self.stack), self.b0)
         self.x[p.arity] = Barrier(self.b0)
 
     def proceed(self):
@@ -1630,6 +1644,26 @@ class Machine:
 
     def op_cut_fail(self, code, off, a, b, c, v):
         self.cut_to(self.b0)
+        self.fail()
+
+    def op_relative_cut_and_fail(self, code, off, a, b, c, v):
+        # pmi db (kl0_opcodes.tsv): relative_cut_and_fail(Level), Level in
+        # A0.  TM-388 4.6 p.112: relative_cut(Level) cuts "all
+        # alternatives below the level specified by Level (the depth of
+        # levels backward from the current level)"; Example 1, `P :- (Q,
+        # relative_cut(1), R ; S)`, cuts S and P's next clause, i.e. back
+        # to the barrier of the $or$'s caller.  Only Level 1 and zero
+        # operand bytes are witnessed (all three held uses)
+        if (a, b, c) != (0, 0, 0):
+            raise Refusal('code', '%s @%x: pmi db with operands %02x %02x %02x (only 00 00 00 witnessed)'
+                          % (code.id, off, a, b, c))
+        n = deref(self.x[0])
+        if n != 1 or not isinstance(n, int):
+            raise Refusal('code', '%s @%x: relative_cut_and_fail(%r): only Level 1 witnessed' % (code.id, off, n))
+        up = getattr(self.b0, 'up', None)
+        if up is None:
+            raise Refusal('code', '%s @%x: relative_cut_and_fail(1) with no caller level' % (code.id, off))
+        self.cut_to(up)
         self.fail()
 
     def op_cut_env_fail(self, code, off, a, b, c, v):
