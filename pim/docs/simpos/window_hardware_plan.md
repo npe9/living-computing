@@ -443,8 +443,8 @@ The record format and every rule are OURS:
   found by reading the rule; no read has been run through the link.
 - `bsv/WinFbBox.bsv` runs the targets in lockstep too: the gen streams `targets`, `rand_x2_1..3`
   and the directed `bsv/win_streams/targets_stall.txt` (under +stall), with injections T1-T4 in
-  `bsv/run_win_tb.sh`'s header. The host link (`bsv/WinLink.bsv`) carries a target record as any
-  other command; it has not been run through it.
+  `bsv/run_win_tb.sh`'s header. No target record has been run through the host link
+  (`bsv/WinLink.bsv`).
 
 ### 2.5 Fonts
 
@@ -749,18 +749,19 @@ seed 1 is small (0.7%). Unchecked cross-domain delays (all through synchronizers
 | 3 | 11,690 | 4,549 | 156 | 33.55 PASS | 87.17 PASS | 384.17 PASS | 1.25 ns |
 
 Against the read's build (10,708 / 4,278 / 156; sys 36.23, 35.44, 31.73): 982 more TRELLIS_COMB,
-271 more FF, the same DP16KD, and 9 MULT18X18D (yosys maps the setup rules' base + row × pitch and
-the target's pitch × h to DSPs). yosys counts 8,058 LUT4 (1,553 more). Most of the growth is the
-cut: every surface's w and h is now a register, not a constant. The worst seed's system clock rose
-from 31.73 to 33.55 MHz. The pitch multiplies moved out of `accept`, `glyph6` and the line's address
+271 more FF and the same DP16KD. yosys counts 8,058 LUT4 (692 more than the read's 7,366) and
+9 MULT18X18D in all (no count was kept for the read's build). Where the growth is was not
+measured: sharing the cut between fill, copy and read (the final build) did not shrink it. The
+worst seed's system clock rose from 31.73 to 33.55 MHz. The pitch multiplies moved out of `accept`, `glyph6` and the line's address
 into setup cycles of their own.
 
 The shift clock is close: seed 1's sclk is 373.83 MHz against 370.10, a 1% margin. Its path is one
 flop and one LUT, and 2.3 ns of it is routing. The FIRST build of this change failed there: seed 1's
 sclk was 326.26 MHz, with sys 34.18, 34.25, 33.35 and 11,682 TRELLIS_COMB. It differed from the
 final build only in the cut: one per primitive, and the target's 16 × 16 multiply. INFERENCE: the
-serializer's logic did not change, so its placement, which moves as the box grows, is what failed.
-A later change that grows the box may fail this check again. Placing the serializer in a region of
+serializer's logic did not change, and the two builds are within 8 TRELLIS_COMB of each other, so
+the failure is the serializer's placement, which varies from one build to the next. Any later
+change to the box may fail this check again; the 3-seed PASS here is narrow. Placing the serializer in a region of
 its own would be the fix, not a change to the box.
 
 **ESTIMATED (OURS, not synthesized):**
