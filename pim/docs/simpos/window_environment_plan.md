@@ -510,6 +510,43 @@ window, from a live run** (`../../psi/README.md` "Window M0, M3, M5"; tests `tes
   in `screens/`, the second from step 3n's bridged run (PIMOS's own replies, replayed from its
   tape; `test_win_m5_bridged_screen`). The status band is not drawn yet.
 
+**Status (2026-11-25, window M4 and M6): PIMOS's console runs on the PSI, and the screen has its
+chrome** (`../../psi/README.md` "Window M4 and M6"; tests `test_espc.py` `Window`
+`test_win_m4_console`, `test_win_m6_system_menu`, `test_fep_bridge.py` `Console`):
+- **M4, done, on real PIMOS.** `../../psi/fep_bridge.py` now routes PIMOS's 104 (create_window)
+  devices to the PSI. A live run (PIMOS on pimm.py from the link checkpoint, 28 s) recorded
+  `../../psi/fep_bridge_tapes/console_pwd.json`, which the tests replay. PIMOS's own messages
+  are 104 → 127 (200, 200, 47, 14) → 130 `PIMOS CONSOLE` → 132 `font:test_11.font` → 143 → 70
+  ×3 → 112 → 111 `Shell>> ` → 112 ×2 → 110. The HELD `pimfep##pimos_window_process`,
+  `pimos_window` and `pimos_window_editor` run them on new stand-ins (`pmacs_window` rewritten,
+  `editor_text_buffer`, `buffer_region`, `editor_command_interpreter`, `pmacs_request`; OURS
+  bodies, INFERENCE/INTERPOLATED where their heads say). The user clicks in the console and
+  types `pwd`. The 110's answer `{28, 1, "pwd"}` is the held editor's own (getl_from_buffer/3,
+  run by carriage_return's after-demon), and PIMOS's reply ` The value of task: directory is
+  ">sys>user>pmpsi" .` and the next `Shell>> ` are drawn under it. fep.py answers none of the
+  window's messages (its log is empty). One opcode was added: `blt 69 not_equal_string`
+  (KNOWN-PLAINTEXT, kappa2 KP_UPT.ESP:124/131), which set_font/4 needs. Screen:
+  `screens/pimos_console.png`. The planned injection (drop 132's font) changes no dot,
+  because 132 names test_11, the device's default font. So the test also checks the window's
+  font object, and that check fails (J2). The nine observed injections are in
+  `test_win_m4_console`'s header.
+- **M6, partly done.** Drawn:
+  - the status band (black, the frame's rows 944-1023): `USER : pmpsi`, `SIMPOS Version V7`;
+  - the box naming the selected window as `<class>/<n>`;
+  - the SYSTEM MENU, opened by `mouse#rr` at the mouse, two columns of login.com's 7 + 3 items,
+    the item under the mouse boxed by an exclusive_or rectangle;
+  - a left click on `Login PIMOS` closes the menu and starts the held requester, its window
+    centred on the click;
+  - selection by `mouse#l` (the console in the M4 run).
+
+  The mouse events are `{mouse, Button, X, Y}` and `{move, X, Y}` on the coordinator's stream
+  (OURS). The M4 tape's user script uses them (`fep_bridge.py`; the tape keeps it), and the
+  login window lands at (755, 544). `test_win_m6_selection` shows that the keys follow the
+  window selected by the mouse (injections J5 and J6 fail it). Not done: the date,
+  `create`/`kill` by rubber band, `SWAPPED`/spool. Screens: `screens/system_menu.png`;
+  `login_pimos_*.png` re-rendered with the band. The M5 frames with the band's rows cleared
+  still equal M5's pins.
+
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like

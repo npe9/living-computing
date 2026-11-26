@@ -34,4 +34,19 @@ attribute window := 0;
 % compiled sends in pimfep##pimos_window_editor (21 methods, 2026-11-24).
 :get_window(Editor, Window) :- Window = Editor!window;
 
+% :carriage_return(Editor) -- window M4 (2026-11-25), INTERPOLATED (body
+% INFERENCE) from: pimfep##pimos_window_editor's held before- and
+% after-demons on it (@2bd, @2c8; window.md §2.11-2.12: "input-line end",
+% the demons prove a SIMPOS primary), and getl_from_buffer/3 @413-449,
+% which the after-demon reaches and which finds the line by searching the
+% buffer for code 10 from the input region's start.  So the primary ends
+% the typed line: a key#lf (10) at the point of the window's text buffer
+% (editor_text_buffer.esp).  Sent by the command interpreter on RETURN
+% (editor_command_interpreter.esp, OURS binding).
+:carriage_return(Editor) :-
+        W = Editor!window,
+        :get_interpreter(W, I),
+        B = I!original_buffer,
+        :insert_code(B, 10);
+
 end.

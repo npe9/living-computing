@@ -705,16 +705,20 @@ class Standins(unittest.TestCase):
             'simpos##abort_handler', 'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
             'simpos##binary_file', 'simpos##boot_process',
-            'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
+            'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##buffer_region', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##coordinator',
             'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
-            'simpos##e_string', 'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##e_string', 'simpos##editor_command_interpreter', 'simpos##editor_text_buffer',
+            'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##menu_pane',
             'simpos##message', 'simpos##monogyny_list_index', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name', 'simpos##network_subsystem',
-            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##port', 'simpos##post_queue',
+            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_request', 'simpos##pmacs_window',
+            'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
-            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer',
+            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##status_band',
+            'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##tcpip_network_subsystem', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
             'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
@@ -1160,8 +1164,9 @@ end.''', 'simpos')
         self.assertEqual(self.send(e[0], 'get_window', K.Var()), [[w]])
         cause, detail = self.refusal(m, 'pimfep##pimfep_message_log', 'class', 'dump_log/1')
         # step 3f: activate/1 is stood in; the text output (window.md
-        # §2.4, putl/2) is not
-        self.assertIn('simpos##pmacs_window:putl/2', detail)
+        # §2.4, putl/2) was not.  Window M4 stood in putl/2; its input,
+        # getl/2, is not
+        self.assertIn('simpos##pmacs_window:getl/2', detail)
         # trace and network_listener_buffer: the pimfep callers run to a
         # solution (no tracer: OURS).  common_network's callers are
         # covered by test_fep_census only
@@ -1239,10 +1244,13 @@ end.''', 'simpos')
         (r,) = K.call_class_method(m, 'pimfep##pimos_timer', 'create', [K.Var()])
         self.assertEqual(r[0].cid, 'pimfep##pimos_timer')
         # a demon-only combination with a stand-in ancestor stays SIMPOS:
-        # the stand-in is part of the lost class (kl0, step 3e)
-        cause, detail = self.refusal(m, 'pimfep##pimos_window_editor', 'instance', 'carriage_return/1')
+        # the stand-in is part of the lost class (kl0, step 3e).  The
+        # witness was pimos_window_editor carriage_return/1 until window
+        # M4 gave standard_editor a carriage_return/1 primary (INFERENCE,
+        # standard_editor.esp); simpos_user_device exit/1 is another
+        cause, detail = self.refusal(m, 'pimfep##simpos_user_device', 'instance', 'exit/1')
         self.assertEqual(cause, 'simpos')
-        self.assertIn('stand-in ancestors simpos##standard_editor simpos##as_program', detail)
+        self.assertIn('no primary in the held classes; stand-in ancestors simpos##as_program', detail)
 
     def test_fep_census(self):
         # kl0's census of pimfep and pimscsi (stand-ins loaded), 2026-11-24.
@@ -1424,7 +1432,21 @@ end.''', 'simpos')
         # too, the cause not traced).  exterminate_fep/1 moves to the
         # census's missing ready queue (exterminate/1 stood in).
         # 810 / 238 / 403
-        self.assertEqual((len(rows), out), (1468, {'success': 810, 'failure': 238, 'refused': 403, 'exception': 16,
+        # window M4/M6 (row by row against the branch's base 9031ff05,
+        # 2026-11-25): 1,468 -> 1,483 rows, all 15 new rows inherited
+        # from stand-ins, no row removed, no held row changes outcome:
+        # with_lock's lock_with_hook/1 and unlock_with_hook/1 in the
+        # three device tables (6, success); pmacs_window's new methods in
+        # pimos_window: get_interpreter/2, has_been_reshaped/1,
+        # selected/1, deselect_window/1, status_name/3 success,
+        # contains/3 failure (no pane), input_data/2, typed/2, putl/2
+        # refused (a census instance has no interpreter: slot constant).
+        # pimos_window activate/1, show/1, flash/1 stay success (a window
+        # not made by create/3 is not drawn, pmacs_window.esp open/1).
+        # The editor's set_font/4 moves its stop from opcode blt 69 to
+        # not_equal_string on the census's unbound font name.
+        # 821 / 239 / 406
+        self.assertEqual((len(rows), out), (1483, {'success': 821, 'failure': 239, 'refused': 406, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1434,8 +1456,12 @@ end.''', 'simpos')
         # rows (get_number/2 to its process's unset context); 157 -> 154 in
         # window M0: font create/3 now reads its file, and the census mounts
         # no file system, so those three rows stop earlier, at directory
-        # retrieve/3 (a stop of the census machine, not of the route)
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 154)
+        # retrieve/3 (a stop of the census machine, not of the route);
+        # 154 -> 158 in window M4: pimos_window input_data/2, typed/2,
+        # putl/2 (new rows) and the editor's carriage_return/1 (was
+        # 'simpos', now get_interpreter/2 to the census window's unset
+        # editor slot) stop at the census's slot constants
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 158)
         self.assertEqual(sorted(r[2] for r in rows if r[0] == 'pimfep##pimos_login_requester'
                                 and 'no file system is mounted' in r[5]),
                          ['goal/1', 'initiate/1', 'invoke/1'])
@@ -1539,13 +1565,23 @@ end.''', 'simpos')
         # assemble/3 is the path of the bridged run), and the editor's
         # get_title/3 moves to put/2 on the window's unset output stream
         # (a slot constant, the step 3g artifact).  837 / 239 / 375
-        self.assertEqual((len(rows), out), (1468, {'success': 837, 'failure': 239, 'refused': 375,
+        # window M4/M6 (row by row against 9031ff05): the 15 new rows of
+        # test_fep_census, here with recipes 13 success, contains/3 and
+        # putl/2 failure; and two held rows refused -> success, both on
+        # the console's path: pimos_window_editor getl/3 (getl_from_buffer
+        # on the editor_text_buffer stand-in) and carriage_return/1
+        # (standard_editor's primary, INFERENCE).  852 / 241 / 373
+        self.assertEqual((len(rows), out), (1483, {'success': 852, 'failure': 241, 'refused': 373,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
         # window M0: 111 -> 108 (the login requester's three rows, as in
-        # test_fep_census)
-        self.assertEqual(slot_const, 108)
+        # test_fep_census); window M4: 108 -> 114, the editor's
+        # buffer_name/3, clear/3, reshape/7, reshape_by_mouse/3,
+        # set_inside_size/5, set_size/3 go from 'simpos' (an unstood
+        # pmacs_window or editor method) to put/2 on the window's unset
+        # output stream (the step 3g artifact, as get_title/3)
+        self.assertEqual(slot_const, 114)
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -1566,8 +1602,11 @@ end.''', 'simpos')
         self.assertIn('stream', by[('pimos_timer', 'instance', 'loop_main/1')][2])
         # 17, and since step 3h pimos_tcpip_socket loop_main/1: 18; step
         # 3n: 19, the front end's exterminate_fep/1 (exterminate/1 stood
-        # in, then the census's missing ready queue)
-        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 19)
+        # in, then the census's missing ready queue); window M4: 21,
+        # pimos_window_process goal/1 and invoke/1 (were 'simpos' at
+        # get_interpreter/2), now waiting in the command interpreter's
+        # get on its input stream, the console's own wait
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 21)
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
@@ -1589,9 +1628,11 @@ end.''', 'simpos')
         self.assertEqual(by[('pimos_timer', 'instance', 'close/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'abort_timer/3')][0], 'success')
         # the editor reaches pimos_window's lost pmacs_window protocol
-        # (get_interpreter/2 is not stood in)
-        self.assertIn('pimfep##pimos_window:get_interpreter/2',
-                      by[('pimos_window_editor', 'instance', 'clear/3')][2])
+        # (get_interpreter/2 was not stood in; window M4 stood it in, and
+        # clear/3 goes on to its reply, put/2 on the census window's unset
+        # output stream, as get_title/3 below)
+        self.assertEqual(by[('pimos_window_editor', 'instance', 'clear/3')],
+                         ('refused', 'receiver a slot constant', 'send put/2 to 0 (a slot constant)'))
         # with the interpolated geometry and title (step 3f), get_title/3
         # runs through the window to its reply; with the request (step 3g)
         # and blt 48 R != A, the reply's assembly stops at blt 36;
@@ -1603,7 +1644,9 @@ end.''', 'simpos')
         # constant, the step 3g artifact)
         self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')],
                          ('refused', 'receiver a slot constant', 'send put/2 to 0 (a slot constant)'))
-        self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
+        # set_size/3: past has_been_reshaped/1 since window M4, to its reply
+        self.assertEqual(by[('pimos_window_editor', 'instance', 'set_size/3')],
+                         ('refused', 'receiver a slot constant', 'send put/2 to 0 (a slot constant)'))
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
 
     def test_step3g_stream_see(self):
@@ -1755,16 +1798,19 @@ end.''', 'simpos')
             classes = [c for c in m.lib.templates if c.split('##')[0] in K.FEP_PACKAGES]
             fwd = norm(K.census_of(m, classes, recipes))
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
-            self.assertEqual(len(fwd), 1468)   # step 3j: 46 stand-in rows; 3m: 2 (message create/2)
+            # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
+            # M4/M6: 15 (test_fep_census)
+            self.assertEqual(len(fwd), 1483)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
         # argument no longer reaches dump_log/1, which goes on to the
-        # message window (pmacs_window putl/2, not stood in)
+        # message window (pmacs_window putl/2, not stood in; window M4
+        # stood it in, and the row goes on to getl/2, not stood in)
         by = norm(K.census_fep(K.fep_machine()))
         self.assertEqual(by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][:2],
                          ('refused', 'simpos'))
-        self.assertIn('pmacs_window:putl/2', by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][2])
+        self.assertIn('pmacs_window:getl/2', by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][2])
 
     def test_step3i_boot(self):
         # step 3i, docs/simpos/boot_route.md B2: the boot process (TM-100
@@ -3268,14 +3314,35 @@ class Window(unittest.TestCase):
                                            'OK. Your initial program starts.', '', 'Good luck!',
                                            '', '#'], (0, 6)),
     }
-    # (sha256 of the frame's PBM, set dots), MEASURED 2026-11-25
+    # (sha256 of the frame's PBM, set dots), MEASURED 2026-11-25, with the
+    # status band (window M6: 97,756 dots more in every stage, the band
+    # and its box naming standard_io_window/1)
     PINS = {
+        'name': ('4a31e4ae4ffddcfd377679180525b2cfdcc07cd08f3d666d23bb05ef212d30bb', 102952),
+        'password': ('28728b793499409abe820be92455041b85d1bbee03360f5273d3a4ce3645be43', 104021),
+        'login': ('c1afaf8cd4050773b32f47d874bc700faa7d34f0caa5487978f66cd024287b17', 103715),
+    }
+    # M5's pins, before the band: the same frames with the band's rows
+    # (944-1023) cleared, so the window's own drawing is unchanged
+    M5_PINS = {
         'name': ('d134cbfaa83e9844279330dd13fdfcf6b290c5917c8ca83ed187788eaa248de8', 5196),
         # the same frame as after 'local', 'pimos' alone: the password's
         # letters draw nothing (echo inhibited by the held read/4 @122)
         'password': ('380d5779597c6dbfcb0693e668963f97c2d362970178979a6957132ed42fca44', 6265),
         'login': ('c4e83dfdbe355ecfb4204087dca9561872a31c04caee94e8681fd0a505809350', 5959),
     }
+
+    @staticmethod
+    def band(fr, n=20):
+        # window M6: the status band read back (status_band.esp): its two
+        # rows white on black (read from the inverted frame), the box's
+        # name (N cells) black on white
+        import windev
+        import winfb
+        g = winfb.Frame()
+        g.rows = [r ^ ((1 << 1280) - 1) for r in fr.rows]
+        return (windev.read_cells(g, 8, 952, 30, 1), windev.read_cells(g, 8, 974, 30, 1),
+                windev.read_cells(fr, 411, 952, n, 1))
 
     def screen(self, keys):
         # boot -> system menu -> Login PIMOS -> KEYS, with the 3m probe for
@@ -3357,16 +3424,33 @@ class Window(unittest.TestCase):
                 fr = dev.frame
                 self.assertEqual(windev.read_cells(fr, 420, 414, 40, 1), ['Pimos remote login %d' % n])
                 self.assertEqual(windev.read_cells(fr, 420, 431, 40, 7), lines)
-                # nothing is drawn outside the window's rectangle
+                # nothing is drawn outside the window's rectangle and the
+                # status band (window M6: rows 944-1023, its box naming
+                # the requester's window, selected when shown)
                 inside = sum(bin((fr.rows[y] >> (1280 - 417 - 446)) & ((1 << 446) - 1)).count('1')
                              for y in range(411, 411 + 121))
-                self.assertEqual(inside, fr.count())
+                band = sum(bin(fr.rows[y]).count('1') for y in range(944, 1024))
+                self.assertEqual(inside + band, fr.count())
+                self.assertEqual(self.band(fr), (['USER : pmpsi'], ['SIMPOS Version V7'],
+                                                 ['standard_io_window/1']))
                 self.assertEqual(set(fr.status), {winfb.OK})
                 self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.PINS.get(stage))
+                self.assertEqual(self.without_band(fr), self.M5_PINS.get(stage))
                 self.assertEqual(winfb.run_stream(dev.stream_text()).pbm(), fr.pbm())
                 self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
 
-    BRIDGED_PIN = ('cd57f0ff7e32029dc432da52be8795f1b2ba3fcb89ca25186304e2eec13ff404', 5968)
+    @staticmethod
+    def without_band(fr):
+        import windev
+        import winfb
+        g = winfb.Frame()
+        g.rows = fr.rows[:944] + [0] * (len(fr.rows) - 944)
+        return windev.pbm_sha256(g), g.count()
+
+    # with the status band (window M6): 97,756 dots more than M5's pin,
+    # M5_BRIDGED_PIN, which the frame with the band cleared still equals
+    BRIDGED_PIN = ('c33da8f127897aea8501f68ae999bcc33dda26df6ec890281b2e29c11007d614', 103724)
+    M5_BRIDGED_PIN = ('cd57f0ff7e32029dc432da52be8795f1b2ba3fcb89ca25186304e2eec13ff404', 5968)
 
     def bridged(self):
         # step 3n's run: the held requester logs into real PIMOS (pimm.py)
@@ -3385,23 +3469,249 @@ class Window(unittest.TestCase):
         # The committed PNGs of docs/simpos/screens/ decode to the pinned
         # frames.  Injections: see test_win_m5_login_screen's header (this
         # test FAILS in W1-W5 and W7-W9, OBSERVED; not in W6).
+        # Window M6 (2026-11-25): the tape replays with its own user
+        # (fep_bridge.tape_script: step 3m's menu select, so the window
+        # is centred on the mouse's start, the old place); the frame has
+        # the status band now.  M4's tape starts it with the mouse
+        # (test_win_m4_console).
         import windev
         import winfb
         m = self.bridged()
         fr = windev.device(m).frame
         (p,) = self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'started'))
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        pane = m.get_slot(m.get_slot(top, 'window'), 'pane')
+        self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h', 'cols', 'rows')],
+                         [417, 411, 446, 121, 40, 7])
         self.assertEqual(windev.read_cells(fr, 420, 414, 40, 1),
                          ['Pimos remote login %d' % m.get_slot(m.get_slot(p, 'context'), 'number')])
         self.assertEqual(windev.read_cells(fr, 420, 431, 40, 7), self.SCREENS['login'][1])
+        self.assertEqual(self.band(fr), (['USER : pmpsi'], ['SIMPOS Version V7'],
+                                         ['standard_io_window/1']))
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.BRIDGED_PIN)
+        self.assertEqual(self.without_band(fr), self.M5_BRIDGED_PIN)
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+        self.assert_shots()
+
+    def assert_shots(self):
+        # the committed PNGs of docs/simpos/screens/ decode to the pinned
+        # frames (psi/winshot.py writes them)
+        import windev
+        import winfb
         shots = os.path.join(HERE, '..', 'docs', 'simpos', 'screens')
-        for name, pin in (('password', self.PINS['password']), ('bridged', self.BRIDGED_PIN)):
-            with open(os.path.join(shots, 'login_pimos_%s.png' % name), 'rb') as f:
+        for name, pin in (('login_pimos_password', self.PINS['password']),
+                          ('login_pimos_bridged', self.BRIDGED_PIN),
+                          ('pimos_console', self.CONSOLE_PIN),
+                          ('system_menu', self.MENU_PINS['boxed'])):
+            with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
             self.assertEqual((windev.pbm_sha256(g), g.count()), pin, name)
+
+    CONSOLE_PIN = ('f9da0fe2881c5bd15fd41c07608396991eec0775a6295faa485f205e602b4a53', 110676)
+
+    def console(self):
+        # window M4's run: PIMOS's shell window (104) bridged to the PSI,
+        # replayed from the committed tape (test_fep_bridge.py Console)
+        import fep_bridge
+        stop, psi, left, t = fep_bridge.replay(
+            os.path.join(HERE, 'fep_bridge_tapes', 'console_pwd.json'))
+        self.assertEqual((stop.cause, left), ('would suspend', []))
+        return psi, t
+
+    def test_win_m4_console(self):
+        # M4: PIMOS's console window drawn by a run whose every window
+        # message is PIMOS's own (pimm.py, through the bridge, replayed
+        # from psi/fep_bridge_tapes/console_pwd.json): 104, then 127
+        # reshape (200, 200, 47 x 14), 130 "PIMOS CONSOLE", 132
+        # font:test_11.font, 143 show, 111 "Shell>> ", 110 getl.  The PSI
+        # runs them with the HELD pimfep##pimos_window_process (its
+        # create_window/9, window_loop, put/2) and the HELD
+        # pimfep##pimos_window / pimos_window_editor (kl1_message/2,
+        # reshape, set_title, set_font, show, putb, flush, getl) on the
+        # stand-ins pmacs_window, editor_text_buffer, buffer_region,
+        # editor_command_interpreter, pmacs_request (OURS/INFERENCE,
+        # their headers).  The user (OURS, fep_bridge.shell_events)
+        # clicks in the console and types `pwd` RETURN: the getl's answer
+        # is the editor's own (getl_from_buffer/3 after carriage_return's
+        # after-demon), and PIMOS's reply is drawn after it.
+        # Injections, OBSERVED (2026-11-25, after merging master 10884b99;
+        # each from a backup copy, restored by copy, cmp clean; run each
+        # time: test_espc.py Window, test_fep_bridge.py, test_kl0.py; the
+        # rest of the window tests and test_fep_bridge OK unless listed):
+        #   J1 kl0 blt 69 not_equal_string always fails: this test,
+        #      test_fep_bridge Console.test_replay and test_kl0
+        #      Table.test_step3c_cells FAIL.
+        #   J2 pmacs_window set_font/2 drops the font (the plan's M4
+        #      injection): this test ERROR (the font slot 0), nothing else:
+        #      the dots are the same, test_11 being the device's default.
+        #   J3 pmacs_window get_interpreter/2 answers the editor (the plan's
+        #      M3 injection): this test, test_win_m6_selection and
+        #      Console.test_replay FAIL.
+        #   J4 standard_editor carriage_return/1 inserts no line end (code
+        #      10): this test and Console.test_replay FAIL (the 110 is
+        #      never answered).
+        #   J5 coordinator: mouse#l on a window does nothing:
+        #      test_win_m6_selection FAILS, nothing else.
+        #   J6 coordinator: mouse#l selects the newest window, not the one
+        #      under the mouse (the plan's M6 injection, in this form):
+        #      test_win_m6_selection FAILS, nothing else.
+        #   J7 menu_pane: the box drawn by set, not exclusive_or:
+        #      test_win_m6_system_menu FAILS, nothing else.
+        #   J8 status_band: the band 40 rows high, not 80: this test, the
+        #      three stages of test_win_m5_login_screen,
+        #      test_win_m5_bridged_screen and test_win_m6_system_menu FAIL.
+        #   J9 pmacs_request: the argument read from the stored vector again
+        #      (the backtracking bug, pmacs_request.esp's head): this test,
+        #      test_win_m6_selection and Console.test_replay FAIL.
+        import windev
+        import winfb
+        psi, t = self.console()
+        m = psi.m
+        fr = windev.device(m).frame
+        C = K.ClassRef('simpos##coordinator')
+        ws = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual([w.cid for w in ws], ['pimfep##pimos_window', 'simpos##standard_io_window'])
+        pane = m.get_slot(ws[0], 'pane')
+        self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h', 'cols', 'rows')],
+                         [200, 200, 523, 219, 47, 14])
+        # 132's font, through the held editor's set_font/4 (blt 69): the
+        # window's font is the font object of font:test_11.font, 11 x 14
+        # (the device's default is also test_11, so the dots alone would
+        # not show a dropped font)
+        f = m.get_slot(ws[0], 'font')
+        self.assertEqual((f.cid, K.resolve(m.get_slot(f, 'name')).text,
+                          m.get_slot(f, 'width'), m.get_slot(f, 'height')),
+                         ('simpos##font', 'font:test_11.font', 11, 14))
+        self.assertEqual(windev.read_cells(fr, 203, 203, 47, 1), ['PIMOS CONSOLE'])
+        self.assertEqual(windev.read_cells(fr, 203, 220, 47, 4), [
+            'Shell>> pwd',
+            ' The value of task: directory is ">sys>user>pmp',
+            'si" .',
+            'Shell>> #'])
+        self.assertEqual(windev.read_cells(fr, 203, 276, 47, 10), [''] * 10)
+        # the login window is where the menu's click put it, untouched
+        self.assertEqual(windev.read_cells(fr, 758, 547, 40, 1), ['Pimos remote login 8'])
+        # the left button in the console selected it (window M6)
+        self.assertIs(m.get_slot(C, 'selected'), ws[0])
+        self.assertEqual(self.band(fr, 14), (['USER : pmpsi'], ['SIMPOS Version V7'],
+                                             ['pmacs_window/2']))
+        # the tape's script (fep_bridge.py): the login by the menu, the
+        # shell's line after a click in the login window and one in the
+        # console; the keys reach the console only by that last click
+        self.assertEqual(t['script']['login'][:2], [['mouse', 'rr', 640, 560], ['mouse', 'l', 978, 605]])
+        self.assertEqual(t['script']['shell'], [['mouse', 'l', 900, 620], ['mouse', 'l', 300, 300]]
+                         + [['key', c] for c in K.Str('pwd').codes() + [13]])
+        self.assertEqual(t['result']['user_at'], [6, 19])
+        self.assertEqual((psi.user_at, psi.shell_at), (6, 19))
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.CONSOLE_PIN)
+        self.assertEqual(t['result']['screen'], dict(sha256=self.CONSOLE_PIN[0], dots=self.CONSOLE_PIN[1]))
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+        self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
+
+    def test_win_m6_selection(self):
+        # M6: mouse#l selects the window under the mouse, and the keys go
+        # to the selected window.  The M4 run's script with the console
+        # click left out: the click in the login window selects the
+        # requester (its window, under the mouse), so `pwd` goes to it, not
+        # to the console: the PSI never answers the console's 110 (no
+        # {28, 1, "pwd"}), the console shows no echo, and the requester,
+        # its wait/1 answered, exits (the band's box cleared).  PIMOS's
+        # side is fed from the tape regardless (its later texts appear
+        # unasked).  With mouse#l a no-op, or selecting the newest window
+        # whatever is under the mouse, the keys reach the console and
+        # this test fails (J5, J6 in test_win_m4_console's header).
+        import json
+        import fep_bridge as FB
+        import windev
+        with open(os.path.join(HERE, 'fep_bridge_tapes', 'console_pwd.json')) as f:
+            t = json.load(f)
+        psi = FB.PsiSide(script=dict(login=t['script']['login'],
+                                     shell=[['mouse', 'l'] + list(FB.LOGIN_WINDOW_AT)]
+                                     + FB.key_script('pwd')))
+        tape, sent = list(t['exchanges']), []
+
+        def exchange(out):
+            sent.extend(FB.show(r) for r in out)
+            return [bytes.fromhex(r) for r in tape.pop(0)['to_psi']] if tape else []
+        self.assertEqual(psi.run(exchange).cause, 'would suspend')
+        self.assertNotIn([28, 0, 1, FB.fepm.jis('pwd')], sent)
+        fr = windev.device(psi.m).frame
+        self.assertEqual(windev.read_cells(fr, 203, 220, 47, 1)[0][:9], 'Shell>>  ')
+        C = K.ClassRef('simpos##coordinator')
+        self.assertEqual([w.cid for w in self._walk(psi.m.get_slot(C, 'windows'))], ['pimfep##pimos_window'])
+        self.assertEqual(psi.m.get_slot(C, 'selected'), 0)
+
+    # window M6: (sha256, dots) of the boot screen with the system menu
+    # open at fep_bridge.MENU_AT, and with "Login PIMOS" boxed
+    MENU_PINS = {
+        'open': ('c1843568e297eab6c6f1db50526a28353e62bb03bd67da654c346e0569a96d3d', 108361),
+        'boxed': ('87871fa8e06af511b3e0018c6c1d95fa5e8299063dc8c9c8b88c22fceaaf1706', 109023),
+    }
+
+    def menu_run(self, *events):
+        import fep_bridge
+        import windev
+        psi = fep_bridge.PsiSide()
+        psi.user = list(events)
+        stop = psi.run(lambda out: [])
+        self.assertEqual(stop.cause, 'would suspend')
+        return psi.m, windev.device(psi.m).frame
+
+    def test_win_m6_system_menu(self):
+        # M6: the system menu drawn when invoked, by the mouse (OURS event
+        # form {mouse, Button, X, Y} / {move, X, Y}, coordinator.esp): the
+        # right button opens it with its top-left at the mouse
+        # (menu_pane.esp), titled SYSTEM MENU, the HELD me:login.com's
+        # items in its two columns (7 + 3); moving onto an item boxes it
+        # (exclusive_or, so moving off erases the box exactly); the left
+        # button on "Login PIMOS" closes the menu and starts the HELD
+        # pimfep##pimos_login_requester, whose window is centred on the
+        # click.  Injections: test_win_m4_console's header (J7, J8).
+        import fep_bridge as FB
+        import windev
+        x, y = FB.MENU_AT
+        move = lambda px, py: K.Vec([K.Atom('move'), px, py])   # noqa: E731
+        m, fr = self.menu_run(FB.mouse('rr', x, y))
+        pin_open = (windev.pbm_sha256(fr), fr.count())
+        self.assertEqual(pin_open, self.MENU_PINS['open'])
+        M = m.get_slot(K.ClassRef('simpos##coordinator'), 'menu_pane')
+        self.assertEqual([K.resolve(m.get_slot(M, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
+                         [x, y, 499, 135, 581])
+        self.assertEqual(windev.read_cells(fr, x + 2, y + 3, 45, 1), [' ' * 17 + 'SYSTEM MENU'])
+        cols = [['debugger', 'pmacs', 'file ', 'librarian', 'shell', 'spooler', 'pattern editor'],
+                ['Pseudo Multi-PSI', 'Login PIMOS', '(Pseudo)Multi-PSI Installer']]
+        cx = x + 2
+        for col, w in zip(cols, (176, 319)):
+            for r, label in enumerate(col):
+                lx = cx + (w - 11 * len(label)) // 2
+                self.assertEqual(windev.read_cells(fr, lx, 581 + 16 * r + 1, len(label), 1),
+                                 [label.rstrip()], label)
+            cx += w
+        # boxed: the item's 1-dot rectangle, column 2 row 2
+        m, fb = self.menu_run(FB.mouse('rr', x, y), move(*FB.LOGIN_ITEM_AT))
+        self.assertEqual((windev.pbm_sha256(fb), fb.count()), self.MENU_PINS['boxed'])
+        bx, by, bw, bh = x + 2 + 176 + 1, 581 + 16, 319 - 2, 16
+        diff = [fr.rows[i] ^ fb.rows[i] for i in range(1024)]
+        for yy in range(by, by + bh):
+            span = ((1 << bw) - 1) if yy in (by, by + bh - 1) else (1 << (bw - 1)) | 1
+            self.assertEqual(diff[yy], span << (1280 - bx - bw), yy)
+        self.assertEqual(sum(bin(d).count('1') for d in diff), 2 * bw + 2 * (bh - 2))
+        # moved off every item: the box erased, the frame the open menu's
+        m, fo = self.menu_run(FB.mouse('rr', x, y), move(*FB.LOGIN_ITEM_AT), move(x + 10, y + 134))
+        self.assertEqual((windev.pbm_sha256(fo), fo.count()), pin_open)
+        # the left button on the item: the menu closed, the requester started
+        m, fl = self.menu_run(FB.mouse('rr', x, y), FB.mouse('l', *FB.LOGIN_ITEM_AT))
+        (p,) = self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'started'))
+        self.assertEqual(m.get_slot(K.ClassRef('simpos##coordinator'), 'menu_pane'), 0)
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        pane = m.get_slot(m.get_slot(top, 'window'), 'pane')
+        self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y')], [755, 544])
+        # the menu's rectangle left of the new window is clear
+        self.assertEqual(sum(bin((fl.rows[yy] >> (1280 - 755)) & ((1 << (755 - x)) - 1)).count('1')
+                             for yy in range(y, y + 135)), 0)
 
 
 if __name__ == '__main__':

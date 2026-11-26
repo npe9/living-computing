@@ -1,0 +1,192 @@
+% SCAFFOLDING, OURS: a pop-up menu on the screen, compiled by psi/espc.py
+% into the package `simpos`.  `menu_pane` is NOT a SIMPOS class name: the
+% menu classes are lost (docs/simpos/subsystems/window.md §0.3; the 1984
+% system_menu of TR-046 PDF p27 uses multi_column_menu and menu_item, both
+% lost).  Window milestone M6 (2026-11-25): the coordinator's system menu
+% (coordinator.esp) drawn when it is invoked, and the item under the mouse.
+% As window_pane.esp, it decides every rectangle and glyph and sends only
+% the simpos##bitmap_display primitives (psi/windev.py).
+%
+% THE LOOK, each choice with its basis:
+%   - a pop-up with a title bar above centred items, the title
+%     `SYSTEM MENU`: SCREENSHOT simpos.wmv@9.6-11.3 (window.md §4.5,
+%     subsystems/notes/video.md "SYSTEM MENU"), two columns there and here
+%     (the held login.com's `menu` item has two columns, 7 and 3 items:
+%     test_espc.py test_step3l_b6_b8);
+%   - the item under the mouse boxed, not inverted: SCREENSHOT
+%     simpos.wmv@10.9, @60, @117, @132 (2.50/A00; window.md §4.5); the box
+%     a 1-dot rectangle drawn by exclusive_or, so drawing it again erases
+%     it (OURS);
+%   - the border 2 dots and the title strip with a rule under it, as a
+%     window's label (window_pane.esp; OURS for a menu);
+%   - an item one font line plus 2 dots high (OURS, the plan §5 "Known
+%     decisions that are OURS"); a column as wide as its longest item plus
+%     one cell each side; each item centred in its column (SCREENSHOT,
+%     above), the title centred;
+%   - the menu's top-left at the mouse, kept on the 1,280 x 944 screen
+%     (OURS: the 1984 code's placement is lost);
+%   - the font test_11, the device's default (the menu font is not held:
+%     the plan §1.4);
+%   - closed, its rectangle is cleared (OURS: no save areas until M7; the
+%     route opens it on the boot screen, where nothing is under it).
+
+class menu_pane has
+
+% :create(#menu_pane, Title, Columns, X, Y, Menu) -- OURS: the menu of
+% Columns (lists of {Label, Value}) drawn with its top-left at (X, Y).
+% INTERPOLATED (selector and body OURS): create; basis above and in
+% the head comment.
+:create(Class, Title, Columns, X, Y, Menu) :-
+        :new(Class, Menu),
+        :default_font(#bitmap_display, Id, Cw, Ch),
+        Menu!font := Id, Menu!cw := Cw, Menu!ch := Ch,
+        Menu!title := Title, Menu!columns := Columns,
+        widths(Columns, Cw, Ws, 0, Iw),
+        Menu!widths := Ws,
+        most(Columns, 0, Rows),
+        times(Rows, Ch + 2, 0, Ih),
+        sizes(Menu, Iw + 4, Ih + Ch + 9),
+        :get_size(#bitmap_display, Sw, Sh),
+        clamp(X, Sw, Menu!w, Mx), clamp(Y, Sh, Menu!h, My),
+        Menu!x := Mx, Menu!y := My,
+        top(Menu, My + Ch + 7),
+        draw(Menu);
+
+instance
+
+% OURS representation: the outer rectangle, the font and its cell, the
+% columns and their widths, the items' top row, the boxed item
+% ({Column, Row} or none).
+attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
+          title := 0, columns := [], widths := [], items_top := 0,
+          boxed := none;
+
+% :item_at(Menu, X, Y, Label, Value) -- OURS: the item under (X, Y), else
+% fail.
+% INTERPOLATED (selector and body OURS): item_at; basis above and in
+% the head comment.
+:item_at(Menu, X, Y, Label, Value) :-
+        cell_at(Menu, X, Y, C, R),
+        nth(Menu!columns, C, Column),
+        nth(Column, R, {Label, Value});
+
+% :box_at(Menu, X, Y) -- OURS: the item under (X, Y) boxed, the one boxed
+% before unboxed (window.md §4.5, above).
+% INTERPOLATED (selector and body OURS): box_at; basis above and in
+% the head comment.
+:box_at(Menu, X, Y) :-
+        cell_at(Menu, X, Y, C, R),
+        nth(Menu!columns, C, Column), nth(Column, R, _), !,
+        rebox(Menu, {C, R});
+:box_at(Menu, _, _) :- rebox(Menu, none);
+
+% :erase(Menu) -- OURS (see the head comment).
+% INTERPOLATED (selector and body OURS): erase; basis above and in
+% the head comment.
+:erase(Menu) :-
+        :fill(#bitmap_display, Menu!x, Menu!y, Menu!w, Menu!h, reset);
+
+local
+
+times(0, _, P, P) :- !;
+times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
+
+sizes(Menu, W, H) :- Menu!w := W, Menu!h := H;
+top(Menu, T) :- Menu!items_top := T;
+
+% each column's width in dots, and their sum
+widths([], _, [], W, W);
+widths([Column | Cs], Cw, [W | Ws], W0, Wt) :-
+        longest(Column, 0, N),
+        times(N + 2, Cw, 0, W),
+        widths(Cs, Cw, Ws, W0 + W, Wt);
+
+longest([], N, N);
+longest([{L, _} | Is], N0, N) :- string(L, K, _), K > N0, !, longest(Is, K, N);
+longest([_ | Is], N0, N) :- longest(Is, N0, N);
+
+most([], N, N);
+most([C | Cs], N0, N) :- count(C, 0, K), K > N0, !, most(Cs, K, N);
+most([_ | Cs], N0, N) :- most(Cs, N0, N);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+clamp(V, S, W, V) :- V + W =< S, !;
+clamp(_, S, W, P) :- S >= W, !, value(S - W, P);
+clamp(_, _, _, 0);
+
+value(V, V);
+
+nth([X | _], 0, X) :- !;
+nth([_ | R], N, X) :- N > 0, nth(R, N - 1, X);
+
+% the frame, the title, the rule, the items
+draw(Menu) :-
+        :fill(#bitmap_display, Menu!x, Menu!y, Menu!w, Menu!h, set),
+        :fill(#bitmap_display, Menu!x + 2, Menu!y + 2, Menu!w - 4,
+              Menu!h - 4, reset),
+        :fill(#bitmap_display, Menu!x + 2, Menu!y + Menu!ch + 4,
+              Menu!w - 4, 1, set),
+        centred(Menu, Menu!title, Menu!x + 2, Menu!w - 4, Menu!y + 3),
+        columns(Menu, Menu!columns, Menu!widths, Menu!x + 2);
+
+columns(_, [], _, _);
+columns(Menu, [C | Cs], [W | Ws], X) :-
+        items(Menu, C, X, W, Menu!items_top),
+        columns(Menu, Cs, Ws, X + W);
+
+items(_, [], _, _, _);
+items(Menu, [{L, _} | Is], X, W, Y) :-
+        centred(Menu, L, X, W, Y + 1),
+        items(Menu, Is, X, W, Y + Menu!ch + 2);
+
+% the string centred in the W dots from X, at row Y
+centred(Menu, S, X, W, Y) :-
+        string(S, N, _),
+        times(N, Menu!cw, 0, Tw),
+        glyphs(Menu, S, 0, N, X + (W - Tw) / 2, Y);
+
+glyphs(_, _, I, N, _, _) :- I >= N, !;
+glyphs(Menu, S, I, N, X, Y) :-
+        string_element(S, I, C),
+        :glyph(#bitmap_display, Menu!font, C, X, Y, copy),
+        glyphs(Menu, S, I + 1, N, X + Menu!cw, Y);
+
+% the column and row under (X, Y)
+cell_at(Menu, X, Y, C, R) :-
+        Y >= Menu!items_top, X >= Menu!x + 2,
+        column_at(Menu!widths, X - Menu!x - 2, 0, C),
+        quotient(Y - Menu!items_top, Menu!ch + 2, 0, R);
+
+% D / Q by subtraction (OURS: espc has no witnessed opcode for a register
+% divisor)
+quotient(D, Q, R, R) :- D < Q, !;
+quotient(D, Q, R0, R) :- quotient(D - Q, Q, R0 + 1, R);
+
+column_at([W | _], X, C, C) :- X < W, !;
+column_at([W | Ws], X, C0, C) :- column_at(Ws, X - W, C0 + 1, C);
+
+rebox(Menu, Item) :- Menu!boxed == Item, !;
+rebox(Menu, Item) :-
+        box(Menu, Menu!boxed),
+        box(Menu, Item),
+        Menu!boxed := Item;
+
+% the 1-dot rectangle round item {C, R}, by exclusive_or
+box(_, none) :- !;
+box(Menu, {C, R}) :-
+        column_x(Menu!widths, C, Menu!x + 2, X, W),
+        times(R, Menu!ch + 2, Menu!items_top, Y),
+        rect(X + 1, Y, W - 2, Menu!ch + 2);
+
+column_x([W | _], 0, X, X, W) :- !;
+column_x([W | Ws], C, X0, X, Wc) :- column_x(Ws, C - 1, X0 + W, X, Wc);
+
+rect(X, Y, W, H) :-
+        :fill(#bitmap_display, X, Y, W, 1, exclusive_or),
+        :fill(#bitmap_display, X, Y + H - 1, W, 1, exclusive_or),
+        :fill(#bitmap_display, X, Y + 1, 1, H - 2, exclusive_or),
+        :fill(#bitmap_display, X + W - 1, Y + 1, 1, H - 2, exclusive_or);
+
+end.

@@ -1,0 +1,47 @@
+% SCAFFOLDING stand-in for SIMPOS's class `pmacs_request` (a request put
+% into a Pmacs window's input), compiled by psi/espc.py into the package
+% `simpos`.  It is NOT SIMPOS: no body is printed or held (window.md §2.14
+% lists the name, "Pmacs request message (INFERENCE)", nature-only).
+% Window milestone M4 (2026-11-25).
+% USAGE (held cells): pimfep##pimos_window_process put/2 @ce-eb, the
+% front end's hand-over of one PIMOS window message to the window's own
+% process: `:create(#simpos##pmacs_request, kl1_message, {Message}, Req)`
+% (@df-e6: the atom kl1_message in A0, a one-element vector in A1), then
+% `:input_data(Window, Req)` (@eb) on its pimos_window.  So a request is a
+% selector and its arguments (INFERENCE from that form), and the window's
+% command interpreter runs it on the window (INFERENCE: pimfep##pimos_window
+% has the instance method kl1_message/2, which disassembles the message
+% and refutes it on the window's editor, @77-bf).  Model (OURS): the slots
+% below; editor_command_interpreter.esp runs it.
+% The one argument is kept in a slot of its own (OURS, a model need): the
+% vector put/2 builds holds a variable bound to the message, and kl0 stores
+% a vector in a slot as it is (kl0.py resolve_value), so once put/2's
+% process backtracks past that binding the vector's element is unbound
+% again (observed 2026-11-25: kl1_message/2 was sent an unbound message);
+% a string stored in a slot is its value.
+
+class pmacs_request has
+
+% INTERPOLATED from put/2 @e6 (USAGE).
+:create(Class, Selector, Arguments, Req) :-
+        :new(Class, Req),
+        Req!selector := Selector,
+        Req!arguments := Arguments,
+        keep(Arguments, Req);
+
+instance
+
+attribute selector := 0, arguments := {}, argument := 0;
+
+% :argument(Req, X) -- OURS selector: the one argument of a one-argument
+% request (put/2's {Message}).
+% INTERPOLATED (selector and body OURS): argument; basis above and in
+% the head comment.
+:argument(Req, X) :- X = Req!argument;
+
+local
+
+keep({X}, Req) :- !, Req!argument := X;
+keep(_, _);
+
+end.

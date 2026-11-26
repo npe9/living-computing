@@ -325,8 +325,9 @@ class Table(unittest.TestCase):
         # 142 before step 3k's blt 6f, 94 and 90, 145 before step 3m's
         # blt 42 and 43, 147 before step 3m's blt 35, 36, f4, f5 and pmi d6,
         # 152 before step 3m's pmi a8, 153 before step 3n's blt 30, pmi 36
-        # and blt 0d (INFERENCE)
-        self.assertEqual(len(rows), 156)
+        # and blt 0d (INFERENCE), 156 before window M4's blt 69
+        # (not_equal_string, KNOWN-PLAINTEXT on kappa2 KP_UPT.ESP)
+        self.assertEqual(len(rows), 157)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -509,6 +510,14 @@ class Table(unittest.TestCase):
         m.x[1] = K.Str('ac')
         m.op_equal_string(None, 0, 4, 1, 0, None)
         self.assertIsNone(m.pc)
+        # window M4: blt 69 not_equal_string (`69 02 00 00`, KP_UPT.ESP:124),
+        # equal_string's complement; pimos_window_editor set_font/4 tests a
+        # font name against ""
+        for s, want in (('ab', None), ('ac', 'next'), ('', 'next')):
+            m.pc = 'here'
+            m.x[4], m.x[1] = K.Str('ab'), K.Str(s)
+            m.op_not_equal_string(None, 0, 4, 1, 0, None)
+            self.assertEqual(m.pc and 'next', want, s)
 
 
 class StringIdentity(unittest.TestCase):

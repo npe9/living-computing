@@ -281,6 +281,18 @@
     :tag_catch(Process, Name, Object, Method, Args,
                Abort_object, Abort_method, Abort_args, Tag) :-
         :refute(Object, Method, Args);
+    % :catch(Process, Name, Object, Method, Args, Abort_object,
+    % Abort_method, Abort_args) -- window M4 (2026-11-25), INTERPOLATED
+    % from: the held compiled call in pimfep##pimos_window_process
+    % $or$1/3 @1b8-1c5 (registers read 2026-11-25): `:catch(Process, "",
+    % Window_process, command_loop, {_, _}, Window_process, abort_loop,
+    % {..})`, the form of tag_catch/9 without its last argument, the tag
+    % (INFERENCE: a catch point for any throw, TR-285 §4.2); kwic-esp
+    % search_F.esp:142 names `catch` as a method too.  As tag_catch: no
+    % throw is modelled, so it just runs the goal.
+    :catch(Process, Name, Object, Method, Args,
+           Abort_object, Abort_method, Abort_args) :-
+        :refute(Object, Method, Args);
 
     % :status(Process, Old, New) -- if Process's status is Old, it becomes
     % New; otherwise fail.  Step 3j.
