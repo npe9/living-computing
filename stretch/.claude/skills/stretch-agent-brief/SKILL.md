@@ -17,10 +17,18 @@ Read AGENTS.md at the repo root first. Rules, all binding:
 - Scope: edit, build, clean and commit ONLY under stretch/. Never touch
   hobbit/ or pim/, even if git status shows them modified. Stage by path;
   never `git add -A` / `git add .`.
-- Suite: `cd stretch/tests && STRETCH_HALT_REPORT=1 STRETCH_TAPE=<private
-  path in your worktree> ./run_tests.sh > <log> 2>&1`, in the background
-  (1-4 h). Green means "All regression tests passed." and no FAIL lines
-  except `FAIL (UNREPRODUCED, expected) p359_l41_1e512` / `p359_l42_9e615`.
+- Suite: `stretch/tests/suite_bg.sh run <prefix>` (prefix = a path in
+  your worktree, no extension), launched as a run_in_background command
+  (1-4 h); it sets a private STRETCH_TAPE and STRETCH_HALT_REPORT=1 and
+  writes <prefix>.log, .status, .done (verdict GREEN/RED/KILLED) and, if
+  killed, .killed. `suite_bg.sh status <prefix>` checks it. Green means
+  "All regression tests passed." and no FAIL lines except
+  `FAIL (UNREPRODUCED, expected) p359_l41_1e512` / `p359_l42_9e615`.
+- Waiting: rely on the run_in_background notification, or
+  `suite_bg.sh wait <prefix>`. NEVER wait with `pgrep -f <name>` or any
+  loop keyed on a script name: it matches other agents' suites and never
+  ends (an agent lost 3.5 h that way, 2026-11-25). If your suite is
+  KILLED, report it with the time; do not silently retry.
 - New checks must be proven discriminating: inject the bug, record the
   OBSERVED failure set in the test header, revert by the exact inverse
   patch (never `git checkout <file>`), confirm `git diff` is clean.
@@ -58,6 +66,12 @@ verified and how, injection results, anything left undone and why.
 - Do not give two agents overlapping files. `StretchExecute.bsv` and
   `run_tests.sh` are the usual collision points, so say which arms or
   sections belong to which agent.
+- On every "waiting on its own background work" notification that has
+  gone on for over ~4 h, run `stretch/tests/agent_health.sh <scratchpad>`:
+  it shows each worktree's working processes (by cwd), its newest suite
+  log and how it ends (PASS-LINE / FAILED / KILLED / mid), and any
+  waiter keyed on a process name. A KILLED log with no working process
+  means the agent is stuck, not busy.
 - When the agent reports, verify its suite log yourself with
   `stretch-suite-verdict` before merging (`stretch-batch-merge`). An
   agent's confident summary is not evidence.
