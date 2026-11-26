@@ -40,7 +40,13 @@
 %     under it; a code the font lacks shows the font's 0xffff box (the
 %     device's MISSING, never silent).
 % Coordinates are dots on the device's frame; the pane is not clipped
-% against other windows (one window on the route; save areas are M7).
+% against other windows.  Window M7 (2026-11-25): the dots under the pane
+% are saved before it is drawn (save_memory.esp, the save areas of TM-225
+% p10 and TM-126 p5, PROSE, window.md §4.1) and restored when it is
+% erased, so a window killed over another leaves the other's dots as they
+% were when it was covered (what the covered window wrote meanwhile is
+% lost: no output permission is modelled, OURS).  Restacking (the
+% manipulator's HIDE/SHOW) is not done.
 
 class window_pane has
 
@@ -67,6 +73,8 @@ class window_pane has
         place(Pane, X, Y),
         Pane!left := Pane!x + 3, Pane!top := Pane!y + Ch + 6,
         Pane!cx := Pane!left, Pane!cy := Pane!top,
+        :save(#save_memory, Pane!x, Pane!y, Pane!w, Pane!h, Area),
+        Pane!under := Area,
         frame(Pane);
 
 instance
@@ -83,6 +91,8 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
           iw := 0, ih := 0, cw := 0, ch := 0, font := 0, cols := 0,
           rows := 0, col := 0, row := 0, cx := 0, cy := 0, want := off,
           cursor := off, title := 0;
+% window M7, OURS: the save area holding the dots under the pane.
+attribute under := 0;
 
 % :set_title(Pane, Title) -- INTERPOLATED (body OURS) from window.md §2.2
 % set_title/2 (PRINTED-INTERFACE TM-125 p15) and §4.3 (the label strip):
@@ -150,11 +160,12 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
 :deselect(Pane) :- cursor_off(Pane), Pane!want := off;
 
 % :erase(Pane) -- INTERPOLATED (body OURS) from window.md §2.1 kill/1:
-% the window leaves the screen; its rectangle is cleared (OURS: nothing
-% was under it on the route; save areas are M7).
+% the window leaves the screen; since window M7 the dots under it are
+% restored from its save area (until M6 the rectangle was cleared).
 :erase(Pane) :-
         Pane!want := off, Pane!cursor := off,
-        :fill(#bitmap_display, Pane!x, Pane!y, Pane!w, Pane!h, reset);
+        :restore(#save_memory, Pane!under),
+        Pane!under := 0;
 
 local
 

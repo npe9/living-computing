@@ -27,8 +27,10 @@
 %     (OURS: the 1984 code's placement is lost);
 %   - the font test_11, the device's default (the menu font is not held:
 %     the plan §1.4);
-%   - closed, its rectangle is cleared (OURS: no save areas until M7; the
-%     route opens it on the boot screen, where nothing is under it).
+%   - window M7 (2026-11-25): before it is drawn the dots under it are
+%     saved (save_memory.esp: the save areas of TM-225 p10, PROSE), and
+%     closed, they are restored, so a menu opened over a window leaves the
+%     window as it was (until M6 the rectangle was cleared).
 
 class menu_pane has
 
@@ -50,6 +52,8 @@ class menu_pane has
         clamp(X, Sw, Menu!w, Mx), clamp(Y, Sh, Menu!h, My),
         Menu!x := Mx, Menu!y := My,
         top(Menu, My + Ch + 7),
+        :save(#save_memory, Mx, My, Menu!w, Menu!h, Area),
+        Menu!under := Area,
         draw(Menu);
 
 instance
@@ -60,6 +64,8 @@ instance
 attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
           title := 0, columns := [], widths := [], items_top := 0,
           boxed := none;
+% window M7, OURS: the save area holding the dots under the menu.
+attribute under := 0;
 
 % :item_at(Menu, X, Y, Label, Value) -- OURS: the item under (X, Y), else
 % fail.
@@ -80,11 +86,13 @@ attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
         rebox(Menu, {C, R});
 :box_at(Menu, _, _) :- rebox(Menu, none);
 
-% :erase(Menu) -- OURS (see the head comment).
+% :erase(Menu) -- OURS (see the head comment): window M7, the dots under
+% the menu restored from its save area (the box goes with them).
 % INTERPOLATED (selector and body OURS): erase; basis above and in
 % the head comment.
 :erase(Menu) :-
-        :fill(#bitmap_display, Menu!x, Menu!y, Menu!w, Menu!h, reset);
+        :restore(#save_memory, Menu!under),
+        Menu!under := 0;
 
 local
 
