@@ -894,6 +894,35 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
       of the base (e9c4b96b).
     - The FP atlas (PDF 42-101, 9,406 cases) at the base is 76.8% /
       94.3% within 1 / 3, which is the plan's baseline reproduced.
+- **Step 2, ONE MULTIPLIER OR TWO: ONE (settled from the sources).**
+  The sources were re-read for A4, and the answer is one multiplier,
+  with the divider shared the same way. Decision 3 below and
+  `sau_pau_spec.md` §6 already recorded it. The sources:
+  - Buchholz §14.4, printed p.208 (PDF 233, text layer): "a parallel
+    unit for floating-point operations and a serial unit for
+    variable-field-length operations"; "The two units use the same
+    arithmetic registers"; and "variable-field-length binary multiply
+    and divide operations are performed by the parallel unit".
+  - Buchholz Fig. 14.7, printed p.210 (PDF 235): one multiplier
+    ("12 bits of the multiplier are handled in one cycle").
+  - R23-9732 Fig. 3.8.18, printed 8-22 (PDF 242, left; the page is
+    dated 2/1/62). Re-read on the page image 2026-11-26: "IDENTICAL TO
+    FLOATING POINT MULTIPLY BETWEEN THESE POINTS FOR BOTH SAU MULTIPLY
+    AND MULTIPLY AND ADD", "A CHECKER RETURNS CONTROL TO SAU", "SAU
+    RESUMES CONTROL (BEGINS ADDITION)".
+  - R23-9732 Figs. 3.11.1 (PDF 255) and 3.11.10 (PDF 264): the SAU
+    waits for the PAU to multiply and transfer the result to AB.
+    Fig. 3.11.8 (PDF 262) is the VFL divide's "PAU START VFL DIVIDE",
+    and 3.8.19 gives "REDUCTION CYCLES JUST LIKE FP".
+  - What it means for the model:
+    - FP `*`/`D*`/`*+` and both divides are now in `mkPAU` (step 1).
+    - The VFL binary multiply is still mkSAU's `rl_mul`
+      (StretchSAU.bsv). Moving it into `mkPAU` changes mkSAU's
+      internals, which this item was told to leave alone, so it is
+      left OPEN as the one remaining piece of "one multiplier".
+    - The move is SAU byte assembly, then a PAU request, then an SAU
+      unload, which is the shape the VFL divide already has.
+    - It changes no time while only one instruction is in the E-box.
 
 **A5. `ebusy` becomes response readiness; the look-ahead's `Whole`
 entries split** (`ebox_roadmap.md` steps 5 and 7).

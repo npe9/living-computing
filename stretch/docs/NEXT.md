@@ -274,6 +274,14 @@ it is its own milestone with the atlas's add pages (PDF 42-47, 62, 69-70,
 
 ## ONE PARALLEL-UNIT MULTIPLIER, NOT TWO -- open, 2026-11-19
 
+**SETTLED 2026-11-26 (fidelity_plan.md A4 step 2): ONE.** The divider
+and the FP multiplier are now one module, `mkPAU`
+(`bsv/StretchPAU.bsv`). The sources are Buchholz p.208 and Fig. 14.7,
+and R23-9732 Figs. 3.8.18, 3.11.1, 3.11.8 and 3.11.10, cited by page
+in the plan. Only the VFL binary multiply (mkSAU's `rl_mul`, written
+as `mkVflBox` below) is still outside it; moving it changes mkSAU's
+internals and is left open. The text below is the 2026-11-19 record.
+
 `mkVflBox` (VFL binary `*`/`*+`, plan §1c step 5e) and `mkFpBox` (FP `*`,
 `D*`, `*+`, step 5f) each hold a 48 x 12 multiplier at twelve bits a
 clock. Buchholz printed p.208 (PDF 233) puts both in ONE parallel unit:
