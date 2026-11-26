@@ -3199,7 +3199,37 @@ class Window(unittest.TestCase):
         # command log replays through winfb.run_stream to the same frame and
         # the PNG (windev.png_bytes) decodes back to it.  psi/winshot.py
         # writes these screens as PNGs.
-        # Injections, observed: INJECTIONS_PLACEHOLDER
+        # Injections, observed (2026-11-25, before the step 3n merge; each
+        # from a backup copy, restored by copy, cmp clean; the whole of
+        # test_espc.py and test_kl0.py run each time, test_kl0 OK in all):
+        #   W1 window_pane put_char draws every glyph at the row's left edge,
+        #      not the cursor's dot (putl ignoring the cursor): the three
+        #      stages of this test and test_win_pane FAIL, nothing else.
+        #   W2 standard_io_window drawn_title draws nothing (the title
+        #      not drawn): the three stages FAIL, nothing else.
+        #   W3 windev glyph/6 keeps the code's low byte (a wrong code
+        #      mapping: every glyph the 0xffff box): the three stages and
+        #      test_win_pane FAIL, nothing else.
+        #   W4 window_pane newline scrolls one row early (row + 2 < rows):
+        #      the 'login' stage and test_win_pane FAIL, nothing else.
+        #   W5 window_pane frame: a 1-dot border (the plan's M5 injection):
+        #      the three stages and test_win_pane FAIL, nothing else.
+        #   W6 standard_io_window echo draws with echo inhibited (the
+        #      password shown): the 'password' stage FAILS, nothing else.
+        #   W7 windev cell_of: width and height swapped: test_win_m0_font,
+        #      the three stages and test_win_pane FAIL, nothing else.
+        #   W8 simpos_fs: no `font` alias: test_win_m0_font ERROR, the three
+        #      stages, test_step3l_b8_prompt, test_step3m_keyboard and
+        #      test_step3m_local_login FAIL (the requester's font create/3
+        #      fails, so its initiate/1 does), nothing else.
+        #   W9 window_pane's cursor drawn by set, not exclusive_or (never
+        #      erased): the three stages and test_win_pane FAIL, nothing
+        #      else.
+        # After the merge, test_win_m5_bridged_screen was checked against
+        # W1-W9 alone (with test_fep_bridge.py): it FAILS in all but W6
+        # (the bridged run's final screen has no password on it); W8 also
+        # fails test_fep_bridge Scripted and Tape (the requester stops at
+        # its font), test_fep_bridge OK otherwise.
         import windev
         import winfb
         for stage, (keys, lines, cell) in self.SCREENS.items():
@@ -3223,6 +3253,43 @@ class Window(unittest.TestCase):
                 self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.PINS.get(stage))
                 self.assertEqual(winfb.run_stream(dev.stream_text()).pbm(), fr.pbm())
                 self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
+
+    BRIDGED_PIN = ('cd57f0ff7e32029dc432da52be8795f1b2ba3fcb89ca25186304e2eec13ff404', 5968)
+
+    def bridged(self):
+        # step 3n's run: the held requester logs into real PIMOS (pimm.py)
+        # through the held pimfep, the PIMOS side replayed from the
+        # committed tape (psi/fep_bridge.py replay, test_fep_bridge.py Tape)
+        import fep_bridge
+        stop, psi, left, _t = fep_bridge.replay(os.path.join(HERE, 'fep_bridge_tapes', 'login_pwd.json'))
+        self.assertEqual((stop.cause, left), ('would suspend', []))
+        return psi.m
+
+    def test_win_m5_bridged_screen(self):
+        # M5 on step 3n's bridged run: the same window, now holding PIMOS's
+        # OWN replies (login.kl1, through the 620 wire and the held
+        # pimos_remote_login_replier), not the 3m probe's.  Only the label's
+        # number differs from the 'login' stage (this run's process is 8).
+        # The committed PNGs of docs/simpos/screens/ decode to the pinned
+        # frames.  Injections: see test_win_m5_login_screen's header (this
+        # test FAILS in W1-W5 and W7-W9, OBSERVED; not in W6).
+        import windev
+        import winfb
+        m = self.bridged()
+        fr = windev.device(m).frame
+        (p,) = self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'started'))
+        self.assertEqual(windev.read_cells(fr, 420, 414, 40, 1),
+                         ['Pimos remote login %d' % m.get_slot(m.get_slot(p, 'context'), 'number')])
+        self.assertEqual(windev.read_cells(fr, 420, 431, 40, 7), self.SCREENS['login'][1])
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.BRIDGED_PIN)
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+        shots = os.path.join(HERE, '..', 'docs', 'simpos', 'screens')
+        for name, pin in (('password', self.PINS['password']), ('bridged', self.BRIDGED_PIN)):
+            with open(os.path.join(shots, 'login_pimos_%s.png' % name), 'rb') as f:
+                g = winfb.Frame()
+                g.rows = windev.png_rows(f.read())
+            self.assertEqual((windev.pbm_sha256(g), g.count()), pin, name)
 
 
 if __name__ == '__main__':

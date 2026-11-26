@@ -507,7 +507,8 @@ window, from a live run** (`../../psi/README.md` "Window M0, M3, M5"; tests `tes
   name; at the password, typed and not echoed; after the local login's replies), each by its
   text read back from the frame by glyph matching, the frame's PBM sha256 and dot count. PNGs at
   1,280×1,024 (`windev.png_bytes`, stdlib zlib) are written by `../../psi/winshot.py`; two are
-  in `screens/`. The status band is not drawn yet.
+  in `screens/`, the second from step 3n's bridged run (PIMOS's own replies, replayed from its
+  tape; `test_win_m5_bridged_screen`). The status band is not drawn yet.
 
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 

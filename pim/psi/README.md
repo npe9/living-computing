@@ -3789,6 +3789,145 @@ Each has its observed failures in its header.
     constant).
 - Slot constants: 157 plain (unchanged), 110 to 111 with recipes.
 
+### Window M0, M3, M5: the Login PIMOS window drawn by a live run (2026-11-25)
+
+The owner's goal: "keep going until you can connect them", that is, a
+picture of the Login PIMOS window that comes from a live run of the
+held code, not from a script that types the strings. The plan is
+`../docs/simpos/window_environment_plan.md` (§4.1 architecture, §5
+milestones); the look is `../docs/simpos/subsystems/window.md` §4.2-4.3.
+
+**Who draws what.**
+
+| layer | file | label | what it does on the route |
+|---|---|---|---|
+| held code | `pimfep##pimos_login_requester` (pimfep.ptf) | HELD | every send: `create/3` with `{size,{ch,40},{ch,7}}`, `:create(#font,"font:test_11.font",F)`, `set_font/2`, `set_title/2` (its `title_string/1`), `activate/1`, `clear/1`, `show/1`, `putl/2` of its pool prompts and of PIMOS's replies, `read/2`, `getl/2`, `inhibit_echo/1` |
+| window stand-in | `standin/standard_io_window.esp` | OURS bodies, HELD selectors | keeps the step 3l/3m state (transcript, history, echo) and hands the drawing to its pane |
+| window manager | `standin/window_pane.esp` (new) | OURS (class and body); the look cited per item in its head | rectangles, the 2-dot border, the label strip and rule, glyph positions, wrap, scroll, key#lf/cr, the block cursor of the selected window, erase |
+| font | `standin/font.esp` | OURS body, HELD selector; file HELD | `create/3` retrieves the file and asks the device to decode it |
+| device | `windev.py` (new), reached by `SIMPOS_MODELS` | OURS | `simpos##bitmap_display` `fill/6`, `glyph/6`, `copy/8`, `line/7`, `load_font/5`, `default_font/4`, `get_size/3`: each one winfb command on one frame per machine, logged |
+| frame | `winfb.py` (unchanged) | OURS, frozen | the dots |
+| file system | `simpos_fs.py` | placement HELD, directory `>sys>font` and alias `font` OURS | FONT.DIR's seven files under `font:` |
+
+**Why the window manager is ESP.** The plan §4.1 recommends it: the held
+classes subclass the window stand-ins and hang demons on their
+primaries, so the window logic must be ESP in the inheritance order; and
+on the PSI/UX the SIMPOS window manager stayed in SIMPOS and an outside
+"window server" only drew (Giho 9106 p86, PROSE). So Python is kept below
+the primitive line, and what a live run drew is exactly a winfb command
+stream: the test replays the device's log through `winfb.run_stream` and
+gets the same frame, which is also what `../bsv/WinFbBox.bsv`'s bench and
+the hardware plan's UART consume. One cost: KL0 multiplies two registers
+with no witnessed opcode (espc refuses `X*Y`), so the pane keeps the
+cursor's dot position beside its cell and multiplies by repeated
+addition.
+
+**The tests** (`test_espc.py`, class `Window`):
+
+| test | what it pins |
+|---|---|
+| `test_win_m0_font` | the seven `>sys>font` files; test_11's bytes equal the archive's; `font:test_11.font` → id 0, cell 11×14; `test_11b` → id 1 (same cell, other glyphs: not drawable by the frozen command set); `test_10` → id 2, 10×11; `font:font_13.font` (no file) and `font:csp.icon` (not f822) fail `create/3`; the decoded 'A' is 48 dots |
+| `test_win_pane` | a 10×3 pane alone: geometry, the empty frame's dots, the label cut to the strip, wrap, scroll, key#lf/cr, the 0xffff box for a missing code (status MISSING), the cursor erased by xor on deselect, clear, replay, erase to an empty frame |
+| `test_win_m5_login_screen` | the live run at three stages (below): place and size, the cursor's cell, the label `Pimos remote login N` (N the process's context number), the text read back from the frame by glyph matching (`windev.read_cells`), nothing drawn outside the window, every command OK, the PBM sha256 and dot count, the stream's replay, the PNG round trip |
+
+The pinned screens (the frame read back; `#` is the block cursor):
+
+| stage | keys | text | sha256 (PBM), dots |
+|---|---|---|---|
+| name | `local` | `Enter FEP node name--------->` / `local` / `Enter your PIMOS user name-->` / `#` | `d134cbfa…`, 5,196 |
+| password | `local`, `pimos`, then `sec` without RETURN | the above, `pimos`, `Enter your PIMOS password--->`, `#` | `380d5779…`, 6,265: the same frame as with no password keys, so nothing was echoed |
+| login | `local`, `pimos`, `` (3m probe replies) | `Your request is accepted.` / `Login procedure starts.` / `OK. Your initial program starts.` / `` / `Good luck!` / `` / `#` | `c4e83dfd…`, 5,959 |
+
+`python3 -I psi/winshot.py OUTDIR` writes the three PNGs and the bridged
+one (1,280×1,024, 1 bit; 1.5-1.8 KB each) and checks them against the pins;
+`../docs/simpos/screens/` holds the password screen and the bridged
+run's final screen.
+
+**Choices, labelled** (each also in its file):
+- OURS: the window is centred on the 1,280×944 screen for the held
+  `{position, manipulator}` (no mouse is modelled); the label strip is
+  one cell plus 2 dots and drawn in the window's font; glyphs are drawn
+  opaque (`copy`); wrap at the last column; an echoed RETURN is a
+  newline; kill clears the rectangle (no save areas until M7);
+  `default_font/4` answers test_11 for a window drawn before
+  `set_font/2` (font_13 is not held).
+- INFERENCE: key#lf in a string breaks the line and key#cr returns
+  (window.md §2.3); output scrolls up one row past the last; the cell is
+  the font's space character (TM-115 p16-17, PROSE); a missing font
+  file fails `create/3`; the screen is 1,280×944 (TM-785, kl1graph).
+- PRINTED-INTERFACE / SCREENSHOT behind the look: border 2 (TM-125 p15),
+  margins 1 (TM-125 p16), white screen, black text, thin borders, the
+  label strip with its rule, the solid block cursor (window.md §4.2-4.3).
+- The 0x000a at the end of two PIMOS replies (3m's probe texts) is a
+  line break, so each is followed by a blank line.
+
+**A compiler fault found on the way.** In `window_pane create/7`,
+`Pane!iw := Iw, Pane!ih := Ih, Pane!w := Iw + 6, Pane!h := Ih + Ch + 9`
+compiled `Pane!h`'s sum from a register that `put r0, w` (the slot name
+of the assignment before it) had just overwritten: espc kept `Ih` cached
+in r0 after the slot-name put reused r0. kl0 refused (`add on w`), so it
+was not silent here; the pane passes the sizes through a local instead.
+The fault is in `espc.py`'s register cache and is not fixed (open below).
+
+**Injections, observed** (2026-11-25; each from a backup copy, restored
+by copy, `cmp` clean; the full test_espc.py and test_kl0.py run each
+time; test_kl0 OK in all):
+- W1 (`window_pane` draws every glyph at the row's left edge: putl
+  ignoring the cursor), W3 (`windev` keeps a code's low byte: a wrong
+  glyph mapping), W5 (a 1-dot border, the plan's M5 injection), W9 (the
+  cursor drawn by `set`, never erased): the three live stages and
+  `test_win_pane` FAIL, nothing else.
+- W2 (the title not drawn): the three live stages FAIL, nothing else.
+- W4 (scroll one row early: a scroll off by one): the `login` stage and
+  `test_win_pane` FAIL. Only the last stage reaches the last row.
+- W6 (the echo drawn with echo inhibited: the password shown): the
+  `password` stage FAILS, nothing else.
+- W7 (the cell's width and height swapped): `test_win_m0_font`, the
+  three stages and `test_win_pane` FAIL.
+- W8 (no `font` alias): `test_win_m0_font` ERRORS; the three stages,
+  `test_step3l_b8_prompt`, `test_step3m_keyboard` and
+  `test_step3m_local_login` FAIL (the requester's `font:create/3` fails,
+  so its `initiate/1` does).
+- After the step 3n merge, `test_win_m5_bridged_screen` (below) was run
+  against W1-W9 with `test_fep_bridge.py`: it FAILS in all but W6, whose
+  password is not on the final screen; W8 also fails test_fep_bridge's
+  Scripted and Tape tests.
+
+**Census, recomputed row by row** against 9a1a5e52 (MEASURED
+2026-11-25, `_G` numbering normalised; no row new or gone), then the
+step 3n merge's pins re-run:
+- **Six packages:** 319 / 12 / 198, unchanged, no row moved.
+- **Plain FEP** and **with recipes:** outcome totals unchanged (806 /
+  234 / 411 and 832 / 235 / 384 before the 3n merge; 810 / 238 / 403 and
+  837 / 239 / 375 after it, master's own figures). Three rows move their
+  stop in each, all backwards and all census artifacts: the login
+  requester's `initiate/1`, `goal/1` and `invoke/1` stopped at
+  `get_number/2` on their unset context and now stop earlier, at
+  `directory retrieve/3: no file system is mounted`, because
+  `font:create/3` now reads its file and the census mounts no file
+  system. Slot constants 157 → 154 (plain), and with recipes 110 → 107
+  before the merge, 111 → 108 after it.
+- No census row is moved forward by this work: the window's progress is
+  in the `Window` tests, which mount the file system and boot.
+
+**On step 3n's bridged run** (`test_win_m5_bridged_screen`): the
+requester logged into real PIMOS (`ref/pimm/pimm.py`) through the held
+pimfep, the PIMOS side replayed from the committed tape
+`fep_bridge_tapes/login_pwd.json` (`fep_bridge.replay`, about 2 s). The
+same window then holds PIMOS's own replies from `login.kl1` (`Login
+procedure starts.`, `OK. Your initial program starts.`, `Good luck!`),
+not the probe's; the frame differs from the `login` stage only in the
+label's number (`Pimos remote login 8`): sha256 `cd57f0ff…`, 5,968 dots.
+`../docs/simpos/screens/login_pimos_bridged.png` is that frame, and the
+test checks that both committed PNGs decode to their pins. PIMOS's shell
+window (`pwd`, `Shell>> `) is still `fep.py`'s, not a PSI window.
+
+**Where it stops.** The window stops where the route stops: the
+requester waits for a key after the replies. The PIMOS console (M4:
+`pmacs_window` through the held `pimos_window_editor`) needs the wire of
+step 3n; the status band, the system menu's mouse and the manipulator are
+M6-M7.
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window
@@ -3800,10 +3939,26 @@ with the Bluesim bench. The `test_11` font is read from
 `../docs/nonlocal/psdpim.tar.Z` FONT.DIR. Every OURS choice is labelled
 in its header. `test_winfb.py` (26 tests) pins hand-written facts: edge
 masks, overlapping copies, XOR twice erases, save/restore round trips,
-and the glyphs of the Login PIMOS prompt. It is not yet wired into the
-`SIMPOS_MODELS` hook; that is milestone M3 onward.
+and the glyphs of the Login PIMOS prompt. Since window M0/M3/M5 (the
+section before) it is reached from the `SIMPOS_MODELS` hook through
+`windev.py`, unchanged: the live runs draw with its commands.
 
 ## Open
+
+- **espc's register cache and slot-name puts** (window M0/M3/M5). In
+  `Pane!iw := Iw, Pane!ih := Ih, Pane!w := Iw + 6, Pane!h := Ih + Ch + 9`
+  the slot name `w` was put in r0 while espc still took r0 to hold `Ih`
+  (the slotset branch of `ClauseCompiler.inline` takes `R.lowest()` for
+  the name without dropping what the cache says r0 holds). kl0 refused
+  the sum (`add on w`); a case where the stale register held an integer
+  would compute a wrong value silently. Not fixed; `window_pane.esp`
+  works around it.
+- **The window environment after M0/M3/M5:** M4 (the PIMOS console as a
+  PSI `pmacs_window` through the held `pimos_window_editor`, once PIMOS's
+  window commands reach the PSI), the status band, the system menu drawn
+  (M6), save areas and the manipulator (M7). `pmacs_window`'s text
+  protocol, `get_interpreter/2` and `has_been_reshaped/1` are still not
+  stood in (the census's `putl/2` stops), being off the live route.
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still

@@ -619,7 +619,7 @@ typed there, are `Shell>> `, ` The value of task: directory is
 (`ref/pimm/lockstep_shell.py` `APPS['pwd']`). The directory in that
 answer is the one the held `simpos_user_device` gave PIMOS.
 
-### 4.6 The window drawn (window milestones M0, M3, M5; 2026-11-25)
+### 4.7 The window drawn (window milestones M0, M3, M5; 2026-11-25)
 
 The same run now draws. The basis, the injections and the census are in
 `../../psi/README.md`, "Window M0, M3, M5"; the plan is
@@ -652,7 +652,10 @@ The same run now draws. The basis, the injections and the census are in
   ```
 
   After the local login the requester's `clear/1` (@12c) empties it and
-  the four replies follow (`screens/login_pimos_login.png`).
+  the four replies follow. On step 3n's bridged run (PIMOS replayed
+  from its tape, §4.6 and §6.5) they are PIMOS's own
+  `login.kl1` texts, and the window is pinned by
+  `test_win_m5_bridged_screen` (`screens/login_pimos_bridged.png`).
 
 ## 5. Next
 
