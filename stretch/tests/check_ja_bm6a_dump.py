@@ -18,7 +18,9 @@ ERROR1/ERROR2 store the box digit into MSGC1/MSGC2, the tested
 address's six octal digits into MSGD1/MSGD2 and the obtained address's
 into MSGE1/MSGE2, from the binary copies in ERADP1/ERADP2; and SIC
 writes the return into EXIT1/EXIT2 only when the BRGZ to the error
-routine is taken.  None of those words is written on the no-error path.
+routine is taken (Reference Manual printed pp.41-42: the store "is
+executed if and only if the associated branching is successful", and
+the stored counter addresses the instruction after the branch).  None of those words is written on the no-error path.
 So "the program found no error" is: every one of them still holds its
 assembled value.  If one does not, the message is decoded and printed.
 
@@ -40,8 +42,9 @@ from the listing and the Reference Manual, not from the model:
     "specifies the number of bits by which the right end of the
     accumulator operand is offset from the right end of the
     accumulator"), i.e. right-word bits 32-49; connective 1100 over
-    (memory, accumulator) = 00,01,10,11 is NOT memory, so those bits
-    become ~A.  ST(BU,64,8),0($X4) stores the 64-bit accumulator field
+    (memory, accumulator) = 00,01,10,11 (Reference Manual printed p.76,
+    Figure 20's bit order; StretchExecute.bsv's connective comment) is
+    NOT memory, so those bits become ~A.  ST(BU,64,8),0($X4) stores the 64-bit accumulator field
     at offset 0 -- the right word -- at A.  +I(BU,18,8),1.,46 adds 1
     to the field ending 46 bits from the right, right-word bits 0-17.
     So  word(A) = A in bits 0-17, ~A in bits 32-49, zeros elsewhere.
@@ -74,12 +77,24 @@ alias, the fault this test exists to find:
          (the run stopped at 46,944,892 clocks; 35,388,608 clean)
 Nothing else failed.  The alias is invisible at 200005 itself: its
 reads go to 200001, which holds 200005's word.
+A SECOND INJECTION, IN THE LOWER MEMORIES (same day, same revert): 040005
+decoding as 040001 (one unit, above the 612-word save area):
+  UPPER  PASS  (Part I never reaches it)
+  PASS   FAIL  the program took its error path -- ERADP2, MSGC2, MSGD2,
+               MSGE2, EXIT2 changed; its message decodes as
+               "BOX NO. 2  ADDR 040001  THE ADDR OBTAINED IS 040005"
+         FAIL  lower: 6 of 32219 words differ -- 040001, and 001241-
+               001265, the next pass's 100-word save of those five words
+         FAIL  upper: 5 of 65051 words differ (100067 EXIT2, 100076
+               MSGC2, 100077 MSGD2, 100103 MSGE2, 100113 ERADP2)
+Nothing else failed.
 THE BOX DIGIT, AN OPEN QUESTION: for 200001 (low bits 01) the message
 says 4.  L(BU,2,2),$X4+.16 takes the address's low two bits and
 ST(BU,2,8),$X8+.18 stores them at bits 18-19 of the character pointer,
 i.e. in units of TWO characters, and Part I then adds PLS02 = 16 bits
 (PDF p.5): digit = 2b + 2, so 2, 4, 6 and, for b = 3, a byte past the
-NOCOM2 table.  A numbering of the B boxes 2-5 would want b + 2.
+NOCOM2 table.  Part II, with no PLS02, gave 2 for 040001 (b = 1):
+digit = 2b.  A numbering of the B boxes 2-5 would want b + 2.
 Whether the 7030 stores a length-2 field with byte size 8 differently
 from this model's reading is not settled here.
 

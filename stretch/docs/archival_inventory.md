@@ -971,6 +971,13 @@ and they were not read page by page.
 So four of the five remain backed by the Reference Manual alone, and
 their decks say so.
 
+`ja_bm6a` has since been read whole in the page image (2026-11-25,
+`../decks/ja_bm6a_unique_adr.strap`, every printed row checked). It
+holds none of the five. Its VFL immediates (`+I`, `CTI0110`) are
+unindexed (tag byte 80). Its only indexed addresses are through X4,
+X7, X8 and X9, which hold non-negative values. Every branch targets
+the program itself. It sets no boundary registers and does no FP.
+
 ### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
 
 **THE ROUTINE INDEX, transcribed from the write-up at PDF p.2 (printed
