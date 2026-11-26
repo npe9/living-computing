@@ -5495,7 +5495,8 @@ end."""
         #       nothing else.
         #   E3 TM-785 p40's six-element draw_filled_ellipse vector drawn
         #      (read as {CX, CY, RX, RY, Pattern, Op}), not refused: this
-        #      test FAILS, nothing else (Window tests only).
+        #      test FAILS, nothing else (test_fep_bridge.py,
+        #      test_kl0.py also run: OK).
         import windev
         import winfb
         A = K.Atom
@@ -5867,10 +5868,11 @@ end."""
         #      result): test_win_m9_attribute FAILS, nothing else.
         #   E1 a middle click on a choice window opens the manipulator on
         #      it (no not_choice/2): test_win_m9_attribute FAILS, nothing
-        #      else (Window tests only).
+        #      else (test_fep_bridge.py,
+        #      test_kl0.py also run: OK).
         #   E2 MENU's listed/3 lists the choice windows:
-        #      test_win_m9_attribute FAILS, nothing else (Window tests
-        #      only).
+        #      test_win_m9_attribute FAILS, nothing else
+        #      (test_fep_bridge.py, test_kl0.py also run: OK).
         import fep_bridge as FB
         import windev
         A = K.Atom
