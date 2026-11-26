@@ -67,6 +67,12 @@
 ! T7 write "TWO+.56" and not "TWO": an eight-bit field at a word's
 ! own address is that word's TOP byte, which here is zero, and the
 ! first run of this deck duly reported that 255 plus nothing is 255.
+!
+! CYCLES=548 PINNED 2026-11-25 (run_tests.sh; docs/fidelity_plan.md A3 half
+! (b)).  MODEL behaviour, not a documented time: the suite's check that
+! mkSAU's stepped recomplement pass (Perf. Char. Vol. 1 Table 3, printed
+! p.3-7) reaches the core's timing.  Observed: StretchSAU's
+! sauStepRecomp := False gives 546; sauStepZ := False leaves 548.
 
 ! THREE INJECTIONS, MEASURED, and they partition the seven checks:
 !   fieldToSM ignoring the negative sign modifier on an unsigned

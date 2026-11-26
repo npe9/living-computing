@@ -91,6 +91,13 @@
 ! fetches is not printed either (Perf. Char. Vol. 1 printed p.2-3 item 6:
 ! "All VFL stores are fetch-and-stores"); the model's does, CHOSEN.
 !
+! CYCLES 6110 -> 6164, 2026-11-26 (docs/fidelity_plan.md A3 half (b) step
+! 5): mkSAU steps CV / DCV binary-to-decimal by Perf. Char. Vol. 1 Table 3
+! (printed p.3-9, PDF 27): .6(s + u/8 + 1), s and u from this deck's
+! accumulator, where the old row was fitted at s = 1, u/8 = 1.  Cause
+! MEASURED: StretchSAU's sauStepCvtAcc := False gives 6110 / 581 again with
+! every check passing.  MEMREADS 581 does not move.
+!
 ! IBM ORACLE HUNT, 2026-11-18 -- NOTHING FOUND FOR THIS RULE.  Every page
 ! of the diagnostic PDFs (ja_ax1a, jb_ax2a..jb_ax5b, jb_af1c,
 ! ja_ua1, ja_uc1a, ka_ex1/1b, ka_ua1, ka_ul1, ja_bb6b/bm6a/bp6a and
