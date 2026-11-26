@@ -504,9 +504,9 @@ every line identical. No model was changed. The home directory now has
 seventeen files, so `ls` was re-measured (186,304 instructions, 877,733
 lines, its text in two writes) and PASSes on both models; the FEP
 emulator's held card (`tools/mkfepcard.py --held`) has 72 entries,
-the home directory's 54-70. As a control the 33 other rows (pkl1_fact first, then the 32 others, the limit rows with their limits) were
-re-run on the reference from the new checkpoint, each passing its pin
-and its window. The answers are KLIC 2.002's on the same
+the home directory's 54-70. As a control all 40 APPS rows (the limit rows with their limits) were
+re-run on the reference from the new checkpoint, each in its own fork,
+and each matched its pin (lines and instructions) and its window. The answers are KLIC 2.002's on the same
 `NAME_r8.kl1` text (`../docs/pkl1/klic_oracle/oracle_r8b.out`).
 Observed injections on the core (2026-11-26, a private copy of
 `PimmStages.bsv` compiled into a separate build, run on pkl1_cd's kept

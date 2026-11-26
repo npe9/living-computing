@@ -107,7 +107,11 @@ files (`HOME_FILES`) are the primer's `sample1.kl1` and, since R8
 eight samples (seventeen home files). `r8_entry_trace.py` (OURS, not in
 the suite, needs a prompt checkpoint) traces why a file with one
 aborted module is not loaded: the loader's `flush/6` entered with
-`abnormal`.  168
+`abnormal`. `r9_mgtp_probe.py` (OURS, likewise) is R9's first probe: it
+serves MGTP/G's files from the held `mgtp.tgz`, plus our 6-Queens
+axioms, as private home files, and shows where compiling the axioms
+stops (`mark_element` on a list cell; `../../docs/pimos_roadmap.md`
+R9).  168
 instructions on both models (counted 2026-11-24: 168 `i_` handlers in
 `pimm.py`, shoen stage 3's `stop_shoen`, `abort_shoen`, `raise`,
 `current_processor`, `jump`, `set_marked_variable`, `wait_vector`, `multiply_bignum_word`, `subtract_bignum`, `get_constant`, `b_vector`, `code_to_predicate` and `add_shoen_resource` among them, then
