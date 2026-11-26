@@ -142,10 +142,31 @@ for seed in $SEEDS; do
   S="$BUILD/s$seed"
   mkdir -p "$S"
   echo "== nextpnr-ecp5: seed $seed"
+  # a watchdog: nextpnr 0.6's router1 can fail to converge on a placement
+  # (seed 1 of the H7s netlist was still at 37,000 overused arcs after 9
+  # hours, MEASURED 2026-11-26, where seed 2 routed in 320 s), so a seed
+  # that has not finished in WIN_PNR_MAX_S seconds (default 3600) is
+  # stopped and counted as a FAIL of that seed
   nextpnr-ecp5 --85k --package CABGA381 --speed 6 \
     --json "$BUILD/top.json" --lpf ulx3s_win.lpf --textcfg "$S/top.config" \
     --log "$S/nextpnr.log" --report "$S/report.json" --seed "$seed" --timing-allow-fail \
-    > "$S/nextpnr.console" 2>&1 || { tail -30 "$S/nextpnr.console" >&2; die "nextpnr failed (seed $seed)"; }
+    > "$S/nextpnr.console" 2>&1 &
+  pnr=$!
+  t0=$(date +%s)
+  while kill -0 $pnr 2>/dev/null; do
+    if [ $(( $(date +%s) - t0 )) -gt "${WIN_PNR_MAX_S:-3600}" ]; then
+      kill $pnr 2>/dev/null || true
+      echo "   seed $seed: no route within ${WIN_PNR_MAX_S:-3600} s (stopped): this seed FAILS" >&2
+      break
+    fi
+    sleep 10
+  done
+  if ! wait $pnr; then
+    if [ -f "$S/nextpnr.log" ] && grep -q "Program finished normally" "$S/nextpnr.log"; then :; else
+      tail -5 "$S/nextpnr.console" >&2; fail=1; continue
+    fi
+  fi
+  echo "   seed $seed: placed and routed in $(( $(date +%s) - t0 )) s"
   ecppack --compress --input "$S/top.config" --bit "$S/ulx3s_win.bit" \
     > "$S/ecppack.console" 2>&1 || die "ecppack failed (seed $seed)"
   [ -s "$S/ulx3s_win.bit" ] || die "no bitstream (seed $seed)"

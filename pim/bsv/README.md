@@ -988,7 +988,11 @@ Since 2026-11-26 the link is in the board top. `mkWinUlx3s` has
 out), connected to the box after the self-test. `run_win_fpga.sh`: all
 three seeds PASS, 12,161 TRELLIS_COMB, 5,167 FF, 156 DP16KD; sys
 30.74-33.94, pclk 74.81-86.27, sclk 402.74-411.02 MHz (the plan's H6
-status). The host side for the board is the owner's step:
+status, commit 859975f6). **Since H5/H7s added the PS/2 input box to the
+board top, `run_win_fpga.sh` does NOT pass** (MEASURED 2026-11-26, the
+plan's H7s status): nextpnr's router does not converge on any of seeds 1-3,
+while master ba41e458's top without it routes all three in 4-5 minutes.
+Open item. The host side for the board is the owner's step:
 `python3 tools/winlink.py` holds the framing, but its serial-port mode is
 not written (no agent opens the port).
 

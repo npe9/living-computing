@@ -1138,6 +1138,26 @@ taken by the virtual monitor (§4.1).
 - The board top takes the PS/2 keyboard on US2. `usb_fpga_bd_dp` is the clock and
   `usb_fpga_bd_dn` the data, which is INFERENCE; the pull-ups are on. LED 4 shows the clock.
 - The real-monitor check stays deferred with H7.
+- **Synthesis: the board top with the input box does NOT pass `run_win_fpga.sh` (MEASURED
+  2026-11-26). Open item.** H6's table holds for commit 859975f6 only. The measurements:
+  - yosys maps fine. The branch's top, merged with master ba41e458, is 10,263 LUT4, 6,057 FF,
+    221 DPR16X4 and 157 DP16KD. The 157th DP16KD is §3.1's key table, which `proc_rom` makes
+    into a ROM; `run_win_fpga.sh`'s check now expects 157.
+  - nextpnr 0.6 does not route it. On seeds 1, 2 and 3, router1 was still at about 59,000 of
+    67,258 arcs after 1,800 s each, rerouting about 66 arcs a second against a healthy run's
+    roughly 960. router2 (seed 1) stayed at about 12,000 overused wires to its 17th iteration.
+    The placed wirelength is about 200,000, against 130,000 for master's top.
+  - The control: master ba41e458's own top, without the input box, routes and passes on seeds
+    1-3 (231-301 s; pclk 78.06-87.17 MHz). Mapping the key table to logic (`proc -norom`, 156
+    DP16KD) does not help: none of the three seeds routes in 600 s.
+  - Before the merge, the top with the input box routed on seeds 2 and 3 (320 s and 460 s).
+    Seed 2 passed; seed 3 failed pclk, 71.39 MHz against 74. Seed 1 did not finish in 9 hours.
+  - So the input box's part of the top, or what `mkWinBoardCore` changed around it, takes
+    routing past what nextpnr 0.6 manages, though utilisation is about 16%. The likely next
+    steps, none tried: find which nets the router keeps ripping up; floorplan the PS/2 side
+    near its pins (US2 at D15/E15); or take the input box out of the board top until H7.
+  - `run_win_fpga.sh` now stops a seed that has not routed in `WIN_PNR_MAX_S` seconds (3600 by
+    default) and counts it as a FAIL, rather than hanging.
 
 Not yet, and last by the owner's decision of 2026-11-26: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
 report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback
