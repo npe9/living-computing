@@ -388,6 +388,11 @@ and the winfb/RTL lockstep bench, and records the change as OURS.
 **Status (2026-11-26, implementation):** the owner said "do it"; progress is recorded step by step
 in `../../psi/README.md` "Window M8's stops resolved".
 - Step 1 DONE: `/8`, `/6` and `rough_dotted` stood in (`test_win_m8_stops_ellipse`).
+- Step 2 DONE:
+  - the read primitive in `psi/winfb.py` and `bsv/WinFbBox.bsv`, in lockstep (`run_win_tb.sh`);
+  - on top of it `save_image/6`, `get_point_value/4`, `set_point_value/4`, and `paint/5` as a
+    4-connected seed fill (`test_win_m8_stops_read`).
+  - The held paragraph run waits for step 3: it draws into windows that are never shown.
 
 ## 8. Sources read for this page
 

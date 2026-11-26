@@ -512,7 +512,155 @@ attribute under := 0, image := 0;
         :unpeel(#coordinator, L2);
 :copy_in(Pane, _, _, _, _, _, _, _, _) :- :graphics_refused(Pane, copy);
 
+% Window M8's stops, step 2 (2026-11-26): READING DOTS BACK, on the device's
+% read (psi/windev.py read/7, winfb's 2026-11-26 extension, OURS and
+% owner-approved: docs/simpos/m8_stops.md §3, §4).  Each read goes through
+% uncover/3 and unpeel/2 and takes the block cursor off, as a drawing does,
+% so the dots read are the window's own.  1 = black (the frame's).
+%
+% :read_in(Pane, S, X, Y, Width, Height) -- INTERPOLATED (selector and body
+% OURS) from window.md §2.5 save_image/6 (USAGE paragraph p_imag.esp:198,
+% the inverse of restore_image/6): the inside's rectangle into the string S
+% from element 0, ceil(Width/16) words a row, MSB leftmost, the pad dots 0
+% (image_in/6's layout).  The rectangle must lie wholly inside and S hold
+% its words, or the method refuses loudly.
+:read_in(Pane, S, X, Y, W, H) :-
+        inside(Pane, X, Y, W, H), value((W + 15) / 16, N),
+        string(S, L, _), value(H * N, Need), L >= Need, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        :read(#bitmap_display, Pane!left + X, Pane!top + Y, W, H, S, _),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:read_in(Pane, _, _, _, _, _) :- :graphics_refused(Pane, read);
+
+% :point_in(Pane, X, Y, ^Value) -- INTERPOLATED (selector OURS) from TM-125
+% p17's get_point_value/4 (PRINTED-INTERFACE: "the value (0/1) of the
+% pixel"; body OURS): a 1 x 1 read.  A dot outside the inside refuses.
+:point_in(Pane, X, Y, V) :-
+        inside(Pane, X, Y, 1, 1), !,
+        new_string(S, 1, 16),
+        :read_in(Pane, S, X, Y, 1, 1),
+        string_element(S, 0, Wd), bit(0, Wd, V);
+:point_in(Pane, _, _, _) :- :graphics_refused(Pane, point);
+
+% :paint_in(Pane, X, Y, Pattern, Op) -- INTERPOLATED (selector OURS) from
+% window.md §2.5 paint/5 (USAGE kappa2 user_if/pb/pdim.esp:606
+% `:paint(OPicon1, 1, 1, Pattern1, set)`, gog DISPPBMS.esp:117, cil
+% es_gin.esp:1761): a seed fill.  THE REGION IS INFERENCE AND OURS: no
+% source says which dots paint/5 fills.  Here (docs/simpos/m8_stops.md §4)
+% it is the dots 4-connected to (X, Y) inside the inside whose value is
+% the seed's (OURS: a boundary-colour form would take one more argument,
+% which no held caller passes; 4-connected, INFERENCE: an 8-connected fill
+% leaks through a one-dot diagonal outline, such as gog's triangle).  The
+% region is found first (a scanline fill, its rows read as needed, one
+% device read a row) and then drawn row by row as span/6 draws a filled
+% shape's spans (Pattern fix or a pattern, through Op), so a pattern's 0
+% dots, which leave the frame as it was, cannot feed the search.  A seed
+% outside the inside paints nothing (OURS).
+:paint_in(Pane, X, Y, Pt, Op) :-
+        X >= 0, Y >= 0, X < Pane!iw, Y < Pane!ih, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        value(Pane!ih, H),
+        new_heap_vector(Rows, H), new_heap_vector(Spans, H),
+        dot_at(Pane, Rows, X, Y, V),
+        seeds(Pane, Rows, Spans, V, [{X, Y}]),
+        painted(Pane, Spans, 0, Pt, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:paint_in(_, _, _, _, _);
+
 local
+
+% window M8's stops, reading dots back (OURS, see read_in/6, paint_in/5)
+% the dot of word Wd at B (0 = its MSB, the leftmost dot): espc divides by
+% constants only (immediates 0..255, so the larger powers in steps), one
+% clause a position
+bit(0, Wd, D) :- !, value(Wd / 128 / 128 / 2, Q), odd(Q, D);
+bit(1, Wd, D) :- !, value(Wd / 128 / 128, Q), odd(Q, D);
+bit(2, Wd, D) :- !, value(Wd / 128 / 64, Q), odd(Q, D);
+bit(3, Wd, D) :- !, value(Wd / 64 / 64, Q), odd(Q, D);
+bit(4, Wd, D) :- !, value(Wd / 128 / 16, Q), odd(Q, D);
+bit(5, Wd, D) :- !, value(Wd / 128 / 8, Q), odd(Q, D);
+bit(6, Wd, D) :- !, value(Wd / 128 / 4, Q), odd(Q, D);
+bit(7, Wd, D) :- !, value(Wd / 128 / 2, Q), odd(Q, D);
+bit(8, Wd, D) :- !, value(Wd / 128, Q), odd(Q, D);
+bit(9, Wd, D) :- !, value(Wd / 64, Q), odd(Q, D);
+bit(10, Wd, D) :- !, value(Wd / 32, Q), odd(Q, D);
+bit(11, Wd, D) :- !, value(Wd / 16, Q), odd(Q, D);
+bit(12, Wd, D) :- !, value(Wd / 8, Q), odd(Q, D);
+bit(13, Wd, D) :- !, value(Wd / 4, Q), odd(Q, D);
+bit(14, Wd, D) :- !, value(Wd / 2, Q), odd(Q, D);
+bit(15, Wd, D) :- odd(Wd, D);
+
+odd(Q, D) :- value(Q - (Q / 2) * 2, D);
+
+% the dot (X, Y) of the inside, from row Y's words (read once: Rows holds
+% 0 or the row's string)
+dot_at(Pane, Rows, X, Y, V) :-
+        row_of(Pane, Rows, Y, S),
+        value(X / 16, K), string_element(S, K, Wd),
+        value(X - K * 16, B), bit(B, Wd, D), V = D;
+
+row_of(_, Rows, Y, S) :- vector_element(Rows, Y, S), S \== 0, !;
+row_of(Pane, Rows, Y, S) :-
+        value((Pane!iw + 15) / 16, N), new_string(S, N, 16),
+        :read(#bitmap_display, Pane!left, Pane!top + Y, Pane!iw, 1, S, _),
+        set_vector_element(Rows, Y, S);
+
+% the scanline search: a stack of seeds; a seed of value V not yet in a
+% span gives its row's maximal run [L, R] (Spans holds each row's list of
+% {L, R}), and each run of V dots in [L, R] on the rows above and below
+% gives a seed
+seeds(_, _, _, _, []) :- !;
+seeds(Pane, Rows, Spans, V, [{X, Y} | Q]) :-
+        dot_at(Pane, Rows, X, Y, V), vector_element(Spans, Y, Ss), not_in(Ss, X), !,
+        left_end(Pane, Rows, V, X, Y, L), right_end(Pane, Rows, V, X, Y, R),
+        set_vector_element(Spans, Y, [{L, R} | Ss]),
+        next_row(Pane, Rows, V, L, R, Y - 1, Q, Q1),
+        next_row(Pane, Rows, V, L, R, Y + 1, Q1, Q2),
+        seeds(Pane, Rows, Spans, V, Q2);
+seeds(Pane, Rows, Spans, V, [_ | Q]) :- seeds(Pane, Rows, Spans, V, Q);
+
+not_in(0, _) :- !;                      % a row with no span yet (the vector's 0)
+not_in([], _) :- !;
+not_in([{L, _} | Ss], X) :- X < L, !, not_in(Ss, X);
+not_in([{_, R} | Ss], X) :- X > R, not_in(Ss, X);
+
+left_end(Pane, Rows, V, X, Y, L) :-
+        X > 0, dot_at(Pane, Rows, X - 1, Y, V), !, left_end(Pane, Rows, V, X - 1, Y, L);
+left_end(_, _, _, X, _, X);
+
+right_end(Pane, Rows, V, X, Y, R) :-
+        X + 1 < Pane!iw, dot_at(Pane, Rows, X + 1, Y, V), !,
+        right_end(Pane, Rows, V, X + 1, Y, R);
+right_end(_, _, _, X, _, X);
+
+next_row(_, _, _, _, _, Y, Q, Q) :- Y < 0, !;
+next_row(Pane, _, _, _, _, Y, Q, Q) :- Y >= Pane!ih, !;
+next_row(Pane, Rows, V, L, R, Y, Q, Q1) :- runs(Pane, Rows, V, L, R, Y, 0, Q, Q1);
+
+runs(_, _, _, X, R, _, _, Q, Q) :- X > R, !;
+runs(Pane, Rows, V, X, R, Y, In, Q, Q1) :-
+        dot_at(Pane, Rows, X, Y, V), !,
+        pushed(In, X, Y, Q, Q0),
+        runs(Pane, Rows, V, X + 1, R, Y, 1, Q0, Q1);
+runs(Pane, Rows, V, X, R, Y, _, Q, Q1) :- runs(Pane, Rows, V, X + 1, R, Y, 0, Q, Q1);
+
+pushed(0, X, Y, Q, [{X, Y} | Q]) :- !;
+pushed(_, _, _, Q, Q);
+
+% the region drawn: each row's spans (disjoint: a seed inside a span is
+% never searched again), top to bottom
+painted(Pane, _, Y, _, _) :- Y >= Pane!ih, !;
+painted(Pane, Spans, Y, Pt, Op) :-
+        vector_element(Spans, Y, Ss), spans(Pane, Ss, Y, Pt, Op),
+        painted(Pane, Spans, Y + 1, Pt, Op);
+
+spans(_, 0, _, _, _) :- !;
+spans(_, [], _, _, _) :- !;
+spans(Pane, [{L, R} | Ss], Y, Pt, Op) :- span(Pane, L, R, Y, Pt, Op), spans(Pane, Ss, Y, Pt, Op);
 
 % window M8's rest, images (OURS, see image_in/6)
 image_rows(_, _, _, _, _, _, J, H) :- J >= H, !;

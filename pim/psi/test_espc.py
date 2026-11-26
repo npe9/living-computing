@@ -5663,6 +5663,185 @@ end."""
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
 
+    IW, IH = 440, 280                   # graphics_window's inside
+
+    def flood4(self, fr, x, y):
+        # the reference region of paint_in/5 (OURS): the dots 4-connected
+        # to the inside's (x, y) with its value, inside the inside
+        X0, Y0 = self.GRAPHICS_AT
+
+        def dot(i, j):
+            return (fr.rows[Y0 + j] >> (1279 - X0 - i)) & 1
+        v, seen, todo = dot(x, y), set(), [(x, y)]
+        while todo:
+            i, j = todo.pop()
+            if (i, j) in seen or not (0 <= i < self.IW and 0 <= j < self.IH) or dot(i, j) != v:
+                continue
+            seen.add((i, j))
+            todo += [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        return seen
+
+    def test_win_m8_stops_read(self):
+        # Window M8's stops, step 2 (docs/simpos/m8_stops.md §3, §4, §7):
+        # reading dots back on winfb's read (the 2026-11-26 extension, OURS
+        # and owner-approved; psi/windev.py read/7, window_pane.esp
+        # read_in/6, point_in/4, paint_in/5):
+        #   - save_image/6 `(W, String, X, Y, Width, Height)` (USAGE
+        #     paragraph p_imag.esp:198) fills the caller's string with the
+        #     rectangle, ceil(Width/16) words a row, MSB leftmost, pad dots
+        #     0, a 40-wide read (8 pad dots a row) over a filled disc and a
+        #     line; again while another window covers part of it: the same
+        #     words (uncover/3), the frame unchanged;
+        #   - get_point_value/4 on a black and a white dot; set_point_value/4
+        #     1 then 0 (TM-125 p17, PRINTED-INTERFACE: 0/1);
+        #   - paint/5: gog DISPPBMS.esp:116-118's filled triangle
+        #     (draw_polygon/2, then `:paint(W, X+10, Y+10, fix, set)`) and
+        #     cil es_gin.esp:1752-1762's draw_triangle (three 1-dot lines,
+        #     then two paints), both TRANSCRIBED (neither class compiles
+        #     under espc: gog's wait/1 and dot_zahyo/4, cil's
+        #     draw_line_in_window/8 are refused), each against flood4's
+        #     4-connected region; kappa2 pdim.esp:606's `paint(W, 1, 1,
+        #     Pattern, set)` with a pattern (its 0 dots leave the frame);
+        #   - refused loudly, the frame unchanged: a read leaving the
+        #     inside, a string too short, set_point_value 2, paint with an
+        #     integer op.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py,
+        # test_kl0.py and test_winfb.py run, all else OK):
+        #   P1 the search's next rows widened by a dot each side, unclipped:
+        #      this test ERRORS (a read at x = -1), nothing else.
+        #   P1b the same, clipped to the inside (8-connected): this test
+        #      ERRORS at gog's triangle, kl0 StepLimit 20,000,001 (the fill
+        #      leaks through the one-dot diagonal into the whole inside),
+        #      nothing else.
+        #   P2 windev read/7 writes the words from element 1: this test
+        #      FAILS, nothing else.
+        #   P3 point_in/4 takes the word's last dot: this test FAILS,
+        #      nothing else.
+        #   P4 set_point_value 0 draws with set: this test FAILS, nothing
+        #      else.
+        #   P5 winfb's read sets each row's last pad dot: test_winfb
+        #      test_read_words and test_read_clip and this test FAIL
+        #      (test_winfb and Window run).
+        #   P6 read_in/6 without uncover/3 and unpeel/2: this test FAILS
+        #      (the covered save_image), nothing else.
+        # Not covered: paint/5 on a covered window, and the cursor (the
+        # graphics window is never selected).
+        import windev
+        import winfb
+        A = K.Atom
+        SET = A('set')
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        self.assertTrue(self.send(m, w, 'draw_filled_circle', 30, 20, 15, SET))
+        self.assertTrue(self.send(m, w, 'draw_line', 0, 0, 59, 39, 1, A('solid'), SET))
+
+        def want_words(x, y, wd, ht):
+            n = (wd + 15) // 16
+            out = []
+            for j in range(ht):
+                v = (fr.rows[Y0 + y + j] >> (1280 - X0 - x - wd)) & ((1 << wd) - 1)
+                v <<= 16 * n - wd
+                out += [(v >> (16 * (n - 1 - k))) & 0xffff for k in range(n)]
+            return out
+
+        def saved(x, y, wd, ht, extra=0):
+            st = K.Str('')
+            st.set_codes([0x1234] * (((wd + 15) // 16) * ht + extra))
+            self.assertTrue(self.send(m, w, 'save_image', st, x, y, wd, ht))
+            return st.codes()
+        before = list(fr.rows)
+        got = saved(5, 3, 40, 30, 2)
+        self.assertEqual(got[:-2], want_words(5, 3, 40, 30))
+        self.assertEqual(got[-2:], [0x1234, 0x1234])
+        self.assertGreater(sum(bin(c).count('1') for c in got[:-2]), 300)
+        self.assertEqual(fr.rows, before)
+        # covered: another window over part of the rectangle
+        opts = K.Cons(K.Vec([A('position'), 120, 130]),
+                      K.Cons(K.Vec([A('size'), K.Vec([A('ch'), 6]), K.Vec([A('ch'), 2])]), K.NIL))
+        ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, v, 'activate'))
+        covered = list(fr.rows)
+        self.assertNotEqual(covered, before)
+        self.assertEqual(saved(5, 3, 40, 30), got[:-2])
+        self.assertEqual(fr.rows, covered)
+        K.call_class_method(m, 'simpos##coordinator', 'select_window', [w])
+        # points
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 30, 20, V))
+        self.assertEqual(K.deref(V), 1)
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
+        self.assertEqual(K.deref(V), 0)
+        self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 1))
+        self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 1)
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
+        self.assertEqual(K.deref(V), 1)
+        self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 0))
+        self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 0)
+
+        def painted(x, y, sel_args):
+            region = self.flood4(fr, x, y)
+            want = list(fr.rows)
+            for i, j in region:
+                want[Y0 + j] |= 1 << (1279 - X0 - i)
+            self.assertTrue(self.send(m, w, 'paint', *sel_args))
+            self.assertEqual(fr.rows, want)
+            return region
+        # gog's filled triangle at X = 200, Y = 50
+        X, Y = 200, 50
+        def plist(ps):
+            out = K.NIL
+            for x, y in reversed(ps):
+                out = K.Cons(K.Vec([A(','), x, y]), out)
+            return out
+        self.assertTrue(self.send(m, w, 'draw_polygon', plist(
+            [(X + 10, Y + 1), (X + 2, Y + 15), (X + 18, Y + 15), (X + 10, Y + 1)])))
+        r = painted(X + 10, Y + 10, (X + 10, Y + 10, A('fix'), SET))
+        self.assertTrue(30 < len(r) < 120, len(r))
+        # cil's draw_triangle at X = 300, Y = 100 (H = 5)
+        X, Y = 300, 100
+        X2, Y2, Y3, X3 = X + 5, Y - 5, Y + 5, X + 5 - 2
+        for a in [(X, Y, X2, Y2), (X, Y, X2, Y3), (X2, Y2, X2, Y3)]:
+            self.assertTrue(self.send(m, w, 'draw_line', *a, 1, A('solid'), SET))
+        for y in (Y + 2, Y - 2):
+            r = painted(X3, y, (X3, y, A('fix'), SET))
+            self.assertTrue(5 < len(r) < 60, len(r))
+        # kappa2's paint/5 form with a pattern (pdim.esp:606 seeds an icon's
+        # inside at (1, 1)): here the inside of an 80 x 50 outline at
+        # (330, 200), seeded at its (1, 1); the pattern's 0 dots stay white.
+        # (A region of the whole 440 x 280 inside, ~120,000 dots, passed
+        # kl0's 20,000,000-step limit, MEASURED 2026-11-26: paint_in/5
+        # tests dot by dot; README open item.)
+        self.assertTrue(self.send(m, w, 'draw_rectangle', 330, 200, 80, 50, 1, A('solid'), SET))
+        rows = list(fr.rows)
+        region = self.flood4(fr, 331, 201)
+        self.assertEqual(len(region), 78 * 48)
+        self.assertTrue(self.send(m, w, 'paint', 331, 201, A('small_mesh'), SET))
+        for j in range(self.IH):
+            for i in range(self.IW):
+                d = (fr.rows[Y0 + j] >> (1279 - X0 - i)) & 1
+                was = (rows[Y0 + j] >> (1279 - X0 - i)) & 1
+                if (i, j) in region:
+                    self.assertEqual(d, self.pattern_dot(A('small_mesh'), i, j), (i, j))
+                else:
+                    self.assertEqual(d, was, (i, j))
+        rows = list(fr.rows)
+        short = K.Str('')
+        short.set_codes([0] * 5)
+        for args in [('save_image', short, 0, 0, 16, 10),
+                     ('save_image', K.Str(''), 430, 0, 40, 1),
+                     ('set_point_value', 1, 1, 2),
+                     ('paint', 1, 1, A('fix'), 1)]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
     def block(self, fr, x, y, w, h):
         # the dots of the screen rectangle, row by row
         return [(fr.rows[y + j] >> (1280 - x - w)) & ((1 << w) - 1) for j in range(h)]
@@ -5686,9 +5865,9 @@ end."""
         #     (an integer second argument: util_scroll.esp:218's matrix
         #     copy), a source not shown (util_scroll's hide_window), an
         #     area leaving the inside, a colour (integer) op.
-        # paint/5 (USAGE kappa2 pdim.esp:606) is refused loudly too: a STOP
-        # (standard_io_window.esp "PAINT": a seed fill needs the frame's
-        # dots, which no frozen primitive gives the program).
+        # paint/5 (USAGE kappa2 pdim.esp:606) with an integer (colour) op is
+        # refused loudly too (it was a STOP until step 2 of m8_stops.md;
+        # test_win_m8_stops_read).
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
         # test_kl0.py run, all else OK; rerun at the final code with the
@@ -5762,7 +5941,7 @@ end."""
                      ('copy', hidden, 0, 0, 20, 20, 60, 40, A('copy')),
                      ('copy', w, 0, 0, 200, 20, 60, 40, A('copy')),
                      ('copy', w, 0, 0, 20, 20, 60, 40, 1),
-                     ('paint', 1, 1, A('light_paint'), A('set'))]:
+                     ('paint', 1, 1, A('light_paint'), 1)]:
             with self.assertRaises(K.Refusal) as e:
                 self.send(m, w2, *args)
             self.assertIn('graphics_refused', str(e.exception.detail))

@@ -208,5 +208,35 @@ class TestGlyph(unittest.TestCase):
         self.assertEqual(a, b)
 
 
+class TestExtension(unittest.TestCase):
+    """The 2026-11-26 extension (winfb.py header): read.  Each expected
+    word is written out by hand."""
+
+    def test_read_words(self):
+        # dots 3..12 of rows 1, 2 (test_unaligned_fill_bytes' fill)
+        fr = run('fill 3 1 10 2 set\nread 0 1 16 1\nread 3 1 10 2\n'
+                 'read 2 1 12 1\nread 0 0 33 1\nread 13 1 3 1')
+        self.assertEqual(fr.reads, [0x1ff8, 0xffc0, 0xffc0, 0x7fe0,
+                                    0, 0, 0, 0])
+        self.assertEqual(fr.count(), 20)          # reading draws nothing
+        fr = run('fill 14 0 4 1 set\nread 12 0 8 1\nread 14 0 17 1')
+        self.assertEqual(fr.reads, [0x3c00, 0xf000, 0x0000])
+
+    def test_read_clip(self):
+        fr = run('fill 1278 1022 2 2 set\nread 1276 1021 64 64\n'
+                 'read 1280 0 4 4\nread 0 1024 4 4\nread 5 5 0 9\n'
+                 'read 5 5 9 0\nread 1279 1023 1 1')
+        # 4 dots wide (1276..1279), 3 rows (1021..1023): one word a row
+        self.assertEqual(fr.reads, [0x0000, 0x3000, 0x3000, 0x8000])
+        self.assertEqual(fr.status, [F.OK] * 7)
+
+    def test_reserved(self):
+        fr = F.Frame()
+        fr.run([(0xa5, [0, 0, 1, 1, 0, 0]), (0x80, [0] * 6), (0x90, [0] * 6),
+                (0xb0, [0] * 6), (0xc0, [0] * 6), (0, [0] * 6)])
+        self.assertEqual(fr.status, [F.BADOP] * 5)
+        self.assertEqual(fr.reads, [])
+
+
 if __name__ == '__main__':
     unittest.main()

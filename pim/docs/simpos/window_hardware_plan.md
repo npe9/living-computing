@@ -400,6 +400,29 @@ The engine is one box with sub-rules (fill, line, glyph, copy), per the idiomati
 **Clipping** is to the request's rectangle. The stand-in window manager already does window
 clipping (S§4.1), so the box clips only to the screen.
 
+**The 2026-11-26 extension (OURS, owner-approved).** The command set frozen in `psi/winfb.py` was
+itself OURS. The owner approved extending it so that SIMPOS can read dots back
+(`docs/simpos/m8_stops.md` §7). Its basis:
+- TM-125 p17 (PRINTED-INTERFACE) gives `get_point_value/4`;
+- TM-115 p82 (PROSE) says bitmap areas are loaded from and saved to strings.
+
+The record format and every rule are OURS:
+
+| prim | record | answer |
+|---|---|---|
+| `a` read | `a0 x y w h - -` | the rectangle, cut as a fill is cut, as data words: ceil(w'/16) per row, row-major, dots from bit 15, the last word's pad dots 0; then the status OK. A cut rectangle with no dots answers no words. |
+
+- Prims 8, 9 and b–f stay reserved (BADOP), so the older streams' `0x90`/`0x93` records still mean
+  what they meant.
+- `bsv/WinFbBox.bsv` answers it in lockstep with the reference, checked by `bsv/run_win_tb.sh` on
+  the read streams. The words leave as a dump's frame words do.
+- Open item: the host link does not carry them yet. Its TX (`bsv/WinLink.bsv` `sendData`) frames
+  data as 64-word records and takes 64 answers without looking at `isData`. So a read whose word
+  count is not a multiple of 64 would send its status, and later answers, as data words. This was
+  found by reading the rule; no read has been run through the link.
+- A second extension, drawing targets (prim `b`: draw on an area of bitmap memory), is step 3 of
+  `m8_stops.md` and is documented here when it lands.
+
 ### 2.5 Fonts
 
 `test_11.font` (and its five FONT.DIR siblings) are in the held `docs/nonlocal/psdpim.tar.Z`, which
@@ -667,6 +690,20 @@ plane read and dot select. Seeds 1 and 2 passed at 75.35 and 77.32 (MEASURED).
 
 yosys's own counts: 7,313 LUT4 (808 more than H3), 4,277 TRELLIS_FF, 156 DP16KD, 646 PFUMX, 6
 L6MUX21 and 142 TRELLIS_DPR16X4. The added DPR16X4 are the stages' small FIFOs.
+
+**MEASURED, 2026-11-26: after the read** (§2.4's 2026-11-26 extension, rule `sCollectRead`). Same
+tools and script.
+
+| seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+|---|---|---|---|---|---|---|---|
+| 1 | 10,708 / 83,640 | 4,278 | 156 / 208 | 36.23 PASS | 81.37 PASS | 418.24 PASS | 1.45 ns |
+| 2 | 10,708 | 4,278 | 156 | 35.44 PASS | 84.05 PASS | 420.34 PASS | 1.26 ns |
+| 3 | 10,708 | 4,278 | 156 | 31.73 PASS | 84.56 PASS | 389.26 PASS | 1.47 ns |
+
+Against the build before it: 69 more TRELLIS_COMB, 1 more FF, the same DP16KD. yosys counts
+7,366 LUT4 (53 more). The m8_stops.md §3 estimate of 200-500 LUT4 was high, because the read reuses
+the blit's source stream and funnel. The system clock's lowest seed fell from 34.66 to 31.73 MHz;
+it still passes 25 MHz.
 
 yosys's own counts: 6,505 LUT4, 3,612 TRELLIS_FF, 156 DP16KD, 559 PFUMX, 32 L6MUX21, 112
 TRELLIS_DPR16X4 (the cursor planes and small FIFOs), 4 ODDRX1F, 1 EHXPLLL. The 156 DP16KD are the

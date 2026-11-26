@@ -10,6 +10,8 @@
 // It writes:
 //   win_frame.pbm    one PBM P4 image per `dump` and one at `end`
 //   win_status.txt   each command's status, two hex digits a line
+//   win_read.txt     the words each read answers, four hex digits a line
+//                    (the 2026-11-26 extension)
 // which run_win_tb.sh compares with psi/winfb.py's for the same stream.
 // It prints the cycle count from reset to the last image.
 package WinFbBoxTb;
@@ -34,9 +36,12 @@ module mkWinFbBoxTb(Empty);
    Reg#(Bool) started <- mkReg(False);
    Reg#(File) fFrame <- mkReg(InvalidFile);
    Reg#(File) fStatus <- mkReg(InvalidFile);
+   Reg#(File) fRead <- mkReg(InvalidFile);
    Reg#(Bit#(16)) idx <- mkReg(0);
    Reg#(Bool) sentEnd <- mkReg(False);
-   FIFOF#(Bool) finalQ <- mkSizedFIFOF(4);   // per command sent: is it the final dump
+   // per command sent: 0 a command, 1 the final dump, 2 a read (whose data
+   // words go to win_read.txt, not the PBM)
+   FIFOF#(Bit#(2)) finalQ <- mkSizedFIFOF(4);
    Reg#(Bit#(17)) words <- mkReg(0);          // data words of the current image
    Reg#(Bit#(32)) cycles <- mkReg(0);
    Reg#(Bit#(32)) cmds <- mkReg(0);
@@ -61,11 +66,12 @@ module mkWinFbBoxTb(Empty);
    rule open (!started);
       File f <- $fopen("win_frame.pbm", "wb");
       File s <- $fopen("win_status.txt", "w");
-      if (f == InvalidFile || s == InvalidFile) begin
+      File rd <- $fopen("win_read.txt", "w");
+      if (f == InvalidFile || s == InvalidFile || rd == InvalidFile) begin
          $display("WinFbBoxTb: cannot open the output files");
          $finish(1);
       end
-      fFrame <= f; fStatus <= s;
+      fFrame <= f; fStatus <= s; fRead <= rd;
       Bool st <- $test$plusargs("stall");
       stall <= st;
       started <= True;
@@ -80,12 +86,12 @@ module mkWinFbBoxTb(Empty);
       if (op[7:4] == 0) begin
          // end: the final image
          box.server.request.put(WinFbCmd { op: 'h70, a: replicate(0) });
-         finalQ.enq(True);
+         finalQ.enq(1);
          sentEnd <= True;
       end
       else begin
          box.server.request.put(WinFbCmd { op: op, a: a });
-         finalQ.enq(False);
+         finalQ.enq(op[7:4] == 10 ? 2 : 0);
          cmds <= cmds + 1;
          if (idx == fromInteger(valueOf(MaxCmds) - 1)) begin
             $display("WinFbBoxTb: no end record in %0d lines", valueOf(MaxCmds));
@@ -97,16 +103,18 @@ module mkWinFbBoxTb(Empty);
 
    rule drain (started && (!stall || cycles[2:0] < 5));
       let r <- box.server.response.get;
-      if (r.isData) begin
+      if (r.isData && finalQ.first == 2)
+         $fwrite(fRead, "%04h\n", r.data);
+      else if (r.isData) begin
          if (words == 0) $fwrite(fFrame, "P4\n1280 1024\n");
          $fwrite(fFrame, "%c%c", r.data[15:8], r.data[7:0]);
          words <= (words == 81919) ? 0 : words + 1;
       end
       else begin
-         Bool fin = finalQ.first;
+         Bool fin = finalQ.first == 1;
          finalQ.deq;
          if (fin) begin
-            $fclose(fFrame); $fclose(fStatus);
+            $fclose(fFrame); $fclose(fStatus); $fclose(fRead);
             $display("WinFbBoxTb: %0d commands, %0d cycles", cmds, cycles);
             $finish(0);
          end

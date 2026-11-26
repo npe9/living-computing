@@ -16,7 +16,8 @@
 // Interface: Server#(WinFbCmd, WinFbRsp).  One command at a time; each
 // is answered on completion by one status response (isData False).  A
 // dump is answered by the frame's 81,920 words, row-major, as isData
-// responses, then its status.
+// responses, then its status; a read (prim a, the 2026-11-26 extension)
+// by its rectangle's words, then its status.
 //
 // Structure (the idiomatic-Bluespec box pattern of the Pimm*Box modules
 // and mkFBox: one module, request/response, the datapath inside, each
@@ -56,6 +57,11 @@
 //             is needed, writes ropf of it, waits while an earlier item
 //             still has to write the word it reads (mkWinPendQ), and ends
 //             the command with the last write.
+//   - the read (the 2026-11-26 extension, psi/winfb.py's header): a blit
+//             from the frame whose sink is the response queue instead of
+//             the read-modify-write stage (rule sCollectRead: the funnel's
+//             word under the mask, so the pad dots are 0), its status after
+//             the words as a dump's is (dTail).
 //   - the dump engine (rules dump*), on port A (H3 moved it from port
 //             B, which is now the pixel domain's; port A is idle while a
 //             dump runs).
@@ -289,6 +295,7 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
    Reg#(Bit#(12)) sK <- mkRegU;            // destination word in its row
    Reg#(Bit#(16)) sCarry <- mkRegU;        // the funnel's carried source word
    FIFOF#(SrcTok) tokQ <- mkSizedFIFOF(4);
+   Reg#(Bool) bRead <- mkReg(False);       // the blit is a read (the extension)
 
    // ---- the read-modify-write stage -------------------------------------
    FIFOF#(RmwItem) rmwQ <- mkFIFOF;
@@ -476,7 +483,7 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
                       SSave:  bp.rsp[pSrc].deq;
                       default: np.rsp[pSrc].deq;
                    endcase;
-   rule sCollect (mode == MBlit && (!tokQ.first.mem || srcRdy));
+   rule sCollect (mode == MBlit && !bRead && (!tokQ.first.mem || srcRdy));
       SrcTok t = tokQ.first;
       tokQ.deq;
       Bit#(16) w = t.mem ? srcWord : 0;
@@ -487,6 +494,24 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
          Bit#(16) b = bRtl ? sCarry : w;
          rmwQ.enq(RmwItem { word: True, needsDst: t.needsDst, last: t.last, addr: t.addr,
                             mask: t.mask, src: funnel(bSrc == SConst, a, b, bSOff) });
+      end
+   endrule
+
+   // a read's stage 2: the funnel's word under the destination mask (0 at
+   // the pad dots) goes out as a data response; the status follows the
+   // last word (dTail, as a dump's)
+   rule sCollectRead (mode == MBlit && bRead && (!tokQ.first.mem || srcRdy));
+      SrcTok t = tokQ.first;
+      tokQ.deq;
+      Bit#(16) w = t.mem ? srcWord : 0;
+      if (t.mem) srcDeq;
+      sCarry <= w;
+      if (!t.load) begin
+         rspQ.enq(WinFbRsp { isData: True, status: stOK,
+                             data: funnel(False, sCarry, w, bSOff) & t.mask });
+         if (t.last) begin
+            mode <= MIdle; bRead <= False;
+         end
       end
    endrule
 
@@ -726,7 +751,7 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
       Vector#(6, Bit#(16)) a = c.a;
       Bit#(16) fw = fromInteger(fbW);
       Bit#(16) fh = fromInteger(fbH);
-      if (prim == 0 || prim > 7 || r > 4)
+      if (prim == 0 || (prim > 7 && prim != 10) || r > 4)
          reply(stBADOP);
       else case (prim)
          1: begin // fill x y w h
@@ -802,6 +827,18 @@ module mkWinFbBox#(String fontFile, Clock pclk, Reset prst)(WinFbBox);
          7: begin // dump
                dA <= 0; dB <= 0; dIss <= True; dTail <= True;
                mode <= MDump;
+            end
+         10: begin // read x y w h (the 2026-11-26 extension): a blit of the
+               // rectangle to dot 0 of rows ceil(w/16) words long, out as data
+               Bool outside = a[0] >= fw || a[1] >= fh;
+               Bit#(16) w = outside ? 0 : min16(a[2], fw - a[0]);
+               Bit#(16) h = outside ? 0 : min16(a[3], fh - a[1]);
+               if (w == 0 || h == 0) reply(stOK);
+               else begin
+                  bRead <= True; dTail <= True;
+                  startBlit(SFrame, zeroExtend(a[1]) * 80, 80, a[0],
+                            False, 0, 80, 0, w, h, 3, False, False, stOK);
+               end
             end
       endcase
    endrule

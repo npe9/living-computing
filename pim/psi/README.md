@@ -4785,6 +4785,55 @@ recommendations, in its §7 order, one commit a step.
   block, stops_ellipse only; S3 rough_dotted's rows swapped:
   stops_ellipse and patterns.
 
+**Step 2: reading dots back (the 2026-11-26 extension of the winfb
+contract, OURS, owner-approved).**
+- `winfb.py` prim `a`, `read x y w h`. The rectangle is cut as a fill is
+  cut and answered as data words: ceil(w'/16) a row, the pad dots 0, then
+  OK. Prims 8, 9 and b-f stay BADOP. The format is in
+  `../docs/simpos/window_hardware_plan.md` §2.4.
+  - The 11 older streams are byte-identical to the frozen reference.
+  - Three new gen streams (`reads`, `rand_r_1`, `rand_r_2`) and
+    `bsv/win_streams/reads_stall.txt` (under `+stall`).
+  - `bsv/WinFbBox.bsv` reads in lockstep with it: a blit from the frame
+    whose sink is the response queue (rule `sCollectRead`), its status
+    after the words.
+  - The bench writes `win_read.txt`, and `run_win_tb.sh` compares it too.
+    Its header records injections R1-R3.
+- `windev.py` `read/7` writes the words into the caller's string in one
+  `set_codes`. On top of it (`standin/window_pane.esp` `read_in/6`,
+  `point_in/4`, `paint_in/5`; `standard_io_window.esp`):
+  - `save_image/6`, `get_point_value/4` and `set_point_value/4`;
+  - `paint/5`, a seed fill. The region is the dots 4-connected to the
+    seed with the seed's value: INFERENCE and OURS. It is found by a
+    scanline search on rows read once each, then drawn span by span, so a
+    pattern's 0 dots cannot feed the search.
+  - Reads go through `uncover/3` and take the cursor off, as drawing does.
+- `test_win_m8_stops_read` covers:
+  - `save_image/6` of a 40-wide block, open and covered;
+  - point values;
+  - gog `DISPPBMS.esp:116-118`'s painted triangle and cil
+    `es_gin.esp:1752-1762`'s `draw_triangle`, both transcribed (neither
+    class compiles under espc);
+  - kappa2's patterned `paint(W, 1, 1, Pattern, set)` form inside an
+    outline;
+  - the refusals.
+  Its header records the injections.
+- MEASURED cost: paint tests dot by dot. A 78 x 48 region (3,744 dots)
+  takes about 1 s. A 120,000-dot region passes kl0's 20,000,000-step
+  limit. kappa2's icons are 61 x 64 (`pdim.esp:573-574`), within the
+  measured size. Open item: test whole words for large regions.
+- Not yet run: the held callers paragraph `make/3` (`p_imag.esp` go1-go6),
+  gog and cil. paragraph draws into windows that are never shown, which
+  needs step 3 (drawing targets); its saved `profiler_icon_image1..6` are
+  then the independent oracle of `save_image`'s layout. Until then the
+  test's expected words repeat the implementation's own row and bit order.
+- Open item for the host link (`bsv/WinLink.bsv`, the hardware agent's
+  file, not changed here). The TX frames data as 64-word records
+  (`wLeft <= 64`), and `sendData` takes 64 answers without looking at
+  `isData`. So a read whose word count is not a multiple of 64 would have
+  its status, and the answers after it, sent as data words. This is from
+  reading the rule; it has not been run.
+
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
 Injection P13 (the coordinator's own process held back like any writer)

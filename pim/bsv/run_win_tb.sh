@@ -50,6 +50,15 @@
 #       lines, rand_h1_1, rand_h1_2
 #  10 save: the overflow check one word short (need >= size):
 #       save_restore, rand_h1_2
+# The read (the 2026-11-26 extension, psi/winfb.py's header): every read
+# answers its words into win_read.txt (WinFbBoxTb), compared with the
+# reference's fourth file.  OBSERVED 2026-11-26, the same way:
+#  R1 the read's pad dots not masked (sCollectRead without & t.mask):
+#       reads, rand_r_1, rand_r_2, reads_stall
+#  R2 the bench writes each read word with bit 0 flipped (the comparison
+#       of the read files itself): reads, rand_r_1, rand_r_2, reads_stall
+#  R3 the read's height cut one row short at the frame's bottom:
+#       reads, rand_r_1, rand_r_2, reads_stall
 # A first pass missed 5 and 6 in the directed streams (only the random
 # ones caught them: save_restore saved at x = y, copy_overlap had no
 # source ending on a word's first dot); both streams were then changed
@@ -243,19 +252,22 @@ for name in $H01; do
     *)   args=
          python3 -I "$WINFB" gen "$name" > "$B/$name.hex" ;;
   esac
-  python3 -I "$WINFB" run "$B/$name.hex" "$B/$name.py.pbm" "$B/$name.py.status"
+  python3 -I "$WINFB" run "$B/$name.hex" "$B/$name.py.pbm" "$B/$name.py.status" "$B/$name.py.read"
   cp "$B/$name.hex" "$B/run/win_stream.hex"
-  rm -f "$B/run/win_frame.pbm" "$B/run/win_status.txt"
+  rm -f "$B/run/win_frame.pbm" "$B/run/win_status.txt" "$B/run/win_read.txt"
   (cd "$B/run" && ./../sim_win $args > sim.log 2>&1) || { cat "$B/run/sim.log"; status=1; continue; }
   cp "$B/run/win_frame.pbm" "$B/$name.bsv.pbm"
   cp "$B/run/win_status.txt" "$B/$name.bsv.status"
+  cp "$B/run/win_read.txt" "$B/$name.bsv.read"
   n=$(grep -c . "$B/$name.py.status" || true)
   imgs=$(( $(wc -c < "$B/$name.py.pbm") / 163853 ))
   cyc=$(sed -n 's/.* commands, \([0-9]*\) cycles/\1/p' "$B/run/sim.log")
-  if cmp -s "$B/$name.py.pbm" "$B/$name.bsv.pbm" && cmp -s "$B/$name.py.status" "$B/$name.bsv.status"; then
-    echo "   same  $name: $n commands, $imgs PBM images, $cyc cycles"
+  if cmp -s "$B/$name.py.pbm" "$B/$name.bsv.pbm" && cmp -s "$B/$name.py.status" "$B/$name.bsv.status" \
+     && cmp -s "$B/$name.py.read" "$B/$name.bsv.read"; then
+    rd=$(grep -c . "$B/$name.py.read" || true)
+    echo "   same  $name: $n commands, $imgs PBM images, $rd read words, $cyc cycles"
   else
-    echo "   DIFFERS $name: $n commands, $imgs images (cmp $B/$name.py.pbm $B/$name.bsv.pbm; status files likewise)"
+    echo "   DIFFERS $name: $n commands, $imgs images (cmp $B/$name.py.pbm $B/$name.bsv.pbm; status and read files likewise)"
     status=1
   fi
 done

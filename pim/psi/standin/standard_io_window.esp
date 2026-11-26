@@ -361,16 +361,36 @@ attribute permission := out;
 % :19, :252) draws an image string, opaque (window_pane.esp image_in/6);
 % get_label_height/2 (USAGE paragraph p_imag.esp:619 adjust_pos/3, cil
 % ds_brs.esp:280; window.md §2.2) answers the label strip's height, the
-% font's cell plus 2 (window_pane.esp's layout, OURS).  save_image/6 and
-% restore_full_color_image/6 are not stood in (save_image reads the
-% frame's dots, which no frozen device primitive does; the colour form is
-% never reached on the 1-plane screen, bitmap.esp).
+% font's cell plus 2 (window_pane.esp's layout, OURS).
+% restore_full_color_image/6 is not stood in (the colour form is never
+% reached on the 1-plane screen, bitmap.esp); save_image/6 is, below.
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): restore_image.
 :restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :image_in(P, S, X, Y, Wd, Ht);
 % INTERPOLATED (selector: window.md section 2.2, cited above; body OURS):
 % get_label_height.
 :get_label_height(W, H) :- pane_of(W, P), value(P!ch + 2, H);
+% Window M8's stops, step 2 (2026-11-26), READING DOTS BACK on the device's
+% read (the 2026-11-26 extension, OURS, owner-approved; window_pane.esp
+% read_in/6, point_in/4): save_image/6 `(W, String, X, Y, Width, Height)`
+% (USAGE paragraph p_imag.esp:198, p_v_imag.esp:228) fills the caller's
+% 16-bit string, ceil(Width/16) words a row x Height (one plane:
+% get_plane_count is 1 here, bitmap.esp), restore_image/6's layout;
+% get_point_value/4 `(W, X, Y, ^Value)` and set_point_value/4 `(W, X, Y,
+% Value)` (PRINTED-INTERFACE TM-125 p17: "the value (0/1) of the pixel";
+% set as a 1 x 1 fill, set for 1 and reset for 0, OURS; another value
+% refuses loudly).
+% INTERPOLATED (selector and arguments: window.md section 2.5, cited
+% above; body OURS): save_image.
+:save_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :read_in(P, S, X, Y, Wd, Ht);
+% INTERPOLATED (selector and arguments: TM-125 p17, cited above; body
+% OURS): get_point_value.
+:get_point_value(W, X, Y, V) :- pane_of(W, P), :point_in(P, X, Y, V);
+% INTERPOLATED (selector and arguments: TM-125 p17, cited above; body
+% OURS): set_point_value.
+:set_point_value(W, X, Y, 1) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, set);
+:set_point_value(W, X, Y, 0) :- !, pane_of(W, P), :fill_in(P, X, Y, 1, 1, reset);
+:set_point_value(W, _, _, _) :- :graphics_refused(W, point_value);
 % Window M8's rest (2026-11-26), SHAPES (window.md §2.5): draw_circle/7
 % `(W, CX, CY, R, Width, Style, Op)` (PRINTED WINCS p3), draw_ellipse/8
 % `(W, CX, CY, RX, RY, Width, Style, Op)`, draw_arc/9 and draw_fan/9
@@ -410,17 +430,19 @@ attribute permission := out;
 :copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- op_name(Op), !,
         pane_of(W, P), pane_of(Src, Q), :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
 :copy(W, _, _, _, _, _, _, _, Op) :- :graphics_refused(W, Op);
-% Window M8's rest, PAINT, A STOP: paint/5 `(W, X, Y, Pattern, Op)` (USAGE
-% kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1, 1, Pattern1, set)`)
-% fills the region around (X, Y) (a seed fill: INFERENCE from the name and
-% the one-dot seed).  Finding the region's edge needs the frame's dots, and
-% no frozen device primitive gives a dot's value to the program
-% (psi/winfb.py: fill, line, glyph and copy write; save and restore move
-% dots between the frame and save memory unseen), so paint/5 is refused
-% loudly here and not stood in (psi/README.md "Window M8's rest").
+% Window M8's stops, step 2 (2026-11-26), PAINT: paint/5 `(W, X, Y,
+% Pattern, Op)` (USAGE kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1,
+% 1, Pattern1, set)`, gog DISPPBMS.esp:117, cil es_gin.esp:1761) fills the
+% region around (X, Y): a seed fill (INFERENCE from the name and the one-dot
+% seed), the region the 4-connected dots of the seed's value (OURS and
+% INFERENCE: window_pane.esp paint_in/5), Pattern fix or a pattern through
+% Op.  Refused loudly: an op that is not an op name, a pattern that is
+% neither fix nor a pattern (as the filled shapes).
 % INTERPOLATED (selector: window.md section 2.5, cited above; body OURS):
-% paint, refused.
-:paint(W, _, _, _, _) :- :graphics_refused(W, paint);
+% paint.
+:paint(W, X, Y, Pt, Op) :- op_name(Op), fill_pattern(Pt), !,
+        pane_of(W, P), :paint_in(P, X, Y, Pt, Op);
+:paint(W, _, _, Pt, _) :- :graphics_refused(W, Pt);
 % INTERPOLATED (selector and arguments: window.md section 2.5, cited above;
 % body OURS): draw_circle.
 :draw_circle(W, CX, CY, R, Wd, St, Op) :- outline(W, CX, CY, R, R, Wd, all, St, Op);

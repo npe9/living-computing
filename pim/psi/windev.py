@@ -30,6 +30,10 @@ argument order here is OURS, as the plan §4.1 says it would be):
                                                     its style operand used)
   :save(#bitmap_display, Id, X, Y, W, H, Base)      winfb `save` (window M7)
   :restore(#bitmap_display, Id, Op)                 winfb `restore` (M7)
+  :read(#bitmap_display, X, Y, W, H, S, ^N)         winfb `read` (the
+                                                    2026-11-26 extension):
+                                                    its N words into the
+                                                    string S from element 0
   :load_font(#bitmap_display, File, ^Id, ^W, ^H)    the plan's font_load
   :default_font(#bitmap_display, ^Id, ^W, ^H)       OURS (see below)
   :get_size(#bitmap_display, ^W, ^H)                1280 x 944
@@ -200,6 +204,27 @@ def install(models, K):
         check(device(m).run(winfb.RESTORE, op_of(m, 1, 'restore/3'), a), 'restore/3')
         return m.proceed()
 
+    def read(m):
+        # the 2026-11-26 extension (psi/winfb.py's header, OURS): winfb
+        # `read`'s words written into the string S from element 0, all in
+        # one set_codes (kl0's Str decodes its whole text on every access);
+        # N answers their count.  read(#bitmap_display, X, Y, W, H, S, ^N)
+        a = ints(m, 4, 'read/7')
+        s = K.deref(m.x[4])
+        if not isinstance(s, K.Str):
+            raise K.Refusal('simpos', 'bitmap_display read/7: %r is not a string' % (s,))
+        d = device(m)
+        d.frame.reads = []
+        check(d.run(winfb.READ, 0, a), 'read/7')
+        words, d.frame.reads = d.frame.reads, []
+        codes = s.codes()
+        if len(codes) < len(words):
+            raise K.Refusal('simpos', 'bitmap_display read/7: %d words into a string of %d'
+                            % (len(words), len(codes)))
+        codes[:len(words)] = words
+        s.set_codes(codes)
+        return m.proceed() if m.unify(m.x[5], len(words)) else m.fail()
+
     def answer(m, base, font_id, font):
         w, h = cell_of(font)
         ok = (m.unify(m.x[base], font_id) and m.unify(m.x[base + 1], w)
@@ -238,6 +263,7 @@ def install(models, K):
         (D, 'class', 'line', 8): styled,
         (D, 'class', 'save', 7): save,
         (D, 'class', 'restore', 3): restore,
+        (D, 'class', 'read', 7): read,
         (D, 'class', 'load_font', 5): load_font,
         (D, 'class', 'default_font', 4): default_font,
         (D, 'class', 'get_size', 3): get_size,
