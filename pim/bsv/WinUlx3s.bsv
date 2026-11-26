@@ -34,8 +34,14 @@
 // the design under test of bsv/WinUlx3sTb.bsv, which runs the three
 // clocks in Bluesim and checks the picture against the Python view.
 //
+// H6 (2026-11-26): once the self-test is done, the box is the host link's
+// (WinLink.bsv mkWinLink, 1 Mbaud: 25 clocks a bit at 25 MHz) on the FTDI
+// UART: ftdi_txd (M1) in, ftdi_rxd (L4) out.  The host sees the
+// self-test's card first, so a host that wants a blank frame clears it.
+//
 // Board pins (the Verilog top bsv/WinUlx3sTop.v, pins bsv/ulx3s_win.lpf):
 //   led[0] the self-test done   led[1] a status not OK
+//   led[3] the link's receive line is low (a byte arriving)
 //   led[2] blinks every 16 frames (the pixel domain runs)
 //   led[7] PLL lock (in the Verilog top)
 package WinUlx3s;
@@ -48,6 +54,8 @@ import ClientServer::*;
 import Vector::*;
 import WinFbBox::*;
 import WinScanOut::*;
+import WinLink::*;
+import Connectable::*;
 
 typedef union tagged {
    Tuple3#(WinVideoMode, Bit#(7), Bit#(10)) SStart;
@@ -224,6 +232,8 @@ endmodule
 // The board module.  pclk and sclk come from the PLL in the Verilog top
 // (bsv/WinUlx3sTop.v); the default clock is the 25 MHz oscillator.
 interface WinUlx3s;
+   (* always_ready, always_enabled, prefix = "" *) method Action uart((* port = "rxd" *) Bit#(1) b);
+   (* always_ready *) method Bit#(1) txd;     // sys
    (* always_ready *) method Bit#(8) pins;   // lane i {D1, D0} at [2i+1:2i]; sclk
    (* always_ready *) method Bit#(2) led;    // {err, done}; sys
    (* always_ready *) method Bool blink;     // pclk
@@ -239,6 +249,11 @@ module mkWinUlx3s#(Clock pclk, Clock sclk)(WinUlx3s);
       mkNullCrossingWire(sclk, core.out.sym, clocked_by pclk, reset_by prst);
    ReadOnly#(Bool) tx <- mkNullCrossingWire(sclk, core.tog, clocked_by pclk, reset_by prst);
    WinTmdsSer ser <- mkWinTmdsSer(wx, tx, clocked_by sclk, reset_by srst);
+   WinLink link <- mkWinLink(25);
+   mkConnection(link.box, core.dbg);
+
+   method Action uart(Bit#(1) b) = link.rxd(b);
+   method Bit#(1) txd = link.txd;
 
    method Bit#(8) pins = pack(ser.pins);
    method Bit#(2) led = {pack(core.err), pack(core.done)};

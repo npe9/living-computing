@@ -899,10 +899,41 @@ answers port A two cycles after a put, and the box waited a cycle on every frame
   - So the plan's §4 injection "drop one byte: the CRC failure is reported, not drawn" is a
     passing case.
   - The RTL injections are in `run_win_link.sh`'s header.
-- Not done:
-  - the board top with the link at 1 Mbaud (divisor 25), and synthesis of it;
-  - the device layer's tee mode and the `test_espc.py` runs through a pipe. Those are in `psi/`
-    and belong to the window software's owner.
+
+**H6 done in Bluesim and synthesis (2026-11-26).**
+- The board top carries the link. `mkWinUlx3s` instantiates `mkWinLink(25)` (1 Mbaud on the
+  25 MHz clock) on the FTDI UART, `ftdi_txd` M1 in and `ftdi_rxd` L4 out, the pins copied from
+  `ulx3s_fep.lpf` into `../../bsv/ulx3s_win.lpf`. The link is connected to the box once the
+  self-test is done, so a host sees the test card first. LED 3 lights while the line in is low.
+- `run_win_fpga.sh`, MEASURED 2026-11-26, all three seeds PASS:
+
+  | seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+  |---|---|---|---|---|---|---|---|
+  | 1 | 12,161 / 83,640 | 5,167 | 156 / 208 | 33.94 PASS | 80.05 PASS | 411.02 PASS | 1.47 ns |
+  | 2 | 12,161 | 5,167 | 156 | 32.71 PASS | 86.27 PASS | 410.68 PASS | 1.48 ns |
+  | 3 | 12,161 | 5,167 | 156 | 30.74 PASS | 74.81 PASS | 402.74 PASS | 1.24 ns |
+
+  yosys's counts are 8,555 LUT4 (1,242 more than the H3 follow-up), 5,167 TRELLIS_FF, 156
+  DP16KD (the link's queues went to LUT RAM: 180 TRELLIS_DPR16X4, 38 more), 981 PFUMX and
+  27 L6MUX21. The link costs about 1,500 TRELLIS_COMB and 890 FF. The block-RAM count is
+  unchanged, so `WIN_DP16KD` stays at 156.
+- kl0's drawing goes through the link RTL. `../../tools/win_kl0_link.py` makes the M1 and M4
+  runs of `../../psi/test_espc.py` in the test's own way (the Window helpers, read only) and
+  turns their device logs into link streams. Its `pins` check imports the tests' pins at run
+  time; none is copied. `run_win_link.sh` runs two more cases:
+  - kl0_m1: the Login PIMOS window's three stages as one stream of 474 frames. The stages'
+    logs are prefixes of one another, which the tool checks. A dump follows the 312th command
+    (name), the 362nd (password) and the 471st (login).
+  - kl0_m4: the PIMOS console from the tape, 678 frames.
+  Every dump read back over the link equals its `Window.PINS` / `CONSOLE_PIN` sha256. The
+  statuses and error records equal `winlink.py check`'s. Both streams pass SEQ 255, so the
+  sequence wrap is exercised.
+- This is the bench equivalent of the device layer's tee mode: the log is replayed after the
+  run, not teed during it. The tee mode itself is in `psi/windev.py` and belongs to the window
+  software's owner, so it is an **open item** there (a hook that sends each primitive as it is
+  run). The plan's "PBM hashes at every step" is checked at the stage boundaries only: a dump is
+  1,280 data records up the link (about 171 kB, about 6.8 M bench cycles at 4 cycles a bit), so
+  a dump after every command would cost hours of Bluesim.
 
 Not yet, and last by the owner's decision of 2026-11-26: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
 report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback

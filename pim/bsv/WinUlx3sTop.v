@@ -14,10 +14,13 @@
 // The serializer's four lanes leave through ODDRX1F, D0 first then D1,
 // as flute-lx50's Video_DVI.v does at 640x480.  The design is held in
 // reset until the PLL locks and for 255 clocks after configuration;
-// FIRE1 (BTN1) resets it.
+// FIRE1 (BTN1) resets it.  H6 (2026-11-26): the host link on the FTDI
+// UART (mkWinLink inside mkWinUlx3s); led[3] lights while the line in is low.
 module ulx3s_win_top(
     input  wire       clk_25mhz,
     input  wire       BTN1,
+    input  wire       ftdi_txd,     // the host's line in (M1)
+    output wire       ftdi_rxd,     // the board's line out (L4)
     output wire [7:0] led,
     output wire [3:0] gpdi_dp       // [0] blue, [1] green, [2] red, [3] clock
 );
@@ -41,6 +44,8 @@ module ulx3s_win_top(
         .RST_N(rst_n),
         .CLK_pclk(pclk),
         .CLK_sclk(sclk),
+        .rxd(ftdi_txd),
+        .txd(ftdi_rxd),
         .pins(pins),
         .led(st),
         .blink(blink)
@@ -52,5 +57,5 @@ module ulx3s_win_top(
                      .Q(gpdi_dp[i]));
     end endgenerate
 
-    assign led = {locked, 4'b0, blink, st[1], st[0]};
+    assign led = {locked, 3'b0, ~ftdi_txd, blink, st[1], st[0]};
 endmodule

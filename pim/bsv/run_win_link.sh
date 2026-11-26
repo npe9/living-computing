@@ -16,7 +16,17 @@
 # failure is reported, not drawn", plus a flipped bit and a bad LEN; each
 # case's expected error records come from the model, so the check fails
 # if the board reports more, fewer or other errors, or draws a dropped
-# frame.  Build in $WIN_BUILD/link (default build-win/link).  No board.
+# frame.
+#   4. H6's kl0 runs (2026-11-26): tools/win_kl0_link.py makes the streams
+#      of two live kl0 runs of psi/test_espc.py from their device logs:
+#      kl0_m1 (the Login PIMOS window's three stages in one stream, a dump
+#      at each) and kl0_m4 (the PIMOS console by the tape).  Each runs as
+#      the cases above (winlink.py check: statuses, no link errors, dumps
+#      = psi/winfb.py), and then every dump read over the link must equal
+#      the test's pin (win_kl0_link.py pins).  Both pass SEQ 255 (474 and
+#      678 frames), so the receiver's sequence wrap is exercised.
+#      WIN_LINK_KL0=0 skips them.
+# Build in $WIN_BUILD/link (default build-win/link).  No board.
 #
 # INJECTED FAULTS in WinLink.bsv, each in a private copy of pim/bsv, pim/psi
 # and pim/tools (the tree's files never edited).  OBSERVED 2026-11-26; every
@@ -33,6 +43,12 @@
 #   L6 the hunt takes any byte as a frame start: drop, badlen (a LEN error
 #      at every byte until a frame lines up again); a clean stream never
 #      hunts, so the clean cases and flip (one whole bad frame) pass
+# The kl0 cases (OBSERVED 2026-11-26, the same way; the other 6 passed):
+#   K1 win_kl0_link.py puts each dump one command early: kl0_m1 and kl0_m4
+#      (pins: 5,120 and 2,560 data records for 3 and 1 pinned dumps)
+#   K2 the receiver's expected SEQ sticks at 255 (no wrap): kl0_m1 and
+#      kl0_m4 (winlink check: error records [(3, 255)] and two of them,
+#      expected none); the short cases never reach SEQ 255
 set -eu
 cd "$(dirname "$0")"
 
@@ -60,12 +76,20 @@ echo "== bsc: mkWinLinkTb"
   WinLinkTb.bsv > "$B/bsc.log" 2>&1 || { cat "$B/bsc.log"; exit 1; }
 (cd "$B" && "$BSC" -sim -e mkWinLinkTb -bdir . -simdir . -o sim_link > link.log 2>&1) || { cat "$B/link.log"; exit 1; }
 
-# name:stream:encode options (byte numbers: a frame is 18 bytes)
-CASES="glyphs:glyphs: lines:lines: xor_twice:xor_twice: drop:glyphs:--drop_100 flip:glyphs:--flip_300 badlen:glyphs:--flip_56"
+KL0=""
+if [ "${WIN_LINK_KL0:-1}" = 1 ]; then
+  python3 -I ../tools/win_kl0_link.py streams "$B/kl0" | sed 's/^/   /'
+  KL0="kl0_m1:@m1: kl0_m4:@m4:"
+fi
+# name:stream:encode options (@NAME: the kl0 stream $B/kl0/NAME.stream) (byte numbers: a frame is 18 bytes)
+CASES="glyphs:glyphs: lines:lines: xor_twice:xor_twice: drop:glyphs:--drop_100 flip:glyphs:--flip_300 badlen:glyphs:--flip_56 $KL0"
 status=0
 for c in $CASES; do
   name=${c%%:*}; rest=${c#*:}; stream=${rest%%:*}; opts=$(echo "${rest#*:}" | tr '_' ' ')
-  python3 -I "$WINFB" gen "$stream" > "$B/$name.stream"
+  case $stream in
+    @*) cp "$B/kl0/${stream#@}.stream" "$B/$name.stream" ;;
+    *) python3 -I "$WINFB" gen "$stream" > "$B/$name.stream" ;;
+  esac
   # shellcheck disable=SC2086
   python3 -I "$LINK" encode "$B/$name.stream" "$B/run/win_link_in.hex" $opts
   printf '%x\n' "$(grep -c . "$B/run/win_link_in.hex")" > "$B/run/win_link_n.hex"
@@ -78,6 +102,13 @@ for c in $CASES; do
   cp "$B/run/win_link_in.hex" "$B/$name.in.hex"; cp "$B/run/win_link_out.hex" "$B/$name.out.hex"
   if r=$(python3 -I "$LINK" check "$B/$name.in.hex" "$B/$name.out.hex"); then
     echo "   same  $name ($stream${opts:+ $opts}): ${r#winlink check: }; $(sed -n 's/^WinLinkTb: //p' "$B/run/sim.log")"
+    case $stream in
+      @*) if r=$(python3 -I ../tools/win_kl0_link.py pins "$B/$name.out.hex" "$B/kl0/${stream#@}.pins"); then
+            echo "         ${r#win_kl0_link }"
+          else
+            echo "   DIFFERS $name: $r"; status=1
+          fi ;;
+    esac
   else
     echo "   DIFFERS $name: $r"; status=1
   fi

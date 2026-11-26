@@ -957,6 +957,7 @@ plan's §5.1 and its H3 status:
 |---|---|---|---|---|---|---|
 | H3, 2026-11-25 | 384.76-418.24 | 74.53-79.43 | 32.65-34.91 | 9,671 | 3,612 | 156 |
 | H3 follow-up, 2026-11-26 | 412.71-417.54 | 77.26-82.59 | 34.66-36.50 | 10,639 | 4,277 | 156 |
+| H6, the link in the top, 2026-11-26 | 402.74-411.02 | 74.81-86.27 | 30.74-33.94 | 12,161 | 5,167 | 156 |
 
 The follow-up is the pipelined box, plus the cursor lookup in two pixel
 clocks. A full run took about 7 minutes (2026-11-25). Output: `build-winfpga/ulx3s_win.bit` (gitignored). The
@@ -977,11 +978,23 @@ lines. `run_win_link.sh` (called by `run_win_tb.sh`) runs 6 cases: three
 clean streams, a dropped byte, a flipped bit and a bad LEN. Every up
 record's CRC is checked, the error records must equal the model's, and the
 statuses and dumps must equal `psi/winfb.py` run on the accepted commands.
-The link is not in a board top yet.
+Two more cases (H6, 2026-11-26) send live kl0 drawing through it:
+`../tools/win_kl0_link.py` makes the M1 (Login PIMOS, three stages) and M4
+(PIMOS console) runs of `../psi/test_espc.py` into link streams, and every
+dump read back over the link must equal the test's own pin.
+
+Since 2026-11-26 the link is in the board top. `mkWinUlx3s` has
+`mkWinLink(25)` (1 Mbaud) on the FTDI UART (`ftdi_txd` M1 in, `ftdi_rxd` L4
+out), connected to the box after the self-test. `run_win_fpga.sh`: all
+three seeds PASS, 12,161 TRELLIS_COMB, 5,167 FF, 156 DP16KD; sys
+30.74-33.94, pclk 74.81-86.27, sclk 402.74-411.02 MHz (the plan's H6
+status). The host side for the board is the owner's step:
+`python3 tools/winlink.py` holds the framing, but its serial-port mode is
+not written (no agent opens the port).
 
 LEDs: 7 the PLL lock, 0 the self-test done, 1 a self-test error (a
 command status not OK), 2 toggles every 16 frames of the pixel domain
-(a period of about 1.07 s at 29.9 Hz).
+(a period of about 1.07 s at 29.9 Hz), 3 the link's line in is low.
 
 ## Regression
 
