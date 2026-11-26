@@ -5274,6 +5274,197 @@ end."""
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
 
+    # window M8's rest, shapes: the reference dots of window_pane.esp
+    # shape_in/9 (OURS rules, its header), repeated here dot by dot
+    SINE = [0, 18, 36, 54, 71, 89, 107, 125, 143, 160, 178, 195, 213, 230, 248, 265, 282, 299,
+            316, 333, 350, 367, 384, 400, 416, 433, 449, 465, 481, 496, 512, 527, 543, 558, 573,
+            587, 602, 616, 630, 644, 658, 672, 685, 698, 711, 724, 737, 749, 761, 773, 784, 796,
+            807, 818, 828, 839, 849, 859, 868, 878, 887, 896, 904, 912, 920, 928, 935, 943, 949,
+            956, 962, 968, 974, 979, 984, 989, 994, 998, 1002, 1005, 1008, 1011, 1014, 1016,
+            1018, 1020, 1022, 1023, 1023, 1024, 1024]
+
+    def unit(self, d):
+        q, r = divmod(d % 360, 90)
+        sr, cr = self.SINE[r], self.SINE[90 - r]
+        return [(cr, sr), (-sr, cr), (-cr, -sr), (sr, -cr)][q]
+
+    def shape_dots(self, rx, ry, wd, angles=None):
+        # the dots (dx, dy) from the centre (dy down) of shape_in/9
+        def h(r, y):
+            x = r
+            while x * x > r * r + r - y * y:
+                x -= 1
+            return x
+
+        def half(a, b, hh):
+            return a if b == 0 else a * hh // b
+        ri = ry - wd
+        sec = None
+        if angles and angles[0] % 360 != angles[1] % 360:
+            sec = (self.unit(angles[0]), self.unit(angles[1]),
+                   (angles[1] - angles[0]) % 360 > 180)
+        dots = set()
+        for y in range(ry + 1):
+            a = half(rx, ry, h(ry, y))
+            b = None
+            if wd > 0 and ri >= 0 and rx - wd >= 0 and y <= ri:
+                b = half(rx - wd, ri, h(ri, y))
+            for u in ([y] if y == 0 else [y, -y]):
+                for x in range(-a, a + 1):
+                    if b is not None and abs(x) <= b:
+                        continue
+                    if sec:
+                        (c1, s1), (c2, s2), wide = sec
+                        i1, i2 = c1 * u - s1 * x >= 0, c2 * u - s2 * x <= 0
+                        if not ((i1 or i2) if wide else (i1 and i2)):
+                            continue
+                    dots.add((x, -u))
+        return dots
+
+    def rim(self, cx, cy, r, a):
+        c, s = self.unit(a)
+        return cx + (r * c + 512) // 1024, cy - (r * s + 512) // 1024
+
+    def put_dots(self, want, cx, cy, dots, pattern=None, iw=440, ih=280):
+        X0, Y0 = self.GRAPHICS_AT
+        for dx, dy in dots:
+            x, y = cx + dx, cy + dy
+            if 0 <= x < iw and 0 <= y < ih and (pattern is None or self.pattern_dot(pattern, x, y)):
+                want.rows[Y0 + y] |= 1 << (1279 - X0 - x)
+
+    def put_line(self, want, x1, y1, x2, y2, wd, op=0):
+        # draw_line_in/7's line, op OP (0 set, 2 exclusive_or): a fill when level or upright, else
+        # the device line (windev line/7, style all ones)
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        if y1 == y2:
+            want.command(winfb.FILL << 4 | op, [X0 + min(x1, x2), Y0 + y1, abs(x2 - x1) + 1, wd, 0, 0])
+        elif x1 == x2:
+            want.command(winfb.FILL << 4 | op, [X0 + x1, Y0 + min(y1, y2), wd, abs(y2 - y1) + 1, 0, 0])
+        else:
+            want.command(winfb.LINE << 4 | op, [X0 + x1, Y0 + y1, X0 + x2, Y0 + y2, wd, 0xffff])
+
+    def test_win_m8_shapes(self):
+        # M8's rest, shapes (window.md §2.5; standard_io_window.esp
+        # "SHAPES", window_pane.esp shape_in/9, fan_in/8, lines_in/5):
+        # the selectors and argument orders PRINTED WINCS p3 and
+        # PRINTED-INTERFACE TM-785 p40, the dots OURS, each drawing checked
+        # against shape_dots/4 (the rules repeated dot by dot) or the winfb
+        # commands of its lines:
+        #   - draw_circle/7 (the HELD kappa make_copyright/2 arguments,
+        #     MOPMANAGER.ESP:154 `(Window,16,22,10,1,solid,set)`, and a
+        #     3-dot outline), draw_filled_circle/5, draw_ellipse/8,
+        #     draw_filled_ellipse/7 cut to the inside;
+        #   - draw_arc/9 280 to 40 (through 0: the TM-785 p40 angles),
+        #     draw_elliptical_arc/10 95 to 170, draw_filled_fan/9 30 to 300
+        #     (a sweep of 270, wider than 180);
+        #   - draw_fan/9: the arc and its two slanted radii;
+        #   - draw_filled_circle/7 with light_paint (pattern_dot/4's dots);
+        #   - draw_graph/2 (the held kwic scrolls.esp:1135 form: a list of
+        #     (X, Y)) open, draw_polygon/9 closed;
+        #   - execute_graphics_command/2 with TM-785 p40's vectors
+        #     draw_circle {CX, CY, R, W, St, Op} and draw_arc;
+        #   - exclusive_or twice erases a filled fan and an arc;
+        #   - refused loudly, the frame unchanged: style dotted, an integer
+        #     (colour) op, a negative angle, width 0, a polygon leaving the
+        #     inside, a fan whose radius leaves it, an unknown pattern.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   G15 the disc rule x*x + y*y =< R*R (no + R): this test FAILS,
+        #       nothing else.
+        #   G16 a sweep over 180 degrees taken as narrow: this test FAILS,
+        #       nothing else.
+        #   G17 no inner ellipse (every outline filled): this test FAILS,
+        #       nothing else.
+        #   G18 the polygon not closed: this test FAILS, nothing else.
+        #   G19 draw_fan/9 without its first radius: this test FAILS,
+        #       nothing else.
+        #   G20 an outline's op not checked (an integer colour op sent on):
+        #       this test FAILS, nothing else.
+        #   G21 the second quadrant's cosine not negated: this test FAILS,
+        #       nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        S, SET = A('solid'), A('set')
+
+        def drawn(sel, *args):
+            self.assertTrue(self.send(m, w, sel, *args), sel)
+            self.assertEqual(fr.rows, want.rows, sel)
+        self.put_dots(want, 16, 22, self.shape_dots(10, 10, 1))
+        drawn('draw_circle', 16, 22, 10, 1, S, SET)
+        self.put_dots(want, 60, 60, self.shape_dots(40, 40, 3))
+        drawn('draw_circle', 60, 60, 40, 3, S, SET)
+        self.put_dots(want, 160, 60, self.shape_dots(30, 30, 0))
+        drawn('draw_filled_circle', 160, 60, 30, SET)
+        self.put_dots(want, 300, 60, self.shape_dots(60, 25, 2))
+        drawn('draw_ellipse', 300, 60, 60, 25, 2, S, SET)
+        self.put_dots(want, 420, 260, self.shape_dots(40, 30, 0))
+        drawn('draw_filled_ellipse', 420, 260, 40, 30, A('fix'), SET)
+        self.put_dots(want, 60, 180, self.shape_dots(50, 50, 4, (280, 40)))
+        drawn('draw_arc', 60, 180, 50, 280, 40, 4, S, SET)
+        self.put_dots(want, 200, 180, self.shape_dots(60, 30, 3, (95, 170)))
+        drawn('draw_elliptical_arc', 200, 180, 60, 30, 95, 170, 3, S, SET)
+        self.put_dots(want, 340, 200, self.shape_dots(50, 50, 0, (30, 300)))
+        drawn('draw_filled_fan', 340, 200, 50, 30, 300, 1, A('fix'), SET)
+        # draw_fan/9: the arc, then the radii (slanted at 20 and 130)
+        self.put_dots(want, 120, 240, self.shape_dots(30, 30, 1, (20, 130)))
+        for a in (20, 130):
+            x, y = self.rim(120, 240, 30, a)
+            self.put_line(want, 120, 240, x, y, 1)
+        drawn('draw_fan', 120, 240, 30, 20, 130, 1, S, SET)
+        lp = A('light_paint')
+        self.put_dots(want, 250, 250, self.shape_dots(25, 25, 0), lp)
+        drawn('draw_filled_circle', 250, 250, 25, 1, lp, SET)
+        # polylines: the graph open, the polygon closed
+        pts = [(380, 100), (430, 100), (430, 140), (390, 130)]
+
+        def plist(ps):
+            out = K.NIL
+            for x, y in reversed(ps):
+                out = K.Cons(K.Vec([A(','), x, y]), out)
+            return out
+        for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
+            self.put_line(want, x1, y1, x2, y2, 1, 2)     # exclusive_or: the shared ends cancel
+        drawn('draw_graph', plist(pts))
+        tri = [(10, 100), (40, 100), (25, 130)]
+        for (x1, y1), (x2, y2) in zip(tri, tri[1:] + tri[:1]):
+            self.put_line(want, x1, y1, x2, y2, 2)
+        drawn('draw_polygon', plist(tri), 0, 0, 400, 400, 2, S, SET)
+        # execute_graphics_command/2 with TM-785 p40's vectors
+        self.put_dots(want, 420, 20, self.shape_dots(15, 15, 1))
+        self.put_dots(want, 420, 20, self.shape_dots(10, 10, 2, (280, 40)))
+        cmds = K.Cons(K.Vec([A('draw_circle'), K.Vec([420, 20, 15, 1, S, SET])]),
+                      K.Cons(K.Vec([A('draw_arc'), K.Vec([420, 20, 10, 280, 40, 2, S, SET])]), K.NIL))
+        drawn('execute_graphics_command', cmds)
+        # exclusive_or: once each dot, twice none
+        rows = list(fr.rows)
+        X = A('exclusive_or')
+        self.assertTrue(self.send(m, w, 'draw_filled_fan', 200, 120, 20, 300, 60, 1, A('fix'), X))
+        self.assertNotEqual(fr.rows, rows)
+        self.assertTrue(self.send(m, w, 'draw_filled_fan', 200, 120, 20, 300, 60, 1, A('fix'), X))
+        self.assertTrue(self.send(m, w, 'draw_arc', 60, 60, 40, 0, 180, 2, S, X))
+        self.assertTrue(self.send(m, w, 'draw_arc', 60, 60, 40, 0, 180, 2, S, X))
+        self.assertEqual(fr.rows, rows)
+        for args in [('draw_circle', 100, 100, 10, 1, A('dotted'), SET),
+                     ('draw_circle', 100, 100, 10, 1, S, 1),
+                     ('draw_arc', 100, 100, 10, 0, -1, 1, S, SET),
+                     ('draw_ellipse', 100, 100, 10, 5, 0, S, SET),
+                     ('draw_polygon', plist([(10, 10), (450, 20), (10, 30)]), 0, 0, 0, 0, 1, S, SET),
+                     ('draw_fan', 100, 20, 40, 60, 120, 1, S, SET),
+                     ('draw_filled_circle', 100, 100, 10, 1, A('zigzag'), SET)]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
     def test_win_m8_markers(self):
         # M8, markers (window.md §2.6; standard_io_window.esp "MARKERS",
         # marker.esp): selectors PRINTED-INTERFACE TM-125 p17, bodies OURS.
