@@ -27,12 +27,14 @@ relative to `pim/docs/nonlocal/` unless they start with `pim/`.
   (13 sites). The second is `ipl_parameter`, `no` instead of `yes`
   (1 site). The third is `extended_floating_point`, `no` instead of
   `yes` (27 sites). These 41 sites are in 26 files. Every module that
-  the `kl1_network` branches name is in the 3.6 tree (§2.4). The
+  the `kl1_network` branches name is in the 3.6 tree (§2.7, a crude grep). The
   network is documented to the byte unit: 8 x 8 mesh, 9-bit channel
-  units, path tables, 200 ns, 5 MB/s. PIMOS's own compiler already runs
-  on the model (R7, R8), so it can rebuild PIMOS for `mpsi`. Rebuilding
-  for `pimm` first gives a check: the result must match the held
-  objects. The verdict is two-level. At the KL1-B and system level a
+  units, path tables, 200 ns, 5 MB/s. PIMOS's own compiler runs on the
+  model: R8 was reached 2026-11-25/26, with eight pkl1 samples compiled
+  and run. Compiling PIMOS's own modules with it has not been tried, so
+  rebuilding PIMOS for `mpsi` (MP1) is the first open step, not a done
+  one. Rebuilding for `pimm` first gives a check: the result must match
+  the held objects. The verdict is two-level. At the KL1-B and system level a
   reproduction is FEASIBLE, with oracles we did not write. At the PSI-II
   microcode level it is NOT FEASIBLE: the KL1 firmware (16 K steps of
   53-bit microinstructions, TM-671 p. 18, IMG) is lost, and the held
@@ -42,7 +44,7 @@ relative to `pim/docs/nonlocal/` unless they start with `pim/`.
   hardware", the PSL-to-native compilers, and the compiler front end
   that emits VPIM's KL1-B. TR-574 (IMG) describes all three. VPIM's
   KL1-B is a different instruction set from the one the held PIMOS
-  compiler emits (§2.3). Beyond that gate, every per-machine code
+  compiler emits (§2.6). Beyond that gate, every per-machine code
   artefact is lost: native code, macro libraries, microcode, templates,
   assemblers, object sets and CSPs. Each of the four is therefore a
   reconstruction labelled OURS. The only oracles are published figures
@@ -51,10 +53,12 @@ relative to `pim/docs/nonlocal/` unless they start with `pim/`.
   **PIM/i**, then **PIM/c**, then **PIM/k** (§3).
 - **Multi-PSI/V1** is not ranked. Its KL1 system was written in ESP and
   ran on SIMPOS on PSI-I machines (TR-237 §4.1, TXT/OCR in English).
-  Both are lost, and SIMPOS is the PSI track's own gate (P4).
+  Neither is held, and nothing outside was searched for them. SIMPOS is
+  the PSI track's own gate (P4).
 - **Proposed rungs MP1..MP6** for Multi-PSI/V2 are in §4. Each builds on
-  rungs already set: R7/R8 (the compiler runs), M1..M5 (multi-PE PIM/m,
-  `multi_pe.md`), P3/P5 (KL0 and the CSP).
+  rungs already set: R8 (reached), M1..M3 (reached on the reference
+  model 2026-11-26, `multi_pe.md` §5), M4..M5 (not reached), and P3/P5
+  (the CSP, not started).
 
 ## 1. Search record (2026-11-26)
 
@@ -62,13 +66,13 @@ relative to `pim/docs/nonlocal/` unless they start with `pim/`.
 |---|---|---|
 | ICOT TR/TM archive, per machine | **Title-only** pass over `lit/trtm/TRlist.html` and `TMlist.html` (the archive's own indexes). Patterns: `PIM/[pcik]`, `ＰＩＭ／[ｐｃｉｋ]`, `Multi-PSI`, `マルチＰＳＩ`, `並列推論マシン`, `Parallel Inference Machine`, `PIM`, `VPIM`, `KL1-B`, `PSL`, `cluster`/`クラスタ`, `PSI-II`, `firmware`/`ファームウェア`, `microprogram`/`マイクロプログラム`, `PIMOS`. Each hit was checked against all of `nonlocal/` by number and by SHA-256 | About 88 index lines (55 TR, 33 TM, by the pattern set's grep) on the machines or on PIM in general; 16 reports not on disk. Every one of the 16 answered on the AIST host (HTTP 206 to a range probe) and was fetched. One of them, TR-389, turned out byte-identical to the held `nonlocal/tr0389.pdf`, which leaves **15 new**. Three of the 15 are cited and committed (§5). The other twelve stay in scratch, unread: TR-211, 304, 349, 412, 448 (the shared-memory KL1 work that led to the PIM cluster), TR-526 (Multi-PSI load balancing), TR-572, TR-774, TM-503 (PIMOS functional design, 102 pp.), TM-891 (Taki tutorial, 128 pp.), TM-1037 and TM-1211 (the KL1-to-C plan that led to KLIC). The unlisted convention TMs (`literature_gaps.md` Appendix E) are all on disk already: TM-210..213, 259..261, 346, 353..359, 526, 530, 531, 572, 662, 671, 767, 779, 846, 847, 849, 911, 922, 923, 1000, 1010..1012, 1018, 1090, 1091, 1096..1098, 1127, 1247 |
 | TR/TM contents | Read for this audit: TR-237 (English, OCR); TM-671 pp. 17-18 (IMG); TM-526 header (IMG); TR-574 pp. 1-4 (OCR); TR-704 and TR-755 abstracts (OCR, English); TM-958 contents (OCR, English). For topic only, OCR in Japanese: TM-212, TM-261, TM-359, TM-922, TM-923, TM-1000, TM-1011, TM-1090 | §2 rows |
-| IPSJ papers held in `lit/ipsj/` | Titles taken from the 260 records in `lit/records/ipsj/` and matched to the 193 held PDFs | Papers on Multi-PSI, PSI-II, VPIM, PIM/c, PIM/i, PIM/k and PIM/p are held as PDF (ids in §2 and §6 item 4). `literature_gaps.md` Appendix D lists most of them as "resolved-not-read". **Read here:** 田中 et al., 「並列推論マシンPIM/c ―CPUについて―」, IPSJ 40th convention 2L-2, 1990, p. 1179 (`ipsj/118806_*`, IMG). `literature_gaps.md` §10a item 1 named this paper as the likeliest source of PIM/c's microinstruction fields; §2.2 gives the result |
+| IPSJ papers held in `lit/ipsj/` | Titles taken from the 260 records in `lit/records/ipsj/` and matched to the 193 held PDFs | Papers on Multi-PSI, PSI-II, VPIM, PIM/c, PIM/i, PIM/k and PIM/p are held as PDF (ids in §2 and §6 item 4). `literature_gaps.md` Appendix D lists most of them as "resolved-not-read". **Read here:** 田中 et al., 「並列推論マシンPIM/c ―CPUについて―」, IPSJ 40th convention 2L-2, 1990, p. 1179 (`ipsj/118806_*`, IMG). `literature_gaps.md` §10a item 1 named this paper as the likeliest source of PIM/c's microinstruction fields; §2.3 gives the result |
 | House journals held | `pdftotext` and grep of the 17 Fujitsu Sci. Tech. J. issues and 18 Mitsubishi Denki Giho issues under `lit/journals/` | FSTJ: no PIM/p article (V26 N1 mentions PSI-II only; V29 N2 cites Multi-PSI TRs). Giho 62(12) 1988 (Multi-PSI hardware) and 66(6) 1992 (PIM/m) are already cited by `literature_gaps.md`. Hitachi, Oki and Toshiba pages: the queries in `literature_gaps.md` "detail" §8 cover them; they were not repeated |
 | FGCS'88/'92/'94 | Held under `lit/fgcs/`; per-machine papers already extracted in `literature_gaps.md` "detail" §1-6 | nothing new searched |
-| PIMOS 3.6 source, per-machine code | grep in a scratch copy of `pimos.tar.Z`: `switch(machine)` and `switch(machine_type)` (41 sites in 26 files), every `case(...)`, every configuration switch, and the `kl1_network` branches' module references | §2.4. This repeats and extends `archive_search_notes.md` Task 3 (2026-11-23) |
+| PIMOS 3.6 source, per-machine code | grep in a scratch copy of `pimos.tar.Z`: `switch(machine)` and `switch(machine_type)` (41 sites in 26 files), every `case(...)`, every configuration switch, and the `kl1_network` branches' module references | §2.7. This repeats and extends `archive_search_notes.md` Task 3 (2026-11-23) |
 | The machine-configuration header | `pimos.h`, the 1995 copy in `ifs/symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz` (3 identical copies), already found 2026-11-23 | its table is `archive_search_notes.md` Task 3; used here for the per-machine builds |
 | VPIM | grep of a scratch copy of `vpim.tar.Z` | no conditional compilation per machine, as Task 3 found. New here: the primitive layer (`src/primitives/prim.psl.c`, 85 `#PSL_define`) calls 79 `_`-prefixed "virtual hardware" primitives. Only 5 of them are held as C (`_function_fast.c`). VPIM's KL1-B opcode table (`p_opecode_table.psl.c`) is a different numbering and set from PIMOS's `inst_tab.kl1` |
-| IFS, all 307 archives | `gzip -dc` over every archive, byte grep for `pimi_scsi`, `pim_scsi`, `case(pim[pcik])`, `define(machine…)`, `switch(machine` | only `dpool_pimos.tgz` matches. IFS abstracts with a Machine line: 17 name Multi-PSI alone, 11 more name Multi-PSI with PIM or PIM/m, and none names PIM/p, c, i or k |
+| IFS, all 307 archives | `gzip -dc` over every archive, byte grep for `pimi_scsi`, `pim_scsi`, `case(pim[pcik])`, `define(machine…)`, `switch(machine`; and, in a second pass, `mpsi_*.sav`, `mpsi_*.kbn`, `mpsi_*.mbn` and `ppim_*.sav` (members or text; 307 archives, none failed `gzip -t`) | the first pass matches only `dpool_pimos.tgz`. The second matches only `manuals/pimos/man30.j.ps.Z`, which names `mpsi_bios.sav` and `ppim_bios.sav`, so no Multi-PSI or PIM/p object set is held. IFS abstracts with a Machine line: 17 name Multi-PSI alone, 11 more name Multi-PSI with PIM or PIM/m, and none names PIM/p, c, i or k |
 | Not repeated | the CMU AI Repository ICOT tree (another agent); the web queries of `literature_gaps.md` "detail" §8 and `psi_acquisition.md` §4 | — |
 
 ## 2. Held, documented, lost: per machine
@@ -85,9 +89,9 @@ Columns as area L's. "Held" = on disk under `pim/docs/nonlocal/`.
 | KL1 firmware (`.mbn`, `kl1kp.kbn`, `kl1pat.com`) | none | TM-671 p. 18 (IMG): "16 K steps of 53-bit microinstructions, about 0.1 MB", loaded into every PE over the maintenance path; TR-715, TR-531, TR-585, TR-466, TR-469 give its behaviour, message sizes and step counts | **LOST** (`icot_software_survey.md` §4) | PIM/m's microprogram is this one converted (`literature_gaps.md` "The other PIMs"); the held `pimm.MEkbn` is PSI-III code |
 | PSI-II microinstruction | none | 53 bits (TR-265, `literature_gaps.md` §8); ZEUS simulator (TM-212, OCR) | LOST (format not published) | blocks only the microcode-level verdict |
 | KL1-B instruction set | `pimos/src/library/assembler/inst_tab.kl1` (the encoding, `kl1_encoding.md`) | TM-662 (code format), TR-715 | HELD-SOURCE | the same `machine_type` (`mpsi`) as PIM/m (`pimos.h`) |
-| PIMOS build configuration | `pimos.h` (1995 dpool copy) `case(mpsi)` | `fep_interface kl1_network`, `ipl_parameter no`, `extended_floating_point no`; otherwise PIM/m's settings | HELD (dated 1995, two years after the 3.6 release; INFERENCE that 3.6 used the same) | §2.4 |
-| PIMOS source branches | 3.6 tree: 13 `fep_interface` sites in 11 files, `kl1_network` branches in `bios/boot/scsi_man.kl1`, `scsi_conf.kl1`, `bios/scsi/*.kl1`, `server/scsi/scsiRserver.kl1`, `kernel/init/rsc_init.kl1` | — | HELD-SOURCE, complete for the modules it names (§2.4) | — |
-| PIMOS object set for `mpsi` (`mpsi_*.sav`, `mpsi_bios.sav`) | none; the 3.0 manual names `mpsi_bios.sav` (`icot_software_survey.md` §7) | — | LOST; **rebuildable** with the held compiler (MP1) | the IFS search found no `mpsi_*` member |
+| PIMOS build configuration | `pimos.h` (1995 dpool copy) `case(mpsi)` | `fep_interface kl1_network`, `ipl_parameter no`, `extended_floating_point no`; otherwise PIM/m's settings | HELD (dated 1995, two years after the 3.6 release; INFERENCE, unverified, that 3.6 used the same) | §2.7 |
+| PIMOS source branches | 3.6 tree: 13 `fep_interface` sites in 11 files; 9 `case(kl1_network)` branches in 6 of them (`bios/boot/scsi_man.kl1` x3, `bios/boot/scsi_conf.kl1`, `bios/scsi/{scsi_blt,DAMC,scsi_common,DAM,scsi_processor}.kl1`) | — | HELD-SOURCE; the modules the branches call are in the tree (§2.7) | — |
+| PIMOS object set for `mpsi` (`mpsi_*.sav`, `mpsi_bios.sav`) | none; the 3.0 manual names `mpsi_bios.sav` (`icot_software_survey.md` §7) | — | not in any held file (searched 2026-11-26, §1); outside sources still open (audit §5 item 12); **rebuildable** with the held compiler (MP1) | the IFS byte grep for `mpsi_*.sav`/`.kbn`/`.mbn` and `ppim_*.sav` matched only the Japanese 3.0 manual `man30.j.ps.Z`, which names `mpsi_bios.sav` and `ppim_bios.sav` |
 | The held `pimm_*` objects on a "Pseudo Multi-PSI" | `pimosobj` `INSTALL`: "Pseudo PIM/M system or Psuedo Multi-PSI system" on "PSI-II or PSI-UX" | — | OPEN CONTRADICTION (§6 item 1) | not a held Multi-PSI build |
 | CSP and FEP software | `mpsicspR.ptf` (remote CSP half, 30 classes, `psdpim`); CSP command form `PE番号 @ コマンド` (TM-671 §4.1, IMG), the `PE00(00) @ DC>` prefix of the manual's transcripts | CSP and FEP were ESP on SIMPOS, "over 3 MB of source" (TM-671 §4, IMG); manual "Multi-PSI/V2 Console System (CSP) Operating Manual" CITED-ONLY | LOST except `mpsicspR.ptf` (HELD-BINARY-ONLY) | the PSI track's P3/P5 decide whether `mpsicspR.ptf` can run |
 | Applications | 28 IFS entries whose abstract's Machine line names Multi-PSI (17 Multi-PSI only: 11, 17, 18, 20, 30, 31, 39, 42, 51, 53, 60, 61, 62, 63, 67, 70, 71) | — | HELD-SOURCE (per entry) | period programs; MP5's candidates |
@@ -110,8 +114,8 @@ Columns as area L's. "Held" = on disk under `pim/docs/nonlocal/`.
 
 | Item | Held? | Documented? | Status | Notes |
 |---|---|---|---|---|
-| Hardware | TR-672, TR-671, TR-704, TR-755 (= FGCS'92 pp. 723-730), TR-863, TR-871, TR-869, TM-870, TM-1260; IPSJ 118805..118809, 120649..120651 | datapath, micro-step costs (`literature_gaps.md` "detail" §2) | PARTIAL | — |
-| **Microinstruction (new)** | IPSJ 40th convention 2L-2, p. 1179 (`ipsj/118806_*`) | **104 bits in 6 fields and 41 subfields**, IMG, Table 2: Sequence Control (SC) 6 subfields, 28 bits; Execution Unit Control (EUC) 4, 11; Register File Access Control (RFAC) 8, 18; Bus Load Control (BLC) 7, 23; Memory Interface (MI) 7, 14; Miscellaneous (MIS) 9, 10. Table 1: general registers 8 x 2 words, dedicated registers 256 x 2 words; ALU on tagged data; shifter of 1-8 bits; 3 internal buses; 50 ns machine cycle; data and addresses each 5 bytes plus 5 parity bits. Section 3: an 8-way branch on network state in 2 cycles; a 2-way branch on the slit-check flag in 1 cycle; a block transfer of 4 words in 5 cycles (80 MB/s). About 51 K gates on a CMOS gate array | DOCUMENTED to field width; subfield encodings and tag bits NOT published | closes `literature_gaps.md` §10a item 1 only partly |
+| Hardware | TR-672, TR-671, TR-704, TR-755 (same title as FGCS'92 vol. 2 pp. 723-730; INFERENCE: its preprint), TR-863, TR-871, TR-869, TM-870, TM-1260; IPSJ 118805..118809, 120649..120651 | datapath, micro-step costs (`literature_gaps.md` "detail" §2) | PARTIAL | — |
+| **Microinstruction (new)** | IPSJ 40th convention 2L-2, p. 1179 (`ipsj/118806_*`) | 104 bits (already in `literature_gaps.md`); new here: **6 fields and 41 subfields**, IMG, Table 2: Sequence Control (SC) 6 subfields, 28 bits; Execution Unit Control (EUC) 4, 11; Register File Access Control (RFAC) 8, 18; Bus Load Control (BLC) 7, 23; Memory Interface (MI) 7, 14; Miscellaneous (MIS) 9, 10. Table 1: general registers 8 x 2 words, dedicated registers 256 x 2 words; ALU on tagged data; shifter of 1-8 bits; 3 internal buses; 50 ns machine cycle; data and addresses each 5 bytes plus 5 parity bits. Section 3: an 8-way branch on network state in 2 cycles; a 2-way branch on the slit-check flag in 1 cycle; a block transfer of 4 words in 5 cycles (80 MB/s). About 51 K gates on a CMOS gate array | DOCUMENTED to field width; subfield encodings and tag bits NOT published | closes `literature_gaps.md` §10a item 1 only partly |
 | Microcode generation | none | TM-1000 (IPSJ 120650): register allocation, control-flow flattening, micro-templates, micro-address generation from VPIM (OCR, matching TR-672's Figs. 6-7, IMG in `literature_gaps.md`) | tools and microcode LOST | the microcode was generated mechanically, so in principle it could be generated again from VPIM, with the templates ours |
 | PIMOS build | `pimos.h` `case(pimc)`: no double-width integer, bignum or floating point; no processor profile; `scsi`, `vpim`. 3.6: `case(pimc)` at `pimos.vmac`:432 only (timer unit `usec15`) | — | HELD-SOURCE (configuration); objects LOST | — |
 | Oracles | TR-672 Table 2: 416 microsteps for append in version 1, and the savings by cause; FGCS'94 Table 1: 55 / 56 KRPS at 66 ns | — | PRINTED | — |
@@ -148,11 +152,51 @@ Columns as area L's. "Held" = on disk under `pim/docs/nonlocal/`.
 | PSL compiler to native code, macro expander | none | LOST | TR-574 §2 |
 | KL1 compiler emitting VPIM KL1-B | none | **LOST**. The held compiler emits the Multi-PSI KL1-B (`try_me_else` ... `inst_tab.kl1`). VPIM's opcode table (`p_opecode_table.psl.c`: `RESET_SSP 0x000`, `COMMIT 0x002`, `READ_WAIT 0x010` ...) is another set; its header says Multi-PSI/V2 uses KL1-B opcodes as built-in IDs and that the RISC machines must reuse these virtual numbers so that PIMOS need not be rewritten per machine | the instruction list is FGCS'92 p. 455 Table 6 (Hirata et al.) |
 
+### 2.7 PIMOS 3.6 per-machine code: counts and the module check
+
+grep of a fresh scratch copy of `pimos.tar.Z`, 2026-11-26. These are
+counts of text, not a compile.
+
+- `:- switch(machine)` and `:- switch(machine_type)`: 41 sites in 26
+  files. Cases: `case(mpsi,pimm)` 20 (19 written without a space, 1
+  with), `case(mpsi)` 9, `case(vpim)` 9, `case(pimp)` 3
+  (`macro/pimos/pimos/pimos.vmac`:429, 444, 465), `case(pimc)` 1
+  (`pimos.vmac`:432), `case(pimi)` 1 (`macro/pimos/scsi/scsi.vmac`:14),
+  `case(pimk)` 0. No `switch(machine)` site separates `mpsi` from
+  `pimm`.
+- The switches whose value differs between `mpsi` and `pimm` in
+  `pimos.h`: `fep_interface` 13 sites, `ipl_parameter` 1
+  (`bios/boot/bios.kl1`:52), `extended_floating_point` 27. That is 41
+  sites in 26 files: `bios/boot/{bios,scsi_conf,scsi_man}.kl1`,
+  `bios/scsi/{DAM,DAMC,scsi_blt,scsi_common,scsi_handler,scsi_processor}.kl1`,
+  `debugger/inspector/{cmd_insp,cmd_mon,inspvar,unify}.kl1`,
+  `kernel/init/rsc_init.kl1`, `library/unloader/{decoder,encoder}.kl1`,
+  `macro/pimos/scsi/scsi.vmac`, `server/scsi/scsiRserver.kl1`,
+  `utility/ioutls/{bufutil,mklib,token,uparse,variable}.kl1`,
+  `utility/pool/{comp,hash}.kl1` and `utility/sorter/sorter.kl1`. That
+  both totals are 41 is a coincidence.
+- **The module check (crude).** For each of the 9 `case(kl1_network)`
+  branches, the text up to the next `case`, `default` or `end_switch`
+  was scanned for `name:` calls and `name#` macro references. The
+  result was compared with the 480 names declared by `:- module` in the
+  tree. Modules called: `scsi_string_io` (`scsi_man.kl1`:84) and
+  `shoen` (`scsi_conf.kl1`:50). Both are declared. The other names
+  found (`ascii#`, `string#`, `scsi#`, `pimos_tag#`) are macro
+  references, not modules. Five of the nine branches are two lines
+  long. The check does not follow calls into other files, and it does
+  not show that the branches compile.
+- `case(pimi)` maps the SCSI built-ins to modules `pimi_scsi` and
+  `pim_scsi`. Neither is declared anywhere held. The timer macro
+  `mdlib#system_timer_unit` (`pimos.vmac`:424-437) has cases for
+  `mpsi,pimm`, `pimp` and `pimc` only, with no `default`. INFERENCE,
+  unverified: 3.6 does not compile as released for `pimi` or `pimk`
+  (§6 item 3).
+
 ## 3. Verdicts and rank
 
 | Rank | Machine | Verdict | What a reproduction is | Oracle (not ours) | Cost |
 |---|---|---|---|---|---|
-| 1 | **Multi-PSI/V2** | **FEASIBLE** at the KL1-B and system level. NOT FEASIBLE at the PSI-II microcode level (firmware and microinstruction format lost) | The PIM/m reference model and core, with N PEs (M1..M5), the Multi-PSI network (mesh, path tables, 9-bit units, FIFO channels), PIMOS 3.6 rebuilt with `define(machine, mpsi)`, and an FEP node on the network (`kl1_network`) in place of SCSI | (a) the held `pimm_*` objects, which a `pimm` rebuild must reproduce. (b) The manual's Multi-PSI transcripts: `e-sysman.tex`:104-111, the boot (V3.0, so with R5's caveat); 139-144, the shutdown; `e-version.tex` Examples 1 and 2 (the `$version` line and the IPL loading lines). (c) Message sizes and counts printed in TR-715, TR-531 and TR-585. (d) The 28 IFS entries naming Multi-PSI, and PDSS and KLIC as answer oracles | low to medium: mostly rungs already planned for PIM/m |
+| 1 | **Multi-PSI/V2** | **FEASIBLE** at the KL1-B and system level. NOT FEASIBLE at the PSI-II microcode level (firmware and microinstruction format lost) | The PIM/m reference model and core, with N PEs (M1..M5), the Multi-PSI network (mesh, path tables, 9-bit units, FIFO channels), PIMOS 3.6 rebuilt with `define(machine, mpsi)`, and an FEP node on the network (`kl1_network`) in place of SCSI | (a) the held `pimm_*` objects, which a `pimm` rebuild must reproduce. (b) The manual's Multi-PSI transcripts: `e-sysman.tex`:104-111, the boot (V3.0, so with R5's caveat); 139-144, the shutdown; `e-version.tex` Examples 1 and 2 (the `$version` line and the IPL loading lines). (c) Message sizes and counts printed in TR-715, TR-531 and TR-585. (d) The 28 IFS entries naming Multi-PSI, and PDSS and KLIC as answer oracles | medium: mostly rungs already planned for PIM/m, but gated on MP1 (compiling PIMOS's own modules, not yet tried) and on M4/M5 |
 | 2 | **PIM/p** | FEASIBLE ONLY AS A RECONSTRUCTION (OURS): instruction forms published, encodings and toolchain lost | An instruction-level PE model from TR-577 and TR-770 with our own encodings, or TR-389's 1988 tables once transcribed; VPIM compiled by our own PSL compiler; our own KL1-B-for-VPIM front end | the append trace (28 instructions, 33 clocks, by category); TM-1320's clock counts; FGCS'94 tables; PIMOS's `pimp` branches | very high: three lost toolchains |
 | 3 | **PIM/i** | RECONSTRUCTION ONLY: instruction list and tag layout published | for the pre-VPIM system, the held compiler's KL1-B through our own post-compiler to a PIM/i model; at most 8 PEs, no network | TR-675's per-KL1b statistics; FGCS'94 KRPS | very high; PIMOS's PIM/i modules are lost |
 | 4 | **PIM/c** | RECONSTRUCTION ONLY: microword field widths published (new), subfield encodings not | our own generator from VPIM to a 104-bit microword of our own encoding | TR-672 Table 2 (416 microsteps and the savings); FGCS'94 KRPS | very high |
@@ -181,9 +225,9 @@ restated.
 | Rung | Observable | Oracle | Needs |
 |---|---|---|---|
 | MP0 | This audit: held, documented and lost per machine, with the searches recorded | — | done 2026-11-26 |
-| MP1 | PIMOS rebuilt by its own compiler on the model. **(a)** With `pimos.h` set to `pimm`, a chosen set of 3.6 modules is compiled through the home-file service (as R7 compiles `sample1`). The resulting code is compared, module by module, with the same modules decoded from the held `pimm_*360E.sav`. **(b)** The 26 files with `fep_interface`, `ipl_parameter` or `extended_floating_point` switches are compiled again with `mpsi`, giving `mpsi_*` modules | (a): the held objects, HELD-BINARY. A difference is a finding about the release (audit §6 item 7: which `ipl_parameter` branch the held bios was built from), not a failure to fix. (b): the source's own `case(kl1_network)` text | R7/R8 (the compiler runs, home files); `pimos.h` (1995 copy, labelled) as a home file; `asm/unlsav.py` |
+| MP1 | PIMOS rebuilt by its own compiler on the model. **(a)** With `pimos.h` set to `pimm`, a chosen set of 3.6 modules is compiled through the home-file service (as R7 compiled `sample1` and R8 the pkl1 samples). The resulting code is compared, module by module, with the same modules decoded from the held `pimm_*360E.sav`. **(b)** The 26 files with `fep_interface`, `ipl_parameter` or `extended_floating_point` switches are compiled again with `mpsi`, giving `mpsi_*` modules | (a): the held objects, HELD-BINARY. A difference is a finding about the release (audit §6 item 7: which `ipl_parameter` branch the held bios was built from), not a failure to fix. (b): the source's own `case(kl1_network)` text | R8 (reached: the compiler runs, home files); `pimos.h` (1995 copy, labelled) as a home file; `asm/unlsav.py` |
 | MP2 | The Multi-PSI network in the reference model. An 8 x 8 mesh of PEs; packets in 9-bit units with header and tail; per-channel path tables set by software; x-then-y routing; FIFO per channel; 200 ns per unit. M1-M3's messages travel on it and produce the same answers as on the abstract FIFO network | M1-M3's oracles (`seqgc`, `gc`, the heap monitors). The message sizes in bytes that TR-715, TR-531 and TR-585 print for `throw_goal`, `read`, `answer_value`, `unify` and `release` | M1..M3; TR-715 §3 and Fig. 2. The body layout of each message is ours, from VPIM's logical packets (`multi_pe.md` §3), INFERENCE |
-| MP3 | The `mpsi` PIMOS boots on N PEs, with its FEP as a node on the network (`fep_interface kl1_network`: `scsi_string_io`, `scsi_conf.kl1`'s branch). The front end is a stand-in, OURS, speaking the protocol that the `kl1_network` branches define, in place of `fep.py`'s SCSI | `e-sysman.tex`:104-111 (with R5's caveat: a V3.0 transcript). R6's shutdown lines against `e-sysman.tex`:139-144, which are Multi-PSI lines | MP1(b), MP2, M4, M5 |
+| MP3 | The `mpsi` PIMOS boots on N PEs, with its FEP as a node on the network (`fep_interface kl1_network`: `scsi_string_io`, `scsi_conf.kl1`'s branch). The front end is a stand-in, OURS, speaking the protocol that the `kl1_network` branches define, in place of `fep.py`'s SCSI | `e-sysman.tex`:104-111 (with R5's caveat: a V3.0 transcript). R6's shutdown lines against `e-sysman.tex`:139-144. **This oracle does not discriminate**: the manual says it uses Multi-PSI as its example and that other systems start and stop "essentially identical" (`e-sysman.tex`:92), so a `pimm` build passes it too. The check that is specific to `mpsi` is that the boot goes through the `case(kl1_network)` clauses (§2.7), seen in a trace | MP1(b), MP2, M4, M5 |
 | MP4 | The Multi-PSI console's output form: `PEnn(nn) @ DC>` prefixes and the `$version` line of `e-version.tex` Example 1 and the IPL loading lines of Example 2 | the manual's two examples. The remote half `mpsicspR.ptf` if P3 runs it | P3, P5 (the PSI track); without them OURS |
 | MP5 | A period Multi-PSI application from IFS (the 17 entries naming only Multi-PSI, §2.1) runs on N PEs | its printed results; KLIC 2.002 and PDSS for answers | MP3 |
 | MP6 | Bluespec: N cores of the PIM/m core on a mesh module with Multi-PSI parameters, in lockstep with MP2's reference | the reference's traces | M7 |
@@ -205,7 +249,7 @@ Digital Archive permits free academic use without change,
 - `trtm/tr0704.pdf`: TR-704, Nakagawa et al., "Hardware Implementation
   of Dynamic Load Balancing in the Parallel Inference Machine PIM/c"
   (draft, 1991-10).
-- `trtm/tr0755.pdf`: TR-755, the same paper, 1992-03.
+- `trtm/tr0755.pdf`: TR-755, the same title, 1992-03 (INFERENCE: the preprint of FGCS'92 vol. 2 pp. 723-730).
 - `trtm/tm0958.pdf`: TM-958, PDSS 2.52 manual and source listings
   (1990-09, 214 pp.).
 
@@ -223,12 +267,12 @@ The other twelve new reports (§1) are fetchable at
    both used the PIM/m build, and the pseudo machine's FEP was the same
    PSI. Whether that is so is not established. The objects are recorded
    as a PIM/m build, not a Multi-PSI one.
-2. **TM-526's index title.** Appendix E lists TM-526 as 「並列推論マシンPIM/sの概要」,
+2. **TM-526's index title.** The archive's index record `TMidx/tm0526.idx` (quoted in `literature_gaps.md` Appendix E; TM-526 is not in `TMlist.html`) titles it 「並列推論マシンPIM/sの概要」,
    but the page reads 「並列推論マシンPIM/pの概要」 (Goto, Shinogi, Kumon,
    Hattori; IMG). "PIM/s" in VPIM's comments and `pimos.h` is something
    else (§2.6).
 3. **PIMOS 3.6 for PIM/i and PIM/k.** Both lack a timer branch, and
-   PIM/i lacks its SCSI modules (§2.4, §2.5). Whether the 3.6 compiler
+   PIM/i lacks its SCSI modules (§2.4, §2.5, §2.7). Whether the 3.6 compiler
    rejects an undefined `mdlib#` macro or leaves the term in place is
    not checked. MP1 would answer it at no extra cost.
 4. **Not transcribed or not read, though held:** TR-389 PDF pp. 17-18

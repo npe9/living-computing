@@ -1541,8 +1541,8 @@ FGCS Digital Archive's terms (see "Rights"):
 - `trtm/tr0704.pdf`: TR-704, Nakagawa et al., "Hardware Implementation
   of Dynamic Load Balancing in the Parallel Inference Machine PIM/c"
   (1991).
-- `trtm/tr0755.pdf`: TR-755, the same paper as printed in FGCS'92
-  (1992).
+- `trtm/tr0755.pdf`: TR-755, the same title as FGCS'92 vol. 2
+  pp. 723-730 (1992; INFERENCE: its preprint).
 - `trtm/tm0958.pdf`: TM-958, the PDSS 2.52 manual and source listings
   (1990, 214 pp.).
 
