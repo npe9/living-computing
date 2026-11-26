@@ -249,6 +249,16 @@ STILL OPEN, in order:
 
 ## THE FP BOX'S REMAINING CLASSES -- open, 2026-11-19
 
+**2026-11-26 (fidelity_plan.md A4 step 3):**
+- Item 1 is DONE. `*+` is one chained `FpMulAdd` request to `mkPAU`, and
+  its Table 2 add terms are charged from the add pass. The atlas `*+`
+  family goes from 88.8% to 98.8% within 3.
+- Items 2 and 3 are left undone, with the reasons in the plan. Both
+  families already meet the rule, and no countable time moves them.
+- "The add's data-dependent time" below is now BUILT behind
+  `pauAddStep` and measured, but held off: it reproduces D+'s -37 tail
+  exactly, and moves M+/M+MG further away.
+
 `mkFpBox` holds the FP multiply (plan §1c step 5f stage 1) and, since stage
 2, the add's datapath for `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG`, `F+`, at
 Table 2's one execution cycle. Still in `fpArithClass`, in this order:
@@ -273,6 +283,14 @@ it is its own milestone with the atlas's add pages (PDF 42-47, 62, 69-70,
 73-78, 93, 100-101) as the check.
 
 ## ONE PARALLEL-UNIT MULTIPLIER, NOT TWO -- open, 2026-11-19
+
+**SETTLED 2026-11-26 (fidelity_plan.md A4 step 2): ONE.** The divider
+and the FP multiplier are now one module, `mkPAU`
+(`bsv/StretchPAU.bsv`). The sources are Buchholz p.208 and Fig. 14.7,
+and R23-9732 Figs. 3.8.18, 3.11.1, 3.11.8 and 3.11.10, cited by page
+in the plan. Only the VFL binary multiply (mkSAU's `rl_mul`, written
+as `mkVflBox` below) is still outside it; moving it changes mkSAU's
+internals and is left open. The text below is the 2026-11-19 record.
 
 `mkVflBox` (VFL binary `*`/`*+`, plan §1c step 5e) and `mkFpBox` (FP `*`,
 `D*`, `*+`, step 5f) each hold a 48 x 12 multiplier at twelve bits a
@@ -791,7 +809,7 @@ data-dependent terms, and the reduction-loop count comes from walking
 the 7030's own divide algorithm -- Buchholz, *Planning a Computer
 System*, Figs. 14.11-14.13 and pp.213-216 (PDF 238-241) -- inside
 `mkDivBox`, one loop a clock.  The cycle structure is from R23-9732
-fig. 3.8.15 (PDF 239-241).  `bsv/StretchDivBox.bsv` "THE 7030'S
+fig. 3.8.15 (PDF 239-241).  `bsv/StretchPAU.bsv (was StretchDivBox.bsv)` "THE 7030'S
 REDUCTION LOOP" has the citations.  The atlas before/after, with
 residual = model - printed in clocks, on every non-internal column:
 

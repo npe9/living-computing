@@ -10,7 +10,7 @@
 ! Before that, 2026-11-17: 522 clocks to halt;
 ! 527 before the preparation floor (measured with it removed).
 ! Before the FP divide was charged Table 2's divide row with its
-! reduction loops walked by mkDivBox (bsv/StretchDivBox.bsv "THE
+! reduction loops walked by mkDivBox (bsv/StretchPAU.bsv "THE
 ! 7030'S REDUCTION LOOP"), the same deck took 385; with the box's
 ! charge forced to 0 it takes 385 and the pin fails.
 !

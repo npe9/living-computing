@@ -2015,7 +2015,7 @@ unchanged, and the choice is left open.** This is item 10's open entry,
   refer to the worst possible situations" of LAAR queuing.
 - The box's total rests on one RECONSTRUCTION, worth 2 clocks: the
   second divide cycle (SDC) is counted as a reduction loop of its own
-  (NEXT.md "FP DIVIDE TIME"; StretchDivBox.bsv "RECONSTRUCTION, AND WHAT
+  (NEXT.md "FP DIVIDE TIME"; StretchPAU.bsv (was StretchDivBox.bsv) "RECONSTRUCTION, AND WHAT
   DECIDED IT"). That choice was made by matching PDF 54's 7.50 µs exactly.
   - Not counting the SDC is nearer PDF 41's "average divide time should
     be about 10 µs" (10.8 µs against 11.4).
@@ -2526,7 +2526,7 @@ untouched.
      disowns these pages as a timing.  **FP half DONE 2026-11-17**:
      Table 2's divide row with its data terms, the reduction loops
      walked by Buchholz Fig. 14.11's algorithm in `mkDivBox`
-     (`bsv/StretchDivBox.bsv`, "THE 7030'S REDUCTION LOOP").  PDF 54/85
+     (`bsv/StretchPAU.bsv (was StretchDivBox.bsv)`, "THE 7030'S REDUCTION LOOP").  PDF 54/85
      `/` and 56/87 `R/` −15.7..−20.0 → **+1.00** on every non-internal
      column (the same +1 as `*`, PDF 52); PDF 55/86 `D/` −21.0 →
      **−0.03..0.00**.  Internal columns: `/`, `R/` −25/−27 → −6, `D/`

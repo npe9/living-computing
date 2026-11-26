@@ -56,6 +56,18 @@
 !
 ! DL(U) zeroes accumulator bits 60-107, and unlike F216A this block
 ! does not fill them, so the accumulator fraction is {constant, 0}.
+!
+! HALT CLOCKS, fidelity_plan.md A4 step 3 (2026-11-26). No check here pins
+! a time.
+! The STRETCH_HALT_REPORT halt moved 774 -> 790 (+16).
+! The cause was measured by running this deck with StretchPAU.bsv's
+! switches.
+! With every step-3 switch off (pauChainMulAdd and pauMa*), the halt is 774
+! again.
+! With the chain on and the terms off, it is 790. So the cause is
+! pauChainMulAdd: the chained request's add pass makes the box answer in 5
+! clocks, not 4, and the hold behind a `*+` grows with it (NEXT.md 'ONE
+! PARALLEL-UNIT MULTIPLIER', the hold cost); the add terms move nothing.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

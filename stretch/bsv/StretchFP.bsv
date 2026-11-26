@@ -242,7 +242,7 @@ endfunction
 //   * the DATAPATH: the alignment shift, the 97-bit add or subtract and
 //     the post-normalization -- the parallel unit's 96-bit shifter and
 //     adder (Buchholz printed p.210).  fpAddSumRef below is its ONE-STEP
-//     REFERENCE; mkFpBox (StretchFpBox.bsv) has its own;
+//     REFERENCE; mkFpBox (StretchPAU.bsv) has its own;
 //   * a FINISH (fpAddFinish / fpAddDoubleFinish): the exponent, the
 //     order-of-magnitude-zero exponent, and LC, LS, PSH.
 // fpAdd and fpAddDouble are the three run in a row, and are what the
@@ -830,7 +830,7 @@ function FpNum fpExpRangeWinner(FpNum a, FpNum b) =
 // -1024.
 //
 // THE PRODUCT IS AN ARGUMENT SINCE 2026-11-19 (plan §1c step 5f): the
-// 48 x 48 fraction product is mkFpBox's (StretchFpBox.bsv), formed twelve
+// 48 x 48 fraction product is mkFpBox's (StretchPAU.bsv), formed twelve
 // multiplier bits a clock, and the box hands it to fpMulProd for the
 // exponent, the normalization and the indicators.  `p` must be
 // a.frac * b.frac; fpMul, below, is exactly that and is now only the
@@ -885,7 +885,7 @@ function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy) =
 // FPGA asked for the structural change: fpDiv and fpDivDouble now take
 // the quotient and remainder as an ARGUMENT and report the dividend
 // and divisor they want divided, and mkEBox's one divide box
-// (StretchDivBox.bsv, mkDivBox) does these same 96 steps a few per
+// (StretchPAU.bsv, mkDivBox) does these same 96 steps a few per
 // clock.  This function stays as the REFERENCE the box's testbenches
 // are checked against, bit for bit -- and everything below about why
 // it is 96 steps and what the 49th bit is still describes the box.
@@ -949,7 +949,7 @@ typedef struct {
 //                  "3 cycles for initial dividend pass if dividend has
 //                   leading zeros."
 //                  [2 per additional reduction loop, 2 if the final
-//                   remainder is complemented: StretchDivBox's walk]
+//                   remainder is complemented: mkPAU's divide walk]
 //                  "1 cycle - all"
 // `vs` and `ds` are the divisor's and the dividend's pre-normalization
 // shifts exactly as fpDiv / fpDivDouble perform them (p.93), and
