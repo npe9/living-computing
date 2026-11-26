@@ -163,6 +163,10 @@ class _Mem(dict):
 
 
 class Machine:
+    # the tags (MRB off) of an unbound cell: a variable, one with goals
+    # waiting (a PE adds its exported variables', pimm_pe.py)
+    VAR_TAGS = (UNDF, HOOK)
+
     # the merger's list (2026-11-24): ready goals of the stub merge_in,
     # taken before the ready queue (Machine.ready, Machine.run).  mq is
     # its head; mwh, mwt the goals made ready since the last pickup, in
@@ -442,7 +446,7 @@ class Machine:
         None for an unbound variable."""
         w = self.deref(w)
         t = w[0] & ~1
-        if self.unbound(w) or t in (UNDF, HOOK):    # the latter: an element cell
+        if self.unbound(w) or t in self.VAR_TAGS:    # the latter: an element cell
             return None
         if t == INT:
             return signed(w[1])
@@ -1170,7 +1174,7 @@ class Machine:
         marked too (PDSS b_vector_element, mark_element), written only
         if that changes it."""
         c = self.mem[a]
-        if c[0] & ~1 in (UNDF, HOOK):
+        if c[0] & ~1 in self.VAR_TAGS:
             return (REF, a) if single else (REF + 1, a)
         if mark and marked(c) != c:
             self.mem[a] = marked(c)
@@ -2902,7 +2906,7 @@ class Machine:
             self.mem[a] = (CDESC, e0[1])
             for i in range(1, n):
                 c = self.mem[base + i]
-                if c[0] & ~1 in (UNDF, HOOK):
+                if c[0] & ~1 in self.VAR_TAGS:
                     raise Unimplemented('new_module: element %d is unbound in place' % i)
                 self.mem[a + i] = c
             return [(MOD, a)]
@@ -3561,7 +3565,7 @@ class Machine:
             if n is None or not 0 <= i < n:
                 raise Unimplemented('built-in exception: set_vector_element')
             src = self.vbase(v)
-            if not v[0] & 1 and self.mem[src + i][0] & ~1 not in (UNDF, HOOK):
+            if not v[0] & 1 and self.mem[src + i][0] & ~1 not in self.VAR_TAGS:
                 old = self.mem[src + i]
                 self.mem[src + i] = e
                 return [old, v]

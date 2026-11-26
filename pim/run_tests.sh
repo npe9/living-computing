@@ -54,6 +54,10 @@ python3 ref/pimm/ref_scsi.py
 
 echo "=== PIM/m reference model, several PEs (rung M1, docs/multi_pe.md): PIMOS's seqgc and gc on 1, 2, 4 PEs ==="
 python3 ref/pimm/m1_gc.py
+echo "=== PIM/m reference model, several PEs (rung M2, docs/multi_pe.md): %read, %answer_value, structures across PEs; PIMOS's heap monitors on 1, 2, 4 PEs ==="
+python3 ref/pimm/m2_read.py
+echo "=== PIM/m reference model, several PEs (rung M3, docs/multi_pe.md): white and black tables, WEC, collections with live tables ==="
+python3 ref/pimm/m3_gc.py
 
 echo "=== PIM/m core (Bluespec) in lockstep with the reference model ==="
 bsv/run_pimm_lockstep.sh
