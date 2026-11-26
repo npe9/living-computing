@@ -1532,3 +1532,21 @@ SIMPOS machines search") and one in `lit/SHA256SUMS`, where the
 `SOURCES.tsv` line was recomputed. The files are in the gitignored
 directories of the worktree the search ran in. They must be copied to
 the main checkout's directories of the same name.
+
+## Addendum 2026-11-26: the other PIMs search
+
+Findings: `docs/other_pims.md`. Three ICOT reports were added to
+`lit/trtm/` and committed like the rest of that directory, under the
+FGCS Digital Archive's terms (see "Rights"):
+- `trtm/tr0704.pdf`: TR-704, Nakagawa et al., "Hardware Implementation
+  of Dynamic Load Balancing in the Parallel Inference Machine PIM/c"
+  (1991).
+- `trtm/tr0755.pdf`: TR-755, the same paper as printed in FGCS'92
+  (1992).
+- `trtm/tm0958.pdf`: TM-958, the PDSS 2.52 manual and source listings
+  (1990, 214 pp.).
+
+Each has a line in `lit/SOURCES.tsv` (retrieval "fetched 2026-11-26,
+other PIMs search") and one in `lit/SHA256SUMS`, where the `SOURCES.tsv`
+line was recomputed. Twelve more reports were fetched in the same
+search and not added. `docs/other_pims.md` §1 lists them.
