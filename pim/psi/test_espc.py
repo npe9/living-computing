@@ -496,8 +496,17 @@ class Structure(unittest.TestCase):
         # X-range disjunctions one level deeper than espc does
         # (read/2.35#1#1#1#1#1-3 held, #1#1#1#3 and #1#1#2 ours): so two
         # $or$s are paired with another arity and two are compiled only,
-        # the first such rows (OPEN: how the held compiler numbers that
-        # nest)
+        # the first such rows.  FOUND (2026-11-26, a compile probe): espc
+        # flattens a parenthesised disjunction that is an outer one's first
+        # alternative, `(A ; B) ; C`, into ONE $or$ of three clauses
+        # (espc.py flat/2 in disjunction/3; the probe `((Y<1,!,fail ;
+        # Y>=1,!,fail) ; R=c)` gives the single local $or$0/2), and the
+        # held rows (one level deeper, three leaves under it) fit the held
+        # compiler keeping the inner $or$ its own predicate.  A cut is
+        # local to its $or$, so this is a BEHAVIOURAL difference, not only
+        # numbering: held, `A, !, X` with X failing fails the inner $or$
+        # and C is still tried; ours, the cut commits past C.  OPEN (an
+        # espc fix outside M10; psi/README.md "Open")
         self.assertEqual((c['pred compared'], c['pred exact']), (1286, 258))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 2)
@@ -6377,10 +6386,43 @@ end."""),
         m, fr, stop = self.pmacs_run('exshow', [k(self.C_X)] + ks('q'))
         self.assertEqual(self.m10_rows(m, fr)[0][47], 'Undefined key')
 
+    def test_win_m10_scroll(self):
+        # M10, the display's scrolling and the mode line's place field
+        # (pmacs_display.esp scrolled/2, drop_lines/3, place/3, all OURS):
+        # 50 RETURNs at the start of exshow's buffer (62 lines, 46 text
+        # rows) put the point on line 50, so the first shown line is 5
+        # (the point's line the last row) and the place `--8%--`
+        # (5 * 100 / 62); C-n x 6: line 11, `--17%--` (two digits); C-n x 20
+        # (the last line): `--Bot--`; then C-p x 60: line 1 above the
+        # screen, the first shown line 1, `--1%--`; C-p: `--Top--`.  The
+        # screen's rows are the buffer's lines from the first shown one.
+        # Implemented, NOT exercised by any test: status_window(off) (no
+        # mode line), a point past the last column (no cursor).
+        # Injections, OBSERVED: the table after test_win_m10_keys (Q1, Q2).
+        k = self.m10_key
+        R = [k(13)] * 50
+        mode = self.M10_MODE.replace(' --Top--', ' --%s--') % (1, '%s')
+        for seq, top, place in ((R, 5, '8%'), (R + [k(14)] * 6, 11, '17%'),
+                                (R + [k(14)] * 20, 16, 'Bot'),
+                                (R + [k(14)] * 20 + [k(16)] * 60, 1, '1%'),
+                                (R + [k(14)] * 20 + [k(16)] * 61, 0, 'Top')):
+            m, fr, stop = self.pmacs_run('exshow', seq)
+            lines = self.m10_buffer_text(m).split('\n')
+            self.assertEqual(len(lines), 62)
+            D = m.get_slot(self.m10_window(m), 'display')
+            self.assertEqual(K.deref(m.get_slot(D, 'top')), top)
+            rows, _rev = self.m10_rows(m, fr)
+            shown = [ln[:99].rstrip() for ln in lines[top:top + 46]]
+            self.assertEqual(rows[:46], shown + [''] * (46 - len(shown)))
+            self.assertEqual(rows[46], mode % place)
+
     # Window M10 injections, OBSERVED (2026-11-26; each in a private copy
     # of psi/, the worktree untouched; test_espc.py, test_fep_bridge.py and
     # test_kl0.py run; all else OK):
-    #   K1 C-d bound to backward_character: M10 keys FAIL/ERROR, nothing else.
+    #   K1 C-d bound to backward_character: first run NOTHING failed (the
+    #      keys test's sequence then killed the line, hiding the deleted
+    #      character); the sequence was changed (C-d before C-e), then M10
+    #      keys FAIL/ERROR, nothing else.
     #   S1 a save overwrites the latest version (kl0 new_version keeps the number; the plan's injection): M10 exshow, M10 menu (ERROR) FAIL/ERROR, nothing else.
     #   D1 the mode line drawn plain, not reversed: M10 exshow, M10 menu (its pinned frame) FAIL/ERROR, nothing else.
     #   D2 a text row once drawn is never drawn again: M10 exshow, keys, menu, cal FAIL/ERROR, nothing else.
@@ -6390,6 +6432,8 @@ end."""),
     #   C1 the editor class from the option only (a subclass's slot ignored): M10 cal FAIL/ERROR, nothing else.
     #   P1 select_buffer/2's primary does nothing: M10 select; test_fep_census FAIL/ERROR, nothing else.
     #   X1 the window's datum as the term {data, X} again (the bug found): M4 console, M6 selection, M7 console move; test_fep_bridge.py Console FAIL/ERROR, nothing else.
+    #   Q1 scrolled/2 never moves the first shown line: M10 scroll FAIL, nothing else.
+    #   Q2 place/3's --Bot-- clause removed: M10 scroll FAIL, nothing else.
 
     # the EDITOR MENU's items (standard_editor.esp show_menu/1: verbatim
     # from IPSJ 36239 p5), opened by the right button at (300, 200)
@@ -6501,6 +6545,7 @@ end."""),
         # "two", then the held after-demon of select_buffer/2, which is
         # refused at its first send, show_mode_menu/2 (papyrus's
         # my_mode_changer, not loaded: an empty class here).
+        # Injections, OBSERVED: the table after test_win_m10_keys (P1).
         k = self.m10_key
         m, fr, stop = self.pmacs_run('select', [k(self.C_X)] + self.m10_keys('b'))
         w = self.m10_window(m)
@@ -6509,6 +6554,18 @@ end."""),
         I = m.get_slot(w, 'interpreter')
         self.assertEqual(m.get_slot(m.get_slot(I, 'buffer'), 'name').text, 'two')
         self.assertIn('my_buffer_selecter:show_mode_menu/2', stop.detail)
+
+    def test_win_m10_dedit_compiles(self):
+        # M10: cal's dedit.esp (HELD cal-esp deb2.12, the editor whose
+        # control_c/control_x tables window.md §5.2 cites) compiles with the
+        # key macros, one class, and its only refused predicate is exit/1
+        # (an if-then-else, not modelled); it is not run (its editor class
+        # needs cal's other classes).
+        import held
+        ts, failed = espc.compile_text(held.member_text('dedit'), 'simpos')
+        self.assertEqual(failed, {})
+        self.assertEqual([t.refusals for t in ts],
+                         [[(('exit', 1, 0x35), 'if-then-else ->', 'not modelled')]])
 
 if __name__ == '__main__':
     unittest.main()

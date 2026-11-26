@@ -673,7 +673,7 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
 
 **Status (2026-11-26, window M10: Pmacs proper)** (`../../psi/README.md` "Window M10"; tests
 `test_win_m10_exshow`, `test_win_m10_keys`, `test_win_m10_menu`, `test_win_m10_cal`,
-`test_win_m10_select`):
+`test_win_m10_select`, `test_win_m10_scroll`, `test_win_m10_dedit_compiles`):
 - Three held programs run whole: disc `exshow.esp` (a file read into a pooled buffer, edited,
   saved as a new version with the old kept, exit kills the window), cal `cal_pmacs.esp` (its
   `cal_pmacs_window`'s editor class from the slot, its own pf#11 binding before the defaults) and
@@ -681,17 +681,20 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
   primary). Their harness classes are OURS; exshow's missing `kanji_28.font` is a test_11
   substitute made in the run.
 - The screen: text rows, the reversed mode line `PMACS(fundamental)(C,R) *-N* Name Path --Top--`,
-  the echo line; only changed rows are redrawn. The EDITOR MENU on the right button, IPSJ 36239
+  the echo line; only changed rows are redrawn; the first shown line follows the point's line
+  (`--Bot--`, `--N%--` when it moves). The EDITOR MENU on the right button, IPSJ 36239
   p5's eight items; three are stood in, five refuse loudly.
 - Key macros: `mouse#B` atoms (HELD names), key#lf = 10 witnessed by held cells, the other values
   OURS (G2). Default bindings OURS (G6, Q6).
 - No new device primitive: `window_pane` gained `draw_row/4` and `set_cursor/3` over the frozen
   set, so the frame interface (§4.1) is unchanged.
+- Found, not fixed: espc flattens `(A ; B) ; C` into one `$or$`, where the held compiler keeps
+  the inner one; cuts make it behavioural (`../../psi/README.md` "Open").
 - Found and fixed: a term vector put on a stream lost its elements to the sender's backtracking
   (the console replay diverged); the datum is now a heap vector.
 - Not done: Pmacs's other ~100 commands (search, yank, regions, windows, modes), a prompt for C-x
-  b, the five other menu items, Pmacs's own mode names, scrolling by command, the M9 leftovers (a
-  second ATTRIBUTE while a sheet is up; editing a choice window's text field).
+  b, the five other menu items, Pmacs's own mode names, scrolling by command, the M9 leftovers, not
+  attempted (a second ATTRIBUTE while a sheet is up; editing a choice window's text field).
 - Screens: `screens/pmacs_editor.png`, `screens/editor_menu.png`.
 
 Also pinned (2026-11-26): the coordinator's own process is never held back (P13), by

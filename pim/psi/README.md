@@ -4896,10 +4896,12 @@ loses exactly that row). With the macros, held code that was refused
 compiles: kappa2 12,871 -> 12,963 compared, 1,514 -> 1,518 exact, none
 lost; paragraph 1,280 -> 1,286 compared, none exact. Paragraph's
 `as_view_select_window read/2` nests five deep, and two of its `$or$`s
-pair with another arity (the held compiler numbers that nest one level
-deeper): OPEN, pinned in `Structure.test_counts`. dedit.esp compiles but
-its `exit` (`->`); cal_pmacs.esp, my_select.esp.1, exshow.esp compile
-whole.
+pair with another arity: espc FLATTENS `(A ; B) ; C` into one `$or$`
+where the held compiler keeps the inner one its own predicate, a
+behavioural difference under cuts ("Open"), pinned in
+`Structure.test_counts`. dedit.esp compiles but its `exit` (`->`;
+`test_win_m10_dedit_compiles`); cal_pmacs.esp, my_select.esp.1,
+exshow.esp compile whole.
 
 **The stand-ins** (selectors HELD where held code sends them, bodies OURS):
 - `editor_text_buffer`: the buffer pool, a class slot (PROSE IPSJ
@@ -4929,7 +4931,13 @@ whole.
   line `PMACS(fundamental)(C,R) *-N* Name Path --Top--` reversed, the
   echo line (SCREENSHOT IPSJ 36239 p5-6, IPSJ 114012 Fig. 2; the fields
   per window.md §2.11; layout OURS). Only the rows that changed are
-  drawn. It draws with two new `window_pane` methods, `draw_row/4` and
+  drawn. The first shown line moves only to keep the point's line on
+  the screen; the place field is `--Top--`, `--Bot--` or `--N%--` (N the
+  first shown line's share of the lines, OURS) (`test_win_m10_scroll`).
+  Implemented but NOT exercised by any test: `status_window(off)` (no
+  mode line), a point past the last column (no cursor), and exshow's
+  fallback when the buffer name is taken (`get_buffer_instance/3`,
+  `reset/1`). It draws with two new `window_pane` methods, `draw_row/4` and
   `set_cursor/3`, over the existing bitmap_display primitives. **No
   device primitive was added**: the frame interface the viewer will tee
   is unchanged. A window that never visits a buffer (PIMOS's console)
@@ -4954,8 +4962,9 @@ replay met `{_, _}` and diverged at exchange 11. The datum is now a heap
 vector (`new_heap_vector/2`, as list_index.esp's entries); injection X1
 puts the term back.
 
-**Census.** 1,485 -> 1,520 rows, all 35 new rows inherited by
-pimos_window and pimos_window_editor, no held row changes outcome; the
+**Census.** 1,485 -> 1,521 rows: 35 new rows inherited by
+pimos_window and pimos_window_editor, then `set_input_position/1`
+(success), 36 in all; no held row changes outcome; the
 held `select_buffer/4` moves its stop past `get_buffer_instance/3`
 (row by row in `test_fep_census`, `test_step3f_census_recipes`).
 
@@ -4964,7 +4973,9 @@ held `select_buffer/4` moves its stop past `get_buffer_instance/3`
 the substitute font), `test_win_m10_keys` (the bindings against an
 Emacs's result; undefined keys), `test_win_m10_menu` (the eight items,
 List Buffers, Save All Files, ABORT, a click away, Set Font refused),
-`test_win_m10_cal`, `test_win_m10_select`. Screens:
+`test_win_m10_cal`, `test_win_m10_select`, `test_win_m10_scroll` (the
+first shown line and the place field), `test_win_m10_dedit_compiles`.
+Screens:
 `../docs/simpos/screens/pmacs_editor.png` (stage `pmacs`),
 `editor_menu.png` (stage `editor_menu`).
 
@@ -4974,7 +4985,7 @@ run; all else OK):
 
 | | injection | fails |
 |---|---|---|
-| K1 | C-d bound to backward_character | M10 keys |
+| K1 | C-d bound to backward_character | first run NOTHING (the keys sequence killed the line, hiding the deleted character); sequence changed (C-d before C-e); then M10 keys |
 | S1 | a save overwrites the latest version (kl0 new_version keeps the number; the plan's injection) | M10 exshow, M10 menu (ERROR) |
 | D1 | the mode line drawn plain, not reversed | M10 exshow, M10 menu (its pinned frame) |
 | D2 | a text row once drawn is never drawn again | M10 exshow, keys, menu, cal |
@@ -4984,6 +4995,8 @@ run; all else OK):
 | C1 | the editor class from the option only (a subclass's slot ignored) | M10 cal |
 | P1 | select_buffer/2's primary does nothing | M10 select; test_fep_census |
 | X1 | the window's datum as the term {data, X} again (the bug found) | M4 console, M6 selection, M7 console move; test_fep_bridge.py Console |
+| Q1 | scrolled/2 never moves the first shown line | M10 scroll |
+| Q2 | place/3's `--Bot--` clause removed | M10 scroll |
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
@@ -5119,7 +5132,7 @@ test_kappa2's exact count).
   `out`); Pmacs proper (M10: done in part, section "Window M10"; open
   there: Pmacs's other commands, a prompt for C-x b, five EDITOR MENU
   items, papyrus and cal run only through their editor classes, not
-  whole; the M9 leftovers, a second ATTRIBUTE while a sheet is up and
+  whole; the M9 leftovers, not attempted in M10: a second ATTRIBUTE while a sheet is up and
   editing a choice window's text field). `pmacs_window` getl/2 is not stood in (the
   census's dump_log/1 stops there); M8's shapes beyond lines,
   rectangles and strings, images and markers. Sections "Window M7's rest"
@@ -5129,6 +5142,15 @@ test_kappa2's exact count).
   clause body with no head (a comment line ate the head) compiled
   without a complaint: **FIXED 2026-11-25** (section "Window M7: the
   manipulator and keyboard focus", `test_espc_swallowed_head`).
+- **espc flattens `(A ; B) ; C` into one `$or$`** (`flat/2` in
+  `disjunction/3`; found 2026-11-26 by a compile probe:
+  `((Y<1,!,fail ; Y>=1,!,fail) ; R=c)` gives a single local `$or$0/2` of
+  three clauses). The held compiler keeps the inner disjunction its own
+  `$or$` (paragraph `as_view_select_window read/2`'s rows sit one level
+  deeper). A cut is local to its `$or$`, so the difference is
+  behavioural: held, `A, !, X` with X failing still tries C; ours does
+  not. Pinned as two odd rows in `Structure.test_counts`; not fixed
+  (outside window M10).
 - **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
   copies only lists): a binding undone on backtracking empties the
   stored vector's element. Found in window M4 (`pmacs_request.esp`'s
