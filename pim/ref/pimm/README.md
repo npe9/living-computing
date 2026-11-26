@@ -162,6 +162,17 @@ suite, after `m1_gc.py`) runs PIMOS's own compiled heap monitors
 PEs under two quotas, and bench cases on their `reverse` and `out`;
 `M2_CACHE=PATH` keeps the loaded machine between runs.
 
+Rung M3 (2026-11-26): the tables as the machine had them. MRB off is
+white (a new entry, one `%unify` or `%release`), MRB on black (one
+entry per address, WEC, 2^24 a send, given back by `%read`, `%unify`,
+`%release` and coming home, reclaimed at 0); an imported ID is passed
+on as VPIM does; a PE collects with live tables (`PECollector`: the
+export table a root, the import table weak, a dead import released).
+`python3 ref/pimm/m3_gc.py` (in the suite, after `m2_read.py`) runs
+the heap monitors with collections at every quiescence and checks WEC
+conservation, that every entry is named, and the bench drains. The
+exported variable is not retagged `EUNDF`/`EHOOK` (open).
+
     python3 ref/pimm/test_jtoa.py
 
 runs module `jis_to_ascii` from the image against an oracle built from

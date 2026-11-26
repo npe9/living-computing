@@ -251,7 +251,7 @@ packet bytes and hardware-assembled 40-bit words.
 |---|---|---|---|
 | M1 | N PEs; `current_node` gives (k, N) on PE k; `Goal@node(K)` with K another PE sends `%throw_goal` and the goal runs on K; an unbound argument is exported and the importer's body unification of it with an atomic value sends `%unify` home, which binds it and wakes its waiters | `seqgc:go/0` and `gc:go/0` (§2) on 1, 2, 4 PEs, under two schedules | the reference model only |
 | M2 | Reading an external reference: a guard or `wait` on an imported cell sends `%read`, the reader's goals wait on a variable of its own, the exporter hooks a reply record (VPIM's `RHOOK`) on its variable if unbound, `%answer_value` brings a level-1 copy and the import is given back with `%release`; structures exported at level 0 (a list one cons at a time); a reference coming home resolves to the local cell | PIMOS's own `h_monitor` and `x_h_monitor` (the paragraph profiler's heap meters) on 1, 2, 4 PEs, homes 0 and N-1, against what their source fixes; bench cases on their `reverse/2,3` and `out/2` (§5) | M1 |
-| M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release`, the exported variable retagged `EUNDF`/`EHOOK` (TM-1044), the tables at fixed addresses and as roots of the collector | an injected leak or double release failing a check; a collection with live exports | M2 |
+| M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release` with WEC, an imported ID passed on as VPIM does (the release export, half the WEC, the indirect export), the export table a root of the collector and the import table weak; the exported variable retagged `EUNDF`/`EHOOK` (TM-1044, not reached) | the heap monitors of M2 collected at every quiescence, WEC conserved, every entry named by an import; an injected leak or double release failing a check; a collection with live exports | M2 |
 | M4 | The shoen across PEs: foster parents (`FPREC`), WTC (`wtctu`, `wtcsu`), `%terminated`, `%ready`, resource messages, exceptions for a bad node number | the manual's `range_overflow`/`illegal_input`; a shoen spread over nodes terminating once | M3 |
 | M5 | PIMOS boots on N PEs (its 113 `@node` sites), and the shell's `cn`, `gc`, `seqgc`, `set node` run | `cn.kl1`'s printout; §2's collection counts through the shell | M4; code fetch by module identifier |
 | M6 | A period multi-node program: MGTP-N, STB/MLB, Distributed Pool | its answer (KLIC's; for MGTP-N the 1-PE statistics its manual prints, p. 57) | M5 |
@@ -303,9 +303,7 @@ Not reached, open:
 - On the core: M7 (above).
 - (Done at M2, below: `current_processor`, `unbound` and
   `to_processor` with another PE; structure arguments.)
-- An `EX` cell in a collection is not exercised: `seqgc` sends its
-  `%unify` before the collection, and a collection with live exports
-  is refused loudly (`pimm_gc.py` refuses the tag). M3.
+- (Done at M3, below: a collection with live tables.)
 - Every check of `m1_gc.py` fired under at least one injection (tally
   of the observed FAIL lines: request order, throw order, one
   request/throw per node, one collection per node, messages, node c
@@ -430,3 +428,135 @@ Not reached at M2, open:
   PIMOS compiler run from a prompt checkpoint; the oracles here are
   programs already compiled in the held image.
 - `unbound/2` of an external reference (VPIM throws it to the owner).
+
+**M3 reached on the reference model, 2026-11-26, except the
+retagging.** `ref/pimm/pimm_pe.py` (the white and black tables, WEC,
+`PECollector`) and `ref/pimm/m3_gc.py` (the check, in `run_tests.sh`
+after `m2_read.py`). `pimm_gc.py` gained two empty hooks
+(`more_roots`, `after_scan`), a class attribute for the tags that move
+into a structure copied after them (`VAR_TAGS`), and `collect()` uses
+the machine's own `Collector` if its class names one. One machine is
+unchanged: the M1 list of traces is byte-identical (`lockstep_tproc`,
+`lockstep_shoen3`, `lockstep_merge`, `lockstep_shoen`, the one-machine
+`seqgc` and `gc`; the last two collect an empty heap, so they do not
+test the copy), and a real one-machine collection, the one
+`m2_read.py`'s loader makes (1,470 live cells of the loaded modules),
+gives a byte-identical pickled machine before and after the change.
+
+What is modelled, and from where:
+
+- **White and black.** VPIM chooses by the path's MRB
+  (`f_Put_StructureGroup_inLogicalPacket`, `f_Put_UnboundGroup_...`:
+  `s_IfMRBoff` white, else black). White: a new entry per export,
+  given back by exactly one `%unify` or `%release`, or by coming home.
+  Black: one entry per exported address (VPIM
+  `s_AllocBlackExpEntry_Sub`; TM-1044 9: the black export table hashed
+  by the data's address), each ID sent with `WEC_UNIT` = 2^24 of WEC
+  (`D_EXPORT_WEC_UNIT`), the entry's WEC the negative of what it gave
+  out; the ID word has the tag's low bit on and an `INT` word of WEC
+  follows it (VPIM's black layout, `f_Put_EX_inLogicalPacket_Sub`'s
+  diagram; INFERENCE that PIMOS's `x` tags are the black IDs). One
+  import per black ID, the WEC of a second arrival added to it (the
+  black import table hashed by ID).
+- **WEC comes back** with `%read` (half the importer's, rounded down:
+  `s_GetExrefIdAndWecBImpRec_Sub` "WEC を半分にしている"), `%unify`
+  (all), `%release {8, ID, WEC}` (all), and an ID coming home; the entry
+  is reclaimed at 0 (TM-1044 `s9.tex` 432-453).
+- **An imported ID passed on** (`f_Put_EX_inLogicalPacket_Sub`): white
+  on a white path goes itself and the import is given up (the release
+  export); white on a black path is exported again (an indirect
+  export, a black entry of this PE); black on a white path with no
+  read pending, to an ID imported only once, takes all its WEC and the
+  import is given up (`s_GetExrefIdAllWecAndReclaimBImpRec_Sub`,
+  `s_IfSingleImport`), else half; with less than 2 it is exported
+  again. A black ID received a second time sets the import's flag,
+  more than one reference (`s_SetMultiImportFlagBImpRec`). OURS: a
+  `%read` always keeps the import and sends half the WEC (VPIM's
+  `f_GetExrefIdAndWec_forRead_BEX` takes all of it on a white path to
+  a single import), and a `%unify` always sends all of it and gives the
+  import up, the cell becoming the value (VPIM keeps half on a black
+  path). At M2 every ID going to a
+  third PE was exported again: the M2 pins for `home` and `third` move
+  (both now leave nothing; `third` on 4 PEs reads L from PE 0 directly,
+  11 reads instead of 22), noted in `m2_read.py`.
+- **A collection on a PE** (`PECollector`): the export table and the
+  bench's words are roots (TR-466 3.2); an external cell is a one-word
+  datum; the import table is weak: an import whose cell was not reached
+  is released, all its WEC with it (OURS: when and how VPIM's
+  collector releases imports was not read here). The PE's
+  suspended-goal count is taken again from the copy.
+
+The check runs the M2 heap monitors on the same five (N, c) and both
+quotas with every PE collected at quiescence after the start and each
+round, then twice more after the bench lets go of the stream: the
+answers stay right, at every quiescence each black entry's WEC plus
+its importers' is 0, every entry is named by an import (a white one by
+one) or is a pending read's reply, the external cells in a heap match
+the import table, a second collection releases nothing, and both
+quotas give the same; the messages, what is held before the let-go
+and what is left after, and the releases by round are pinned per
+program and N (and in `m2_read.py` the monitors' messages and
+leftovers too). Bench cases, each pinned: `drain` (the bench lets go of
+`out/2`'s P: PE 0's collection releases its two imports, PE 1's then
+finds out1's goal unreachable, every table empty; releases by round
+0, 2, 0), `black` (reverse([], X, X) with X on a marked path: one
+entry, two units, one import, released with both), `via` (a black ID
+passed on with all its WEC to a third PE, which reads L from PE 0),
+`share` (reverse(X, X)@node(N-2) by way of PE 1, X marked twice: PE 1
+imports the ID once with the flag set, passes both references on with
+half the WEC each and keeps its import; X = [] on PE 0, then every PE
+collected: every table empty), and the two indirect exports as units.
+Every M3 path marked in `pimm_pe.py` must run. `m3 gc: PASS (36 runs)`.
+
+What the monitors leave: with the stream let go, every one-PE run
+collects to nothing, and every N>1 run keeps the goals that wait on
+each other across PEs, through the export tables (a per-PE collection with
+the export table as a root cannot reclaim a cycle across PEs). The
+monitors' own collections release nothing: their imports are live.
+Only the bench cases release at a collection, so the monitors'
+`fixpoint` check is vacuous; `drain`'s releases by round is the real
+one.
+
+Observed fault injections (each on a private copy of `pimm_pe.py`,
+`m3_gc.py` and `m2_read.py` both run):
+
+| Injection | Observed |
+|---|---|
+| a dead import dropped without `%release` | 56 FAIL lines in m3 (drain, black, share: WEC, named, releases, tables); m2 PASS |
+| imports made roots of the collector | 25 in m3 (drain, black, share: releases, tables; the path list); m2 PASS |
+| an import's cell not moved | raises `KeyError` |
+| external cells not in `VAR_TAGS` | nothing: PASS. No external cell is ever inside a block copied after it (each is a one-cell block, referred to only by references): not caught, and by construction not reachable |
+| the suspended goals not counted again | 16 in m3 (the monitors' pinned tables, drain's no goal left) |
+| `%read` keeps its half of WEC | 6312 in m3 (WEC, named, more WEC returned than given, pins); 450 in m2 (more WEC returned, monitor pins) |
+| `%read`'s WEC not added back | 4040 in m3 (WEC, named, pins); 34 in m2 (monitor and bench tables) |
+| `%unify`'s WEC not added back | 848 in m3 (WEC, named, pins); 16 in m2 (monitor tables) |
+| no black entry reused | raises `KeyError` (the reverse map) |
+| a white ID passed on, its import kept | 8 in m3 (via: dangles, pin); 20 in m2 (home, third: dangles, tables) |
+| a black ID passed on with all its WEC, its import kept | 8 in m3 (via: dangles, pin); m2 PASS |
+| a white ID come home, its entry kept | 4 in m3 (via: named, pin); 6 in m2 (home, third: tables) |
+| a black ID imported twice | raises `KeyError` |
+| WEC not halved when passed on | raises `Unimplemented: %read to a released export entry` |
+| the import flag ignored (all the WEC passed on by one of two references) | raises `KeyError` in `share`; m2 PASS |
+| the cell left external after `%answer_value` | raises `KeyError` (both checks) |
+
+Never fired: `cells`, `fixpoint`, `a white entry held twice`, `an
+import with no WEC`, `a reply entry imported`, `the two schedules
+differ`.
+
+Not reached at M3, open:
+
+- **The retagging** (TM-1044 `s9-msg-kl1data.tex` 269-300: the
+  exported variable's cell becomes `EUNDF`/`EHOOK`/`EMHOK`). The model
+  keeps `UNDF`/`HOOK` and finds the exported variable through the
+  entry's word. Retagging would change how a variable looks to
+  `deref`, `bind`, `hook`, `taken`, `term`, the collector's variable
+  rule and its `HOOK` word, and every base instruction that tests a
+  cell for `UNDF` or `HOOK` itself (not audited); no check here
+  observes the tag. Not done.
+- The tables at fixed addresses: they are Python tables of the PE,
+  not memory cells (OURS since M1).
+- Cross-PE cycles are not collected: no global collection is
+  modelled.
+- `cells` and `fixpoint` never fired under an injection; the
+  `VAR_TAGS` addition is defensive (above).
+- The two OURS simplifications of `%read` and `%unify`'s WEC above.

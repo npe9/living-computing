@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PIM/m with more than one PE, on the reference model: rungs M1 and M2.
+"""PIM/m with more than one PE, on the reference model: rungs M1 to M3.
 
 docs/multi_pe.md is the plan and the evidence; every choice below is
 labelled there.  In brief:
@@ -34,8 +34,28 @@ labelled there.  In brief:
   string as EXVAL (VPIM f_GetLogicalPacketData_W_StructureGroup:
   WEXVAL; ..._W_UnboundGroup: WEXREF).  The tag's low bit is the MRB
   of the path (EXREFo/x, EXVALo/x, PIMOS debugger/inspector/
-  tagtbl.kl1 32h-35h), M92's MRB-off and MRB-on tables (INFERENCE);
-  at M2 both are handled alike, one entry per export, never reused.
+  tagtbl.kl1 32h-35h), M92's MRB-off and MRB-on tables (INFERENCE).
+  Rung M3: MRB off is WHITE, a new entry per export, given back by
+  exactly one %unify or %release; MRB on is BLACK (VPIM
+  f_Put_*Group_inLogicalPacket: s_IfMRBoff white, else black): one
+  entry per exported address, each ID sent with WEC_UNIT of WEC
+  (VPIM D_EXPORT_WEC_UNIT, the entry's WEC going negative), the ID
+  word tagged with the low bit on and followed by an INT word of WEC
+  (INFERENCE that the x tags are the black IDs); the WEC comes back
+  with %read (half the importer's), %unify (all), %release (all) and
+  an ID coming home, and the entry is reclaimed at 0 (TM-1044 9).
+  An imported ID passed on (VPIM f_Put_EX_inLogicalPacket_Sub): white
+  on a white path goes itself and the import is given up (the release
+  export); white on a black path is exported again (an indirect
+  export, black); black gives half its WEC, all of it on a white path
+  with no read pending to an ID imported once (the import given up),
+  and is exported again when its WEC cannot be halved.  A black ID
+  received again adds its WEC to the one import of it (TM-1044 9: the
+  black import table hashed by ID) and marks it imported more than
+  once (VPIM's import flag).  OURS: a %read always keeps the import and
+  takes half the WEC (VPIM takes all of it on a white path to a single
+  import), and a %unify always takes all of it and gives the import up
+  (VPIM half on a black path), the cell becoming the value here.
 - Level 1 (the value of %unify and %answer_value, TM-1044 9.2): the
   structure itself, its elements at level 0 (VPIM f_int_cl_msg_type
   section 4 (3): LISTo then car and cdr; VECTn then the elements; a
@@ -50,9 +70,9 @@ labelled there.  In brief:
   structure's element cell is never an external cell).  An ID of the
   receiver's own coming home resolves to the word its export entry
   holds (VPIM f_Get_WExRef_fromLogicalPacket_Sub: "if it is data we
-  exported, take the pointer to it"); the entry is kept, the sender
-  still holding its import (OURS: VPIM reclaims it there, its sender
-  having released its import, the release export).
+  exported, take the pointer to it"); a white entry is then done with
+  (its importer gave the import up passing the ID on, the release
+  export), a black one has the WEC back.
 - An external cell looks unbound to the machine (deref stops at it).
   A goal that waits on one (any suspension: a guard, a waiting
   built-in, a variable node) sends %read once, {6, the ID, the reply
@@ -87,9 +107,14 @@ labelled there.  In brief:
 - The PEs run in turn, PE 0 first, each for a quota of goal switches
   (the console's roundrobin_scheduler, INFERENCE as to the unit).
 
+- A collection on a PE (PECollector, pimm_gc's own with two hooks):
+  the export table is a root, the import table weak; an import whose
+  external cell was not reached is released (all its WEC with it).
+  The exported variable keeps its UNDF or HOOK tag: TM-1044's EUNDF /
+  EHOOK retagging is not modelled (docs/multi_pe.md 5, M3).
+
 Goals of the root only (no shoen): a throw from inside a shoen is
-refused (rung M4).  A collection with a live export or import is
-refused (rung M3).  The PE classes never change a single machine:
+refused (rung M4).  The PE classes never change a single machine:
 pimm.Machine's behaviour on one PE is untouched (its run() calls the
 same goal_switch() this file calls).
 """
@@ -103,6 +128,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import pimm  # noqa: E402
+import pimm_gc  # noqa: E402
 from pimm import (INT, ATOM, REF, UNDF, HOOK, LIST, STRG, CDESC, VECT0,  # noqa: E402
                   Unimplemented, sx16)
 from pimm_layout import G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS, SUSPENDED, TAKEN, HEAP  # noqa: E402
@@ -120,6 +146,9 @@ KIND_NAMES = {M_THROW: 'throw', M_READ: 'read', M_ANSWER: 'answer_value',
 THROW_ARGS = 15
 UNIFY_ARG1 = 7
 LONG_VECT = VECT0 + 14
+# the WEC a black export gives each ID it sends (VPIM
+# D_EXPORT_WEC_UNIT; TR-390 7: 2^24)
+WEC_UNIT = 1 << 24
 
 
 def ext_id(pe, entry):
@@ -144,8 +173,12 @@ class PE(pimm.Machine):
         self.pe = pe
         self.exports = {}           # entry -> the exported word
         self.next_export = 1        # entries are never reused
-        self.imports = {}           # entry -> {'id', 'cell', 'read'}
+        self.wec = {}               # black entry -> its WEC (negative: what it gave out)
+        self.black = {}             # (tag, address) of a black entry's word -> entry
+        self.imports = {}           # entry -> {'id', 'cell', 'read', 'tag', 'black', 'wec'}
+        self.bimports = {}          # ID -> the black import of it
         self.next_import = 1
+        self.roots = {}             # words a bench holds: roots of the collector
         self.reading = {}           # reply export entry -> import entry
         self.collections = 0
         self.heap_log = []          # get_heap_size: (size, used), in order
@@ -202,14 +235,15 @@ class PE(pimm.Machine):
 
     def goal_switch(self, limit):
         if self.gc_request:
-            if self.exports or self.imports:
-                # the tables would be roots of the collector (TR-466
-                # 3.2): rung M3
-                raise Unimplemented('a collection with %d live exports, %d imports'
-                                    % (len(self.exports), len(self.imports)))
             self.collections += 1
             self.system.log.append(('gc', self.pe))
         return pimm.Machine.goal_switch(self, limit)
+
+    def collect(self):
+        """A collection now (a bench's, at quiescence), by PECollector."""
+        self.collections += 1
+        self.system.log.append(('gc', self.pe))
+        return pimm_gc.collect(self)
 
     # ---- @node -------------------------------------------------------
     def node_number(self, w):
@@ -272,11 +306,80 @@ class PE(pimm.Machine):
         """d (dereferenced) is a reference to an external cell."""
         return d[0] & ~1 == REF and self.mem[d[1]][0] in EX_TAGS
 
-    def new_export(self, w):
-        e = self.next_export
-        self.next_export += 1
-        self.exports[e] = w
+    def new_export(self, w, black=False):
+        """An ID for w.  White: a new entry.  Black: the entry of w's
+        address if there is one, else a new one; WEC_UNIT more given
+        out (VPIM s_AllocBlackExpEntry_Sub, f_GetLogicalPacketData_B_*)."""
+        if black and key(w) in self.black:
+            e = self.black[key(w)]
+            self.ran('black entry again')
+        else:
+            e = self.next_export
+            self.next_export += 1
+            self.exports[e] = w
+            if black:
+                self.black[key(w)] = e
+                self.wec[e] = 0
+        if black:
+            self.wec[e] -= WEC_UNIT
         return ext_id(self.pe, e)
+
+    def free_export(self, e):
+        w = self.exports.pop(e)
+        if e in self.wec:
+            del self.wec[e]
+            del self.black[key(w)]
+
+    def give_back(self, e, wec):
+        """WEC returned to black entry e; reclaimed at 0 (TM-1044 9)."""
+        if e not in self.wec:
+            self.system.anomalies.append(('WEC returned to a white or free entry', self.pe, e))
+            return
+        self.wec[e] += wec
+        if self.wec[e] > 0:
+            self.system.anomalies.append(('more WEC returned than given', self.pe, e))
+        elif self.wec[e] == 0:
+            self.ran('black entry reclaimed')
+            self.free_export(e)
+
+    def drop_import(self, imp):
+        ent = self.imports.pop(imp)
+        if ent['black']:
+            del self.bimports[ent['id']]
+        return ent
+
+    def black_export(self, tag, d):
+        return [(tag | 1, self.new_export(d, black=True)), (INT, WEC_UNIT)]
+
+    def forward(self, d, mrb, dst):
+        """An external cell at level 0 (VPIM f_Put_EX_inLogicalPacket_Sub)."""
+        cell = self.mem[d[1]]
+        ent = self.imports[cell[1]]
+        kind = cell[0] & ~1
+        if not ent['black']:
+            if not mrb:
+                # a white path: the ID itself goes and the import with it
+                # (the release export)
+                self.ran('white ID passed on')
+                self.drop_import(cell[1])
+                return [(kind, ent['id'])]
+            self.ran('indirect export')
+            return self.black_export(kind, d)
+        if not mrb and ent['read'] is None and not ent['multi']:
+            # a white path to a black ID imported once
+            # (s_GetExrefIdAllWecAndReclaimBImpRec_Sub: s_IfSingleImport)
+            self.ran('black ID passed on, all its WEC')
+            self.drop_import(cell[1])
+            return [(kind | 1, ent['id']), (INT, ent['wec'])]
+        if ent['wec'] >= 2:
+            self.ran('black ID passed on, half its WEC')
+            if not mrb and ent['read'] is None:
+                self.ran('multi-import: half')
+            half = ent['wec'] >> 1
+            ent['wec'] -= half
+            return [(kind | 1, ent['id']), (INT, half)]
+        self.ran('indirect export, no WEC to give')
+        return self.black_export(kind, d)
 
     def level0(self, w, dst):
         """The words of a message for w at level 0, sent to PE dst."""
@@ -285,18 +388,17 @@ class PE(pimm.Machine):
         if t in (INT, ATOM, VECT0):
             return [(t, d[1])]
         if self.is_ex(d):
-            cell = self.mem[d[1]]
-            ent = self.imports[cell[1]]
-            if id_pe(ent['id']) == dst:
-                self.ran('goes home')
-                return [(cell[0] & ~1, ent['id'])]            # it goes home
-            self.ran('indirect export')
-            return [(cell[0] & ~1 | mrb, self.new_export(d))]  # an indirect export
+            return self.forward(d, mrb, dst)
         if self.unbound(d):
-            return [(EXREF | mrb, self.new_export(d))]
-        if t == LIST or t == STRG or self.vsize(d) is not None:
-            return [(EXVAL | mrb, self.new_export(d))]
-        raise Unimplemented('exporting %r' % (d,))
+            tag = EXREF
+        elif t == LIST or t == STRG or self.vsize(d) is not None:
+            tag = EXVAL
+        else:
+            raise Unimplemented('exporting %r' % (d,))
+        if mrb:
+            self.ran('black export')
+            return self.black_export(tag, d)
+        return [(tag, self.new_export(d))]
 
     def level1(self, w, dst):
         """The words of a message for w at level 1."""
@@ -334,20 +436,33 @@ class PE(pimm.Machine):
             rid = self.new_export(v)
             self.reading[id_entry(rid)] = imp
             ent['read'] = v[1]
-            self.send(id_pe(ent['id']), [(INT, M_READ), (cell[0], ent['id']), (EXREF, rid)])
+            if ent['black']:
+                # half its WEC goes with it (VPIM f_GetExrefIdAndWec_forRead_BEX)
+                half = ent['wec'] >> 1
+                ent['wec'] -= half
+                pk = [(INT, M_READ), (cell[0], ent['id']), (INT, half), (EXREF, rid)]
+            else:
+                pk = [(INT, M_READ), (cell[0], ent['id']), (EXREF, rid)]
+            self.send(id_pe(ent['id']), pk)
         return ent['read']
 
-    def send_release(self, ident, tag):
-        self.send(id_pe(ident), [(INT, M_RELEASE), (tag, ident)])
+    def send_release(self, ent):
+        """%release of an import (dropped): {8, ID}, black {8, ID, WEC}."""
+        pk = [(INT, M_RELEASE), (ent['tag'], ent['id'])]
+        if ent['black']:
+            pk.append((INT, ent['wec']))
+        self.send(id_pe(ent['id']), pk)
 
     def send_unify(self, cell_addr, v):
         """A unification of the external cell with v (not a variable of
         this PE): %unify to the owner; the cell is v here."""
         cell = self.mem[cell_addr]
-        ent = self.imports.pop(cell[1])
+        ent = self.drop_import(cell[1])
         dst = id_pe(ent['id'])
+        # a black ID takes all its WEC with it (VPIM f_GetExrefIdAndWec_forUnify1_BEX)
         self.send(dst, [(INT, M_UNIFY), (INT, 0), (INT, 0), (INT, 0), (INT, 0),
                         (INT, 0), (INT, self.system.n), (cell[0], ent['id'])]
+                  + ([(INT, ent['wec'])] if ent['black'] else [])
                   + self.level1(v, dst))
         if ent['read'] is not None:
             self.ran('unify with a read pending')
@@ -369,14 +484,16 @@ class PE(pimm.Machine):
             return self.answer(reply, d)
         self.ran('reply record')
         # a reply record: a goal record with no code, hooked on the
-        # variable (or on the external cell, which reads it in turn)
+        # variable (or on the external cell, which reads it in turn);
+        # the reply ID, always white, kept as an integer, so that the
+        # only ID words in a heap are external cells (OURS)
         g = self.alloc(G_ARGS + 2)
         self.mem[g + G_LINK] = (INT, 0)
         self.mem[g + G_STATUS] = (INT, SUSPENDED)
         self.mem[g + G_CODE] = (INT, 0)
         self.mem[g + G_ARGN] = (INT, 2)
         self.mem[g + G_ARGS] = d
-        self.mem[g + G_ARGS + 1] = reply
+        self.mem[g + G_ARGS + 1] = (INT, reply[1])
         self.nsusp += 1
         self.hook(g, d[1])
 
@@ -387,21 +504,47 @@ class PE(pimm.Machine):
         if w[0] & ~1 in (INT, ATOM, VECT0):
             return w, i + 1
         if w[0] in EX_TAGS:
+            black = w[0] & 1
+            wec, j = (pk[i + 1][1], i + 2) if black else (None, i + 1)
             if id_pe(w[1]) == self.pe:
+                # an ID of ours: the word its entry holds (VPIM
+                # f_Get_WExRef_fromLogicalPacket_Sub); a white entry is
+                # done with (its importer passed it on), a black one has
+                # the WEC back
                 e = id_entry(w[1])
                 if e not in self.exports:
                     raise Unimplemented('an ID of a released export entry %d came home' % e)
-                self.ran('came home')
-                return self.exports[e], i + 1
-            return self.import_id(w), i + 1
+                word = self.exports[e]
+                if black:
+                    self.ran('black ID came home')
+                    self.give_back(e, wec)
+                else:
+                    self.ran('white ID came home')
+                    self.free_export(e)
+                return word, j
+            if black and w[1] in self.bimports:
+                # one import per black ID (TM-1044 9: the black import
+                # table hashed by ID), its WEC summed
+                # and its import flag on, multi-import (VPIM
+                # s_SetMultiImportFlagBImpRec): more than one reference
+                # to the one cell now
+                self.ran('black ID imported again')
+                ent = self.bimports[w[1]]
+                ent['wec'] += wec
+                ent['multi'] = True
+                return (REF, ent['cell']), j
+            return self.import_id(w, wec), j
         raise Unimplemented('importing %r' % (w,))
 
-    def import_id(self, w):
+    def import_id(self, w, wec=None):
         e = self.next_import
         self.next_import += 1
         a = self.alloc(1)
         self.mem[a] = (w[0], e)
-        self.imports[e] = {'id': w[1], 'cell': a, 'read': None, 'tag': w[0]}
+        self.imports[e] = {'id': w[1], 'cell': a, 'read': None, 'tag': w[0],
+                           'black': wec is not None, 'wec': wec, 'multi': False}
+        if wec is not None:
+            self.bimports[w[1]] = self.imports[e]
         return (REF, a)
 
     def get1(self, pk, i):
@@ -449,32 +592,49 @@ class PE(pimm.Machine):
                 self.record(pimm.READY, code, args)
                 self.event('N throw %d %d' % (src, code))
             elif kind == M_UNIFY:
-                e = self.own_entry(packet[UNIFY_ARG1], 'unify')
-                var = self.exports.pop(e)
-                val, _ = self.get1(packet, UNIFY_ARG1 + 1)
+                w = packet[UNIFY_ARG1]
+                e = self.own_entry(w, 'unify')
+                var = self.exports[e]
+                if w[0] & 1:
+                    val, _ = self.get1(packet, UNIFY_ARG1 + 2)
+                    self.give_back(e, packet[UNIFY_ARG1 + 1][1])
+                else:
+                    self.free_export(e)
+                    val, _ = self.get1(packet, UNIFY_ARG1 + 1)
                 self.event('N unify %d %d' % (src, e))
                 self.unify(var, val)
             elif kind == M_READ:
                 e = self.own_entry(packet[1], 'read')
                 self.event('N read %d %d' % (src, e))
-                self.reply_when_bound(self.exports[e], packet[2])
+                if packet[1][0] & 1:
+                    self.reply_when_bound(self.exports[e], packet[3])
+                    self.give_back(e, packet[2][1])
+                else:
+                    self.reply_when_bound(self.exports[e], packet[2])
             elif kind == M_ANSWER:
                 e = self.own_entry(packet[1], 'answer_value')
-                v = self.exports.pop(e)
+                v = self.exports[e]
+                self.free_export(e)
                 imp = self.reading.pop(e)
                 val, _ = self.get1(packet, 2)
                 self.event('N answer %d %d' % (src, e))
-                ent = self.imports.pop(imp, None)
+                ent = self.drop_import(imp) if imp in self.imports else None
                 self.ran('answer, import %s' % ('kept' if ent is not None else 'given up'))
                 if ent is not None:             # not given up by a %unify
                     self.mem[ent['cell']] = v
-                    self.send_release(ent['id'], ent['tag'])
+                    self.send_release(ent)
                 self.unify(v, val)
             elif kind == M_RELEASE:
                 e = id_entry(packet[1][1])
                 assert id_pe(packet[1][1]) == self.pe
-                if self.exports.pop(e, None) is None:
+                if e not in self.exports:
                     self.system.anomalies.append(('release of a free entry', self.pe, e))
+                elif packet[1][0] & 1:
+                    self.give_back(e, packet[2][1])
+                elif e in self.wec:
+                    self.system.anomalies.append(('white release of a black entry', self.pe, e))
+                else:
+                    self.free_export(e)
                 self.event('N release %d %d' % (src, e))
             else:
                 raise Unimplemented('message kind %d' % kind)
@@ -520,7 +680,7 @@ class PE(pimm.Machine):
             self.hook(g, d[1])
             return
         self.mem[g + G_STATUS] = (INT, TAKEN)
-        self.answer(self.mem[g + G_ARGS + 1], d)
+        self.answer((EXREF, self.mem[g + G_ARGS + 1][1]), d)
 
     def unify(self, a, b):
         da, db = self.deref(a), self.deref(b)
@@ -536,6 +696,64 @@ class PE(pimm.Machine):
             self.bind(db, da)                   # a variable here points at the cell
             return
         self.send_unify(da[1], db)
+
+
+def key(w):
+    """A black entry's key: its word's tag (MRB off) and address."""
+    return (w[0] & ~1, w[1])
+
+
+class PECollector(pimm_gc.Collector):
+    """pimm_gc's collector on a PE: the export table a root (TR-466
+    3.2; TM-1044 9), an external cell a one-word datum that moves into a
+    structure copied after it as a variable does, and the import table
+    weak: an import whose cell was not reached is released, all its
+    WEC with it if black (OURS: when and how VPIM's collector
+    releases imports was not read).  What a
+    bench holds (PE.roots) is a root too, and the suspended goals are
+    counted again from the copy."""
+    VAR_TAGS = pimm_gc.Collector.VAR_TAGS + (EXREF, EXVAL)
+
+    def word(self, w):
+        if w[0] in EX_TAGS:
+            return w
+        return pimm_gc.Collector.word(self, w)
+
+    def more_roots(self):
+        pe = self.m
+        for e in sorted(pe.exports):
+            pe.exports[e] = self.word(pe.exports[e])
+        for k in sorted(pe.roots):
+            pe.roots[k] = self.word(pe.roots[k])
+
+    def after_scan(self):
+        pe = self.m
+        for imp in sorted(pe.imports):
+            ent = pe.imports[imp]
+            f = self.fwd(ent['cell'])
+            if f is not None:
+                ent['cell'] = f
+                if ent['read'] is not None:
+                    ent['read'] = self.fwd(ent['read'])
+            else:
+                pe.ran('import released at a collection')
+                pe.send_release(pe.drop_import(imp))
+        pe.black = {key(pe.exports[e]): e for e in pe.wec}
+        n, p = 0, self.to
+        while p < self.top:
+            t, v = self.get(p)
+            if t == pimm_gc.GCHDR:
+                if v >> 24 == pimm_gc.K_GOAL and self.get(p + 1 + G_STATUS)[1] & 3 == SUSPENDED:
+                    n += 1
+                p += 1 + (v & 0xffffff)
+            elif t == CDESC and (v >> 24) & 7 != 6:
+                p += 1 + (v & 0xffffff)
+            else:
+                p += 1
+        pe.nsusp = n
+
+
+PE.Collector = PECollector
 
 
 def dumps(machine):

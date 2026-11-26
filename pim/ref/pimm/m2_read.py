@@ -38,7 +38,8 @@ each of the three answers is a list of N vectors, the k-th equal to
 {Used, Size - Used} of PE k's own get_heap_size in that round, and
 each PE asked exactly three times; under quota 1 and 1,000,000 the
 message counts by kind are the same and so is what is left at the end
-(per PE: exports, imports, pending reads, suspended goals); every
+(per PE: exports, imports, pending reads, suspended goals; both
+pinned per program and N, MONITOR, since rung M3); every
 import left refers to a live export entry, and no %release finds a
 free entry.  The heap values themselves differ by schedule (they are
 the allocation order's), so they are checked against the log only.
@@ -51,10 +52,11 @@ PIMOS's), N = 2 and 4, home 0:
          rest from PE 1: RR = [1..6]; throw 1, read 11, answer 11,
          unify 1, release 11; every table empty at the end.
   home   reverse([], A, B) thrown to PE 1, A and B of PE 0: PE 1's A = B
-         sends %unify(A, B's ID), which comes home and is resolved to
-         B itself; then B = 7 on PE 0 gives A = 7.  PE 1's import of B
-         and PE 0's entry for it are left (nothing releases an unread
-         import before rung M3's collection).
+         sends %unify(A, B's ID), PE 1 passing B's ID on with its import
+         (a white path, rung M3), which comes home and is resolved to B
+         itself, B's entry done with; then B = 7 on PE 0 gives A = 7;
+         every table empty (at M2, before the pass-on, PE 1's import of
+         B and PE 0's entry were left).
   chain  reverse(X, R) thrown to PE 1, X of PE 0: PE 1 reads X; then
          X = Y on PE 0 wakes the reply record with X still unbound, and
          it waits again on Y; Y = [] gives R = []; throw, read, answer,
@@ -64,11 +66,11 @@ PIMOS's), N = 2 and 4, home 0:
          makes it, then P = 1: the same answer and messages as rev.
   third  rev with the to_processor goal of Goal@node(K) thrown to PE 1
          with K = N - 2: on 2 PEs it goes back to PE 0, both IDs come
-         home and reverse runs there (throw 2; PE 1's two imports and
-         PE 0's two entries left); on 4 it goes on to PE 2, PE 1
-         exporting its imports again: PE 2 reads L by way of PE 1 and
-         R's %unify goes the same way (throw 2, read 22, answer 22,
-         unify 2, release 22; every table empty).
+         home and reverse runs there (throw 2); on 4 it goes on to PE
+         2, PE 1 passing the two IDs on (white paths, rung M3): PE 2
+         reads L from PE 0 itself (throw 2, read 11, answer 11, unify
+         1, release 11); every table empty.  (At M2 PE 1 exported them
+         again: 22 reads, and on 2 PEs two entries left.)
   alias  reverse(X, R) thrown to PE 1, which reads X; then on PE 1 a
          new variable Y = X's cell (Y becomes a reference to it) and
          Y = [] (%unify with the read pending): X = R = [] on PE 0;
@@ -87,7 +89,8 @@ vector, string, an ID going home and coming home, an indirect export,
 ...) must run in some case (PATHS).
 
 Observed fault injections, 2026-11-26, each on a private copy of
-pimm_pe.py, the whole check run (FAIL lines by check, both quotas):
+rung M2's pimm_pe.py (commit 53012caa), the whole check run (FAIL
+lines by check, both quotas; rung M3's are in m3_gc.py):
   no %read sent              107: every N>1 monitor case (each PE
                              asked, the answers), every bench answer,
                              messages and tables, `PE 1 has S`, paths
@@ -159,15 +162,25 @@ PROGS = (('h', 'h2monitor'), ('x', 'x2h2monitor'))
 CASES = [(1, 0), (2, 0), (2, 1), (4, 0), (4, 3)]      # (N, the home node c)
 QUOTAS = (1, 1000000)
 ROUNDS = 3
+# the monitors: messages by kind, and what is left on the home and on
+# each other PE (exports, imports, pending reads, suspended goals,
+# ready), by (program, N); observed 2026-11-26 and pinned
+MONITOR = {
+    ('h', 1): ({}, (0, 0, 0, 2, 0), None),
+    ('h', 2): ({0: 1, 6: 8, 7: 7, 8: 7, 9: 3}, (1, 0, 0, 3, 0), (1, 1, 1, 1, 0)),
+    ('h', 4): ({0: 3, 6: 24, 7: 21, 8: 21, 9: 9}, (3, 0, 0, 5, 0), (1, 1, 1, 1, 0)),
+    ('x', 1): ({}, (0, 0, 0, 2, 0), None),
+    ('x', 2): ({0: 1, 6: 14, 7: 13, 8: 12, 9: 1}, (1, 1, 0, 3, 0), (2, 1, 1, 1, 0)),
+    ('x', 4): ({0: 3, 6: 42, 7: 39, 8: 36, 9: 3}, (1, 3, 0, 5, 0), (2, 1, 1, 1, 0)),
+}
 # third: messages by kind (observed 2026-11-26, then pinned)
 THIRD = {
-    # back to PE 0: both IDs come home there and reverse runs on PE 0;
-    # PE 1's imports and PE 0's entries are left (released at M3)
-    2: ({0: 2}, [(2, 0, 0, 0, 0), (0, 2, 0, 0, 0)]),
-    # on to PE 2: PE 1 exports its two imports again; PE 2 reads L
-    # from PE 1, which reads it from PE 0, and R's %unify goes the
-    # same way; then PE 0 reads R's rest from PE 2 by way of PE 1
-    4: ({0: 2, 6: 22, 7: 22, 8: 22, 9: 2}, None),
+    # back to PE 0: both IDs come home there, their entries done with
+    # (PE 1 passed them on, white paths), and reverse runs on PE 0
+    2: ({0: 2}, None),
+    # on to PE 2: PE 1 passes the two IDs on (rung M3; at M2 it
+    # exported them again, 22 reads); PE 2 reads L from PE 0 itself
+    4: ({0: 2, 6: 11, 7: 11, 8: 11, 9: 1}, None),
 }
 
 
@@ -246,11 +259,14 @@ def loaded():
     return out
 
 
-# every path of pimm_pe.py's M2 code (PE.ran) must run in some case
-PATHS = ('answer at once', 'answer, import given up', 'answer, import kept', 'came home',
-         'goes home', 'indirect export', 'level 1 list', 'level 1 long vector',
+# every path of pimm_pe.py's reading code (PE.ran) must run in some
+# case; the rest of the M3 paths in m3_gc.py
+PATHS = ('answer at once', 'answer, import given up', 'answer, import kept',
+         'black ID came home', 'black ID passed on, half its WEC', 'black entry again',
+         'black entry reclaimed', 'black export', 'level 1 list', 'level 1 long vector',
          'level 1 string', 'level 1 vector', 'reply record', 'reply record waits again',
-         'unify with a read pending', 'variable to external cell')
+         'unify with a read pending', 'variable to external cell', 'white ID came home',
+         'white ID passed on')
 SYSTEMS = []
 
 
@@ -401,9 +417,8 @@ def bench_home(blob, info, n, quota):
     if sent != {0: 1, 9: 1}:
         bad.append(('messages', sent))
     left = tables(system)
-    want = [(1, 0, 0, 0, 0), (0, 1, 0, 0, 0)] + [(0, 0, 0, 0, 0)] * (n - 2)
-    if left != want:
-        bad.append(('left: PE 1 imports B, PE 0 exports it', left, want))
+    if left != [(0, 0, 0, 0, 0)] * n:
+        bad.append(('left: B passed home, nothing left', left))
     return bad + consistent(system), sent
 
 
@@ -537,6 +552,12 @@ def main(argv):
                 b = check_monitor(system, repo, n, c)
                 bad += [(prog, n, c, q) + (x,) for x in b]
                 sent = dict(sorted(system.sent.items()))
+                msgs, hrow, orow = MONITOR[(prog, n)]
+                if sent != msgs:
+                    bad.append((prog, n, c, q, ('messages', sent, msgs)))
+                want = [hrow if k == c else orow for k in range(n)]
+                if tables(system) != want:
+                    bad.append((prog, n, c, q, ('left', tables(system), want)))
                 seen.append((sent, tables(system)))
                 rows.append('%s N=%d c=%d quota=%-7d messages %s  left %s' % (
                     prog, n, c, q, sent, tables(system)))
