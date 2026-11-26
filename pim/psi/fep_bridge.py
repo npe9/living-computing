@@ -60,7 +60,8 @@ the bus, and nothing else:
     started: the server's held io(1) waits).  Queued at the boot, as in
     step 3m, they reach the requester before PIMOS's server exists and
     it writes "Network error.".  Window M4: the shell's lines (--type)
-    are a second batch, the left button in the console and the keys,
+    are a second batch, the left button in the login window, then in
+    the console, and the keys (shell_script; a tape keeps its script),
     given at the first quiet exchange after PIMOS's console has had a
     110 (getl).  A tape from before M4 (login_pwd.json: no `shell`) has
     the lines fep.py's, as that run's window was.
@@ -287,27 +288,58 @@ def mouse(button, x, y):
     return K.Vec([K.Atom('mouse'), K.Atom(button), x, y])
 
 
-# The user's two batches (OURS; window M4/M6, 2026-11-25).  The menu: the
-# right button at MENU_AT opens the system menu with its top-left there
-# (menu_pane.esp), and the left button on its "Login PIMOS" item starts the
-# requester, whose window is centred on that click (window_pane.esp), away
-# from PIMOS's console at (200, 200).  The item's place follows from the
-# menu's layout with test_11 (11 x 14 cells): columns 176 and 319 dots
-# wide, items 16 dots high from 21 dots below the top; "Login PIMOS" is
-# column 2, row 2 (psi/test_winfb.py WinM6 pins the drawn menu).  The
-# console: the left button inside it selects it (the status band's box
-# names it) and the shell's lines are typed to it.
+# The user's script (OURS; window M4/M6, 2026-11-25), kept in a tape as
+# JSON: each event a list, ['mouse', Button, X, Y], ['move', X, Y],
+# ['key', Code], ['invoke_system_menu'] or ['select', Label] (step 3m's
+# forms), made into the coordinator's terms by event().  Two batches:
+#   - login: the right button at MENU_AT opens the system menu with its
+#     top-left there (menu_pane.esp), and the left button on its "Login
+#     PIMOS" item starts the requester, whose window is centred on that
+#     click (window_pane.esp), away from PIMOS's console at (200, 200);
+#     then the requester's three answers.  The item's place follows from
+#     the menu's layout with test_11 (11 x 14 cells): columns 176 and 319
+#     dots wide, items 16 dots high from 21 dots below the top; "Login
+#     PIMOS" is column 2, row 2 (test_espc.py Window
+#     test_win_m6_system_menu pins the drawn menu);
+#   - shell: the left button in the login window (it becomes the selected
+#     one), then in the console (selected again: the keys go to it only
+#     if mouse#l selection works, since the console's own show/1 had
+#     selected it), then the shell's lines.
 MENU_AT = (640, 560)
 LOGIN_ITEM_AT = (978, 605)
+LOGIN_WINDOW_AT = (900, 620)
 CONSOLE_AT = (300, 300)
+# step 3n's login (login_pwd.json, recorded before the script was taped)
+LOGIN_3N = [['invoke_system_menu'], ['select', 'Login PIMOS']]
 
 
-def login_events(login):
-    return [mouse('rr', *MENU_AT), mouse('l', *LOGIN_ITEM_AT)] + keys(*login)
+def key_script(*lines):
+    return [['key', c] for line in lines for c in K.Str(line).codes() + [13]]
 
 
-def shell_events(shell):
-    return [mouse('l', *CONSOLE_AT)] + keys(*shell)
+def login_script(login):
+    return [['mouse', 'rr'] + list(MENU_AT), ['mouse', 'l'] + list(LOGIN_ITEM_AT)] + key_script(*login)
+
+
+def shell_script(shell):
+    return ([['mouse', 'l'] + list(LOGIN_WINDOW_AT), ['mouse', 'l'] + list(CONSOLE_AT)]
+            + key_script(*shell))
+
+
+def event(j):
+    """A script event (JSON) as the coordinator's term."""
+    kind = j[0]
+    if kind == 'mouse':
+        return mouse(j[1], j[2], j[3])
+    if kind == 'move':
+        return K.Vec([K.Atom('move'), j[1], j[2]])
+    if kind == 'key':
+        return K.Vec([K.Atom('key'), j[1]])
+    if kind == 'select':
+        return K.Vec([K.Atom('select'), jstr(j[1])])
+    if kind == 'invoke_system_menu':
+        return K.Atom(kind)
+    raise ValueError('a script event %r' % (j,))
 
 
 class PsiSide:
@@ -315,7 +347,10 @@ class PsiSide:
     system, the boot program BOOT with the login typed, and (window M4)
     the shell's lines typed into PIMOS's console window."""
 
-    def __init__(self, login=('local', 'pimos', ''), shell=(), max_steps=20000000):
+    def __init__(self, login=('local', 'pimos', ''), shell=(), script=None, max_steps=20000000):
+        """SCRIPT: the user's events, {'login': [...], 'shell': [...]} in
+        the JSON form above (a tape's `script`); by default the login's
+        and the shell's from LOGIN and SHELL."""
         ts, failed = espc.compile_text(BOOT, 'simpos')
         if failed:
             raise SystemExit('fep_bridge: the boot program does not compile: %r' % (failed,))
@@ -330,8 +365,11 @@ class PsiSide:
         self.fe_in, self.fe_out = fi[0], fo[0]
         m.set_slot(prog, 'fe_in', self.fe_in)
         m.set_slot(prog, 'fe_out', self.fe_out)
-        self.user = login_events(login)
-        self.shell = shell_events(shell) if shell else []
+        if script is None:
+            script = dict(login=login_script(login), shell=shell_script(shell) if shell else [])
+        self.script = script
+        self.user = [event(j) for j in script['login']]
+        self.shell = [event(j) for j in script['shell']]
         self.user_at = None     # the exchange the login's events were given at
         self.shell_at = None    # the exchange the shell's lines were given at
         self.windows = set()    # devices PIMOS made by 104 (its windows)
@@ -446,11 +484,12 @@ def screen(psi):
     return dict(sha256=windev.pbm_sha256(fr), dots=fr.count())
 
 
-def live(pkl, lines=(), record=None):
+def live(pkl, lines=(), record=None, script=None):
     """LINES: the shell's lines, typed into PIMOS's console window on the
-    PSI (window M4; before it, fep.py's scripted getl answers)."""
+    PSI (window M4; before it, fep.py's scripted getl answers).  SCRIPT:
+    the user's events (a tape's), else the default for LINES."""
     pim = PimSide(pkl)
-    psi = PsiSide(shell=lines)
+    psi = PsiSide(shell=lines, script=script)
     tape = []
 
     def exchange(from_psi):
@@ -470,16 +509,25 @@ def live(pkl, lines=(), record=None):
                   user_at=[psi.user_at, psi.shell_at], screen=screen(psi))
     if record:
         with open(record, 'w') as f:
-            json.dump(dict(lines=list(lines), shell=list(lines), exchanges=tape, result=result),
-                      f, indent=1)
+            json.dump(dict(lines=list(lines), shell=list(lines), script=psi.script,
+                           exchanges=tape, result=result), f, indent=1)
     return result, psi, pim
+
+
+def tape_script(t):
+    """The user's script a tape was recorded with: its own (window M4 on),
+    or, for step 3n's login_pwd.json (no `script`: its user was step 3m's
+    menu select and the three answers, and its shell lines were fep.py's),
+    that one."""
+    if 'script' in t:
+        return t['script']
+    return dict(login=LOGIN_3N + key_script('local', 'pimos', ''), shell=[])
 
 
 def replay(path):
     with open(path) as f:
         t = json.load(f)
-    # a tape from before window M4 (no `shell`) typed its lines to fep.py
-    psi = PsiSide(shell=t.get('shell', ()))
+    psi = PsiSide(script=tape_script(t))
     tape = list(t['exchanges'])
     seen = []
 

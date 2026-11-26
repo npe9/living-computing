@@ -226,7 +226,11 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % the head comment.
 :contains(Window, X, Y) :- Window!pane \== 0, :contains(Window!pane, X, Y);
 % INTERPOLATED (selector and body OURS): status_name; basis above and in
-% the head comment.
+% the head comment.  The status band's `<class>/<n>` (FSTJ 26(1) p99
+% shows the window's class, `editor_buffer_window/19`) is here the
+% stand-in's own class name for every window it makes, a held subclass's
+% too (pimfep##pimos_window shows as `pmacs_window/N`): OURS, the
+% instance's class name is not read.
 :status_name(Window, "pmacs_window", N) :- N = Window!number;
 
 local

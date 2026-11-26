@@ -3447,9 +3447,10 @@ class Window(unittest.TestCase):
         g.rows = fr.rows[:944] + [0] * (len(fr.rows) - 944)
         return windev.pbm_sha256(g), g.count()
 
-    # M5's bridged pin was ('cd57f0ff...ff404', 5968), the window at (417, 411)
-    # and no band; now 97,756 dots of band more, the window at (755, 544)
-    BRIDGED_PIN = ('41f8f62f8202d81bd5d02eb6354632b7e598ff5a8eea9acacb0bad2c9ba7627e', 103724)
+    # with the status band (window M6): 97,756 dots more than M5's pin,
+    # M5_BRIDGED_PIN, which the frame with the band cleared still equals
+    BRIDGED_PIN = ('c33da8f127897aea8501f68ae999bcc33dda26df6ec890281b2e29c11007d614', 103724)
+    M5_BRIDGED_PIN = ('cd57f0ff7e32029dc432da52be8795f1b2ba3fcb89ca25186304e2eec13ff404', 5968)
 
     def bridged(self):
         # step 3n's run: the held requester logs into real PIMOS (pimm.py)
@@ -3468,11 +3469,11 @@ class Window(unittest.TestCase):
         # The committed PNGs of docs/simpos/screens/ decode to the pinned
         # frames.  Injections: see test_win_m5_login_screen's header (this
         # test FAILS in W1-W5 and W7-W9, OBSERVED; not in W6).
-        # Window M6 (2026-11-25): the bridge's user now starts Login PIMOS
-        # with the mouse (fep_bridge.login_events: the right button at
-        # MENU_AT, the left on the item), so the window is centred on that
-        # click, at (755, 544), not on the screen's centre; its text and
-        # label are the same.
+        # Window M6 (2026-11-25): the tape replays with its own user
+        # (fep_bridge.tape_script: step 3m's menu select, so the window
+        # is centred on the mouse's start, the old place); the frame has
+        # the status band now.  M4's tape starts it with the mouse
+        # (test_win_m4_console).
         import windev
         import winfb
         m = self.bridged()
@@ -3481,14 +3482,15 @@ class Window(unittest.TestCase):
         top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
         pane = m.get_slot(m.get_slot(top, 'window'), 'pane')
         self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h', 'cols', 'rows')],
-                         [755, 544, 446, 121, 40, 7])
-        self.assertEqual(windev.read_cells(fr, 758, 547, 40, 1),
+                         [417, 411, 446, 121, 40, 7])
+        self.assertEqual(windev.read_cells(fr, 420, 414, 40, 1),
                          ['Pimos remote login %d' % m.get_slot(m.get_slot(p, 'context'), 'number')])
-        self.assertEqual(windev.read_cells(fr, 758, 564, 40, 7), self.SCREENS['login'][1])
+        self.assertEqual(windev.read_cells(fr, 420, 431, 40, 7), self.SCREENS['login'][1])
         self.assertEqual(self.band(fr), (['USER : pmpsi'], ['SIMPOS Version V7'],
                                          ['standard_io_window/1']))
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.BRIDGED_PIN)
+        self.assertEqual(self.without_band(fr), self.M5_BRIDGED_PIN)
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
         self.assert_shots()
 
@@ -3534,9 +3536,35 @@ class Window(unittest.TestCase):
         # clicks in the console and types `pwd` RETURN: the getl's answer
         # is the editor's own (getl_from_buffer/3 after carriage_return's
         # after-demon), and PIMOS's reply is drawn after it.
-        # Injections, OBSERVED (2026-11-25; each from a backup copy,
-        # restored by copy, cmp clean; test_espc Window and
-        # test_fep_bridge run each time): see the list after the M6 test.
+        # Injections, OBSERVED (2026-11-25, after merging master 10884b99;
+        # each from a backup copy, restored by copy, cmp clean; run each
+        # time: test_espc.py Window, test_fep_bridge.py, test_kl0.py; the
+        # rest of the window tests and test_fep_bridge OK unless listed):
+        #   J1 kl0 blt 69 not_equal_string always fails: this test,
+        #      test_fep_bridge Console.test_replay and test_kl0
+        #      Table.test_step3c_cells FAIL.
+        #   J2 pmacs_window set_font/2 drops the font (the plan's M4
+        #      injection): this test ERROR (the font slot 0), nothing else:
+        #      the dots are the same, test_11 being the device's default.
+        #   J3 pmacs_window get_interpreter/2 answers the editor (the plan's
+        #      M3 injection): this test, test_win_m6_selection and
+        #      Console.test_replay FAIL.
+        #   J4 standard_editor carriage_return/1 inserts no line end (code
+        #      10): this test and Console.test_replay FAIL (the 110 is
+        #      never answered).
+        #   J5 coordinator: mouse#l on a window does nothing:
+        #      test_win_m6_selection FAILS, nothing else.
+        #   J6 coordinator: mouse#l selects the newest window, not the one
+        #      under the mouse (the plan's M6 injection, in this form):
+        #      test_win_m6_selection FAILS, nothing else.
+        #   J7 menu_pane: the box drawn by set, not exclusive_or:
+        #      test_win_m6_system_menu FAILS, nothing else.
+        #   J8 status_band: the band 40 rows high, not 80: this test, the
+        #      three stages of test_win_m5_login_screen,
+        #      test_win_m5_bridged_screen and test_win_m6_system_menu FAIL.
+        #   J9 pmacs_request: the argument read from the stored vector again
+        #      (the backtracking bug, pmacs_request.esp's head): this test,
+        #      test_win_m6_selection and Console.test_replay FAIL.
         import windev
         import winfb
         psi, t = self.console()
@@ -3548,6 +3576,14 @@ class Window(unittest.TestCase):
         pane = m.get_slot(ws[0], 'pane')
         self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h', 'cols', 'rows')],
                          [200, 200, 523, 219, 47, 14])
+        # 132's font, through the held editor's set_font/4 (blt 69): the
+        # window's font is the font object of font:test_11.font, 11 x 14
+        # (the device's default is also test_11, so the dots alone would
+        # not show a dropped font)
+        f = m.get_slot(ws[0], 'font')
+        self.assertEqual((f.cid, K.resolve(m.get_slot(f, 'name')).text,
+                          m.get_slot(f, 'width'), m.get_slot(f, 'height')),
+                         ('simpos##font', 'font:test_11.font', 11, 14))
         self.assertEqual(windev.read_cells(fr, 203, 203, 47, 1), ['PIMOS CONSOLE'])
         self.assertEqual(windev.read_cells(fr, 203, 220, 47, 4), [
             'Shell>> pwd',
@@ -3561,6 +3597,12 @@ class Window(unittest.TestCase):
         self.assertIs(m.get_slot(C, 'selected'), ws[0])
         self.assertEqual(self.band(fr, 14), (['USER : pmpsi'], ['SIMPOS Version V7'],
                                              ['pmacs_window/2']))
+        # the tape's script (fep_bridge.py): the login by the menu, the
+        # shell's line after a click in the login window and one in the
+        # console; the keys reach the console only by that last click
+        self.assertEqual(t['script']['login'][:2], [['mouse', 'rr', 640, 560], ['mouse', 'l', 978, 605]])
+        self.assertEqual(t['script']['shell'], [['mouse', 'l', 900, 620], ['mouse', 'l', 300, 300]]
+                         + [['key', c] for c in K.Str('pwd').codes() + [13]])
         self.assertEqual(t['result']['user_at'], [6, 19])
         self.assertEqual((psi.user_at, psi.shell_at), (6, 19))
         self.assertEqual(set(fr.status), {winfb.OK})
@@ -3568,6 +3610,39 @@ class Window(unittest.TestCase):
         self.assertEqual(t['result']['screen'], dict(sha256=self.CONSOLE_PIN[0], dots=self.CONSOLE_PIN[1]))
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
         self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
+
+    def test_win_m6_selection(self):
+        # M6: mouse#l selects the window under the mouse, and the keys go
+        # to the selected window.  The M4 run's script with the console
+        # click left out: the click in the login window selects the
+        # requester (its window, under the mouse), so `pwd` goes to it, not
+        # to the console: the PSI never answers the console's 110 (no
+        # {28, 1, "pwd"}), the console shows no echo, and the requester,
+        # its wait/1 answered, exits (the band's box cleared).  PIMOS's
+        # side is fed from the tape regardless (its later texts appear
+        # unasked).  With mouse#l a no-op, or selecting the newest window
+        # whatever is under the mouse, the keys reach the console and
+        # this test fails (J5, J6 in test_win_m4_console's header).
+        import json
+        import fep_bridge as FB
+        import windev
+        with open(os.path.join(HERE, 'fep_bridge_tapes', 'console_pwd.json')) as f:
+            t = json.load(f)
+        psi = FB.PsiSide(script=dict(login=t['script']['login'],
+                                     shell=[['mouse', 'l'] + list(FB.LOGIN_WINDOW_AT)]
+                                     + FB.key_script('pwd')))
+        tape, sent = list(t['exchanges']), []
+
+        def exchange(out):
+            sent.extend(FB.show(r) for r in out)
+            return [bytes.fromhex(r) for r in tape.pop(0)['to_psi']] if tape else []
+        self.assertEqual(psi.run(exchange).cause, 'would suspend')
+        self.assertNotIn([28, 0, 1, FB.fepm.jis('pwd')], sent)
+        fr = windev.device(psi.m).frame
+        self.assertEqual(windev.read_cells(fr, 203, 220, 47, 1)[0][:9], 'Shell>>  ')
+        C = K.ClassRef('simpos##coordinator')
+        self.assertEqual([w.cid for w in self._walk(psi.m.get_slot(C, 'windows'))], ['pimfep##pimos_window'])
+        self.assertEqual(psi.m.get_slot(C, 'selected'), 0)
 
     # window M6: (sha256, dots) of the boot screen with the system menu
     # open at fep_bridge.MENU_AT, and with "Login PIMOS" boxed
@@ -3594,7 +3669,7 @@ class Window(unittest.TestCase):
         # (exclusive_or, so moving off erases the box exactly); the left
         # button on "Login PIMOS" closes the menu and starts the HELD
         # pimfep##pimos_login_requester, whose window is centred on the
-        # click.  Injections: see the list after this test.
+        # click.  Injections: test_win_m4_console's header (J7, J8).
         import fep_bridge as FB
         import windev
         x, y = FB.MENU_AT

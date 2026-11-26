@@ -3932,6 +3932,159 @@ requester waits for a key after the replies. The PIMOS console (M4:
 step 3n; the status band, the system menu's mouse and the manipulator are
 M6-M7.
 
+### Window M4 and M6: PIMOS's console on the PSI, the status band and the system menu (2026-11-25)
+
+**M4: the console, on real PIMOS.** `fep_bridge.py` now routes a device
+PIMOS makes by 104 (create_window) to the PSI, as it routed 601's in step
+3n. `BridgeFep.BRIDGED` gains `CREATE_WINDOW`, and the module doc
+describes the boundary. One live run (PIMOS on `ref/pimm/pimm.py` from the
+link checkpoint, 28 s, 8,626,640 PIMOS instructions, 26 exchanges)
+recorded `fep_bridge_tapes/console_pwd.json`. A second run gave the same
+exchanges and result byte for byte: it came after merging master, with
+the script's extra click. PIMOS's own messages to its console, device 28:
+
+    104 (pmpsi) -> 127 (200, 200, 47, 14) -> 130 "PIMOS CONSOLE"
+    -> 132 "font:test_11.font" -> 143 -> 70 x3 -> 112 -> 111 "Shell>> "
+    -> 112 x2 -> 110 -> [user: pwd] -> 111 " The value of task:
+    directory is ">sys>user>pmpsi" . \n" -> 112 -> 111 "Shell>> "
+    -> 112 x2 -> 110 (waits)
+
+The PSI answers `{28, 1}` to each, except the 70s (abort: no reply, as in
+fep.py) and the waiting 110. It answers the first 110 with `{28, 1,
+"pwd"}`. fep.py answers none of them: its log is empty and nothing is
+held.
+
+What runs them on the PSI. HELD:
+- `pimfep##pimos_window_process`: create_window/9, create_with_buffer,
+  goal/1, window_loop, catch/8, command_loop, tag_catch/9, put/2;
+- `pimfep##pimos_window`: kl1_message/2, which disassembles each message
+  and refutes it on the editor, then replies;
+- `pimfep##pimos_window_editor`: reshape, set_title, set_font/4, show,
+  putb/4, flush, getl/3 and getl_from_buffer/3, and carriage_return/1's
+  demons.
+
+The new or rewritten stand-ins, with their heads giving each label:
+- `pmacs_window` (rewritten): create/3 makes the editor, an
+  `editor_text_buffer` and an `editor_command_interpreter`;
+  get_interpreter/2, input_data/2, has_been_reshaped/1, flash/1 and
+  putl/2 are stood in.
+- `editor_text_buffer`: the buffer protocol the held editor sends
+  (current_position, input_region, move_to, insert_string, search/5,
+  see_position/4, end_of_buffer, delete, reset), with redisplay through
+  `window_pane` put_codes/2.
+- `buffer_region`: the region's start and finish.
+- `editor_command_interpreter`: command_interpret/1 reads requests and
+  keys from its input stream. RETURN is the editor's carriage_return/1;
+  any other key is inserted (Pmacs's bindings are lost, gap G6; this
+  minimal set is OURS).
+- `pmacs_request`: put/2's `{kl1_message, {Msg}}`.
+
+Small stand-in additions:
+- `standard_editor` carriage_return/1 (INFERENCE: a line end at the point);
+- `with_lock` lock_with_hook/1 and unlock_with_hook/1 (INTERPOLATED);
+- `process` catch/8 (INTERPOLATED from pimos_window_process $or$1/3).
+
+One opcode was added: **blt 69 `not_equal_string`**, KNOWN-PLAINTEXT on
+kappa2 `KP_UPT.ESP`:124 and :131 (`69 02 00 00`, `69 01 00 00`), which
+set_font/4 needs (157 rows).
+
+A model hazard was found and handled in the stand-in. kl0 stores a vector
+in a slot as it is (`resolve_value` copies lists only). put/2's
+`{Message}` held a variable bound to the message, and the binding was
+undone when put/2's process backtracked: kl1_message/2 was sent an
+unbound message (OBSERVED). `pmacs_request` keeps the one argument in a
+slot of its own; injection J9 puts the bug back.
+
+**M6: the chrome.** All OURS in look and event form, with the sources in
+the files' heads:
+- `status_band` (new): the black band on the frame's rows 944-1023, with
+  `USER : pmpsi` and `SIMPOS Version V7`. A white box names the selected
+  window `<class>/<n>`. `pimos_window` shows as `pmacs_window/N`, the
+  stand-in's class name (OURS).
+- `menu_pane` (new): the SYSTEM MENU, opened by `{mouse, rr, X, Y}` with
+  its top-left at the mouse. It shows two columns of the held login.com's
+  7 + 3 items. `{move, X, Y}` boxes the item under the mouse with an
+  exclusive_or rectangle, so it erases exactly. `{mouse, l, X, Y}` on an
+  item closes the menu and starts the program; on a window, it selects it.
+- The coordinator keeps the windows, the mouse (starting at 640, 472) and
+  the open menu. A window opened with `{position, manipulator}` is
+  centred on the mouse (`window_pane`). At the start position this is the
+  old centred place, so step 3m's pins hold.
+
+The bridge's user is now a taped script (`fep_bridge.py`: JSON events
+`['mouse', B, X, Y]`, `['move', X, Y]`, `['key', C]`). It has two batches:
+- the login: the menu at (640, 560), the item at (978, 605), the three
+  answers;
+- the shell: a click in the login window, then in the console, then
+  `pwd` RETURN. It is given at the first quiet exchange after the
+  console's 110.
+
+`replay` uses a tape's own script. `login_pwd.json`, which has none, gets
+step 3m's menu select.
+
+**Tests** (`test_espc.py` `Window`, `test_fep_bridge.py` `Console`):
+- `test_win_m4_console`:
+  - the console's geometry (200, 200, 523 x 219 dots, 47 x 14 cells);
+  - its font object (`font:test_11.font`);
+  - its text read back from the frame: `PIMOS CONSOLE`, `Shell>> pwd`,
+    the answer (wrapped at 47 columns), `Shell>> ` and the cursor;
+  - the login window untouched;
+  - the band and box `pmacs_window/2`;
+  - the script, sha256 `f9da0fe2…` with 110,676 dots, the command-stream
+    replay and the PNG round trip.
+- `test_win_m6_selection`: the same run with the console click left out.
+  The keys go to the requester, the console's 110 is never answered, and
+  the requester exits.
+- `test_win_m6_system_menu`:
+  - the menu's geometry, title and every item read back;
+  - the box is exactly a 1-dot rectangle, 662 dots of difference;
+  - moving off restores the open-menu frame;
+  - a click on the item starts the requester at (755, 544) and clears the
+    menu.
+- The M5 tests: every pin is +97,756 dots (the band), and the frames with
+  the band's rows cleared still equal M5's pins.
+- `Console.test_replay`: PIMOS's messages to device 28 and the PSI's
+  answers, in order.
+- `winshot.py` writes `../docs/simpos/screens/pimos_console.png` and
+  `system_menu.png`, and re-renders the two login PNGs.
+
+**Injections, OBSERVED** (the list is in `test_win_m4_console`'s header):
+
+| | injection | fails |
+|---|---|---|
+| J1 | blt 69 always fails | M4, Console replay, test_kl0 |
+| J2 | set_font/2 drops the font | M4 only (ERROR), by the font-object check; the dots alone cannot show it |
+| J3 | get_interpreter/2 answers the editor | M4, selection, replay |
+| J4 | no line end on RETURN | M4, replay |
+| J5 | mouse#l a no-op | selection |
+| J6 | mouse#l selects the newest window | selection |
+| J7 | box by `set` | menu |
+| J8 | band 40 rows | every window pin |
+| J9 | vector argument back | M4, selection, replay |
+
+**Census, row by row** against the branch base 9031ff05:
+- six packages: unchanged.
+- FEP: 1,468 → 1,483 rows, 810 / 238 / 403 → 821 / 239 / 406.
+  - The 15 new rows are methods inherited from stand-ins (with_lock's
+    hooks in three tables; pmacs_window's new methods in `pimos_window`).
+  - No row moves down: `pimos_window` activate/1, show/1 and flash/1 stay
+    success, because a window not made by create/3 is not drawn.
+- With recipes: 837 / 239 / 375 → 852 / 241 / 373.
+  - `pimos_window_editor` getl/3 and carriage_return/1 go refused →
+    success.
+  - `pimos_window_process` goal/1 and invoke/1 now wait in the
+    interpreter's get.
+  - Six editor rows move on to the census's unset output stream.
+  - The pins and their account are in `test_fep_census`,
+    `test_step3f_census_recipes` and `test_step3i_census_order`.
+
+**Not done:**
+- M6's date, rubber-band create/kill, and SWAPPED/spool;
+- M7's save areas: the menu clears its rectangle on closing, and in the
+  route nothing is under it;
+- the box's class name for held subclasses;
+- Pmacs's real key bindings.
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window
@@ -4059,12 +4212,21 @@ test_kappa2's exact count).
   `substring(S, H, T - H, P)`, `O!a := X + O!b` and `X = O!a + X` with
   head arguments compile; no failing shape was found, but none is proven
   absent.
-- **The window environment after M0/M3/M5:** M4 (the PIMOS console as a
-  PSI `pmacs_window` through the held `pimos_window_editor`, once PIMOS's
-  window commands reach the PSI), the status band, the system menu drawn
-  (M6), save areas and the manipulator (M7). `pmacs_window`'s text
-  protocol, `get_interpreter/2` and `has_been_reshaped/1` are still not
-  stood in (the census's `putl/2` stops), being off the live route.
+- **The window environment after M4/M6:** M6's date and rubber-band
+  create/kill, save areas and the manipulator (M7), Pmacs proper (M10).
+  `pmacs_window` getl/2 is not stood in (the census's dump_log/1 stops
+  there).
+- **espc drops a refused stand-in predicate silently.** `espc.standins()`
+  puts a refused predicate in the template's `refusals` and does not
+  raise, so a stand-in method that uses an unwitnessed construct (an
+  arithmetic immediate over 255, `16#"..."`) is simply absent at run
+  time. Window M6 lost status_band's box this way until it was found
+  (`test_compiled_whole` does check that every stand-in compiles whole;
+  the gap is only in the run before that test). Should fail loud.
+- **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
+  copies only lists): a binding undone on backtracking empties the
+  stored vector's element. Found in window M4 (`pmacs_request.esp`'s
+  head); how the PSI copied a slot's value is not printed.
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still

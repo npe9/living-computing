@@ -526,8 +526,9 @@ chrome** (`../../psi/README.md` "Window M4 and M6"; tests `test_espc.py` `Window
   ">sys>user>pmpsi" .` and the next `Shell>> ` are drawn under it. fep.py answers none of the
   window's messages (its log is empty). One opcode was added: `blt 69 not_equal_string`
   (KNOWN-PLAINTEXT, kappa2 KP_UPT.ESP:124/131), which set_font/4 needs. Screen:
-  `screens/pimos_console.png`. The planned injection (drop 132's font) does not discriminate
-  here, because 132 names test_11, the device's default; the observed injection set is in
+  `screens/pimos_console.png`. The planned injection (drop 132's font) changes no dot,
+  because 132 names test_11, the device's default font. So the test also checks the window's
+  font object, and that check fails (J2). The nine observed injections are in
   `test_win_m4_console`'s header.
 - **M6, partly done.** Drawn:
   - the status band (black, the frame's rows 944-1023): `USER : pmpsi`, `SIMPOS Version V7`;
@@ -539,10 +540,12 @@ chrome** (`../../psi/README.md` "Window M4 and M6"; tests `test_espc.py` `Window
   - selection by `mouse#l` (the console in the M4 run).
 
   The mouse events are `{mouse, Button, X, Y}` and `{move, X, Y}` on the coordinator's stream
-  (OURS). The bridge's user starts Login PIMOS that way, so the bridged screen's window is now at
-  (755, 544). Not done: the date, `create`/`kill` by rubber band, `SWAPPED`/spool. Screens:
-  `screens/system_menu.png`; `login_pimos_*.png` re-rendered with the band. The M5 frames with
-  the band's rows cleared still equal M5's pins.
+  (OURS). The M4 tape's user script uses them (`fep_bridge.py`; the tape keeps it), and the
+  login window lands at (755, 544). `test_win_m6_selection` shows that the keys follow the
+  window selected by the mouse (injections J5 and J6 fail it). Not done: the date,
+  `create`/`kill` by rubber band, `SWAPPED`/spool. Screens: `screens/system_menu.png`;
+  `login_pimos_*.png` re-rendered with the band. The M5 frames with the band's rows cleared
+  still equal M5's pins.
 
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 

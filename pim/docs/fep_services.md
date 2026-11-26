@@ -1323,3 +1323,27 @@ they are listed here.
   directory, not `pimos:`, so with INSTALL's layout neither is read.
 - §3 step 6 and "A minimal honest FEP": the object does ask for
   `pimos:autoload.tbl` (§7.1).
+
+### 7.9 Who answers which device in a bridged run (2026-11-25)
+
+`psi/fep_bridge.py` splits PIMOS's FEP between `ref/pimm/fep.py` and the
+held pimfep on the PSI's KL0 interpreter (`psi/kl0.py`). A device is the
+PSI's when PIMOS makes it by:
+- **601** (`create_string_io`; step 3n, 2026-11-25): the login replier,
+  the servers and `simpos_user_device`;
+- **104** (`create_window`; window M4, 2026-11-25): the shell's console.
+
+Every later message to such a device is passed whole to the PSI. Its
+held `pimos_scsi_front_end` answers, and fep.py does not see the reply.
+Everything else is still fep.py's: the files, the timer, 240, the
+directory. Observed in the M4 run (tape
+`psi/fep_bridge_tapes/console_pwd.json`):
+- PIMOS's console messages are 104, 127, 130, 132, 143, 70 ×3, 112,
+  111, 110, as §7.3 row 7 and §6.8 list.
+- The PSI answers `{Id, 1}` to each, except the 70s (abort: no reply,
+  as §6.7 and fep.py) and a waiting 110.
+- The answer to a 110 is `{Id, 1, Line}`: the line typed into the PSI's
+  window, read from the held `pimos_window_editor`'s buffer.
+
+fep.py's `STD_WINDOW` and window answers (§7.5) are not reached in such a
+run. They stay for fep.py-only runs (`ref/pimm/longrun_ipl.py --fep`).

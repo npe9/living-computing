@@ -4,7 +4,11 @@
     python3 psi/test_fep_bridge.py          the in-suite tests (~10 s)
     FEP_BRIDGE_PKL=PKL python3 psi/test_fep_bridge.py
         also the live run (PIMOS from the IPL's link checkpoint PKL on
-        ref/pimm/pimm.py, ~30 s, ~15 GB resident), checked against the tape
+        ref/pimm/pimm.py, ~30 s, ~15 GB resident), checked against the
+        tape.  Since window M4 that is console_pwd.json (Console.test_live,
+        with the tape's own script); login_pwd.json's live check
+        (Tape.test_live) was removed, since a live run now bridges the
+        console too: login_pwd.json stays a replay-only record of step 3n
 
 What is checked (psi/fep_bridge.py has the boundary):
   - Assembler: the held pimfep##fep_message_assembler assemble/3 gives,
@@ -201,7 +205,11 @@ class Console(unittest.TestCase):
     recorded psi/fep_bridge_tapes/console_pwd.json; the user (OURS) logs
     in by the mouse and types `pwd` into the console once PIMOS's 110
     waits.  login_pwd.json (step 3n, the window fep.py's) still replays
-    (Tape above)."""
+    (Tape above), with its own user (fep_bridge.tape_script).  Recorded
+    twice (2026-11-25): the second run, after merging master and with the
+    script's extra click in the login window, gave the same 26 exchanges
+    and result byte for byte.  Injections J1, J3, J4, J9 of test_espc.py
+    test_win_m4_console's header FAIL test_replay (OBSERVED)."""
 
     def test_replay(self):
         stop, psi, left, t = B.replay(CONSOLE_TAPE)
@@ -234,7 +242,7 @@ class Console(unittest.TestCase):
     def test_live(self):
         with open(CONSOLE_TAPE) as f:
             t = json.load(f)
-        result, _psi, _pim = B.live(os.environ['FEP_BRIDGE_PKL'], t['shell'])
+        result, _psi, _pim = B.live(os.environ['FEP_BRIDGE_PKL'], t['shell'], script=t['script'])
         self.assertEqual(json.loads(json.dumps(result)), t['result'])
 
 

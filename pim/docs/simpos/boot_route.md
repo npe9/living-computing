@@ -657,14 +657,58 @@ The same run now draws. The basis, the injections and the census are in
   `login.kl1` texts, and the window is pinned by
   `test_win_m5_bridged_screen` (`screens/login_pimos_bridged.png`).
 
+### 4.8 PIMOS's console on the PSI (window milestones M4, M6; 2026-11-25)
+
+The shell's window has moved to the PSI. `fep_bridge.py` routes PIMOS's
+104 (create_window) devices to the PSI, as it does 601's (§6.5). One live
+run recorded `psi/fep_bridge_tapes/console_pwd.json`. The tape keeps the
+user's script: mouse clicks and keys, OURS.
+
+What runs on the PSI. The HELD classes:
+- `pimfep##pimos_window_process` makes the console;
+- `pimos_window` disassembles each of PIMOS's messages: 127 (200, 200,
+  47, 14), 130 `PIMOS CONSOLE`, 132 `font:test_11.font`, 143, 111, 112
+  and 110;
+- `pimos_window_editor` runs them.
+
+They run on the stand-ins `pmacs_window`, `editor_text_buffer`,
+`buffer_region`, `editor_command_interpreter` and `pmacs_request`.
+
+The user clicks in the console and types `pwd`. PIMOS's 110 is answered
+by the held editor from its buffer. PIMOS's reply is drawn under it, and
+the next `Shell>> ` follows. The screen
+(`test_win_m4_console`; `screens/pimos_console.png`):
+
+```
++- PIMOS CONSOLE --------------------------------+     (200, 200; 47 x 14)
+| Shell>> pwd                                    |
+|  The value of task: directory is ">sys>user>pmp|
+| si" .                                          |
+| Shell>> #                                      |
++------------------------------------------------+
+            +- Pimos remote login 8 ----+   (755, 544: centred on the menu click)
+            | Your request is accepted. |
+            | ...  Good luck!           |
+            +---------------------------+
+USER : pmpsi          [ pmacs_window/2 ]          (the status band, black)
+SIMPOS Version V7
+```
+
+The status band, the SYSTEM MENU drawn at `mouse#rr` with the item under
+the mouse boxed, and selection by `mouse#l` are M6
+(`test_win_m6_system_menu`, `test_win_m6_selection`;
+`screens/system_menu.png`). The basis, injections and census are in
+`../../psi/README.md`, "Window M4 and M6".
+
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
 login run (§4.5). Open, in order:
 
-1. DONE in step 3n (§4.6, §6.5): the wire from SIMPOS to PIMOS. Open
-   on it: the shell's window on the PSI (the PMACS editor is lost),
-   and lia / tcpip logins.
+1. DONE in step 3n (§4.6, §6.5): the wire from SIMPOS to PIMOS. The
+   shell's window on the PSI: DONE in window M4 (§4.8), on stand-ins for
+   the lost PMACS editor's buffer and command loop. Open: lia / tcpip
+   logins.
 2. The FEP census side items: blt 0d (DONE in step 3n as an INFERENCE,
    `object/3`, outputs unbound) and blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s
@@ -802,8 +846,8 @@ driver and the bus, and for nothing else.
   made by 601 (`create_string_io`: the replier 23, the servers 24 and 25,
   `simpos_user_device` 26 and 29) whole to the PSI, and queues the PSI's
   answers for RECEIVE. Everything else stays `fep.py`'s: the files of
-  `pimos:` and `me:`, the timer, 240, the directory, and the shell's
-  window 28 (104 and its commands).
+  `pimos:` and `me:`, the timer, 240, the directory, and (until window
+  M4, §4.8, which bridges 104 too) the shell's window 28.
 - On the PSI side, packets go on the front end's input stream as 32-bit
   strings, and its output is taken from its output stream's post queue.
   Both happen in the idle interrupt (`kl0.py` `Machine.interrupt`, OURS),
@@ -839,7 +883,8 @@ with it. Here that is `pmpsi`, registered in step 3l (OURS). An empty
 password only disagrees with that OURS registry: the probe's user is not
 found (§13.3). `fep.LOGIN`'s `''` is OURS too and was not changed.
 
-**Not on the PSI.** The shell's window. `pimos_window_editor`'s
+**Not on the PSI** in step 3n (on it since window M4, §4.8, on
+stand-ins for the editor's buffer and command loop). The shell's window. `pimos_window_editor`'s
 `putb/4` and `getl/3` run into the lost PMACS editor
 (`insert_string`, `input_region`, `get_interpreter/2`, the
 carriage-return demons), for which there is only a 37-line
