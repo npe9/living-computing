@@ -971,6 +971,13 @@ and they were not read page by page.
 So four of the five remain backed by the Reference Manual alone, and
 their decks say so.
 
+`ja_bm6a` has since been read whole in the page image (2026-11-25,
+`../decks/ja_bm6a_unique_adr.strap`, every printed row checked). It
+holds none of the five. Its VFL immediates (`+I`, `CTI0110`) are
+unindexed (tag byte 80). Its only indexed addresses are through X4,
+X7, X8 and X9, which hold non-negative values. Every branch targets
+the program itself. It sets no boundary registers and does no FP.
+
 ### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
 
 **THE ROUTINE INDEX, transcribed from the write-up at PDF p.2 (printed
@@ -1774,7 +1781,7 @@ reverse index (source -> transcription/implementation).
 | `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); 1260's prologue and TESTs 1A/1B, pp.8-13 (`ax5b_160_test1ab_mask.strap`, 2026-11-19); TEST 1C, pp.14-21 (`ax5b_160_test1c_mask.strap`, 2026-11-19); TEST 2, pp.22-23 (`ax5b_160_test2_ia.strap`, 2026-11-19); TEST 3 (p.24) through TEST 4 (p.36) not yet; interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
-| `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |
+| `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test ("M M 06", May 5 1961) | Source | RUN, 2026-11-25: `../decks/ja_bm6a_unique_adr.strap`, the whole listing (PDF pp.4-11), bit-exact vs `../tests/verify_ja_bm6a_listing.py` (264 checks: 216 printed rows, 47 symbols, END; two torn rows unchecked, B,GEN1 at 001016.40 and the zero DD at 001076.00). The four `LCI,$X1,200000` print code 606530 (= 200024, not 200000's 606500) every time, cause unknown; the deck follows the printed code, as `fp_arith_f214c` does. The program writes each word's address and complement into it and reads them back, and its pass/fail is its own error typeout (PDF p.1 2.2) and "O.K. every 100 passes" (p.2 3.3). But its typewriter, `TYPE SYN,19.32` (p.11), is channel 39, and the model's console is 35, so every W is a Unit Not Ready reject and nothing is typed. `../tests/run_ja_bm6a.sh` stops it after the upper memories (UPPER) and after one whole pass (PASS), and `check_ja_bm6a_dump.py` reads the error message the program builds in core (MSGC/D/E, ERADP, EXIT), and compares every word of core with the image computed from the listing and the Reference Manual. Both PASS. The 100-pass O.K. is not reached (one pass is ~35 M model clocks). Entry at M06 is inferred (`END,99.` names an unloaded word). No unit-busy/cycle statement; the box number in the error message is the address's low two bits (PDF pp.5, 9). |
 | `ja_bp6a_memory_patterns_test.pdf` (6pp) | Memory-patterns test ("MPT 06 I and II", May 5 1961) | Source | RUN, 2026-11-24: `../decks/ja_bp6a_memory_patterns.strap`, the whole 65-line listing (PDF pp.3-6), bit-exact vs `../tests/verify_ja_bp6a_listing.py` (97 checks: 70 printed rows, 24 symbols, two DR lengths, END; the torn row 100016.00 MPTDD2 reconstructed from MPTDD1 and unchecked). The printed PUNFUL card is commented out and the image preloaded (IPL stubbed). The test compares nothing ("relies on scoping", PDF p.1), so `../tests/run_ja_bp6a.sh` stops it behind a CB and `check_ja_bp6a_dump.py` compares every reached word of core: B3, B4, A3, A4 and a whole loop all PASS. No unit-busy/cycle statement anywhere; PDF p.1 puts the two A boxes at 40 (octal) and the four B boxes at 100000, the reverse of `StretchMemory.bsv`'s Buchholz map (four-way low) -- recorded in the deck header, not changed. Measured: the model's 65,535-word ripple T costs ~17 clocks a word. |
 | `ja_ua1_ssip.pdf` (52pp; **pp.7-52 an unbroken STRAP listing**) | SSIP (System Test Program supervisor), JA UA1, "SSIP CBD 2-9-61" | Source | RUN (partial): `ssip_sip17_reset` (SIP16/SIP17, PDF pp.17-18, bit-exact vs `../tests/verify_ssip_sip17_listing.py`), which named the five instruction-exception indicators and settled that slot 14 is not one. CORRECTED 2026-09-19: this row previously described the file as framework prose only. It is not. pp.1-6 are the writeup and the Maintenance Tape Control Card; p.7 opens with the source line "PRINID, SSIP CBD 2-9-61 JA UA1" and p.52 closes with `END,%8@100.` at 002732.71. The listing is 1-up fanfold with NO printed page numbers, so it is cited by PDF page, unlike every other tape here. It also explains the SIC/BEW pass-fail idiom the transcriptions reproduce externally. |
 | `ja_uc1a_maintenance_tape.pdf` | Maintenance-tape builder | Source | needs full tape/channel I/O |
@@ -1817,7 +1824,7 @@ transcription.
 1. **The floating-point diagnostic** (`jb_af1c`): transcribe a block
    exercising `+ * L ST K E+ SHF` and run it against `StretchFP.bsv`.
    First real historical FP source validating the stage-4c arithmetic.
-2. **The memory tests** (`ja_bp6a` smallest first): run against the
+2. **The memory tests** (`ja_bp6a` and `ja_bm6a` RUN; `ja_bb6b` next): run against the
    interleaved `StretchMemory.bsv` -- the first source to exercise the
    real memory model rather than a single BRAM.
 3. **The DCP Memory Compare / Panel Dump** (once CTL/LOC and the

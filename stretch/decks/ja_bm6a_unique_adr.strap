@@ -1,0 +1,342 @@
+! ja_bm6a_unique_adr.strap -- IBM 7030 "UNIQUE ADDRESS TESTS",
+! File No. JA BM6A, May 5, 1961 (docs/ja_bm6a_unique_adr_test.pdf,
+! 11 PDF pages: writeup pp.1-2, the PRNID cards p.3, listing pp.4-11).
+! PRNID: "UNIQUE ADDRESS (6 BOX) A. BROWN".  The writeup calls it
+! "M M 06"; the listing's own remark says "MEMORY UNIQUENESS TEST M006".
+!
+! TRANSCRIBED VERBATIM from the page images rendered at 150 and 300 dpi
+! (no OCR), with this repo's print-chain conventions: "%" prints "(",
+! the box glyph prints ")", "&" prints "+", and the listing's "@"
+! remarks follow "! @" here.
+!
+! GLYPHS AND DEPARTURES, each settled against the machine-code column:
+!   - THE LISTING PRINTER BREAKS "E" INTO "F" (PDF p.3 "UNIQUF ADDRFSS",
+!     p.4 "REL%SFOP"): the first REL prints SFOP, the others SEOP, and
+!     all four print the same code 23.40 80 000000.33 00.  SEOP here.
+!   - LCI,$X1,200000 -- FOUR TIMES (PDF pp.4, 6, 8, 9): the source
+!     column prints the decimal "200000" every time and the code column
+!     prints "606530.03 02" every time (all four zoomed at 300 dpi).
+!     200000 is octal 606500; 606530 is 200024.  strap_asm assembles
+!     the printed source to 606500, so the two columns disagree, the
+!     same way on every line.  Why IBM's STRAP gave 606530 is NOT
+!     known.  The value only sets the length of a CBR,$X1,$ delay loop
+!     after each typeout.  The deck writes the operand AS THE PRINTED
+!     CODE, "(8)606530", so the loaded image is the one the real deck
+!     carried; the printed source text is kept in each line's remark.
+!     Precedent: fp_arith_f214c.strap follows the printed code where
+!     its two columns disagree.
+!   - BZB,4.35,$+3.32 (PDF p.6): the digit after "$+" is blotched; the
+!     code 001070.34 (= EXIT1, 1064.40 + 3.40) reads 3, and p.10's twin
+!     prints a clear 3.
+!   - MSGC1 (PDF p.7) has eight bytes "00 00 00 2D 32 32 4E 00", the
+!     same as p.10's MSGC2; read at 300 dpi.
+!   - The second "NOP," remark (PDF p.8) prints "@B,LCI,$X5 FOR NON
+!     PRINT", the first (p.4) "$X6"; both kept as printed (remarks only).
+!   - TORN: PDF p.4's last line (B,GEN1 at 001016.40) keeps only "101"
+!     of its code, and the next remark "@CHECKING ROUTINE" is half
+!     gone; PDF p.6's last line (the eight-zero-byte DD at 001076.00)
+!     is legible in the source but not in the code.  Both unchecked.
+!
+! LISTING-ORACLE RESULT (tests/verify_ja_bm6a_listing.py): every printed
+! row on PDF pp.4-11 is reproduced bit-for-bit by strap_asm.py: 264
+! checks, all PASS -- 216 printed rows, 47 symbol addresses (TYPE's
+! SYN among them, printed 23.40) and END,99.'s 143.00.  The two torn
+! rows above are the only rows not checked.
+!
+! WHAT THE PROGRAM DOES (writeup PDF pp.1-2, read with the code).
+!   "The address of each location is stored into that location, along
+!   with the complement of the address and padding bits to fill out the
+!   word.  Subsequently, each address is read out and checked." (p.2,
+!   section 4.)  Part I, M06/PHA1 in low core, saves 100 words of Part
+!   II (100000) to PHA1+100. and tests the UPPER memories, 100000-
+!   277777 (CTI ... 98303 is its upper limit); restores Part II and
+!   branches to it.  Part II, PHA2 at 100000, saves 612 words of low
+!   core from 100 (octal) to PHA2+100. and tests the LOWER memories,
+!   100-77777 (limit 32767); restores, counts the pass in X6 and
+!   branches back to PHA1.  Every 100th pass it types O.K.  Forever.
+!   The word written at A has A in bits 0-17 and ~A in bits 32-49
+!   (check_ja_bm6a_dump.py derives it from the code and the Reference
+!   Manual).  The check reads each word back with CT0110 (exclusive
+!   or) against the regenerated word; a nonzero result goes, through
+!   "SIC,EXIT1 / BRGZ,ERROR1", to an error routine that builds a
+!   message -- "BOX NO. b ADDR aaaaaa THE ADDR OBTAINED IS oooooo" --
+!   and types it, then returns through EXIT1, which SIC has set.
+!   PASS AND FAIL, IN THE PROGRAM'S OWN WORDS: "Errors encountered will
+!   be printed out on the typewriter, giving the memory box in error,
+!   the memory location tested, and the location actually obtained."
+!   (p.1, 2.2); "Continuous operation with print out O.K. every 100
+!   passes indicates success." (p.2, 3.3).
+!
+! SENSE SWITCHES (maintenance bits, word 4; writeup PDF p.2, 3.2):
+!   32 suppress printing of errors, 35 repeat on error, 36 loop on test
+!   of upper memories, 37 loop on test of lower memories.  By address
+!   the code agrees: BB 4.32 skips the error typeout; BZB 4.35 skips the
+!   retry; BB 4.36 loops Part I (upper); BB 4.37 loops Part II (lower).
+!   All are 0 in the runs here (the model's word 4 reads 0).
+!
+! THE MAINTENANCE TAPE CONTROL CARD (writeup PDF p.2, right half,
+! handwritten): "Location/s of Exit Branch/es" 100031.0, 1070.0,
+! 100067.4 -- the B,PHA1 that ends a pass, EXIT1 and EXIT2.  "Pre-
+! Loading Manual Intervention Required? No."
+!
+! MEMORY FACTS (for A11a).  No statement anywhere about unit busy,
+! cycle or recycle time.  What the document does state:
+!   - "6 BOX" (PRNID, PDF p.3); the lower memories are 100-77777 and
+!     the upper 100000-277777 (the CTI limits 32767 and 98303, PDF pp.4,
+!     5, 8), the same split ja_bp6a states in words: two A boxes low,
+!     four B boxes high.  The model's StretchMemory.bsv has the reverse
+!     (four-way over 0-177777); see ja_bp6a's header.
+!   - THE BOX NUMBER THE ERROR MESSAGE PRINTS is computed from the low
+!     two bits of the word address, "L(BU,2,2),$X4+.16" (bits 16-17 of
+!     the address in X4), PDF pp.5 and 9 -- i.e. the program takes the
+!     box to be (address mod 4), for both halves.  Part I adds PLS02,
+!     (8)0.20 = 16 bits, to the character pointer first (PDF p.5); Part
+!     II does not (PDF p.9).  How that maps to the printed digit is in
+!     check_ja_bm6a_dump.py's injection record.
+!
+! HOW IT IS RUN: see tests/run_ja_bm6a.sh and check_ja_bm6a_dump.py.
+!   WHAT IS STUBBED: the IPL (PUNFUL commented out, image preloaded, as
+!   ja_bp6a), and the ENTRY, an inference: END,99. names word 99 (143),
+!   where this deck loads nothing, so the run starts at M06.
+!   WHAT THE MODEL LACKS: a typewriter on channel 39.  TYPE is
+!   "SYN,19.32" (PDF p.11): channel-address bits 12-18 of 19.32 are
+!   0100111, channel 39.  The model's console is at 35 (StretchIO.bsv,
+!   chosen as the first free channel), and 39 is installed with no
+!   unit, so every REL and W on TYPE is a Unit Not Ready reject (BD at
+!   M06 has interrupts off).  Nothing is typed.  So the check reads the
+!   error message the program builds in core before typing it.
+!   RESULT (2026-11-25): stopped after the upper memories (UPPER) and
+!   after one whole pass (PASS), the program has composed no error
+!   message and every word of core it has reached is as computed from
+!   the listing.  The 100-pass O.K. is NOT reached (~35 M model clocks a
+!   pass).  An injected address alias (200005 decoding as 200001) makes
+!   the program compose "ADDR 200001 THE ADDR OBTAINED IS 200005";
+!   check_ja_bm6a_dump.py has the record.
+
+        PRNID,UNIQUE ADDRESS (6 BOX) A. BROWN
+        PRNID,MAY 5, 1961, JA BM6A
+!       PUNFUL,                    ! PRINTED (PDF p.4 line 1): COMMENTED OUT, see HOW IT IS RUN
+        SEM,6,G
+        SLC,509.
+        CW(CDSC),510.,2,510
+        CW(CDSC),512.,M06Z-M06,$+1.0
+        CW(CD),32768.,M06AZ-PHA2,$
+! @MEMORY UNIQUENESS TEST M006
+        SLC,512.
+M06     BD,$+.32
+        NOP
+           NOP,                    ! @B,LCI,$X6 FOR NON PRINT
+        REL(SEOP),TYPE             ! printed "REL%SFOP" (E broken), same code as p.6's REL(SEOP)
+        LCI,$X1,(8)606530          ! PRINTED SOURCE "200000"; FROM THE PRINTED CODE, see header
+        W(SEOP),TYPE,CW01A         ! @TITLE
+        CBR,$X1,$                  ! @DELAY
+        REL(SEOP),TYPE
+        LCI,$X6,100.               ! @SETUP PASS COUNTER
+! @GENERATION ROUTINE 1
+PHA1    LCI,$X2,100
+        T,$X2,PHA2,PHA1+100.
+        Z,$X3
+        LVI,$X3,32768.             ! @FIRST LOCATION CHECKED
+        SX,$X3,$R                  ! @PLACE LOC. INR. ACC. LEFT HALF
+GEN1    C1100(BU,18,8),$R,14       ! @PLACE COMPLEMENT INR. ACC. RIGHT HALF
+        ST(BU,64,8),$X4            ! @SETUP X4 WITH PROPER VALUE FIELD
+        ST(BU,64,8),0($X4)         ! @PLACE ADDRESS-COMPL IN LOCATION
+        CTI0110(BU,18,8),98303,46  ! @UPPER LIMIT
+        BZRGZ,CHK1                 ! @TO CHECK ROUTINE
+        +I(BU,18,8),1.,46          ! @INCREMENT ADDRESS
+        B,GEN1                     ! @REPEAT LOOP  [printed code TORN, PDF p.4 last line]
+! @CHECKING ROUTINE                  [remark torn, PDF p.4]
+CHK1    SX,$X3,$R                  ! @RESTORE FIRST ADDRESS
+CHK1A   C1100(BU,18,8),$R,14       ! @COMPL
+        ST(BU,64,8),$X4            ! @SETUP FOR PROPER VALUE FIELD
+        CT0110(BU,64,8),0($X4)     ! @CMP ACC TO ADDRESSED WORD
+        SIC,EXIT1
+              BRGZ,ERROR1          ! @TO ERROR ROUTINE
+        CTI0110(BU,18,8),98303,46  ! @UPPER LIMIT
+        BZRGZ,$+2.                 ! @TO LOWER MEM SETUP
+        +I(BU,18,8),1.,46          ! @INCREMENT ADDRESS
+        B,CHK1A                    ! @RETURN TO CK LOOP
+        BB,4.36,PHA1+1.32          ! @LOOP ON UPPER MEM
+        LCI,$X2,100
+        T,$X2,PHA1+100.,PHA2       ! @REPLACE LOWER TEST
+        B,PHA2                     ! @GIVE CONTROL TO LOWER TEST
+! @ERROR ROUTINE 1
+ERROR1  LX,$X5,$R                  ! @SAVE ACC
+        Z,$SB                      ! @RESET ZONES
+        LX,$X8,POUT3               ! @UP
+        L(BU,2,2),$X4+.16          ! @SET
+        ST(BU,2,8),$X8+.18         ! @UP
+        V+,$X8,PLS02               ! @AND
+        L(BU,8,8),0.0($X8)         ! @OBTAIN
+        ST(BU,8,8),MSGC1           ! @PROPER BOX NO.
+        LX,$X7,POUT2               ! @SET
+        LX,$X8,POUT3               ! @UP
+        LX,$X9,0.0                 ! @INDEX
+        SV,$X4,ERADP1              ! @SET
+ERRSU   L(BU,3,3),ERADP1($X7)      ! @UP
+        ST(BU,3,3),$X8+.18         ! @AND
+        L(BU,8,8),0.0($X8)         ! @OBTAIN
+        ST(BU,8,8),MSGD1($X9)      ! @ADDRESS
+        V+,$X9,PLS08               ! @TESTED
+        V+,$X7,PLS03               ! @AND
+        CB,$X7,ERRSU               ! @IN ERROR
+        LX,$X7,POUT2               ! @SET
+        LX,$X8,POUT3               ! @UP
+        LX,$X9,0.0                 ! @INDEX
+        LX,$X10,0.0                ! @REGS
+        LV,$X10,0.0($X4)           ! @
+        SV,$X10,ERADP1             ! @SET
+ERRSU1  L(BU,3,3),ERADP1($X7)      ! @UP
+        ST(BU,3,3),$X8+.18         ! @AND
+        L(BU,8,8),0.0($X8)         ! @OBTAIN
+        ST(BU,8,8),MSGE1($X9)      ! @ADDRESS
+        V+,$X9,PLS08               ! @TESTED
+        V+,$X7,PLS03               ! @AND
+        CB,$X7,ERRSU1              ! @OBTAINED
+        SX,$X5,$R                  ! @RESTORE ACC
+        BB,4.32,$+4.0
+        LCI,$X1,(8)606530          ! PRINTED SOURCE "200000"; FROM THE PRINTED CODE, see header
+        W(SEOP),TYPE,CW01B         ! @ERROR PRINT OUT
+        CBR,$X1,$                  ! @DELAY
+        CBR,$X1,$                  ! @DELAY
+        REL(SEOP),TYPE
+        BZB,4.35,$+3.32            ! printed "$&?.32", the digit blotched; the code 1070.34 reads 3
+        ST(BU,64,8),0($X4)
+        CT0110(BU,64,8),0($X4)
+        BRGZ,ERROR1
+EXIT1   B,EXIT1
+! @CONTROL WORDS AND CONSTANTS
+CW01A   CW(CR),MSGA1,5,CW01A
+CW01B   CW(CR),MSGB1,11,CW01B
+MSGA1   DD(BU,64,8),0,0,0
+        (16)DD(BU,64,8),00 00 00 00 00 00 00 00       ! @  [printed word TORN, PDF p.6 last line]
+        (16)DD(BU,64,8),00 45 60 60 6C 00 FD FE       ! @ M006
+        CNOP
+MSGB1   DD(BU,64,8),0,0,0
+        (16)DD(BU,64,8),00 2F 48 5A 00 47 48 74       ! @ BOX NO.
+MSGC1   (16)DD(BU,64,8),00 00 00 2D 32 32 4E 00       ! @   ADDR
+MSGD1   (16)DD(BU,64,8),00 00 00 00 00 00 00 FD       ! @
+        (16)DD(BU,64,8),53 3A 34 00 2D 32 32 4E       ! @THE ADDR
+        (16)DD(BU,64,8),00 48 2E 52 2C 3C 46 34       ! @ OBTAINE
+        (16)DD(BU,64,8),32 00 3C 50 00 00 00 00       ! @D IS
+MSGE1   (16)DD(BU,64,8),00 00 00 00 00 00 FD FE       ! @
+        DD(BU,64,8),0,0,0
+        CNOP
+ERADP1  (8)DD(BU,32,8),0           ! @BINARY ADDRESS
+POUT2   XW,0.0,6,$                 ! @COUNT AND
+POUT3   XW,NOCOM2,0,0              ! @INDEX WORDS
+NOCOM2  (16)DD(BU,64,8),60 62 64 66 68 6A 6C 6E       ! @01234567
+PLS02   VF,(8)0.20                 ! @(8) 20 INCREMENT
+PLS03   VF,0.03                    ! @03 INCREMENT
+PLS08   VF,0.08                    ! @08 INCREMENT
+        CNOP,0.0
+M06Z    NOP,0.0
+        SLC,32768.
+! @GENERATION ROUTINE 2
+PHA2    LCI,$X2,612
+        T,$X2,64.0,PHA2+100.       ! @SAVE UPPER TEST
+        Z,$X3
+        LVI,$X3,64.                ! @FIRST ADDRESS
+        SX,$X3,$R                  ! @PLACE LOC INR. ACC RIGHT HALF
+GEN2    C1100(BU,18,8),$R,14       ! @PLACE COMPL
+        ST(BU,64,8),$X4            ! @SETUP X4 WITH PROPER VALUE FIELD
+        ST(BU,64,8),0($X4)         ! @PLACE ADDRESS-COMPL IN LOCATION
+        CTI0110(BU,18,8),32767,46  ! @UPPER LIMIT
+        BZRGZ,CHK2                 ! @TO CHECK ROUTINE
+        +I(BU,18,8),1.,46          ! @INCREMENT ADDRESS
+        B,GEN2                     ! @REPEAT LOOP
+! @CHECKING ROUTINE
+CHK2    SX,$X3,$R                  ! @RESTORE ACC
+CHK2A   C1100(BU,18,8),$R,14       ! @COMPL
+        ST(BU,64,8),$X4            ! @SETUP FOR PROPER VALUE FIELD
+        CT0110(BU,64,8),0($X4)     ! @CMP ACC TO ADDRESSED WORD
+        SIC,EXIT2
+              BRGZ,ERROR2          ! @TO ERROR ROUTINE
+        CTI0110(BU,18,8),32767,46  ! @UPPER LIMIT
+        BZRGZ,$+2.                 ! @UPPER TEST SET UP
+        +I(BU,18,8),1.,46          ! @INCREMENT ADDRESS
+        B,CHK2A
+        BB,4.37,PHA2+1.32          ! @LOOP ON LOWER MEM
+        LCI,$X2,612
+        T,$X2,PHA2+100.,64.0       ! @REPLACE UPPER TEST
+        C-I,$X6,1                  ! @ADJUST PASS COUNTER
+        BXCZ,$+1.
+        B,PHA1
+        NOP
+           NOP,                    ! @B,LCI,$X5 FOR NON PRINT  (sic; "$X6" on p.4)
+        LCI,$X1,(8)606530          ! PRINTED SOURCE "200000"; FROM THE PRINTED CODE, see header
+        W(SEOP),TYPE,CW02C         ! @PRINT SUCCESS IND
+        CBR,$X1,$
+        REL(SEOP),TYPE
+        LCI,$X6,100.               ! @SETUP PASS COUNTER
+        B,PHA1
+! @ERROR ROUTINE 2
+ERROR2  LX,$X5,$R                  ! @SAVE ACC
+        Z,$SB                      ! @RESET ZONES
+        LX,$X8,POUT32              ! @UP
+        L(BU,2,2),$X4+.16          ! @SET
+        ST(BU,2,8),$X8+.18         ! @UP
+        L(BU,8,8),0.0($X8)         ! @OBTAIN
+        ST(BU,8,8),MSGC2           ! @PROPER BOX NO.
+        LX,$X7,POUT22              ! @SET
+        LX,$X8,POUT32              ! @UP
+        LX,$X9,0.0                 ! @INDEX
+        SV,$X4,ERADP2              ! @SET
+ERRSU2  L(BU,3,3),ERADP2($X7)      ! @UP
+        ST(BU,3,3),$X8+.18         ! @AND
+        L(BU,8,8),0.0($X8)         ! @OBTAIN
+        ST(BU,8,8),MSGD2($X9)      ! @ADDRESS
+        V+,$X9,PLS082              ! @TESTED
+        V+,$X7,PLS032              ! @AND
+        CB,$X7,ERRSU2              ! @IN ERROR
+        LX,$X7,POUT22              ! @SET
+        LX,$X8,POUT32              ! @UP
+        LX,$X9,0.0                 ! @INDEX
+        LX,$X10,0.0                ! @REGS
+        LV,$X10,0.0($X4)           ! @
+        SV,$X10,ERADP2             ! @SET
+ERRSU4  L(BU,3,3),ERADP2($X7)      ! @UP
+        ST(BU,3,3),$X8+.18         ! @AND
+        L(BU,8,8),0.0($X8)         ! @OBTAIN
+        ST(BU,8,8),MSGE2($X9)      ! @ADDRESS
+        V+,$X9,PLS082              ! @TESTED
+        V+,$X7,PLS032              ! @AND
+        CB,$X7,ERRSU4              ! @OBTAINED
+        SX,$X5,$R                  ! @RESTORE ACC
+        BB,4.32,$+4.0
+        LCI,$X1,(8)606530          ! PRINTED SOURCE "200000"; FROM THE PRINTED CODE, see header
+        W(SEOP),TYPE,CW02B         ! @ERROR PRINT OUT
+        CBR,$X1,$
+        CBR,$X1,$                  ! @DELAY
+        REL(SEOP),TYPE
+        BZB,4.35,$+3.32
+        ST(BU,64,8),0($X4)
+        CT0110(BU,64,8),0($X4)
+        BRGZ,ERROR2
+EXIT2   B,EXIT2
+! @CONTROL WORD AND CONSTANTS
+CW02B   CW(CR),MSGB2,11,CW02B
+CW02C   CW(CR),MSGF2,5,CW02C
+MSGB2   DD(BU,64,8),0,0,0
+        (16)DD(BU,64,8),00 2F 48 5A 00 47 48 74       ! @ BOX NO.
+MSGC2   (16)DD(BU,64,8),00 00 00 2D 32 32 4E 00       ! @   ADDR
+MSGD2   (16)DD(BU,64,8),00 00 00 00 00 00 00 FD       ! @
+        (16)DD(BU,64,8),53 3A 34 00 2D 32 32 4E       ! @THE ADDR
+        (16)DD(BU,64,8),00 48 2E 52 2C 3C 46 34       ! @ OBTAINE
+        (16)DD(BU,64,8),32 00 3C 50 00 00 00 00       ! @D IS
+MSGE2   (16)DD(BU,64,8),00 00 00 00 00 00 FD FE       ! @
+MSGF2   DD(BU,64,8),0,0,0
+        (16)DD(BU,64,8),00 49 74 41 74 00 FD FE       ! @O.K.
+        DD(BU,64,8),0,0,0
+        CNOP
+ERADP2  (8)DD(BU,32,8),0           ! @BINARY ADDRESS
+POUT22  XW,0.0,6,$                 ! @COUNT AND
+POUT32  XW,NOCOM3,0,0              ! @INDEX WORDS
+NOCOM3  (16)DD(BU,64,8),60 62 64 66 68 6A 6C 6E       ! @01234567
+        NOP
+PLS032  VF,0.03                    ! @03 INCREMENT
+PLS082  VF,0.08                    ! @08 INCREMENT
+TYPE    SYN,19.32
+        CNOP,0.0
+M06AZ   NOP,0.0
+        END,99.
