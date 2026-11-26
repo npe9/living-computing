@@ -68,7 +68,7 @@
 // box runs on the 25 MHz oscillator (WinUlx3s.bsv), so a full-screen
 // scroll is ~15 ms.  A carried funnel
 // word and pipelined frame reads (several in flight) would bring copies
-// to ~1-2 a word; that is H4's.
+// to ~1-2 a word; that is not scheduled (H4 is the owner's board step).
 
 // Unimplemented cases fail loud: a font that is not f822 or has more
 // than 255 records stops the simulation at reset.

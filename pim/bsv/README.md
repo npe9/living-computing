@@ -756,7 +756,7 @@ pixel 10, shift 2 time units) and checks the self-test's frame, a whole
 mode 0 frame of characters and three lines of serial bits.
 `WinCrossModel.bsv` is bench-only: it turns the pixel word to garbage
 when the shift domain samples it on the shift edge where it changes or
-in the following one, so a serializer whose sample phase is not tied to
+on the one before the next change (ages 0 and 4 of 0-4), so a serializer whose sample phase is not tied to
 the pixel clock fails the serializer checks (H2's uncaught injection
 #14 is now caught). `run_win_fpga.sh` builds the bitstream: bsc
 -verilog, yosys `synth_ecp5` (with `share` left out: it merged the
@@ -791,4 +791,4 @@ crossbar testbench (`run_nu_routed_tb.sh`), the mesh testbench
 (`run_mesh_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`), the
 FEP emulator against `fep.py` (`run_fepemu.sh`) and
 the formal BMC (`formal/run_formal.sh`). The board build checks are
-`run_fpga_build.sh` and `run_fepemu_fpga.sh`.
+`run_fpga_build.sh`, `run_fepemu_fpga.sh` and `run_win_fpga.sh`.

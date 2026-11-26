@@ -60,7 +60,7 @@
 #      with offset K, built for K = 0..4 (H3: the five alignments of the
 #      pixel clock to the shift clock), the pixel word and `tog` through
 #      WinCrossModel (garbage when sampled on the shift edge where the word
-#      changes or the next one); every lane carries the encoders'
+#      changes or on the one before the next change); every lane carries the encoders'
 #      characters at the clock lane's boundary and one latency;
 #   8. WinScanOutTb, for every `winscan.py cases` case: the stream drawn,
 #      the frame dumped (= the Python layer's PBM), one frame + 2-3 lines
@@ -130,7 +130,11 @@
 #    latencies"); bits 0 and 3 (ages 1-3 are safe) PASS, as predicted
 #  H3-2 free-running phase (e ignored: phn = rotate ph), WIN_PART=h2: ser
 #    K=0..4 and ulx3s serializer ("0 boundaries give a steady clock
-#    character")
+#    character": the un-reset phase starts at Bluesim's 'hAA.. pattern,
+#    not one-hot, and nothing restarts it)
+#  H3-2b free-running phase that starts one-hot (ph given the reset):
+#    ser K=0 and K=1 and ulx3s serializer fail ("0 latencies"), K=2, 3, 4
+#    pass: the K sweep separates good alignments from bad ones
 #  H3-3 port B latency claimed 5, not 4 (WinFrameLatB), WIN_PART=h2: all
 #    scan cases but rand1 (no ink in its window) and ulx3s scan
 #  H3-4 port B's second mux level from the wrong address bits (h[bk1[6:3]]
