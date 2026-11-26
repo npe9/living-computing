@@ -49,6 +49,14 @@
 % clipped, the selected window's block cursor (drawn by exclusive_or) is
 % taken off before a new pane is drawn (coordinator cursor_aside/1, OURS),
 % so it is neither saved under the new pane nor later toggled over it.
+% Window M7, output to a covered window: each output method (set_title,
+% put_string, put_code, put_codes, new_line, clear) first asks the
+% coordinator to uncover the pane (coordinator uncover/3: the windows
+% above lifted, if one overlaps it), draws, and lays them back.  So the
+% covered part goes into the save areas above and only the shown part
+% appears: TM-225 p10-11's ② and TM-125 p6's OUTPUT, the held
+% `permission(out)` (63 USAGE sites, window.md §4.1).  That every window
+% has this permission is OURS (TM-225's default is ①, wait).
 % Window M7 (2026-11-25): restacking.  A pane can be lifted off (its own
 % dots saved, what was under it drawn back), laid back on top and moved
 % (lift/1, lay/1, move_to/3); the coordinator orders them (coordinator.esp
@@ -164,33 +172,41 @@ attribute under := 0, image := 0;
 % the strip is cleared and the title drawn in it, cut to the strip.
 :set_title(Pane, Title) :-
         Pane!title := Title,
+        :uncover(#coordinator, Pane, Lifted),
         :fill(#bitmap_display, Pane!x + 2, Pane!y + 2, Pane!w - 4,
               Pane!ch + 2, reset),
-        label(Pane, Title);
+        label(Pane, Title),
+        :unpeel(#coordinator, Lifted);
 
 % :put_string(Pane, String) -- INTERPOLATED (body OURS) from window.md
 % §2.3 write_line/2 and §2.4 putl/2: each code at the cursor, which moves
 % on.
 :put_string(Pane, String) :-
+        :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
         string(String, N, _),
         put_codes(Pane, String, 0, N),
-        cursor_on(Pane);
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
 
 % :put_code(Pane, Code) -- INTERPOLATED (body OURS) from window.md §2.3
 % write/2 (PRINTED-INTERFACE TM-125 p16): one character at the cursor.
 :put_code(Pane, Code) :-
+        :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
         put_char(Pane, Code),
-        cursor_on(Pane);
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
 
 % :put_codes(Pane, Codes) -- window M4, INTERPOLATED (selector and body
 % OURS) from window.md §2.3 write/2: a list of codes at the cursor, as
 % put_string/2 (the Pmacs buffer's text, editor_text_buffer.esp).
 :put_codes(Pane, Codes) :-
+        :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
         put_list(Pane, Codes),
-        cursor_on(Pane);
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
 
 % :contains(Pane, X, Y) -- window M6 (selector and body OURS): (X, Y) is
 % inside the pane's outer rectangle (the mouse's hit test,
@@ -204,18 +220,22 @@ attribute under := 0, image := 0;
 % :new_line(Pane) -- INTERPOLATED (body OURS) from window.md §2.3 (the
 % newline) and §2.4 putl/2 ("then a newline").
 :new_line(Pane) :-
+        :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
         newline(Pane),
-        cursor_on(Pane);
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
 
 % :clear(Pane) -- INTERPOLATED (body OURS) from window.md §2.3 clear/1
 % ("clear the window and home the cursor", INFERENCE there).
 :clear(Pane) :-
+        :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
         :fill(#bitmap_display, Pane!left, Pane!top, Pane!iw, Pane!ih, reset),
         Pane!col := 0, Pane!row := 0,
         Pane!cx := Pane!left, Pane!cy := Pane!top,
-        cursor_on(Pane);
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
 
 % :select(Pane) and :deselect(Pane) -- INTERPOLATED (body OURS) from
 % TM-126 p7 (PROSE, window.md §4.1): the selected window shows its

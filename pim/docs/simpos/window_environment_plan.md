@@ -576,7 +576,7 @@ M6's rest and M7's save areas"; tests `test_win_m7_save_areas`, `test_win_m6_dat
 **Status (2026-11-25, window M7: the manipulator and keyboard focus)** (`../../psi/README.md`
 "Window M7: the manipulator and keyboard focus"; tests `test_win_m7_manip`,
 `test_win_m7_keyboard_focus`, `test_espc_swallowed_head`):
-- **M7, done but output permission and the other items.**
+- **M7, done but the other permissions and items.**
   - The manipulator opens on the middle button over a window (OURS; TM-125 puts it on the system
     menu, which the held login.com lacks). Its items SHOW, HIDE, RESHAPE and MOVE are verbatim
     from TM-125 p8.
@@ -587,9 +587,11 @@ M6's rest and M7's save areas"; tests `test_win_m7_save_areas`, `test_win_m6_dat
   - Pinned against frames built without the manipulator: HIDE then SHOW gives back the frame
     exactly (the planned pin); a kill under another window equals a run that never made it;
     MOVE equals a window made there.
-  - Open: output permission (`out`/`wait`/`show`: a covered window that writes still draws over
-    the windows above it, though no tested flow writes to one); the other eight items; a Pmacs
-    RESHAPE that changes the text size.
+  - Output to a covered window has permission `out` (TM-225 ②, the held `permission(out)`): the
+    windows above are lifted while it draws. MOVE of PIMOS's console runs through the stand-in
+    `has_been_reshaped/1` (`test_win_m7_console_move`).
+  - Open: the permissions wait/show/notify; the other eight items; a Pmacs RESHAPE that changes
+    the text size.
 - **Keyboard focus.** Each window reads its own input stream, and keys go to the selected window
   (TM-225 p11). A selection brings its window to the top (INFERENCE, TM-225 p11).
 - Screens: `screens/window_manipulator.png`, `manipulator_hide.png`, `manipulator_reshape.png`.

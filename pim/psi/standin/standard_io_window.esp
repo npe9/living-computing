@@ -34,7 +34,8 @@
 %   - keyboard input goes to the SELECTED window (PROSE TM-225 p11, TM-115
 %     p111; window.md §2.7, §4.1); the coordinator receives the keyboard
 %     events (PRINTED prose TR-061, TR-046 PDF p26-p28) and keeps the
-%     typed codes on its stream `keyboard` (OURS, coordinator.esp); a
+%     typed codes on its stream `keyboard` (OURS, coordinator.esp; since
+%     window M7 each window's own stream, below); a
 %     window becomes the selected one when it is shown (INFERENCE from
 %     TM-225 p10-11, window.md §4.1: SHOW "changes the selected window",
 %     and the selected window is on top and has the keyboard); a read on a window that is not selected waits (window.md
@@ -95,7 +96,7 @@
 % (select_window/2, which also redraws the box); the left button on it
 % selects it (contains/3); a key the coordinator gives it while selected
 % (typed/2) goes on the coordinator's keyboard stream, where read/2 and
-% getl/2 take it, as before.  The {position, manipulator} placement now
+% getl/2 take it, as before (since M7 on the window's own stream).  The {position, manipulator} placement now
 % centres the window on the mouse (window_pane.esp): at the mouse's start
 % (640, 472) that is the old centred place, (417, 411).
 
@@ -241,8 +242,9 @@ attribute place := [];
 
 % Window M4/M6 (selectors and bodies OURS): the coordinator's side of
 % selection (select_window/2: the cursor drawn), the keyboard (a key
-% typed while this window is selected goes on the coordinator's keyboard
-% stream, which next_code reads: step 3m's path), the mouse's hit test and
+% typed while this window is selected goes on the window's own input
+% stream, which next_code reads: window M7; step 3m put it on the
+% coordinator's keyboard stream), the mouse's hit test and
 % the status band's name (coordinator.esp).
 % INTERPOLATED (selector and body OURS): selected; basis above and in
 % the head comment.

@@ -61,9 +61,10 @@
 %     the shown windows newest first for the mouse's hit test (since
 %     M7 the stacking order, top first: below);
 %   - THE KEYBOARD: a {key, Code} goes to the selected window's typed/2
-%     (standard_io_window: the keyboard stream, as step 3m; pmacs_window:
-%     its command interpreter's input), or the keyboard stream when none
-%     is selected;
+%     (standard_io_window: since M7 its own input stream, until M7 the
+%     coordinator's keyboard stream; pmacs_window: its command
+%     interpreter's input), or the keyboard stream when none is selected
+%     (since M7 passed on to the next window selected, below);
 %   - THE STATUS BAND: drawn when the coordinator starts (draw_status/1,
 %     from coordinator_program.esp).
 %
@@ -132,9 +133,9 @@
 %     window_pane.esp move_to/3).  MOVE and RESHAPE raise and select the
 %     window, then send reshape/5 and the callback has_been_reshaped/1
 %     (window.md §2.1, §2.12: the reshape notifier calls it after the
-%     geometry is set).  Not modelled: output permission (a covered
-%     window that writes draws over the windows above it), the other
-%     eight items.
+%     geometry is set).  Output to a covered window: permission `out`
+%     for every window (uncover/3, window_pane.esp's head).  Not
+%     modelled: the other permissions and the other eight items.
 % The windows' owners (the process that made each, `:self(#process, P)`
 % at add_window/3) and the programs started ([Name, P]) are kept for kill,
 % as lists (kl0 keeps a list's values in a slot; a vector would keep its
@@ -158,7 +159,9 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
           owners := [];
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
-% window (standard_io_window.esp); `selected`, that window (0: none).
+% window (standard_io_window.esp) until window M7, since then holding only
+% the keys typed while no window is selected (type_ahead/2); `selected`,
+% that window (0: none).
 % INTERPOLATED from TR-061 and TR-046 PDF p26-p28 (PRINTED prose and
 % code): the coordinator receives the keyboard events; keys the
 % translation table does not take go to the selected window (TM-225 p11,
@@ -286,6 +289,19 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 % INTERPOLATED (selector and body OURS): unpeel; basis above and in the
 % head comment.
 :unpeel(Class, Lifted) :- unpeel(Lifted);
+
+% :uncover(#coordinator, Pane, Lifted) -- window M7 (selector and body
+% OURS): before a window's pane draws output, the windows above it are
+% lifted if one of them overlaps it (output permission `out`,
+% window_pane.esp's head); unpeel/2 lays them back.  A pane of no shown
+% window (not yet added, or a census instance) lifts nothing.
+% INTERPOLATED (selector and body OURS): uncover; basis above and in the
+% head comment.
+:uncover(Class, Pane, Lifted) :-
+        owner(Class!windows, Pane, W), !,
+        above(Class!windows, W, Above),
+        peel(Pane, Above, Lifted);
+:uncover(_, _, []);
 
 % :placement(#coordinator, X, Y) -- window M6 (selector and body OURS,
 % see the head comment): the top-left of the outline swept for the next
@@ -472,6 +488,9 @@ lift_all([U | Us]) :- :lift(U!pane), lift_all(Us);
 % laid back bottom first (the list is top first)
 unpeel([]);
 unpeel([U | Us]) :- unpeel(Us), :lay(U!pane);
+
+owner([W | _], Pane, W) :- P = W!pane, P == Pane, !;
+owner([_ | Ws], Pane, W) :- owner(Ws, Pane, W);
 
 on_screen(W) :- P = W!pane, P \== 0, P!image == 0;
 

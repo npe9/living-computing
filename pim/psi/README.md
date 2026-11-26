@@ -4225,7 +4225,17 @@ on the selected window's stream (`typed/2`). Basis:
 - a window is selected when it is shown (TM-225 p10-11) or by a left
   click on it (PRINTED TR-046 p28, `mouse#l` = visit; PROSE TM-115 p111);
 - a selection also brings the window to the top (INFERENCE from TM-225
-  p11: the selected window is the top of the stack).
+  p11: the selected window is the top of the stack);
+- `select/1` "make it the keyboard (input) window" (PROSE Giho 8609 p19,
+  TM-125 p22; window.md §2.1) and TM-126 p7 (the selected window's cursor
+  blinks; clicks go to the fully visible window under the mouse).
+  The held code was searched for how a program picks the keyboard window
+  (`docs/simpos/subsystems/notes/ptf.md`, 2026-11-25). pimfep sends no
+  `select/1`. `has_been_selected/1` is a `select_notifier` callback,
+  defined by kappa `pbwin` (an after-demon) and paragraph
+  `profiler_view_window`. So selection by the user, as modelled, is the
+  only path the held FEP route needs. The stand-ins do not send
+  `has_been_selected/1` (open).
 
 Until M7 every requester read the coordinator's one keyboard stream, so
 after `create` the first key went to the older requester, which was
@@ -4326,6 +4336,7 @@ The held programs go through `check()`, which still records such items as
 |---|---|
 | `test_win_m7_keyboard_focus` | after `create`, `local` RETURN reaches the new requester only (each window's history; its text read back from the frame); a left click on the older window's uncovered part raises and selects it, and the next line is its own |
 | `test_win_m7_manip` | the manipulator's place, title and items; HIDE equals a frame built from `two` and `before`; HIDE then SHOW equals `two` exactly; a kill under another window equals a run that never made it, with the same line typed; MOVE of the top window equals a window made there; MOVE of the covered window equals a composed frame; RESHAPE's outline (2w + 2(h - 2) dots), the new pane (35 x 12 cells), its title, transcript and cursor, and outside it the frame with the window gone. After each: save memory holds only the windows' own areas, every command is OK, and the stream replays to the frame |
+| `test_win_m7_console_move` | MOVE of PIMOS's console (HELD `pimos_window` on the `pmacs_window` stand-in): `has_been_reshaped/1` makes a new pane, the window's place is (100, 100), and the frame equals the replay's with the console's dots moved; RESHAPE moves it with its size kept |
 | `test_espc_swallowed_head` | four swallowed-head forms refused (`source`); the same clause with its head on its own line compiles |
 
 None of the earlier pins moved. The new restacks send nothing to the
@@ -4335,7 +4346,7 @@ device when no dot would change, so the `saves()` logs of
 `../docs/simpos/screens/window_manipulator.png`, `manipulator_hide.png`,
 `manipulator_reshape.png`.
 
-**Injections, OBSERVED**: each from a backup copy, restored by copy, `cmp`
+**Injections, OBSERVED** (2026-11-26, at the final code): each from a backup copy, restored by copy, `cmp`
 clean; `test_espc.py` Window (E2, E3: all of `test_espc.py`),
 `test_fep_bridge.py` and `test_kl0.py` run; `test_kl0.py` stayed OK in
 each; the lists are in the tests' heads.
@@ -4343,26 +4354,49 @@ each; the lists are in the tests' heads.
 | | injection | fails |
 |---|---|---|
 | F1b | step 3m's keyboard back: one shared stream, the read gated on selection, no type-ahead | keyboard focus, manip |
-| F1 | the same with M7's type-ahead kept (it puts each key back on the stream it takes it from) | M4, bridged and login screens, M6 selection, focus, manip; bridge replay and login service |
-| F2 | type-ahead a no-op | M4, bridged and login screens, M6 selection; bridge replay and login service |
+| F1 | the same with M7's type-ahead kept (it puts each key back on the stream it takes it from) | M4, bridged and login screens, M6 selection, console move, focus, manip; bridge replay and login service |
+| F2 | type-ahead a no-op | M4, bridged and login screens, M6 selection, console move; bridge replay and login service |
 | F3 | a selection does not raise | focus, manip |
 | M1 | lift/1 skips the restore (the plan's injection) | focus, manip |
 | M2 | kill lifts nothing (M6's way) | manip only |
 | M3 | HIDE lays the window on top | manip only |
-| M4 | MOVE leaves the old place's dots | manip only |
+| M4 | MOVE leaves the old place's dots | manip, console move |
 | M5 | RESHAPE draws no transcript | manip only |
 | M6 | no overlap ever found | focus, manip |
+| M7 | uncover/3 lifts nothing (no `out` permission) | manip only (the covered-output case) |
+| M8 | MOVE and RESHAPE send no has_been_reshaped/1 | console move, manip (its RESHAPE) |
 | E2 | source_refusals and swallowed_heads answer [] | swallowed-head test only |
 | E3 | swallowed_heads alone answers [] | swallowed-head test only |
 
 
+**Output to a covered window: permission `out`.** Per-window input made
+this reachable: a covered requester reads its queued keys, echoes them
+and prompts. A probe drew window 2's prompt over window 1's label. Each
+output method of `window_pane` (set_title, put_string, put_code,
+put_codes, new_line, clear) now asks the coordinator to uncover the pane
+(`uncover/3`: the windows above are lifted if one overlaps it), draws, and
+lays them back (`unpeel/2`). The covered part goes into the save areas
+above, and only the shown part appears. This is TM-225 p10-11's ② and
+TM-125 p6's OUTPUT, the held `permission(out)` (63 USAGE sites, window.md
+§4.1). Giving every window this permission is OURS; TM-225's default is
+① wait.
+
+**The console** (`test_win_m7_console_move`). After the M4 replay, the
+mouse events go straight to the coordinator's `event/2` (OURS harness:
+the tape's script is fixed). MOVE of `pimfep##pimos_window` sends
+`reshape/5` and `has_been_reshaped/1`. The stand-in redraws the window at
+its new place with a new pane, and the frame equals the replay's with the
+console's dots moved. RESHAPE moves it and keeps its size.
+
 **Open:**
-- output permission (TM-125 p6, TM-225 p10-11: `wait` by default). A
-  covered window that writes still draws over the windows above it, since
-  the panes are not clipped; no tested flow writes to a covered window;
+- the other output permissions (wait, show, notify) and a per-window
+  choice of permission;
+- a pop-up menu over a covered window that writes: the lifted windows'
+  areas would be drawn back under the menu, not over it. No flow does
+  this;
 - the manipulator's other eight TM-125 p8 items;
-- a `pmacs_window` RESHAPE that changes its text size (it moves only),
-  and MOVE/RESHAPE of the PIMOS console, which are in no test.
+- a `pmacs_window` RESHAPE that changes its text size (it moves only);
+- `has_been_selected/1` is not sent.
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
@@ -4492,8 +4526,7 @@ test_kappa2's exact count).
   head arguments compile; no failing shape was found, but none is proven
   absent.
 - **The window environment after M7's manipulator:** output permission
-  (a covered window that writes draws over the windows above it; no flow
-  in the tests does), the manipulator's other TM-125 p8 items (EXPAND,
+  beyond `out` (wait, show, notify), the manipulator's other TM-125 p8 items (EXPAND,
   MENU, PERMISSION, ATTRIBUTE, HARDCOPY, SUPERIOR, INFERIOR, EXIT), a
   `pmacs_window` RESHAPE that changes its text size (it moves only), and
   Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the census's

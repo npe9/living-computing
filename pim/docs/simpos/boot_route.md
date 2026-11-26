@@ -730,8 +730,8 @@ login run (§4.5). Open, in order:
    shell's window on the PSI: DONE in window M4 (§4.8), on stand-ins for
    the lost PMACS editor's buffer and command loop; the screen's chrome
    (M6) and save areas (M7, part) since; the window manipulator (M7) and
-   per-window keyboard input since. Open: lia / tcpip logins; output
-   permission (M7).
+   per-window keyboard input since. Open: lia / tcpip logins; the output
+   permissions other than `out` (M7).
 2. The FEP census side items: blt 0d (DONE in step 3n as an INFERENCE,
    `object/3`, outputs unbound) and blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s
