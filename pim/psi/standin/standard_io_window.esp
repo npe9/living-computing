@@ -210,6 +210,12 @@ attribute permission := out;
         W!killed := 1, W!active := 0, erased(W),
         :remove_window(#coordinator, W);
 
+% :right_click(W, X, Y) -- window M10 (selector and body OURS): the
+% coordinator's right button on the window; a plain window binds nothing
+% to it (a Pmacs window opens its EDITOR MENU, pmacs_window.esp).
+% INTERPOLATED (selector and body OURS): see above.
+:right_click(W, X, Y);
+
 % :reshape(W, X, Y, Width, Height) -- window M7, INTERPOLATED (body OURS)
 % from window.md §2.1 reshape/5 `(W,X,Y,Wd,Ht)`, "move and resize at
 % once" (USAGE cal-esp cpwindow.esp:85): the new outer rectangle is kept;

@@ -1,0 +1,209 @@
+% SCAFFOLDING, OURS: the screen of a Pmacs editor window, compiled by
+% psi/espc.py into the package `simpos`.  `pmacs_display` is NOT a SIMPOS
+% class name: Pmacs's display classes are lost (window.md §0.3, §2.11;
+% IPSJ 22404 counts 93 Pmacs classes, none held).  Window milestone M10
+% (2026-11-26).
+%
+% THE SCREEN FORM (SCREENSHOT: IPSJ 36239 p5-6; IPSJ 114012 Fig. 2;
+% esp.wmv@108-149; window.md §2.11, §4.6): the text, then a reversed mode
+% line, then an echo line below it.  Here the window's pane (window_pane.
+% esp) is split by rows (OURS): the text in the first Rows - 2, the mode
+% line in the next, the echo line in the last.
+%   - THE MODE LINE (window.md §2.11, its fields from the screenshots):
+%     `PMACS(fundamental)(C,R) *-N* Name Path --Top--`.  PMACS the editor
+%     name; the major mode in parentheses, here always `fundamental`
+%     (OURS: Emacs's name; the screenshots show `esp` for an .esp file and
+%     no other mode is seen); `(C,R)` in the video's round brackets
+%     (A00; the 1986 screenshots have `[w,h]`, VARIANT), here the text's
+%     columns and rows (INFERENCE, window.md: "window size in
+%     characters?"); `*-N*` the buffer's number in the pool
+%     (editor_text_buffer.esp, INFERENCE); the buffer's name and the full
+%     pathname of its file (the 1986 screenshot shows both, `demo
+%     i3psi7::>sys>user>hiroyuki>demo.esp`; here without a host, as
+%     retrieve/4 answers); `--Top--` when the first line shows, `--Bot--`
+%     when the last does (OURS), `--N%--` otherwise, N the first shown
+%     line's share of the lines (OURS: what Pmacs's percentage counts is
+%     not printed; `--74%--` is seen).  Reversed: drawn, then the row
+%     inverted by exclusive_or (as the menus' boxes are).  Cut at the
+%     pane's width.
+%   - THE ECHO LINE: the editor's last message (standard_editor message/2:
+%     `Read! <path>` SCREENSHOT, the others OURS), cut at the width.
+%   - THE TEXT: the buffer's lines from the first shown one, each cut at
+%     the width (OURS: no continuation mark); the window's block cursor at
+%     the point (window_pane.esp's cursor; a point past the last column
+%     shows none).  The first shown line moves only to keep the point's
+%     line on the screen (OURS: Emacs recentres).
+% REDISPLAY (OURS): only what changed is drawn: each row's codes are kept
+% and compared, so a key typed in a line redraws that row, and a moved
+% point only moves the cursor.  Every drawing is a pane method, so it goes
+% through the coordinator's uncover/unpeel (the output permission) as all
+% window text does.
+
+class pmacs_display has
+
+% :create(#pmacs_display, Pane, Cols, Rows, Status, D) -- OURS selector:
+% the screen of a pane of Cols x Rows cells; Status `off` (the held
+% status_window(off) option) leaves the mode line out, so the echo line
+% follows the text.
+% INTERPOLATED (selector and body OURS): see the head comment.
+:create(Class, Pane, Cols, Rows, Status, D) :-
+        :new(Class, D),
+        D!pane := Pane, D!cols := Cols, D!status := Status,
+        text_rows(Status, Rows, T),
+        D!rows := T;
+
+instance
+
+% OURS (see the head comment): the pane, the text's width and height in
+% cells, the first shown line, the codes shown in each text row (a list of
+% lists; none: not drawn), in the mode line and in the echo line (none:
+% not drawn), the message to show.
+attribute pane := 0, cols := 0, rows := 0, status := on, top := 0, shown := none,
+          mode := none, echoed := none, message := [];
+
+% :redisplay(D, Buffer) -- OURS selector: the screen made to show Buffer.
+% INTERPOLATED (selector and body OURS): see REDISPLAY in the head comment.
+:redisplay(D, B) :-
+        Text = B!text,
+        line_of(Text, B!point, Ln, Col),
+        scrolled(D, Ln),
+        drop_lines(Text, D!top, Rest),
+        taken(Rest, D!rows, D!cols, Rows),
+        drawn_rows(D, Rows, D!shown, 0, Shown),
+        D!shown := Shown,
+        mode_line(D, B, D!status, Next),
+        cut(D!message, D!cols, Echo),
+        drawn_line(D, Next, Echo, D!echoed, copy),
+        D!echoed := Echo,
+        :set_cursor(D!pane, Col, Ln - D!top);
+
+% :message(D, String) -- OURS selector: the echo line's text from now on
+% (drawn at the next redisplay).
+% INTERPOLATED (selector and body OURS): see THE ECHO LINE.
+:message(D, S) :- string(S, N, _), codes(S, 0, N, Codes), D!message := Codes;
+
+% :forget(D) -- OURS selector: nothing is on the screen any more (the
+% pane was drawn again): every row is drawn at the next redisplay.
+% INTERPOLATED (selector and body OURS): see REDISPLAY.
+:forget(D) :- D!shown := none, D!mode := none, D!echoed := none;
+
+local
+
+text_rows(off, R, 1) :- R < 2, !;
+text_rows(off, R, T) :- !, value(R - 1, T);
+text_rows(_, R, 1) :- R < 3, !;
+text_rows(_, R, T) :- value(R - 2, T);
+
+% the mode line (none with status off); Next, the echo line's row
+mode_line(D, _, off, R) :- !, R = D!rows;
+mode_line(D, B, _, R) :-
+        count_lines(B!text, 1, Lines),
+        mode_codes(D, B, Lines, Mode),
+        drawn_line(D, D!rows, Mode, D!mode, reverse),
+        D!mode := Mode,
+        value(D!rows + 1, R);
+
+value(V, V);
+
+% the line (from 0) and column of position P
+line_of(Text, P, Ln, Col) :- walk(Text, P, 0, 0, Ln, Col);
+
+walk(_, 0, L, C, L, C) :- !;
+walk([10 | R], P, L, _, Ln, Col) :- !, walk(R, P - 1, L + 1, 0, Ln, Col);
+walk([_ | R], P, L, C, Ln, Col) :- walk(R, P - 1, L, C + 1, Ln, Col);
+
+% the first shown line keeps line Ln on the screen
+scrolled(D, Ln) :- Ln < D!top, !, D!top := Ln, D!shown := none;
+scrolled(D, Ln) :- Ln >= D!top + D!rows, !, value(Ln - D!rows + 1, T), D!top := T, D!shown := none;
+scrolled(_, _);
+
+drop_lines(Text, 0, Text) :- !;
+drop_lines([], _, []) :- !;
+drop_lines([10 | R], N, Rest) :- !, drop_lines(R, N - 1, Rest);
+drop_lines([_ | R], N, Rest) :- drop_lines(R, N, Rest);
+
+% N rows: the next lines' codes, each cut at Cols ([] past the end)
+taken(_, 0, _, []) :- !;
+taken(Text, N, Cols, [Row | Rows]) :-
+        a_line(Text, Line, Rest), cut(Line, Cols, Row),
+        taken(Rest, N - 1, Cols, Rows);
+
+a_line([], [], []) :- !;
+a_line([10 | R], [], R) :- !;
+a_line([C | R], [C | L], Rest) :- a_line(R, L, Rest);
+
+cut(_, 0, []) :- !;
+cut([], _, []) :- !;
+cut([C | R], N, [C | L]) :- cut(R, N - 1, L);
+
+count_lines([], N, N);
+count_lines([10 | R], N0, N) :- !, count_lines(R, N0 + 1, N);
+count_lines([_ | R], N0, N) :- count_lines(R, N0, N);
+
+% each text row drawn where it differs from what is shown
+drawn_rows(_, [], _, _, []);
+drawn_rows(D, [Row | Rows], Old, R, [Row | Shown]) :-
+        old_row(Old, Was, Older),
+        drawn_line(D, R, Row, Was, copy),
+        drawn_rows(D, Rows, Older, R + 1, Shown);
+
+old_row(none, none, none) :- !;
+old_row([W | Ws], W, Ws) :- !;
+old_row([], none, none);
+
+drawn_line(_, _, Codes, Was, _) :- same(Codes, Was), !;
+drawn_line(D, R, Codes, _, Op) :- :draw_row(D!pane, R, Codes, Op);
+
+same([], []);
+same([X | A], [Y | B]) :- X == Y, same(A, B);
+
+% the mode line's codes (see THE MODE LINE)
+mode_codes(D, B, Lines, Codes) :-
+        number_codes(D!cols, Cs), number_codes(D!rows, Rs),
+        number_codes(B!number, Ns),
+        name_codes(B, Name), path_codes(B, Path),
+        place(D, Lines, Place),
+        string_codes("PMACS(fundamental)(", P1),
+        string_codes(",", P2), string_codes(") *-", P3), string_codes("* ", P4),
+        string_codes(" ", P5),
+        append(P1, Cs, A1), append(A1, P2, A2), append(A2, Rs, A3),
+        append(A3, P3, A4), append(A4, Ns, A5), append(A5, P4, A6),
+        append(A6, Name, A7), append(A7, P5, A8), append(A8, Path, A9),
+        append(A9, Place, All),
+        cut(All, D!cols, Codes);
+
+name_codes(B, Codes) :- string_codes(B!name, Codes);
+
+path_codes(B, []) :- B!file == 0, !;
+path_codes(B, Codes) :- F = B!file, string_codes(F!full_name, Codes);
+
+place(D, _, Codes) :- D!top == 0, !, string_codes(" --Top--", Codes);
+place(D, Lines, Codes) :- D!top + D!rows >= Lines, !, string_codes(" --Bot--", Codes);
+place(D, Lines, Codes) :-
+        quotient(D!top * 100, Lines, Q), number_codes(Q, Ds),
+        string_codes(" --", A), string_codes("%--", B),
+        append(A, Ds, A1), append(A1, B, Codes);
+
+string_codes(S, Codes) :- string(S, N, _), codes(S, 0, N, Codes);
+
+codes(_, I, N, []) :- I >= N, !;
+codes(S, I, N, [C | Cs]) :- string_element(S, I, C), codes(S, I + 1, N, Cs);
+
+% the JIS digits of N >= 0 (16#2330 is `0`, as espc's #"0")
+number_codes(N, [C]) :- N < 10, !, digit(N, C);
+number_codes(N, Cs) :-
+        value(N / 10, Q), value(N - Q * 10, R),
+        number_codes(Q, Qs), digit(R, C),
+        append(Qs, [C], Cs);
+
+digit(N, C) :- Zero = 16#"2330", value(Zero + N, C);
+
+% N / D for a D in a register, by subtraction (OURS arithmetic: espc
+% divides only by a constant)
+quotient(N, D, 0) :- N < D, !;
+quotient(N, D, Q) :- quotient(N - D, D, Q0), value(Q0 + 1, Q);
+
+append([], L, L);
+append([X | R], L, [X | T]) :- append(R, L, T);
+
+end.

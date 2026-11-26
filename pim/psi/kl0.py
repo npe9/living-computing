@@ -1267,6 +1267,43 @@ class Machine:
         terms, pos = self.input_terms(deref(self.x[0]))
         return self.proceed() if pos >= len(terms) else self.fail()
 
+    def file_new_version(self):
+        """:new_version(File, Contents, New) -- window M10 (2026-11-26),
+        OURS selector: a save of a Pmacs buffer (standin/standard_editor.esp).
+        New is a new binary_file in File's directory, File's name with the
+        next version (INFERENCE from TR-524 PDF p9, folio 8: "The version
+        ... is assigned by the file system and incremented every time a file
+        is newly created"; "If only an identifier and an extension are
+        specified in opening a file, its latest version is retrieved", so
+        the old versions stay), its 16-bit text Contents, its size two bytes
+        a code (as psi/simpos_fs.py's text files).  The file system is the
+        mounted tree (psi/simpos_fs.py, OURS), so this is a model, as
+        directory retrieve is; a file with no directory refuses."""
+        text, f = deref(self.x[0]), deref(self.x[2])
+        if not isinstance(text, Str):
+            raise Refusal('unbound argument' if isinstance(text, Var) else 'simpos',
+                          'binary_file new_version/3 contents %r' % (text,))
+        d = self.get_slot(f, 'directory') if isinstance(f, Instance) else None
+        if not isinstance(d, Instance):
+            raise Refusal('simpos', 'binary_file new_version/3: %r is in no directory' % (f,))
+        name = self.get_slot(f, 'name').text
+        v, t = 0, self.get_slot(d, 'entries')
+        while isinstance(t, Cons):
+            e = deref(t.args[0])
+            t = deref(t.args[1])
+            x = deref(e.args[1])
+            if deref(e.args[0]).text == name and x.cid == 'simpos##binary_file':
+                v = max(v, self.get_slot(x, 'version'))
+        new = new_instance(self.lib, 'simpos##binary_file', self)
+        s = Str('')
+        s.set_codes(text.codes())
+        for k, val in (('name', Str(name)), ('version', v + 1), ('size', 2 * len(s.codes())),
+                       ('full_name', Str('%s>%s.%d' % (self.get_slot(d, 'full_name').text, name, v + 1))),
+                       ('contents', s), ('directory', d)):
+            self.set_slot(new, k, val)
+        self.set_slot(d, 'entries', Cons(Vec([Str(name), new]), self.get_slot(d, 'entries')))
+        return self.proceed() if self.unify(self.x[1], new) else self.fail()
+
     def world_root_path(self):
         """:root_path(World, LogicalName, Root) (step 3n).  INTERPOLATED
         from its one held send, pimfep##simpos_user_device $or$3/2
@@ -3021,6 +3058,8 @@ SIMPOS_MODELS = {
     # step 3l, B6: reading terms (standin/standard_input_file.esp)
     ('simpos##standard_input_file', 'instance', 'gett', 2): Machine.input_gett,
     ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
+    # window M10: a Pmacs save writes a new version (standin/binary_file.esp)
+    ('simpos##binary_file', 'instance', 'new_version', 3): Machine.file_new_version,
 }
 # window M0/M3/M5 (OURS): the display device's simpos##bitmap_display
 # selectors (psi/windev.py; the window stand-ins draw through them)

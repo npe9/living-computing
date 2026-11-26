@@ -22,6 +22,13 @@ instance
 
 % OURS representation (see the head comment).
 attribute name := 0, version := 0, size := 0, full_name := 0, contents := 0;
+% Window M10 (OURS): the directory the file is in (psi/simpos_fs.py mount
+% sets it), for a save's new version.  :new_version(File, Contents, New)
+% is a kl0 model (psi/kl0.py Machine.file_new_version, OURS selector):
+% a new binary_file beside File with the next version and the text
+% Contents (TR-524 PDF p9: versions are assigned by the file system and
+% incremented every time a file is newly created).
+attribute directory := 0;
 
 % :is_directory(File) / :not_directory(File) -- INTERPOLATED from the held
 % call sites pimfep##pimos_file local remove/2 @1d7-1e3 and

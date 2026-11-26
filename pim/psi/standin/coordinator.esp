@@ -267,6 +267,18 @@ attribute sheet := [];
         Class!waiters := Vs,
         unselect(Class, W);
 
+% :editor_menu(#coordinator, W, Columns) -- window M10 (selector and body
+% OURS): a Pmacs window's EDITOR MENU (standard_editor show_menu/1), a
+% pop-up at the mouse as the system menu is; a left click on an item gives
+% its value to W (menu_chosen/2), one elsewhere closes it (as ABORT).
+% INTERPOLATED (selector and body OURS): see the head comment.
+:editor_menu(Class, W, Columns) :-
+        close_menu(Class),
+        cancel(Class),
+        :create(#menu_pane, "EDITOR MENU", Columns, Class!mouse_x, Class!mouse_y, M),
+        Class!menu_pane := M,
+        Class!dialogue := [editor_menu, W];
+
 % :cursor_aside(#coordinator) -- window M6/M7 (selector and body OURS):
 % before a new pane is drawn, the selected window's cursor is taken off
 % (its deselect_window/1), as the panes are not clipped (window_pane.esp).
@@ -411,7 +423,14 @@ click(Class, l, X, Y) :- Class!menu_pane \== 0, !, menu_click(Class, Class!dialo
 click(Class, l, X, Y) :- Class!dialogue \== [], !, corner(Class, Class!dialogue, X, Y);
 click(Class, l, X, Y) :- !, visit(Class, Class!windows, X, Y);
 click(Class, m, X, Y) :- !, cancel(Class), manipulator(Class, Class!windows, X, Y);
+% window M10 (OURS): the right button goes to the window under the mouse
+% (a Pmacs window binds it, mouse#r, to its EDITOR MENU: standard_editor.esp)
+click(Class, r, X, Y) :- !, cancel(Class), right(Class, Class!windows, X, Y);
 click(_, _, _, _);
+
+right(Class, Ws, X, Y) :- under_mouse(Ws, X, Y, W), not_choice(Class, W), !,
+        :right_click(W, X, Y);
+right(_, _, _, _);
 
 % the system menu's item; then the create/kill pop-up's (head comment)
 menu_click(Class, [], X, Y) :-
@@ -444,6 +463,12 @@ menu_click(Class, [notify, W], X, Y) :-
         close_menu(Class),
         Class!dialogue := [],
         notified(Class, Choice, W);
+% window M10: an EDITOR MENU item's value goes to its window's input
+menu_click(Class, [editor_menu, W], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, Value), !,
+        close_menu(Class),
+        Class!dialogue := [],
+        :menu_chosen(W, Value);
 menu_click(Class, _, _, _) :- close_menu(Class), Class!dialogue := [];
 
 chosen(Class, Label, Name, X, Y) :-

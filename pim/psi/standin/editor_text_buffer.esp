@@ -59,15 +59,48 @@ class editor_text_buffer has
 
 nature as_resource, with_lock;
 
-% :create(#editor_text_buffer, Name, Buffer) -- OURS selector (the held
-% create/4 of $or$2/2 is not on the route): an empty buffer.
-% INTERPOLATED (selector and body OURS): create; basis above and in
+% :new_buffer(#editor_text_buffer, Name, Buffer) -- OURS selector: an
+% empty buffer, not in the pool (a pmacs_window's own buffer, made with
+% it).  Window M10: renamed from create/3, whose arity the held create/3
+% `(Class, ^Buffer, Size)` has (window.md §2.11).
+% INTERPOLATED (selector and body OURS): new_buffer; basis above and in
 % the head comment.
-:create(Class, Name, Buffer) :-
+:new_buffer(Class, Name, Buffer) :-
         :new(Class, Buffer),
         Buffer!name := Name,
         :create(#buffer_region, R),
         Buffer!region := R;
+
+% WINDOW M10 (2026-11-26): THE BUFFER POOL.  PROSE (IPSJ 114007, window.md
+% §2.11): text lives in buffers "registered in a buffer pool and reachable
+% by name from any process".  The selectors are HELD (window.md §2.11's
+% table, USAGE): create/4 `(#editor_text_buffer, ^Buffer, Name, Size)`
+% (disc/exshow.esp:25, held IFS source, relies on its failing when Name
+% is taken: its alternative is get_buffer_instance/3 then reset/1;
+% cal-esp deb2.12/dmenu.esp:1214-1219); create/3 `(#.., ^Buffer, Size)`
+% unnamed; get_buffer_instance/3 `(#.., Name, ^Buffer)` (exshow :26 and
+% pimfep##pimos_window_editor select_buffer/4, ptf.md W6);
+% get_buffer_instance_list/2.  Bodies OURS: the pool a class slot, newest
+% first; the size is not a limit (the list grows); a buffer's number (the
+% mode line's `*-n*`, window.md §2.11) is its place in the order of
+% creation, from 1 (OURS: what the number counts is UNKNOWN).
+% INTERPOLATED (body OURS): basis above.
+attribute pool := [], count := 0;
+
+% INTERPOLATED (body OURS): see THE BUFFER POOL above.
+:create(Class, _, Name, _) :- pooled(Class!pool, Name, _), !, fail;
+:create(Class, Buffer, Name, _) :-
+        :new_buffer(Class, Name, Buffer),
+        pool_in(Class, Buffer);
+% INTERPOLATED (body OURS): see THE BUFFER POOL above; an unnamed buffer
+% is not in the pool (OURS: the pool is by name).
+:create(Class, Buffer, _) :- :new_buffer(Class, "", Buffer);
+
+% INTERPOLATED (body OURS): see THE BUFFER POOL above.
+:get_buffer_instance(Class, Name, Buffer) :- pooled(Class!pool, Name, Buffer);
+
+% INTERPOLATED (body OURS): see THE BUFFER POOL above.
+:get_buffer_instance_list(Class, List) :- List = Class!pool;
 
 instance
 
@@ -173,7 +206,106 @@ attribute name := "", text := [], length := 0, point := 0, region := 0,
 % the head comment.
 :set_pane(B, Pane) :- B!pane := Pane, B!shown := 0, B!valid := 0;
 
+% WINDOW M10 (2026-11-26): THE EDITOR'S BUFFER.  The point, lines and
+% files of a buffer a Pmacs editor visits (standard_editor.esp's commands,
+% pmacs_display.esp's screen).  OURS representation: as above, plus the
+% file it was read from or last written to (a binary_file, 0: none),
+% whether it changed since (modified, 0 or 1) and its number in the pool
+% (0: not pooled).  A line ends at code 10 (as getl_from_buffer/3's
+% search, above); a column is the number of codes from the line's start.
+attribute file := 0, modified := 0, number := 0;
+
+% Navigation, HELD selectors where held code sends them to a buffer
+% (USAGE: MENDELS ZONE swindow.esp:240-300, 427, window.md §2.11
+% "editor_text_buffer navigation": move_to_first/1, move_to_last/1,
+% next_line/2, previous_line/2, see_current_line/2), OURS otherwise; the
+% bodies OURS.  next_line(B, Col) and previous_line(B, Col): the point to
+% column Col of the next (previous) line, or to its end if it is shorter
+% (INFERENCE: MENDELS sends them with 0 and then reads the line from its
+% start, so the argument is taken as the column); they fail on the last
+% (first) line (OURS).
+% INTERPOLATED (body OURS): see Navigation above.
+:move_to_first(B) :- B!point := 0;
+% INTERPOLATED (body OURS): see Navigation above.
+:move_to_last(B) :- B!point := B!length;
+% INTERPOLATED (selector and body OURS): see Navigation above.
+:forward_character(B) :- P = B!point, P < B!length, B!point := P + 1;
+% INTERPOLATED (selector and body OURS): see Navigation above.
+:backward_character(B) :- P = B!point, P > 0, B!point := P - 1;
+% INTERPOLATED (selector and body OURS): see Navigation above.
+:beginning_of_line(B) :- line_start(B!text, B!point, S), B!point := S;
+% INTERPOLATED (selector and body OURS): see Navigation above.
+:end_of_line(B) :- line_end(B!text, B!point, E), B!point := E;
+% INTERPOLATED (selector and body OURS): see Navigation above.
+:column(B, C) :- line_start(B!text, B!point, S), value(B!point - S, C);
+% INTERPOLATED (body OURS): see Navigation above.
+:next_line(B, Col) :-
+        line_end(B!text, B!point, E), E < B!length,
+        line_end(B!text, E + 1, E2),
+        at_column(E + 1, E2, Col, P), B!point := P;
+% INTERPOLATED (body OURS): see Navigation above.
+:previous_line(B, Col) :-
+        line_start(B!text, B!point, S), S > 0,
+        line_start(B!text, S - 1, S2),
+        at_column(S2, S - 1, Col, P), B!point := P;
+% INTERPOLATED (body OURS): see Navigation above; the current line, the
+% point unchanged.
+:see_current_line(B, String) :-
+        line_start(B!text, B!point, S), line_end(B!text, B!point, E),
+        :see_position(B, S, E - S, String);
+
+% :load_file(B, File) -- OURS selector (standard_editor read_file/4): the
+% text replaced by the file's (its 16-bit contents, psi/simpos_fs.py),
+% the point at the start, unmodified.
+% INTERPOLATED (selector and body OURS): see THE EDITOR'S BUFFER above.
+:load_file(B, File) :-
+        S = File!contents,
+        string(S, N, _),
+        codes(S, 0, N, Codes),
+        :reset(B),
+        B!text := Codes, B!length := N, B!point := 0,
+        B!file := File, B!modified := 0;
+
+% :contents(B, String) -- OURS selector: the whole text as a new 16-bit
+% string (what a save writes).
+% INTERPOLATED (selector and body OURS): see THE EDITOR'S BUFFER above.
+:contents(B, String) :- :see_position(B, 0, B!length, String);
+
+% :saved(B, File) -- OURS selector: the buffer is now File's text.
+% INTERPOLATED (selector and body OURS): see THE EDITOR'S BUFFER above.
+:saved(B, File) :- B!file := File, B!modified := 0;
+
 local
+
+% window M10: the pool (OURS, see THE BUFFER POOL)
+pooled([B | _], Name, B) :- N = B!name, equal_string(N, Name), !;
+pooled([_ | Bs], Name, B) :- pooled(Bs, Name, B);
+
+pool_in(Class, B) :-
+        value(Class!count + 1, N),
+        Class!count := N,
+        B!number := N,
+        Class!pool := [B | Class!pool];
+
+value(V, V);
+
+% window M10: the line around a position (OURS, see THE EDITOR'S BUFFER):
+% its first position, and the position of its ending 10 (or the length)
+line_start(Text, P, S) :- starts(Text, 0, P, 0, S);
+
+starts(_, I, P, S, S) :- I >= P, !;
+starts([10 | R], I, P, _, S) :- !, starts(R, I + 1, P, I + 1, S);
+starts([_ | R], I, P, S0, S) :- starts(R, I + 1, P, S0, S);
+
+line_end(Text, P, E) :- drop(Text, P, R), ends(R, P, E);
+
+ends([], I, I);
+ends([10 | _], I, I) :- !;
+ends([_ | R], I, E) :- ends(R, I + 1, E);
+
+% the position of column Col in the line from S to E (E its end)
+at_column(S, E, Col, E) :- S + Col >= E, !;
+at_column(S, _, Col, P) :- value(S + Col, P);
 
 codes(_, I, N, []) :- I >= N, !;
 codes(S, I, N, [C | Cs]) :- string_element(S, I, C), codes(S, I + 1, N, Cs);
@@ -198,9 +330,12 @@ cut_out([X | R], I, From, To, [X | T]) :- I < From, !, cut_out(R, I + 1, From, T
 cut_out([_ | R], I, From, To, T) :- I < To, !, cut_out(R, I + 1, From, To, T);
 cut_out([X | R], I, From, To, [X | T]) :- cut_out(R, I + 1, From, To, T);
 
-% a change at P: the screen is right only up to P
-changed(B, P) :- P < B!valid, !, B!valid := P;
-changed(_, _);
+% a change at P: the screen is right only up to P (window M10: and the
+% buffer is modified)
+changed(B, P) :- B!modified := 1, lowered(B, P);
+
+lowered(B, P) :- P < B!valid, !, B!valid := P;
+lowered(_, _);
 
 % the length and the point after N codes went in at P (the point moves
 % past them: see insert_string/2)

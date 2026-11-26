@@ -1,0 +1,30 @@
+% SCAFFOLDING stand-in for SIMPOS's class `pmacs_standard_editor` (the
+% Pmacs editor proper, as held applications subclass it), compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of it
+% is printed or held.  Window milestone M10 (2026-11-26).
+% USAGE (window.md §2.11, its usage table: 4 programs):
+%   - cal2.12/cal_pmacs.esp and chal/cal_pmacs.esp (held IFS source):
+%     `class cal_pmacs_editor has nature pmacs_standard_editor;` with its
+%     own `:command(Editor,pf#11,cal_menu)`;
+%   - papyrus demo/EDITOR/my_editor.esp.1:27 (my_text_editor's last
+%     nature), my_select.esp.1 (after-demons on select_buffer/1,2 and
+%     list_buffers/1, which prove a SIMPOS primary: window.md §2.12),
+%     my_save.esp.1 (`:command(Editor,save,save)`,
+%     `:control_c(Editor,#"s",save)`);
+%   - the selectors held code sends to one: current_buffer/2,
+%     get_window/2, exception/2, select_buffer/2, insert/2, find_file/2,
+%     two_windows/1, mark/1, backward_character/1, write_file/4,
+%     push_to_yank/3, clear_input/1, cursor_with_mouse/1, show_menu/1,
+%     goto_beginning/1, exchange_point/1, next_term/1.
+% Model (INFERENCE): the Pmacs editor is standard_editor with Pmacs's own
+% commands; every method here is inherited from the standard_editor
+% stand-in (its default bindings and commands, OURS, gap G6).  Of the
+% selectors above, find_file/2, two_windows/1, mark/1, write_file/4,
+% push_to_yank/3, clear_input/1, cursor_with_mouse/1, exchange_point/1 and
+% next_term/1 are not stood in, so a send of one is refused loudly.
+
+class pmacs_standard_editor has
+
+nature standard_editor;
+
+end.

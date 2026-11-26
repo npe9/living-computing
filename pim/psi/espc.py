@@ -167,6 +167,48 @@ def num_value(t):
 _PUNCT_INV = {v: k for k, v in P.PUNCT.items()}
 
 
+# Window M10 (2026-11-26): the key and mouse constant macros (window.md
+# §3.5; the plan's gap G2, open question Q2).
+#   - mouse#B is the ATOM named `mouse#B` (HELD: the atom names `mouse#l`,
+#     `mouse#ll`, `mouse#m`, `mouse#mm`, `mouse#r`, `mouse#rr` are in the
+#     symbol tables of the held .ptf of kappa, papyrus, paragraph, pimfep,
+#     pimmutil, tour, mpsicsp and pimmcsp: docs/simpos/subsystems/notes/
+#     ptf.md W4, re-measured 2026-11-26 as JIS words in the .ptf bytes).
+#   - key#N, control#"c" and pf#N are INTEGERS (INFERENCE: no atom named
+#     `key#...`, `control#...` or `pf#...` is in any held .ptf, MEASURED the
+#     same day), and their VALUES ARE OURS (G2: no table is held) except
+#     key#lf = 10, which the HELD CELLS witness: kappa2 DUMP.ESP dumpLine/6
+#     (`Char == key#lf`) compiles exact only with 10, and KMACS2.ESP's
+#     `:command(Self,mouse#r,kappa_menu)` only with mouse#r the atom above
+#     (test_espc.py MacroBank.test_kappa2, injections observed).  key#cr
+#     13 as the stand-ins already use it; the other ASCII controls at their
+#     ASCII codes; control#"c" the ASCII control code of the letter (C-x is
+#     24); the named keys without an ASCII code at 16#8001.., pf#N at
+#     16#8100 + N.  A held program compares them only with each other, so
+#     only their distinctness matters to it.
+#   - meta#, control_meta#, keypad# and the modified pf families stay
+#     refused (no caller on a milestone's route).
+MOUSE_NAMES = ('l', 'll', 'm', 'mm', 'r', 'rr')
+KEY_CODES = {'bell': 7, 'bs': 8, 'tab': 9, 'lf': 10, 'cr': 13, 'esc': 27, 'del': 127,
+             'up': 0x8001, 'down': 0x8002, 'left': 0x8003, 'right': 0x8004,
+             'abort': 0x8005, 'help': 0x8006, 'enter': 0x8007, 'etx': 3}
+PF_BASE = 0x8100
+
+
+def key_constant(family, b):
+    """mouse#B, key#N, control#"c", pf#N (see the table above), or None."""
+    name = atom_name(b) if b[0] in ('atom', 'qatom') else None
+    if family == 'mouse' and name in MOUSE_NAMES:
+        return ('atom', 'mouse#' + name)
+    if family == 'key' and name in KEY_CODES:
+        return ('int', KEY_CODES[name])
+    if family == 'pf' and b[0] == 'num' and 0 <= int(b[1]) <= 18:
+        return ('int', PF_BASE + int(b[1]))
+    if family == 'control' and b[0] == 'str' and len(b[1]) == 1 and 0x40 <= ord(b[1].upper()) <= 0x5f:
+        return ('int', ord(b[1].upper()) & 0x1f)
+    return None
+
+
 def jis_code(c):
     """The 16-bit JIS code of one character, as ptfdump.ch decodes it:
     0x23xx for ASCII letters and digits, 0x21xx for the punctuation table,
@@ -477,6 +519,9 @@ def classify(t, unit):
                 return ('int', int(b[1], int(a[1])))
             if atom_name(a) == 'string' and b[0] == 'str':
                 return ('str', jis_text(b[1]))
+            v = key_constant(atom_name(a), b)
+            if v is not None:
+                return v
             raise CompileRefusal('constant macro %s#' % (atom_name(a) or a[0]), 'no value table held')
         if f == '!' and len(args) == 2:
             nm = atom_name(args[1])

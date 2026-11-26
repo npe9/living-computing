@@ -256,6 +256,35 @@ attribute under := 0, image := 0;
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
 
+% :draw_row(Pane, Row, Codes, Op) -- window M10 (selector and body OURS),
+% for a Pmacs window's screen (pmacs_display.esp): text row Row cleared and
+% Codes drawn in it from column 0, the ones past the last column left
+% out; with Op `reverse` the row is then inverted by exclusive_or (the
+% reversed mode line, window.md §2.11, SCREENSHOT).  The cursor is not
+% moved.
+% INTERPOLATED (selector and body OURS): basis above.
+:draw_row(Pane, Row, Codes, Op) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        value(Pane!top + Row * Pane!ch, Y),
+        :fill(#bitmap_display, Pane!left, Y, Pane!iw, Pane!ch, reset),
+        row_glyphs(Pane, Codes, 0, Pane!left, Y),
+        row_reversed(Pane, Y, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :set_cursor(Pane, Col, Row) -- window M10 (selector and body OURS): the
+% cursor to cell (Col, Row) (a Pmacs window's point, pmacs_display.esp).
+% INTERPOLATED (selector and body OURS): basis above.
+:set_cursor(Pane, Col, Row) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        Pane!col := Col, Pane!row := Row,
+        value(Pane!left + Col * Pane!cw, X), value(Pane!top + Row * Pane!ch, Y),
+        Pane!cx := X, Pane!cy := Y,
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
 % :select(Pane) and :deselect(Pane) -- INTERPOLATED (body OURS) from
 % TM-126 p7 (PROSE, window.md §4.1): the selected window shows its
 % cursor.
@@ -744,6 +773,17 @@ put_codes(Pane, S, I, N) :-
         string_element(S, I, C),
         put_char(Pane, C),
         put_codes(Pane, S, I + 1, N);
+
+% window M10 (OURS, see draw_row/4)
+row_glyphs(_, [], _, _, _) :- !;
+row_glyphs(Pane, _, C, _, _) :- C >= Pane!cols, !;
+row_glyphs(Pane, [Code | Codes], C, X, Y) :-
+        :glyph(#bitmap_display, Pane!font, Code, X, Y, copy),
+        row_glyphs(Pane, Codes, C + 1, X + Pane!cw, Y);
+
+row_reversed(Pane, Y, reverse) :- !,
+        :fill(#bitmap_display, Pane!left, Y, Pane!iw, Pane!ch, exclusive_or);
+row_reversed(_, _, _);
 
 put_list(_, []);
 put_list(Pane, [C | Cs]) :- put_char(Pane, C), put_list(Pane, Cs);

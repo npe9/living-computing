@@ -75,13 +75,14 @@ class pmacs_window has
 % with it (OURS: the held code finds them through get_interpreter/2).
 :create(Class, Options, Window) :-
         :new(Class, Window),
-        editor_class(Options, Editor_class),
+        editor_class(Options, Window!editor, Editor_class),
         :new(Editor_class, Editor),
         Window!editor := Editor,
         Editor!window := Window,
-        :create(#editor_text_buffer, "", Buffer),
+        :new_buffer(#editor_text_buffer, "", Buffer),
         :create(#editor_command_interpreter, Window, Editor, Buffer, I),
-        Window!interpreter := I;
+        Window!interpreter := I,
+        options(Window, Options);
 % INTERPOLATED from: kwic-esp src/inEditor1.esp:151 and mendels
 % comp_win.esp:54-62 `:create(#pmacs_window, Opts, _, W)` (held IFS
 % source; Opts with `nature([with_superior_input_buffer])` and
@@ -94,7 +95,20 @@ instance
 
 % INTERPOLATED: the representation (OURS).  Window M4: the interpreter,
 % the pane (0: not drawn), the window's number in the status box (OURS).
+% Window M10: `editor` holds the editor's CLASS until create/3 puts the
+% editor there (HELD: cal2.12/cal_pmacs.esp's cal_pmacs_window, a
+% pmacs_window subclass, declares `attribute editor := #cal_pmacs_editor`;
+% so the slot names the class a subclass's window gets its editor from;
+% that create/3 then keeps the editor in the same slot is INFERENCE, which
+% get_editor/2 and the held pimfep census test read).  0 here: the class
+% is the {editor, Class} option's, else standard_editor (OURS).
 attribute editor := 0, interpreter := 0, pane := 0, number := 0;
+% Window M10, OURS: the Pmacs screen (pmacs_display.esp; 0: none), shown
+% once the window visits a buffer (set_input_buffer/2: visiting 1);
+% `status` the held status_window(..) option (on unless `off`: papyrus
+% main_window.esp.1:32 passes `status_window(off)`, so a mode line is the
+% default, INFERENCE); the last echo-line message.
+attribute display := 0, visiting := 0, status := on, echo := "";
 
 % INTERPOLATED (step 3e) from: pimos_window create_pimos_window/3, which
 % sets it to 1 after creating the window; meaning UNKNOWN.
@@ -121,7 +135,18 @@ attribute permission := out;
 :get_interpreter(Window, I) :- I = Window!interpreter;
 
 % Window M4, INTERPOLATED (body OURS) from the USAGE in the head comment.
-:input_data(Window, Data) :- :input(Window!interpreter, Data);
+% Window M10: the datum joins the input as the heap vector {data, Data}
+% (new_heap_vector/2, set_vector_element/3, as list_index.esp's entries),
+% so the interpreter tells it from a key or a menu's atom.  A term
+% {data, Data} would not do: its elements are undone when the sender
+% backtracks (pimos_window_process's loop), and the console's replay then
+% met {_, _} in the interpreter and diverged at exchange 11 (observed
+% 2026-11-26).
+:input_data(Window, Data) :-
+        new_heap_vector(V, 2),
+        set_vector_element(V, 0, data),
+        set_vector_element(V, 1, Data),
+        :input(Window!interpreter, V);
 
 % Window M4, INTERPOLATED (body INFERENCE, see the head comment).
 :has_been_reshaped(Window) :- drawn_again(Window);
@@ -129,7 +154,57 @@ attribute permission := out;
 % Window M4, INTERPOLATED (body OURS) from window.md §2.3, Appendix A
 % (USAGE): the buffer made visible.
 :flash(Window) :- Window!interpreter == 0, !;
-:flash(Window) :- buffer(Window, B), :redisplay(B);
+:flash(Window) :- :refresh(Window);
+
+% WINDOW M10 (2026-11-26): PMACS PROPER (editor_command_interpreter.esp,
+% standard_editor.esp, pmacs_display.esp, editor_text_buffer.esp).
+% :set_input_buffer(W, B) -- INTERPOLATED (selector HELD: exshow :29,
+% cal_pmacs run/4, pimos_window_editor select_buffer/4; body OURS): the
+% window's editor visits B, and the window shows the Pmacs screen (text,
+% mode line, echo line: pmacs_display.esp) from now on.  OURS: a window
+% that never visits a buffer this way (PIMOS's console, whose editor
+% writes its own original_buffer) keeps the plain text screen of window
+% M4 (the held callers that make an editor window, exshow and cal's
+% run/4, both send it before activate/1; the console's commands never
+% do, ptf.md W6).
+:set_input_buffer(Window, B) :-
+        :set_buffer(Window!interpreter, B),
+        Window!visiting := 1,
+        drawn_again(Window);
+% INTERPOLATED (selector HELD: cal_pmacs run/4 sends it to its
+% cal_pmacs_window before activate/1; 25 held uses, docs/simpos/required/
+% requirements.tsv; meaning UNKNOWN, body OURS): nothing (the point stays
+% where the editor's goto_beginning/1 put it).
+:set_input_position(Window);
+% INTERPOLATED (selector HELD, USAGE pmacs_window current_buffer/2 6U,
+% cal_pmacs run/4; body OURS): the buffer the editor visits.
+:current_buffer(Window, B) :- :buffer(Window!interpreter, B);
+% :refresh(W) -- OURS selector: the window's screen made to show its text
+% (the interpreter after every input; flash/1).
+% INTERPOLATED (selector and body OURS): see the head comment.
+:refresh(Window) :- D = Window!display, D \== 0, !,
+        :current_buffer(Window, B), :redisplay(D, B);
+:refresh(Window) :- buffer(Window, B), :redisplay(B);
+% :echo(W, String) -- OURS selector: the echo line's message
+% (standard_editor message/2).
+% INTERPOLATED (selector and body OURS): see the head comment.
+:echo(Window, S) :- Window!echo := S, echoed(Window);
+% INTERPOLATED (selector HELD, USAGE editor_main_window clear_echo_area/1,
+% cil ds_brs.esp:92; body OURS): the echo line emptied.
+:clear_echo_area(Window) :- :echo(Window, "");
+% :right_click(W, X, Y) -- OURS selector: the coordinator's right button
+% on the window (coordinator.esp click/4): mouse#r joins the input
+% (bound to show_menu by default, standard_editor.esp).
+% INTERPOLATED (selector and body OURS): see the head comment.
+:right_click(Window, _, _) :- :input(Window!interpreter, mouse#r);
+% :menu_chosen(W, Value) -- OURS selector: an EDITOR MENU item's value
+% (coordinator.esp's editor_menu dialogue) joins the input.
+% INTERPOLATED (selector and body OURS): see the head comment.
+:menu_chosen(Window, Value) :- :input(Window!interpreter, Value);
+% INTERPOLATED from: window.md §2.1 kill/1 (TM-125 p16; exshow :35):
+% the window leaves the screen for good (OURS body, as
+% standard_io_window.esp's).
+:kill(Window) :- taken_off(Window);
 
 % Step 3f: the window's geometry, title and font, and the display
 % methods, as pimfep##pimos_window_editor sends them to its window (kl0
@@ -212,7 +287,9 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % the window is drawn (OURS, as standard_io_window.esp).
 :activate(Window) :- open(Window);
 % INTERPOLATED from: window.md §2.1 deactivate/1 (TM-125 p16).
-:deactivate(Window) ;
+% Window M10: off the screen, kept (OURS body; cal_pmacs run/4 sends it
+% after command_interpret/1, and activate/1 draws it again).
+:deactivate(Window) :- taken_off(Window);
 % INTERPOLATED from: window.md §2.1 show/1 (TM-125 p16).  Window M4: the
 % window is drawn and selected (TM-225 p10-11, PROSE: SHOW changes the
 % selected window; as standard_io_window.esp).
@@ -260,15 +337,48 @@ local
 % The editor's class: the first `{editor, Class}` option (OURS: the
 % option's form is pimos_window's), else standard_editor.  An unbound
 % option list or option is not an editor option (it is not bound to one).
-editor_class(Options, #standard_editor) :- unbound(Options), !;
-editor_class([Option|_], Class) :- editor_option(Option, Class), !;
-editor_class([_|Options], Class) :- !, editor_class(Options, Class);
-editor_class(_, #standard_editor);
+editor_class(Options, Slot, Class) :- option_class(Options, Class), !;
+editor_class(_, Slot, Slot) :- Slot \== 0, !;
+editor_class(_, _, #standard_editor);
+
+option_class(Options, _) :- unbound(Options), !, fail;
+option_class([Option|_], Class) :- editor_option(Option, Class), !;
+option_class([_|Options], Class) :- option_class(Options, Class);
 
 editor_option(Option, _) :- unbound(Option), !, fail;
 editor_option({editor, Class}, Class);
 
 buffer(Window, B) :- I = Window!interpreter, B = I!original_buffer;
+
+% window M10: the held create options a window keeps (OURS bodies):
+% title(T) (exshow :24), position(X, Y) and size(W, H) in dots (exshow's
+% [size(1100,700), position(0,0)]; a size sets the text size that fits,
+% as reshape/5), size(ch(C), ch(R)) in cells (standard_io_window's form),
+% status_window(S) (papyrus).  The others are ignored, as before.
+options(_, Options) :- unbound(Options), !;
+options(_, []) :- !;
+options(Window, [Option | Options]) :- !, option(Window, Option), options(Window, Options);
+options(_, _);
+
+option(_, Option) :- unbound(Option), !;
+option(Window, {title, T}) :- !, Window!title := T;
+option(Window, {position, X, Y}) :- integer(X), integer(Y), !,
+        Window!x := X, Window!y := Y;
+option(Window, {size, {ch, C}, {ch, R}}) :- !,
+        Window!columns := C, Window!rows := R;
+option(Window, {size, W, H}) :- integer(W), integer(H), !,
+        Window!width := W, Window!height := H, text_fits(Window, W, H);
+option(Window, {status_window, S}) :- !, Window!status := S;
+option(_, _);
+
+echoed(Window) :- D = Window!display, D \== 0, !, :message(D, Window!echo);
+echoed(_);
+
+taken_off(Window) :- Window!pane == 0, !;
+taken_off(Window) :-
+        :take_off(#coordinator, Window),
+        :remove_window(#coordinator, Window),
+        Window!pane := 0, Window!display := 0;
 
 % window M7: the text size that fits W x H dots (reshape/5)
 text_fits(Window, W, H) :- integer(W), integer(H), !,
@@ -309,6 +419,16 @@ pane(Window) :-
         :create(#window_pane, Window!x, Window!y, Cols, Rows, Window!font, P),
         Window!pane := P,
         drawn_title(Window),
+        screen(Window, P, Cols, Rows);
+
+% window M4's plain text screen, or (M10) the Pmacs screen of a window
+% that visits a buffer
+screen(Window, P, Cols, Rows) :- Window!visiting == 1, !,
+        :create(#pmacs_display, P, Cols, Rows, Window!status, D),
+        Window!display := D,
+        echoed(Window),
+        :refresh(Window);
+screen(Window, P, _, _) :-
         buffer(Window, B),
         :set_pane(B, P),
         :redisplay(B);

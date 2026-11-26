@@ -1070,6 +1070,15 @@ call sites (notes: ifs_window.md §4).
 The numeric code values are not held: the macros delegate to the expander (gap G2). TM-125 p18 prints the 1985 mouse
 codes as `mouse$r`, `mouse$m`, `mouse$l`, `mouse$rr`. **VARIANT** `$` vs `#`.
 
+Window M10 (2026-11-26), what the held cells settle of G2 (`psi/espc.py` key_constant):
+- `mouse#B` is an ATOM named `mouse#B`, not an integer: the six names are in the held .ptf symbol tables
+  (notes/ptf.md W4), and kappa2 KMACS2.ESP's `:command(Self,mouse#r,kappa_menu)` compiles exact against
+  the held cells only with that atom (an injected rename loses that one exact row).
+- `key#lf` is 10: kappa2 DUMP.ESP dumpLine/6's `Char == key#lf` compiles exact only with 10 (11 loses it).
+- No atom named `key#..`, `control#..` or `pf#..` is in any held .ptf, so those are integers (INFERENCE).
+  Their values other than key#lf stay OURS. One held table agrees with ASCII for `control#"c"`:
+  pimfep##pimos_window_editor command/3 @17-26 binds the integer 3 to `attention` (C-c in ASCII).
+
 The pimfep supervisor dispatches on mouse codes (USAGE, pimfep##pimos_fep_superviser refute_command/3 (ptf); notes:
 ptf.md W4):
 - `mouse#l`: hide;
@@ -1294,8 +1303,10 @@ PRINTED TR-046 p28; TR-061 p13. The table is `default_translation_table`, looked
 
 ### 5.2 Pmacs bindings
 
-Pmacs binds keys by `:command` clauses (§2.11). The default table is not held (gap G6). User extensions bind
-(USAGE):
+Pmacs binds keys by `:command` clauses (§2.11). The default table is not held (gap G6); window M10 (2026-11-26)
+stands in a small Emacs subset, OURS, in `psi/standin/standard_editor.esp` (C-f/b/n/p/a/e/d/k, DEL, the arrows,
+C-x C-s/C-z/C-b, C-x b, mouse#r for the EDITOR MENU), which a held subclass's own clauses come before. User
+extensions bind (USAGE):
 - `control#` letters;
 - the `control_c` and `control_x` prefix tables (cal-esp/deb2.12/dedit.esp:105, :120);
 - `mouse#r` (kappa2/kappa2/utility/fmp/KMACS.ESP:67).
