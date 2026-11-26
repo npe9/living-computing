@@ -251,7 +251,7 @@ packet bytes and hardware-assembled 40-bit words.
 |---|---|---|---|
 | M1 | N PEs; `current_node` gives (k, N) on PE k; `Goal@node(K)` with K another PE sends `%throw_goal` and the goal runs on K; an unbound argument is exported and the importer's body unification of it with an atomic value sends `%unify` home, which binds it and wakes its waiters | `seqgc:go/0` and `gc:go/0` (§2) on 1, 2, 4 PEs, under two schedules | the reference model only |
 | M2 | Reading an external reference: a guard or `wait` on an imported cell sends `%read`, the reader's goals wait on a variable of its own, the exporter hooks a reply record (VPIM's `RHOOK`) on its variable if unbound, `%answer_value` brings a level-1 copy and the import is given back with `%release`; structures exported at level 0 (a list one cons at a time); a reference coming home resolves to the local cell | PIMOS's own `h_monitor` and `x_h_monitor` (the paragraph profiler's heap meters) on 1, 2, 4 PEs, homes 0 and N-1, against what their source fixes; bench cases on their `reverse/2,3` and `out/2` (§5) | M1 |
-| M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release` with WEC, an imported ID passed on as VPIM does (the release export, half the WEC, the indirect export), the export table a root of the collector and the import table weak; the exported variable retagged `EUNDF`/`EHOOK` (TM-1044, not reached) | the heap monitors of M2 collected at every quiescence, WEC conserved, every entry named by an import; an injected leak or double release failing a check; a collection with live exports | M2 |
+| M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release` with WEC, an imported ID passed on as VPIM does (the release export, half the WEC, the indirect export), the export table a root of the collector and the import table weak; the exported variable retagged `EUNDF`/`EHOOK` (TM-1044; `EMHOK` not) | the heap monitors of M2 collected at every quiescence, WEC conserved, every entry named by an import; an injected leak or double release failing a check; a collection with live exports | M2 |
 | M4 | The shoen across PEs: foster parents (`FPREC`), WTC (`wtctu`, `wtcsu`), `%terminated`, `%ready`, resource messages, exceptions for a bad node number | the manual's `range_overflow`/`illegal_input`; a shoen spread over nodes terminating once | M3 |
 | M5 | PIMOS boots on N PEs (its 113 `@node` sites), and the shell's `cn`, `gc`, `seqgc`, `set node` run | `cn.kl1`'s printout; §2's collection counts through the shell | M4; code fetch by module identifier |
 | M6 | A period multi-node program: MGTP-N, STB/MLB, Distributed Pool | its answer (KLIC's; for MGTP-N the 1-PE statistics its manual prints, p. 57) | M5 |
@@ -429,8 +429,8 @@ Not reached at M2, open:
   programs already compiled in the held image.
 - `unbound/2` of an external reference (VPIM throws it to the owner).
 
-**M3 reached on the reference model, 2026-11-26, except the
-retagging.** `ref/pimm/pimm_pe.py` (the white and black tables, WEC,
+**M3 reached on the reference model, 2026-11-26** (the retagging in a
+second commit, below). `ref/pimm/pimm_pe.py` (the white and black tables, WEC,
 `PECollector`) and `ref/pimm/m3_gc.py` (the check, in `run_tests.sh`
 after `m2_read.py`). `pimm_gc.py` gained two empty hooks
 (`more_roots`, `after_scan`), a class attribute for the tags that move
@@ -545,14 +545,9 @@ differ`.
 
 Not reached at M3, open:
 
-- **The retagging** (TM-1044 `s9-msg-kl1data.tex` 269-300: the
-  exported variable's cell becomes `EUNDF`/`EHOOK`/`EMHOK`). The model
-  keeps `UNDF`/`HOOK` and finds the exported variable through the
-  entry's word. Retagging would change how a variable looks to
-  `deref`, `bind`, `hook`, `taken`, `term`, the collector's variable
-  rule and its `HOOK` word, and every base instruction that tests a
-  cell for `UNDF` or `HOOK` itself (not audited); no check here
-  observes the tag. Not done.
+- `EMHOK` (several goals' hook kinds) is not modelled; nor is when the
+  machine untags a variable whose last entry is freed unbound (OURS:
+  at once).
 - The tables at fixed addresses: they are Python tables of the PE,
   not memory cells (OURS since M1).
 - Cross-PE cycles are not collected: no global collection is
@@ -560,3 +555,23 @@ Not reached at M3, open:
 - `cells` and `fixpoint` never fired under an injection; the
   `VAR_TAGS` addition is defensive (above).
 - The two OURS simplifications of `%read` and `%unify`'s WEC above.
+
+**The retagging, 2026-11-26.** An exported variable's cell is retagged
+while an entry holds it (TM-1044 `s9-msg-kl1data.tex` 269-300; PIMOS
+`tagtbl.kl1` 2Ah-2Dh): `UNDF` becomes `EUNDF`, `HOOK` `EHOOK`; a goal
+hooked on it keeps `EHOOK`; binding it wakes its goals as a `HOOK`'s
+are; when its last entry is freed still unbound it is a plain variable
+again (OURS). `pimm.py` gained `Machine.VAR_TAGS = (UNDF, HOOK)` in
+place of the literal pair in `term`, `taken`, `new_module` and
+`set_vector_element` (behaviour-preserving; `deref`, `bind` and `hook`
+are overridden by the PE); `PECollector` treats `EUNDF` as a datum and
+`EHOOK` as a hook word. One machine: the M1 trace list byte-identical
+again, and `m2_read.py`'s loader collection gives the same pickled
+machine. `m3_gc.py` checks at every quiescence that every exported
+variable still unbound is retagged and every retagged cell is one an
+entry holds. Injections: no retag, 678 FAIL lines in m3 (`exported
+variable not retagged` in every monitor and bench case), m2 PASS; no
+untag, 4 in m3 (`black`: a retagged cell no entry holds); an `EHOOK`
+bound without waking its goals, 73 in m2 (the monitors' answers and
+messages, `chain`, `alias`, paths), and m3 raises
+`gc: the to-space is full`.

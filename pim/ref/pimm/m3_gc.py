@@ -20,6 +20,10 @@ which wait on each other across PEs through the export tables, are
 never reclaimed (the tables are roots: a cycle across PEs is not
 collected, as with any reference count; TR-390 7).
 
+Since the retagging (TM-1044 s9-msg-kl1data.tex 269-300): retagged,
+every exported variable still unbound is EUNDF/EHOOK and every such
+cell is one an entry holds, also at every quiescence.
+
 Checked at every quiescence, on (N, c) = (1,0), (2,0), (2,1), (4,0),
 (4,3), quota 1 and 1,000,000:
   answers   each round's answer is each node's own heap (m2_read.py);
@@ -64,6 +68,10 @@ reachable).  Never fired: cells, fixpoint (vacuous for the monitors,
 which release nothing; drain's releases by round is the real one),
 a white entry held twice, an import with no WEC, a reply entry
 imported, the two schedules differ.
+The retagging: no retag, 678 FAIL lines here (exported variable not
+retagged), m2 PASS; no untag, 4 here (black: a cell no entry holds);
+EHOOK bound without waking, 73 in m2 (monitors, chain, alias, paths),
+and here raises `gc: the to-space is full`.
 """
 import os
 import sys
@@ -174,8 +182,29 @@ def cells(pe):
     return bad
 
 
+def retagged(system):
+    """Every exported variable still unbound is EUNDF or EHOOK, and
+    every EUNDF or EHOOK cell in a heap is one an entry holds."""
+    bad = []
+    for pe in system.pes:
+        held = set()
+        for e, w in pe.exports.items():
+            if w[0] & ~1 == pimm.REF:
+                c = pe.mem[w[1]]
+                held.add(w[1])
+                if c[0] & ~1 in (pimm.UNDF, pimm.HOOK):
+                    bad.append(('exported variable not retagged', pe.pe, e, c))
+        lo = getattr(pe, 'heap_lo', None) or pe.load + HEAP
+        for a in range(lo, pe.hp):
+            c = dict.get(pe.mem, a)
+            if c is not None and c[0] in pimm_pe.E_TAGS and a not in held:
+                bad.append(('an EUNDF/EHOOK cell no entry holds', pe.pe, a))
+    return bad
+
+
 def quiet(system):
-    return wec_check(system) + named(system) + m2_read.consistent(system)
+    return (wec_check(system) + named(system) + retagged(system)
+            + m2_read.consistent(system))
 
 
 def collect_all(system, quota):

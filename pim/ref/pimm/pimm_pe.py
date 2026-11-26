@@ -110,8 +110,10 @@ labelled there.  In brief:
 - A collection on a PE (PECollector, pimm_gc's own with two hooks):
   the export table is a root, the import table weak; an import whose
   external cell was not reached is released (all its WEC with it).
-  The exported variable keeps its UNDF or HOOK tag: TM-1044's EUNDF /
-  EHOOK retagging is not modelled (docs/multi_pe.md 5, M3).
+  An exported variable's cell is retagged EUNDF (unbound) or EHOOK
+  (goals waiting) while an entry holds it (TM-1044 s9-msg-kl1data.tex
+  269-300), and plain again when its last entry is freed unbound
+  (OURS).  EMHOK is not modelled.
 
 Goals of the root only (no shoen): a throw from inside a shoen is
 refused (rung M4).  The PE classes never change a single machine:
@@ -136,6 +138,10 @@ from pimm_layout import G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS, SUSPENDED, TAK
 # external cells and IDs (debugger/inspector/tagtbl.kl1): o = MRB off
 EXREF, EXREFx, EXVAL, EXVALx = 0x32, 0x33, 0x34, 0x35
 EX_TAGS = (EXREF, EXREFx, EXVAL, EXVALx)
+# an exported variable (TM-1044 s9-msg-kl1data.tex 269-300; tagtbl.kl1
+# 2Ah-2Dh): EUNDF unbound, EHOOK with goals waiting
+EUNDF, EUNDFx, EHOOK, EHOOKx = 0x2A, 0x2B, 0x2C, 0x2D
+E_TAGS = (EUNDF, EUNDFx, EHOOK, EHOOKx)
 # message kinds: the Pseudo PIM/m console's codes (docs/multi_pe.md 1.1),
 # the same as VPIM's _NW_ numbering
 M_THROW, M_READ, M_ANSWER, M_RELEASE, M_UNIFY = 0, 6, 7, 8, 9
@@ -167,6 +173,7 @@ def id_entry(ident):
 
 class PE(pimm.Machine):
     """One processing element.  Made by System from a loaded machine."""
+    VAR_TAGS = pimm.Machine.VAR_TAGS + (EUNDF, EHOOK)
 
     def setup(self, system, pe):
         self.system = system
@@ -320,6 +327,7 @@ class PE(pimm.Machine):
             if black:
                 self.black[key(w)] = e
                 self.wec[e] = 0
+            self.retag(w)
         if black:
             self.wec[e] -= WEC_UNIT
         return ext_id(self.pe, e)
@@ -329,6 +337,27 @@ class PE(pimm.Machine):
         if e in self.wec:
             del self.wec[e]
             del self.black[key(w)]
+        self.untag(w)
+
+    def retag(self, w):
+        """An exported variable's cell: UNDF to EUNDF, HOOK to EHOOK
+        (TM-1044 9: the cell's type changes and a pointer to it goes in
+        the export table)."""
+        if w[0] & ~1 == REF:
+            c = self.mem[w[1]]
+            if c[0] == UNDF:
+                self.mem[w[1]] = (EUNDF, 0)
+            elif c[0] & ~1 == HOOK:
+                self.mem[w[1]] = (EHOOK, c[1])
+
+    def untag(self, w):
+        """Its last entry freed, an exported variable still unbound is
+        a plain one again (OURS: when the machine did this is not held)."""
+        if w[0] & ~1 == REF and self.mem[w[1]][0] in E_TAGS:
+            if any(key(v) == key(w) for v in self.exports.values()):
+                return
+            c = self.mem[w[1]]
+            self.mem[w[1]] = (UNDF, 0) if c[0] & ~1 == EUNDF else (HOOK, c[1])
 
     def give_back(self, e, wec):
         """WEC returned to black entry e; reclaimed at 0 (TM-1044 9)."""
@@ -656,7 +685,7 @@ class PE(pimm.Machine):
         while w[0] & ~1 == REF:
             on = on or bool(w[0] & 1)
             c = self.mem[w[1]]
-            if c[0] == UNDF or c[0] & ~1 == HOOK or c[0] in EX_TAGS:
+            if c[0] == UNDF or c[0] & ~1 == HOOK or c[0] in EX_TAGS or c[0] in E_TAGS:
                 break
             w = c
         return pimm.marked(w) if on else w
@@ -664,7 +693,21 @@ class PE(pimm.Machine):
     def hook(self, g, var):
         if self.mem[var][0] in EX_TAGS:
             var = self.send_read(var)
-        return pimm.Machine.hook(self, g, var)
+        c = self.mem[var]
+        if c[0] not in E_TAGS:
+            return pimm.Machine.hook(self, g, var)
+        # an exported variable: hooked as a plain one, the tag kept
+        self.mem[var] = (UNDF, 0) if c[0] & ~1 == EUNDF else (HOOK, c[1])
+        pimm.Machine.hook(self, g, var)
+        self.mem[var] = (EHOOK, self.mem[var][1])
+
+    def bind(self, ref, w):
+        c = self.mem[ref[1]]
+        if c[0] & ~1 == EHOOK:
+            # its goals woken as a plain variable's are (TM-1044: an
+            # EHOOK is a HOOK that is exported)
+            self.mem[ref[1]] = (HOOK, c[1])
+        return pimm.Machine.bind(self, ref, w)
 
     def ready(self, g):
         if self.mem[g + G_CODE][1] != 0:
@@ -712,11 +755,13 @@ class PECollector(pimm_gc.Collector):
     releases imports was not read).  What a
     bench holds (PE.roots) is a root too, and the suspended goals are
     counted again from the copy."""
-    VAR_TAGS = pimm_gc.Collector.VAR_TAGS + (EXREF, EXVAL)
+    VAR_TAGS = pimm_gc.Collector.VAR_TAGS + (EXREF, EXVAL, EUNDF, EHOOK)
 
     def word(self, w):
-        if w[0] in EX_TAGS:
+        if w[0] in EX_TAGS or w[0] & ~1 == EUNDF:
             return w
+        if w[0] & ~1 == EHOOK:
+            return (w[0], self.susp(w[1]))
         return pimm_gc.Collector.word(self, w)
 
     def more_roots(self):

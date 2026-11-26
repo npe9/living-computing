@@ -171,7 +171,7 @@ export table a root, the import table weak, a dead import released).
 `python3 ref/pimm/m3_gc.py` (in the suite, after `m2_read.py`) runs
 the heap monitors with collections at every quiescence and checks WEC
 conservation, that every entry is named, and the bench drains. The
-exported variable is not retagged `EUNDF`/`EHOOK` (open).
+exported variable is retagged `EUNDF`/`EHOOK` while an entry holds it.
 
     python3 ref/pimm/test_jtoa.py
 
