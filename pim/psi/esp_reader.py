@@ -20,6 +20,14 @@ held login files' clause syntax (shell.md §4.2.2) and nothing more:
 
 read_terms(text) -> [term, ...] with kl0 terms (Atom, int, Str, Var,
 Cons, Vec).  A syntax error raises ValueError.
+
+Step 3o (2026-11-26), for the debugger's goals (standin/debugger.esp):
+  - the prefix `:` of a method call, `:f(R, A, ...)` read as {':', {f, R,
+    A, ...}}, and the prefix `#` of a class, `#c` as {'#', c} (ESP's
+    surface syntax, PRINTED: TM-134 PDF p71 `:create(#process,Process).`;
+    the term form OURS);
+  - read_goal(K, text) -> (term, [(name, Var), ...]): one goal ended by
+    `.`, with its named variables in the order they first appear (OURS).
 """
 import re
 
@@ -32,6 +40,7 @@ TOKEN = re.compile(r'''
  | (?P<atom>[a-z][A-Za-z0-9_]*(?:\#\#[A-Za-z_][A-Za-z0-9_]*)?)
  | (?P<end>\.(?=\s|$))
  | (?P<op>:-|:=|\#\#)
+ | (?P<pre>[:\#])
  | (?P<punct>[()\[\]{},|])
 ''', re.X)
 
@@ -106,6 +115,20 @@ class Reader:
                 self.take()
                 return K.Vec([K.Atom(name)] + self.args(')'))
             return K.Atom(name)
+        if k == 'pre' and v == ':':
+            # step 3o: a method call; the selector and its arguments
+            k2, v2 = self.take()
+            if k2 != 'atom' or self.peek()[1] != '(':
+                raise ValueError('reader: a method call without its arguments at %r' % (v2,))
+            self.take()
+            return K.Vec([K.Atom(':'), K.Vec([K.Atom(v2)] + self.args(')'))])
+        if k == 'pre' and v == '#':
+            # step 3o: a class
+            k2, v2 = self.take()
+            if k2 not in ('atom', 'qatom'):
+                raise ValueError('reader: # without a class name at %r' % (v2,))
+            name = v2[1:-1].replace("''", "'") if k2 == 'qatom' else v2
+            return K.Vec([K.Atom('#'), K.Atom(name)])
         if v == '(':
             t = self.term(1200)
             self.take(')')
@@ -146,3 +169,18 @@ def read_terms(K, text):
         out.append(t)
         i = j + 1
     return out
+
+
+def read_goal(K, text):
+    """Step 3o (OURS): the one goal of TEXT, ended by `.` -> (term,
+    [(name, Var), ...]) with the named variables in order of first
+    appearance.  A syntax error, no end or more than one goal raises
+    ValueError."""
+    toks = tokens(text)
+    if not toks or toks[-1][0] != 'end' or any(k == 'end' for k, _ in toks[:-1]):
+        raise ValueError('reader: a goal is one term ended by .')
+    r = Reader(K, toks[:-1])
+    t = r.term(1200)
+    if r.i != len(r.t):
+        raise ValueError('reader: trailing %r' % (r.t[r.i:],))
+    return t, list(r.vars.items())

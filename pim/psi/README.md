@@ -25,6 +25,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
 | `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`; since step 3i, the interpolated `boot_process`; since step 3j, the interpolated `context` and `as_resource` (basis table in "Step 3j"); since step 3k, the interpolated `date_time` (basis table in "Step 3k"). |
+| `test_boot_route.py` | Step 3o: the boot route's B8 top level, the debugger stand-in as the listener with TM-134 p71's dialogue typed, and the timer's alarms. It is in `../run_tests.sh` and takes about 10 s. `--png DIR` writes its screen. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -44,6 +45,7 @@ From `pim/`:
     python3 -I psi/kl0.py census --fep --recipes      # the same, receivers made by their held creators
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
+    python3 -I psi/test_boot_route.py             # step 3o, the debugger's listener (~10 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
     python3 -I psi/espc.py behave [-v]            # compiled paragraph against paragraph.ptf
     python3 -I psi/espc.py compile psi/standin/stream.esp --package simpos --listing
@@ -4998,6 +5000,68 @@ run; all else OK):
 | Q1 | scrolled/2 never moves the first shown line | M10 scroll |
 | Q2 | place/3's `--Bot--` clause removed | M10 scroll |
 
+### Step 3o: the debugger's listener, TM-134's dialogue typed into it (2026-11-26)
+
+The boot route's B8 (`../docs/simpos/boot_route.md` §4.9) had one top
+level, the system menu. SIMPOS has a second (§1 of that page): the
+debugger, "for debugging but also an ESP listener" (`shell.md` §5.4),
+and the dialogue that starts a program in a new process is typed there
+(TM-134 PDF p71, folio 67). The step's recorded next item, keyboard
+input past the requester's prompt, was already done by step 3m (and
+per-window focus by window M7); the menu path's create, create
+(#process), activate was already `coordinator.esp` `start/2` (step 3l).
+What step 3o adds is the listener. Every inference is in
+`../docs/simpos/source_check_2026-11-24.md` §14. Tests:
+`test_boot_route.py` (a new file; in `../run_tests.sh`).
+
+| What runs | Label | Test |
+|---|---|---|
+| The held login.com's first item, `{"debugger", simpos##debugger}`, chosen with the mouse on the SYSTEM MENU, starts `standin/debugger.esp` in a new process (the coordinator's `start/2`, step 3l) | item HELD; the class lost, the stand-in OURS | `test_step3o_dialogue` |
+| The window `debugger_1` (the count INFERENCE), the prompt `:- ` on the line of the goal typed (`debugger_window.esp` `putt/2`, INFERENCE), `> Success !!` / `> Fail !!` and a blank line, a `Variable Window` of `Name = $class,` ... `;` | SCREENSHOT TM-134 PDF p68, p71; TM-125 Fig 4 | `test_step3o_dialogue`, `test_step3o_variables` |
+| A line read with the window's `getl/2` (window M1's path: `{key, Code}` to the selected window), read as a goal by `kl0.py` `debugger_read_goal` (`esp_reader.py` `read_goal`, the prefixes `:` and `#`), run with `refute/3`; variables kept from goal to goal | reader and run OURS; persistence INFERENCE (Fig. 6-4) | all four |
+| TM-134 p71's three goals with the held `pimfep##pimos_login_requester` for the printed-in-part `hypocycloid_drawer`: `:activate` returns at once and the prompt comes back while the requester runs in `Proc`, a child of the debugger's process; its dialogue then equals the menu path's (`test_step3m_keyboard`) | PRINTED dialogue and prose; the requester HELD | `test_step3o_dialogue` |
+| `:create(#process,Proc).` again: `> Fail !!` (Proc keeps its value); a line that does not read: `> Syntax error !!` (OURS text); a new variable joins the Variable Window | INFERENCE / OURS | `test_step3o_variables` |
+| The subroutine form `:create(#c,R), :goal(R).` runs in the debugger's process: no prompt comes back | PROSE TM-134 PDF p69; TM-786 p5 | `test_step3o_subroutine_form` |
+| B4: `alarm_watch on_at/2`; the held `pimos_timer` alarms 303 and 302 round-trip, reply `{Id, 1, 9}` (9 = wake_up), at once (no clock) | INTERPOLATED from the held send @14e; the reply HELD (@12b-131) | `test_step3o_timer_alarms` |
+
+The screen (`test_step3o_dialogue`, pinned by its PBM sha256;
+`../docs/simpos/screens/debugger_dialogue.png`, written by
+`python3 -I psi/test_boot_route.py --png DIR`): `debugger_1` at the right
+with the three goals and their answers and the prompt again, the
+Variable Window under it, and the requester's window, cleared after the
+password, showing `Network error.`.
+
+Open item 4 of step 3l (`boot_route.md` §5 item 2), where the sources
+allow: blt 0d was done in step 3n; `get_interpreter/2` and
+`has_been_reshaped/1` have been stood in since window M4 and M7 (recorded
+now in "Open"); 303 runs, but a delayed alarm needs a clock (open); blt
+a8 (9 held uses, all in pimscsi without source) and `terminate_core`'s
+PCB word 15 (read at `pseudo_pe_process` @3bb and given to
+`remove_only/2`, written by no held cell) stay blocked.
+
+**Injections, OBSERVED** (2026-11-26; each in a private copy of `psi/`,
+the worktree untouched; `test_boot_route.py`, `test_espc.py` and
+`test_kl0.py` run; all else OK):
+
+| | injection | fails |
+|---|---|---|
+| D1 | `bind/2` gives no name its earlier value | `_dialogue`, `_variables` (refused at the third goal: activate/2 to an unbound receiver) |
+| D2 | a send of activate/2 runs the object's goal/1 in the debugger's process | `_dialogue`, `_variables` |
+| D3 | `;` after every binding in the Variable Window | `_dialogue`, `_variables` |
+| D4 | the reader takes a method call's arguments in reverse | `_reader`, `_dialogue`, `_variables`, `_subroutine_form` |
+| D5 | a failed goal answered `> Success !!` | `_variables` |
+| T1 | `alarm_watch on_at/2` fails | `test_step3o_timer_alarms` |
+
+test_espc.py and test_kl0.py stayed OK in all six.
+
+**Census.** Unchanged: `test_espc.py`'s and `test_kl0.py`'s census pins
+pass with the two new classes and `on_at/2` (2026-11-26). No held class
+inherits `debugger` or `debugger_window`, and the census's
+`pimos_timer` rows never reach `on_at/2` (`kl0.py census --fep`, rerun
+2026-11-26: `on_at/4` and `on_after/4` fail on their unbound count,
+`do_on_at/4` and `do_on_after/4` refuse at `allow_forced_event/1` to an
+unbound receiver, as before).
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window
@@ -5211,6 +5275,11 @@ test_kappa2's exact count).
         `cal2.12/scawin.esp`:68; kwic-esp `doc/classSpec.IO2`:2232
         documents kwic's own). What the default primary does is not
         printed. A no-op would be a guess.
+      - (Step 3o, recorded: both are stood in since the window
+        milestones, `pmacs_window.esp` get_interpreter/2 since M4 and
+        has_been_reshaped/1 in `pmacs_window.esp` and
+        `standard_io_window.esp` since M7; INTERPOLATED selectors, OURS
+        bodies. SIMPOS's own bodies are still not printed.)
     - The census's unbound request arguments: device replies refuse at
       `set_string_element` on an unbound argument (25 rows plain, 45
       with recipes). Step 3g: the recipe census gives requests (OURS

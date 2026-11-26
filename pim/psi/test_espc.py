@@ -745,7 +745,8 @@ class Standins(unittest.TestCase):
             'simpos##binary_file', 'simpos##bitmap', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##buffer_region', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##coordinator',
-            'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
+            'simpos##coordinator_program', 'simpos##date_time', 'simpos##debugger',
+            'simpos##debugger_window', 'simpos##directory',
             'simpos##e_string', 'simpos##editor_command_interpreter', 'simpos##editor_text_buffer',
             'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##marker',       # window M8's markers (2026-11-26)

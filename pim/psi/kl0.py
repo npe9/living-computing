@@ -1267,6 +1267,113 @@ class Machine:
         terms, pos = self.input_terms(deref(self.x[0]))
         return self.proceed() if pos >= len(terms) else self.fail()
 
+    def debugger_read_goal(self):
+        """:read_goal(#debugger, Line, Goal, Names) -- step 3o (2026-11-26),
+        OURS selector and form: the debugger's reader (standin/debugger.esp;
+        SIMPOS's debugger and its reader are lost, shell.md §5.4).  Line, a
+        string typed in the debugger's window, is read as one goal ended by
+        `.` (psi/esp_reader.py read_goal; Input is terminated with `.`,
+        SCREENSHOT Giho 8609 p20, shell.md §5.4.2).  Goal is its executable
+        form: {send, Selector, Receiver, {Arguments}} for a method call
+        `:sel(R, A, ...)` (PRINTED form TM-134 PDF p71, folio 67), {and, G1,
+        G2} for `G1, G2` (PRINTED form TM-786 p5 `:create(#simshow##simshow,
+        S), :goal(S).`), every `#c` the class object (the library's lookup,
+        lib_class_named: the class must be loaded).  Names is the list of
+        the goal's named variables, [[Name, Var], ...] with Name an atom, in
+        order of first appearance.  A line that does not read fails; a goal
+        of another form (a built-in, a unification) is refused loudly: only
+        method calls are stood in."""
+        import esp_reader
+        import simpos_fs
+        line = deref(self.x[0])
+        if not isinstance(line, Str):
+            raise Refusal('unbound argument' if isinstance(line, Var) else 'simpos',
+                          'debugger read_goal/4 on %r' % (line,))
+        try:
+            term, names = esp_reader.read_goal(sys.modules[__name__], simpos_fs.text_of(line.codes()))
+        except ValueError:
+            return self.fail()
+
+        def data(t):
+            t = deref(t)
+            if isinstance(t, Vec) and len(t.args) == 2 and deref(t.args[0]) == Atom('#'):
+                name = deref(t.args[1]).name
+                cid = self.lib_class_named(name)
+                if cid is None:
+                    raise Refusal('simpos', 'debugger read_goal/4: class %s is not loaded' % name)
+                return ClassRef(cid)
+            if isinstance(t, Vec):
+                return Vec([data(a) for a in t.args])
+            if isinstance(t, Cons):
+                return Cons(data(t.args[0]), data(t.args[1]))
+            return t
+
+        def goal(t):
+            t = deref(t)
+            if isinstance(t, Vec) and len(t.args) == 3 and deref(t.args[0]) == Atom(','):
+                return Vec([Atom('and'), goal(t.args[1]), goal(t.args[2])])
+            if isinstance(t, Vec) and len(t.args) == 2 and deref(t.args[0]) == Atom(':'):
+                call = deref(t.args[1])
+                if len(call.args) < 2:
+                    raise Refusal('simpos', 'debugger read_goal/4: a method call with no receiver')
+                return Vec([Atom('send'), deref(call.args[0]), data(call.args[1]),
+                            Vec([data(a) for a in call.args[2:]])])
+            raise Refusal('simpos', 'debugger read_goal/4: the goal %r is not a method call '
+                          '(not in the stand-in)' % (t,))
+        g = goal(term)
+        out = NIL
+        for name, v in reversed(names):
+            out = Cons(Cons(Atom(name), Cons(v, NIL)), out)
+        if not self.unify(self.x[1], g):
+            return self.fail()
+        return self.proceed() if self.unify(self.x[2], out) else self.fail()
+
+    def debugger_variable_lines(self):
+        """:variable_lines(#debugger, Variables, Lines) -- step 3o, OURS
+        selector: the Variable Window's lines for Variables, [[Name, Value],
+        ...]: `Name = Value`, then `,` after each but the last and `;` after
+        the last; an object is `$` and its class's name without the package
+        (SCREENSHOT TM-134 PDF p68 (folio 64) `Object1 = $hypocycloid_drawer,`
+        / `Object2 = $hypocycloid_drawer;`, PDF p71 `Cyc = $hypocycloid_drawer,
+        Proc = $process;`; shell.md §5.4.2).  Other values are written as
+        ESP source (OURS): integers, "strings", atoms, #class, [lists],
+        {vectors}, `_` for an unbound variable."""
+        def text(t, depth=0):
+            t = deref(t)
+            if depth > 7:
+                return '...'
+            if isinstance(t, Instance):
+                return '$' + t.cid.split('##', 1)[-1]
+            if isinstance(t, ClassRef):
+                return '#' + t.cid.split('##', 1)[-1]
+            if isinstance(t, Var):
+                return '_'
+            if isinstance(t, Str):
+                return '"%s"' % t.text
+            if isinstance(t, Atom):
+                return '[]' if t == NIL else t.name
+            if isinstance(t, Vec):
+                return '{%s}' % ','.join(text(a, depth + 1) for a in t.args)
+            if isinstance(t, Cons):
+                items = []
+                while isinstance(t, Cons):
+                    items.append(text(t.args[0], depth + 1))
+                    t = deref(t.args[1])
+                tail = '' if t == NIL else '|' + text(t, depth + 1)
+                return '[%s%s]' % (','.join(items), tail)
+            return str(t)
+        vs, t = [], deref(self.x[0])
+        while isinstance(t, Cons):
+            e = deref(t.args[0])
+            vs.append((deref(e.args[0]).name, deref(deref(e.args[1]).args[0])))
+            t = deref(t.args[1])
+        out = NIL
+        for k in reversed(range(len(vs))):
+            s = Str('')
+            s.text = '%s = %s%s' % (vs[k][0], text(vs[k][1]), ';' if k == len(vs) - 1 else ',')
+            out = Cons(s, out)
+        return self.proceed() if self.unify(self.x[1], out) else self.fail()
+
     def file_new_version(self):
         """:new_version(File, Contents, New) -- window M10 (2026-11-26),
         OURS selector: a save of a Pmacs buffer (standin/standard_editor.esp).
@@ -3060,6 +3167,9 @@ SIMPOS_MODELS = {
     ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
     # window M10: a Pmacs save writes a new version (standin/binary_file.esp)
     ('simpos##binary_file', 'instance', 'new_version', 3): Machine.file_new_version,
+    # step 3o: the debugger's reader and Variable Window (standin/debugger.esp)
+    ('simpos##debugger', 'class', 'read_goal', 4): Machine.debugger_read_goal,
+    ('simpos##debugger', 'class', 'variable_lines', 3): Machine.debugger_variable_lines,
 }
 # window M0/M3/M5 (OURS): the display device's simpos##bitmap_display
 # selectors (psi/windev.py; the window stand-ins draw through them)

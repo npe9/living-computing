@@ -1,0 +1,137 @@
+% SCAFFOLDING stand-in for SIMPOS's class `debugger`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost (docs/simpos/subsystems/shell.md §5.4).  Step 3o, route step B8
+% (docs/simpos/boot_route.md §4.9).  MINIMAL: the debugger as the ESP
+% listener, which runs typed goals of method calls, as the 1.0 dialogue
+% that starts a program in a new process (no trace, no spy points, no
+% Debugger Menu, no state window).
+%
+% HELD: the held login file me:login.com names this class as the first
+% item of the system menu's first column, {"debugger", simpos##debugger}
+% (psdpim INSTALL.DIR>login.com.8; psi/simpos_fs.py).
+% PRINTED (SCREENSHOT and prose; page images read 2026-11-26):
+%   - TM-134 PDF p71 (folio 67), Fig. 6-4 "starting a process": in the
+%     window `debugger_1`, the prompt `:- `, the goals typed after it and
+%     ended by `.` and RETURN, `> Success !!` after each, then the prompt
+%     again; the dialogue `:create(#hypocycloid_drawer,300,Cyc).`,
+%     `:create(#process,Proc).`, `:activate(Proc,Cyc).`; the prose:
+%     ":activate returns at once, the prompt `:- ` appears and the
+%     debugger can be used on" while the program runs in its own process;
+%     the sub-window `Variable Window` shows `Cyc = $hypocycloid_drawer,
+%     Proc = $process;`, so a variable bound by one goal keeps its value
+%     in the next (Cyc and Proc are used again in the third goal);
+%   - TM-134 PDF p68 (folio 64), Fig. 6-3: `debugger_3`, the subroutine
+%     form `:- :new(#hypocycloid_drawer,Object1).` `> Success !!`, a
+%     blank line between one answer and the next prompt, and the Variable
+%     Window one binding a line (`Object1 = $hypocycloid_drawer,` /
+%     `Object2 = $hypocycloid_drawer;`);
+%   - TM-125 Fig 4 (trtm_window.md): the other answer, `> Fail !!`;
+%   - shell.md §5.4.2: the 1.00 prompt `:- ` (2.00 and later `?- `, with
+%     the binding on the next line).  The 1.00 form is used here: it is the
+%     only one printed with the dialogue this step runs.
+% INFERENCE: the window's number is a count of the debuggers made, from 1
+% (shell.md §4 "Window and process names": in 1.x the n of `debugger_n`
+% is a per-program counter, not the process number).
+% OURS throughout, labelled:
+%   - the reader and the Variable Window's text are kl0 models
+%     (kl0.py debugger_read_goal, debugger_variable_lines; the reader
+%     psi/esp_reader.py read_goal): only method calls and `,` are read as
+%     goals; a line that does not read is answered `> Syntax error !!`
+%     (OURS text: no such screen is held);
+%   - the goal is run with class `class`'s refute/3 (TM-388 p46, the
+%     dynamic method call; kl0 Machine.refute), its first solution only;
+%   - the variables are kept as [Name, Value] lists in an instance slot
+%     (kl0 keeps a list's values in a slot, resolve_value); after a
+%     failure the goal's new variables are not kept;
+%   - the windows' places and sizes (the debugger at the right, as in
+%     both figures; 44 x 14 cells, the Variable Window 44 x 3 under it);
+%   - the prompt stands on the line with the goal typed after it (putt/2
+%     of debugger_window, standin/debugger_window.esp: a write with no new line; that the window
+%     class had one is INFERENCE from the screens).
+
+class debugger has
+
+nature as_program;
+
+% INFERENCE (see above): the debuggers made so far.
+attribute count := 0;
+
+instance
+
+% OURS (see above): the debugger's window, its Variable Window, the
+% variables bound so far ([[Name, Value], ...], Name an atom).
+attribute window := 0, variable_window := 0, variables := [];
+
+% :goal(D) -- INTERPOLATED (see above): the window `debugger_N` and its
+% Variable Window, then the listener's loop for ever.
+:goal(D) :-
+        #debugger!count := #debugger!count + 1,
+        :get_number_string(#symbolizer, #debugger!count, NS),
+        :append(#string, ["debugger_", NS], Title),
+        :create(#font, "font:test_11.font", F),
+        :create(#debugger_window, [{size, {ch, 44}, {ch, 3}}, {position, 720, 300}], V),
+        :set_font(V, F), :set_label_font(V, F),
+        :set_title(V, "Variable Window"), :activate(V),
+        D!variable_window := V,
+        :create(#debugger_window, [{size, {ch, 44}, {ch, 14}}, {position, 720, 40}], W),
+        :set_font(W, F), :set_label_font(W, F),
+        :set_title(W, Title), :activate(W),
+        D!window := W,
+        :show(V),
+        :show(W),
+        loop(D);
+
+local
+
+loop(D) :- listen(D), !, loop(D);
+loop(D) :- loop(D);
+
+% one goal: the prompt, a line, the answer
+listen(D) :-
+        W = D!window,
+        :putt(W, ":- "),
+        :getl(W, Line),
+        answer(D, W, Line);
+
+answer(D, W, Line) :-
+        :read_goal(#debugger, Line, Goal, Names), !,
+        bind(Names, D!variables),
+        run(D, W, Goal, Names);
+answer(_, W, _) :- :putl(W, "> Syntax error !!"), :putl(W, "");
+
+run(D, W, Goal, Names) :- exec(Goal), !,
+        kept(Names, D!variables, Vs),
+        D!variables := Vs,
+        :putl(W, "> Success !!"), :putl(W, ""),
+        shown_variables(D);
+run(_, W, _, _) :- :putl(W, "> Fail !!"), :putl(W, "");
+
+exec({and, A, B}) :- !, exec(A), exec(B);
+exec({send, Selector, Receiver, Arguments}) :- :refute(Receiver, Selector, Arguments);
+
+% a name bound by an earlier goal has its value
+bind([], _) :- !;
+bind([[N, V] | Ns], S) :- value_of(S, N, V0), !, V = V0, bind(Ns, S);
+bind([_ | Ns], S) :- bind(Ns, S);
+
+value_of([[N0, V] | _], N, V) :- N0 == N, !;
+value_of([_ | S], N, V) :- value_of(S, N, V);
+
+% the new names join the end, in their order
+kept([], S, S) :- !;
+kept([[N, _] | Ns], S0, S) :- value_of(S0, N, _), !, kept(Ns, S0, S);
+kept([B | Ns], S0, S) :- append(S0, [B], S1), kept(Ns, S1, S);
+
+append([], L, L) :- !;
+append([X | L1], L2, [X | L3]) :- append(L1, L2, L3);
+
+shown_variables(D) :-
+        :variable_lines(#debugger, D!variables, Lines),
+        V = D!variable_window,
+        :clear(V),
+        put_lines(V, Lines);
+
+put_lines(_, []) :- !;
+put_lines(V, [L | Ls]) :- :putl(V, L), put_lines(V, Ls);
+
+end.

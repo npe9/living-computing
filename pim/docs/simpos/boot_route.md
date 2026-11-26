@@ -14,7 +14,9 @@ It then names the first step that is unblocked. Step 3i took B2, step
 3j B3, step 3k B4 for the FEP timer, and step 3l B5 to B8 as labelled
 stand-ins, under the owner's rule of 2026-11-25 (§4.4). Step 3m took the
 login requester through its prompts and a local login to the held login
-server and replier (§4.5); §6 is the path from SIMPOS to PIMOS.
+server and replier (§4.5); §6 is the path from SIMPOS to PIMOS. Step 3o
+took the second top level of §1, the debugger's listener, with TM-134's
+dialogue typed into it (§4.9).
 
 Labels, as elsewhere in `docs/simpos/`:
 
@@ -58,11 +60,11 @@ from it.
 | B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles the stand-ins (36 before step 3l; 48 files in `psi/standin/` after it, 50 after step 3m) | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
-| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
+| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Step 3o: the alarms `on_after` (303) and `on_at` (302) round-trip, the alarm at once (no clock is modelled; §4.9). Not reached: `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE. **Step 3l:** `directory` (`retrieve/3,4` and the node methods, INTERPOLATED) over an OURS tree built from the HELD psdpim archive and its `INSTALL` placement; `node_full_name/3` (INFERENCE) | **DONE as a stand-in** (§4.4). The real file system is lost; the tree holds only what PIM/m installs. |
 | B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal. **Step 3l:** a coordinator process (OURS state and selectors, INTERPOLATED behaviour) reads `me:login.com` through `standard_input_file` (INTERPOLATED; reader OURS), applies its `define`, holds its `menu`, answers `information/3`; `standard_io_window` and `font` (OURS bodies, held selectors) | **The coordinator: DONE as a stand-in** (§4.4). The window system only as far as the login requester's first prompt: a window is a transcript and an input stream; no bitmap, no menu window (the menu is a list). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors. **Step 3l:** `user`, `world`, `password_list` (INTERPOLATED from the held sends; registry and password OURS); the held `create/4` and `setup_process/2` run to their ends | **DONE as a stand-in** (§4.4). |
-| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program puts its first prompt and waits for a FEP node name; every process waits. Step 3m (§4.5): keyboard input takes it through its three prompts and a local login to the held server and replier. |
+| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program puts its first prompt and waits for a FEP node name; every process waits. Step 3m (§4.5): keyboard input takes it through its three prompts and a local login to the held server and replier. **Step 3o** (§4.9): the menu's `debugger` item (HELD login.com, `simpos##debugger`, stood in) is the listener; TM-134 p71's dialogue typed into it starts the held requester in a new process, and the prompt comes back at once. |
 
 ### B0. The console processor (PRINTED prose, HELD files)
 
@@ -721,6 +723,76 @@ Since then (the README's "Window M7: the manipulator and keyboard focus"):
   repaints what it uncovers (`screens/window_manipulator.png`,
   `manipulator_hide.png`, `manipulator_reshape.png`).
 
+### 4.9 The debugger's listener, and the 1.0 dialogue typed (step 3o, 2026-11-26)
+
+The basis, the injections and the census are in `../../psi/README.md`,
+"Step 3o"; every inference is listed in `source_check_2026-11-24.md` §14.
+The tests are `../../psi/test_boot_route.py`.
+
+§1's second top level is the debugger as the ESP listener. The held
+login.com's first menu column starts with `{"debugger",
+simpos##debugger}`; that class is lost, so a stand-in
+(`../../psi/standin/debugger.esp`, OURS, labelled) is what the item now
+starts. Its window and answers are TM-134's 1.0 screens (SCREENSHOT, PDF
+p68 and p71, folios 64 and 67): the window `debugger_1`, the prompt
+`:- `, `> Success !!` or `> Fail !!` and a blank line after each goal,
+and a `Variable Window` of `Name = $class,` lines. Input is window M1's
+path: `{key, Code}` events to the selected window, read with
+`getl/2`. The reader of a typed goal and the Variable Window's text are
+kl0 models (OURS); a goal is run by class `class`'s `refute/3`.
+
+The run (`test_step3o_dialogue`; `screens/debugger_dialogue.png`): the
+right button opens the SYSTEM MENU, the left button chooses `debugger`,
+and TM-134 p71's three goals are typed, with the held
+`pimfep##pimos_login_requester` in place of `hypocycloid_drawer` (printed
+only in part, TM-134 PDF p70):
+
+```
++- debugger_1 ------------------------------------+
+| :- :create(#pimfep##pimos_login_requester,Re    |
+| q).                                             |
+| > Success !!                                    |
+|                                                 |
+| :- :create(#process,Proc).                      |
+| > Success !!                                    |
+|                                                 |
+| :- :activate(Proc,Req).                         |
+| > Success !!                                    |
+|                                                 |
+| :-                                              |
++-------------------------------------------------+
++- Variable Window -------------------------------+
+| Req = $pimos_login_requester,                   |
+| Proc = $process;                                |
++-------------------------------------------------+
+```
+
+`:activate` returns at once and the prompt comes back (TM-134 PDF p71,
+prose), while the requester runs in `Proc`, a child of the debugger's
+process. Its window shows and takes the keyboard; `local`, `pimos` and a
+password typed then give the same dialogue as the menu path's (step 3m,
+`test_step3m_keyboard`: three prompts, no password echo, `Network
+error.`, two beeps). A click back on the debugger's window selects it
+again (`test_step3o_variables`): `:create(#process,Proc).` answers `> Fail
+!!`, as Proc keeps its value; `:create(#process,P2).` succeeds and P2
+joins the Variable Window. The subroutine form `:create(#pimfep##
+pimos_login_requester,R), :goal(R).` (TM-134 PDF p69; TM-786 p5) runs the
+requester in the debugger's own process, and no prompt comes back
+(`test_step3o_subroutine_form`).
+
+The timer's alarms (B4, open item 2 below). The held `pimos_timer`
+`on_after/4` (@10c-131) and `on_at/4` (@136-) make an `alarm_watch` and
+a `time`, set the count, `wait/1`, and reply `{1, 9}`: 9 is `wake_up`,
+what PIMOS's waiter reads (`../fep_services.md` §2.4). Step 3o stood in
+`alarm_watch on_at/2` (INTERPOLATED, the held send @14e); both round-trip
+(`test_step3o_timer_alarms`), the alarm at once, since no clock is
+modelled.
+
+**Where the route stops now.** Both of §1's top levels run as stand-ins,
+and a held program is started from each. Every process waits: the
+requester for a key, the debugger in its `getl/2`, the coordinator for
+an event.
+
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
@@ -732,10 +804,34 @@ login run (§4.5). Open, in order:
    (M6) and save areas (M7, part) since; the window manipulator (M7) and
    per-window keyboard input since. Open: lia / tcpip logins; the output
    permissions other than `out` (M7).
-2. The FEP census side items: blt 0d (DONE in step 3n as an INFERENCE,
-   `object/3`, outputs unbound) and blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
-   timer's `on_after` (303) with an alarm process; `terminate_core`'s
-   PCB word 15. (`create/3`'s `instance_array` entry was measured in
+2. The FEP census side items:
+   - blt 0d: DONE in step 3n as an INFERENCE (`object/3`, outputs
+     unbound).
+   - blt a8: re-examined in step 3o. Its 9 held uses are all in pimscsi
+     (`scsi_device_bus_management`, `scsi_device_interrupt_management`,
+     `scsi_dummy_handler`), whose source is not held, and no witness was
+     found elsewhere. BLOCKED. (pmi a8, a different row, is
+     KNOWN-PLAINTEXT since step 3m.)
+   - `get_interpreter/2` and `has_been_reshaped/1`: stood in by the
+     window milestones (`pmacs_window.esp` since M4 and M7,
+     `standard_io_window.esp` since M7; INTERPOLATED, bodies OURS).
+     SIMPOS's own bodies are still not printed.
+   - The timer's alarms 303 and 302: they round-trip since step 3o (§4.9),
+     but the alarm comes at once. A delay needs a clock, which is not
+     modelled: OPEN. The held `on_after/4` waits in the device's own
+     process (`:self(#process, P)` @6c), so the "alarm process" would be
+     SIMPOS's clock inside `alarm_watch`, whose class is lost.
+   - `terminate_core`'s PCB word 15: re-examined in step 3o
+     (`pimmcsp##pseudo_pe_process`, cells read with
+     `psi/fepread/ptfread.py`). `terminate_core/1` @1d6 goes to `$or$4/2`
+     and `$or$5/2` @3a9: if `status(P, dormant, suspended)` fails, it
+     tries `status(P, dormant, ready)`, then reads word 15 (`a7 01 00 0f`,
+     `blt 90 00 01 01` @3ba-3bb) and passes it to `$or$6/2` @39e, which
+     sends it `remove_only/2`. So word 15 of a ready process is something
+     it is removed from, likely the queue it is ready on (INFERENCE, a
+     lead only). The held code writes words 8, 10, 11, 12 and 24
+     (`blt 94` @349-38a), never 15, so the firmware keeps it, and the
+     dispatcher's ready queue here is OURS. BLOCKED. (`create/3`'s `instance_array` entry was measured in
    step 3l: it breaks every census row that creates a process outside
    the supervisor, so it stays out; `../../psi/README.md` "Step 3k".)
 3. B4's SIMPOS device handlers (lost).

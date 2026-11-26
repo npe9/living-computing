@@ -1244,3 +1244,53 @@ pmi 36 `get_vector_6` (paragraph `p_MAIN.esp`:202, `graph_status_element create/
   not traced in `login.kl1`.
 
 PIMOS's instruction count at the end, 8,626,676, differs from the pinned 8,625,275 accordingly.
+
+## §14 Step 3o: the inferences of the debugger's listener and the timer's alarms (2026-11-26)
+
+Step 3o works under the same rule as §11-§13. Page images read for it: TM-134 PDF p68-p72 (folios 64-68). Held
+cells were read with `psi/fepread/ptfread.py` (pimfep `pimos_timer`, pimmcsp `pseudo_pe_process`). The tests are
+`psi/test_boot_route.py`; the path is `boot_route.md` §4.9.
+
+### §14.1 PRINTED and HELD (what the stand-in follows)
+
+- HELD: login.com's first menu column names `{"debugger", simpos##debugger}`; the coordinator's `start/2` (step
+  3l) starts it in a new process like any item.
+- SCREENSHOT, TM-134 PDF p71 (folio 67), Fig. 6-4: the window `debugger_1`; the prompt `:- `; each goal typed after
+  it and ended by `.`; `> Success !!` after each; the dialogue `:create(#hypocycloid_drawer,300,Cyc).`,
+  `:create(#process,Proc).`, `:activate(Proc,Cyc).`; the sub-window `Variable Window` with `Cyc =
+  $hypocycloid_drawer, Proc = $process;`. Prose on the same page: `:activate` returns at once and the prompt `:- `
+  appears, and the debugger can be used on; the program and the debugger are independent processes.
+- SCREENSHOT, TM-134 PDF p68 (folio 64), Fig. 6-3: `debugger_3`; a blank line after each answer; the Variable
+  Window one binding a line, `,` after each but the last, `;` after the last.
+- SCREENSHOT, TM-125 Fig 4 (`subsystems/notes/trtm_window.md`): the other answer, `> Fail !!`.
+- PROSE, TM-134 PDF p69 (folio 65): a program called as a subroutine from the debugger runs on the debugger's
+  process, which is held up until it ends.
+- HELD cells, pimfep `pimos_timer`: `on_after/4` @63-7d runs `do_on_after` under `tag_catch/9` in the process of
+  `:self(#process, P)` (@6c); local `on_after/4` @10c-131 and `on_at/4` @136-: `:create(#alarm_watch, W)`,
+  `:create(#time, T)`, `set_count/2`, `on_after/2` or `on_at/2` (@124, @14e), `wait/1`,
+  `inhibit_forced_event/1`, then `reply_message/2` of `{1, 9}` (@12b-131). 9 is `wake_up` on PIMOS's side
+  (`../fep_services.md` §2.4).
+
+### §14.2 INFERENCE
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | The n of `debugger_n` counts the debuggers made, from 1 | `subsystems/shell.md` §4 "Window and process names": in 1.x n is a per-program counter, not the process number (TM-134 p68 `debugger_3`, TM-181 p5) | `standin/debugger.esp` class slot `count` |
+| 2 | A variable keeps its value from one goal to the next | Fig. 6-4: `Cyc` and `Proc` bound by the first two goals are used by the third, and both are listed in the Variable Window | `debugger.esp` `bind/2`, `kept/3` |
+| 3 | The window class had a write with no new line (the prompt and the goal share a line) | the screens of Fig. 6-3 and 6-4 | `standin/debugger_window.esp` `putt/2` |
+| 4 | An object is written `$` and its class's name without the package | `$hypocycloid_drawer`, `$process` (simpos##process) in both figures | `kl0.py` `debugger_variable_lines` |
+| 5 | `alarm_watch on_at/2` keeps its time as `on_after/2` does | the held send @14e, in a local `on_at/4` shaped as `on_after/4` | `standin/alarm_watch.esp` |
+| 6 | PCB word 15 of a ready process names what `terminate_core` removes it from, likely its ready queue (a lead, not used) | `$or$5/2` @3a9-3bc reads it after `status(P, dormant, ready)`, and `$or$6/2` @39e sends it `remove_only/2`; the held code writes words 8, 10, 11, 12 and 24 only | not modelled (`boot_route.md` §5 item 2) |
+
+### §14.3 OURS
+
+- The debugger stand-in as a whole: only method calls and `,` are goals; a goal is run by class `class`'s
+  `refute/3`, first solution only; no trace, spy points, Debugger Menu or state window.
+- The reader of a typed goal (`psi/esp_reader.py` `read_goal`: the prefixes `:` and `#` read as `{':', {f, R,
+  ...}}` and `{'#', c}`) and its executable form `{send, Selector, Receiver, {Args}}`, `{and, G1, G2}` (`kl0.py`
+  `debugger_read_goal`). A goal of any other form is refused loudly.
+- The answer to a line that does not read, `> Syntax error !!`: no such screen is held.
+- The places and sizes of the two windows; the font `font:test_11.font`, as the held requester uses.
+- The 1.00 prompt `:- ` rather than the 2.x `?- ` (`shell.md` §5.4.2 makes `?- ` the spec for the held programs):
+  1.00 is the only version printed with this dialogue.
+- That the alarm comes at once: no clock is modelled (`alarm_watch wait/1`, as since step 3k).

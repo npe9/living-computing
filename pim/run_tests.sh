@@ -43,6 +43,9 @@ python3 -I psi/test_espc.py
 echo "=== PSI side: the held SIMPOS FEP logs into PIMOS (step 3n; the live run's tape replayed, the live run opt-in) ==="
 python3 -I psi/test_fep_bridge.py
 
+echo "=== PSI side: the SIMPOS top level, the debugger's listener starts a held program in a new process (step 3o) ==="
+python3 -I psi/test_boot_route.py
+
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 
