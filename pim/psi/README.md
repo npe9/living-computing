@@ -3849,7 +3849,8 @@ run's final screen.
   `{position, manipulator}` (no mouse is modelled); the label strip is
   one cell plus 2 dots and drawn in the window's font; glyphs are drawn
   opaque (`copy`); wrap at the last column; an echoed RETURN is a
-  newline; kill clears the rectangle (no save areas until M7);
+  newline; kill clears the rectangle (no save areas until M7; since
+  M7 it restores what was under it);
   `default_font/4` answers test_11 for a window drawn before
   `set_font/2` (font_13 is not held).
 - INFERENCE: key#lf in a string breaks the line and key#cr returns
@@ -4078,12 +4079,139 @@ step 3m's menu select.
   - The pins and their account are in `test_fep_census`,
     `test_step3f_census_recipes` and `test_step3i_census_order`.
 
-**Not done:**
-- M6's date, rubber-band create/kill, and SWAPPED/spool;
-- M7's save areas: the menu clears its rectangle on closing, and in the
-  route nothing is under it;
+**Not done** (the date, create/kill and the save areas are done since,
+in the next section):
 - the box's class name for held subclasses;
 - Pmacs's real key bindings.
+
+### Window M6's rest and M7's save areas (2026-11-25)
+
+**M7, save areas.** A pop-up saves the dots under it and restores them
+when it closes; until now it cleared its rectangle.
+- `windev.py` gains `simpos##bitmap_display` `save/7` (Id, X, Y, W, H,
+  Base) and `restore/3` (Id, Op). Each is one command of winfb's frozen
+  set, which `../bsv/WinFbBox.bsv` already runs in lockstep (its bench's
+  `save_restore` stream), so a live run's stream still replays on both.
+- `standin/save_memory.esp` (new, OURS) picks the slot (the lowest free of
+  16) and the base (first fit in winfb's 65,536 words, ceil(w/16) words a
+  row). It checks no limit: an area past the end, or a seventeenth, goes
+  to the device, which refuses it (BADSAVE, a kl0 Refusal). Running out
+  is loud, never a silent clear. An area is the list [Id, Base, Size]: a
+  vector stored in a slot would lose its bindings on backtracking (the J9
+  hazard, below).
+- `menu_pane` and `window_pane` save before they draw and restore on
+  erase. Basis: PROSE TM-225 p10 and TM-126 p5 (window.md §4.1), a hidden
+  window's image kept in a per-window save area in bitmap memory. What a
+  covered window writes while covered is lost on the restore: no output
+  permission is modelled (OURS).
+- The panes are not clipped, so the selected window's exclusive_or
+  cursor is taken off before a new pane is drawn (coordinator
+  `cursor_aside/1`, OURS). Otherwise it would be saved under the new
+  window and later toggled over it (injection R4).
+- Not done: restacking, the manipulator (HIDE/SHOW, MOVE, RESHAPE), and
+  output permission.
+
+**M6, the date.** The band's second row ends with `20-May-93 Thursday
+00:00:00`, right-aligned 8 dots from the frame's edge.
+- The form `DD-Mon-YY Weekday hh:mm:ss` is SCREENSHOT: TM-153 PDF p28
+  (row 2 right, `25-Jan-86 Saturday 13:01:36`), TM-115 p25 and FSTJ
+  26(1) p99. The other months' and days' spellings are INFERENCE.
+- The source is the PSI's `date_time`. Its class slots now start at day
+  33742, the same OURS value as `ref/pimm/fep.py` DATE (PIMOS's banner
+  date, days from 01-Jan-1901), and time 0. The real FEP was the PSI, so
+  PIMOS's date and the PSI's are one clock. No clock runs on kl0, so the
+  date is the same in every run and in every tape replay.
+- `date_time` gains `create/2`, `set_count/3` and `get_value/8`,
+  INTERPOLATED from the held sends in cil `src/ms_ist.esp:735-742`
+  (HELD-SOURCE). The Gregorian calendar is OURS; the eighth argument (the
+  milliseconds) is INFERENCE. espc has no immediate over 255 and no
+  register divisor, so the constants are facts and the quotients are
+  counted by subtraction.
+- Every frame with the band has 941 dots fewer than before. The tests
+  check that with the date's rectangle set black again each frame equals
+  its pin from before the date (`assert_date`; the `M6_*` pins). The M4
+  tape's recorded screen is that earlier frame.
+
+**M6, SWAPPED and spool: not drawn.** The screenshots show them on row 1
+right: TM-153 p28 (`SWAPPED` an inverse box, `spool` boxed), FSTJ p99
+(both inverse) and Giho 8609 p16. No source read says what turns either
+on or off (window.md §4.2, shell.md §4.4, notes/ipsj.md, notes/tm115.md,
+the plan §3; searched 2026-11-25). With no state to draw them from, and
+no swapping or spooler modelled, they stay out (`status_band.esp`'s
+head).
+
+**M6, create and kill from the system menu** (`coordinator.esp`'s head).
+- Choosing an item whose program already has a window opens a pop-up at
+  the mouse, titled with the item's label, with `create` and `kill`.
+  SCREENSHOT simpos.wmv@49-60 (titled `file_manipulator`, `create`,
+  `k…`) and prolog.wmv@14-15 (`WHICH ?`, `create`, `kill`); the sequence
+  is INFERENCE (subsystems/notes/video.md §3).
+- That the pop-up comes only when the program already has a window is
+  INFERENCE, from `WHICH ?` and the video's `file_manipulator_2`. So the
+  first choice starts the program at once, as before, and the M4 tape's
+  path and pins are unchanged.
+- `create`: the next left click is one corner. Each `{move}` redraws the
+  outline from that corner to the mouse, a 1-dot exclusive_or rectangle.
+  The next left click is the other corner: the outline is erased and the
+  program started. Its window, made with `{position, manipulator}`, takes
+  the outline's top-left (`window_pane` `placement/3`). Two corners as
+  TM-125 p8's RESHAPE (PRINTED-INTERFACE). The held requester fixes its
+  own size, so the swept size is not used (OURS).
+- `kill`: the newest process started from that item that has a window is
+  exterminated, and its windows killed. Each restores what it covered.
+- The right button cancels a sweep.
+- `menu_pane`: a title wider than the columns widens the last column
+  (OURS; the pop-up's title is wider than `create`).
+
+**Open, found by probes (not in a test):**
+- After `create`, keys go first to the OLDER requester: it already waits
+  in get/2 on the coordinator's one keyboard stream, so the first key of
+  `local` reached window 1 and the rest window 2. The created window is
+  drawn and placed right, but typing into it is not right yet; per-window
+  keyboard streams would fix it. After `kill`, a click in window 1 and
+  `local` RETURN reach it.
+- Killing a window that lies under a newer one restores its saved dots
+  over the newer window (no restacking or clipping).
+
+**espc fails loud on a refused stand-in predicate.** `espc.standins()`
+now raises `CompileRefusal('stand-in', ...)` naming the predicate and the
+reason. Before, the predicate was dropped and showed only at run time as
+"not in the stand-in"; date_time's first `get_value/8` (`/ 3600000`) was
+lost that way while this was written. The nine known refusals, HELD-SOURCE
+bodies of `e_string`, `name` and `pathname` (if-then-else,
+`set_substring/4`), are listed in `espc.KNOWN_STANDIN_REFUSALS`; the test
+checks that list equals the refusals exactly.
+
+**Tests** (`test_espc.py` `Window`):
+
+| test | what it pins |
+|---|---|
+| `test_win_m7_save_areas` | the menu opened at (700, 500) over the Login PIMOS window (3,005 set dots under it: border, label, prompt, cursor), closed four ways (off the items; boxed, then outside; clamped at the right edge; an item click whose start refuses), each frame equal to the frame before the open; the save/restore commands; only the window's area left in use; a full-screen save and a seventeenth slot refused (winfb status 4) |
+| `test_win_m6_date` | `get_value/8` against Python's calendar at seven counts (day 0, 33742, a leap day of 2000, the last millisecond of a day); the default slots = fep.py's DATE, time 0 |
+| `test_win_m6_create_kill` | the pop-up's place, size, title and items; the outline exactly 2w + 2(h - 2) dots of difference; the created frame equal to the one with no moves; the second window at (600, 500) and the band's box `standard_io_window/2`; after kill, the second process dead and the frame the first run's with only its cursor off and the box cleared |
+| `test_standin_refusals_loud` | the refusals equal `KNOWN_STANDIN_REFUSALS`; a new one raises |
+| the M4, M5 and M6 tests | every band pin moved by -941 dots, accounted by `assert_date` |
+
+Screens (`psi/winshot.py`, pinned, checked by `assert_shots`):
+`../docs/simpos/screens/menu_over_window.png`, `create_kill_popup.png`,
+`rubber_band.png`; the four earlier ones re-rendered with the date.
+
+**Injections, OBSERVED** (each from a backup copy, restored by copy,
+`cmp` clean; `test_espc.py` Window, `test_fep_bridge.py` and
+`test_kl0.py` run; the lists are in the tests' heads):
+
+| | injection | fails |
+|---|---|---|
+| S1 | menu_pane erase clears instead of restoring | M7, create/kill |
+| S2 | save_memory always slot 0 | M7, M6 selection, create/kill |
+| S3 | restore by exclusive_or | M7, create/kill, test_win_pane, every window pin |
+| D1 | calendar from 1900 | the date test, every band pin, M7, create/kill |
+| D2 | weekday off by one | every band pin, M7, create/kill |
+| R1 | outline edge by set | create/kill only |
+| R2 | no shown program found (no pop-up) | create/kill only (ERROR) |
+| R3 | placement ignored | create/kill only |
+| R4 | cursor_aside a no-op | create/kill only |
+| E1 | check_standin_refusals a no-op | the refusal test only (test_espc.py and test_kl0.py run whole) |
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
@@ -4212,17 +4340,14 @@ test_kappa2's exact count).
   `substring(S, H, T - H, P)`, `O!a := X + O!b` and `X = O!a + X` with
   head arguments compile; no failing shape was found, but none is proven
   absent.
-- **The window environment after M4/M6:** M6's date and rubber-band
-  create/kill, save areas and the manipulator (M7), Pmacs proper (M10).
-  `pmacs_window` getl/2 is not stood in (the census's dump_log/1 stops
-  there).
-- **espc drops a refused stand-in predicate silently.** `espc.standins()`
-  puts a refused predicate in the template's `refusals` and does not
-  raise, so a stand-in method that uses an unwitnessed construct (an
-  arithmetic immediate over 255, `16#"..."`) is simply absent at run
-  time. Window M6 lost status_band's box this way until it was found
-  (`test_compiled_whole` does check that every stand-in compiles whole;
-  the gap is only in the run before that test). Should fail loud.
+- **The window environment after M6/M7's save areas:** the manipulator
+  (M7: restacking, HIDE/SHOW, MOVE, RESHAPE, output permission), Pmacs
+  proper (M10). `pmacs_window` getl/2 is not stood in (the census's
+  dump_log/1 stops there).
+- **espc drops a refused stand-in predicate silently: FIXED 2026-11-25**
+  (section "Window M6's rest and M7's save areas"). A related gap seen on
+  the way: a clause body with no head (a comment line ate the head) was
+  compiled without a complaint; not investigated.
 - **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
   copies only lists): a binding undone on backtracking empties the
   stored vector's element. Found in window M4 (`pmacs_request.esp`'s

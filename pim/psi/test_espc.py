@@ -716,7 +716,7 @@ class Standins(unittest.TestCase):
             'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_request', 'simpos##pmacs_window',
             'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
-            'simpos##semaphore', 'simpos##standard_editor',
+            'simpos##save_memory', 'simpos##semaphore', 'simpos##standard_editor',
             'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##status_band',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##tcpip_network_subsystem', 'simpos##time',
@@ -3316,12 +3316,39 @@ class Window(unittest.TestCase):
     }
     # (sha256 of the frame's PBM, set dots), MEASURED 2026-11-25, with the
     # status band (window M6: 97,756 dots more in every stage, the band
-    # and its box naming standard_io_window/1)
+    # and its box naming standard_io_window/1; then the band's date, 941
+    # dots fewer, M6_PINS before it: see DATE)
     PINS = {
+        'name': ('20f7c567fdf7728f202f99ee70e1b67636ae3fb8e3e8fa3602d87c92958eec54', 102011),
+        'password': ('d2a2021d034858a4616549858ff6f459d7bd8792b04b61ad4b2584cafe99d69b', 103080),
+        'login': ('5c90d0d7d4e07834243e28e3684b69442aa45b14f7e4d1e109de75c5506b62af', 102774),
+    }
+    M6_PINS = {
         'name': ('4a31e4ae4ffddcfd377679180525b2cfdcc07cd08f3d666d23bb05ef212d30bb', 102952),
         'password': ('28728b793499409abe820be92455041b85d1bbee03360f5273d3a4ce3645be43', 104021),
         'login': ('c1afaf8cd4050773b32f47d874bc700faa7d34f0caa5487978f66cd024287b17', 103715),
     }
+
+    # window M6, the date (status_band.esp): drawn white on black at the
+    # right of the band's second row, from the PSI's date_time (day 33742,
+    # time 0: date_time.esp).  Every frame with the band has 941 dots
+    # fewer than before it (the 27 cells' glyphs inverted), and with the
+    # date's rectangle set black again it equals its pin from before the
+    # date (the M6_ pins): the date is all that changed.
+    DATE = '20-May-93 Thursday 00:00:00'
+    DATE_AT = (975, 974, 27 * 11, 14)
+
+    def assert_date(self, fr, before):
+        import windev
+        import winfb
+        x, y, w, h = self.DATE_AT
+        g = winfb.Frame()
+        g.rows = [r ^ ((1 << 1280) - 1) for r in fr.rows]
+        self.assertEqual(windev.read_cells(g, x, y, 27, 1), [self.DATE])
+        g.rows = list(fr.rows)
+        g.command(winfb.FILL << 4 | 0, [x, y, w, h, 0, 0])
+        self.assertEqual((windev.pbm_sha256(g), g.count()), before)
+        self.assertEqual(fr.count(), before[1] - 941)
     # M5's pins, before the band: the same frames with the band's rows
     # (944-1023) cleared, so the window's own drawing is unchanged
     M5_PINS = {
@@ -3363,6 +3390,10 @@ class Window(unittest.TestCase):
 
     def test_win_m5_login_screen(self):
         # M5 (and M3's core): the Login PIMOS window drawn by a LIVE run.
+        # Window M6's date (2026-11-25): every stage's pin moved by -941
+        # dots (PINS; M6_PINS before the date), accounted by assert_date
+        # (DATE): with the date's rectangle set black again the frame is
+        # its M6 pin.
         # The boot of step 3l/3m (B8 probe, coordinator, the held login.com
         # menu) starts the HELD pimfep##pimos_login_requester; its held
         # initiate/1 and read/4 send create/3, set_font/2 (font:test_11.font,
@@ -3436,6 +3467,7 @@ class Window(unittest.TestCase):
                 self.assertEqual(set(fr.status), {winfb.OK})
                 self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.PINS.get(stage))
                 self.assertEqual(self.without_band(fr), self.M5_PINS.get(stage))
+                self.assert_date(fr, self.M6_PINS.get(stage))
                 self.assertEqual(winfb.run_stream(dev.stream_text()).pbm(), fr.pbm())
                 self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
 
@@ -3448,8 +3480,10 @@ class Window(unittest.TestCase):
         return windev.pbm_sha256(g), g.count()
 
     # with the status band (window M6): 97,756 dots more than M5's pin,
-    # M5_BRIDGED_PIN, which the frame with the band cleared still equals
-    BRIDGED_PIN = ('c33da8f127897aea8501f68ae999bcc33dda26df6ec890281b2e29c11007d614', 103724)
+    # M5_BRIDGED_PIN, which the frame with the band cleared still equals;
+    # then the date (DATE): 941 fewer, M6_BRIDGED_PIN before it
+    BRIDGED_PIN = ('7ffdf41ae544a47a6b77a087cb8b13c6d09b7d0c6a2e18328ba898b3f3ee53a1', 102783)
+    M6_BRIDGED_PIN = ('c33da8f127897aea8501f68ae999bcc33dda26df6ec890281b2e29c11007d614', 103724)
     M5_BRIDGED_PIN = ('cd57f0ff7e32029dc432da52be8795f1b2ba3fcb89ca25186304e2eec13ff404', 5968)
 
     def bridged(self):
@@ -3491,6 +3525,7 @@ class Window(unittest.TestCase):
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.BRIDGED_PIN)
         self.assertEqual(self.without_band(fr), self.M5_BRIDGED_PIN)
+        self.assert_date(fr, self.M6_BRIDGED_PIN)
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
         self.assert_shots()
 
@@ -3503,13 +3538,19 @@ class Window(unittest.TestCase):
         for name, pin in (('login_pimos_password', self.PINS['password']),
                           ('login_pimos_bridged', self.BRIDGED_PIN),
                           ('pimos_console', self.CONSOLE_PIN),
-                          ('system_menu', self.MENU_PINS['boxed'])):
+                          ('system_menu', self.MENU_PINS['boxed']),
+                          ('menu_over_window', self.SHOT_PINS['over']),
+                          ('create_kill_popup', self.SHOT_PINS['popup']),
+                          ('rubber_band', self.SHOT_PINS['sweep'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
             self.assertEqual((windev.pbm_sha256(g), g.count()), pin, name)
 
-    CONSOLE_PIN = ('f9da0fe2881c5bd15fd41c07608396991eec0775a6295faa485f205e602b4a53', 110676)
+    # the M4 run's final screen; M6_CONSOLE_PIN before the date (DATE),
+    # which the tape's recorded screen is (recorded before the date)
+    CONSOLE_PIN = ('b3e0ea5030adfae107f0867d90257e573c8acf90c1a8cf313715f8d7bb692b46', 109735)
+    M6_CONSOLE_PIN = ('f9da0fe2881c5bd15fd41c07608396991eec0775a6295faa485f205e602b4a53', 110676)
 
     def console(self):
         # window M4's run: PIMOS's shell window (104) bridged to the PSI,
@@ -3562,6 +3603,9 @@ class Window(unittest.TestCase):
         #   J8 status_band: the band 40 rows high, not 80: this test, the
         #      three stages of test_win_m5_login_screen,
         #      test_win_m5_bridged_screen and test_win_m6_system_menu FAIL.
+        # Window M6's date (2026-11-25): this run's frame has 941 dots
+        # fewer than CONSOLE_PIN had before it (now M6_CONSOLE_PIN), the
+        # band's date; assert_date and DATE account for it.
         #   J9 pmacs_request: the argument read from the stored vector again
         #      (the backtracking bug, pmacs_request.esp's head): this test,
         #      test_win_m6_selection and Console.test_replay FAIL.
@@ -3607,7 +3651,10 @@ class Window(unittest.TestCase):
         self.assertEqual((psi.user_at, psi.shell_at), (6, 19))
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.CONSOLE_PIN)
-        self.assertEqual(t['result']['screen'], dict(sha256=self.CONSOLE_PIN[0], dots=self.CONSOLE_PIN[1]))
+        self.assert_date(fr, self.M6_CONSOLE_PIN)
+        # the tape's result was recorded before the band's date: it is the
+        # frame with the date's rectangle black again
+        self.assertEqual(t['result']['screen'], dict(sha256=self.M6_CONSOLE_PIN[0], dots=self.M6_CONSOLE_PIN[1]))
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
         self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
 
@@ -3647,6 +3694,11 @@ class Window(unittest.TestCase):
     # window M6: (sha256, dots) of the boot screen with the system menu
     # open at fep_bridge.MENU_AT, and with "Login PIMOS" boxed
     MENU_PINS = {
+        'open': ('023384cbc9c34fda9121814c18cd4647289ffa52f29c3f31e2a11d673b44939d', 107420),
+        'boxed': ('708b7cff434691f178291e17644fbdc3a4c5822673d88d065743d5c8f0a30474', 108082),
+    }
+    # before the band's date (DATE)
+    M6_MENU_PINS = {
         'open': ('c1843568e297eab6c6f1db50526a28353e62bb03bd67da654c346e0569a96d3d', 108361),
         'boxed': ('87871fa8e06af511b3e0018c6c1d95fa5e8299063dc8c9c8b88c22fceaaf1706', 109023),
     }
@@ -3677,6 +3729,7 @@ class Window(unittest.TestCase):
         m, fr = self.menu_run(FB.mouse('rr', x, y))
         pin_open = (windev.pbm_sha256(fr), fr.count())
         self.assertEqual(pin_open, self.MENU_PINS['open'])
+        self.assert_date(fr, self.M6_MENU_PINS['open'])
         M = m.get_slot(K.ClassRef('simpos##coordinator'), 'menu_pane')
         self.assertEqual([K.resolve(m.get_slot(M, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
                          [x, y, 499, 135, 581])
@@ -3693,6 +3746,7 @@ class Window(unittest.TestCase):
         # boxed: the item's 1-dot rectangle, column 2 row 2
         m, fb = self.menu_run(FB.mouse('rr', x, y), move(*FB.LOGIN_ITEM_AT))
         self.assertEqual((windev.pbm_sha256(fb), fb.count()), self.MENU_PINS['boxed'])
+        self.assert_date(fb, self.M6_MENU_PINS['boxed'])
         bx, by, bw, bh = x + 2 + 176 + 1, 581 + 16, 319 - 2, 16
         diff = [fr.rows[i] ^ fb.rows[i] for i in range(1024)]
         for yy in range(by, by + bh):
@@ -3713,6 +3767,290 @@ class Window(unittest.TestCase):
         self.assertEqual(sum(bin((fl.rows[yy] >> (1280 - 755)) & ((1 << (755 - x)) - 1)).count('1')
                              for yy in range(y, y + 135)), 0)
 
+
+    def test_standin_refusals_loud(self):
+        # espc's refusals in a stand-in fail loud (espc.standins,
+        # check_standin_refusals, 2026-11-25): only the listed HELD-SOURCE
+        # bodies of KNOWN_STANDIN_REFUSALS are refused, every entry of the
+        # list is still refused (none stale), and a new refusal, here
+        # date_time's first get_value/8 (`/ 3600000`: no witnessed
+        # immediate above 255), is a CompileRefusal naming the predicate.
+        # Injection, OBSERVED (2026-11-25, from a backup copy, restored by
+        # copy, cmp clean): E1 check_standin_refusals a no-op: this test
+        # FAILS, nothing else in this file or test_kl0.py.
+        refused = {(t.id, k[0], k[1]) for t in self.ts for k, _w, _d in t.refusals}
+        self.assertEqual(refused, espc.KNOWN_STANDIN_REFUSALS)
+        text = """class probe_clock has
+:hour(Class, T, H) :- value(T / 3600000, H);
+local
+value(V, V);
+end.
+"""
+        ts, failed = espc.compile_text(text, 'simpos')
+        self.assertFalse(failed)
+        with self.assertRaises(espc.CompileRefusal) as e:
+            espc.check_standin_refusals(ts, 'probe_clock.esp')
+        self.assertIn('simpos##probe_clock refuses hour/3: arithmetic immediate', str(e.exception))
+
+    def test_win_m6_date(self):
+        # M6, the band's date source: date_time get_value/8 and set_count/3
+        # (INTERPOLATED from cil/src/ms_ist.esp:735-742, HELD-SOURCE; the
+        # calendar OURS, day 0 = 01-Jan-1901 as PIMOS counts) against
+        # Python's calendar, across 1901, the banner day 33742 (fep.py
+        # DATE, the PSI's default), the leap day of 2000 and the end of a
+        # day; the band's weekday (status_band.esp) is pinned through DATE
+        # in every band pin.  Injections, OBSERVED (2026-11-25, re-run at
+        # the final commit; from a backup copy, restored by copy, cmp
+        # clean; Window, test_fep_bridge.py and test_kl0.py run, all else
+        # OK):
+        #   D1 the calendar counted from 1900: this test, the three M5
+        #      stages, the bridged screen, M4, the system menu,
+        #      test_win_m7_save_areas and test_win_m6_create_kill FAIL.
+        #   D2 the weekday off by one ((N + 3) mod 7): the same set
+        #      without this test (it does not read the weekday).
+        import datetime
+        sys.path.insert(0, os.path.join(HERE, '..', 'ref', 'pimm'))
+        import fep
+        m = self.fs_machine()
+        self.assertEqual([m.get_slot(K.ClassRef('simpos##date_time'), k) for k in ('date', 'time')],
+                         [fep.DATE, 0])
+        for d, t in ((0, 0), (33742, 0), (33742, 45296789), (36218, 1), (36524, 86399999),
+                     (36583, 1), (40000, 0)):
+            m.reset()
+            ((D,),) = K.call_class_method(m, 'simpos##date_time', 'create', [K.Var()])
+            m.reset()
+            self.assertTrue(any(True for _ in m.solve_send(D, 'set_count', [d, t, D])))
+            m.reset()
+            regs = [K.Var() for _ in range(7)]
+            self.assertTrue(any(True for _ in m.solve_send(D, 'get_value', regs + [D])))
+            got = [K.resolve(v) for v in regs]
+            dd = datetime.datetime(1901, 1, 1) + datetime.timedelta(days=d, milliseconds=t)
+            self.assertEqual(got, [dd.year, dd.month, dd.day, dd.hour, dd.minute, dd.second,
+                                   dd.microsecond // 1000], (d, t))
+        self.assertEqual((datetime.date(1901, 1, 1) + datetime.timedelta(fep.DATE)).strftime('%d-%b-%y %A'),
+                         self.DATE[:18])
+
+    def later_run(self, first, *then):
+        # window M6/M7: FIRST given at the first quiet moment (as
+        # menu_run), each batch of THEN at the next one, after the
+        # processes the batch before started have drawn (fep_bridge's
+        # shell batch, its getl condition set, refilled from THEN).  ->
+        # (machine, frame, the refusal that ended the run)
+        import fep_bridge
+        import windev
+        psi = fep_bridge.PsiSide()
+        psi.user, rest = list(first), [list(b) for b in then]
+
+        def exchange(out):
+            if rest and not psi.shell:
+                psi.shell, psi.getl = rest.pop(0), True
+            return []
+        stop = psi.run(exchange)
+        self.assertEqual((rest, psi.shell), ([], []))
+        return psi.m, windev.device(psi.m).frame, stop
+
+    # window M6/M7 screens (psi/winshot.py): the event batches (later_run)
+    # and the frames' pins
+    @staticmethod
+    def shot_events():
+        import fep_bridge as FB
+        L = FB.mouse
+        login = [L('rr', *FB.MENU_AT), L('l', *FB.LOGIN_ITEM_AT)]
+        pop = [L('rr', 200, 150), L('l', 500, 195)]
+        return dict(
+            over=lambda: (login, [L('rr', 700, 500)]),
+            popup=lambda: (login, pop),
+            sweep=lambda: (login, pop + [L('l', 540, 220), L('l', 600, 500),
+                                         K.Vec([K.Atom('move'), 900, 600])]))
+
+    SHOT_PINS = {
+        'over': ('a398542a5a3d589728d533c59c9b01ce551f2a487e839b2a7e15bb2220c599b3', 104904),
+        'popup': ('42bfaa7dd1c4e7d2fc1c703be0569243e5cfc96cf639edd3081db31832c26058', 102627),
+        'sweep': ('d329f4fbb05d319a26922c63e309efdc7313863c96e978b88ecddfea82d2b6a9', 101796),
+    }
+
+    def test_win_m6_create_kill(self):
+        # M6, create and kill from the system menu (coordinator.esp head:
+        # SCREENSHOT simpos.wmv@49-60, prolog.wmv@14-15, the sequence
+        # INFERENCE; the sweep by two corners as TM-125 p8's RESHAPE,
+        # PRINTED-INTERFACE).  With a Login PIMOS window shown, choosing
+        # the item again opens a pop-up titled `Login PIMOS` with `create`
+        # and `kill` at the mouse; `create`, a corner, a move: the outline
+        # is exactly a 1-dot rectangle (exclusive_or) between the corner
+        # and the mouse; the other corner: the outline erased and a second
+        # held requester started, its window at the outline's top-left;
+        # then `kill` on the same item: the newest requester is
+        # exterminated and its window restores what it covered (the first
+        # window), exactly.  Injections, OBSERVED (2026-11-25; each from a
+        # backup copy, restored by copy, cmp clean; Window,
+        # test_fep_bridge.py and test_kl0.py run, all else OK):
+        #   R1 the outline's top edge drawn by set, not exclusive_or: this
+        #      test FAILS, nothing else.
+        #   R2 coordinator running/4 never finds a shown program (the item
+        #      always starts it, no pop-up): this test ERRORS, nothing
+        #      else.
+        #   R3 window_pane ignores the swept placement (the window centred
+        #      on the mouse): this test FAILS, nothing else.
+        #   R4 coordinator cursor_aside/1 a no-op: this test FAILS,
+        #      nothing else.
+        # Not tested, and found wrong by a probe (open, psi/README.md):
+        # keys typed after `create` go first to the older requester,
+        # which already waits in get/2 on the one keyboard stream (the
+        # first key of `local` reached window 1, the rest window 2).
+        # After `kill`, a click in window 1 and `local` RETURN reach it
+        # (probe, 2026-11-25).
+        import fep_bridge as FB
+        import windev
+        import winfb
+        L = FB.mouse
+        mv = lambda px, py: K.Vec([K.Atom('move'), px, py])   # noqa: E731
+        C = K.ClassRef('simpos##coordinator')
+        x, y = FB.MENU_AT
+        login = [L('rr', x, y), L('l', *FB.LOGIN_ITEM_AT)]
+        m, before, _ = self.later_run(login)
+        # the pop-up: the system menu at (200, 150), Login PIMOS (column 2,
+        # row 2) at (500, 195)
+        pop = [L('rr', 200, 150), L('l', 500, 195)]
+        m, fp, stop = self.later_run(login, pop)
+        self.assertEqual(stop.cause, 'would suspend')
+        P = m.get_slot(C, 'menu_pane')
+        self.assertEqual([K.resolve(m.get_slot(P, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
+                         [500, 195, 147, 55, 216])
+        self.assertEqual(windev.read_cells(fp, 502, 198, 13, 1), [' Login PIMOS'])
+        self.assertEqual(windev.read_cells(fp, 502 + 38, 217, 6, 1), ['create'])
+        self.assertEqual(windev.read_cells(fp, 502 + 49, 233, 4, 1), ['kill'])
+        self.assertEqual(K.resolve(m.get_slot(C, 'dialogue')).args[0], K.Atom('which'))
+        self.assertEqual((windev.pbm_sha256(fp), fp.count()), self.SHOT_PINS['popup'])
+        # create, the first corner, a move: the outline only
+        corner = pop + [L('l', 540, 220), L('l', 600, 500)]
+        m, f1, _ = self.later_run(login, corner)
+        m, f2, _ = self.later_run(login, corner + [mv(900, 600)])
+        self.assertEqual(f1.rows, before.rows)
+        bw, bh = 301, 101
+        for yy in range(500, 601):
+            span = ((1 << bw) - 1) if yy in (500, 600) else (1 << (bw - 1)) | 1
+            self.assertEqual(f1.rows[yy] ^ f2.rows[yy], span << (1280 - 600 - bw), yy)
+        self.assertEqual(sum(bin(a ^ b).count('1') for a, b in zip(f1.rows, f2.rows)), 2 * bw + 2 * (bh - 2))
+        self.assertEqual((windev.pbm_sha256(f2), f2.count()), self.SHOT_PINS['sweep'])
+        # the other corner: the outline gone, the second window at (600,
+        # 500), the same frame as with no move at all
+        done = corner + [mv(900, 600), mv(1100, 700), L('l', 1000, 640)]
+        m, fd, stop = self.later_run(login, done)
+        self.assertEqual(stop.cause, 'would suspend')
+        m0, fd0, _ = self.later_run(login, corner + [L('l', 1000, 640)])
+        self.assertEqual(fd.rows, fd0.rows)
+        ws = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual(len(ws), 2)
+        pane = m.get_slot(ws[0], 'pane')
+        self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h')], [600, 500, 446, 121])
+        self.assertEqual(windev.read_cells(fd, 603, 503, 40, 1), ['Pimos remote login 6'])
+        self.assertEqual(windev.read_cells(fd, 603, 520, 40, 2), ['Enter FEP node name--------->', '#'])
+        self.assertEqual(self.band(fd)[2], ['standard_io_window/2'])
+        self.assertEqual(m.get_slot(C, 'placement'), K.NIL)
+        # kill: the newest requester dead, its window gone, the first
+        # window's dots back (its cursor taken off when the second was
+        # drawn, coordinator cursor_aside/1; the band's box cleared)
+        kill = [L('rr', 100, 100), L('l', 400, 145), L('l', 440, 188)]
+        m, fk, stop = self.later_run(login, done, kill)
+        self.assertEqual(stop.cause, 'would suspend')
+        (w1,) = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual([m.get_slot(m.get_slot(w1, 'pane'), k) for k in ('x', 'y')], [755, 544])
+        p2 = self._walk(m.get_slot(C, 'started'))[0]
+        self.assertEqual(m.get_slot(p2, 'status'), K.Atom('nil'))
+        self.assertEqual(m.get_slot(C, 'selected'), 0)
+        want = winfb.Frame()
+        want.rows = list(before.rows)
+        want.command(winfb.FILL << 4 | 2, [758, 578, 11, 14, 0, 0])      # the cursor off
+        want.command(winfb.FILL << 4 | 0, [400, 950, 440, 18, 0, 0])     # the box cleared
+        self.assertEqual(fk.rows, want.rows)
+        self.assertEqual(len(self._walk(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))), 1)
+        self.assertEqual(set(fk.status) | set(fd.status), {winfb.OK})
+
+    @staticmethod
+    def saves(m):
+        import windev
+        import winfb
+        return [winfb.mnemonic(op, a) for op, a in windev.device(m).log
+                if op >> 4 in (winfb.SAVE, winfb.RESTORE)]
+
+    def test_win_m7_save_areas(self):
+        # M7, save areas (save_memory.esp, OURS allocation; TM-225 p10 and
+        # TM-126 p5 PROSE, window.md §4.1): a pop-up saves the dots under
+        # it before it is drawn and restores them when it closes, through
+        # winfb's save/restore (simpos##bitmap_display save/7, restore/3,
+        # psi/windev.py; bsv/WinFbBox.bsv runs both in lockstep).  The
+        # SYSTEM MENU is opened OVER the Login PIMOS window (its border,
+        # label, prompt and the selected window's block cursor), so a
+        # clear would not give back the frame.  The frame after open +
+        # close equals the frame before the open, closed four ways: a click
+        # off the items, with an item boxed first, a menu clamped at the
+        # right edge, and a click on an item (librarian: its class is not
+        # loaded, so the start refuses loudly, after the restore).  The
+        # window's own area stays in use; out of save memory is a loud
+        # refusal (winfb BADSAVE), never a silent clear.
+        # Injections, OBSERVED (2026-11-25, re-run at the final commit
+        # with every window test in place; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   S1 menu_pane erase/1 clears its rectangle (fill reset, M6's
+        #      way) instead of restoring: this test and
+        #      test_win_m6_create_kill FAIL.
+        #   S2 save_memory always gives slot 0 (a later save replaces an
+        #      earlier one's entry): this test, test_win_m6_selection and
+        #      test_win_m6_create_kill FAIL.
+        #   S3 save_memory restores by exclusive_or, not copy: this test,
+        #      test_win_pane, the three M5 stages, the bridged screen, M4,
+        #      the system menu and test_win_m6_create_kill FAIL.
+        import fep_bridge as FB
+        import windev
+        x, y = FB.MENU_AT
+        login = [FB.mouse('rr', x, y), FB.mouse('l', *FB.LOGIN_ITEM_AT)]
+        m, before, stop = self.later_run(login)
+        self.assertEqual(stop.cause, 'would suspend')
+        self.assertEqual(self.saves(m), ['save 0 640 560 499 135 0', 'restore 0 copy',
+                                         'save 0 755 544 446 121 0'])
+        self.assertEqual(windev.read_cells(before, 758, 564, 40, 2),
+                         ['Enter FEP node name--------->', '#'])
+        # the menu at (700, 500) covers the window's left part: what is
+        # under it is not blank (border, label, prompt, cursor)
+        under = sum(bin((before.rows[j] >> (1280 - 700 - 499)) & ((1 << 499) - 1)).count('1')
+                    for j in range(500, 635))
+        self.assertEqual(under, 3005)
+        m, opened, stop = self.later_run(login, [FB.mouse('rr', 700, 500)])
+        self.assertEqual(self.saves(m)[3:], ['save 1 700 500 499 135 3388'])
+        self.assertNotEqual(opened.rows, before.rows)
+        self.assertEqual((windev.pbm_sha256(opened), opened.count()), self.SHOT_PINS['over'])
+        move = lambda px, py: K.Vec([K.Atom('move'), px, py])   # noqa: E731
+        for name, then, at in (
+                ('off the items', [FB.mouse('l', 705, 505)], (700, 500)),
+                ('boxed, then outside', [move(720, 525), FB.mouse('l', 1100, 900)], (700, 500)),
+                ('clamped', [FB.mouse('l', 1100, 900)], (781, 520))):
+            # the right button at (1100, 520) for the clamped menu
+            m, closed, stop = self.later_run(login, [FB.mouse('rr', 1100 if name == 'clamped' else at[0], at[1])]
+                                             + then)
+            self.assertEqual(stop.cause, 'would suspend', name)
+            self.assertEqual(self.saves(m)[3:], ['save 1 %d %d 499 135 3388' % at, 'restore 1 copy'], name)
+            self.assertEqual(closed.rows, before.rows, name)
+            self.assertEqual(len(self._walk(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))),
+                             1, name)
+        m, closed, stop = self.later_run(login, [FB.mouse('rr', 700, 500), FB.mouse('l', 720, 584)])
+        self.assertEqual((stop.cause, stop.detail),
+                         ('simpos', 'library get_class_object/3: simpos##librarian is not loaded'))
+        self.assertEqual(closed.rows, before.rows)
+        # out of save memory: loud.  A full-screen area is 80 x 944 =
+        # 75,520 words > 65,536 (BADSAVE); so is a seventeenth area
+        m = self.fs_machine()
+        with self.assertRaises(K.Refusal) as e:
+            K.call_class_method(m, 'simpos##save_memory', 'save', [0, 0, 1280, 944, K.Var()])
+        self.assertEqual(e.exception.detail, 'bitmap_display save/7: winfb status 4')
+        m = self.fs_machine()
+        for i in range(16):
+            K.call_class_method(m, 'simpos##save_memory', 'save', [0, 0, 16, 1, K.Var()])
+        with self.assertRaises(K.Refusal) as e:
+            K.call_class_method(m, 'simpos##save_memory', 'save', [0, 0, 16, 1, K.Var()])
+        self.assertEqual(e.exception.detail, 'bitmap_display save/7: winfb status 4')
+        # the refused command is logged (and refused again on a replay)
+        self.assertEqual(self.saves(m)[-2:], ['save 15 0 0 16 1 15', 'save 16 0 0 16 1 16'])
 
 if __name__ == '__main__':
     unittest.main()

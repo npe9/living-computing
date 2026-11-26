@@ -2357,11 +2357,41 @@ def library(templates, base=None):
 STANDIN = os.path.join(HERE, 'standin')
 
 
+# Predicates of the stand-ins that espc refuses, each refusal known and
+# kept (window M6, 2026-11-25).  Every other refusal in a stand-in fails
+# standins() loud.  Before, a refused predicate was dropped silently and
+# showed only at run time, as kl0's "not in the stand-in" (found when
+# date_time get_value/8 used `/ 3600000`, an immediate espc has no
+# witnessed opcode for).  These are HELD-SOURCE bodies copied as they are:
+# if-then-else is not modelled and set_substring/4 has no witnessed opcode;
+# a send to them still refuses at run time.
+KNOWN_STANDIN_REFUSALS = {
+    ('simpos##e_string', 'string_sort', 3), ('simpos##e_string', 'string_sort', 2),
+    ('simpos##e_string', 'qsort', 3), ('simpos##e_string', 'partition', 4),
+    ('simpos##name', 'sort', 3), ('simpos##name', 'qsort', 3), ('simpos##name', 'partition', 4),
+    ('simpos##pathname', 'append_names', 3), ('simpos##pathname', 'set_names', 3),
+}
+
+
+def check_standin_refusals(ts, where):
+    """Refuse loud on a refused predicate of a stand-in that is not one of
+    KNOWN_STANDIN_REFUSALS."""
+    for t in ts:
+        new = [(k, why, detail) for k, why, detail in t.refusals
+               if (t.id, k[0], k[1]) not in KNOWN_STANDIN_REFUSALS]
+        if new:
+            raise CompileRefusal('stand-in', '%s: %s refuses %s' % (
+                where, t.id, '; '.join('%s/%d: %s (%s)' % (k[0], k[1], why, detail)
+                                       for k, why, detail in new)))
+
+
 def standins(names=None):
     """The SIMPOS stand-ins of psi/standin/ (scaffolding: OURS, or printed
     source with marked corrections), compiled into package `simpos`; each
     template is flagged `standin`, so kl0 refuses a method it lacks as a
-    SIMPOS call, not as 'no method'."""
+    SIMPOS call, not as 'no method'.  A predicate espc refuses fails the
+    whole call (CompileRefusal 'stand-in'), unless it is one of
+    KNOWN_STANDIN_REFUSALS."""
     out = []
     for f in sorted(os.listdir(STANDIN)):
         if not f.endswith('.esp') or (names is not None and f[:-4] not in names):
@@ -2372,6 +2402,7 @@ def standins(names=None):
         ts, failed = compile_text(text, 'simpos', path=path)
         if failed:
             raise CompileRefusal('stand-in', '%s: %s' % (f, failed))
+        check_standin_refusals(ts, f)
         for t in ts:
             t.standin = True
             out.append(t)

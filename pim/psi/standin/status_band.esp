@@ -24,8 +24,24 @@
 %   - the version: `V7`, the same OURS value as ref/pimm/fep.py's 240
 %     answer ("SIMPOS V7"; docs/fep_services.md §6.3: the PSI asks
 %     simpos##version, not held);
-%   - not drawn: `SWAPPED`, `spool` and the date (FSTJ 4.2): no swapping,
-%     spooler or clock is modelled, so they would show nothing true.
+%   - the date, window M6 (2026-11-25): `DD-Mon-YY Weekday hh:mm:ss` at
+%     the right of row 2 (SCREENSHOT TM-153 PDF p28 Fig. 7, `25-Jan-86
+%     Saturday 13:01:36`, row 2 right, subsystems/listings/
+%     TM-153_p23_p28_recheck.txt; the same form in TM-115 p25 `23-May-85
+%     Thursday 20:22:44` and FSTJ 26(1) p99 `12-Sep-89 Tuesday 10:25:41`,
+%     shell.md §4.4).  The month's three letters and the weekday's full
+%     name are as in those three; the other months' and days' spellings
+%     are the English names (INFERENCE).  Its right edge 8 dots from the
+%     frame's (OURS, as the left text's 8).  The date is the PSI's
+%     date_time (date_time.esp: day 33742 = 20-May-93, a Thursday, time 0,
+%     the PIM/m FEP's OURS clock), read once when the band is drawn (the
+%     time does not run: OURS, no clock is modelled);
+%   - not drawn: `SWAPPED` and `spool`.  The screenshots show them (row 1
+%     right, TM-153 p28: SWAPPED an inverse box, spool boxed; FSTJ p99:
+%     both inverse; Giho 8609 p16), but no source read says what turns
+%     either on or off (2026-11-25: window.md §4.2, shell.md §4.4,
+%     notes/ipsj.md, notes/tm115.md, the plan §3), so there is no state to
+%     draw them from; no swapping or spooler is modelled either.
 
 class status_band has
 
@@ -39,7 +55,8 @@ class status_band has
         user(U),
         text(Id, Cw, "USER : ", 8, 952, X),
         name(Id, Cw, U, X, 952),
-        text(Id, Cw, "SIMPOS Version V7", 8, 974, _);
+        text(Id, Cw, "SIMPOS Version V7", 8, 974, _),
+        date(Id, Cw);
 
 % :show_selected(#status_band, Kind, N) -- OURS: the box names the window
 % Kind/N (Kind a string), or is cleared when Kind is 0.
@@ -51,6 +68,75 @@ class status_band has
         boxed(Id, Cw, Ch, Kind, N);
 
 local
+
+% the date at the right of row 2 (see the head comment)
+date(Id, Cw) :-
+        :now(#date_time, D),
+        :get_value(D, Y, Mo, Da, H, Mi, S, _),
+        :get_count(D, Days, _),
+        weekday(Days, Wd), day_name(Wd, Name),
+        month_name(Mo, Mn),
+        quotient(Y, 100, 0, C), times(C, 100, 0, Yc),
+        string(Name, Nl, _),
+        times(Nl + 19, Cw, 0, Tw),
+        right_edge(R),
+        two(Id, Cw, Da, R - Tw, X1),
+        text(Id, Cw, "-", X1, 974, X2),
+        text(Id, Cw, Mn, X2, 974, X3),
+        text(Id, Cw, "-", X3, 974, X4),
+        two(Id, Cw, Y - Yc, X4, X5),
+        text(Id, Cw, " ", X5, 974, X6),
+        text(Id, Cw, Name, X6, 974, X7),
+        text(Id, Cw, " ", X7, 974, X8),
+        two(Id, Cw, H, X8, X9),
+        text(Id, Cw, ":", X9, 974, X10),
+        two(Id, Cw, Mi, X10, X11),
+        text(Id, Cw, ":", X11, 974, X12),
+        two(Id, Cw, S, X12, _);
+
+right_edge(1272);
+
+% N < 100 as two digits, white on black, from X on row 2
+two(Id, Cw, N, X, X1) :-
+        quotient(N, 10, 0, T),
+        times(T, 10, 0, T10),
+        digit(T, D1), digit(N - T10, D2),
+        :glyph(#bitmap_display, Id, D1, X, 974, reverse),
+        :glyph(#bitmap_display, Id, D2, X + Cw, 974, reverse),
+        value(X + Cw + Cw, X1);
+
+% the day of the week of day count N, 0 = Sunday: day 0, 01-Jan-1901, was
+% a Tuesday; (N + 2) mod 7, by subtraction in steps (espc has no
+% immediate above 255)
+weekday(N, W) :- seven_k(K), mod7(N + 2, K, W);
+mod7(N, K, W) :- N >= K, !, mod7(N - K, K, W);
+mod7(N, K, W) :- K > 7, !, smaller(K, K1), mod7(N, K1, W);
+mod7(N, _, N);
+smaller(7000, 700) :- !;
+smaller(700, 70) :- !;
+smaller(70, 7);
+seven_k(7000);
+
+day_name(0, "Sunday");
+day_name(1, "Monday");
+day_name(2, "Tuesday");
+day_name(3, "Wednesday");
+day_name(4, "Thursday");
+day_name(5, "Friday");
+day_name(6, "Saturday");
+
+month_name(1, "Jan");
+month_name(2, "Feb");
+month_name(3, "Mar");
+month_name(4, "Apr");
+month_name(5, "May");
+month_name(6, "Jun");
+month_name(7, "Jul");
+month_name(8, "Aug");
+month_name(9, "Sep");
+month_name(10, "Oct");
+month_name(11, "Nov");
+month_name(12, "Dec");
 
 user(Name) :- :user(#user, U), U \== 0, !, :local_name(U, Name);
 user(0);

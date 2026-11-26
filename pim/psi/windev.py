@@ -24,12 +24,20 @@ argument order here is OURS, as the plan §4.1 says it would be):
   :glyph(#bitmap_display, Font, Code, X, Y, Op)     winfb `glyph`
   :copy(#bitmap_display, SX, SY, W, H, DX, DY, Op)  winfb `copy`
   :line(#bitmap_display, X1, Y1, X2, Y2, Wd, Op)    winfb `line`, solid
+  :save(#bitmap_display, Id, X, Y, W, H, Base)      winfb `save` (window M7)
+  :restore(#bitmap_display, Id, Op)                 winfb `restore` (M7)
   :load_font(#bitmap_display, File, ^Id, ^W, ^H)    the plan's font_load
   :default_font(#bitmap_display, ^Id, ^W, ^H)       OURS (see below)
   :get_size(#bitmap_display, ^W, ^H)                1280 x 944
 
 Op is an atom: set, reset, exclusive_or (W§2.5's drawing operations),
-copy, reverse (W§2.5's transfer operations).  A refused command (winfb
+copy, reverse (W§2.5's transfer operations).  save/restore (window M7,
+2026-11-25) are the save areas of TM-225 p10 / TM-126 p5 (PROSE, window.md
+§4.1: "a hidden window's image is kept in a per-window save area in bitmap
+memory"): the slot Id (0-15) and the word Base in winfb's 65,536-word
+bitmap memory are chosen by the ESP stand-in standin/save_memory.esp, not
+here; a slot or area the memory cannot hold is winfb's BADSAVE, so a
+Refusal, and a restore of a slot never saved is NOSAVE, also a Refusal.  A refused command (winfb
 status BADOP, BADFONT, BADSAVE, NOSAVE) is a kl0 Refusal: nothing is ever
 dropped silently.  MISSING (a code test_11 lacks) draws the font's 0xffff
 box and succeeds, so a gap shows on the screen (the plan §1.4).
@@ -49,7 +57,7 @@ substitute for the window's default font_13, which is not held (the plan
 Screen.  winfb's frame is 1,280 x 1,024 (OURS, hardware plan §2.1);
 get_size answers the logical 1,280 x 944 (INFERENCE, the plan §1.1: TM-785
 p9 and kl1graph's full-screen window); the rows below 944 are left for the
-status band (not drawn yet).
+status band (status_band.esp, window M6).
 
 Views (the plan §4.2): `png_bytes` (a 1-bit PNG at the frame's real
 size, stdlib zlib; 0 = black in PNG greyscale, so the frame's bits are
@@ -170,6 +178,16 @@ def install(models, K):
         check(device(m).run(winfb.LINE, op_of(m, 5, 'line/7'), a + [0xffff]), 'line/7')
         return m.proceed()
 
+    def save(m):
+        a = ints(m, 6, 'save/7')
+        check(device(m).run(winfb.SAVE, 0, a), 'save/7')
+        return m.proceed()
+
+    def restore(m):
+        a = ints(m, 1, 'restore/3')
+        check(device(m).run(winfb.RESTORE, op_of(m, 1, 'restore/3'), a), 'restore/3')
+        return m.proceed()
+
     def answer(m, base, font_id, font):
         w, h = cell_of(font)
         ok = (m.unify(m.x[base], font_id) and m.unify(m.x[base + 1], w)
@@ -205,6 +223,8 @@ def install(models, K):
         (D, 'class', 'glyph', 6): glyph,
         (D, 'class', 'copy', 8): copy,
         (D, 'class', 'line', 7): line,
+        (D, 'class', 'save', 7): save,
+        (D, 'class', 'restore', 3): restore,
         (D, 'class', 'load_font', 5): load_font,
         (D, 'class', 'default_font', 4): default_font,
         (D, 'class', 'get_size', 3): get_size,

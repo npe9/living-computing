@@ -12,12 +12,30 @@
 %   - docs/simpos/required/classes.tsv row date_time (class now/2 used
 %     in kappa2, cil, euod, knov, kwic-esp; get_count/3 only in pimfep).
 % There is no clock: the date and time are the class slots date and
-% time, 0 unless set (OURS).
+% time (OURS).
+%
+% Window M6 (2026-11-25): the status band's date (status_band.esp) reads
+% it, so the class slots start at the PIM/m side's FEP clock, OURS,
+% ref/pimm/fep.py DATE = 33742 (20-May-1993, PIMOS's banner date, as
+% PIMOS counts: days from 01-Jan-1901), and time 0 (fep.py's midnight is
+% the moment its processor booted; this machine's clock does not run, so
+% its time stays 0).  The real PIM/m's FEP was the PSI, so PIMOS's date
+% and the PSI's are one clock; on the bridge PIMOS's timer is still
+% fep.py's (psi/fep_bridge.py), and both answer 33742.  Under a tape
+% replay the PSI runs the same steps, so the date drawn is the same.
+% Added for it: set_count/3 and get_value/8, INTERPOLATED from their held
+% sends (cil/src/ms_ist.esp:735-742, ICOT Free Software, HELD-SOURCE:
+% `:create(#date_time, Date_time), :set_count(Date_time, Day, Msec)`, then
+% `:get_value(Date_time, Year, Month, Day, Hour, Minute, Second, _)`), and
+% create/2 (ms_ist.esp:735; kwic-esp src/kwMan.esp:1016).
 
 class date_time has
 
-% OURS: the present date and time (no clock is modelled).
-attribute date := 0, time := 0;
+% OURS: the present date and time (no clock is modelled; see above).
+attribute date := 33742, time := 0;
+
+% INTERPOLATED from :create(#date_time, D) (above): a date_time of day 0.
+:create(Class, D) :- :new(Class, D);
 
 % INTERPOLATED: see above.
 :now(Class, D) :-
@@ -35,5 +53,74 @@ attribute date := 0, time := 0;
 :get_count(D, Date, Time) :-
         Date = D!date,
         Time = D!time;
+
+% :set_count(D, Date, Time) -- INTERPOLATED from cil ms_ist.esp:736 (above):
+% the inverse of get_count/3.
+:set_count(D, Date, Time) :-
+        D!date := Date,
+        D!time := Time;
+
+% :get_value(D, Year, Month, Day, Hour, Minute, Second, Msec) --
+% INTERPOLATED from cil ms_ist.esp:742 (above; its caller names the first
+% seven).  The calendar is OURS: Gregorian, day 0 = 01-Jan-1901 (PIMOS's
+% count, docs/fep_services.md §2.4, time_dvc.kl1:371); Month 1-12 and Day
+% from 1; the eighth argument the milliseconds within the second
+% (INFERENCE: the held caller ignores it, and the count's unit is the
+% millisecond).
+:get_value(D, Year, Month, Day, Hour, Minute, Second, Msec) :-
+        year(D!date, 1901, 1, 1, 301, Year, Yd, Leap),
+        months(Leap, Ls),
+        month(Ls, Yd, 1, Month, Day),
+        hour_ms(Hm), minute_ms(Mm), second_ms(Sm),
+        quotient(D!time, Hm, 0, Hour, M0),
+        quotient(M0, Mm, 0, Minute, S0),
+        quotient(S0, Sm, 0, Second, Msec);
+
+local
+
+% espc refuses an arithmetic immediate above 255 and X/Y on two registers
+% (psi/README.md, the register-cache section), so the constants are facts
+% and a quotient is counted by subtraction (as in status_band.esp).
+hour_ms(3600000);
+minute_ms(60000);
+second_ms(1000);
+
+% D0 / Q -> Q1 and the remainder R
+quotient(D, Q, N, N, D) :- D < Q, !;
+quotient(D, Q, N0, N, R) :- quotient(D - Q, Q, N0 + 1, N, R);
+
+% the year of day D counted from Y (01-Jan-Y is day 0), with Y mod 4, mod
+% 100 and mod 400 carried along; -> the year, the day in it, its leap flag
+year(D, Y, C4, C100, C400, Year, Yd, Leap) :-
+        leap(C4, C100, C400, L0),
+        length_of(L0, L),
+        next(D, L, Y, C4, C100, C400, L0, Year, Yd, Leap);
+
+next(D, L, Y, _, _, _, L0, Y, D, L0) :- D < L, !;
+next(D, L, Y, C4, C100, C400, _, Year, Yd, Leap) :-
+        wrap(C4 + 1, 4, N4), wrap(C100 + 1, 100, N100), wrap400(C400 + 1, N400),
+        year(D - L, Y + 1, N4, N100, N400, Year, Yd, Leap);
+
+wrap(C, C, 0) :- !;
+wrap(C, _, C);
+wrap400(C, 0) :- four_hundred(C), !;
+wrap400(C, C);
+four_hundred(400);
+
+leap(_, _, 0, 1) :- !;
+leap(_, 0, _, 0) :- !;
+leap(0, _, _, 1) :- !;
+leap(_, _, _, 0);
+
+length_of(1, 366) :- !;
+length_of(_, 365);
+
+months(1, [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]) :- !;
+months(_, [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]);
+
+month([L | _], Yd, M, M, Day) :- Yd < L, !, value(Yd + 1, Day);
+month([L | Ls], Yd, M0, M, Day) :- month(Ls, Yd - L, M0 + 1, M, Day);
+
+value(V, V);
 
 end.

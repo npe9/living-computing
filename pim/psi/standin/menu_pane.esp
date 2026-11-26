@@ -19,6 +19,8 @@
 %     it (OURS);
 %   - the border 2 dots and the title strip with a rule under it, as a
 %     window's label (window_pane.esp; OURS for a menu);
+%   - a title wider than the columns widens the last column to the title
+%     plus one cell each side (OURS; window M6's create/kill pop-up);
 %   - an item one font line plus 2 dots high (OURS, the plan §5 "Known
 %     decisions that are OURS"); a column as wide as its longest item plus
 %     one cell each side; each item centred in its column (SCREENSHOT,
@@ -27,8 +29,10 @@
 %     (OURS: the 1984 code's placement is lost);
 %   - the font test_11, the device's default (the menu font is not held:
 %     the plan §1.4);
-%   - closed, its rectangle is cleared (OURS: no save areas until M7; the
-%     route opens it on the boot screen, where nothing is under it).
+%   - window M7 (2026-11-25): before it is drawn the dots under it are
+%     saved (save_memory.esp: the save areas of TM-225 p10, PROSE), and
+%     closed, they are restored, so a menu opened over a window leaves the
+%     window as it was (until M6 the rectangle was cleared).
 
 class menu_pane has
 
@@ -41,7 +45,10 @@ class menu_pane has
         :default_font(#bitmap_display, Id, Cw, Ch),
         Menu!font := Id, Menu!cw := Cw, Menu!ch := Ch,
         Menu!title := Title, Menu!columns := Columns,
-        widths(Columns, Cw, Ws, 0, Iw),
+        widths(Columns, Cw, Ws0, 0, Iw0),
+        string(Title, Tn, _),
+        times(Tn + 2, Cw, 0, Tw),
+        widen(Ws0, Iw0, Tw, Ws, Iw),
         Menu!widths := Ws,
         most(Columns, 0, Rows),
         times(Rows, Ch + 2, 0, Ih),
@@ -50,6 +57,8 @@ class menu_pane has
         clamp(X, Sw, Menu!w, Mx), clamp(Y, Sh, Menu!h, My),
         Menu!x := Mx, Menu!y := My,
         top(Menu, My + Ch + 7),
+        :save(#save_memory, Mx, My, Menu!w, Menu!h, Area),
+        Menu!under := Area,
         draw(Menu);
 
 instance
@@ -60,6 +69,8 @@ instance
 attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
           title := 0, columns := [], widths := [], items_top := 0,
           boxed := none;
+% window M7, OURS: the save area holding the dots under the menu.
+attribute under := 0;
 
 % :item_at(Menu, X, Y, Label, Value) -- OURS: the item under (X, Y), else
 % fail.
@@ -80,11 +91,13 @@ attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
         rebox(Menu, {C, R});
 :box_at(Menu, _, _) :- rebox(Menu, none);
 
-% :erase(Menu) -- OURS (see the head comment).
+% :erase(Menu) -- OURS (see the head comment): window M7, the dots under
+% the menu restored from its save area (the box goes with them).
 % INTERPOLATED (selector and body OURS): erase; basis above and in
 % the head comment.
 :erase(Menu) :-
-        :fill(#bitmap_display, Menu!x, Menu!y, Menu!w, Menu!h, reset);
+        :restore(#save_memory, Menu!under),
+        Menu!under := 0;
 
 local
 
@@ -100,6 +113,14 @@ widths([Column | Cs], Cw, [W | Ws], W0, Wt) :-
         longest(Column, 0, N),
         times(N + 2, Cw, 0, W),
         widths(Cs, Cw, Ws, W0 + W, Wt);
+
+% a title wider than the columns widens the last column to it (window
+% M6, the create/kill pop-up: OURS)
+widen(Ws, Iw, Tw, Ws, Iw) :- Iw >= Tw, !;
+widen(Ws, Iw, Tw, Ws1, Tw) :- last_plus(Ws, Tw - Iw, Ws1);
+
+last_plus([W], E, [W1]) :- !, value(W + E, W1);
+last_plus([W | Ws], E, [W | Ws1]) :- last_plus(Ws, E, Ws1);
 
 longest([], N, N);
 longest([{L, _} | Is], N0, N) :- string(L, K, _), K > N0, !, longest(Is, K, N);

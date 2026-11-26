@@ -547,6 +547,32 @@ chrome** (`../../psi/README.md` "Window M4 and M6"; tests `test_espc.py` `Window
   `login_pimos_*.png` re-rendered with the band. The M5 frames with the band's rows cleared
   still equal M5's pins.
 
+**Status (2026-11-25, window M6's rest and M7's save areas)** (`../../psi/README.md` "Window
+M6's rest and M7's save areas"; tests `test_win_m7_save_areas`, `test_win_m6_date`,
+`test_win_m6_create_kill`, `test_standin_refusals_loud`):
+- **M7, partly done: the save areas.** A pop-up (the menu) and a window save the dots under
+  them before they draw and restore them when they go (winfb `save`/`restore` through
+  `windev.py` save/7, restore/3; the allocator `save_memory.esp`, OURS; PROSE TM-225 p10,
+  TM-126 p5). Proved over the Login PIMOS window: the frame after menu open + close equals the
+  frame before, closed four ways; out of save memory is a loud refusal. Not done: the
+  manipulator (HIDE/SHOW, MOVE, RESHAPE, restacking) and output permission, so
+  `test_win_m7_manip` as planned is still open.
+- **M6, done but SWAPPED/spool.**
+  - The date `20-May-93 Thursday 00:00:00` at the band's row 2 right (SCREENSHOT TM-153 p28,
+    TM-115 p25, FSTJ p99). Its source is the PSI's `date_time`, day 33742 = `ref/pimm/fep.py`
+    DATE, time 0: deterministic in every run and replay. Every band pin moved by -941 dots,
+    accounted by masking the date.
+  - create/kill: the second choice of a shown program opens a `create`/`kill` pop-up
+    (SCREENSHOT simpos.wmv@49-60, prolog.wmv@14-15). `create` sweeps a rubber-band outline by
+    two corner clicks (exclusive_or; TM-125 p8 RESHAPE). The new window takes the outline's
+    top-left. `kill` exterminates the newest such process, and its window restores what it
+    covered.
+  - SWAPPED and spool: shown in TM-153 p28, FSTJ p99 and Giho 8609 p16, but no source read
+    says what sets them, so they are not drawn (recorded in `status_band.esp`).
+  - Screens: `screens/menu_over_window.png`, `create_kill_popup.png`, `rubber_band.png`.
+- espc now refuses loud when a stand-in predicate is refused (nine known HELD-SOURCE
+  refusals listed in `espc.KNOWN_STANDIN_REFUSALS`).
+
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like
@@ -559,6 +585,8 @@ step 3l did):
 - the status-band height;
 - the substitute `font_13` and kanji box;
 - the menu geometry: item height = font line height + 2;
+- the save-area allocation (first fit) and the date's clock (fep.py's day, time 0);
+- that the create/kill pop-up comes only for a program already shown;
 - Pmacs's default bindings.
 
 ---

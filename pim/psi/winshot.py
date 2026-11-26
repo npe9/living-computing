@@ -13,13 +13,19 @@ Each screen is a live kl0 run, the same run test_espc.py Window pins:
     replayed from psi/fep_bridge_tapes/console_pwd.json: `Shell>> `,
     the typed `pwd`, PIMOS's answer, beside the Login PIMOS window;
   - menu (window M6): the boot screen with the system menu opened by the
-    right button and its "Login PIMOS" item boxed.
+    right button and its "Login PIMOS" item boxed;
+  - over (window M7): the system menu opened over the Login PIMOS window,
+    whose dots its save area keeps (test_win_m7_save_areas);
+  - popup, sweep (window M6): with Login PIMOS shown, its item chosen
+    again: the `create`/`kill` pop-up; then `create`, a corner, a move:
+    the rubber-band outline (test_win_m6_create_kill).
 The PNG is the whole device frame, 1,280 x 1,024 dots, one bit a dot
 (psi/windev.py png_bytes, stdlib zlib only); the frame's PBM sha256 is
 printed beside it and must equal the test's pin.
 
 Use:  python3 -I psi/winshot.py OUTDIR [STAGE ...]   (stages: name,
-      password, login, bridged, console, menu; all when none is given)
+      password, login, bridged, console, menu, over, popup, sweep; all
+      when none is given)
 """
 import os
 import sys
@@ -27,7 +33,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-NAMES = {'console': 'pimos_console', 'menu': 'system_menu'}
+NAMES = {'console': 'pimos_console', 'menu': 'system_menu', 'over': 'menu_over_window',
+         'popup': 'create_kill_popup', 'sweep': 'rubber_band'}
 
 
 def main(argv):
@@ -42,7 +49,7 @@ def main(argv):
     os.makedirs(out, exist_ok=True)
     T.Window.setUpClass()
     t = T.Window('test_win_m5_login_screen')
-    stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu']
+    stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep']
     bad = 0
     for stage in stages:
         if stage == 'bridged':
@@ -56,6 +63,9 @@ def main(argv):
             _m, frame = t.menu_run(FB.mouse('rr', *FB.MENU_AT),
                                    K.Vec([K.Atom('move')] + list(FB.LOGIN_ITEM_AT)))
             want = T.Window.MENU_PINS['boxed']
+        elif stage in T.Window.SHOT_PINS:
+            _m, frame, _stop = t.later_run(*T.Window.shot_events()[stage]())
+            want = T.Window.SHOT_PINS[stage]
         else:
             _m, _p, _w, dev = t.screen(T.Window.SCREENS[stage][0])
             frame = dev.frame

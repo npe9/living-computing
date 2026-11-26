@@ -1,0 +1,88 @@
+% SCAFFOLDING, OURS: the allocator of the display's save areas, compiled by
+% psi/espc.py into the package `simpos`.  `save_memory` is NOT a SIMPOS
+% class name: the class that kept SIMPOS's save areas is lost
+% (docs/simpos/subsystems/window.md §0.3).  Window milestone M7
+% (2026-11-25): a pop-up (menu_pane.esp) and a window (window_pane.esp)
+% save the dots under them when they are drawn and restore them when they
+% go, instead of clearing their rectangle.
+%
+% Basis:
+%   - PROSE TM-225 p10, TM-126 p5 (window.md §4.1 "Implementation"): a
+%     hidden window's image is kept in a per-window save area in bitmap
+%     memory, and restacking copies between the save areas and frame
+%     memory.  That a pop-up saves what is under it and puts it back is
+%     the same mechanism used for the pop-up (INFERENCE: the 1.0 rule
+%     "uncovered areas are not cleared", TM-115 p29, p111, says the
+%     uncovered area is not cleared either);
+%   - the device: winfb's `save id x y w h base` and `restore id R`
+%     (psi/winfb.py, frozen; bsv/WinFbBox.bsv runs them in lockstep),
+%     reached as simpos##bitmap_display save/7 and restore/3
+%     (psi/windev.py).  16 slots, 65,536 words of 16 bits, ceil(w/16)
+%     words a row: winfb's numbers, OURS (the plan §2.3);
+%   - the allocation, OURS: the lowest free slot and the lowest base where
+%     the area fits between the areas in use (first fit, the areas kept
+%     sorted by base).  Nothing here checks the limits: an area past the
+%     memory's end, or a seventeenth area, is sent as it is and the device
+%     refuses it (winfb BADSAVE, a kl0 Refusal), so running out of save
+%     memory is loud, never a silent clear.
+%
+% An area is the list [Id, Base, Size], Size in words: a list, not a
+% vector, because kl0 copies a list stored in a slot with its variables'
+% values but stores a vector as it is, so a vector's elements would come
+% unbound when the storing process backtracks (psi/kl0.py resolve_value;
+% the same hazard as pmacs_request.esp's, window M4 J9).
+
+class save_memory has
+
+% OURS: the areas in use, sorted by base.
+attribute used := [];
+
+% :save(#save_memory, X, Y, W, H, Area) -- OURS (selector and body): the
+% dots of the rectangle saved; Area names them.
+% INTERPOLATED (selector and body OURS): save; basis above and in the
+% head comment.
+:save(Class, X, Y, W, H, [Id, Base, Size]) :-
+        times(H, (W + 15) / 16, 0, Size),
+        slot(Class!used, 0, Id),
+        base(Class!used, 0, Size, Base),
+        :save(#bitmap_display, Id, X, Y, W, H, Base),
+        insert(Class!used, [Id, Base, Size], Used),
+        Class!used := Used;
+
+% :restore(#save_memory, Area) -- OURS (selector and body): the saved dots
+% drawn back where they were (copy), and the area freed.
+% INTERPOLATED (selector and body OURS): restore; basis above and in the
+% head comment.
+:restore(Class, [Id, Base, Size]) :-
+        :restore(#bitmap_display, Id, copy),
+        without(Class!used, Id, Used),
+        Class!used := Used;
+
+local
+
+times(0, _, P, P) :- !;
+times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
+
+% the lowest slot id no area in use has (16 when all are: the device
+% refuses it)
+slot(Used, I, I) :- not_used(Used, I), !;
+slot(Used, I, Id) :- slot(Used, I + 1, Id);
+
+not_used([], _);
+not_used([[I, _, _] | _], I) :- !, fail;
+not_used([_ | R], I) :- not_used(R, I);
+
+% the lowest base from B0 where Size words fit before the next area
+base([], B, _, B);
+base([[_, B1, _] | _], B, Size, B) :- B + Size =< B1, !;
+base([[_, B1, S1] | R], _, Size, Base) :- base(R, B1 + S1, Size, Base);
+
+insert([], A, [A]);
+insert([[I1, B1, S1] | R], [I, B, S], [[I, B, S], [I1, B1, S1] | R]) :- B < B1, !;
+insert([X | R], A, [X | T]) :- insert(R, A, T);
+
+without([], _, []);
+without([[I, _, _] | R], I, R) :- !;
+without([X | R], I, [X | T]) :- without(R, I, T);
+
+end.

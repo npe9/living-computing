@@ -66,6 +66,42 @@
 %     is selected;
 %   - THE STATUS BAND: drawn when the coordinator starts (draw_status/1,
 %     from coordinator_program.esp).
+%
+% Window M6, create and kill (2026-11-25), OURS in form, the dialogue from
+% the video: choosing a program on the system menu is followed by a
+% pop-up titled with the program's name (simpos.wmv@49-60:
+% `file_manipulator`, `create` and `k...`) or `WHICH ?` (prolog.wmv@14-15:
+% `create`, `kill`), and `create` by an outline swept with the mouse, the
+% new window appearing there (simpos.wmv@53-56); SCREENSHOT, the sequence
+% INFERENCE (subsystems/notes/video.md §2-§3, window.md §4.5).  The
+% sweep is two corner clicks with the outline following the mouse between
+% them, as the window manipulator's RESHAPE: "point at the top-left and
+% bottom-right corners with the mouse" (PRINTED-INTERFACE TM-125 p8,
+% window.md §4.4, §5.3 "sweep two corners: RESHAPE, or place a new
+% window").  Here:
+%   - the pop-up comes only when the program already has a window
+%     (INFERENCE from `WHICH ?` and the video's file_manipulator_2, made
+%     while file_manipulator_1 was shown); otherwise the item starts the
+%     program at once, as since step 3l (so the M4 tape's path is
+%     unchanged);
+%   - the pop-up is a menu_pane titled with the item's label, the items
+%     `create` and `kill` (SCREENSHOT), at the mouse;
+%   - `create`: the next left click is one corner, a move draws the
+%     outline from it to the mouse, a 1-dot rectangle by exclusive_or (so
+%     drawing it again erases it exactly, OURS), the next left click the
+%     other corner; the outline is erased and the program started; its
+%     window, made with {position, manipulator}, takes the swept
+%     rectangle's top-left (window_pane.esp, placement/3).  The held
+%     requester fixes its size ({size,{ch,40},{ch,7}}), so the swept size
+%     is not used (OURS);
+%   - `kill`: the newest process started from that item that has a window
+%     is exterminated (process.esp exterminate/1) and its windows killed
+%     (their kill/1: each restores what was under it, save_memory.esp);
+%   - the right button cancels a sweep (and opens the menu).
+% The windows' owners (the process that made each, `:self(#process, P)`
+% at add_window/3) and the programs started ([Name, P]) are kept for kill,
+% as lists (kl0 keeps a list's values in a slot; a vector would keep its
+% variables, psi/kl0.py resolve_value).
 
 class coordinator has
 
@@ -76,6 +112,13 @@ attribute items := [], menu := [], shown := 0, started := [], events := 0,
 % first; how many were drawn; the mouse; the open menu's pane (0: none).
 attribute windows := [], count := 0, mouse_x := 640, mouse_y := 472,
           menu_pane := 0;
+% Window M6, create and kill, OURS (see the head comment): the dialogue's
+% state ([] none, [which, Name], [sweep, Name], [corner, Name, X, Y]), the
+% outline drawn ([] or [X, Y, W, H]), the swept placement for the next
+% window ([] or [X, Y, W, H]), the programs started ([Name, P], newest
+% first) and the windows' owners ([W, P]).
+attribute dialogue := [], outline := [], placement := [], programs := [],
+          owners := [];
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
 % window (standard_io_window.esp); `selected`, that window (0: none).
@@ -132,7 +175,7 @@ attribute windows := [], count := 0, mouse_x := 640, mouse_y := 472,
         click(Class, Button, X, Y);
 :event(Class, {move, X, Y}) :- !,
         Class!mouse_x := X, Class!mouse_y := Y,
-        moved(Class, Class!menu_pane, X, Y);
+        moved(Class, Class!menu_pane, Class!dialogue, X, Y);
 
 % :select_window(#coordinator, W) -- window M4/M6 (selector and body
 % OURS; see the head comment): W becomes the selected window.
@@ -154,7 +197,9 @@ attribute windows := [], count := 0, mouse_x := 640, mouse_y := 472,
 :add_window(Class, W, N) :-
         value(Class!count + 1, N),
         Class!count := N,
-        Class!windows := [W | Class!windows];
+        Class!windows := [W | Class!windows],
+        :self(#process, P),
+        Class!owners := [[W, P] | Class!owners];
 
 % :remove_window(#coordinator, W) -- window M4/M6 (selector and body
 % OURS): W has left the screen; if it was selected, none is.
@@ -163,7 +208,26 @@ attribute windows := [], count := 0, mouse_x := 640, mouse_y := 472,
 :remove_window(Class, W) :-
         without(Class!windows, W, Ws),
         Class!windows := Ws,
+        disowned(Class!owners, W, Os),
+        Class!owners := Os,
         unselect(Class, W);
+
+% :cursor_aside(#coordinator) -- window M6/M7 (selector and body OURS):
+% before a new pane is drawn, the selected window's cursor is taken off
+% (its deselect_window/1), as the panes are not clipped (window_pane.esp).
+% INTERPOLATED (selector and body OURS): cursor_aside; basis above and in
+% the head comment.
+:cursor_aside(Class) :- S = Class!selected, S \== 0, !, :deselect_window(S);
+:cursor_aside(_);
+
+% :placement(#coordinator, X, Y) -- window M6 (selector and body OURS,
+% see the head comment): the top-left of the outline swept for the next
+% window, given once; fails when none was swept.
+% INTERPOLATED (selector and body OURS): placement; basis above and in
+% the head comment.
+:placement(Class, X, Y) :-
+        Class!placement = [X, Y | _],
+        Class!placement := [];
 
 % :draw_status(#coordinator) -- window M6 (selector and body OURS): the
 % status band (status_band.esp).
@@ -180,7 +244,8 @@ start(Class, Name) :-
         :create(Program_class, Program),
         :create(#process, P),
         :activate(P, Program),
-        Class!started := [P | Class!started];
+        Class!started := [P | Class!started],
+        Class!programs := [[Name, P] | Class!programs];
 
 % the system menu: open (drawn at the mouse), closed (erased)
 open_menu(Class) :-
@@ -195,19 +260,94 @@ close_menu(Class) :-
         :erase(Class!menu_pane),
         Class!menu_pane := 0, Class!shown := 0;
 
-click(Class, rr, _, _) :- !, open_menu(Class);
-click(Class, l, X, Y) :- Class!menu_pane \== 0, !, menu_click(Class, X, Y);
+click(Class, rr, _, _) :- !, cancel(Class), open_menu(Class);
+click(Class, l, X, Y) :- Class!menu_pane \== 0, !, menu_click(Class, Class!dialogue, X, Y);
+click(Class, l, X, Y) :- Class!dialogue \== [], !, corner(Class, Class!dialogue, X, Y);
 click(Class, l, X, Y) :- !, visit(Class, Class!windows, X, Y);
 click(_, _, _, _);
 
-menu_click(Class, X, Y) :-
-        :item_at(Class!menu_pane, X, Y, _, Name), !,
+% the system menu's item; then the create/kill pop-up's (head comment)
+menu_click(Class, [], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, Label, Name), !,
         close_menu(Class),
-        start(Class, Name);
-menu_click(Class, _, _) :- close_menu(Class);
+        chosen(Class, Label, Name, X, Y);
+menu_click(Class, [which, Name], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, Action), !,
+        close_menu(Class),
+        which(Class, Action, Name);
+menu_click(Class, _, _, _) :- close_menu(Class), Class!dialogue := [];
 
-moved(_, 0, _, _) :- !;
-moved(_, M, X, Y) :- :box_at(M, X, Y);
+chosen(Class, Label, Name, X, Y) :-
+        running(Class!owners, Class!programs, Name, _), !,
+        :create(#menu_pane, Label, [[{"create", create}, {"kill", kill}]], X, Y, M),
+        Class!menu_pane := M,
+        Class!dialogue := [which, Name];
+chosen(Class, _, Name, _, _) :- start(Class, Name);
+
+which(Class, create, Name) :- !, Class!dialogue := [sweep, Name];
+which(Class, kill, Name) :- Class!dialogue := [], kill_program(Class, Name);
+
+% the first corner, then the second: the outline erased, the program
+% started at the swept place
+corner(Class, [sweep, Name], X, Y) :- !,
+        Class!dialogue := [corner, Name, X, Y];
+corner(Class, [corner, Name, X1, Y1], X2, Y2) :-
+        unoutline(Class),
+        span(X1, X2, X, W), span(Y1, Y2, Y, H),
+        Class!placement := [X, Y, W, H],
+        Class!dialogue := [],
+        start(Class, Name);
+
+moved(_, M, _, X, Y) :- M \== 0, !, :box_at(M, X, Y);
+moved(Class, _, [corner, _, X1, Y1], X2, Y2) :- !,
+        unoutline(Class),
+        span(X1, X2, X, W), span(Y1, Y2, Y, H),
+        outline(Class, X, Y, W, H);
+moved(_, _, _, _, _);
+
+cancel(Class) :- unoutline(Class), Class!dialogue := [];
+
+% the low end and the width of the dots from A to B, both included
+span(A, B, A, W) :- A =< B, !, value(B - A + 1, W);
+span(A, B, B, W) :- value(A - B + 1, W);
+
+% the outline: a 1-dot rectangle by exclusive_or; none narrower than 2
+outline(Class, X, Y, W, H) :- W >= 2, H >= 2, !,
+        rect(X, Y, W, H),
+        Class!outline := [X, Y, W, H];
+outline(_, _, _, _, _);
+
+unoutline(Class) :- Class!outline = [X, Y, W, H], !,
+        rect(X, Y, W, H),
+        Class!outline := [];
+unoutline(_);
+
+rect(X, Y, W, H) :-
+        :fill(#bitmap_display, X, Y, W, 1, exclusive_or),
+        :fill(#bitmap_display, X, Y + H - 1, W, 1, exclusive_or),
+        :fill(#bitmap_display, X, Y + 1, 1, H - 2, exclusive_or),
+        :fill(#bitmap_display, X + W - 1, Y + 1, 1, H - 2, exclusive_or);
+
+% the newest program Name started that has a window
+running(Owners, [[Name, P] | _], Name, P) :- owns(Owners, P), !;
+running(Owners, [_ | R], Name, P) :- running(Owners, R, Name, P);
+
+owns([[_, P1] | _], P) :- P1 == P, !;
+owns([_ | R], P) :- owns(R, P);
+
+kill_program(Class, Name) :-
+        running(Class!owners, Class!programs, Name, P), !,
+        :exterminate(P),
+        kill_windows(Class!owners, P);
+kill_program(_, _);
+
+kill_windows([], _);
+kill_windows([[W, P1] | R], P) :- P1 == P, !, :kill(W), kill_windows(R, P);
+kill_windows([_ | R], P) :- kill_windows(R, P);
+
+disowned([], _, []);
+disowned([[X, _] | R], W, R) :- X == W, !;
+disowned([X | R], W, [X | T]) :- disowned(R, W, T);
 
 % the newest window under the mouse is selected; none: nothing changes
 visit(_, [], _, _);
