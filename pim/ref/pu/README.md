@@ -11,6 +11,7 @@ stands in for the D/A/R/S stages the decode entry's nano-code drives.
     python3 ref/pu/check_pu.py            the U1 check (in run_tests.sh, ~2 s)
     python3 ref/pu/check_pu.py -v         with every microinstruction executed
     python3 ref/pu/check_pu.py --inject NAME
+    python3 ref/pu/measure.py             the counts behind the rules, pinned
 
 The microcode is third-party and stays out of git: it is read from
 `docs/nonlocal/psdpim.tar.Z` at run time, as `asm/psdpim.py` reads it.
@@ -21,16 +22,23 @@ terminal.
 
 **U1 reached; U2 not reached.**
 
-- 23 cases, all PASS: 19 compared against `pimm.py` (34 held
-  microinstructions executed and matched), and 4 that take the last cell
-  of a free list and must enter the refill (17 held words executed up
-  to the refill, where they stop, as they should).
+- 26 cases, all PASS: 22 compared against `pimm.py` (44 held
+  microinstructions executed and matched: 33 in multi-word routines, 11
+  in one-word ones), and 4 that take the last cell of a free list and
+  must enter the refill (17 held words executed up to the refill, where
+  they stop, as they should). `measure.py`'s pins (the counts behind the
+  rules) are checked in the same run.
 - Multi-word routines that run as held: `set_nil`, `write_nil` (2
   words: a stamp, then a write and a structure-pointer step),
   `set_variable`, `write_variable` (3: a pop from the one-cell list, the
   new cell made `UNDF`, a `REF` to it), `put_variable` (4), `put_list`,
   `put_vector_1`, `put_vector_2` (3: a pop, the list or vector pointer,
   the structure pointer).
+- Held out: `set_marked_variable`, `write_marked_variable`,
+  `put_marked_variable` (entries `318d`, `3197`, `31d5`; 3, 3 and 4
+  words) were added after every rule was fixed and passed unchanged,
+  `REFx` compared exactly. (The check's `indirect` comparison had to
+  accept `REFx` as well as `REFo`; no rule changed.)
 - One-word routines (`set_value`, `set_integer`, `set_atom`,
   `put_value`, `put_integer`, `put_atom`, `put_nil`, `put_vector_0`,
   `write_value`, `write_integer`, `write_atom`) pass too, but they prove
@@ -67,21 +75,30 @@ and `setup.py`):
 | Operand selects `a` = y, `b` = z (8 = opcode, 9 = x are MEASURED) | `318f` (`set_variable` writes its REF to `opda`; `pimm.py` `reg[y]`), `31d7` (`put_variable`, `reg[y]`) | the `pimm.py` operand readings; `b` is not yet executed |
 | TGIF 3: both stamps, the tag from EM2 | `3193` (`write_nil`: EM1 `20`, EM2 `02`; the cell must be `ATOM 0`) | thesis p.144 "EM2 can also be the DST-Bus tag immediate"; predicted at `3365`/`3366` (the refill, read not run): EM2 there is `VECT0x`, the free-cell link tag MEASURED in section 15, where EM1 would give `STRGx`. This changes `mekbn`'s trace of `1c0f` (cell 15 of `suspend`'s record), which takes EM1 |
 | A write with bit 59 stores MDR2 | `31d7` (`put_variable`: the cell gets the `UNDF` of `31d6`; MDR1 holds the link) | **conflict, open:** the refill loop `3367` (CCF `16`, bits 62, 60, 59) must write MDR1, the running link, to build a list; `31d7` is CCF `12`. CCF is probably a coded field, as `rassy`'s value table says (`binary_reverse_engineering.md` section 3), and bit 59 alone does not choose the data register |
-| MCF with EM1 `20` steps R02 by one | `31c7` (`write_integer`: one word, MCF, EM1 `20`; `pimm.py` `_sp += 1`; `set_integer` has neither and leaves sp), `3193` | the self-loops carry MCF with EM1 `10` (a loop counter, below): EM1 is MCF's operation |
+| MCF with EM1 `20` steps R02 by one | `31c7` (`write_integer`: one word, MCF, EM1 `20`; `pimm.py` `_sp += 1`; `set_integer` has neither and leaves sp), `3193` | 22 of the 23 self-loops carry MCF with EM1 `10` (a loop counter, below), so EM1 may select MCF's operation; but `3365`/`3366` carry CNDF 6 with EM1 `0f` and no MCF, so EM1 may belong to the condition instead. Any other MCF use raises |
 | JMPF bit 26 (codes b, c, e) makes a jump conditional; 3, 4, 6 jump unconditionally whatever CNDF holds, and their CNDF only forms COND for a later word | `318c` (`set_variable`, JMPF 4 CNDF b, must jump over `set_marked_variable`'s `318d`-`318e`) | measured over both stores, "Conditions" below; replaces `mekbn.tested()` inside the simulator |
 | CNDF 9: COND := tag of the ALU's first input = EM1; CNDF b: = EM2 | `31fa`, `31d1` (EM1 `ATOMo`), `318c`, `3196`, `31d6` (EM2 `ATOMo`), each tested by the conditional end that follows | "Conditions" below; the refill writes `{ATOMo, 0}` as the last link (`3368`) |
 | A conditional JMPF 1 with EM bit 0 set is taken when COND is false | `31fb`, `31d2`, `318f`, `31d8` (a pop's end, taken unless the link was the end marker) | one fit; the opposite pairing (COND true when the link is a cell, bit 0 = taken on true) is not told apart by these words. EM bit 0 clear: raises |
 | ODPF 1: the S stage loads R(10 or EMO1) into MAR2 (ODSF 0) or MAR1 (ODSF 1) | `318b` (`set_variable`), `31d0` (`put_list`) | predicted for `put_variable`, `put_vector_1/2`, `write_variable` (run); read for `proceed`, `collect_list`, the marked forms (`setup.py` header). Nano-code field positions are Fig. 3-22 right-aligned on the entry's 56 bits; only ODPF, ODSF, EMO1, EMO2 are used |
 | R06 = R07 = 0 | `31d6` (`{UNDF, R07}` where `pimm.py` writes `UNDF 0`) | `{ATOMo, R06}` stands where a nil does (section 17) |
 
-**Conditions.** Measured with scratch scripts over all words (not
-pinned). The word after a JMPF 3/4/6 word is zero or an explicit
-branch target in 47-83% of cases, with or without CNDF; after a JMPF
-b/c/e word in 3-17% (image 2: 3: 69%/83% with/without CNDF, 4: 76%/74%,
-6: 51%/47%, b: 13%/3%, c: 8%/3%, e: 11%/17%; `syspsi` the same split).
-All 23 self-jumping words are c or e; 22 carry MCF with EM1 `10`, 20
-of them with CNDF 6 (two b; `281f` has CNDF 2 and no MCF): INFERENCE, a
-counted loop on the loop counter (`rassy`
+**Conditions.** `measure.py` (pinned, run by `check_pu.py`). The word
+after a JMPF 3/4/6 word is zero or an explicit branch target in 47-83%
+of cases, with or without CNDF; after a JMPF b/c/e word in 3-17%
+(image 2, with/without CNDF: 3 69%/83%, 4 76%/74%, 6 51%/47%, b 13%/3%,
+c 8%/3%, e 11%/17%; `syspsi`: 3 49%/68%, 4 59%/70%, 6 51%/54%, b
+7%/40%, c 5%/6%, e 8%/13%; the one exception, `syspsi`'s JMPF b without
+CNDF, is 6 of 15 words). Self-jumping words: all 23 of image 2 are c
+or e, 36 of 37 of `syspsi` (the other, `syspsi` `4de1`, JMPF 3 with
+CNDF 7, would loop until a trap or interrupt under this rule). As a
+held-out test, `mekbn`'s own flow measures under the bit-26 rule in
+place of `tested()`: after a call, returns/ends go from 222/10 to 234/9
+(image 2) and 250/13 to 264/7 (`syspsi`); decode entries still reach an
+end and never a return (96 to 107 ends in image 2, 125 to 119 in
+`syspsi`). The call/return separation improves; `mekbn.py` and its
+pins are not changed. In image 2, 22 of the 23 self-jumping words carry
+MCF with EM1 `10`, 20 of them with CNDF 6 (two b; `281f` has CNDF 2 and
+no MCF): INFERENCE, a counted loop on the loop counter (`rassy`
 names register 3 of the second bank `lc`, and `3378` loads R03 before
 the refill's loop). CNDF 9 words leave EM1 free (TGIF 0 in 448 of 453)
 and their EM1 values are tags (`ATOMo` 105, `INTo` 94, `REFo` 32,
@@ -96,7 +113,11 @@ condition, not run.
   address in MAR1, per operand form, from `pimm.py`'s operand readings:
   a goal argument at R10 + argument number (R10 = `cgp` in `rassy`'s
   register names, M92 p.428 "CGP to locate a goal argument"), a
-  structure element at R02.
+  structure element at R02. Reading the select `10 | n` with WRBF clear
+  as `rassy`'s register-file entry n is INFERENCE: it fits every register
+  the routines run here use (R10 `cgp`, R19 `fvp`, R1a `flp`, R1f `hp`)
+  and those sections 17-18 found (R13 `cfpp`, R14 `gsp`); `rassy` gives
+  names and numbers, not the select encoding.
 - Free lists already built (`check_pu.py` `seed_lists`), in the shape
   the firmware writes: cells `{VECT0x, next}`, the last `{ATOMo, 0}`.
 - Memory: a flat dict; the goal record being built at `f1000000`, the
@@ -109,11 +130,11 @@ condition, not run.
 | Injection | Observed |
 |---|---|
 | `tgif3_em1` (TGIF 3 tag from EM1) | `write_nil` FAILs (cell `20:0` for `02:0`); nothing else |
-| `w59_mdr1` (a bit-59 write stores MDR1) | `put_variable` FAILs (no cell with `UNDF`); nothing else |
-| `write_same_word` (a write stores the MDR as loaded in its own word) | `set_variable`, `write_variable` FAIL |
-| `opd_a_is_z` (select `a` = z) | `set_variable`, `put_variable` FAIL (wrong register written) |
-| `cnd_em_swapped` (CNDF 9 against EM2, b against EM1) | the four last-cell cases FAIL (the pop ends without entering the refill); the 19 compared cases still pass, which is why the last-cell cases exist |
-| `odsf_swapped` (ODSF 0 = MAR1, 1 = MAR2) | 10 cases STOP (MAR2 / MAR1 never set): every pop |
+| `w59_mdr1` (a bit-59 write stores MDR1) | `put_variable`, `put_marked_variable` FAIL (no cell with `UNDF`) |
+| `write_same_word` (a write stores the MDR as loaded in its own word) | `set_variable`, `write_variable` and their marked forms FAIL |
+| `opd_a_is_z` (select `a` = z) | `set_variable`, `put_variable` and their marked forms FAIL (wrong register written) |
+| `cnd_em_swapped` (CNDF 9 against EM2, b against EM1) | the four last-cell cases FAIL (the pop ends without entering the refill); the 22 compared cases still pass, which is why the last-cell cases exist |
+| `odsf_swapped` (ODSF 0 = MAR1, 1 = MAR2) | 13 cases STOP (MAR2 / MAR1 never set): every pop |
 
 ## First routine that would not run
 

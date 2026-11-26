@@ -129,6 +129,14 @@ independent trees. WP1.3's pim runner is in place.
 
 ### Ordered work plan
 
+**The held microprogram (2026-11-26).** ICOT's own KL1 microcode
+(`pimm.MEkbn` image 2) now executes: `ref/pu/` runs it and matches
+`pimm.py` on 22 instructions (rung U1). The rungs from there to a
+Bluespec PU with the held WCS that replaces `mkPimmExec`'s hand-written
+sequencer, and to the PSI-III ESP store on the same PU, are U2-U5 of
+`docs/pu_microcode_plan.md`; the next step for U2 is in
+`ref/pu/README.md`.
+
 Each work package states a deliverable and the check that closes it.
 Do not start a later package before the earlier one's check is observed.
 

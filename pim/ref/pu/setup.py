@@ -81,7 +81,8 @@ def base(name):
 FORMS = {
     'set_value': ('y', 'arg_x'), 'set_integer': ('c16', 'arg_x'),
     'set_atom': ('a24', 'arg_op'), 'set_nil': (None, 'arg_x'),
-    'set_variable': (None, 'arg_x'),
+    'set_variable': (None, 'arg_x'), 'set_marked_variable': (None, 'arg_x'),
+    'write_marked_variable': (None, None), 'put_marked_variable': (None, None),
     'put_value': ('y', None), 'put_integer': ('c16', None), 'put_atom': ('a24', None),
     'put_nil': (None, None), 'put_list': (None, None), 'put_variable': (None, None),
     'put_vector_0': (None, None), 'put_vector_1': (None, None), 'put_vector_2': (None, None),

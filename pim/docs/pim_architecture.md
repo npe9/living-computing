@@ -346,7 +346,7 @@ the sources confirm from what they contradict.
 
 *2026-11-26, the held microprogram executed.* `ref/pu/` runs the
 Pseudo PIM/m KL1 microprogram (`pimm.MEkbn` image 2, the PU's own
-microcode by TM-862) word by word and matches `ref/pimm/pimm.py` on 19
+microcode by TM-862) word by word and matches `ref/pimm/pimm.py` on 22
 KL1-B instructions (rung U1 of `pu_microcode_plan.md`). What that means
 for the model:
 

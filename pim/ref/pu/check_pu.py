@@ -25,12 +25,14 @@ discriminates the condition rules.
 Prints one line per case and a total; exit status 1 on any FAIL.
   python3 ref/pu/check_pu.py [-v] [--inject NAME]
 
-Observed 2026-11-26: PASS, 23 cases, 51 held microinstructions (34 in
-the 19 compared cases).  Injections (INJECT below; observed results, in
-full, in ref/pu/README.md): tgif3_em1 FAILs write_nil only; w59_mdr1
-put_variable only; write_same_word set_variable and write_variable;
-opd_a_is_z set_variable and put_variable; cnd_em_swapped the four
-last-cell cases only; odsf_swapped STOPs the ten pop cases.
+Observed 2026-11-26: PASS, 26 cases, 61 held microinstructions (44 in
+the 22 compared cases; the three *_marked_variable cases held out).
+Injections (INJECT below; observed in full in ref/pu/README.md):
+tgif3_em1 FAILs write_nil only; w59_mdr1 put_variable and
+put_marked_variable; write_same_word set_/write_variable and their marked
+forms; opd_a_is_z set_/put_variable and their marked forms;
+cnd_em_swapped the four last-cell cases only; odsf_swapped STOPs the 13
+pop cases.
 
 The firmware is read from docs/nonlocal/psdpim.tar.Z (not in git).
 """
@@ -101,6 +103,12 @@ CASES = [
     ('put_vector_N[01]', (6, 0, 0), {}, ('mrb',)),
     ('put_vector_N[02]', (5, 0, 0), {}, ('mrb',)),
     ('put_vector_N[00]', (5, 0, 0), {}, ()),
+    # Held out: added after every rule above was fixed, run unchanged.
+    # The marked forms enter at their own words (318d, 3197, 31d5) and
+    # must give REFx (MRB on) where the unmarked give REFo.
+    ('set_marked_variable', (1, 10, 0), {}, ()),
+    ('write_marked_variable', (7, 0, 0), {}, ('indirect',)),
+    ('put_marked_variable', (4, 11, 0), {}, ()),
     # The pop of the LAST free cell: the exhaustion test must fire and the
     # routine go on to the refill (3378 for the one-cell list, 337d for the
     # two-cell list), which is not run (README "First routine that would
@@ -216,7 +224,7 @@ def run_case(name, ops, regs_extra, declared, verbose=False):
                 rn.pair(fa, pa)
             matched.add(fa)
             fv = p.mem.get(fa)
-            if 'indirect' in declared and fv and fv[0] == pimm.REF and fv[1] in p.mem \
+            if 'indirect' in declared and fv and fv[0] & ~1 == pimm.REF and fv[1] in p.mem \
                     and fv[1] not in rn.f2p and p.mem[fv[1]] == pv:
                 # the firmware puts a reference to a new cell where pimm.py
                 # puts the cell itself: the same term after dereference
@@ -304,6 +312,12 @@ def main(argv):
             print('ok   %-20s %d words%s%s' % (name, n, ', firmware-only writes %d' % len(only)
                                                 if only else '',
                                                 ', declared: ' + '; '.join(notes) if notes else ''))
+    import measure
+    pins = measure.check(quiet=True)
+    print('measure.py pins (the counts behind the INFERENCE rules): %s'
+          % ('ok' if pins else 'FAIL'))
+    if not pins:
+        bad += 1
     print('%s: %d cases, %d held microinstructions executed, %d not ok'
           % ('PASS' if not bad else 'FAIL', total, words, bad))
     return 1 if bad else 0

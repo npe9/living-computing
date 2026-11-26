@@ -82,12 +82,12 @@ RULES = {
     # pimm.py i_write_integer _sp += 1; set_integer 3182 has neither and
     # does not move sp) and 3193 (write_nil).
     'mcf_20_sp': True,
-    # The free-list pop's exhaustion test.  CNDF 9 in the word that takes
-    # the link into the head register sets COND := "the link is a cell"
-    # (tag VECT0x), tested by the conditional end in the next word, whose
-    # other arm calls the refill (3378 / 337d).  INFERENCE: pushes stamp
-    # the link VECT0x (3000, 216c; MEASURED section 15); decided at
-    # 31fa/31fb (put_vector_1), 31d1/31d2 (put_list).
+    # Switch for COND_RULES below (CNDF 9 / b: the tag compared with EM1 /
+    # EM2).  In a free-list pop the word that takes the link into the head
+    # register compares its tag with ATOMo, the refill's end marker
+    # (3368), and the conditional end that follows goes on to the refill
+    # (3378 / 337d) when they are equal.  Decided at 31fa/31fb
+    # (put_vector_1), 31d1/31d2 (put_list), 318c/318f, 31d6/31d8.
     'cnd9_link': True,
     # R06 and R07 hold zero: {ATOMo, R06} is written where nil stands
     # (section 17), {UNDF, R07} where pimm.py writes UNDF 0 (31d6).
@@ -99,10 +99,13 @@ RULES = {
     # measurement (ref/pu/README.md "Conditions"): the word after a JMPF
     # 3/4/6 word is zero or an explicit target in 47-83% of cases with or
     # without CNDF (image 2 and syspsi alike), after a b/c/e word in
-    # 3-17%; all 23 self-jumping words are c or e.  Decided at 318c
-    # (set_variable: JMPF 4 CNDF b must jump over set_marked_variable's
-    # words 318d-318e to 318f).  This replaces mekbn.tested() (CNDF != 0)
-    # inside the simulator; mekbn's pins do not depend on the difference.
+    # 3-17%; all 23 self-jumping words of image 2 are c or e, 36 of 37 of
+    # syspsi (ref/pu/measure.py, pinned).  Decided at 318c (set_variable:
+    # JMPF 4 CNDF b must jump over set_marked_variable's words 318d-318e
+    # to 318f).  This replaces mekbn.tested() (CNDF != 0) inside the
+    # simulator; under it mekbn's flow pins move (measure.py
+    # 'mekbn_under_bit26': the call/return separation improves).  Which
+    # way a conditional b/c/e jump goes on COND is not decided: raises.
     'bit26_cond': True,
     # A conditional JMPF 1 (EM bit 1) with EM bit 0 set is taken when
     # COND is false.  INFERENCE, decided at 31fb/31d2/318f/31d8: the
@@ -334,13 +337,17 @@ class PU:
         # sequencing
         if kind == 'jmpf2':
             raise Unmodelled(upc, '4-bit JMPF 2')
+        if jf in (8, 9, 0xd, 0xf):
+            # bit 26 on a fall-through, JMPF 1, or a call: meaning open
+            raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
+        if kind == 'branch':
+            raise Unmodelled(upc, 'JMPF %x conditional branch (polarity not decided)' % jf)
         if mekbn.jk(x) in (3, 4, 6):
             if not RULES['bit26_cond']:
                 raise Unmodelled(upc, 'JMPF %x (bit 26 rule off)' % jf)
-            conditional = bool(jf & 8)
-            if conditional and own:
-                raise Unmodelled(upc, 'JMPF %x with its own CNDF %x (timing not decided)'
-                                 % (jf, cnd))
+            if jf & 8:
+                raise Unmodelled(upc, 'JMPF %x conditional jump (polarity not decided)' % jf)
+            conditional = False
         taken = True
         if mekbn.jk(x) == 1 and kind in ('jump', 'end', 'return'):
             if kind == 'jump' and em & 4:
@@ -353,10 +360,8 @@ class PU:
                 taken = not prev_cond
             elif em & 1:
                 raise Unmodelled(upc, 'JMPF 1 %s with EM bit 0' % kind)
-        elif conditional and kind != 'next':
-            if prev_cond is None:
-                raise Unmodelled(upc, '%s? with no condition formed' % kind)
-            taken = prev_cond
+        elif conditional:
+            raise Unmodelled(upc, 'conditional %s (not decided)' % kind)
         if not taken:
             return upc + 1              # the other arm is the next word
         if kind == 'branch':

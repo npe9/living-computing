@@ -1328,21 +1328,26 @@ pinned by `--check`):
 
 The held words now run. `ref/pu/pu.py` executes image 2 word by word
 under the rules above (rung U1 of `pu_microcode_plan.md`), and
-`ref/pu/check_pu.py` (in `run_tests.sh`) compares 19 KL1-B instructions
-with `ref/pimm/pimm.py`: 34 held microinstructions executed and matched,
-plus 17 in four cases that take a free list's last cell and must enter
-the refill. The rules it adds to these sections, each INFERENCE with the
-microaddress that decided it, are in `ref/pu/README.md`. Three of them
-change readings above:
+`ref/pu/check_pu.py` (in `run_tests.sh`) compares 22 KL1-B instructions
+with `ref/pimm/pimm.py`: 44 held microinstructions executed and matched
+(three instructions held out), plus 17 in four cases that take a free
+list's last cell and must enter the refill. The rules it adds to these
+sections, each INFERENCE with the microaddress that decided it, are in
+`ref/pu/README.md`; the counts behind them are pinned by
+`ref/pu/measure.py`. Three of them change readings above:
 
 - **JMPF bit 26 is the conditional bit** of the page-relative and
   relative jumps (b, c, e conditional; 3, 4, 6 unconditional whatever
   CNDF holds). Section 8's "JMPF 3, 4 and 6 are conditional when bits
   22..19 are non-zero" does not hold: split by bit 26, the word after a
   JMPF 3/4/6 word is zero or an explicit target in 47-83% of cases with
-  or without CNDF, after b/c/e in 3-17%, in both stores; every
-  self-jumping word is c or e. `mekbn.tested()` is unchanged (its pins
-  do not depend on it); the simulator uses the bit.
+  or without CNDF, after b/c/e in 3-17% (one exception: `syspsi`'s 15
+  JMPF b words without CNDF, 6 of 15); every self-jumping word is c or
+  e except one in `syspsi` (`4de1`). Under the bit-26 rule section 8's
+  call/return test sharpens (after a call 234 returns / 9 ends in image
+  2, 264 / 7 in `syspsi`, against 222 / 10 and 250 / 13; entries still 0
+  returns). `mekbn.tested()` and its pins are unchanged; the simulator
+  uses the bit.
 - **TGIF 3 takes the tag from EM2** (fitted at `write_nil` `3193`;
   the refill's links at `3365`/`3366` then carry `VECT0x`, the
   free-cell tag of section 15). Section 21's `{VECT2o, 0}` for cell 15
@@ -1354,8 +1359,10 @@ change readings above:
 And one conflict: a write with bit 59 stores MDR2 at `31d7` (CCF `12`)
 but the refill loop `3367` (CCF `16`) must write MDR1; CCF is likely the
 coded field `rassy` says it is. `rassy`'s register names
-(`binary_reverse_engineering.md` section 3) agree with the registers
-these sections found: R10 `cgp`, R12 `cpr`, R13 `cfpp` (the foster
+(`binary_reverse_engineering.md` section 3), read as select `10 | n`
+(WRBF clear) = register-file entry n (INFERENCE: `rassy` gives names and
+numbers, not the select encoding), agree with the registers these
+sections found: R10 `cgp`, R12 `cpr`, R13 `cfpp` (the foster
 parent, section 18), R14 `gsp`, R19 `fvp`, R1a `flp`, R1b `fgp`, R1f
 `hp`, and in the second bank R03 `lc`, R04 `pc`. R02 is open: it acts
 as the structure pointer when written (`put_list`, `put_vector_N`,

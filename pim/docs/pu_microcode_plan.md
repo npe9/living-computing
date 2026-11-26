@@ -183,18 +183,45 @@ differs from a PIM/m PE, and so what the simulator stands in:
 | I/O | PSI-III I/O bus and timer outside the PU (thesis p.130) | NU to the mesh, SCSI to the FEP (`M92` p.427) | none; a routine that reaches I/O fails loud |
 | Parameters | `SYSTEM.DIR/PIMM.PARAM` (Goal Stack Entry Table, stacks), "FOR PSEUDO MULTI-PSI" | set by PIMOS boot | the registers a run needs are set by the harness: OURS, listed per case |
 
+## Estimates (2026-11-26, after U1)
+
+Honest, and in sessions of the length that reached U1.
+
+- **U2:** two to four sessions. In order: the refill (AS1F 3, the
+  counted loop, CCF as a coded field), the allocator for three cells
+  and more (the list-head table at R05, SC2F `b`), `execute`, `proceed`,
+  `try_me_else`, then the `get_*`/`wait_*` tables, which need the
+  tag-dispatch RAM (not in `pimm.MEkbn`; found in `sysinit` or inferred
+  row by row) and the S stage's tag set-up. Each new routine has so far
+  cost one or two field rules.
+- **U3:** many sessions (ten or more), and the rung most at risk. PIMOS
+  boot touches suspension and resumption, the shoen, GC, the built-ins
+  and the SCSI built-ins, each a family of routines with its own
+  unknowns, and the Pseudo PIM/m board's TLB traps, interrupts and I/O
+  have no PIM/m counterpart to compare with. A routine that needs
+  hardware no source describes would stop U3 there.
+- **U4:** the generic E-stage datapath is small (one decoder, two
+  phases, COND, a micro stack), two or three sessions to build and run
+  in lockstep with `ref/pu/` on U2's program. Replacing `mkPimmExec`
+  keeps the core suite green only once U3's coverage exists, so U4's
+  "done" is gated by U3.
+- **U5:** not estimated; the KL0 instruction set at the bit level is
+  not documented.
+
 ## Status
 
 - 2026-11-26: plan written. U1 and U2 are the first task (`ref/pu/`);
   status lines are added below as rungs are reached.
 - 2026-11-26: **U1 reached.** `ref/pu/check_pu.py` (in `run_tests.sh`):
-  19 instructions agree with `pimm.py`, 34 held microinstructions
-  executed (the free-list pops of `set_variable`, `write_variable`,
-  `put_variable`, `put_list`, `put_vector_1/2`; the stamps of `set_nil`,
-  `write_nil`; and eleven one-word routines that only test the
-  plumbing), and four last-cell cases reach the refill (17 more words).
-  Nine INFERENCE rules, each with the microaddress that decided it, and
-  six observed fault injections: `ref/pu/README.md`. **U2 not reached.**
+  22 instructions agree with `pimm.py`, 44 held microinstructions
+  executed and matched (33 in multi-word routines: the free-list pops of
+  `set_variable`, `write_variable`, `put_variable` and their marked
+  forms, held out, `put_list`, `put_vector_1/2`; the stamps of `set_nil`,
+  `write_nil`; 11 in one-word routines that only test the plumbing), and
+  four last-cell cases reach the refill (17 more words). Nine INFERENCE
+  rules, each with the microaddress that decided it, the counts behind
+  them pinned (`ref/pu/measure.py`), and six observed fault injections:
+  `ref/pu/README.md`. **U2 not reached.**
   The first routines that would not run: the free-list refill
   (`3365`-`337f`, at `3378` on AS1F 3) and the allocator for three cells
   and more (`3331`, the list-head table at R05 and the SC2F `b`
