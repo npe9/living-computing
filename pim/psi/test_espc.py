@@ -717,7 +717,9 @@ class Standins(unittest.TestCase):
             'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_request', 'simpos##pmacs_window',
             'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
-            'simpos##save_memory', 'simpos##semaphore', 'simpos##standard_editor',
+            'simpos##save_memory', 'simpos##semaphore',
+            'simpos##standard_choice_window',       # window M9 (2026-11-26)
+            'simpos##standard_editor',
             'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##status_band',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##tcpip_network_subsystem', 'simpos##time',
@@ -1450,7 +1452,11 @@ end.''', 'simpos')
         # window M7's rest (2026-11-26): 1,483 -> 1,485 rows, pmacs_window's
         # set_permission/2 and has_been_selected/1 inherited by
         # pimos_window, both success; no other row changes.  823 / 239 / 406
-        self.assertEqual((len(rows), out), (1485, {'success': 823, 'failure': 239, 'refused': 406, 'exception': 16,
+        # window M9 (2026-11-26): pimfep superviser error_mode_menu/2
+        # refused -> success (its held create_error_mode_menu/1 reaches
+        # the new standard_choice_window stand-in; before, the class was
+        # missing); rows unchanged.  824 / 239 / 405
+        self.assertEqual((len(rows), out), (1485, {'success': 824, 'failure': 239, 'refused': 405, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1576,8 +1582,9 @@ end.''', 'simpos')
         # on the editor_text_buffer stand-in) and carriage_return/1
         # (standard_editor's primary, INFERENCE).  852 / 241 / 373
         # window M7's rest: + set_permission/2, has_been_selected/1 in
-        # pimos_window (success), as in test_fep_census
-        self.assertEqual((len(rows), out), (1485, {'success': 854, 'failure': 241, 'refused': 373,
+        # pimos_window (success), as in test_fep_census.  Window M9:
+        # error_mode_menu/2 refused -> success, as there.  855 / 241 / 372
+        self.assertEqual((len(rows), out), (1485, {'success': 855, 'failure': 241, 'refused': 372,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -5650,6 +5657,116 @@ end."""
         self.assertEqual(fr.rows, rows)
         self.assertEqual(set(fr.status), {winfb.OK})
         self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    # the error mode menu's outer size: 15 x 5 cells of the default font
+    # (11 x 14 dots), window_pane.esp's layout (OURS)
+    CHOICE_SIZE = (171, 93)
+
+    def test_win_m9_choice(self):
+        # M9, the choice window (window.md §2.10, §3.4;
+        # standard_choice_window.esp): the HELD pimfep superviser's error
+        # mode menu.  After the Login PIMOS run, a pimos_fep_superviser
+        # instance's held error_mode_menu/2 (the .ptf: it runs the held
+        # local create_error_mode_menu/1 @48a, whose create/3 carries the
+        # choice_list and label_flag(off)) gives the menu; then
+        # refute_sub_command/2 @36c-3b0's sends (OURS harness: the sends
+        # copied, the FEP object's own steps left out): set_item_value/3
+        # error_mode on, get_size/3, set_position/3, activate/1:
+        #   - the sheet: "   ERROR Mode", then the choose row with `on`
+        #     reversed (OURS look), the button row " do_it  abort ";
+        #   - a left click on `off` (the coordinator's event/2) reverses
+        #     `off` instead, and the coordinator selects nothing;
+        #   - a click on do_it, then read/2: [{error_mode, off}], the
+        #     held `R = [{error_mode, V}]` shape;
+        #   - deactivate/1: the frame as before activate/1 (the selected
+        #     window's cursor back), no window or choice left in the
+        #     coordinator;
+        #   - activated again, `on` clicked (away from the held default
+        #     off), do_it: [{error_mode, on}]; then abort clicked: read/2
+        #     gives abort;
+        #   - set_item_value/3 on a key the menu lacks refuses loudly.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   M1 a click on an option does not change the field's value:
+        #      this test FAILS, nothing else.
+        #   M2 the coordinator sends a click on a choice window to a
+        #      selection (no choose/3): this test ERRORS, nothing else.
+        #   M3 deactivate/1 does not give the selected window its cursor
+        #      back: this test FAILS, nothing else.
+        #   M4 read/2 returns the fields' defaults, not their values (the
+        #      plan's injection): first run, NOTHING failed (the one edit
+        #      ended on the held default, off); with the edit to `on`
+        #      added, this test FAILS, nothing else.
+        import fep_bridge as FB
+        import windev
+        A = K.Atom
+        m, fr, _ = self.later_run(self.manip_events()['login'])
+        m.reset()
+        C = K.ClassRef('simpos##coordinator')
+        sup = K.make_instance(m, 'pimfep##pimos_fep_superviser')
+        v = K.Var()
+        self.assertTrue(self.send(m, sup, 'error_mode_menu', v))
+        menu = K.resolve(v)
+        self.assertEqual(menu.cid, 'simpos##standard_choice_window')
+        self.assertTrue(self.send(m, menu, 'set_item_value', A('error_mode'), A('on')))
+        wv, hv = K.Var(), K.Var()
+        self.assertTrue(self.send(m, menu, 'get_size', wv, hv))
+        self.assertEqual((K.resolve(wv), K.resolve(hv)), self.CHOICE_SIZE)
+        self.assertTrue(self.send(m, menu, 'set_position', 300, 200))
+        before = list(fr.rows)
+        self.assertTrue(self.send(m, menu, 'activate'))
+        pane = m.get_slot(menu, 'pane')
+        left, top, cw, ch = (m.get_slot(pane, k) for k in ('left', 'top', 'cw', 'ch'))
+
+        def row(r, c0, n, inverted=()):
+            # row R's cells C0.. read back, the INVERTED cells first
+            # inverted again in a copy of the frame
+            import winfb
+            f = winfb.Frame()
+            f.rows = list(fr.rows)
+            for c, k in inverted:
+                f.command(winfb.FILL << 4 | 2, [left + c * cw, top + r * ch, k * cw, ch, 0, 0])
+            return windev.read_cells(f, left + c0 * cw, top + r * ch, n, 1)[0]
+        self.assertEqual(row(0, 0, 13), '   ERROR Mode')
+        self.assertEqual(row(2, 0, 11, [(5, 2)]), '     on off')
+        self.assertNotEqual(row(2, 5, 2), 'on')
+        self.assertEqual(row(4, 0, 14), ' do_it  abort')     # read_cells drops the trailing space
+
+        def click(c, r):
+            K.call_class_method(m, 'simpos##coordinator', 'event',
+                                [FB.mouse('l', left + c * cw + cw // 2, top + r * ch + ch // 2)])
+        selected = m.get_slot(C, 'selected')
+        click(9, 2)
+        self.assertEqual(row(2, 0, 11, [(8, 3)]), '     on off')
+        self.assertEqual(row(2, 5, 2), 'on')
+        self.assertIs(m.get_slot(C, 'selected'), selected)
+        click(2, 4)
+        r = K.Var()
+        self.assertTrue(self.send(m, menu, 'read', r))
+        self.assertEqual(repr(K.resolve(r)), repr(K.Cons(K.Vec([A('error_mode'), A('off')]), K.NIL)))
+        self.assertTrue(self.send(m, menu, 'deactivate'))
+        self.assertEqual(fr.rows, before)
+        self.assertNotIn(menu, self._walk(m.get_slot(C, 'windows')))
+        self.assertEqual(self._walk(m.get_slot(C, 'choices')), [])
+        self.assertTrue(self.send(m, menu, 'activate'))
+        # the field edited away from its default (the held default is
+        # off): `on` clicked, then do_it
+        click(6, 2)
+        self.assertEqual(row(2, 0, 11, [(5, 2)]), '     on off')
+        click(2, 4)
+        r = K.Var()
+        self.assertTrue(self.send(m, menu, 'read', r))
+        self.assertEqual(repr(K.resolve(r)), repr(K.Cons(K.Vec([A('error_mode'), A('on')]), K.NIL)))
+        click(10, 4)
+        r = K.Var()
+        self.assertTrue(self.send(m, menu, 'read', r))
+        self.assertEqual(K.resolve(r), A('abort'))
+        self.assertTrue(self.send(m, menu, 'kill'))
+        self.assertEqual(fr.rows, before)
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, menu, 'set_item_value', A('colour'), A('on'))
+        self.assertIn('choice_refused', str(e.exception.detail))
 
     def test_win_m8_markers(self):
         # M8, markers (window.md §2.6; standard_io_window.esp "MARKERS",

@@ -167,6 +167,9 @@ attribute dialogue := [], outline := [], placement := [], programs := [],
 % wait or notify; notified once its notify window was shown), each
 % waiting on its stream S.
 attribute waiters := [];
+% Window M9, OURS: the shown choice windows (standard_choice_window.esp),
+% whose left clicks go to their choose/3, not to a selection.
+attribute choices := [];
 % Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
 % keyboard handler's output, B4: its class is lost), read by the selected
 % window (standard_io_window.esp) until window M7, since then holding only
@@ -315,6 +318,15 @@ attribute waiters := [];
 :uncover(Class, Pane, {M, O, []}) :-
         outline_off(Class, O),
         menu_off(Class, Pane, [], M);
+
+% :add_choice(#coordinator, W) and :remove_choice(#coordinator, W) --
+% window M9 (selectors and bodies OURS): W is shown as a choice window
+% (standard_choice_window.esp), or no longer: a left click on it goes to
+% its choose/3 (visit/4).
+% INTERPOLATED (selector and body OURS): add_choice; basis above.
+:add_choice(Class, W) :- Class!choices := [W | Class!choices];
+% INTERPOLATED (selector and body OURS): remove_choice; basis above.
+:remove_choice(Class, W) :- without(Class!choices, W, Cs), Class!choices := Cs;
 
 % :placement(#coordinator, X, Y) -- window M6 (selector and body OURS,
 % see the head comment): the top-left of the outline swept for the next
@@ -818,8 +830,13 @@ reshape(Class, W, X, Y, Wd, Ht) :-
 
 % the newest window under the mouse is selected; none: nothing changes
 visit(_, [], _, _);
-visit(Class, [W | _], X, Y) :- :contains(W, X, Y), !, :select_window(Class, W);
+visit(Class, [W | _], X, Y) :- :contains(W, X, Y), !, clicked(Class, W, X, Y);
 visit(Class, [_ | Ws], X, Y) :- visit(Class, Ws, X, Y);
+
+% window M9: a click on a choice window is its choice (OURS), on any other
+% window a selection
+clicked(Class, W, X, Y) :- member(W, Class!choices), !, :choose(W, X, Y);
+clicked(Class, W, _, _) :- :select_window(Class, W);
 
 key(0, Code, Class) :- !, :put(Class!keyboard, Code);
 key(W, Code, _) :- :typed(W, Code);

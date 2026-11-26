@@ -105,6 +105,15 @@ class window_pane has
 :pattern(_, P) :- named(P, 0, _), !;
 :pattern(_, P) :- string(P, N, _), N == 256;
 
+% :outer_size(#window_pane, Cols, Rows, Font, W, H) -- window M9 (selector
+% and body OURS): the outer size in dots of a pane of Cols x Rows cells of
+% Font (0: the device's default), as create/7 lays it out.
+% INTERPOLATED (selector and body OURS): outer_size; basis above.
+:outer_size(_, Cols, Rows, Font, W, H) :-
+        metrics(Font, _, Cw, Ch),
+        times(Cols, Cw, 0, Iw), times(Rows, Ch, 0, Ih),
+        value(Iw + 6, W), value(Ih + Ch + 9, H);
+
 instance
 
 % OURS representation: the outer rectangle (x, y, w, h), the inside's
