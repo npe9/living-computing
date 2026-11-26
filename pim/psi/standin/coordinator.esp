@@ -244,7 +244,11 @@ attribute waiters := [];
         Class!owners := [[W, P] | Class!owners];
 
 % :remove_window(#coordinator, W) -- window M4/M6 (selector and body
-% OURS): W has left the screen; if it was selected, none is.
+% OURS): W has left the screen; if it was selected, none is.  Its held-back
+% writers are dropped from the waiters (OURS): never woken (a dead
+% window's output has no pane to go to; the writer stays suspended on its
+% stream), never offered in a notify window, so `show` can never select
+% a dead window.
 % INTERPOLATED (selector and body OURS): remove_window; basis above and in
 % the head comment.
 :remove_window(Class, W) :-
@@ -252,6 +256,8 @@ attribute waiters := [];
         Class!windows := Ws,
         disowned(Class!owners, W, Os),
         Class!owners := Os,
+        unwaited(Class!waiters, W, Vs),
+        Class!waiters := Vs,
         unselect(Class, W);
 
 % :cursor_aside(#coordinator) -- window M6/M7 (selector and body OURS):
@@ -745,7 +751,12 @@ offer(_);
 notices([[W, S, notify] | R], W, [[W, S, notified] | R]) :- !;
 notices([X | R], W, [X | T]) :- notices(R, W, T);
 
-notified(Class, show, W) :- !, :select_window(Class, W);
+unwaited([], _, []);
+unwaited([[X, _, _] | R], W, Vs) :- X == W, !, unwaited(R, W, Vs);
+unwaited([V | R], W, [V | Vs]) :- unwaited(R, W, Vs);
+
+notified(Class, show, W) :- member(W, Class!windows), !,
+        :select_window(Class, W);
 notified(_, _, _);
 
 % window M7: what lies over a pane while it writes.  The windows above

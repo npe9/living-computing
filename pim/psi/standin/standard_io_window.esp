@@ -293,7 +293,9 @@ attribute permission := out;
 % draw_string/4, /5 (VARIANT: 1985's Op, the held Font; an op name is taken
 % as the op), /6 (USAGE paragraph c_p_meter); transfer/8 (USAGE cil
 % es_gin.esp:855); execute_graphics_command/2, a list of {Name, {Args}}
-% (USAGE paragraph p_icon.esp:61, :176); get_mouse_position/3 (SCREENSHOT
+% (USAGE paragraph p_icon.esp:61, :176; g_window.esp:141-142 the
+% five-element draw_string, :169 the seven-element draw_filled_rectangle
+% with a held pattern, which refuses: only fix); get_mouse_position/3 (SCREENSHOT
 % IPSJ 36239 p5; USAGE).  The default op is exclusive_or ("default is
 % exclusive or", PRINTED-INTERFACE TM-125 p17); the default line is 1 dot,
 % solid.  OURS bodies, drawn by the pane (window_pane.esp "Window M8").
@@ -346,6 +348,56 @@ attribute permission := out;
 :get_mouse_position(W, X, Y) :-
         pane_of(W, P), C = #coordinator,
         value(C!mouse_x - P!left, X), value(C!mouse_y - P!top, Y);
+
+% Window M8, MARKERS (window.md §2.6, owner `as_markers`, INFERENCE): the
+% selectors and arguments are PRINTED-INTERFACE TM-125 p17 (create_marker/2
+% `(W,^M)`, draw_marker/2, erase_marker/2, move_marker/4 `(W,M,X,Y)`,
+% set_marker_type/3 `(W,M,box|line)`, set_marker_size/4, get_marker_list/2);
+% create_marker/7 `(W,X,Y,Width,Height,Type,^M)` is the CESP substitute's
+% form (linguist with_marker.esp:21-25, an analogy only).  The bodies are
+% OURS: a marker is drawn with exclusive_or (TM-125 p17's default op), so
+% drawing it twice takes it off and what was under it comes back -- a box
+% is the rectangle's 1-dot outline (draw_rectangle/5), a line runs from
+% the marker's top-left to its bottom-right corner (draw_line/5), reverse
+% inverts the area; create_marker/2 makes a 16 x 16 box at (0, 0) (OURS);
+% a marker is made not drawn; moving, retyping or resizing a drawn marker
+% takes it off and draws it again.  get_marker_position/4 (UNSPECIFIED,
+% window.md §2.6) is not stood in.
+attribute markers := [];
+
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): create_marker.
+:create_marker(W, M) :- :create_marker(W, 0, 0, 16, 16, box, M);
+:create_marker(W, X, Y, Wd, Ht, Type, M) :- marker_type(Type), !,
+        :create(#marker, W, X, Y, Wd, Ht, Type, M),
+        append(W!markers, [M], Ms),
+        W!markers := Ms;
+:create_marker(W, _, _, _, _, Type, _) :- :graphics_refused(W, Type);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): draw_marker.
+:draw_marker(W, M) :- M!shown == 1, !;
+:draw_marker(W, M) :- marker_drawn(W, M), M!shown := 1;
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): erase_marker.
+:erase_marker(W, M) :- M!shown == 0, !;
+:erase_marker(W, M) :- marker_drawn(W, M), M!shown := 0;
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): move_marker.
+:move_marker(W, M, X, Y) :- S = M!shown,
+        :erase_marker(W, M), M!x := X, M!y := Y, again(W, M, S);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): set_marker_type.
+:set_marker_type(W, M, Type) :- marker_type(Type), !, S = M!shown,
+        :erase_marker(W, M), M!type := Type, again(W, M, S);
+:set_marker_type(W, _, Type) :- :graphics_refused(W, Type);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): set_marker_size.
+:set_marker_size(W, M, Wd, Ht) :- S = M!shown,
+        :erase_marker(W, M), M!w := Wd, M!h := Ht, again(W, M, S);
+% INTERPOLATED (selector and arguments: window.md section 2.6, cited
+% above; body OURS): get_marker_list, the window's markers in the order
+% made.
+:get_marker_list(W, Ms) :- Ms = W!markers;
 
 local
 
@@ -464,12 +516,38 @@ command(W, draw_rectangle, 7, A) :- !,
 command(W, draw_filled_rectangle, 5, A) :- !,
         el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, Op),
         :draw_filled_rectangle(W, X, Y, Wd, Ht, Op);
+command(W, draw_filled_rectangle, 7, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, Wd), el(A, 3, Ht), el(A, 4, U),
+        el(A, 5, Pt), el(A, 6, Op),
+        :draw_filled_rectangle(W, X, Y, Wd, Ht, U, Pt, Op);
 command(W, draw_string, 3, A) :- !,
         el(A, 0, X), el(A, 1, Y), el(A, 2, S),
         :draw_string(W, X, Y, S);
+command(W, draw_string, 4, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, S), el(A, 3, B),
+        :draw_string(W, X, Y, S, B);
+command(W, draw_string, 5, A) :- !,
+        el(A, 0, X), el(A, 1, Y), el(A, 2, S), el(A, 3, F), el(A, 4, Op),
+        :draw_string(W, X, Y, S, F, Op);
 command(W, Name, _, _) :- :graphics_refused(W, Name);
 
 el(A, I, V) :- vector_element(A, I, V);
+
+% markers (OURS, see "MARKERS" above)
+marker_type(box);
+marker_type(line);
+marker_type(reverse);
+
+marker_drawn(W, M) :- T = M!type, T == box, !,
+        :draw_rectangle(W, M!x, M!y, M!w, M!h);
+marker_drawn(W, M) :- T = M!type, T == line, !,
+        value(M!x + M!w - 1, X2), value(M!y + M!h - 1, Y2),
+        :draw_line(W, M!x, M!y, X2, Y2);
+marker_drawn(W, M) :-
+        :draw_filled_rectangle(W, M!x, M!y, M!w, M!h, exclusive_or);
+
+again(W, M, 1) :- !, :draw_marker(W, M);
+again(_, _, _);
 
 reverse([], L, L);
 reverse([X | R], L0, L) :- reverse(R, [X | L0], L);

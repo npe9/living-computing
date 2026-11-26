@@ -1,0 +1,31 @@
+% SCAFFOLDING stand-in for SIMPOS's class `marker`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no part of it is printed
+% or held.  Window M8 (2026-11-26), MARKERS (docs/simpos/subsystems/
+% window.md §2.6): `marker` is a real 1985 class name (TM-125 p8-13,
+% window.md "1985 names not used by the held programs"; IPSJ 122601 had to
+% re-create it for CESP), and the window's marker methods (create_marker,
+% draw_marker, erase_marker, move_marker, set_marker_type, set_marker_size,
+% get_marker_list: PRINTED-INTERFACE TM-125 p17) take and give one.  What
+% a marker holds is OURS: its window, its place and size in the window's
+% inside, in dots, its type (box or line: TM-125 p17's set_marker_type/3;
+% reverse: the CESP substitute's third type, an analogy only), and whether
+% it is drawn.  The drawing is the window's (standard_io_window.esp
+% "markers").
+
+class marker has
+
+% :create(#marker, Window, X, Y, Width, Height, Type, M) -- INTERPOLATED
+% (selector and body OURS): a marker of Window, not yet drawn.
+:create(Class, W, X, Y, Wd, Ht, Type, M) :-
+        :new(Class, M),
+        M!window := W,
+        M!x := X, M!y := Y, M!w := Wd, M!h := Ht,
+        M!type := Type;
+
+instance
+
+% OURS representation (see above)
+attribute window := 0, x := 0, y := 0, w := 16, h := 16, type := box,
+          shown := 0;
+
+end.

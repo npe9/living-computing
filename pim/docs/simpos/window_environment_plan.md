@@ -609,6 +609,8 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - **The manipulator's items**, in TM-125 p8's order: EXPAND (OURS order of the edges), MENU (the
   windows by title, OURS), PERMISSION, EXIT are added. Not offered: ATTRIBUTE (a choice window, M9),
   HARDCOPY (no printer), SUPERIOR/INFERIOR (no window hierarchy).
+- A writer held back is woken when its permission becomes `out` or `show`; a killed window's
+  waiters are dropped (OURS) (`test_win_m7_permission_change`).
 - **`has_been_selected/1`** is sent after a selection (the select notifier's callback; the
   stand-ins' primary does nothing, OURS).
 - **Pmacs RESHAPE** sets the text size to the cells that fit (INFERENCE from the held
@@ -616,17 +618,22 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - Screens: `screens/manipulator_expand.png`, `manipulator_menu.png`, `notify_window.png`;
   `window_manipulator.png` re-rendered (eight items).
 
-**Status (2026-11-26, window M8: lines, rectangles, strings, transfers; shapes, images and markers
-open)** (`../../psi/README.md` "Window M8"; test `test_win_m8_graphics`):
+**Status (2026-11-26, window M8, partial: lines, rectangles, strings, transfers, markers; shapes,
+patterns and images open)** (`../../psi/README.md` "Window M8"; tests `test_win_m8_graphics`,
+`test_win_m8_forms`, `test_win_m8_markers`):
 - `draw_line/5-8`, `draw_rectangle/5,7,8`, `draw_filled_rectangle/6,8` (pattern `fix`),
   `draw_string/4-6`, `transfer/8`, `execute_graphics_command/2` and `get_mouse_position/3` are
   stood in on `standard_io_window`. The held paragraph `type_switch_icon` `draw_box/5` draws
   through `execute_graphics_command/2` on them, and gives pinned frames. A slanted line drawn twice
-  with the default exclusive_or erases itself.
+  with the default exclusive_or erases itself. The held paragraph `g_window` `draw_list/8` (the
+  mono list: five-element `draw_string` commands with a font) draws too.
+- Markers (W§2.6, TM-125 p17's selectors): create, draw, erase, move, type `box`/`line`, size and
+  list, on a stand-in class `marker`; drawn with exclusive_or, the look OURS.
 - Only winfb's frozen primitives are used. No new primitive was needed, so the hardware contract
   (§4.1) is unchanged.
-- Open: circles, arcs, ellipses, polygons, fill patterns other than `fix`, `copy/9`, `paint/5`,
-  images, and the markers. Each refuses loudly or is not stood in.
+- Open: circles, arcs, ellipses, polygons, fill patterns other than `fix` (g_window's bar views
+  refuse), `copy/9`, `paint/5`, images, `get_marker_position/4` (UNSPECIFIED). Each refuses loudly
+  or is not stood in.
 - Screen: `screens/window_graphics.png`.
 
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.

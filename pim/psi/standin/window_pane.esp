@@ -275,12 +275,17 @@ attribute under := 0, image := 0;
 % TM-785 p40): a solid line Width dots wide.  A horizontal or vertical
 % line is a fill, its width going down or right (as the device's line,
 % psi/winfb.py: the extra dots along the minor axis).
+% A slanted line leaving the inside is refused BEFORE uncover/3, as
+% transfer_in/8's areas are, so a covered window's lifted panes are never
+% left lifted by the refusal.
 :draw_line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :-
+        drawable(Pane, X1, Y1, X2, Y2, Wd), !,
         :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
         line_in(Pane, X1, Y1, X2, Y2, Wd, Op),
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
+:draw_line_in(Pane, _, _, _, _, _, _) :- :graphics_refused(Pane, line);
 
 % :fill_in(Pane, X, Y, Width, Height, Op) -- INTERPOLATED (selector and
 % body OURS) from window.md §2.5 draw_filled_rectangle/6: the rectangle
@@ -385,11 +390,14 @@ line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :- Y1 == Y2, !,
 line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :- X1 == X2, !,
         low_span(Y1, Y2, Y, H), fill_cut(Pane, X1, Y, Wd, H, Op);
 line_in(Pane, X1, Y1, X2, Y2, Wd, Op) :-
-        low_span(X1, X2, X, W), low_span(Y1, Y2, Y, H),
-        inside(Pane, X, Y, W + Wd - 1, H + Wd - 1), !,
         :line(#bitmap_display, Pane!left + X1, Pane!top + Y1,
               Pane!left + X2, Pane!top + Y2, Wd, Op);
-line_in(Pane, _, _, _, _, _, _) :- :graphics_refused(Pane, line);
+
+drawable(_, _, Y1, _, Y2, _) :- Y1 == Y2, !;
+drawable(_, X1, _, X2, _, _) :- X1 == X2, !;
+drawable(Pane, X1, Y1, X2, Y2, Wd) :-
+        low_span(X1, X2, X, W), low_span(Y1, Y2, Y, H),
+        inside(Pane, X, Y, W + Wd - 1, H + Wd - 1);
 
 low_span(A, B, A, W) :- A =< B, !, value(B - A + 1, W);
 low_span(A, B, B, W) :- value(A - B + 1, W);
