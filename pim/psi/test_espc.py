@@ -405,7 +405,8 @@ class RegisterCache(unittest.TestCase):
       the same compiler `O!c := Z + 1` refused `add on b`, by a scratch
       run; the test stops at name1.)
     - only the eviction in Regs.lowest() removed, slotset's own record of
-      the name kept: only test_builtin_output_to_constant FAILS.
+      the name kept (full test_espc.py run): only
+      test_builtin_output_to_constant FAILS.
       Slotset's record is then redundant with the eviction (removing it
       alone fails nothing); it is kept so that the name's register is
       recorded where it is written."""
@@ -444,6 +445,28 @@ end.'''
 
     def test_builtin_output_to_constant(self):
         self.assertEqual(self.run_set('elem'), [0, 0, 3])
+
+    def test_compare_reads_its_own_operand(self):
+        # `X < X + 1`: the comparison marked X's register 'cmp' while Y
+        # was put, so Y's read of X lost it: a KeyError for a temporary, a
+        # TypeError at the allocate for a head argument not yet saved
+        # (both observed on the compiler before 2026-11-25).  X's register
+        # now keeps its record, as in arith().  Injection (observed, from
+        # a copy, restored by copy, cmp clean; full test_espc.py): that
+        # keeping reverted, only this test ERRORS
+        t = compile_one('''class cmpx has
+:temp(C, X) :- X < X + 1;
+:temp2(C, X, Y) :- X + 1 > X, Y = X;
+:head(C, X) :- X < X + 1, ok(X), ok(X);
+local
+ok(_);
+end.''')
+        self.assertEqual(t.refusals, [])
+        m = K.Machine(espc.library([t]))
+        for sel in ('temp', 'head'):
+            self.assertEqual(len(K.call_class_method(m, 'user##cmpx', sel, [5])), 1)
+        (r,) = K.call_class_method(m, 'user##cmpx', 'temp2', [5, K.Var()])
+        self.assertEqual(K.resolve(r[1]), 5)
 
 
 class Structure(unittest.TestCase):

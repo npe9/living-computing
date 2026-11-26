@@ -1364,7 +1364,12 @@ class ClauseCompiler:
             x, y = (g.right, g.left) if swap else (g.left, g.right)
             rx = self.to_reg(x, scratch=True)
             hx = self.R.holder.get(rx)
-            self.R.set(rx, ('val', 'cmp'))
+            # as in arith(): a variable's own register keeps its record
+            # (a temporary, or a head argument not yet saved), so Y may
+            # read it too (`X < X + 1`; before 2026-11-25 a KeyError or,
+            # for a head argument, a TypeError at the allocate)
+            if not (x[0] == 'var' and hx in (('var', x[1]), ('pvar', x[1]))):
+                self.R.set(rx, ('val', 'cmp'))
             ry = self.to_reg(y, scratch=True)
             self.R.set(rx, hx)
             self.asm.blt(int(op, 16), rx, ry, 0)

@@ -3820,8 +3820,8 @@ gets the same frame, which is also what `../bsv/WinFbBox.bsv`'s bench and
 the hardware plan's UART consume. One cost, when it was written: espc
 refused `X*Y` on two registers, so the pane keeps the cursor's dot
 position beside its cell and multiplies by repeated addition. (espc
-emits `X*Y` as blt 42 since 2026-11-25, the register-cache section
-below; the pane is unchanged.)
+emits `X*Y` as blt 42 since 2026-11-25, section "espc's register cache
+after an overwrite" below; the pane is unchanged.)
 
 **The tests** (`test_espc.py`, class `Window`):
 
@@ -3868,9 +3868,10 @@ compiled `Pane!h`'s sum from a register that `put r0, w` (the slot name
 of the assignment before it) had just overwritten: espc kept `Ih` cached
 in r0 after the slot-name put reused r0. kl0 refused (`add on w`), so it
 was not silent here; the pane passed the sizes through a local instead.
-The fault was in `espc.py`'s register cache; it is fixed in the section
-after this one, and `create/7` now assigns the sizes directly (the local
-`sizes/3` is gone; the screens' pins are unchanged).
+The fault was in `espc.py`'s register cache; it is fixed (section
+"espc's register cache after an overwrite", below), and `create/7` now
+assigns the sizes directly (the local `sizes/3` is gone; the screens'
+pins are unchanged).
 
 **Injections, observed** (2026-11-25; each from a backup copy, restored
 by copy, `cmp` clean; the full test_espc.py and test_kl0.py run each
@@ -3931,7 +3932,22 @@ requester waits for a key after the replies. The PIMOS console (M4:
 step 3n; the status band, the system menu's mouse and the manipulator are
 M6-M7.
 
-### espc's register cache after an overwrite (2026-11-25)
+## The window framebuffer layer (`winfb.py`, 2026-11-25)
+
+`winfb.py` is the Python device layer under the planned SIMPOS window
+stand-ins (`../docs/simpos/window_environment_plan.md` §4). It is the
+reference for the hardware box `../bsv/WinFbBox.bsv`. It provides a 1-bit
+1280×1024 frame (MSB leftmost), fill, line, glyph, copy, save/restore and
+dump with raster ops, and a text command-stream format that it shares
+with the Bluesim bench. The `test_11` font is read from
+`../docs/nonlocal/psdpim.tar.Z` FONT.DIR. Every OURS choice is labelled
+in its header. `test_winfb.py` (26 tests) pins hand-written facts: edge
+masks, overlapping copies, XOR twice erases, save/restore round trips,
+and the glyphs of the Login PIMOS prompt. Since window M0/M3/M5 (the
+section before) it is reached from the `SIMPOS_MODELS` hook through
+`windev.py`, unchanged: the live runs draw with its commands.
+
+## espc's register cache after an overwrite (2026-11-25)
 
 **The fault.** `Regs` records what each register holds; a register
 holding only a cached copy of a permanent variable (or a temporary with
@@ -3964,12 +3980,14 @@ receiver's `a9`/`25`), `clear_way` (its direct `holder[i] = None` follows
 **Where it was live, and the compiled-output diff.** Every compile the
 suite makes (54 stand-ins, paragraph, kappa2 and utter's held source,
 fep_bridge's boot class, and each `compile_text` of test_espc,
-test_kl0, test_fep_bridge and test_winfb: 3,246 class compiles, 34,063
-predicates) was listed before and after (offsets and pool displacements
-normalised). Seven predicates changed, the five places the old compiler
-read a stale entry (a scratch detector on the old compiler; two more
-stale reads are in predicates refused for another reason, so emitted
-nothing):
+test_kl0, test_fep_bridge and test_winfb: 3,246 class compiles) was
+listed before and after, predicate by predicate (offsets and pool
+displacements normalised). Five predicates of held source changed (seven
+listings: utter's source is compiled once into `fts` by
+`compiled_program` and once into its own packages by `check`), exactly
+the five places the old compiler read a stale entry (a scratch detector
+on the old compiler; two more stale reads are in predicates refused for
+another reason, so emitted nothing):
 - `paragraph##h_grade set_from_endl/5`: `X!end := End` stored the slot
   name `from`; now `End` is reloaded from its Y, as the held code does
   (`a2 02 01` before the `2f`);
@@ -3979,17 +3997,23 @@ nothing):
 - `kappa##kappaMDM_table_update $or$52/6`: one reload added after a
   slot-name put (the class's later pool displacements and one choice
   offset shift by that cell; nothing else in the class changed);
-- `module_head/1` of `objterm` and `translator`, in both `fts` and `qxt`
-  (four predicates, one source shape): after `string_element(Str, 0,
-  0x236d)` the next `string_element` read Str from the register holding
-  the character; now Str is reloaded from Y0, as the held `a4 00 00`.
+- `qxt##objterm` and `qxt##translator` `module_head/1` (one source
+  shape): after `string_element(Str, 0, 0x236d)` the next
+  `string_element` read Str from the register holding the character; now
+  Str is reloaded from Y0, as the held `a4 00 00`.
+The held cells were paired at these points for h_grade,
+profiler_view_window and module_head; kappaMDM_table_update's was not.
 The stand-ins and the boot class compile byte-identical. `espc.py
 check`'s rows (24,531, all three programs) and kl0's census rows (six
 packages 530, plain FEP 1,468, FEP with recipes 1,468) are identical
 before and after: these predicates keep their class of difference.
 
 **The test** is `test_espc.py` `RegisterCache` (both shapes, run on kl0;
-its header has the observed injections).
+its header has the observed injections). Its third test is a relative
+found while auditing: a comparison marked its left operand's register
+busy while it put the right one, so `X < X + 1` lost X (a KeyError for a
+temporary, a TypeError for a head argument not yet saved); X's register
+now keeps its record, as in `arith()`. Compiled output unchanged by it.
 
 **`X*Y` on two registers** (the same day). espc refused it as having no
 witnessed opcode, but kl0_opcodes.tsv has row blt 42 `multiply` since
@@ -4014,28 +4038,27 @@ unchanged), kappa2 12,816 -> 12,871 (exact 1,513 -> 1,514:
 with_kappaMDU_table_with_pp tab/3), utter 568 -> 580 (exact 110 -> 112:
 tour##tt_basic_predicate product/3 and product/6). No compared
 predicate changes its class of difference; no exact one is lost. The
-stand-ins and the boot class compile byte-identical; kl0's census rows
+stand-ins and the boot class compile byte-identical (106 predicates are
+new in the held programs' listings; the others differ only in their
+refusal lists); kl0's census rows
 (six packages, FEP plain and with recipes) are identical. Test:
 `Language.test_multiply` (its injection, `*` as blt 40, fails it and
 test_kappa2's exact count).
 
-## The window framebuffer layer (`winfb.py`, 2026-11-25)
-
-`winfb.py` is the Python device layer under the planned SIMPOS window
-stand-ins (`../docs/simpos/window_environment_plan.md` §4). It is the
-reference for the hardware box `../bsv/WinFbBox.bsv`. It provides a 1-bit
-1280×1024 frame (MSB leftmost), fill, line, glyph, copy, save/restore and
-dump with raster ops, and a text command-stream format that it shares
-with the Bluesim bench. The `test_11` font is read from
-`../docs/nonlocal/psdpim.tar.Z` FONT.DIR. Every OURS choice is labelled
-in its header. `test_winfb.py` (26 tests) pins hand-written facts: edge
-masks, overlapping copies, XOR twice erases, save/restore round trips,
-and the glyphs of the Login PIMOS prompt. Since window M0/M3/M5 (the
-section before) it is reached from the `SIMPOS_MODELS` hook through
-`windev.py`, unchanged: the live runs draw with its commands.
-
 ## Open
 
+- **espc drops a method named `div` or `mod` silently.** `:div(C,X) :-
+  X = 1;` compiles to a class with no `div` predicate, no refusal and no
+  failure (`mod` likewise; `quo` compiles). Found 2026-11-25; not
+  investigated (the reader presumably takes them as operators). A
+  construct must fail loud.
+- **espc's other temporary register markings.** `arith()` and the
+  comparison keep the record of a variable's own register while the
+  other operand is put; `builtin()` does for a temporary only, and
+  slotset and `unify` mark unconditionally. Probed 2026-11-25:
+  `substring(S, H, T - H, P)`, `O!a := X + O!b` and `X = O!a + X` with
+  head arguments compile; no failing shape was found, but none is proven
+  absent.
 - **The window environment after M0/M3/M5:** M4 (the PIMOS console as a
   PSI `pmacs_window` through the held `pimos_window_editor`, once PIMOS's
   window commands reach the PSI), the status band, the system menu drawn
