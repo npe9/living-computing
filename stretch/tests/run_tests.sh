@@ -4931,7 +4931,7 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # >>> THE DIVIDE BOX AT THE EDGES OF ITS DATAPATH. <<<  The VFL divide
 # arm's 96-bit `/` and `%` (118,755 LUT4 + 22,896 CCU2C alone, twice
 # the ULX3S) became an iterative restoring divider, mkDivBox in
-# bsv/StretchDivBox.bsv, reached by execute()'s NeedBox bail.  This
+# bsv/StretchPAU.bsv, reached by execute()'s NeedBox bail.  This
 # deck is the full-width and last-bit cases a shift-and-subtract loop
 # can get wrong and a `/` operator cannot: 96 by 48 significant bits, a
 # quotient of 96 one bits, the largest remainder, dividend below
@@ -4942,7 +4942,7 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # model's count, so =1196+-0 checks that the box's clocks are absorbed
 # into the E-box budget.  It cannot see the I-box overlap a box wait
 # costs (nothing here overlaps); eight FP decks do show it, +1 to +16
-# clocks, tabled in bsv/StretchDivBox.bsv.  The injections and their observed
+# clocks, tabled in bsv/StretchPAU.bsv.  The injections and their observed
 # failures are in the deck header.
 # RE-PINNED 2026-11-16 (1196 -> 2148): VFL E-box time now depends on the
 # operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
@@ -10466,7 +10466,7 @@ run "bsv smoke test (make run)" make run
 # them as "clocks = 3, want 4".
 # FLOATING-POINT DIVIDE TIME (2026-11-17): mkDivBox also walks the 7030's
 # reduction loop for an FP request (Buchholz Fig. 14.11/14.12, R23-9732
-# fig. 3.8.15; StretchDivBox.bsv "THE 7030'S REDUCTION LOOP"), and
+# fig. 3.8.15; StretchPAU.bsv "THE 7030'S REDUCTION LOOP"), and
 # mkCoreDivBoxTb's vectors 8-11 check its clocks and fpExtra against
 # LITERALS from a separately written Python mirror (8 = 1/1: 8 clocks,
 # fpExtra 20, so `/` is 25 clocks = the atlas's 7.50 us).  Injections,
@@ -10527,6 +10527,15 @@ run "SAU STEPPED ADD (Table 3's passes, 2 clocks each; literal answers and clock
 # literals and the literal clock count 1.  The injections and their
 # observed failure sets are in the box file's header.
 run "FLOATING-POINT BOX (multiply and add; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
+# 2026-11-26 (fidelity_plan.md A4): mkFpBox and mkDivBox are ONE unit now,
+# mkPAU (bsv/StretchPAU.bsv), Buchholz printed p.208's parallel unit; the two
+# sections above run their old vectors on it (mkPauFpTb, mkPauDivTb).
+# mkPauMixTb, new with the merge: the classes share the AB and C working
+# registers, the counter and the state machine, so they are issued back to
+# back (each request in the clock the last answer is taken), and a divide
+# is abandoned mid-walk under a multiply.  Injections: bsv/StretchPAU.bsv
+# at mkPauMixTb.
+run "PAU MIXED CLASSES (FP and divide back to back; an abandoned divide)" "$TESTS_DIR/run_paumix_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
@@ -11478,7 +11487,7 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
 # "before" is the tree with the whole change reversed (git apply -R of
 # the saved bsv diff, re-applied and compared with cmp): the flat 4/10/8
 # charges.  The cause of the move is Table 2's divide row with the
-# reduction loops walked by mkDivBox (StretchDivBox.bsv "THE 7030'S
+# reduction loops walked by mkDivBox (StretchPAU.bsv "THE 7030'S
 # REDUCTION LOOP"; docs/NEXT.md "FP DIVIDE TIME").  The injection fails
 # all three pins (and prints "OVERRAN THE E-BOX BUDGET" on F217A and
 # F217WA, where the box's walk is longer than the 5-clock floor); the

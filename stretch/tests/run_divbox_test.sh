@@ -1,6 +1,9 @@
 #!/bin/sh
-# Build and run mkDivBoxTb, the iterative floating-point divide box's
-# own testbench (bsv/StretchDivBox.bsv).
+# Build and run mkFpDivSketchTb (was mkDivBoxTb), the standalone divide
+# sketch mkFpDivBox's own testbench, and mkPauDivTb (was mkCoreDivBoxTb),
+# the divide class of mkPAU, the parallel arithmetic unit
+# (bsv/StretchPAU.bsv, which holds both since 2026-11-26; fidelity_plan.md
+# A4).
 #
 # A SEPARATE SCRIPT because the box is DELIBERATELY STANDALONE: nothing
 # in StretchCore instantiates it yet, so it has no deck and cannot go
@@ -25,14 +28,15 @@ cd "$BSV_DIR"
 # build-* and simbuild-* are gitignored for the same reason.
 mkdir -p build-divbox simbuild-divbox
 "$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -info-dir build-divbox \
-       -g mkDivBoxTb -u StretchDivBox.bsv +RTS -K512m -RTS
-"$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -e mkDivBoxTb \
+       -g mkFpDivSketchTb -u StretchPAU.bsv +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -e mkFpDivSketchTb \
        -o divbox_sim +RTS -K512m -RTS
 ./divbox_sim
-# mkDivBox, the box the core instantiates (2026-11-15): same file, its
-# own testbench, checked against the `/` and `%` it replaced.
+# mkDivBox, the box the core instantiated (2026-11-15), now mkPAU's divide
+# class: same file, its own testbench, checked against the `/` and `%` it
+# replaced.
 "$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -info-dir build-divbox \
-       -g mkCoreDivBoxTb -u StretchDivBox.bsv +RTS -K512m -RTS
-"$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -e mkCoreDivBoxTb \
+       -g mkPauDivTb -u StretchPAU.bsv +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -e mkPauDivTb \
        -o coredivbox_sim +RTS -K512m -RTS
 ./coredivbox_sim

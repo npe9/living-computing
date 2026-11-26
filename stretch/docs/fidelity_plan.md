@@ -854,6 +854,47 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
 - Exit: the FP pages hold or improve on today's 76.8% within 1 clock,
   and `*+` / `D+` meet the rule.
 
+*A4 record, 2026-11-26.*
+
+- **Step 1, RELOCATION (done).** `mkPAU` (`bsv/StretchPAU.bsv`) is
+  one `(* synthesize *)` module with one `request(PauReq)`, one
+  `responseReady` and one `response` (`PauRsp`, tagged FP or divide).
+  It holds the FP class (mkFpBox's multiply passes and the add's
+  one-clock datapath) and the divide class (mkDivBox's restoring
+  steps and the 7030 reduction-loop walk).
+  - Registers: `rg_ab` (96 bits, the "AB 12-107" span) is the
+    multiply's product register and the divide's dividend/quotient
+    register. `rg_cd` (48 bits, "C 12-59") is the multiplicand and
+    the divisor. Both are shared by the two classes (Buchholz §14.4
+    p.208, PDF 233; `sau_pau_spec.md` §2 item 1).
+  - The FP request clears a pending divide's walk. Two separate boxes
+    never had to.
+  - Every class steps exactly as its old box did.
+  - `mkEBox` asks one `pau` where it asked two boxes. These are the
+    only `StretchExecute.bsv` lines touched.
+  - `StretchFpBox.bsv` and `StretchDivBox.bsv` were removed with
+    `git rm` (owner approval, 2026-11-25). Their headers are kept
+    inside StretchPAU.bsv under their own headings, and the docs'
+    pointers now read "StretchPAU.bsv (was ...)".
+  - Verified:
+    - The unit benches pass: `mkPauFpTb` (the old mkFpBoxTb vectors),
+      `mkPauDivTb` and `mkFpDivSketchTb` (the old mkDivBox benches),
+      47 checks in all.
+    - The NEW `mkPauMixTb` passes 7/7. It runs the classes back to
+      back with a stale-register order, and its vector 6 is a divide
+      abandoned two clocks in.
+    - Its injections were observed:
+      - P (the FP request not clearing the walk): mix 6 alone fails
+        (22 clocks, want 4).
+      - Q (the divide not clearing the remainder): mix 3 fails, as do
+        mkPauDivTb 1, 4-8 and 10-12.
+    - The full suite is GREEN (2026-11-26). Its only FAIL lines are the
+      two expected `UNREPRODUCED` p359 ones.
+    - All 386 HALTREPORT lines are identical, in order, to a GREEN run
+      of the base (e9c4b96b).
+    - The FP atlas (PDF 42-101, 9,406 cases) at the base is 76.8% /
+      94.3% within 1 / 3, which is the plan's baseline reproduced.
+
 **A5. `ebusy` becomes response readiness; the look-ahead's `Whole`
 entries split** (`ebox_roadmap.md` steps 5 and 7).
 - The look-ahead holds a level per PART of an instruction, as G1.1

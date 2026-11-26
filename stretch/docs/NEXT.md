@@ -791,7 +791,7 @@ data-dependent terms, and the reduction-loop count comes from walking
 the 7030's own divide algorithm -- Buchholz, *Planning a Computer
 System*, Figs. 14.11-14.13 and pp.213-216 (PDF 238-241) -- inside
 `mkDivBox`, one loop a clock.  The cycle structure is from R23-9732
-fig. 3.8.15 (PDF 239-241).  `bsv/StretchDivBox.bsv` "THE 7030'S
+fig. 3.8.15 (PDF 239-241).  `bsv/StretchPAU.bsv (was StretchDivBox.bsv)` "THE 7030'S
 REDUCTION LOOP" has the citations.  The atlas before/after, with
 residual = model - printed in clocks, on every non-internal column:
 
