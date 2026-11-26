@@ -97,6 +97,41 @@ class window_pane has
         Pane!under := Area,
         frame(Pane);
 
+% :create_surface(#window_pane, Iw, Ih, Font, Pane) -- window M8's stops,
+% step 3 (selector and body OURS; m8_stops.md §2, §7): the pane of a
+% window drawn on before it is shown, or never shown (paragraph p_imag.esp
+% go1-go6 draw into windows they never activate; TM-125 ch.4 PROSE: the
+% bare_window mixin "allocates the bitmap area").  Its inside, Iw x Ih
+% dots, is an area of bitmap memory (save_memory.esp allocate/3, ceil(Iw/16)
+% words a row), cleared (OURS: TM-115 p44 says 1.0's bitmap areas are not
+% cleared on allocation; a cleared one is the stand-in's choice), with its
+% inside at the area's (0, 0): left = top = 0, no border, no title.  The
+% drawing methods reach it through coordinator.esp uncover/3, which aims
+% the device at the area (aim/1) and unpeel/2 back at the frame.  A size
+% bitmap memory cannot hold refuses loudly (graphics_refused/2,
+% bitmap_memory): its 65,536 words are block RAM until H8 (SDRAM).
+% INTERPOLATED (selector and body OURS): create_surface; basis above.
+:create_surface(Class, Iw, Ih, Font, Pane) :-
+        value((Iw + 15) / 16, N), times(Ih, N, 0, Size),
+        Iw > 0, Ih > 0, :allocate(#save_memory, Size, Area), !,
+        :new(Class, Pane),
+        metrics(Font, Id, Cw, Ch),
+        Pane!font := Id, Pane!cw := Cw, Pane!ch := Ch,
+        Pane!iw := Iw, Pane!ih := Ih, Pane!w := Iw, Pane!h := Ih,
+        Pane!pitch := N, Pane!surface := Area,
+        cells(Iw, Cw, Cols), cells(Ih, Ch, Rows),
+        Pane!cols := Cols, Pane!rows := Rows,
+        :aim(Pane),
+        :fill(#bitmap_display, 0, 0, Iw, Ih, reset),
+        :surface(#bitmap_display, frame);
+:create_surface(_, _, _, _, _) :- :graphics_refused(#window_pane, bitmap_memory);
+
+% :cell_of(#window_pane, Font, Cw, Ch) -- window M8's stops (selector and
+% body OURS): the cell of Font (0: the device's default), as create/7
+% lays it out.
+% INTERPOLATED (selector and body OURS): cell_of; basis above.
+:cell_of(_, Font, Cw, Ch) :- metrics(Font, _, Cw, Ch);
+
 % :pattern(#window_pane, Pattern) -- window M8's rest (selector and body
 % OURS): Pattern is one pattern_in/7 draws: a name below, or a held
 % pattern string of 256 words.
@@ -132,6 +167,40 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
 % the pane is lifted off the screen for a restack, the area holding its
 % own dots (0: on the screen).
 attribute under := 0, image := 0;
+% window M8's stops, step 3, OURS: a surface pane's area of bitmap memory
+% (save_memory.esp [Id, Base, Size]; 0: the pane is on the frame) and its
+% words a row.
+attribute surface := 0, pitch := 0;
+
+% :aim(Pane) -- window M8's stops, step 3 (selector and body OURS): the
+% device's surfaces set to the pane's: its area, or the frame.
+% INTERPOLATED (selector and body OURS): aim; basis at create_surface/5.
+:aim(Pane) :- Pane!surface = [_, Base, _], !,
+        :surface(#bitmap_display, Base, Pane!pitch, Pane!iw, Pane!ih);
+:aim(_) :- :surface(#bitmap_display, frame);
+
+% :shown_in(Pane, Q) -- window M8's stops, step 3 (selector and body OURS):
+% the surface pane's dots copied into the inside of the shown pane Q (cut
+% to the smaller of the two), and its area freed.  The copy is the
+% device's (windev show/7), under uncover/3 as any drawing.
+% INTERPOLATED (selector and body OURS): shown_in; basis at
+% create_surface/5.
+:shown_in(Pane, Q) :- Pane!surface = [_, Base, _], !,
+        low_end(Pane!iw, Q!iw, W), low_end(Pane!ih, Q!ih, H),
+        :uncover(#coordinator, Q, Lifted),
+        cursor_off(Q),
+        :show(#bitmap_display, Base, Pane!pitch, W, H, Q!left, Q!top),
+        cursor_on(Q),
+        :unpeel(#coordinator, Lifted),
+        :free(Pane);
+:shown_in(_, _);
+
+% :free(Pane) -- window M8's stops, step 3 (selector and body OURS): a
+% surface pane's area given back (a killed window that was never shown).
+% INTERPOLATED (selector and body OURS): free; basis at create_surface/5.
+:free(Pane) :- Pane!surface \== 0, !,
+        :free(#save_memory, Pane!surface), Pane!surface := 0;
+:free(_);
 
 % Window M7, restacking (OURS selectors and bodies; the mechanism PROSE
 % TM-225 p10 and TM-126 p5, window.md §4.1 "Implementation": a hidden
@@ -805,6 +874,10 @@ moved(Pane, X, Y) :-
 % N x C as a sum (OURS: see the slots)
 times(0, _, P, P) :- !;
 times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
+
+% the cells of size C that fit in N dots, at least 1 (a surface pane's)
+cells(N, C, 1) :- N < C + C, !;
+cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
 
 metrics(0, Id, Cw, Ch) :- !, :default_font(#bitmap_display, Id, Cw, Ch);
 metrics(Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;

@@ -396,6 +396,12 @@ in `../../psi/README.md` "Window M8's stops resolved".
 - Step 3a DONE: drawing targets (prim `b`) in the winfb contract, in `psi/winfb.py` and
   `bsv/WinFbBox.bsv` in lockstep, with bitmap memory 0 at reset (`window_hardware_plan.md` §2.4).
   The stand-in's use of them (hidden windows drawn in areas) is step 3b.
+- Step 3b DONE (`test_win_m8_stops_surface`):
+  - windows drawn before they are shown, or never shown, draw into surface panes in bitmap
+    memory;
+  - paragraph `make/3` runs go1-go6, but its images do NOT match the held ones (every word
+    differs: line geometry and pattern phase, OURS; open in `psi/README.md`);
+  - icotext's 2000 x 2000 canvas refuses loudly (H8).
 
 ## 8. Sources read for this page
 

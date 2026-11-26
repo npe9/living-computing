@@ -428,7 +428,8 @@ attribute permission := out;
 % body OURS): copy.
 :copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- integer(Src), !, :graphics_refused(W, matrix_copy);
 :copy(W, Src, SX, SY, DX, DY, Wd, Ht, Op) :- op_name(Op), !,
-        pane_of(W, P), pane_of(Src, Q), :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
+        pane_of(W, P), pane_of(Src, Q), on_frame(W, P), on_frame(W, Q),
+        :copy_in(P, Q, SX, SY, DX, DY, Wd, Ht, Op);
 :copy(W, _, _, _, _, _, _, _, Op) :- :graphics_refused(W, Op);
 % Window M8's stops, step 2 (2026-11-26), PAINT: paint/5 `(W, X, Y,
 % Pattern, Op)` (USAGE kappa2 user_if/pb/pdim.esp:606 `:paint(OPicon1, 1,
@@ -570,15 +571,30 @@ echo(W, Code) :- W!echo == on, !, W!history := [Code | W!history],
 echo(_, _);
 
 % window M3/M5 (OURS, see the head comment): the pane, made once
-open(W) :- W!pane \== 0, !;
+open(W) :- P = W!pane, P \== 0, P!surface == 0, !;
 open(W) :-
-        size(W!options, Cols, Rows),
+        cell_size(W, Cols, Rows),
         position(W!options, X, Y),
         :create(#window_pane, X, Y, Cols, Rows, W!font, P),
+        S = W!pane,
         W!pane := P,
         :add_window(#coordinator, W, N),
         W!number := N,
-        drawn_title(W);
+        drawn_title(W),
+        shown_surface(S, P);
+
+% window M8's stops, step 3 (OURS): a window drawn on before activate/1
+% shows what it drew (the surface pane's dots copied into the new pane's
+% inside, its area freed)
+shown_surface(0, _) :- !;
+shown_surface(S, P) :- :shown_in(S, P);
+
+% the pane's size in cells: the size option in cells, or in dots (as many
+% cells of the font as fit, at least 1 x 1, OURS)
+cell_size(W, Cols, Rows) :- dots(W!options, Wd, Ht), !,
+        :cell_of(#window_pane, W!font, Cw, Ch),
+        cells(Wd, Cw, Cols), cells(Ht, Ch, Rows);
+cell_size(W, Cols, Rows) :- size(W!options, Cols, Rows);
 
 size(Options, 40, 10) :- unbound(Options), !;
 size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
@@ -613,6 +629,7 @@ pane_do(select, P) :- :select(P);
 pane_do(deselect, P) :- :deselect(P);
 
 % window M7: the pane leaves the screen through the coordinator's stack
+erased(W) :- P = W!pane, P \== 0, P!surface \== 0, !, :free(P), W!pane := 0;
 erased(W) :- W!pane \== 0, !, :take_off(#coordinator, W);
 erased(_);
 
@@ -624,7 +641,38 @@ value(V, V);
 
 % window M8 (OURS, see "Window M8" above)
 pane_of(W, P) :- P = W!pane, P \== 0, !;
+% window M8's stops, step 3 (OURS): a window drawn on before it is shown
+% draws into a surface pane (window_pane.esp create_surface/5), its inside
+% the window's size option in dots (the held `size(Wd, Ht)`, paragraph
+% p_imag.esp:171) or in cells (`{size, {ch, C}, {ch, R}}`, 40 x 10 when
+% none); activate/1 copies it into the shown pane (open/1).  A killed
+% window refuses.
+pane_of(W, P) :- W!killed == 0, !,
+        inside_size(W, Iw, Ih),
+        :create_surface(#window_pane, Iw, Ih, W!font, P),
+        W!pane := P;
 pane_of(W, _) :- :graphics_refused(W, not_shown);
+
+% window M8's stops, step 3 (OURS): copy/9 between two windows runs on the
+% frame only; a window not shown (a surface pane) refuses loudly
+% (surface_copy: icotext util_scroll.esp:211 copies from its never-shown
+% 2000 x 2000 canvas, which bitmap memory cannot hold before H8 anyway)
+on_frame(_, P) :- P!surface == 0, !;
+on_frame(W, _) :- :graphics_refused(W, surface_copy);
+
+inside_size(W, Iw, Ih) :- dots(W!options, Iw, Ih), !;
+inside_size(W, Iw, Ih) :-
+        size(W!options, Cols, Rows),
+        :cell_of(#window_pane, W!font, Cw, Ch),
+        times(Cols, Cw, Iw), times(Rows, Ch, Ih);
+
+dots(Options, _, _) :- unbound(Options), !, fail;
+dots([{size, Wd, Ht} | _], Wd, Ht) :- integer(Wd), integer(Ht), !;
+dots([_ | Os], Wd, Ht) :- dots(Os, Wd, Ht);
+
+times(N, C, P) :- times(N, C, 0, P);
+times(0, _, P, P) :- !;
+times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
 
 line(W, X1, Y1, X2, Y2, Wd, solid, Op) :- !,
         pane_of(W, P), :draw_line_in(P, X1, Y1, X2, Y2, Wd, Op);

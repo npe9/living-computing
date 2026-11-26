@@ -300,6 +300,7 @@ attribute sheet := [];
         lift_all(Lifted);
 % INTERPOLATED (selector and body OURS): unpeel; basis above and in the
 % head comment.
+:unpeel(Class, surface) :- !, :surface(#bitmap_display, frame);
 :unpeel(Class, {M, O, Lifted}) :- !,
         unpeel(Lifted), menu_on(M), outline_on(O);
 :unpeel(Class, Lifted) :- unpeel(Lifted);
@@ -308,10 +309,19 @@ attribute sheet := [];
 % OURS): before a window's pane draws output, the windows above it are
 % lifted if one of them overlaps it (output permission `out`,
 % window_pane.esp's head); unpeel/2 lays them back.  A pane of no shown
-% window (not yet added, or a census instance) lifts nothing.
+% window (not yet added, or a census instance) lifts nothing.  Window
+% M8's stops, step 3 (OURS): a surface pane (window_pane.esp
+% create_surface/5, a window drawn on before it is shown) lifts nothing
+% and aims the device at its area (Lifted is `surface`: unpeel/2 aims it
+% back at the frame); every other pane aims the device at the frame
+% first, so a drawing refused between a surface pane's uncover and unpeel
+% cannot leave a shown window drawing into the area (windev surface/2
+% sends nothing when the frame is aimed at already).
 % INTERPOLATED (selector and body OURS): uncover; basis above and in the
 % head comment.
+:uncover(Class, Pane, surface) :- Pane!surface \== 0, !, :aim(Pane);
 :uncover(Class, Pane, {M, O, Lifted}) :-
+        :surface(#bitmap_display, frame),
         owner(Class!windows, Pane, W), !,
         permitted(Class, W),
         above(Class!windows, W, Above),
@@ -320,6 +330,7 @@ attribute sheet := [];
         menu_off(Class, Pane, Lifted, M),
         lift_all(Lifted);
 :uncover(Class, Pane, {M, O, []}) :-
+        :surface(#bitmap_display, frame),
         outline_off(Class, O),
         menu_off(Class, Pane, [], M);
 

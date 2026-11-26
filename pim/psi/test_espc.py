@@ -5681,6 +5681,144 @@ end."""
             todo += [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
         return seen
 
+    # MEASURED 2026-11-26, NOT A TARGET: words of each paragraph image
+    # (save_image/6 of go1-go6) that differ from the held
+    # profiler_icon_image1..6 (see test_win_m8_stops_surface)
+    PARAGRAPH_GAP = {1: 84, 2: 56, 3: 112, 4: 140, 5: 80, 6: 56}
+
+    def test_win_m8_stops_surface(self):
+        # Window M8's stops, step 3 (docs/simpos/m8_stops.md §2, §7):
+        # windows drawn on before they are shown, or never shown, draw into
+        # a surface pane, an area of bitmap memory (window_pane.esp
+        # create_surface/5; winfb's target, the 2026-11-26 extension;
+        # coordinator.esp uncover/3 aims the device at it):
+        #   - the HELD paragraph profiler_icon_image_lib make/3
+        #     (p_imag.esp:111-129, run through its public
+        #     make_image_class_file/3) runs go1-go6, each into a 500 x 400
+        #     window it never activates (size(500, 400), label_flag(off),
+        #     ...), killed after its save_image/6; the frame is unchanged,
+        #     bitmap memory holds no area afterwards, and each image has the
+        #     held image's length.  Its :write/4 is replaced by a harness
+        #     model that keeps the string (OURS: the files are not wanted).
+        #     THE IMAGES DO NOT MATCH the held profiler_icon_image1..6:
+        #     every word differs (PARAGRAPH_GAP, MEASURED).  Image 5 (lines
+        #     only) shows why: the light_paint phase is 3 dots off (OURS
+        #     anchor at the inside), and the boxes' lines lie about 8 rows
+        #     higher and are drawn black where the held image is white, so
+        #     the draw_line geometry and ops of the stand-in (OURS) differ
+        #     from the PSI's; not tuned here (psi/README.md, open item);
+        #   - kappa2 pdim.esp:579-606's order: a 61 x 64 window painted at
+        #     (1, 1) before activate (light_paint), then activated: the shown
+        #     inside holds the painted dots (cut to the cells that fit);
+        #   - a surface pane's uncover/3 with no unpeel/2 after it (a drawing
+        #     refused there), then a fill in a shown window: it lands on the
+        #     frame (uncover/3 aims every shown pane at the frame);
+        #   - icotext util_scroll.esp's 2000 x 2000 canvas (250,000 words)
+        #     refuses loudly at its first drawing: bitmap_memory (65,536
+        #     words of block RAM until H8, SDRAM);
+        #   - copy/9 from a window never shown refuses loudly (surface_copy).
+        #   - the device's stream replays to the same frame AND bitmap
+        #     memory (winfb.run_stream).
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   Q1 a shown pane's uncover/3 does not aim at the frame: this
+        #      test FAILS (the fill after the unpeeled uncover lands in the
+        #      area), nothing else.
+        #   Q2 a surface not cleared on allocation: this test FAILS (the
+        #      kappa2 check, the cause not looked into), nothing else.
+        #   Q3 activate/1 does not copy the surface: this test FAILS,
+        #      nothing else.
+        #   Q4 kill/1 does not free a surface: this test ERRORS (INFERENCE,
+        #      not checked: six 12,800-word areas outgrow 65,536), nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        SET = A('set')
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        d = windev.device(m)
+        fr = d.frame
+        before = list(fr.rows)
+        got = {}
+        key = ('paragraph##profiler_icon_image_lib', 'class', 'write', 4)
+
+        def write(mm):
+            got[K.deref(mm.x[2]).name] = list(K.deref(mm.x[0]).codes())
+            return mm.proceed()
+        K.SIMPOS_MODELS[key] = write
+        try:
+            L = K.NIL
+            for i in range(6, 0, -1):
+                L = K.Cons(K.Vec([A('profiler_icon_image%d' % i), K.Str('f%d' % i)]), L)
+            m.reset()
+            self.assertTrue(K.call_class_method(m, 'paragraph##profiler_icon_image_lib',
+                                                'make_image_class_file', [K.Str('x'), L]))
+        finally:
+            del K.SIMPOS_MODELS[key]
+        self.assertEqual(fr.rows, before)
+        def ids():
+            out, c = [], K.deref(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))
+            while isinstance(c, K.Cons):
+                out.append(K.deref(K.deref(c.args[0]).args[0]))
+                c = K.deref(c.args[1])
+            return out
+        self.assertEqual([i for i in ids() if i < 0], [])     # no surface left
+        gap = {}
+        for i in range(1, 7):
+            ((h,),) = K.call_class_method(m, 'paragraph##profiler_icon_image%d' % i, 'get', [K.Var()])
+            held = h.codes()
+            mine = got['profiler_icon_image%d' % i]
+            self.assertEqual(len(mine), len(held), i)
+            gap[i] = sum(1 for a, b in zip(mine, held) if a != b)
+        self.assertEqual(gap, self.PARAGRAPH_GAP)
+        # kappa2's order: paint before activate
+        opts = K.Cons(K.Vec([A('size'), 61, 64]),
+                      K.Cons(K.Vec([A('position'), 700, 500]), K.NIL))
+        ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, v, 'paint', 1, 1, A('light_paint'), SET))
+        self.assertEqual(fr.rows, before)
+        self.assertTrue(self.send(m, v, 'activate'))
+        P = m.get_slot(v, 'pane')
+        L_, T_, iw, ih = (m.get_slot(P, k) for k in ('left', 'top', 'iw', 'ih'))
+        self.assertEqual(m.get_slot(P, 'surface'), 0)
+        for j in range(ih):
+            for i in range(iw):
+                self.assertEqual((fr.rows[T_ + j] >> (1279 - L_ - i)) & 1,
+                                 self.pattern_dot(A('light_paint'), i, j), (i, j))
+        # a surface pane's uncover with no unpeel, then a shown window's fill
+        ((_o, u),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [K.NIL, K.Var()])
+        self.assertTrue(self.send(m, u, 'draw_filled_rectangle', 0, 0, 10, 10, SET))
+        U = m.get_slot(u, 'pane')
+        self.assertNotEqual(m.get_slot(U, 'surface'), 0)
+        m.reset()
+        self.assertTrue(K.call_class_method(m, 'simpos##coordinator', 'uncover', [U, K.Var()]))
+        self.assertIsNotNone(d.aim)
+        rows = list(fr.rows)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 0, 0, 8, 1, SET))
+        self.assertIsNone(d.aim)
+        self.assertNotEqual(fr.rows, rows)
+        self.assertEqual(fr.rows[Y0] >> (1280 - X0 - 8) & 0xff, 0xff)
+        # icotext's canvas; copy from a window never shown
+        opts = K.Cons(K.Vec([A('size'), 2000, 2000]), K.NIL)
+        ((_o, big),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        rows = list(fr.rows)
+        for obj, args in [(big, ('draw_filled_rectangle', 0, 0, 10, 10, SET)),
+                          (w, ('copy', u, 0, 0, 20, 20, 10, 10, A('copy')))]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, obj, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(m.get_slot(big, 'pane'), 0)
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'simpos##save_memory', 'allocate', [250000, K.Var()]), [])
+        self.assertEqual(fr.rows, rows)
+        self.assertTrue(self.send(m, u, 'kill'))
+        self.assertEqual(m.get_slot(U, 'surface'), 0)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        again = winfb.run_stream(d.stream_text())
+        self.assertEqual(again.pbm(), fr.pbm())
+        self.assertEqual(again.save, fr.save)
+
     def test_win_m8_stops_read(self):
         # Window M8's stops, step 2 (docs/simpos/m8_stops.md §3, §4, §7):
         # reading dots back on winfb's read (the 2026-11-26 extension, OURS
@@ -5709,7 +5847,8 @@ end."""
         # restored by copy, cmp clean; Window, test_fep_bridge.py,
         # test_kl0.py and test_winfb.py run, all else OK):
         #   P1 the search's next rows widened by a dot each side, unclipped:
-        #      this test ERRORS (a read at x = -1), nothing else.
+        #      this test ERRORS (the cause not looked into; P1b is the
+        #      clipped form), nothing else.
         #   P1b the same, clipped to the inside (8-connected): this test
         #      ERRORS at gog's triangle, kl0 StepLimit 20,000,001 (the fill
         #      leaks through the one-dot diagonal into the whole inside),

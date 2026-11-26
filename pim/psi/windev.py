@@ -34,6 +34,11 @@ argument order here is OURS, as the plan §4.1 says it would be):
                                                     2026-11-26 extension):
                                                     its N words into the
                                                     string S from element 0
+  :surface(#bitmap_display, frame)                  winfb `target` (step 3 of
+  :surface(#bitmap_display, Base, Pitch, W, H)      m8_stops.md): both
+                                                    surfaces, sent on change
+  :show(#bitmap_display, Base, Pitch, W, H, DX, DY) the area copied to the
+                                                    frame (target, copy)
   :load_font(#bitmap_display, File, ^Id, ^W, ^H)    the plan's font_load
   :default_font(#bitmap_display, ^Id, ^W, ^H)       OURS (see below)
   :get_size(#bitmap_display, ^W, ^H)                1280 x 944
@@ -99,6 +104,7 @@ class Device:
         self.frame = winfb.Frame(winfb.test_11())
         self.log = []                   # [(op byte, [A..F])], in order
         self.fonts = []                 # id -> winfb.Font (id 0 test_11)
+        self.aim = None                 # the surface drawn on: None = the frame
 
     def run(self, prim, rop, args):
         op = prim << 4 | rop
@@ -106,6 +112,21 @@ class Device:
         st = self.frame.command(op, args)
         self.log.append((op, args))
         return st
+
+    def aim_at(self, area):
+        """M8 stops step 3: the destination and source surfaces both set
+        to AREA ((base, pitch, w, h), or None = the frame) as winfb target
+        records, sent only when the surface changes, so a run that draws
+        only on the frame streams what it streamed before."""
+        if area == self.aim:
+            return winfb.OK
+        for which in (0, 1):
+            a = [which, 0, 0, 0, 0, 0] if area is None else [which, 1] + list(area)
+            st = self.run(winfb.TARGET, 0, a)
+            if st != winfb.OK:
+                return st
+        self.aim = area
+        return winfb.OK
 
     def stream_text(self):
         return ''.join(winfb.line_of(op, a) + '\n' for op, a in self.log) + \
@@ -225,6 +246,39 @@ def install(models, K):
         s.set_codes(codes)
         return m.proceed() if m.unify(m.x[5], len(words)) else m.fail()
 
+    def aimed(m, area, what):
+        st = device(m).aim_at(area)
+        if st != winfb.OK:
+            raise K.Refusal('simpos', 'bitmap_display %s: winfb status %d' % (what, st))
+        return m.proceed()
+
+    def surface_frame(m):
+        # M8 stops step 3 (OURS): surface(#bitmap_display, frame): fill,
+        # glyph, line, copy and read act on the frame again
+        v = K.deref(m.x[0])
+        if not (isinstance(v, K.Atom) and v.name == 'frame'):
+            raise K.Refusal('simpos', 'bitmap_display surface/2: %r is not frame' % (v,))
+        return aimed(m, None, 'surface/2')
+
+    def surface_area(m):
+        # M8 stops step 3 (OURS): surface(#bitmap_display, Base, Pitch, W,
+        # H): they act on that area of bitmap memory (winfb's target, the
+        # 2026-11-26 extension) until the next surface/2 or /5
+        return aimed(m, tuple(ints(m, 4, 'surface/5')), 'surface/5')
+
+    def show(m):
+        # M8 stops step 3 (OURS): show(#bitmap_display, Base, Pitch, W, H,
+        # DX, DY): the area's W x H dots copied to the frame at (DX, DY);
+        # the surfaces are the frame after it
+        base, pitch, w, h, dx, dy = ints(m, 6, 'show/7')
+        d = device(m)
+        check(d.run(winfb.TARGET, 0, [1, 1, base, pitch, w, h]), 'show/7')
+        check(d.run(winfb.TARGET, 0, [0, 0, 0, 0, 0, 0]), 'show/7')
+        check(d.run(winfb.COPY, OPS['copy'], [0, 0, w, h, dx, dy]), 'show/7')
+        check(d.run(winfb.TARGET, 0, [1, 0, 0, 0, 0, 0]), 'show/7')
+        d.aim = None
+        return m.proceed()
+
     def answer(m, base, font_id, font):
         w, h = cell_of(font)
         ok = (m.unify(m.x[base], font_id) and m.unify(m.x[base + 1], w)
@@ -264,6 +318,9 @@ def install(models, K):
         (D, 'class', 'save', 7): save,
         (D, 'class', 'restore', 3): restore,
         (D, 'class', 'read', 7): read,
+        (D, 'class', 'surface', 2): surface_frame,
+        (D, 'class', 'surface', 5): surface_area,
+        (D, 'class', 'show', 7): show,
         (D, 'class', 'load_font', 5): load_font,
         (D, 'class', 'default_font', 4): default_font,
         (D, 'class', 'get_size', 3): get_size,

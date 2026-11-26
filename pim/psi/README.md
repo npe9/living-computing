@@ -4856,6 +4856,54 @@ OURS, owner-approved).** Python and RTL only; no stand-in uses them yet.
 - Next is step 3b: the stand-in's hidden windows draw into areas. That
   makes paragraph's `p_imag.esp` runnable.
 
+**Step 3b: windows drawn before they are shown, or never shown (OURS
+bodies).**
+- A window drawn on before `activate/1` gets a surface pane
+  (`standin/window_pane.esp` `create_surface/5`).
+  - Its inside is an area of bitmap memory, `ceil(Iw/16)` words a row,
+    taken from `save_memory.esp`'s first-fit list (new `allocate/3` and
+    `free/2`; a surface's id is `-1 - Base`, never a device slot).
+  - The area is cleared on allocation (OURS: TM-115 p44 says 1.0's areas
+    are not).
+  - The inside is the window's `size(Wd, Ht)` in dots (paragraph's form),
+    or its size in cells.
+- `coordinator.esp` `uncover/3` aims the device at the area (`windev.py`
+  `surface/5`), and `unpeel/2` aims it back at the frame.
+  - Every shown pane's `uncover/3` aims at the frame first. So a drawing
+    refused inside a surface pane's uncover cannot leave a shown window
+    drawing into the area.
+  - `windev` sends target records only when the surface changes, so runs
+    that draw only on the frame stream what they streamed before.
+- `activate/1` copies the surface into the new pane's inside (`windev`
+  `show/7`) and frees the area. `kill/1` of a window never shown frees it.
+  A `size(Wd, Ht)` window, when shown, gets as many cells as fit.
+- Refused loudly:
+  - copy/9 to or from a window never shown (`surface_copy`);
+  - a surface bitmap memory cannot hold (`bitmap_memory`). icotext's
+    2000 x 2000 canvas needs 250,000 words; the memory is 65,536 words of
+    block RAM until H8 moves it to SDRAM.
+- `test_win_m8_stops_surface` covers:
+  - the HELD paragraph `make/3` (p_imag.esp go1-go6), run through its
+    public `make_image_class_file/3`, with a harness model in place of its
+    file-writing `:write/4`. Each image is made into a 500 x 400 window
+    that is never shown. The frame is unchanged and no area is left.
+  - kappa2's paint before activate;
+  - the refused-uncover case;
+  - icotext's canvas;
+  - the stream replaying to the same frame and bitmap memory.
+- **Open: the paragraph images do not match the held
+  `profiler_icon_image1..6`; every word differs.** The counts are pinned
+  as `PARAGRAPH_GAP`, MEASURED, not a target. Image 5 (lines only) shows
+  three causes:
+  - the stand-in's light_paint phase is 3 dots off (its anchor at the
+    inside is OURS);
+  - the box lines lie about 8 rows higher;
+  - they are drawn black where the held image is white.
+  So the stand-in's `draw_line` geometry and ops (OURS) are not the
+  PSI's. This is the first independent oracle for them. Fixing it needs
+  the line semantics re-derived from these images, which is not done
+  here.
+
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
 Injection P13 (the coordinator's own process held back like any writer)
