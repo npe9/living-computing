@@ -626,7 +626,11 @@ and the PIMOS source tree, which carries per-machine variants; the
 ranks first. At the KL1-B and system level it is PIM/m with a mesh
 network and a network-attached FEP, and PIMOS 3.6 can be rebuilt for it
 with three configuration switches changed. Its rungs, MP0..MP6, are in
-that document's §4. PIM/p, PIM/i, PIM/c and PIM/k follow in that order.
+that document's §4. *2026-11-26: MP1(a) done and MP1(b) not (Multi-PSI
+set aside by the owner). The held compiler on the model rebuilt 23 of 25
+PIMOS 3.6 files, 20 of them equal to the held code but for the header
+and orders (`ref/pimm/mp1_rebuild.py`, `other_pims.md` §4).* PIM/p,
+PIM/i, PIM/c and PIM/k follow in that order.
 Each is a reconstruction (OURS) gated on the lost VPIM toolchain.
 
 ## 8. What stops now
