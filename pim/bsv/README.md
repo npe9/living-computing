@@ -491,6 +491,9 @@ R8 (2026-11-25, `../docs/binary_reverse_engineering.md` 1.4, "R8, the
 pkl1 samples"): the five `pkl1_*` rows above, measured on both models
 from the R7L prompt checkpoint (made afresh from the link checkpoint,
 8,595,408 instructions), every line identical. No model was changed.
+As a control, the 28 rows that came before R8 were re-run on the
+reference from the remade checkpoint with the new home files, and
+each passed its pin and its window.
 The home directory gained the four pkl1 samples (`../docs/pkl1/`) and
 their adaptations `NAME_r8.kl1` (OURS, `longrun_ipl.PKL1_ADAPT`), so
 `ls` was re-measured: nine lines where it had one, 174,299
