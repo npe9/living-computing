@@ -3396,14 +3396,16 @@ function WordAddr vflRmwNextRead(Bit#(2) have, WordAddr w0, Bool crosses,
 function SauAddSteps vflBinAddSteps(VflCtx cx, Bool mg);
   VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, False);
   return SauAddSteps { passes: vb.b0 + vb.s, top: cx.offSh + vb.x,
-                       osb: (cx.offSh + 7) >> 3, b0: vb.b0, mg: mg };
+                       osb: (cx.offSh + 7) >> 3, b0: vb.b0, mg: mg,
+                       cls: SauStAdd, early: False };
 endfunction
 
 function SauAddSteps vflDecAddSteps(VflCtx cx, Bit#(8) offDec, Bool mg);
   VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, True);
   Bit#(8) od = offDec >> 2;
   return SauAddSteps { passes: vb.b0 + vb.s, top: od + vb.b0,
-                       osb: od, b0: vb.b0, mg: mg };
+                       osb: od, b0: vb.b0, mg: mg,
+                       cls: SauStAdd, early: False };
 endfunction
 
 // >>> THE PASSES mkSAU STEPS FOR THE OTHER DECIMAL CLASSES (fidelity_plan.md
