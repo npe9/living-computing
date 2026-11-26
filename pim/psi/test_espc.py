@@ -3534,7 +3534,10 @@ class Window(unittest.TestCase):
         for name, pin in (('login_pimos_password', self.PINS['password']),
                           ('login_pimos_bridged', self.BRIDGED_PIN),
                           ('pimos_console', self.CONSOLE_PIN),
-                          ('system_menu', self.MENU_PINS['boxed'])):
+                          ('system_menu', self.MENU_PINS['boxed']),
+                          ('menu_over_window', self.SHOT_PINS['over']),
+                          ('create_kill_popup', self.SHOT_PINS['popup']),
+                          ('rubber_band', self.SHOT_PINS['sweep'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -3795,17 +3798,138 @@ class Window(unittest.TestCase):
         self.assertEqual((datetime.date(1901, 1, 1) + datetime.timedelta(fep.DATE)).strftime('%d-%b-%y %A'),
                          self.DATE[:18])
 
-    def later_run(self, first, then=()):
-        # window M7: FIRST given at the first quiet moment (as menu_run),
-        # THEN at the next one, after the processes FIRST started have
-        # drawn (fep_bridge's shell batch, its getl condition set).  ->
+    def later_run(self, first, *then):
+        # window M6/M7: FIRST given at the first quiet moment (as
+        # menu_run), each batch of THEN at the next one, after the
+        # processes the batch before started have drawn (fep_bridge's
+        # shell batch, its getl condition set, refilled from THEN).  ->
         # (machine, frame, the refusal that ended the run)
         import fep_bridge
         import windev
         psi = fep_bridge.PsiSide()
-        psi.user, psi.shell, psi.getl = list(first), list(then), True
-        stop = psi.run(lambda out: [])
+        psi.user, rest = list(first), [list(b) for b in then]
+
+        def exchange(out):
+            if rest and not psi.shell:
+                psi.shell, psi.getl = rest.pop(0), True
+            return []
+        stop = psi.run(exchange)
+        self.assertEqual((rest, psi.shell), ([], []))
         return psi.m, windev.device(psi.m).frame, stop
+
+    # window M6/M7 screens (psi/winshot.py): the event batches (later_run)
+    # and the frames' pins
+    @staticmethod
+    def shot_events():
+        import fep_bridge as FB
+        L = FB.mouse
+        login = [L('rr', *FB.MENU_AT), L('l', *FB.LOGIN_ITEM_AT)]
+        pop = [L('rr', 200, 150), L('l', 500, 195)]
+        return dict(
+            over=lambda: (login, [L('rr', 700, 500)]),
+            popup=lambda: (login, pop),
+            sweep=lambda: (login, pop + [L('l', 540, 220), L('l', 600, 500),
+                                         K.Vec([K.Atom('move'), 900, 600])]))
+
+    SHOT_PINS = {
+        'over': ('a398542a5a3d589728d533c59c9b01ce551f2a487e839b2a7e15bb2220c599b3', 104904),
+        'popup': ('42bfaa7dd1c4e7d2fc1c703be0569243e5cfc96cf639edd3081db31832c26058', 102627),
+        'sweep': ('d329f4fbb05d319a26922c63e309efdc7313863c96e978b88ecddfea82d2b6a9', 101796),
+    }
+
+    def test_win_m6_create_kill(self):
+        # M6, create and kill from the system menu (coordinator.esp head:
+        # SCREENSHOT simpos.wmv@49-60, prolog.wmv@14-15, the sequence
+        # INFERENCE; the sweep by two corners as TM-125 p8's RESHAPE,
+        # PRINTED-INTERFACE).  With a Login PIMOS window shown, choosing
+        # the item again opens a pop-up titled `Login PIMOS` with `create`
+        # and `kill` at the mouse; `create`, a corner, a move: the outline
+        # is exactly a 1-dot rectangle (exclusive_or) between the corner
+        # and the mouse; the other corner: the outline erased and a second
+        # held requester started, its window at the outline's top-left;
+        # then `kill` on the same item: the newest requester is
+        # exterminated and its window restores what it covered (the first
+        # window), exactly.  Injections, OBSERVED (2026-11-25; each from a
+        # backup copy, restored by copy, cmp clean; Window,
+        # test_fep_bridge.py and test_kl0.py run, all else OK):
+        #   R1 the outline's top edge drawn by set, not exclusive_or: this
+        #      test FAILS, nothing else.
+        #   R2 coordinator running/4 never finds a shown program (the item
+        #      always starts it, no pop-up): this test ERRORS, nothing
+        #      else.
+        #   R3 window_pane ignores the swept placement (the window centred
+        #      on the mouse): this test FAILS, nothing else.
+        #   R4 coordinator cursor_aside/1 a no-op (the selected window's
+        #      cursor saved under the new window and toggled over it):
+        #      this test FAILS, nothing else (the M4 pins are unchanged by
+        #      cursor_aside: the console's own selection took the login
+        #      window's cursor off before).
+        import fep_bridge as FB
+        import windev
+        import winfb
+        L = FB.mouse
+        mv = lambda px, py: K.Vec([K.Atom('move'), px, py])   # noqa: E731
+        C = K.ClassRef('simpos##coordinator')
+        x, y = FB.MENU_AT
+        login = [L('rr', x, y), L('l', *FB.LOGIN_ITEM_AT)]
+        m, before, _ = self.later_run(login)
+        # the pop-up: the system menu at (200, 150), Login PIMOS (column 2,
+        # row 2) at (500, 195)
+        pop = [L('rr', 200, 150), L('l', 500, 195)]
+        m, fp, stop = self.later_run(login, pop)
+        self.assertEqual(stop.cause, 'would suspend')
+        P = m.get_slot(C, 'menu_pane')
+        self.assertEqual([K.resolve(m.get_slot(P, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
+                         [500, 195, 147, 55, 216])
+        self.assertEqual(windev.read_cells(fp, 502, 198, 13, 1), [' Login PIMOS'])
+        self.assertEqual(windev.read_cells(fp, 502 + 38, 217, 6, 1), ['create'])
+        self.assertEqual(windev.read_cells(fp, 502 + 49, 233, 4, 1), ['kill'])
+        self.assertEqual(K.resolve(m.get_slot(C, 'dialogue')).args[0], K.Atom('which'))
+        self.assertEqual((windev.pbm_sha256(fp), fp.count()), self.SHOT_PINS['popup'])
+        # create, the first corner, a move: the outline only
+        corner = pop + [L('l', 540, 220), L('l', 600, 500)]
+        m, f1, _ = self.later_run(login, corner)
+        m, f2, _ = self.later_run(login, corner + [mv(900, 600)])
+        self.assertEqual(f1.rows, before.rows)
+        bw, bh = 301, 101
+        for yy in range(500, 601):
+            span = ((1 << bw) - 1) if yy in (500, 600) else (1 << (bw - 1)) | 1
+            self.assertEqual(f1.rows[yy] ^ f2.rows[yy], span << (1280 - 600 - bw), yy)
+        self.assertEqual(sum(bin(a ^ b).count('1') for a, b in zip(f1.rows, f2.rows)), 2 * bw + 2 * (bh - 2))
+        self.assertEqual((windev.pbm_sha256(f2), f2.count()), self.SHOT_PINS['sweep'])
+        # the other corner: the outline gone, the second window at (600,
+        # 500), the same frame as with no move at all
+        done = corner + [mv(900, 600), mv(1100, 700), L('l', 1000, 640)]
+        m, fd, stop = self.later_run(login, done)
+        self.assertEqual(stop.cause, 'would suspend')
+        m0, fd0, _ = self.later_run(login, corner + [L('l', 1000, 640)])
+        self.assertEqual(fd.rows, fd0.rows)
+        ws = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual(len(ws), 2)
+        pane = m.get_slot(ws[0], 'pane')
+        self.assertEqual([m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h')], [600, 500, 446, 121])
+        self.assertEqual(windev.read_cells(fd, 603, 503, 40, 1), ['Pimos remote login 6'])
+        self.assertEqual(windev.read_cells(fd, 603, 520, 40, 2), ['Enter FEP node name--------->', '#'])
+        self.assertEqual(self.band(fd)[2], ['standard_io_window/2'])
+        self.assertEqual(m.get_slot(C, 'placement'), K.NIL)
+        # kill: the newest requester dead, its window gone, the first
+        # window's dots back (its cursor taken off when the second was
+        # drawn, coordinator cursor_aside/1; the band's box cleared)
+        kill = [L('rr', 100, 100), L('l', 400, 145), L('l', 440, 188)]
+        m, fk, stop = self.later_run(login, done, kill)
+        self.assertEqual(stop.cause, 'would suspend')
+        (w1,) = self._walk(m.get_slot(C, 'windows'))
+        self.assertEqual([m.get_slot(m.get_slot(w1, 'pane'), k) for k in ('x', 'y')], [755, 544])
+        p2 = self._walk(m.get_slot(C, 'started'))[0]
+        self.assertEqual(m.get_slot(p2, 'status'), K.Atom('nil'))
+        self.assertEqual(m.get_slot(C, 'selected'), 0)
+        want = winfb.Frame()
+        want.rows = list(before.rows)
+        want.command(winfb.FILL << 4 | 2, [758, 578, 11, 14, 0, 0])      # the cursor off
+        want.command(winfb.FILL << 4 | 0, [400, 950, 440, 18, 0, 0])     # the box cleared
+        self.assertEqual(fk.rows, want.rows)
+        self.assertEqual(len(self._walk(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))), 1)
+        self.assertEqual(set(fk.status) | set(fd.status), {winfb.OK})
 
     @staticmethod
     def saves(m):
@@ -3860,6 +3984,7 @@ class Window(unittest.TestCase):
         m, opened, stop = self.later_run(login, [FB.mouse('rr', 700, 500)])
         self.assertEqual(self.saves(m)[3:], ['save 1 700 500 499 135 3388'])
         self.assertNotEqual(opened.rows, before.rows)
+        self.assertEqual((windev.pbm_sha256(opened), opened.count()), self.SHOT_PINS['over'])
         move = lambda px, py: K.Vec([K.Atom('move'), px, py])   # noqa: E731
         for name, then, at in (
                 ('off the items', [FB.mouse('l', 705, 505)], (700, 500)),
