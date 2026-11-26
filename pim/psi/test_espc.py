@@ -652,6 +652,155 @@ end.'''
             self.assertEqual(got[k], 'other', k)
 
 
+class IfThenElse(unittest.TestCase):
+    """`C -> T ; E` is a $or$ whose clause is `C, !, T` (espc.py if_then);
+    a chain `C1 -> T1 ; C2 -> T2 ; E` is one $or$ of three clauses; a last
+    alternative `C -> T` with no else has an implicit `; true`; and
+    relative_cut_and_fail(1) is pmi db (kl0_opcodes.tsv).
+
+    Sources.  TM-388 prints `->` only as an operator (App. B p.142, PDF
+    p.154: xfy 1040, below `;`); §5.2 pp.119-120 (PDF pp.131-132) says
+    ESP has no IF THEN ELSE and writes it `Q :- P, !, S1 ; Q :- S2`.  The
+    rest is the held code (kappa2):
+    - IXMRSRHV.ESP `(Status = found -> Set_position = @rsr_mini_set_posi ;
+      true)` is held point_forward_or_backward_RSR/8.11#1, e4 / get found /
+      d0 / put 2047 / f0 / e0 / f0; ours is cell for cell the same (exact).
+    - KP_BFMMM.ESP delete_buffer_object_1/5's three-way chain is one held
+      $or$ (c4 .. d0 .. c2 .. d0 .. c0) of arity 4.
+    - No else: IXMDELRSR.ESP flag_maintenance_HV/8 `(Info == empty -> true
+      ; Info == first_set -> true ; Info == last_set -> true)` is held
+      #1: three `f2` tests, each else to the next, the last else to a
+      final `f0`: when no test holds the $or$ succeeds.  The same in
+      IXMISRHV.ESP search_set_root_to_leaf2/8 (`f4 .. 01`, the else on
+      `f1`) and PCPCLDAP.ESP make_new_info_list/5 (#1's else on `f0`).
+      Not Prolog's `(C -> T)`, which fails.
+    - The held compiler inlines a `->` into its caller when the
+      disjunction is the clause's last goal and C is one test with a
+      test-and-branch form (espc.py peels_into_caller; MEASURED: of the
+      48 such disjunctions that are the only one of their caller, 41 are
+      inlined by the count; apart from two with a two-test C, never one
+      that is not last or whose C is not such a test).
+      espc keeps the $or$ (the same answers); `check` does not pair that
+      caller's $or$s ('under an inlined ->'), which it mispaired before.
+    - relative_cut_and_fail(1): all three held uses (pb/hash.esp:168 and
+      :344, KP_MDMART.ESP:58) are `a7 00 00 01, db 00 00 00` and the
+      proceed; TM-388 4.6 p.112 (PDF p.124) prints its meaning.
+
+    Injections (2026-11-26, observed; each into the working file from a
+    backup copy, restored by cp, cmp clean): see the end of this class.
+    """
+    T = '''class t has
+:p(C, X, R) :- (X < 1 -> R = a ; X < 5 -> R = b ; R = c);
+:g(C, R) :- (gen(X), X > 1 -> R = X ; R = none);
+:n(C, X, R) :- (X == a -> R = 1 ; X == b -> R = 2);
+:h(C, X, R) :- hh(X, R);
+:k(C, X, R) :- kk(X, R);
+local
+gen(1); gen(2); gen(3);
+hh(X, R) :- (X == 0, !, relative_cut_and_fail(1) ; R = one);
+hh(_, two);
+kk(X, R) :- (X == 0, !, fail ; R = one);
+kk(_, two);
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        ts, failed = espc.compile_text(cls.T, 'user')
+        assert not failed and not any(t.refusals for t in ts), (failed, [t.refusals for t in ts])
+        (cls.t,) = ts
+        cls.m = K.Machine(espc.library(ts))
+
+    def run_(self, sel, *args):
+        return K.call_class_method(self.m, 'user##t', sel, list(args) + [K.Var()])
+
+    def or_of(self, path):
+        (name,) = [n for n, p in self.t.or_path.items() if p == path]
+        return name
+
+    def test_shape(self):
+        ops = lambda path: [op for _t, op, _a, _b in code(self.t, self.or_of(path))]
+        # p: one $or$, three clauses; the two `->` clauses cut after the test
+        p = ops('p/3.25#1')
+        self.assertEqual([o for o in p if o in (0xe4, 0xe2, 0xe0, 0xd0)],
+                         [0xe4, 0xd0, 0xe2, 0xd0, 0xe0])
+        # n: the two `->` clauses and the implicit `true`, a lone proceed
+        n = ops('n/3.25#1')
+        self.assertEqual([o for o in n if o in (0xe4, 0xe2, 0xe0, 0xd0)],
+                         [0xe4, 0xd0, 0xe2, 0xd0, 0xe0])
+        self.assertEqual(n[-2:], [0xe0, 0xf0])
+        # relative_cut_and_fail(1): the held search_and_get/5.11#1 tail
+        h = code(self.t, self.or_of('hh/2.11#1'))
+        i = [x[1] for x in h].index(0xdb)
+        self.assertEqual(h[i - 1:i + 2], [(0x20, 0xa7, 0, 0), (0x20, 0xdb, 0, 0), (0x20, 0xf0, 0, 0)])
+        # a bare `->` (no `;`) has no witness and still refuses
+        ts, _f = espc.compile_text('class u has\n:r(C,X,R) :- (X == 1 -> R = 2);\nend.', 'user')
+        self.assertEqual([(r[0][:2], r[1]) for r in ts[0].refusals], [(('r', 3), 'if-then-else ->')])
+
+    def test_on_kl0(self):
+        self.assertEqual(repr([self.run_('p', x) for x in (0, 3, 7)]),
+                         '[[[0, a]], [[3, b]], [[7, c]]]')
+        # the cut takes gen/1's other answers and the else with it
+        self.assertEqual(repr(self.run_('g')), '[[2]]')
+        got = [self.run_('n', K.Atom(a) if hasattr(K, 'Atom') else a) for a in ('a', 'b', 'c')]
+        self.assertEqual(repr(got[:2]), '[[[a, 1]], [[b, 2]]]')
+        # no test holds: n succeeds once, R unbound
+        self.assertEqual(len(got[2]), 1)
+        self.assertIsInstance(K.deref(got[2][0][1]), K.Var)
+
+    def test_relative_cut_and_fail_on_kl0(self):
+        # hh's $or$ cuts back to hh's caller level: hh's second clause goes
+        # too, so h(0) fails; kk's `!, fail` cuts only its $or$ (TM-388
+        # p.111), so k(0) still answers `two`.  X=1 is the control
+        self.assertEqual(repr([self.run_('h', x) for x in (0, 1)]),
+                         '[[], [[1, one], [1, two]]]')
+        self.assertEqual(repr([self.run_('k', x) for x in (0, 1)]),
+                         '[[[0, two]], [[1, one], [1, two]]]')
+
+    def test_held_rows(self):
+        lib, r = kappa2()
+        rows = {(x[0], x[1]): x[2] for x in r['rows']}
+        self.assertEqual(rows[('kappa##kappaIXM_RSR_heap', 'point_forward_or_backward_RSR/8.11#1 12')],
+                         'exact')
+        cid, k = 'kappa##kappaBFM_MDB_manager', 'delete_buffer_object_1/5.11#1'
+        ht, t = lib.templates[cid], r['templates'][cid]
+        ch, cn = espc.canonical(ht), espc.canonical(t)
+        hp = [p for p in ht.preds() if p is not None and ch[p.offset] == k][0]
+        cp = [p for p in t.preds() if p is not None and cn[p.offset] == k][0]
+        self.assertEqual((hp.arity, cp.arity), (4, 4))
+        cut_sends = lambda t_, p_, c_, pool: [x for x in espc.semantic(espc.normal(t_, p_, pool, c_))
+                                              if x[0] in ('cut', 'send')][:6]
+        self.assertEqual(cut_sends(t, cp, cn, espc._pool_ours), cut_sends(ht, hp, ch, espc._pool_held))
+        # a caller whose `->` the held compiler inlined: its $or$s not paired
+        for n in ('search_set2/11.11#1 12', 'search_set2/11.11#3 12', 'search_set/11.11#1 12'):
+            self.assertEqual(rows[('kappa##kappaIXM_RSR_heap', n)], 'under an inlined ->', n)
+        # a lifted head expression's variables are shared with a $or$:
+        # REPDB.ESP count_element/5 (`No1 + No2` in the head) is held
+        # #1 of arity 3; ours was 2 (No1 left out)
+        cid = 'kappa##with_kappaREP_database'
+        t = r['templates'][cid]
+        (cp,) = [p for p in t.preds() if p is not None and espc.canonical(t)[p.offset] == 'count_element/5.11#1']
+        self.assertEqual(cp.arity, 3)
+
+    # Injections, observed (2026-11-26):
+    # (each in a private copy of pim/psi; whole test_espc.py (114 tests)
+    # and test_kl0.py (49) run each time, test_kl0 OK in all five)
+    # - A, if_then returning `C, T` (no cut): test_held_rows ('other' !=
+    #   'exact'), test_on_kl0 (p answers every later branch too),
+    #   test_shape (no d0) and MacroBank.test_kappa2 (exact 1521 != 1530)
+    #   FAIL, nothing else.
+    # - B, the implicit `; true` dropped: test_on_kl0 (n(c) 0 answers)
+    #   and test_shape FAIL, nothing else.
+    # - C, kl0 op_relative_cut_and_fail cutting to self.b0 (the $or$'s
+    #   own barrier, a plain `!, fail`): test_relative_cut_and_fail_on_kl0
+    #   FAIL (h(0) answers [0, two]), nothing else.
+    # - D, peels_into_caller always False: test_held_rows ('moves and
+    #   environment' != 'under an inlined ->') and MacroBank.test_kappa2
+    #   (compared 13167 != 13133) FAIL, nothing else.
+    # - E, add_clause's head_vars from the lifted values only:
+    #   test_held_rows (count_element arity 2 != 3) and
+    #   MacroBank.test_kappa2 (13131 != 13133) FAIL, nothing else.
+
+
 class Behaviour(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -771,11 +920,37 @@ end.'''
         # now ours apart and refused (they call the refused
         # check_value_attribute/3), so they count as `$or$ of a refused
         # predicate`
-        self.assertEqual((c['pred compared'], c['pred exact']), (12967, 1518))
-        # 21 before the fix; the three gone are copy_table/1.11#2#1 (held
-        # arity 2, ours 3) and the two search_enzan_code #...#2#2#1 (9,
-        # 6).  The 18 left are not disjunction nesting (not examined)
-        self.assertEqual(c['$or$ paired with another arity'], 18)
+        # with `->` compiled (2026-11-26, IfThenElse; row by row against
+        # the commit before): 13,133 compared, 1,530 exact.  189 predicates
+        # refused before compile (refused 5,021 -> 4,832; 'if-then-else
+        # ->' 129 -> 0).  12 new exact rows: delete_MDBbuffer/5, check_occ/2
+        # and get_child_info/5 (refused before) and nine $or$s compared as
+        # 'other' before, e.g. point_forward_or_backward_RSR/8.11#1 (a
+        # predicate refused at its `->` kept the $or$ clauses compiled
+        # before the refusal, and they were compared).  116 rows are
+        # 'under an inlined ->' (espc.py peels_into_caller): 41 compiled
+        # only, 22 other and 4 more compared (mispaired) before.  A lifted
+        # head expression's variables now count as the clause's (espc.py
+        # add_clause): get_used_lpn/5 refused ('unbound input') -> moves
+        # and environment, count_element/5.11#1 at the held arity 3
+        self.assertEqual((c['pred compared'], c['pred exact']), (13133, 1530))
+        self.assertEqual(c['pred under an inlined ->'], 116)
+        self.assertEqual(c['pred compiled only'], 89)
+        # 21 before the nesting fix; the three gone are copy_table/1.11#2#1
+        # (held arity 2, ours 3) and the two search_enzan_code #...#2#2#1
+        # (9, 6).  18 -> 10 with `->`, examined (psi/README.md
+        # "If-then-else"): 4 were under an inlined `->` (now not paired),
+        # 2 under an `unbound/1` test inlined (check_search_index_value/11
+        # #1), 2 were espc's lifted-head bug (count_element/5.11#1,
+        # get_used_lpn/5.11#1#1).  Of the 10 left, 9 are held code order:
+        # first-argument indexing puts a list clause's code before the
+        # `[]` clause's, and canonical() numbers held $or$s in code order
+        # (search_ch_list_loop/8, search_delimiter_loop/5,
+        # get_substring_value/6, set_item/2, get_table_option/3); one,
+        # merge_occ_element/11.11#6, follows a clause espc's reader cannot
+        # parse (PCPROPMG.ESP:508: `!` then a goal with no comma), so the later
+        # $or$s shift by one.  None is an espc code generation bug
+        self.assertEqual(c['$or$ paired with another arity'], 10)
         # the held cells witness two of the key macros' values (espc.py
         # key_constant): KMACS2.ESP `:command(Self,mouse#r,kappa_menu)` is
         # exact only with mouse#r the atom named `mouse#r`, and DUMP.ESP
@@ -908,14 +1083,9 @@ class Standins(unittest.TestCase):
             'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
         # predicates espc refuses; every other stand-in compiles whole
+        # (e_string's and name's sorts, refused at partition/4's
+        # if-then-else, compile since `->` did, 2026-11-26)
         held = {
-            'simpos##e_string': {('string_sort', 3): 'calls a refused local',
-                                 ('string_sort', 2): 'calls a refused local',
-                                 ('qsort', 3): 'calls a refused local',
-                                 ('partition', 4): 'if-then-else ->'},
-            'simpos##name': {('sort', 3): 'calls a refused local',
-                             ('qsort', 3): 'calls a refused local',
-                             ('partition', 4): 'if-then-else ->'},
             'simpos##pathname': {('append_names', 3): 'calls a refused local',
                                  ('set_names', 3): 'built-in set_substring/4'},
         }
@@ -6697,14 +6867,13 @@ end."""),
     def test_win_m10_dedit_compiles(self):
         # M10: cal's dedit.esp (HELD cal-esp deb2.12, the editor whose
         # control_c/control_x tables window.md §5.2 cites) compiles with the
-        # key macros, one class, and its only refused predicate is exit/1
-        # (an if-then-else, not modelled); it is not run (its editor class
-        # needs cal's other classes).
+        # key macros, one class, whole since `->` compiles (2026-11-26; its
+        # exit/1, an if-then-else, was refused before); it is not run (its
+        # editor class needs cal's other classes).
         import held
         ts, failed = espc.compile_text(held.member_text('dedit'), 'simpos')
         self.assertEqual(failed, {})
-        self.assertEqual([t.refusals for t in ts],
-                         [[(('exit', 1, 0x35), 'if-then-else ->', 'not modelled')]])
+        self.assertEqual([t.refusals for t in ts], [[]])
 
 if __name__ == '__main__':
     unittest.main()

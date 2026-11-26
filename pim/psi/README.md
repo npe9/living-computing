@@ -885,8 +885,9 @@ method.
   - What does not:
     - `pathname`'s `get_last/4` refuses. It searches backwards (B > E),
       which no witness shows.
-    - The `qsort`/`partition` pair (`->`) and `set_names/3`
-      (`set_substring/4`) are refused, and pinned.
+    - `set_names/3` (`set_substring/4`) is refused, and pinned. The
+      `qsort`/`partition` pair (`->`) compiles since 2026-11-26
+      (section "If-then-else").
 - **Symbolizer** (INTERPOLATED). `get_number/3` (number out, string in)
   and `get_number_string/3` (number in, string out) work on integers,
   in decimal with a leading `-`, from their call sites (cil
@@ -4185,10 +4186,11 @@ head).
 now raises `CompileRefusal('stand-in', ...)` naming the predicate and the
 reason. Before, the predicate was dropped and showed only at run time as
 "not in the stand-in"; date_time's first `get_value/8` (`/ 3600000`) was
-lost that way while this was written. The nine known refusals, HELD-SOURCE
-bodies of `e_string`, `name` and `pathname` (if-then-else,
-`set_substring/4`), are listed in `espc.KNOWN_STANDIN_REFUSALS`; the test
-checks that list equals the refusals exactly.
+lost that way while this was written. The known refusals, HELD-SOURCE
+bodies of `pathname` (`set_substring/4`), are listed in
+`espc.KNOWN_STANDIN_REFUSALS`; the test checks that list equals the
+refusals exactly. (Nine until 2026-11-26: `e_string`'s and `name`'s
+sorts, refused at an if-then-else, compile since `->` does.)
 
 **Tests** (`test_espc.py` `Window`):
 
@@ -4905,9 +4907,9 @@ lost; paragraph 1,280 -> 1,286 compared, none exact. Paragraph's
 pair with another arity: espc FLATTENED `(A ; B) ; C` into one `$or$`
 where the held compiler keeps the inner one its own predicate, a
 behavioural difference under cuts (fixed 2026-11-26; see "Nested
-disjunctions and the cut in a `$or$`"). dedit.esp compiles but its `exit` (`->`;
-`test_win_m10_dedit_compiles`); cal_pmacs.esp, my_select.esp.1,
-exshow.esp compile whole.
+disjunctions and the cut in a `$or$`"). dedit.esp compiles whole since
+`->` does (its `exit` was refused before; `test_win_m10_dedit_compiles`);
+cal_pmacs.esp, my_select.esp.1, exshow.esp compile whole.
 
 **The stand-ins** (selectors HELD where held code sends them, bodies OURS):
 - `editor_text_buffer`: the buffer pool, a class slot (PROSE IPSJ
@@ -5167,8 +5169,8 @@ not ESP's:
   `Code='$$nil'` are dead code under the clause-wide cut.
   pb/hash.esp `search_and_get/5` writes `!, relative_cut_and_fail(1)`
   in a disjunction, which would be plain `fail` if `!` already cut the
-  clause. Its held `$or$` has a `pmi db` there; db has no row in the
-  table, so that is INFERENCE only.
+  clause. Its held `$or$` has a `pmi db` there (rowed 2026-11-26 as
+  relative_cut_and_fail, section "If-then-else").
 - The manual does not state the nesting rule. That comes from the held
   rows.
 
@@ -5217,6 +5219,189 @@ by a monkeypatch):
 - Held rows: `get_number`/`get_font` `#1` and `#1#1` are compared at the
   held arity, with `semantic` forms equal for three of them, and read/2's
   `#1#1#1#1#1-3` are compared.
+- The injections and their observed failures are in the class header.
+
+## If-then-else, `relative_cut_and_fail` and the `$or$` arity pairs (2026-11-26)
+
+The open items of the section above. Three changes in espc, one in kl0,
+one opcode row.
+
+**What the sources say about `->`.**
+- PRINTED, TM-388 App. B p.142 (PDF p.154): `->` is an operator, xfy
+  1040, below `;` (1150) and above `,` (1000). So `C -> T ; E` reads as
+  `;(->(C,T), E)`, and `C1 -> T1 ; C2 -> T2 ; E` as
+  `;(->(C1,T1), ;(->(C2,T2), E))`.
+- PRINTED, TM-388 §5.2 pp.119-120 (PDF pp.131-132): "ESP does not have
+  ... IF THEN ELSE"; a conditional branch is written `Q :- P, !, S1;
+  Q :- S2`. The manual prints no meaning for `->`.
+- So the meaning is HELD-SOURCE, from the held rows below. The census
+  sources hold 243 `->`: 238 as an alternative with something after it,
+  5 as the last alternative, none as a bare goal.
+
+**espc: `C -> T` in a disjunction is the `$or$` clause `C, !, T`**
+(`espc.py` `if_then`).
+- MEASURED: kappa2 IXMRSRHV.ESP `(Status = found -> Set_position =
+  @rsr_mini_set_posi ; true)` is held
+  `point_forward_or_backward_RSR/8.11#1`: `e4`, get `found`, `d0`, put
+  2047, `f0` / `e0`, `f0`. Ours is cell for cell the same (`exact`).
+- The cut is local to the `$or$` (kl0 gives each `$or$` its own
+  barrier), so it removes the later alternatives and C's own choice
+  points, as an if-then-else must.
+- A chain is one `$or$`, one clause per alternative. MEASURED: held
+  `kappaBFM_MDB_manager delete_buffer_object_1/5.11#1` (KP_BFMMM.ESP,
+  three alternatives) is `c4 .. d0 .. c2 .. d0 .. c0`, arity 4. Ours has
+  the same arity, and the same cuts and sends in the same order.
+- A bare `(C -> T)` that is not an alternative of a `;` still refuses:
+  the census has none, so there is no witness.
+
+**A last alternative `C -> T` has an implicit `; true`.** When no
+condition holds, the disjunction succeeds. This is not Prolog's
+`(C -> T)`, which fails. MEASURED on three held predicates:
+- IXMDELRSR.ESP `flag_maintenance_HV/8`, source `(Info == empty -> true ;
+  Info == first_set -> true ; Info == last_set -> true)`. Held `#1` is
+  three `f2` tests. Each test's else goes to the next test, and the
+  last else goes to a final `f0` (proceed).
+- IXMISRHV.ESP `search_set_root_to_leaf2/8`'s first clause: the last
+  test is `f4 00 01 01`, and its else is a `f1`.
+- PCPCLDAP.ESP `make_new_info_list/5`: `#1`'s else is `f0`.
+
+espc appends a `true` clause to such a `$or$`.
+
+**The held compiler inlines some `->` into the caller.** MEASURED,
+kappa2 (a scratch survey of each caller's `$or$` count, source against
+held):
+- The rule: the disjunction is the clause's last goal, and its first
+  alternative's condition is one test with a test-and-branch opcode
+  (`==`, `\==`, `<`, `>`, `=<`, `>=`, `atom/1`, `integer/1`,
+  `unbound/1`).
+- What the held code does then: the test branches in the caller, the
+  then-part follows it inline, and the else is the rest. When two or
+  more alternatives remain, the rest is a `$or$`. Example: held
+  `kappaIXM_RSR_heap search_set/11`'s `blt f4 02 00 09`, with `#1`
+  holding `Q = 0 -> ... ; error` as two clauses.
+- How well the rule fits: of the 48 such disjunctions that are their
+  caller's only `$or$`, 41 are inlined by the count (4 of the other 7
+  have three alternatives, where a first one inlined and the rest a
+  `$or$` gives the same count). Apart from the two below, no disjunction
+  that is not last, or whose condition is not one such test, is inlined.
+- Exceptions:
+  - Three disjunctions fit the rule but keep their `$or$`:
+    `delete_BI/5`, `set_free_buffer_object/4` and `release_work_string/2`.
+    `delete_BI/5`'s `$or$` has a test-and-branch inside, with no choice
+    point.
+  - Two whose conditions are two tests are inlined:
+    `search_element/12.11#2` and `get_contents/4`.
+  - What decides these cases is not settled.
+
+espc keeps the `$or$`, which gives the same answers. Generating the
+inline form would be new code: espc emits no `f0`/`f2`/`f4`/`f5`/`e1`.
+
+`espc.py check` gives a caller that fits the rule its own cause, `under
+an inlined ->` (`peels_into_caller`, `ClassCompiler.peeled`). Its
+`$or$`s are numbered apart from the held ones, so the check does not
+pair them. Before this, 22 such rows were compared against the wrong
+held `$or$`.
+
+**espc bug fixed: a lifted head expression's variables.** In a head
+argument `No1 + No2`, espc makes a fresh variable and unifies it after
+the body. A disjunction in the body did not count No1 as shared, so it
+bound a variable of its own. MEASURED: kappa2 REPDB.ESP
+`count_element(CFT, Bit_count, Count_limit, [P1|PR], No1 + No2) :-
+(and(CFT,P1,0), !, No1 = 0 ; No1 = 1), ...` is held
+`count_element/5.11#1` with arity 3 and No1 in A1. Ours had arity 2.
+`get_used_lpn/5` had the same bug, refused as `unbound input`; it now
+compiles (`moves and environment`).
+
+**pmi db is relative_cut_and_fail** (`kl0_opcodes.tsv`, hand-written as
+every row is; KNOWN-PLAINTEXT).
+- All three held uses pair with `relative_cut_and_fail(1)` in source:
+  - pb/hash.esp:166-168, `search_and_get/5.11#1`;
+  - hash.esp:344, `search_and_remove/6.11#1`;
+  - KP_MDMART.ESP:58, `add_record/5.35#2#1#1`.
+  Each is `a7 00 00 01` (the 1 into A0), `db 00 00 00`, then the proceed.
+- The meaning is PRINTED, TM-388 4.6 p.112 (PDF p.124):
+  relative_cut_and_fail fails after `relative_cut(Level)`.
+  relative_cut cuts "all alternatives below the level specified by
+  argument Level (the depth of levels backward from the current
+  level)". Example 1 on p.112, `P :- (Q, relative_cut(1), R ; S)`, cuts
+  S and P's next clause. That is back to the barrier of the `$or$`'s
+  caller.
+- INFERENCE: Level is read from A0, because the operand bytes are
+  `00 00 00` in all three uses.
+- kl0 (`op_relative_cut_and_fail`): each entry barrier is now a `Level`,
+  an int that keeps its caller's (`up`). db cuts to `b0.up` and fails.
+  Only Level 1 and zero operand bytes are witnessed; anything else
+  refuses.
+- OURS: a last call counts as a level. The manual does not say.
+- espc emits it as the held code has it, as a last goal only. The three
+  held predicates stay refused for other reasons (`increment/2`, a
+  back-quoted macro term), so they are not compared.
+
+**The `$or$`s paired with another arity** (kappa2 18 -> 10, examined
+one by one with `espc.py check` and the held dumps):
+- 4 were under an inlined `->`. They are no longer paired.
+- 2 were under an inlined `unbound/1` test (`check_search_index_value/11`
+  `#1`), so `unbound` is in the rule.
+- 2 were the lifted-head bug: `count_element/5.11#1` and
+  `get_used_lpn/5.11#1#1`.
+- 9 of the 10 left come from the held code order, an artifact of
+  `canonical()`, not of espc:
+  - First-argument indexing puts a list clause's code before the `[]`
+    clause's. Held `search_ch_list_loop/8` is `c9` on the list, then
+    clauses 2 and 3, then clause 1; its `c5`/`c3`/`c1` chain gives the
+    source order.
+  - `canonical()` numbers held `$or$`s in code order, so pairs swap:
+    `search_ch_list_loop/8`, `search_delimiter_loop/5`,
+    `get_substring_value/6`, `set_item/2` and `get_table_option/3`.
+- 1, `merge_occ_element/11.11#6`, comes after a clause espc's reader
+  cannot parse: kappa2 kernel/pcm/PCPROPMG.ESP:508, `To_number1 <
+  To_number2, !` followed by a goal with no comma. The held reader accepted it, so the later
+  `$or$`s shift by one.
+
+None of the 10 is an espc code-generation bug.
+
+**Effects** (`espc.py check`, row by row against the commit before):
+
+| | kappa2 |
+|---|---|
+| compared | 12,967 -> 13,133 |
+| exact | 1,518 -> 1,530 |
+| refused | 5,021 -> 4,832 (`if-then-else ->` 129 -> 0) |
+| compiled only | 134 -> 89 |
+| under an inlined `->` (new) | 116 |
+| `$or$` paired with another arity | 18 -> 10 |
+
+- The 12 new exact rows: `delete_MDBbuffer/5`, `check_occ/2` and
+  `get_child_info/5` were refused before, and nine `$or$`s were
+  compared as `other`, for example `point_forward_or_backward_RSR/8.11#1`.
+  A predicate refused at its `->` kept the `$or$` clauses compiled before
+  the refusal, and those partial `$or$`s were compared.
+- Paragraph and utter are unchanged.
+- The stand-ins: `e_string`'s and `name`'s sorts (HELD-SOURCE
+  `partition/4` with `->`) now compile.
+  `espc.KNOWN_STANDIN_REFUSALS` is down to `pathname`'s two. M10's
+  dedit.esp compiles whole.
+
+**Test**: `test_espc.py` `IfThenElse`.
+- Shape:
+  - a chain is one `$or$` with `d0` after each condition;
+  - a no-else chain ends in a lone `f0` clause;
+  - relative_cut_and_fail(1) is `a7 00 00 01, db, f0`;
+  - a bare `->` refuses.
+- kl0:
+  - the chain answers a, b, c;
+  - `(gen(X), X > 1 -> R = X ; R = none)` answers only `2`;
+  - with no condition true, the no-else chain succeeds with R unbound;
+  - `hh(0, R)` fails, because relative_cut_and_fail(1) takes `hh`'s
+    second clause too;
+  - `kk(0, R)` with `!, fail` still answers `two`.
+- Held rows:
+  - `point_forward_or_backward_RSR/8.11#1` is exact;
+  - `delete_buffer_object_1/5.11#1` has the held arity and cut/send
+    order;
+  - `search_set2/11` and `search_set/11`'s `$or$`s are `under an inlined
+    ->`;
+  - `count_element/5.11#1` has arity 3.
 - The injections and their observed failures are in the class header.
 
 ## Open
@@ -5409,7 +5594,8 @@ by a monkeypatch):
   `enter_atom/3`, are modelled (OURS, INTERPOLATED). The run-time
   lookup order is an INFERENCE.
 - **The compiler's unwitnessed constructs.** These have no witnessed
-  compiled form yet: `=\=`, `->` and `not`; of `with_macro`, the
+  compiled form yet: `=\=` and `not` (`->` since 2026-11-26, section
+  "If-then-else"; a bare `(C -> T)` with no `;` still refuses); of `with_macro`, the
   rules with a tail and `==>`. Vectors of one, five, six or n elements
   now have interpreter rows (pmi b1, b5, b6, b7, step 3e), but
   `espc.py` does not emit them yet.
