@@ -399,7 +399,7 @@ is not loadable: make it again with the two commands above):
 | pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
 | pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
 | pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
-| ls (R7; R8's home) | `ls` | 174,299 | 804,300 | 32 |
+| ls (R7; R8b's home) | `ls` | 186,304 | 877,733 | 36 |
 | gc (R7G) | `gc` | 89,179 | 368,543 | 18 |
 | gc_listener (R7G) | `gc`, the compile_work lines, `gc`, the listener_sieve lines | 1,752,873 | 7,880,429 | 283 |
 | listener_sieve_limit (R7G 5) | listener_sieve's, heap limit 2,952,727 | 1,575,086 | 7,144,911 | 249 |
@@ -413,6 +413,12 @@ is not loadable: make it again with the two commands above):
 | pkl1_nrev (R8) | ... `nrev_r8` ..., `nrev:nrev([1,2,3,4,5,6,7,8],R).` | 1,466,386 | 6,820,828 | 249 |
 | pkl1_qsort (R8) | ... `qsort_r8` ..., `qsort:qsort([27,74,17,33,94,18,46,83,65,2],R).` | 1,852,929 | 8,142,420 | 249 |
 | pkl1_kkqueen (R8) | ... `kkqueen_r8` ..., `top:go(9,M).` | 5,419,133 | 17,463,720 | 249 |
+| pkl1_tak (R8b) | ... `tak_r8` ..., `tak:tak(18,12,6,A).` | 2,443,822 | 10,733,760 | 249 |
+| pkl1_cd (R8b) | ... `cd_r8` ..., `count_down:count_down(1000).` | 1,266,723 | 6,064,443 | 249 |
+| pkl1_lips (R8b) | ... `lips_r8` ..., `print_length(40).`, `top:make_list(30,L), top:repeat(3,L), nrev:nrev(L,R).` | 2,110,069 | 9,323,920 | 291 |
+| pkl1_life (R8b) | ... `life_r8` ..., `top:life(5,6,6,2,2,L), top:count_1(L,N).` | 7,106,868 | 26,192,690 | 270 |
+| pkl1_nrev30 (R8b) | ... `nrev_r8` ..., `print_length(40).`, `nrev:nrev([30,...,1],R).` | 1,559,564 | 7,294,046 | 270 |
+| pkl1_qsort50 (R8b) | ... `qsort_r8` ..., `print_length(60).`, `qsort:qsort(list50,R).` | 1,975,036 | 8,733,588 | 270 |
 
 R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
 1.4, "R7P, the pipe"): the four rows above, measured on both models
@@ -486,6 +492,32 @@ pipe_three_limit FAIL at line 675,004 (`G 79850166` for `G 33042`).
 (Dropping the `nMq`/`nMwH` assignment altogether fails at the first
 collection, line 4,108, whatever the lists hold, so it does not test
 the path; the injections above do.)
+
+R8's second half (R8b in the table; 2026-11-26,
+`../docs/binary_reverse_engineering.md` 1.4, "R8, the other four"):
+the six `pkl1_*` rows marked R8b, the other four samples (`tak`, `cd`,
+`lips`, `life`) and the samples' own larger inputs (nrev's 30,
+qsort's 50, `print_length` raised at the Listener), measured on the
+reference from a prompt checkpoint made afresh from the link
+checkpoint (8,595,408 instructions, as R8's), then on both models,
+every line identical. No model was changed. The home directory now has
+seventeen files, so `ls` was re-measured (186,304 instructions, 877,733
+lines, its text in two writes) and PASSes on both models; the FEP
+emulator's held card (`tools/mkfepcard.py --held`) has 72 entries,
+the home directory's 54-70. As a control all 40 APPS rows (the limit rows with their limits) were
+re-run on the reference from the new checkpoint, each in its own fork,
+and each matched its pin (lines and instructions) and its window. The answers are KLIC 2.002's on the same
+`NAME_r8.kl1` text (`../docs/pkl1/klic_oracle/oracle_r8b.out`).
+Observed injections on the core (2026-11-26, a private copy of
+`PimmStages.bsv` compiled into a separate build, run on pkl1_cd's kept
+checkpoint): the guard subtract (`op_subtract` in the stage's
+integer-guard write) made to give 997 for 1000 - 1, that is the first
+step of `count_down(1000)`, gives `FAIL at line 5886092 of the trace,
+instruction 1239820 after the checkpoint`, with the reference writing
+`R 3 00000003e7` and the core `R 3 00000003e5`. The copy was then
+deleted; the worktree's `PimmStages.bsv` was never touched
+(`git diff --quiet`). The reference-side injections (each answer
+or failure report against KLIC's) are in the docs entry above.
 
 R8 (2026-11-25, `../docs/binary_reverse_engineering.md` 1.4, "R8, the
 pkl1 samples"): the five `pkl1_*` rows above, measured on both models

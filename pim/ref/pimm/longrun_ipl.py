@@ -364,7 +364,9 @@ HOME_FILES = {'sample1.kl1': (PRIMER, 592, 605, ':- module sample1.', '%(1-6)')}
 # utility/ioutls/token.kl1:735 ct/2)
 PKL1 = os.path.join(HERE, '..', '..', 'docs', 'pkl1')
 PKL1_HEAD = '/*-----------------------------------------------------------'
-for _n in ('fact.kl1', 'nrev.kl1', 'qsort.kl1', 'kkqueen.kl1'):
+for _n in ('fact.kl1', 'nrev.kl1', 'qsort.kl1', 'kkqueen.kl1',
+           # R8's second half (2026-11-26): the other four samples
+           'tak.kl1', 'life.kl1', 'lips.kl1', 'cd.kl1'):
     HOME_FILES[_n] = (os.path.join(PKL1, _n), None, None, PKL1_HEAD, None)
 # ... and each adapted for PIMOS, served as NAME_r8.kl1: OURS, the
 # least change the held compiler accepts.  As distributed the samples
@@ -391,6 +393,19 @@ PKL1_ADAPT = {
     # calls abort the whole module: top/0 (lines 25-31) is dropped, as
     # the KLIC 2.002 oracle run drops it too
     'kkqueen.kl1': (('after', 24, ':- public go/2.'), ('drop', 25, 31)),
+    # R8's second half (2026-11-26).  tak's and cd's top modules (lines
+    # 5-23, 5-10) hold only top/0 and its loop: dropped whole, as fact's
+    'tak.kl1': (('drop', 5, 23), ('after', 24, ':- public tak/4.')),
+    'cd.kl1': (('drop', 5, 10), ('after', 11, ':- public count_down/1.')),
+    # lips's module top also holds make_list/2 and repeat/2, the
+    # benchmark's loop: only top/0 (lines 6-11) is dropped, as kkqueen's,
+    # and both modules get their public line
+    'lips.kl1': (('after', 5, ':- public make_list/2, repeat/2.'), ('drop', 6, 11),
+                 ('after', 23, ':- public nrev/2.')),
+    # life is one module, top: top/0 (lines 55-58, start_measure and
+    # report_measure) is dropped; display/1 stays, display_console being
+    # one of the held compiler's built-ins (library/compiler/blt.kl1:302)
+    'life.kl1': (('after', 53, ':- public go/1, life/6, count_1/2.'), ('drop', 55, 58)),
 }
 for _n, _e in PKL1_ADAPT.items():
     HOME_FILES[_n[:-4] + '_r8.kl1'] = (os.path.join(PKL1, _n), None, None, PKL1_HEAD, _e)

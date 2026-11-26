@@ -1,0 +1,6 @@
+% [oracle, OURS] KLIC entry point for lips_r8.kl1 (its modules top and
+% nrev): the Listener's goal of APPS pkl1_lips
+:- module main.
+main :-
+	top:make_list(30,L), top:repeat(3,L), nrev:nrev(L,R),
+	io:outstream([print(L), nl, print(R), nl]).

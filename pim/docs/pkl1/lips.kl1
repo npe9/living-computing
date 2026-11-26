@@ -1,0 +1,28 @@
+/*----------------------------------------------------------- 
+%   (C)1992 Institute for New Generation Computer Technology 
+%       (Read COPYRIGHT for detailed information.) 
+-----------------------------------------------------------*/
+:- module(top).
+top :-
+	builtin:readint(N),
+	make_list(30, L),
+	builtin:start_measure,
+	repeat(N, L),
+	builtin:report_measure(_).
+
+make_list(0, L) :- L = [].
+otherwise.
+make_list(K, L) :- K1 := K-1 | L = [K|T], make_list(K1, T).
+
+repeat(0, _).
+repeat(N, L0) :- N > 0 |
+	N1 := N-1,
+	nrev:nrev(L0, L),
+	repeat(N1, L).
+
+:- module(nrev).
+append([], Y, Z) :- Y = Z.
+append([W|X], Y, WZ) :- WZ = [W|Z], append(X, Y, Z).
+
+nrev([], R) :- R = [].
+nrev([W|X], R) :- nrev(X, XR), append(XR, [W], R).

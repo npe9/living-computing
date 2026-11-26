@@ -1,0 +1,6 @@
+% [oracle, OURS] KLIC entry point for life_r8.kl1 (its module top):
+% the Listener's goal of APPS pkl1_life
+:- module main.
+main :-
+	top:life(5,6,6,2,2,L), top:count_1(L,N),
+	io:outstream([print(L), nl, print(N), nl]).

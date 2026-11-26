@@ -190,8 +190,9 @@ PINNED = {
     ('prompt', LISTENER_POOLS): (3847621, 967660),
     # R8 (2026-11-25): the pkl1 samples (APPS pkl1_*), measured on the
     # reference, then on both models by bsv/run_pimm_apps.sh; ls
-    # re-measured for the eight new home files (was 768488, 164287)
-    ('prompt', ('ls',)): (804300, 174299),
+    # re-measured for the eight new home files (was 768488, 164287), and
+    # again for R8's second half's eight (2026-11-26; was 804300, 174299)
+    ('prompt', ('ls',)): (877733, 186304),
     ('prompt', ('compile', '!package work', 'nrev', '!exit')): (6138452, 1275047),
     ('prompt', ('compile', '!package work', 'fact_r8', '!exit', 'listener',
                 'default_package(work).', 'fact:fact(10,R).')): (6328026, 1335291),
@@ -202,7 +203,34 @@ PINNED = {
                 'qsort:qsort([27,74,17,33,94,18,46,83,65,2],R).')): (8142420, 1852929),
     ('prompt', ('compile', '!package work', 'kkqueen_r8', '!exit', 'listener',
                 'default_package(work).', 'top:go(9,M).')): (17463720, 5419133),
+    # R8's second half (2026-11-26): measured on the reference from a
+    # prompt checkpoint made afresh (8,595,408 instructions; pkl1_fact
+    # re-run from it gave its pin above), then on both models
+    ('prompt', ('compile', '!package work', 'tak_r8', '!exit', 'listener',
+                'default_package(work).', 'tak:tak(18,12,6,A).')): (10733760, 2443822),
+    ('prompt', ('compile', '!package work', 'cd_r8', '!exit', 'listener',
+                'default_package(work).', 'count_down:count_down(1000).')): (6064443, 1266723),
+    ('prompt', ('compile', '!package work', 'lips_r8', '!exit', 'listener',
+                'default_package(work).', 'print_length(40).',
+                'top:make_list(30,L), top:repeat(3,L), nrev:nrev(L,R).')): (9323920, 2110069),
+    ('prompt', ('compile', '!package work', 'life_r8', '!exit', 'listener',
+                'default_package(work).',
+                'top:life(5,6,6,2,2,L), top:count_1(L,N).')): (26192690, 7106868),
+    ('prompt', ('compile', '!package work', 'nrev_r8', '!exit', 'listener',
+                'default_package(work).', 'print_length(40).',
+                'nrev:nrev([30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,'
+                '6,5,4,3,2,1],R).')): (7294046, 1559564),
+    ('prompt', ('compile', '!package work', 'qsort_r8', '!exit', 'listener',
+                'default_package(work).', 'print_length(60).',
+                'qsort:qsort([27,74,17,33,94,18,46,83,65,2,32,53,28,85,99,47,28,82,6,11,55,29,39,'
+                '81,90,37,10,0,66,51,7,21,85,27,31,63,75,4,95,99,11,28,61,74,18,92,40,53,59,8],'
+                'R).')): (8733588, 1975036),
 }
+# R7 ls: the home directory's listing (longrun_ipl.HOME_FILES, name order)
+_LS = ''.join(' >sys>user>pmpsi>%s.1\n' % n for n in (
+    'cd.kl1', 'cd_r8.kl1', 'fact.kl1', 'fact_r8.kl1', 'kkqueen.kl1', 'kkqueen_r8.kl1',
+    'life.kl1', 'life_r8.kl1', 'lips.kl1', 'lips_r8.kl1', 'nrev.kl1', 'nrev_r8.kl1',
+    'qsort.kl1', 'qsort_r8.kl1', 'sample1.kl1', 'tak.kl1', 'tak_r8.kl1'))
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
 # the manual print): name -> (the lines typed at the prompt, the window's
@@ -340,16 +368,18 @@ APPS = {
     # with its version), so the line is ours too: the primer prints no
     # ls.  The home had the one file, sample1.kl1; since R8 (2026-11-25)
     # also the four pkl1 samples and their adaptations (OURS,
-    # longrun_ipl.PKL1_ADAPT), nine files in the name order.  Injection
+    # longrun_ipl.PKL1_ADAPT), nine files in the name order; since R8's
+    # second half (2026-11-26) all eight samples and their adaptations,
+    # seventeen files.  Injection
     # (OBSERVED 2026-11-25, before R8, the one file): home_listing
     # without the version (".1") gives ' >sys>user>pmpsi>sample1.kl1>'
     # (taken for a directory) and the counts (768817, 164311): FAIL
-    # against this row and PINNED.  Re-observed with the nine (R8): see
-    # the pkl1 rows' header below
-    'ls': (('ls',),
-        (''.join(' >sys>user>pmpsi>%s.1\n' % n for n in (
-            'fact.kl1', 'fact_r8.kl1', 'kkqueen.kl1', 'kkqueen_r8.kl1', 'nrev.kl1',
-            'nrev_r8.kl1', 'qsort.kl1', 'qsort_r8.kl1', 'sample1.kl1')), 'Shell>> ')),
+    # against this row and PINNED.  Re-observed with the nine (R8) and
+    # the seventeen (R8's second half): see the pkl1 rows' headers below.
+    # With seventeen the text is written in two parts, the first 490
+    # characters long, as help's is (the window's text in pieces of the
+    # writer's buffer, observed on the reference)
+    'ls': (('ls',), (_LS[:490], _LS[490:], 'Shell>> ')),
     # R7G (2026-11-25): the shell's gc (shell/utils/gc.kl1 go/0:
     # collect_garbage on each processor; nothing written), then the
     # collection at the next goal switch on both models, INFERENCE/OURS
@@ -462,6 +492,78 @@ APPS['pkl1_qsort'] = _pkl1('qsort_r8', 'qsort', 'qsort:qsort([27,74,17,33,94,18,
 # by the Listener's default package (e-proginfo.tex:397, the package
 # search)
 APPS['pkl1_kkqueen'] = _pkl1('kkqueen_r8', 'top', 'top:go(9,M).', ' M = 352\n\n')
+# R8's second half (2026-11-26): the other four samples, tak, cd, lips
+# and life (longrun_ipl.PKL1_ADAPT, OURS), and the samples' own larger
+# inputs, nrev.kl1's make_list(30) and qsort.kl1's list50, with the
+# Listener's print_length raised first (INFERENCE: the samples print
+# with KLIC's builtin:print, which has no such limit; the held
+# Listener's default is 10, debugger/listener/buffer.kl1:35-36, and
+# print_length(N) is the Listener's own command, as listener_pools
+# types print_length(2)).  Every answer is KLIC 2.002's on the same
+# NAME_r8.kl1 text (docs/pkl1/klic_oracle/oracle_r8b.out: tak(18,12,6)
+# 7, life's L and N = 19, lips's L and R, qsort's fifty sorted, nrev's
+# thirty reversed).  cd binds nothing: its oracle is that the goal ends
+# without a failure (KLIC exits 0; the Listener answers an empty line
+# and the next prompt), and the count pin.  lips is two modules (top
+# and nrev, loaded nrev first); life's display/1 stays and is the
+# compile's second warning (unused).  Observed injections: see
+# docs/binary_reverse_engineering.md 1.4, "R8, the other four"
+
+
+def _pkl1b(file, compiled, goals):
+    """an R8 row of the second half: FILE compiled into work, COMPILED
+    the compiler's window parts between the file's line and the
+    warning total, then each (GOAL, ANSWER) in the Listener"""
+    head = ('** KL1 Compiler **\n', 'COMPILE> ',
+            'Package : work\n!WARNING! not included in the working packages : work\n',
+            'COMPILE> ', 'Compile File : PSI::>sys>user>pmpsi>%s.kl1.1\n' % file)
+    listener = ('*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\n'
+                'CURRENT DIRECTORY : >sys>user>pmpsi\n\n', '[1] ', '\n')
+    win = head + compiled + ('COMPILE> ', 'Shell>> ') + listener
+    for i, (_g, a) in enumerate(goals):
+        win += ('[%d] ' % (i + 2), a)
+    win += ('[%d] ' % (len(goals) + 2),)
+    return (('compile', '!package work', file, '!exit', 'listener', 'default_package(work).')
+            + tuple(g for g, _a in goals), win)
+
+
+def _one(file, module, warnings=1, extra=()):
+    """the compiler's window parts for FILE's one MODULE"""
+    return ("!WARNING! no with_macro declaraion. assumed `pimos'.\n[%s.kl1@0] Compile Module : %s\n"
+            % (file, module), '=>  :- module %s .\n' % module,
+            'Compile Succeeded : %s\n\n' % module + ''.join(extra[:1])) + tuple(extra[1:]) + (
+            '"work:: %s" Loaded\n' % module, 'Total Number of Warning : %d\n' % warnings)
+
+
+LIST30 = '[' + ','.join(str(i) for i in range(30, 0, -1)) + ']'
+UP30 = '[' + ','.join(str(i) for i in range(1, 31)) + ']'
+LIST50 = ('[27,74,17,33,94,18,46,83,65,2,32,53,28,85,99,47,28,82,6,11,55,29,39,81,90,37,10,0,'
+          '66,51,7,21,85,27,31,63,75,4,95,99,11,28,61,74,18,92,40,53,59,8]')
+SORTED50 = ('[0,2,4,6,7,8,10,11,11,17,18,18,21,27,27,28,28,28,29,31,32,33,37,39,40,46,47,51,53,'
+            '53,55,59,61,63,65,66,74,74,75,81,82,83,85,85,90,92,94,95,99,99]')
+APPS['pkl1_tak'] = _pkl1b('tak_r8', _one('tak_r8', 'tak'), (('tak:tak(18,12,6,A).', ' A = 7\n\n'),))
+APPS['pkl1_cd'] = _pkl1b('cd_r8', _one('cd_r8', 'count_down'),
+                         (('count_down:count_down(1000).', '\n'),))
+APPS['pkl1_lips'] = _pkl1b('lips_r8', (
+    "!WARNING! no with_macro declaraion. assumed `pimos'.\n[lips_r8.kl1@0] Compile Module : top\n",
+    '=>  :- module top .\n', 'Compile Succeeded : top\n\n[lips_r8.kl1@7] Compile Module : nrev\n',
+    '=>  :- module nrev .\n', 'Compile Succeeded : nrev\n\n',
+    '"work:: nrev" Loaded\n"work:: top" Loaded\n', 'Total Number of Warning : 1\n'),
+    (('print_length(40).', '\n'),
+     ('top:make_list(30,L), top:repeat(3,L), nrev:nrev(L,R).',
+      ' L =%s\n R =%s\n\n' % (LIST30, UP30))))
+APPS['pkl1_life'] = _pkl1b('life_r8', _one('life_r8', 'top', 2, (
+    '!WARNING![life_r8.kl1@3] unused predicate found : display/ 1\n',
+    '=> display(A) :-\n    display_console(A) |\n      true .\n')),
+    (('top:life(5,6,6,2,2,L), top:count_1(L,N).',
+      ' L =[[1,1,0,0,0,1],[1,0,1,1,1,0],[1,0,0,0,0,0],[1,1,0,1,0,1],[1,1,1,0,1,1],[1,0,0,1,0,0]]\n'
+      ' N = 19\n\n'),))
+APPS['pkl1_nrev30'] = _pkl1b('nrev_r8', _one('nrev_r8', 'nrev'),
+                             (('print_length(40).', '\n'),
+                              ('nrev:nrev(%s,R).' % LIST30, ' R =%s\n\n' % UP30)))
+APPS['pkl1_qsort50'] = _pkl1b('qsort_r8', _one('qsort_r8', 'qsort'),
+                              (('print_length(60).', '\n'),
+                               ('qsort:qsort(%s,R).' % LIST50, ' R =%s\n\n' % SORTED50)))
 # R7G stage 5 (2026-11-25), a collection when memory runs out: the APPS
 # run with a heap limit (pimm.Machine.heap_limit, RESTORE 5; pimm_gc.py
 # "When memory runs out"), name -> cells.  Their windows are APPS's; the

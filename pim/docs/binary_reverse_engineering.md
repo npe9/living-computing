@@ -991,11 +991,12 @@ the device are given it again whenever the machine runs dry.
     `report_measure`). A file with one aborted module is not loaded at
     all: observed with only the `:- public` lines added, `Compile
     Succeeded : fact` and then the Listener's ` Nonexistent module>>
-    fact`. Why, INFERENCE from the source read, not traced: the
-    loader goes on to link only on `normal(GoalModules)`
-    (`library/loader/dstrbt.kl1`:699-708 `relink`), and
-    `selfcal.kl1`:73-79 `watch_compile` makes a compile error
-    `abnormal`. PIMOS is not patched. Each sample is
+    fact`. Why (first an INFERENCE from the source read; traced
+    2026-11-26, see "R8, the other four" below, which corrects where
+    the decision is made): `selfcal.kl1`:73-79 `watch_compile` makes a
+    compile error `abnormal`, and the loader goes on to link only on
+    `normal(GoalModules)` (`library/loader/dstrbt.kl1`:699-708
+    `relink`). PIMOS is not patched. Each sample is
     served a second time as `NAME_r8.kl1` with the least change the
     held compiler takes (OURS, `longrun_ipl.PKL1_ADAPT`): a `:- public`
     line after the module line, and the `top` module dropped (for
@@ -1023,7 +1024,7 @@ the device are given it again whenever the machine runs dry.
     fewer so that the held Listener's default `print_length` of 10
     prints them whole with nothing typed first; `qsort`'s own 50 and
     `nrev`'s 30 would need `print_length` raised (as listener_pools
-    lowers it), not run here. The
+    lowers it), not run here (run since, below). The
     module `top` of kkqueen is `work::top`, found before `pimos::top`
     from the default package (`e-proginfo.tex`:397). Observed
     injections (2026-11-25): `pimm.py` `i_b_multiply` giving 3628801
@@ -1033,6 +1034,114 @@ the device are given it again whenever the machine runs dry.
     check fails, ` R = 3628801`; the core's multiplier stopped after 3
     of its 32 steps (`PimmMBox.bsv` `mLeft <= 3`, a private copy, on
     pkl1_fact's kept checkpoint): see `bsv/README.md`, "R8".
+  - **R8, the other four** (2026-11-26; APPS `pkl1_tak`, `pkl1_cd`,
+    `pkl1_lips`, `pkl1_life`, `pkl1_nrev30`, `pkl1_qsort50`, in lockstep
+    on both models; no model changed for them). The other four samples
+    of `pkl1.tar.Z` (`tak.kl1`, `cd.kl1`, `lips.kl1`, `life.kl1`, in
+    `docs/pkl1/` byte for byte, SHA-256 in `SOURCE.md`) are home files
+    beside the first four, and again as `NAME_r8.kl1` (OURS,
+    `longrun_ipl.PKL1_ADAPT`): tak's and cd's `top` modules, which hold
+    only `top/0` and its loop, are dropped whole, as fact's; lips's and
+    life's `top` modules also hold the program (lips's `make_list/2`
+    and `repeat/2`, all of life), so only `top/0` is dropped, as
+    kkqueen's; each module gets a `:- public` line (lips has two
+    modules). life's `display/1` stays: `display_console` is one of the
+    held compiler's built-ins (`library/compiler/blt.kl1`:302, class
+    user), and the compile reports it as its second warning, `unused
+    predicate found : display/ 1`. None of the four was refused for any
+    other cause. The samples' own larger inputs run too: nrev.kl1's
+    `make_list(30)` (typed as the list, since nrev.kl1's `make_list` is
+    in the dropped `top`) and qsort.kl1's `list50`, with the Listener's
+    `print_length` raised first (`print_length(40).`,
+    `print_length(60).`; INFERENCE: the samples print with KLIC's
+    `builtin:print`, which has no such limit, and the held Listener's
+    default is 10, `debugger/listener/buffer.kl1`:35-36; the Listener
+    answers the command with an empty line). The oracle is KLIC 2.002
+    on exactly the `NAME_r8.kl1` text the FEP serves, `:- public`
+    lines and all, which KLIC accepts (`docs/pkl1/klic_oracle/`,
+    `oracle_r8b.out`; our build of the held source, OURS, not in the
+    suite):
+
+    | Row | Goal typed | The Listener's answer | KLIC 2.002 | Instructions | Trace lines |
+    |---|---|---|---|---|---|
+    | pkl1_tak | `tak:tak(18,12,6,A).` | ` A = 7` | `7` | 2,443,822 | 10,733,760 |
+    | pkl1_cd | `count_down:count_down(1000).` | an empty line, then `[3] ` | exit 0, no failure | 1,266,723 | 6,064,443 |
+    | pkl1_lips | `print_length(40).`, then `top:make_list(30,L), top:repeat(3,L), nrev:nrev(L,R).` | ` L =[30,...,1]`, ` R =[1,...,30]` | the same two lists | 2,110,069 | 9,323,920 |
+    | pkl1_life | `top:life(5,6,6,2,2,L), top:count_1(L,N).` | ` L =[[1,1,0,0,0,1],...,[1,0,0,1,0,0]]`, ` N = 19` | the same | 7,106,868 | 26,192,690 |
+    | pkl1_nrev30 | `print_length(40).`, then `nrev:nrev([30,...,1],R).` | ` R =[1,...,30]` | the same | 1,559,564 | 7,294,046 |
+    | pkl1_qsort50 | `print_length(60).`, then `qsort:qsort(list50,R).` | the fifty sorted | the same | 1,975,036 | 8,733,588 |
+
+    The window of each row (`lockstep_shell.APPS`) holds every list
+    whole. cd and the `repeat` of lips bind nothing that is printed:
+    for those the observable is that the goal ends without a failure
+    (the Listener prints a `Failure>` report for one, below; KLIC's
+    runtime stops with a fatal error and exit 255 on `count_down(-1)`,
+    the control) and the count pin. The inputs are ours where the
+    sample reads them with `builtin:readint`: tak's base 6 (the classic
+    tak(18,12,6); also tak(9,6,3) 6 on both, not pinned), cd's 1000,
+    lips's repetition 3 (its list is its own `make_list(30)`), life at
+    5 generations of 6 by 6, where its `go/1` asks 120 of 38 by 38, a
+    run far beyond these (life(5,6,6,...) is already 7.1M instructions,
+    most of it the compile of the 201-line module). The home directory
+    has seventeen files: `ls` re-measured (186,304 instructions, 877,733
+    lines, was 174,299 and 804,300; its text now comes in two writes,
+    the first 490 characters, as help's), and the FEP emulator's held
+    card has eight entries more. Observed injections (2026-11-26, the
+    reference alone, a private patch of the forked process's machine,
+    active only in code made after the checkpoint, i.e. the module just
+    loaded, and only once every line was typed; each pin differs too
+    unless said):
+    - `less_than` as `=<` (tak's `X > Y`): tak no longer ends, no
+      answer; stopped by the probe at 30,000,028 instructions.
+    - body `>>` one place too far (life's `PrevNum >> 3`, `Y >> 2`):
+      ` N = 27` and another L, against 19 (7,107,052 instructions).
+    - guard subtract giving N - 3 (cd's `N1 := N - 1`): the Listener
+      writes ` Failure> count_down: count_down/ 1`, `Goal>
+      count_down(-2)`, ` !! Exception`.
+    - body subtract giving N - 2 (lips's `repeat`): ` Failure> top:
+      repeat/ 2`, `Goal> repeat(-1,[30,...])`.
+    - `not_less_than` as `>` (qsort's `=<` and `>=`): ` Failure> qsort:
+      partition/ 4`, at the second 27 of list50.
+    - nrev30 without `print_length(40).`: ` R =[1,2,...,10, ... ]`, the
+      window check FAILs (the row's inputs, not a model fault).
+    On the core: see `bsv/README.md`, "R8's second half".
+
+    *The unadapted file, traced* (2026-11-26, `ref/pimm/r8_entry_trace.py`,
+    on the reference). fact.kl1 with only the `:- public` lines added
+    is compiled and the Listener answers ` Nonexistent module>> fact`;
+    at each entry of the loader's `kl1_self_cal:watch_compile/17` and
+    `kl1_compiler_distributer:flush/6` the arguments were printed.
+    watch_compile for `top` gets (normal, abnormal, normal, normal) -
+    its third clause, `Compile Aborted`; for `fact`, all four normal -
+    its first, `Compile Succeeded`. flush/6 is entered with `abnormal`
+    (between the two: `dstrbt.kl1`:89-121 binds the file's status
+    abnormal at the first abnormal module) and so takes its `otherwise`
+    clause (`dstrbt.kl1`:683-686): `report_total_error` only, no
+    `flush_0`, so neither the loader table's flush (where a module is
+    registered) nor `relink` runs. With fact_r8.kl1 (the control) the
+    one watch_compile is all normal and flush/6 is entered with
+    `normal`. This corrects the earlier reading: the file is dropped at
+    flush/6, one step before `relink`. Which atom is `normal` is
+    INFERENCE (the modules of the kernel's .sav files have no atom
+    names in the reference): read from which clause's message appears.
+
+    *The samples' own `top` modules: not run, by decision.* `builtin:G`
+    is resolved inside the held compiler, never as a module: the
+    normalizer's `classify_one_goal((builtin:Goal0))`
+    (`library/compiler/newnorm.kl1`:656-659) looks `Goal0` up in the
+    compiler's own built-in table (`kl1cmp_blttbl:active_builtin`) and
+    reports any it lacks as `undefined predicate found`
+    (`classify_one_goal_on_type`'s `otherwise`, :741-749; the macro
+    pass keeps the prefix, `newmac.kl1`:317-322). So no module of ours
+    named `builtin` would be called. A stand-in would mean either
+    adding `print`, `readint`, `start_measure` and `report_measure` to
+    that table (patching PIMOS, which R8 does not do) or rewriting
+    every `builtin:` call of the samples to another module (an edit of
+    the very entry points it is meant to run), and `readint` would need
+    a reader of typed lines under the Listener, whose body goals have
+    no order to put a prompt before a read. Neither is the samples'
+    own code running, so the entry points stay unrun and the goals are
+    typed at the Listener instead.
   - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
     `add_bignum` in on both models (VPIM's edges, `pimm.py`
     `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs

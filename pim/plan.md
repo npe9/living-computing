@@ -336,7 +336,19 @@ test or an explicit label.
    As distributed the held compiler refuses them (no `:- public`); the
    files compiled carry the least change it takes, OURS
    (`docs/pimos_roadmap.md` R8 row; `docs/binary_reverse_engineering.md`
-   1.4, "R8, the pkl1 samples"). Next: R9.
+   1.4, "R8, the pkl1 samples"). *2026-11-26:* the other four samples
+   (`tak`, `cd`, `lips`, `life`) and the samples' own larger inputs
+   (nrev's 30, qsort's 50) run the same way, in lockstep, every answer
+   KLIC 2.002's on the same text (APPS `pkl1_tak`, `pkl1_cd`,
+   `pkl1_lips`, `pkl1_life`, `pkl1_nrev30`, `pkl1_qsort50`;
+   `docs/binary_reverse_engineering.md` 1.4, "R8, the other four").
+   The samples' `top` modules stay unrun by decision (they call
+   `builtin:print`/`readint`, resolved inside the held compiler). R8
+   is done. *R9 started (2026-11-26):* MGTP/G (IFS No.22), whose
+   manual prints its procedure on PIMOS's own tools and its N-Queens
+   results; on the reference its two modules compile and load, and our
+   6-Queens axioms stop at `mark_element` on a list
+   (`docs/pimos_roadmap.md` R9 row).
 
    **KL1-B execution design (milestone 2).** The model's current ISA is
    the diagnostic stand-in; KL1-B is a separate execution path. The
