@@ -567,6 +567,23 @@ AI Repository,
 `manuals/`, `newsltr/`, `nlp/`, `reasonng/`, `symbolic/`, `cesp.txt`,
 `info.tgz` READ).
 
+That copy has now been compared file by file with ours
+(`nonlocal/CMU_MANIFEST.md`, 2026-11-26). We walked all 31 directories and matched each of
+its 100 `.tgz` packages by its `.ltv` listing (member names and sizes)
+against the held archives, then downloaded 20 files and compared them by hash:
+- 8 are byte-identical once decompressed. These include `pimos`, `pimosobj`,
+  `psdpim`, `pimosman`, `pdss`, `pkl1` and `vpim`, all the 12 May 1994
+  release we hold.
+- 79 have the same members as our copies.
+- 5 hold, in one bundle, files that AIST keeps as separate files.
+- 4 are earlier releases: Quixote, proview, kl1graph, and cu-Prolog 3.1.
+- 4 exist only at CMU: **KLIC 1.000, 1.100, 1.210 and 1.410** (Dec 1993 to
+  Jun 1994, older than the 1.500 we held). They are now in
+  `nonlocal/cmu/` with the IFS terms.
+
+The CMU copy has no other PIMOS version and no SIMPOS, PSI microcode,
+firmware, window system, Pmacs or ESP compiler.
+
 **What the catalogue means for a booted PIMOS.** The 49 PIMOS entries
 are source distributions for PIMOS 3.0 to 3.5 (the pages name "PIMOS
 3.0", "3.01", "3.1", "3.4", "3.45", "V3.5 and later"); ours is 3.6.

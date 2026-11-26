@@ -1,0 +1,5 @@
+# CMU-written wrapper and listing files (0.doc, 0.html, 0.lst, 0.iso,
+# *.ltv, index.txt, cesp.txt) and the crawl's file list: no stated
+# redistribution terms, so held on disk only, in the main checkout.
+# ../CMU_MANIFEST.md lists them; meta/SHA256SUMS checks them.
+/meta/
