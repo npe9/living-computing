@@ -709,8 +709,16 @@ images instead of the disk.
   gives A11a no timing: the document states no unit-busy or cycle time.
   Its PDF p.1 puts the two A boxes at 40 (octal) and the four B boxes at
   100000, the reverse of `StretchMemory.bsv`'s map. That is open for
-  A11a, and the model is not changed yet. `ja_bm6a` and `ja_bb6b` are
-  next.
+  A11a, and the model is not changed yet. `ja_bm6a` is RUN (2026-11-25,
+  `decks/ja_bm6a_unique_adr.strap`, bit-exact against
+  `verify_ja_bm6a_listing.py`, 264 checks). It gives A11a no timing
+  either. Its limits put the lower memories at 100-77777 and the upper
+  at 100000-277777 (PDF pp.4-8), agreeing with `ja_bp6a`, and its error
+  message takes the box number from the address's low two bits (PDF
+  pp.5, 9). It types on channel 39 (`TYPE SYN,19.32`, PDF p.11), where
+  the model has no unit, so its run reads the message it builds in core.
+  Upper memories and one whole pass are clean on the model; the
+  100-pass O.K. is not reached. `ja_bb6b` is next.
 - I-Box 2 and 3 (`jb_ax2a`, `jb_ax3a`, surveyed only) gate A8.
 - BX-0 (`ka_ex1`) gates A11.
 

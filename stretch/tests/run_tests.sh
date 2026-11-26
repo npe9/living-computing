@@ -16553,10 +16553,24 @@ run "JA BP6A memory patterns: 1010 through the A boxes (A3)" ./run_ja_bp6a.sh A3
 run "JA BP6A memory patterns: 0101 through the A boxes (A4)" ./run_ja_bp6a.sh A4
 run "JA BP6A memory patterns: one whole loop (LOOP)" ./run_ja_bp6a.sh LOOP
 
+# IBM's JA BM6A "UNIQUE ADDRESS TESTS" (May 5, 1961), the second of the
+# three memory diagnostics.  The listing oracle checks PDF pp.4-11 (264
+# checks; two torn rows unchecked).  The program types its errors on
+# channel 39, where the model has no unit (run_ja_bm6a.sh), so
+# check_ja_bm6a_dump.py reads the error message the program builds in
+# core, and compares every word of core against the image computed from
+# the program's own steps.  Stages: UPPER (Part I's generate-and-check
+# of 100000-277777) and PASS (one whole pass, both halves).
+# INJECTION RECORD: see check_ja_bm6a_dump.py's header.
+run "JA BM6A unique address listing bit-exact comparison" python3 verify_ja_bm6a_listing.py
+run "JA BM6A unique address: the upper memories (UPPER)" ./run_ja_bm6a.sh UPPER
+run "JA BM6A unique address: one whole pass (PASS)" ./run_ja_bm6a.sh PASS
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
 rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv "$BSV_DIR"/StretchLoaderOctalTb.bsv
 rm -f "$BSV_DIR"/StretchJaBp6a*Tb.bsv
+rm -f "$BSV_DIR"/StretchJaBm6a*Tb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 
