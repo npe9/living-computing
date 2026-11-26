@@ -99,7 +99,11 @@ IPL parts (the IPL reading its list and files through its own SCSI
 stack) on both models;
 `longrun_ipl.py` is the long run (not in the suite); with `--load
 --go --fep` it runs `pim:go/4` through the scripted login to the
-shell's `Shell>> ` (`docs/fep_services.md` §7).  168
+shell's `Shell>> ` (`docs/fep_services.md` §7).  The home directory's
+files (`HOME_FILES`) are the primer's `sample1.kl1` and, since R8
+(2026-11-25), four pkl1 samples (`docs/pkl1/`) and their adaptations
+`NAME_r8.kl1` (OURS, `PKL1_ADAPT`), which `lockstep_shell.py`'s APPS
+`pkl1_*` compile and run through the Listener.  168
 instructions on both models (counted 2026-11-24: 168 `i_` handlers in
 `pimm.py`, shoen stage 3's `stop_shoen`, `abort_shoen`, `raise`,
 `current_processor`, `jump`, `set_marked_variable`, `wait_vector`, `multiply_bignum_word`, `subtract_bignum`, `get_constant`, `b_vector`, `code_to_predicate` and `add_shoen_resource` among them, then

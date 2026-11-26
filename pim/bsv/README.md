@@ -399,7 +399,7 @@ is not loadable: make it again with the two commands above):
 | pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
 | pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
 | pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
-| ls (R7) | `ls` | 164,287 | 768,488 | 32 |
+| ls (R7; R8's home) | `ls` | 174,299 | 804,300 | 32 |
 | gc (R7G) | `gc` | 89,179 | 368,543 | 18 |
 | gc_listener (R7G) | `gc`, the compile_work lines, `gc`, the listener_sieve lines | 1,752,873 | 7,880,429 | 283 |
 | listener_sieve_limit (R7G 5) | listener_sieve's, heap limit 2,952,727 | 1,575,086 | 7,144,911 | 249 |
@@ -408,6 +408,11 @@ is not loadable: make it again with the two commands above):
 | ts_short (R7G 5) | ts's, heap limit 1,900,000: `gc: memory shortage` | 135,590 | 431,779 | 5 |
 | ts_heap_full (R7G 5) | ts's, heap limit 2,000,000: `heap full: past the heap limit` | 135,785 | 445,203 | 5 |
 | listener_pools (R7) | `listener`, `print_length(2).`, the primer's bag, keyed_bag and keyed_set goals | 967,660 | 3,847,621 | 104 |
+| pkl1_held (R8) | `compile`, `!package work`, `nrev`, `!exit`: refused by the held compiler | 1,275,047 | 6,138,452 | 217 |
+| pkl1_fact (R8) | the same lines for `fact_r8`, then `listener`, `default_package(work).`, `fact:fact(10,R).` | 1,335,291 | 6,328,026 | 249 |
+| pkl1_nrev (R8) | ... `nrev_r8` ..., `nrev:nrev([1,2,3,4,5,6,7,8],R).` | 1,466,386 | 6,820,828 | 249 |
+| pkl1_qsort (R8) | ... `qsort_r8` ..., `qsort:qsort([27,74,17,33,94,18,46,83,65,2],R).` | 1,852,929 | 8,142,420 | 249 |
+| pkl1_kkqueen (R8) | ... `kkqueen_r8` ..., `top:go(9,M).` | 5,419,133 | 17,463,720 | 249 |
 
 R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
 1.4, "R7P, the pipe"): the four rows above, measured on both models
@@ -481,6 +486,36 @@ pipe_three_limit FAIL at line 675,004 (`G 79850166` for `G 33042`).
 (Dropping the `nMq`/`nMwH` assignment altogether fails at the first
 collection, line 4,108, whatever the lists hold, so it does not test
 the path; the injections above do.)
+
+R8 (2026-11-25, `../docs/binary_reverse_engineering.md` 1.4, "R8, the
+pkl1 samples"): the five `pkl1_*` rows above, measured on both models
+from the R7L prompt checkpoint (made afresh from the link checkpoint,
+8,595,408 instructions), every line identical. No model was changed.
+As a control, the 28 rows that came before R8 were re-run on the
+reference from the remade checkpoint with the new home files, and
+each passed its pin and its window.
+The home directory gained the four pkl1 samples (`../docs/pkl1/`) and
+their adaptations `NAME_r8.kl1` (OURS, `longrun_ipl.PKL1_ADAPT`), so
+`ls` was re-measured: nine lines where it had one, 174,299
+instructions and 804,300 lines (was 164,287 and 768,488), PASS on both
+models; and the FEP emulator's held card (`tools/mkfepcard.py --held`)
+has 64 entries where it had 56, entries 54-61 the eight new files
+(`run_fepemu.sh` PASS, the tapes unchanged). The answers are the
+Listener's: ` R = 3628800`, ` R =[8,7,6,5,4,3,2,1]`,
+` R =[2,17,18,27,33,46,65,74,83,94]`, ` M = 352`, each KLIC 2.002's;
+pkl1_held pins the held compiler's refusal of the file as distributed.
+Observed injections (2026-11-25, private copies, run on pkl1_fact's
+kept checkpoint): `PimmMBox.bsv`'s multiplier stopped after 3 of its 32
+steps: FAIL at line 1,434,053, instruction 288,310 (`R 3 0000000064` /
+`R 3 0000000014`, a product of the compile itself, long before the
+goal); a product of 3628800 given as 3628801: FAIL at line 6,149,926,
+instruction 1,315,168 (`R 3 0000375f00` / `R 3 0000375f01`, fact's last
+multiply). On the reference alone (`pimm.py` `i_b_multiply`, the same
+3628801): the counts equal pkl1_fact's pin, and the window check fails
+on ` R = 3628801`: the answer, not the pin, is what catches a wrong
+result both models would share. `home_listing` without the version,
+re-observed with the nine files: `ls` FAIL, 807,269 lines and 174,515
+instructions against the pin.
 
 R7 `ls` (2026-11-25): the home directory through 204 and 237
 (`ref/pimm/fep.py` `listing`, the reply's form INFERENCE from PIMOS's

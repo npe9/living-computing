@@ -1,0 +1,23 @@
+/*----------------------------------------------------------- 
+%   (C)1992 Institute for New Generation Computer Technology 
+%       (Read COPYRIGHT for detailed information.) 
+-----------------------------------------------------------*/
+:- module top.
+
+top :-
+	make_list(30, L),
+	builtin:print(L),
+	nrev:nrev(L, R),
+	builtin:print(R).
+
+make_list(0, L) :- L = [].
+otherwise.
+make_list(K, L) :- K1 := K-1 | L = [K|T], make_list(K1, T).
+
+:- module nrev.
+
+nrev([], R) :- R = [].
+nrev([W|X], R) :- nrev(X, XR), append(XR, [W], R).
+
+append([], Y, Z) :- Y = Z.
+append([W|X], Y, WZ) :- WZ = [W|Z], append(X, Y, Z).

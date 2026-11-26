@@ -171,7 +171,7 @@ PINNED = {
     ('prompt', ('grep(":-") <= file("sample1.kl1") | lc',)): (957748, 286597),
     # R7 ls (2026-11-25): the home directory through 204 and 237, the
     # listing's form INFERENCE (fep.listing), on both models
-    ('prompt', ('ls',)): (768488, 164287),
+    # (R8: re-pinned below for the pkl1 home files)
     # R7G (2026-11-25): gc, and r7g_gc.py's session, on both models
     # (the core's collector, bsv/PimmGcBox.bsv), the K lines included
     ('prompt', ('gc',)): (368543, 89179),
@@ -188,6 +188,20 @@ PINNED = {
     # R7, the Listener's pools (2026-11-25): the primer's three examples
     # (primer25.tex:2120-2190), APPS listener_pools
     ('prompt', LISTENER_POOLS): (3847621, 967660),
+    # R8 (2026-11-25): the pkl1 samples (APPS pkl1_*), measured on the
+    # reference, then on both models by bsv/run_pimm_apps.sh; ls
+    # re-measured for the eight new home files (was 768488, 164287)
+    ('prompt', ('ls',)): (804300, 174299),
+    ('prompt', ('compile', '!package work', 'nrev', '!exit')): (6138452, 1275047),
+    ('prompt', ('compile', '!package work', 'fact_r8', '!exit', 'listener',
+                'default_package(work).', 'fact:fact(10,R).')): (6328026, 1335291),
+    ('prompt', ('compile', '!package work', 'nrev_r8', '!exit', 'listener',
+                'default_package(work).', 'nrev:nrev([1,2,3,4,5,6,7,8],R).')): (6820828, 1466386),
+    ('prompt', ('compile', '!package work', 'qsort_r8', '!exit', 'listener',
+                'default_package(work).',
+                'qsort:qsort([27,74,17,33,94,18,46,83,65,2],R).')): (8142420, 1852929),
+    ('prompt', ('compile', '!package work', 'kkqueen_r8', '!exit', 'listener',
+                'default_package(work).', 'top:go(9,M).')): (17463720, 5419133),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -324,12 +338,18 @@ APPS = {
     # utils/pathname.kl1 loop/5), one a line.  The FEP's answer is
     # INFERENCE from that reader (fep.listing: entries LF-ended, a file
     # with its version), so the line is ours too: the primer prints no
-    # ls.  The home has the one file, sample1.kl1.  Injection (OBSERVED
-    # 2026-11-25): home_listing without the version (".1") gives
-    # ' >sys>user>pmpsi>sample1.kl1>' (taken for a directory) and the
-    # counts (768817, 164311): FAIL against this row and PINNED
+    # ls.  The home had the one file, sample1.kl1; since R8 (2026-11-25)
+    # also the four pkl1 samples and their adaptations (OURS,
+    # longrun_ipl.PKL1_ADAPT), nine files in the name order.  Injection
+    # (OBSERVED 2026-11-25, before R8, the one file): home_listing
+    # without the version (".1") gives ' >sys>user>pmpsi>sample1.kl1>'
+    # (taken for a directory) and the counts (768817, 164311): FAIL
+    # against this row and PINNED.  Re-observed with the nine (R8): see
+    # the pkl1 rows' header below
     'ls': (('ls',),
-        (' >sys>user>pmpsi>sample1.kl1.1\n', 'Shell>> ')),
+        (''.join(' >sys>user>pmpsi>%s.1\n' % n for n in (
+            'fact.kl1', 'fact_r8.kl1', 'kkqueen.kl1', 'kkqueen_r8.kl1', 'nrev.kl1',
+            'nrev_r8.kl1', 'qsort.kl1', 'qsort_r8.kl1', 'sample1.kl1')), 'Shell>> ')),
     # R7G (2026-11-25): the shell's gc (shell/utils/gc.kl1 go/0:
     # collect_garbage on each processor; nothing written), then the
     # collection at the next goal switch on both models, INFERENCE/OURS
@@ -371,6 +391,77 @@ APPS_POOLS = ('listener_pools', (LISTENER_POOLS,
      ' S =[empty(yes),put("atom",atom), ... ]\n\n', '[4] ',
      ' A ={}\n B ={"str"}\n C = atom\n S =[put(key,"str", ... ),put(key,atom, ... ), ... ]\n\n', '[5] ')))
 APPS[APPS_POOLS[0]] = APPS_POOLS[1]
+# R8 (2026-11-25): pkl1's samples (docs/pkl1/, ICOT Free Software from
+# pkl1.tar.Z) compiled by PIMOS's own compiler into the package work,
+# then run through the Listener as listener_sieve runs sample1's sieve.
+# The answers are KLIC 2.002's on the same modules (our build of the
+# held klic-2.002.tgz, OURS: fact(10) 3628800, nrev of [1..8] reversed,
+# qsort's ten sorted, go(9) 352; docs/binary_reverse_engineering.md
+# 1.4, "R8, the pkl1 samples"), and go(9)'s 352 is also the number
+# kkqueen.kl1's own header prints ("for N = 9, should print M = 352").
+# pkl1_held: the sample as distributed, refused by the held compiler:
+# each module `Compile Aborted ... public declaration not found`
+# (library/compiler/isblt.kl1:100-103 check_public_declarations: no
+# `:- public`), and top/0's builtin:print `undefined predicate found`
+# (newnorm.kl1:735-748: `builtin:` is the compiler's own built-ins).
+# The other rows compile NAME_r8.kl1, the sample with the least change
+# the held compiler takes (OURS, longrun_ipl.PKL1_ADAPT: a `:- public`
+# line, the `top` module dropped)
+# Observed injections (2026-11-25, private copies): on the reference
+# alone, pimm.py i_b_multiply giving 3628801 for 3628800: pkl1_fact's
+# counts equal its pin (6328026, 1335291) and the window check FAILs on
+# ' R = 3628801' (the answer, not the pin, catches a fault both models
+# would share); on the core, from pkl1_fact's kept checkpoint,
+# PimmMBox.bsv's multiplier stopped after 3 of 32 steps: FAIL at line
+# 1434053, instruction 288310 (R 3 0000000064 / R 3 0000000014, in the
+# compile), and the product 3628800 given as 3628801: FAIL at line
+# 6149926, instruction 1315168 (R 3 0000375f00 / R 3 0000375f01, fact's
+# last multiply).  ls re-observed with the nine home files, home_listing
+# without the version: FAIL, (807269, 174515) against the pin
+APPS['pkl1_held'] = (('compile', '!package work', 'nrev', '!exit'),
+    ('** KL1 Compiler **\n', 'COMPILE> ',
+     'Package : work\n!WARNING! not included in the working packages : work\n', 'COMPILE> ',
+     'Compile File : PSI::>sys>user>pmpsi>nrev.kl1.1\n',
+     "!WARNING! no with_macro declaraion. assumed `pimos'.\n[nrev.kl1@0] Compile Module : top\n",
+     '=>  :- module top .\n',
+     'Compile Aborted : []\n\n!ERROR! public declaration not found\n'
+     '!ERROR![nrev.kl1@1] in top/ 0 : undefined predicate found : print/ 1\n',
+     '=> top :-\n      make_list(30,L) ,\n      builtin: print(L) ,\n      nrev: nrev(L,R) ,\n'
+     '      builtin: print(R) .\n',
+     '!WARNING![nrev.kl1@1] unused predicate found : top/ 0\n',
+     '=> top :-\n      make_list(30,L) ,\n      builtin: print(L) ,\n      nrev: nrev(L,R) ,\n'
+     '      builtin: print(R) .\n',
+     '[nrev.kl1@5] Compile Module : nrev\n', '=>  :- module nrev .\n',
+     'Compile Aborted : []\n\n!ERROR! public declaration not found\n',
+     'Total Number of Warning : 2\nTotal Number of Error : 3\n', 'COMPILE> ', 'Shell>> '))
+
+
+def _pkl1(file, module, goal, answer):
+    """an R8 row: FILE compiled into work (MODULE loaded), then GOAL
+    in the Listener, answered ANSWER"""
+    return (('compile', '!package work', file, '!exit', 'listener', 'default_package(work).', goal),
+            ('** KL1 Compiler **\n', 'COMPILE> ',
+             'Package : work\n!WARNING! not included in the working packages : work\n',
+             'COMPILE> ', 'Compile File : PSI::>sys>user>pmpsi>%s.kl1.1\n' % file,
+             "!WARNING! no with_macro declaraion. assumed `pimos'.\n[%s.kl1@0] Compile Module : %s\n"
+             % (file, module),
+             '=>  :- module %s .\n' % module, 'Compile Succeeded : %s\n\n' % module,
+             '"work:: %s" Loaded\n' % module, 'Total Number of Warning : 1\n', 'COMPILE> ',
+             'Shell>> ',
+             '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\n'
+             'CURRENT DIRECTORY : >sys>user>pmpsi\n\n',
+             '[1] ', '\n', '[2] ', answer, '[3] '))
+
+
+APPS['pkl1_fact'] = _pkl1('fact_r8', 'fact', 'fact:fact(10,R).', ' R = 3628800\n\n')
+APPS['pkl1_nrev'] = _pkl1('nrev_r8', 'nrev', 'nrev:nrev([1,2,3,4,5,6,7,8],R).',
+                          ' R =[8,7,6,5,4,3,2,1]\n\n')
+APPS['pkl1_qsort'] = _pkl1('qsort_r8', 'qsort', 'qsort:qsort([27,74,17,33,94,18,46,83,65,2],R).',
+                           ' R =[2,17,18,27,33,46,65,74,83,94]\n\n')
+# kkqueen's go/2 is in its module top: work::top, found before pimos::top
+# by the Listener's default package (e-proginfo.tex:397, the package
+# search)
+APPS['pkl1_kkqueen'] = _pkl1('kkqueen_r8', 'top', 'top:go(9,M).', ' M = 352\n\n')
 # R7G stage 5 (2026-11-25), a collection when memory runs out: the APPS
 # run with a heap limit (pimm.Machine.heap_limit, RESTORE 5; pimm_gc.py
 # "When memory runs out"), name -> cells.  Their windows are APPS's; the

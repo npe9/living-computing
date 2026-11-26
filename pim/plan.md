@@ -327,6 +327,17 @@ test or an explicit label.
    below where they differ: the notes below describe the bench model as
    built, which the roadmap's Phase 1 replaces.
 
+   *Status 2026-11-25: R8 reached.* PIMOS's own KL1 compiler, running
+   on the model from the shell, compiles four pkl1 samples (`fact`,
+   `nrev`, `qsort`, `kkqueen`; `docs/pkl1/`, ICOT Free Software) into
+   the package `work`, and the Listener runs one goal of each, in
+   lockstep on the reference and the Bluespec core
+   (`bsv/run_pimm_apps.sh`, APPS `pkl1_*`), every answer KLIC 2.002's.
+   As distributed the held compiler refuses them (no `:- public`); the
+   files compiled carry the least change it takes, OURS
+   (`docs/pimos_roadmap.md` R8 row; `docs/binary_reverse_engineering.md`
+   1.4, "R8, the pkl1 samples"). Next: R9.
+
    **KL1-B execution design (milestone 2).** The model's current ISA is
    the diagnostic stand-in; KL1-B is a separate execution path. The
    design, recorded before code:

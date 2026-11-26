@@ -1,0 +1,52 @@
+--- a/include/klic/basic.h	2026-11-25 22:01:37
++++ b/include/klic/basic.h	2026-11-25 22:01:37
+@@ -25,7 +25,7 @@
+ 
+ #ifdef __GNUC__
+ #define Inline		__inline__
+-#define NoReturn	Volatile
++#define NoReturn	/* patched: volatile-function noreturn trick rejected by clang */
+ #else
+ #define Inline
+ #define NoReturn
+--- a/include/klic/g_basic.h	2026-11-25 22:01:37
++++ b/include/klic/g_basic.h	2026-11-25 22:01:37
+@@ -131,4 +131,4 @@
+   external functions
+ */
+ 
+-extern Volatile voidfn G_error;
++extern NoReturn voidfn G_error;
+--- a/runtime/generic.c	2026-11-25 22:01:37
++++ b/runtime/generic.c	2026-11-25 22:01:37
+@@ -233,7 +233,7 @@
+   return makeint((long)GD_SELF->method_table);
+ }
+ 
+-Volatile void G_error(errmsg, where, object_kind, class)
++NoReturn void G_error(errmsg, where, object_kind, class)
+      char *errmsg, *where, *object_kind, *class;
+ {
+   fatalf("%s\n\t(in %s of %s object of class \"%s\")",
+--- a/runtime/faisus.c	2026-11-25 22:01:37
++++ b/runtime/faisus.c	2026-11-25 22:01:37
+@@ -16,7 +16,7 @@
+ #endif
+ 
+ #ifdef __STDC__
+-static Volatile voidfn do_fail;
++static NoReturn voidfn do_fail;
+ #endif
+ static void do_fail(goal, reasonp)
+      struct goalrec *goal;
+--- a/include/klic/options.h	2026-11-25 22:01:57
++++ b/include/klic/options.h	2026-11-25 22:01:57
+@@ -18,7 +18,7 @@
+     ARG_NOT_USED
+ };
+ 
+-extern Const struct opttable opttable[];
++/* patched: premature extern of incomplete array type removed; declared again below */
+ 
+ char *parse_opts();
+ 

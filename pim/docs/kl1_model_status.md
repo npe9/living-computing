@@ -100,6 +100,14 @@ default case.
 
 ## What this means for PIMOS
 
+*2026-11-25:* this page describes the bench model `PimKL1B` only. PIMOS
+itself runs on the PIM/m core (`bsv/PimmCore.bsv`, `ref/pimm/pimm.py`),
+which is a different path: there the roadmap stands at R8
+(`pimos_roadmap.md`): four pkl1 samples compiled by PIMOS's own
+compiler and run through the Listener in lockstep on both models
+(`bsv/README.md`, "R8"). The paragraph below is the bench model's
+state and is unchanged.
+
 The model can execute a hand-assembled KL1-B program that builds heap
 cells and reads them back, and it can prove the deref path. It has a
 flat argument-save area (`set_*`/`read_*`), a goal-label queue

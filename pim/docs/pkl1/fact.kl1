@@ -1,0 +1,25 @@
+/*----------------------------------------------------------- 
+%   (C)1992 Institute for New Generation Computer Technology 
+%       (Read COPYRIGHT for detailed information.) 
+-----------------------------------------------------------*/
+:- module top.
+top :-
+	builtin:print('Repetitions?'),
+	builtin:readint(R),
+	builtin:print('Problem Size?'),
+	builtin:readint(N),
+	builtin:start_measure,
+	repeat(R, N),
+	builtin:report_measure(_).
+
+repeat(0, _).
+repeat(N, K) :- N > 0 |
+	N1 := N-1,
+	fact:fact(K, _),
+	repeat(N1, K).
+
+:- module fact.
+fact(1, R) :- R = 1.
+fact(N, R) :- N > 1, N1 := N-1 |
+	fact(N1, R1),
+	R := R1 * N.
