@@ -13,7 +13,8 @@ core can hold the same state and be compared write for write: goal
 records, the ready queue, suspension records and hooked variables are
 cells on the heap (layouts in docs/pimm_semantics.md "Runtime state";
 they are this project's design, the firmware being lost).  One
-processor, a LIFO ready queue without priorities, 8- and 16-bit
+processor (several, each a Machine of its own: pimm_pe.py, rung M1 of
+docs/multi_pe.md), a LIFO ready queue without priorities, 8- and 16-bit
 strings.  Garbage collection when collect_garbage asks for it, and
 (R7G stage 5) when the heap reaches Machine.heap_limit, if one is set
 (pimm_gc.py, INFERENCE/OURS; otherwise the heap only grows); the MRB is
@@ -162,6 +163,10 @@ class _Mem(dict):
 
 
 class Machine:
+    # the tags (MRB off) of an unbound cell: a variable, one with goals
+    # waiting (a PE adds its exported variables', pimm_pe.py)
+    VAR_TAGS = (UNDF, HOOK)
+
     # the merger's list (2026-11-24): ready goals of the stub merge_in,
     # taken before the ready queue (Machine.ready, Machine.run).  mq is
     # its head; mwh, mwt the goals made ready since the last pickup, in
@@ -441,7 +446,7 @@ class Machine:
         None for an unbound variable."""
         w = self.deref(w)
         t = w[0] & ~1
-        if self.unbound(w) or t in (UNDF, HOOK):    # the latter: an element cell
+        if self.unbound(w) or t in self.VAR_TAGS:    # the latter: an element cell
             return None
         if t == INT:
             return signed(w[1])
@@ -761,38 +766,47 @@ class Machine:
         if pc is not None:
             self.spawn(pc, args)
         before = self.steps
-        while True:
-            if self.gc_request:
-                # R7G: the collection collect_garbage asked for, at the
-                # goal switch, before the alarm (pimm_gc.py: INFERENCE)
-                self.gc_request = False
-                import pimm_gc
-                pimm_gc.collect(self)
-            if self.alarm_var is not None and self.alarm_due():
-                self.fire_alarm()       # R7L: before the next goal is taken
-            g = self.pick()
-            if not g:
-                break
-            self.event('G %d' % (g - self.load))
-            st = self.mem[g + G_STATUS][1]        # shoen << 2 | status
-            self.shoen = self.load + (st >> 2) if st >> 2 else 0
-            self.mem[g + G_STATUS] = (INT, st & ~3 | TAKEN)
-            code = self.mem[g + G_CODE][1] - self.load
-            for i in range(self.mem[g + G_ARGN][1]):
-                self.reg[i] = self.mem[g + G_ARGS + i]
-            if self.shoen:
-                how = self.taken_check(g)
-                if how != 'run':
-                    self.event('E ' + how)
-                    continue
-            self.chain = 0
-            self.reduce(code, before + limit)     # the limit is this run's
-            self.end_reduction()
+        while self.goal_switch(before + limit):
+            pass
         self.shoen = 0                # what a bench makes between runs is the root's
         self.event('Q')
         if self.nsusp:
             raise Suspend('%d goals still suspended' % self.nsusp)
         return self.steps - before
+
+    def goal_switch(self, limit):
+        """One goal switch of run(): the collection asked for, the alarm,
+        then the next goal taken and reduced (limit: the step count at
+        which the run stops).  False when there was no goal to take.
+        Split out of run() on 2026-11-26 for the multi-PE reference
+        (pimm_pe.py), which calls it once per goal; run() is unchanged."""
+        if self.gc_request:
+            # R7G: the collection collect_garbage asked for, at the
+            # goal switch, before the alarm (pimm_gc.py: INFERENCE)
+            self.gc_request = False
+            import pimm_gc
+            pimm_gc.collect(self)
+        if self.alarm_var is not None and self.alarm_due():
+            self.fire_alarm()       # R7L: before the next goal is taken
+        g = self.pick()
+        if not g:
+            return False
+        self.event('G %d' % (g - self.load))
+        st = self.mem[g + G_STATUS][1]        # shoen << 2 | status
+        self.shoen = self.load + (st >> 2) if st >> 2 else 0
+        self.mem[g + G_STATUS] = (INT, st & ~3 | TAKEN)
+        code = self.mem[g + G_CODE][1] - self.load
+        for i in range(self.mem[g + G_ARGN][1]):
+            self.reg[i] = self.mem[g + G_ARGS + i]
+        if self.shoen:
+            how = self.taken_check(g)
+            if how != 'run':
+                self.event('E ' + how)
+                return True
+        self.chain = 0
+        self.reduce(code, limit)              # the limit is the run's
+        self.end_reduction()
+        return True
 
     def pick(self):
         """The next goal to run, taken off its list, or 0.  The goals
@@ -1160,7 +1174,7 @@ class Machine:
         marked too (PDSS b_vector_element, mark_element), written only
         if that changes it."""
         c = self.mem[a]
-        if c[0] & ~1 in (UNDF, HOOK):
+        if c[0] & ~1 in self.VAR_TAGS:
             return (REF, a) if single else (REF + 1, a)
         if mark and marked(c) != c:
             self.mem[a] = marked(c)
@@ -2892,7 +2906,7 @@ class Machine:
             self.mem[a] = (CDESC, e0[1])
             for i in range(1, n):
                 c = self.mem[base + i]
-                if c[0] & ~1 in (UNDF, HOOK):
+                if c[0] & ~1 in self.VAR_TAGS:
                     raise Unimplemented('new_module: element %d is unbound in place' % i)
                 self.mem[a + i] = c
             return [(MOD, a)]
@@ -3551,7 +3565,7 @@ class Machine:
             if n is None or not 0 <= i < n:
                 raise Unimplemented('built-in exception: set_vector_element')
             src = self.vbase(v)
-            if not v[0] & 1 and self.mem[src + i][0] & ~1 not in (UNDF, HOOK):
+            if not v[0] & 1 and self.mem[src + i][0] & ~1 not in self.VAR_TAGS:
                 old = self.mem[src + i]
                 self.mem[src + i] = e
                 return [old, v]

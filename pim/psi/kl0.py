@@ -40,9 +40,16 @@ THE MACHINE (OURS, WAM-shaped as layers/KL0.md §3 describes KL0)
 - Cut: a predicate's entry barrier is kept in B0 and also put in register
   A_arity (MEASURED: kappa##kappaDBC_interface pic/1 saves A1 with
   `20 01 00` and cuts with `dd 01 01`; pmi dd/de take the register).
-  A `$or$N` (kind 0x12) keeps its caller's barrier, so a cut inside a
-  disjunction cuts the clause (OURS reading, consistent with
-  pic/1's `$or$3/1`, whose `!` is d0 with A1 overwritten).
+  A `$or$N` (kind 0x12) is entered like any predicate, with its own
+  barrier, so a cut inside a disjunction cuts only that disjunction's
+  alternatives (PRINTED: TM-388 4.6 p.111 Example 2, App. G pp.161-162,
+  "differently from ! of Prolog"; held code that relies on it:
+  kappa2 stwin.esp get_number/3's `Number = abort` after an inner
+  `!, fail`, and pb/hash.esp search_and_get/5's
+  `!, relative_cut_and_fail(1)`, which would be plain `fail` if `!`
+  already cut the clause).  Until 2026-11-26 a `$or$` kept its
+  caller's barrier (OURS, now withdrawn: pic/1's `$or$3/1`, `!` as d0
+  with A1 overwritten, fits either reading).
 - Slot assignment is not undone on backtracking (ESP's semantics, TM-388
   §3.5 slots are object state).
 - Method dispatch goes through the loader's Fig. A-1 tables
@@ -292,6 +299,20 @@ class Barrier:
 
     def __repr__(self):
         return '<barrier %d>' % self.b
+
+
+class Level(int):
+    """A predicate's entry barrier (the choice-point stack height, as an
+    int) that also keeps its caller's, `up`: the chain of call levels that
+    TM-388 4.6 p.112 relative_cut(Level) counts back along ("the depth of
+    levels backward from the current level").  A last call is a level of
+    its own (OURS: TM-388 does not say how level/1 counts a last call).
+    OURS representation."""
+
+    def __new__(cls, b, up):
+        x = int.__new__(cls, b)
+        x.up = up
+        return x
 
 
 def deref(t):
@@ -662,14 +683,14 @@ class Machine:
             self.cont, self.env = self.env.cont, self.env.prev
         elif not last:
             self.cont = (code, off + 1, self.env, self.b0)
-        if p.kind != 0x12:
-            # a $or$N (kind 0x12) keeps the caller's barrier: OURS
-            self.enter_pred(p)
+        # a $or$N (kind 0x12) too: a cut in a disjunction is local to it
+        # (TM-388 4.6 p.111; see the module docstring)
+        self.enter_pred(p)
         self.pc = (code, target)
 
     def enter_pred(self, p):
         """A predicate's entry barrier: in B0, and in register A_arity."""
-        self.b0 = len(self.stack)
+        self.b0 = Level(len(self.stack), self.b0)
         self.x[p.arity] = Barrier(self.b0)
 
     def proceed(self):
@@ -1267,6 +1288,150 @@ class Machine:
         terms, pos = self.input_terms(deref(self.x[0]))
         return self.proceed() if pos >= len(terms) else self.fail()
 
+    def debugger_read_goal(self):
+        """:read_goal(#debugger, Line, Goal, Names) -- step 3o (2026-11-26),
+        OURS selector and form: the debugger's reader (standin/debugger.esp;
+        SIMPOS's debugger and its reader are lost, shell.md §5.4).  Line, a
+        string typed in the debugger's window, is read as one goal ended by
+        `.` (psi/esp_reader.py read_goal; Input is terminated with `.`,
+        SCREENSHOT Giho 8609 p20, shell.md §5.4.2).  Goal is its executable
+        form: {send, Selector, Receiver, {Arguments}} for a method call
+        `:sel(R, A, ...)` (PRINTED form TM-134 PDF p71, folio 67), {and, G1,
+        G2} for `G1, G2` (PRINTED form TM-786 p5 `:create(#simshow##simshow,
+        S), :goal(S).`), every `#c` the class object (the library's lookup,
+        lib_class_named: the class must be loaded).  Names is the list of
+        the goal's named variables, [[Name, Var], ...] with Name an atom, in
+        order of first appearance.  A line that does not read fails; a goal
+        of another form (a built-in, a unification) is refused loudly: only
+        method calls are stood in."""
+        import esp_reader
+        import simpos_fs
+        line = deref(self.x[0])
+        if not isinstance(line, Str):
+            raise Refusal('unbound argument' if isinstance(line, Var) else 'simpos',
+                          'debugger read_goal/4 on %r' % (line,))
+        try:
+            term, names = esp_reader.read_goal(sys.modules[__name__], simpos_fs.text_of(line.codes()))
+        except ValueError:
+            return self.fail()
+
+        def data(t):
+            t = deref(t)
+            if isinstance(t, Vec) and len(t.args) == 2 and deref(t.args[0]) == Atom('#'):
+                name = deref(t.args[1]).name
+                cid = self.lib_class_named(name)
+                if cid is None:
+                    raise Refusal('simpos', 'debugger read_goal/4: class %s is not loaded' % name)
+                return ClassRef(cid)
+            if isinstance(t, Vec):
+                return Vec([data(a) for a in t.args])
+            if isinstance(t, Cons):
+                return Cons(data(t.args[0]), data(t.args[1]))
+            return t
+
+        def goal(t):
+            t = deref(t)
+            if isinstance(t, Vec) and len(t.args) == 3 and deref(t.args[0]) == Atom(','):
+                return Vec([Atom('and'), goal(t.args[1]), goal(t.args[2])])
+            if isinstance(t, Vec) and len(t.args) == 2 and deref(t.args[0]) == Atom(':'):
+                call = deref(t.args[1])
+                if len(call.args) < 2:
+                    raise Refusal('simpos', 'debugger read_goal/4: a method call with no receiver')
+                return Vec([Atom('send'), deref(call.args[0]), data(call.args[1]),
+                            Vec([data(a) for a in call.args[2:]])])
+            raise Refusal('simpos', 'debugger read_goal/4: the goal %r is not a method call '
+                          '(not in the stand-in)' % (t,))
+        g = goal(term)
+        out = NIL
+        for name, v in reversed(names):
+            out = Cons(Cons(Atom(name), Cons(v, NIL)), out)
+        if not self.unify(self.x[1], g):
+            return self.fail()
+        return self.proceed() if self.unify(self.x[2], out) else self.fail()
+
+    def debugger_variable_lines(self):
+        """:variable_lines(#debugger, Variables, Lines) -- step 3o, OURS
+        selector: the Variable Window's lines for Variables, [[Name, Value],
+        ...]: `Name = Value`, then `,` after each but the last and `;` after
+        the last; an object is `$` and its class's name without the package
+        (SCREENSHOT TM-134 PDF p68 (folio 64) `Object1 = $hypocycloid_drawer,`
+        / `Object2 = $hypocycloid_drawer;`, PDF p71 `Cyc = $hypocycloid_drawer,
+        Proc = $process;`; shell.md §5.4.2).  Other values are written as
+        ESP source (OURS): integers, "strings", atoms, #class, [lists],
+        {vectors}, `_` for an unbound variable."""
+        def text(t, depth=0):
+            t = deref(t)
+            if depth > 7:
+                return '...'
+            if isinstance(t, Instance):
+                return '$' + t.cid.split('##', 1)[-1]
+            if isinstance(t, ClassRef):
+                return '#' + t.cid.split('##', 1)[-1]
+            if isinstance(t, Var):
+                return '_'
+            if isinstance(t, Str):
+                return '"%s"' % t.text
+            if isinstance(t, Atom):
+                return '[]' if t == NIL else t.name
+            if isinstance(t, Vec):
+                return '{%s}' % ','.join(text(a, depth + 1) for a in t.args)
+            if isinstance(t, Cons):
+                items = []
+                while isinstance(t, Cons):
+                    items.append(text(t.args[0], depth + 1))
+                    t = deref(t.args[1])
+                tail = '' if t == NIL else '|' + text(t, depth + 1)
+                return '[%s%s]' % (','.join(items), tail)
+            return str(t)
+        vs, t = [], deref(self.x[0])
+        while isinstance(t, Cons):
+            e = deref(t.args[0])
+            vs.append((deref(e.args[0]).name, deref(deref(e.args[1]).args[0])))
+            t = deref(t.args[1])
+        out = NIL
+        for k in reversed(range(len(vs))):
+            s = Str('')
+            s.text = '%s = %s%s' % (vs[k][0], text(vs[k][1]), ';' if k == len(vs) - 1 else ',')
+            out = Cons(s, out)
+        return self.proceed() if self.unify(self.x[1], out) else self.fail()
+
+    def file_new_version(self):
+        """:new_version(File, Contents, New) -- window M10 (2026-11-26),
+        OURS selector: a save of a Pmacs buffer (standin/standard_editor.esp).
+        New is a new binary_file in File's directory, File's name with the
+        next version (INFERENCE from TR-524 PDF p9, folio 8: "The version
+        ... is assigned by the file system and incremented every time a file
+        is newly created"; "If only an identifier and an extension are
+        specified in opening a file, its latest version is retrieved", so
+        the old versions stay), its 16-bit text Contents, its size two bytes
+        a code (as psi/simpos_fs.py's text files).  The file system is the
+        mounted tree (psi/simpos_fs.py, OURS), so this is a model, as
+        directory retrieve is; a file with no directory refuses."""
+        text, f = deref(self.x[0]), deref(self.x[2])
+        if not isinstance(text, Str):
+            raise Refusal('unbound argument' if isinstance(text, Var) else 'simpos',
+                          'binary_file new_version/3 contents %r' % (text,))
+        d = self.get_slot(f, 'directory') if isinstance(f, Instance) else None
+        if not isinstance(d, Instance):
+            raise Refusal('simpos', 'binary_file new_version/3: %r is in no directory' % (f,))
+        name = self.get_slot(f, 'name').text
+        v, t = 0, self.get_slot(d, 'entries')
+        while isinstance(t, Cons):
+            e = deref(t.args[0])
+            t = deref(t.args[1])
+            x = deref(e.args[1])
+            if deref(e.args[0]).text == name and x.cid == 'simpos##binary_file':
+                v = max(v, self.get_slot(x, 'version'))
+        new = new_instance(self.lib, 'simpos##binary_file', self)
+        s = Str('')
+        s.set_codes(text.codes())
+        for k, val in (('name', Str(name)), ('version', v + 1), ('size', 2 * len(s.codes())),
+                       ('full_name', Str('%s>%s.%d' % (self.get_slot(d, 'full_name').text, name, v + 1))),
+                       ('contents', s), ('directory', d)):
+            self.set_slot(new, k, val)
+        self.set_slot(d, 'entries', Cons(Vec([Str(name), new]), self.get_slot(d, 'entries')))
+        return self.proceed() if self.unify(self.x[1], new) else self.fail()
+
     def world_root_path(self):
         """:root_path(World, LogicalName, Root) (step 3n).  INTERPOLATED
         from its one held send, pimfep##simpos_user_device $or$3/2
@@ -1586,6 +1751,26 @@ class Machine:
 
     def op_cut_fail(self, code, off, a, b, c, v):
         self.cut_to(self.b0)
+        self.fail()
+
+    def op_relative_cut_and_fail(self, code, off, a, b, c, v):
+        # pmi db (kl0_opcodes.tsv): relative_cut_and_fail(Level), Level in
+        # A0.  TM-388 4.6 p.112: relative_cut(Level) cuts "all
+        # alternatives below the level specified by Level (the depth of
+        # levels backward from the current level)"; Example 1, `P :- (Q,
+        # relative_cut(1), R ; S)`, cuts S and P's next clause, i.e. back
+        # to the barrier of the $or$'s caller.  Only Level 1 and zero
+        # operand bytes are witnessed (all three held uses)
+        if (a, b, c) != (0, 0, 0):
+            raise Refusal('code', '%s @%x: pmi db with operands %02x %02x %02x (only 00 00 00 witnessed)'
+                          % (code.id, off, a, b, c))
+        n = deref(self.x[0])
+        if n != 1 or not isinstance(n, int):
+            raise Refusal('code', '%s @%x: relative_cut_and_fail(%r): only Level 1 witnessed' % (code.id, off, n))
+        up = getattr(self.b0, 'up', None)
+        if up is None:
+            raise Refusal('code', '%s @%x: relative_cut_and_fail(1) with no caller level' % (code.id, off))
+        self.cut_to(up)
         self.fail()
 
     def op_cut_env_fail(self, code, off, a, b, c, v):
@@ -2253,6 +2438,23 @@ class Machine:
             raise Refusal('operand', 'divide %d / %d: a negative or zero operand is unwitnessed' % (x, y))
         self.x[c] = x // y
         self.nxt(code, off)
+
+    def op_divide_with_remainder(self, code, off, a, b, c, v):
+        # window M8: blt 44 (paragraph bar_v.esp:333 `N mod 6 = 0`, @212
+        # `44 00 02 02` + `03000000`, then A3 got as 0).  The quotient goes
+        # to the third byte's register, the remainder to the register in
+        # the next cell's high byte (INFERENCE from the witness); integers
+        # only, a negative or zero operand refused as divide's
+        x, y = self._int(self.x[a], 'divide_with_remainder'), self._int(self.x[b], 'divide_with_remainder')
+        if x < 0 or y <= 0:
+            raise Refusal('operand', 'divide_with_remainder %d / %d: a negative or zero operand is unwitnessed'
+                          % (x, y))
+        ext = self.operand(code, off)
+        if ext[1] != 0x00 or ext[3] & 0xffffff:
+            raise Refusal('code', '%s @%x: divide_with_remainder extension cell %r unwitnessed' % (code.id, off, ext))
+        self.x[c] = x // y
+        self.x[ext[3] >> 24] = x % y
+        self.nxt(code, off, 2)
 
     def op_add_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
@@ -3004,6 +3206,11 @@ SIMPOS_MODELS = {
     # step 3l, B6: reading terms (standin/standard_input_file.esp)
     ('simpos##standard_input_file', 'instance', 'gett', 2): Machine.input_gett,
     ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
+    # window M10: a Pmacs save writes a new version (standin/binary_file.esp)
+    ('simpos##binary_file', 'instance', 'new_version', 3): Machine.file_new_version,
+    # step 3o: the debugger's reader and Variable Window (standin/debugger.esp)
+    ('simpos##debugger', 'class', 'read_goal', 4): Machine.debugger_read_goal,
+    ('simpos##debugger', 'class', 'variable_lines', 3): Machine.debugger_variable_lines,
 }
 # window M0/M3/M5 (OURS): the display device's simpos##bitmap_display
 # selectors (psi/windev.py; the window stand-ins draw through them)

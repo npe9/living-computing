@@ -4,8 +4,8 @@
 % selectors held code sends to an editor (docs/simpos/subsystems/
 % window.md §2.11 and its usage table: get_window/2, current_buffer/2,
 % set_current_buffer/2, select_buffer/2, clear_input/1, exception/2,
-% carriage_return/1, ...) only get_window/2 is here, because 21 methods
-% of pimfep##pimos_window_editor stop at it (kl0 census --fep,
+% carriage_return/1, ...) only get_window/2 was here at first, because 21
+% methods of pimfep##pimos_window_editor stop at it (kl0 census --fep,
 % 2026-11-24).  pimos_window_editor's natures, as its template writes
 % them, are `simpos##standard_editor, pimfep##as_pimos_device`, so this
 % is the unloaded ancestor that holds the method (the other one,
@@ -19,6 +19,62 @@
 % slot; an editor made any other way (as the census makes receivers,
 % with new/2) keeps the constant 0, and kl0 refuses the next send, to
 % the window, as "receiver a slot constant".
+%
+% WINDOW M10 (2026-11-26): PMACS PROPER.  The editor's commands and its
+% key bindings.
+%   THE BINDING TABLES ARE HELD IN FORM (window.md §2.11, §5.2, USAGE):
+%   instance clauses `:command(Editor, Input, Method)`, with the prefix
+%   tables `:control_x(Editor, Input, Method)` and `:control_c(..)`:
+%     - pimfep##pimos_window_editor command/3 (the held .ptf, cells
+%       @17-26, read 2026-11-26 with psi/fepread/ptfread.py): a switch on
+%       the input, the integer 3 to `attention` and the atom `exit` to
+%       `exit`.  So an input is a key code or an atom, and 3 is what a
+%       PIMOS window's control-C is (docs/fep_services.md §2.6, the {Id, 3}
+%       reply), which this file's codes give control#"c" (psi/espc.py
+%       KEY_CODES, OURS, G2);
+%     - cal-esp deb2.12/dedit.esp:105-120 (held IFS source):
+%       `:command(Editor,mouse#ll,debugger_menu)`, the control_c table and
+%       `:control_x(Editor,control#"z",exit)`;
+%     - cal2.12/cal_pmacs.esp `:command(Editor,pf#11,cal_menu)` and
+%       `:cal_menu(_)`: the method is sent to the editor with no other
+%       argument;
+%     - papyrus demo/EDITOR/my_save.esp.1:16-17 `:command(Editor,save,
+%       save)` (a menu's atom as input) and `:control_c(Editor,#"s",save)`;
+%     - kappa2 utility/fmp/KMACS.ESP:67 `:command(E, mouse#r, kappa_menu)`.
+%   A held subclass's clauses come first: primaries combine as
+%   alternatives in inheritance order (TM-388 §3.4, psi/librarian.py), so
+%   the interpreter's first answer is the subclass's binding, then these.
+%   THE DEFAULT BINDINGS BELOW ARE OURS (gap G6, the plan's Q6: Pmacs's
+%   own table is lost; Pmacs is "Emacs-like", IPSJ 114007, PROSE), a
+%   minimal Emacs subset.  Two are HELD in form: `exit` to exit
+%   (pimos_window_editor's) and control_x control#"z" to exit (dedit's,
+%   a user table, taken here as the default too: INFERENCE).  mouse#r to
+%   show_menu is INFERENCE: show_menu/1 is a pmacs_standard_editor
+%   selector (papyrus USAGE, window.md §2.11), and kappa's KMACS rebinds
+%   mouse#r to its own menu.  The EDITOR MENU's items are atoms bound
+%   like papyrus's `save` (show_menu/1, below).
+%   THE COORDINATOR'S PRINTED TABLE (window.md §5.1, TR-046 p28) takes
+%   control#"k", "l", "a", "s", "m", "b", "v", "r", "w" before any window
+%   sees them; the coordinator stand-in models only the system menu
+%   (coordinator.esp), so every key reaches the editor here, and C-a, C-b
+%   and C-k bind as Emacs's.  How Pmacs shared those keys with the
+%   coordinator is UNKNOWN (open in psi/README.md "Window M10").
+%   THE COMMANDS: each an editor method of one argument (the editor), as
+%   cal_menu/1; their names are Emacs's (OURS), some HELD as selectors
+%   (USAGE, window.md §2.11's table): beginning_of_line/1,
+%   backward_character/1, goto_beginning/1, select_buffer/1,2,
+%   list_buffers/1, show_menu/1, insert/2, current_buffer/2,
+%   set_current_buffer/2, exception/2, carriage_return/1, read_file/4
+%   (exshow :27).  A command that fails (the point at the end) beeps
+%   (OURS).
+%   FILES: read_file/4 retrieves the file with the directory's retrieve/4
+%   (its fourth argument the full pathname: INFERENCE, TR-524 App. A's
+%   FullPathname; exshow leaves it unbound) and shows "Read! " and the
+%   full pathname in the echo line (SCREENSHOT esp.wmv@108-149: `Read!
+%   >sys>user>demo>8pzl.esp.1`, window.md §2.11).  A save writes a NEW
+%   VERSION (TR-524 PDF p9, PROSE: versions are incremented every time a
+%   file is newly created; binary_file new_version/3, a kl0 model) and
+%   shows "Written! " and its full pathname (the word OURS).
 
 class standard_editor has
 
@@ -41,12 +97,188 @@ attribute window := 0;
 % which the after-demon reaches and which finds the line by searching the
 % buffer for code 10 from the input region's start.  So the primary ends
 % the typed line: a key#lf (10) at the point of the window's text buffer
-% (editor_text_buffer.esp).  Sent by the command interpreter on RETURN
-% (editor_command_interpreter.esp, OURS binding).
+% (editor_text_buffer.esp).  Bound to RETURN (key#cr, below, OURS).
+% Window M10: in the buffer the editor visits (current_buffer/2).
 :carriage_return(Editor) :-
-        W = Editor!window,
-        :get_interpreter(W, I),
-        B = I!original_buffer,
+        :current_buffer(Editor, B),
         :insert_code(B, 10);
+
+% WINDOW M10: THE DEFAULT BINDINGS (OURS, see the head comment).
+% INTERPOLATED (bodies OURS): see THE BINDING TABLES in the head comment.
+:command(Editor, key#cr, carriage_return);
+:command(Editor, exit, exit);
+:command(Editor, control#"f", forward_character);
+:command(Editor, control#"b", backward_character);
+:command(Editor, control#"n", next_line);
+:command(Editor, control#"p", previous_line);
+:command(Editor, control#"a", beginning_of_line);
+:command(Editor, control#"e", end_of_line);
+:command(Editor, control#"d", delete_character);
+:command(Editor, control#"k", kill_line);
+:command(Editor, key#del, delete_backward_character);
+:command(Editor, key#bs, delete_backward_character);
+:command(Editor, key#right, forward_character);
+:command(Editor, key#left, backward_character);
+:command(Editor, key#down, next_line);
+:command(Editor, key#up, previous_line);
+:command(Editor, control#"x", control_x);
+:command(Editor, control#"c", control_c);
+:command(Editor, mouse#r, show_menu);
+% the EDITOR MENU's items (show_menu/1)
+:command(Editor, abort, abort);
+:command(Editor, list_buffers, list_buffers);
+:command(Editor, save_all_files, save_all_files);
+:command(Editor, set_font, set_font_by_menu);
+:command(Editor, set_echo_font, set_echo_font_by_menu);
+:command(Editor, set_window_size, set_window_size_by_menu);
+:command(Editor, from_whiteboard, from_whiteboard);
+:command(Editor, to_whiteboard, to_whiteboard);
+% INTERPOLATED (bodies OURS): see THE BINDING TABLES in the head comment.
+:control_x(Editor, control#"s", save_file);
+:control_x(Editor, control#"z", exit);
+:control_x(Editor, control#"c", exit);
+:control_x(Editor, control#"b", list_buffers);
+:control_x(Editor, #"b", select_buffer);
+
+% WINDOW M10: THE COMMANDS (bodies OURS; see the head comment).
+% INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
+:forward_character(Editor) :- buffer(Editor, B), :forward_character(B);
+% INTERPOLATED (selector HELD, body OURS): see THE COMMANDS.
+:backward_character(Editor) :- buffer(Editor, B), :backward_character(B);
+% INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
+:next_line(Editor) :- buffer(Editor, B), :column(B, C), :next_line(B, C);
+% INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
+:previous_line(Editor) :- buffer(Editor, B), :column(B, C), :previous_line(B, C);
+% INTERPOLATED (selector HELD, body OURS): see THE COMMANDS.
+:beginning_of_line(Editor) :- buffer(Editor, B), :beginning_of_line(B);
+% INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
+:end_of_line(Editor) :- buffer(Editor, B), :end_of_line(B);
+% INTERPOLATED (selector HELD, cal_pmacs run/4; body OURS): see THE COMMANDS.
+:goto_beginning(Editor) :- buffer(Editor, B), :move_to_first(B);
+% INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
+:delete_character(Editor) :-
+        buffer(Editor, B), :current_position(B, P), :end_of_buffer(B, E),
+        P < E, :delete(B, P, P + 1);
+% INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
+:delete_backward_character(Editor) :-
+        buffer(Editor, B), :current_position(B, P),
+        P > 0, :delete(B, P - 1, P);
+% INTERPOLATED (selector OURS, body OURS): Emacs's C-k, the rest of the
+% line, or its newline at its end.
+:kill_line(Editor) :-
+        buffer(Editor, B), :current_position(B, P), :end_of_line(B),
+        :current_position(B, E), :move_to(B, P),
+        killed(B, P, E);
+% INTERPOLATED (selector HELD, body OURS): a string or one code at the
+% point (`:insert(B, key#lf)` on a buffer, MENDELS, window.md §2.11).
+:insert(Editor, X) :- buffer(Editor, B), inserted(B, X);
+% INTERPOLATED (selector HELD, body OURS): the buffer the editor visits.
+:current_buffer(Editor, B) :-
+        W = Editor!window, :get_interpreter(W, I), :buffer(I, B);
+% INTERPOLATED (selector HELD, body OURS): the editor visits B.
+:set_current_buffer(Editor, B) :- :set_input_buffer(Editor!window, B);
+% INTERPOLATED (selector HELD, body OURS): the editor visits B.
+:select_buffer(Editor, B) :- :set_input_buffer(Editor!window, B);
+% INTERPOLATED (selector HELD, body OURS): Pmacs asks for a buffer's
+% name; here the next pooled buffer after the current one (OURS: no
+% prompt is stood in), its name in the echo line.
+:select_buffer(Editor) :-
+        buffer(Editor, B),
+        :get_buffer_instance_list(#editor_text_buffer, L),
+        next_in(L, B, L, N),
+        :select_buffer(Editor, N),
+        :get_name(N, Name),
+        :append(#string, ["Buffer: ", Name], S),
+        :message(Editor, S);
+% INTERPOLATED (selector HELD, body OURS): the pooled buffers' names and
+% numbers in the echo line (OURS look: Pmacs's buffer list is not shown
+% anywhere held).
+:list_buffers(Editor) :-
+        :get_buffer_instance_list(#editor_text_buffer, L),
+        names(L, Parts),
+        :append(#string, ["Buffers:" | Parts], S),
+        :message(Editor, S);
+% INTERPOLATED (selector OURS, body OURS): see FILES in the head comment.
+:save_file(Editor) :- buffer(Editor, B), saved(Editor, B);
+% INTERPOLATED (selector OURS from the EDITOR MENU's "Save All Files",
+% body OURS): every pooled buffer read from a file and modified.
+:save_all_files(Editor) :-
+        :get_buffer_instance_list(#editor_text_buffer, L),
+        all_saved(Editor, L);
+% INTERPOLATED (selector HELD, exshow :27; body OURS): see FILES.
+:read_file(Editor, B, File, Full) :-
+        :retrieve(#directory, F, File, Full),
+        :load_file(B, F),
+        :append(#string, ["Read! ", Full], S),
+        :message(Editor, S);
+% INTERPOLATED (selector HELD in form, pimos_window_editor's and dedit's
+% bindings; body OURS): the command loop ends after it
+% (editor_command_interpreter.esp).
+:exit(Editor);
+% INTERPOLATED (selector OURS, the EDITOR MENU's ABORT): nothing.
+:abort(Editor);
+% INTERPOLATED (selector HELD; pmacs_window_editor show_menu/1 USAGE,
+% body OURS): the EDITOR MENU at the mouse (coordinator editor_menu/3).
+% Its items are verbatim from IPSJ 36239 p5 (SCREENSHOT, 2.50; window.md
+% §2.11; TM-229 p6 has `Set Same Font` for the fifth, VARIANT), one
+% column (OURS).  Each item's value is an atom the window's input gets
+% when it is chosen, bound by the table above.  Only ABORT, List Buffers
+% and Save All Files are stood in: the other five are bound to methods no
+% class has, so choosing one is refused loudly ("not in the stand-in").
+:show_menu(Editor) :-
+        :editor_menu(#coordinator, Editor!window,
+                     [[{"ABORT", abort}, {"List Buffers", list_buffers},
+                       {"Save All Files", save_all_files}, {"Set Font", set_font},
+                       {"Set Echo Font", set_echo_font},
+                       {"Set Window Size", set_window_size},
+                       {"From Whiteboard", from_whiteboard},
+                       {"To Whiteboard", to_whiteboard}]]);
+% INTERPOLATED (selector HELD, "show an error message", window.md §2.11;
+% body OURS): in the echo line.
+:exception(Editor, Message) :- :message(Editor, Message);
+% :message(Editor, String) -- OURS selector: String in the window's echo
+% line (pmacs_window echo/2).
+% INTERPOLATED (selector and body OURS): see THE COMMANDS.
+:message(Editor, String) :- :echo(Editor!window, String);
+% :undefined_key(Editor, Input) -- OURS selector: an input no table binds
+% (and not a character): a beep and a message (OURS words).
+% INTERPOLATED (selector and body OURS): see THE COMMANDS.
+:undefined_key(Editor, _) :- :beep(Editor!window), :message(Editor, "Undefined key");
+% :command_failed(Editor, Method) -- OURS selector: a command that
+% failed: a beep (OURS).
+% INTERPOLATED (selector and body OURS): see THE COMMANDS.
+:command_failed(Editor, _) :- :beep(Editor!window);
+
+local
+
+buffer(Editor, B) :- :current_buffer(Editor, B);
+
+killed(B, P, E) :- E > P, !, :delete(B, P, E);
+killed(B, P, _) :- :end_of_buffer(B, L), P < L, :delete(B, P, P + 1);
+
+inserted(B, X) :- integer(X), !, :insert_code(B, X);
+inserted(B, X) :- :insert_string(B, X);
+
+% the buffer after B in the pool (the first after the last)
+next_in([B, N | _], B, _, N) :- !;
+next_in([B], B, [N | _], N) :- !;
+next_in([_ | R], B, L, N) :- next_in(R, B, L, N);
+
+names([], []);
+names([B | Bs], [" ", Name | Parts]) :- :get_name(B, Name), names(Bs, Parts);
+
+saved(Editor, B) :- F = B!file, F \== 0, !,
+        :contents(B, Text),
+        :new_version(F, Text, New),
+        :saved(B, New),
+        :full_name(New, Full),
+        :append(#string, ["Written! ", Full], S),
+        :message(Editor, S);
+saved(Editor, _) :- :message(Editor, "No file");
+
+all_saved(_, []);
+all_saved(Editor, [B | Bs]) :- B!modified == 1, B!file \== 0, !,
+        saved(Editor, B), all_saved(Editor, Bs);
+all_saved(Editor, [_ | Bs]) :- all_saved(Editor, Bs);
 
 end.

@@ -3396,14 +3396,30 @@ function WordAddr vflRmwNextRead(Bit#(2) have, WordAddr w0, Bool crosses,
 function SauAddSteps vflBinAddSteps(VflCtx cx, Bool mg);
   VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, False);
   return SauAddSteps { passes: vb.b0 + vb.s, top: cx.offSh + vb.x,
-                       osb: (cx.offSh + 7) >> 3, b0: vb.b0, mg: mg };
+                       osb: (cx.offSh + 7) >> 3, b0: vb.b0, mg: mg,
+                       cls: SauStAdd, early: False };
 endfunction
 
 function SauAddSteps vflDecAddSteps(VflCtx cx, Bit#(8) offDec, Bool mg);
   VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, True);
   Bit#(8) od = offDec >> 2;
   return SauAddSteps { passes: vb.b0 + vb.s, top: od + vb.b0,
-                       osb: od, b0: vb.b0, mg: mg };
+                       osb: od, b0: vb.b0, mg: mg,
+                       cls: SauStAdd, early: False };
+endfunction
+
+// >>> THE PASSES mkSAU STEPS FOR THE OTHER DECIMAL CLASSES (fidelity_plan.md
+// A3 (b) step 2 on, 2026-11-25). <<<  The M+ family's, the K family's and
+// SRD's round's requests carry the field COMPACTED: digit 0 of `a` and `b`
+// is the field's low digit (decCompact), so the field's data digits are
+// 0 .. x/y - 1 and the carry is looked at from digit x/y (`top`).  The
+// passes are the field's data bytes and its sign byte's (vflBytes, the
+// count eboxClocks' rows use).  `cls` names the Table 3 equation
+// (StretchSAU's SauStepCls); `early` is the compare's sign decision.
+function SauAddSteps vflDecFieldSteps(VflCtx cx, SauStepCls cls, Bool early);
+  VflBytes vb = vflBytes(cx.len_, cx.bsz, cx.vi.m.unsign == 0, True);
+  return SauAddSteps { passes: vb.b0 + vb.s, top: vb.b0, osb: 0, b0: vb.b0,
+                       mg: False, cls: cls, early: early };
 endfunction
 
 function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
@@ -3905,9 +3921,9 @@ function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool ah0 = (ind[63 - ind_AH] == 1);
               Bool skipCmp = condEq && !(ind[63 - ind_AE] == 1);
               if (vi.m.decimal == 1 && !skipCmp) begin
+                Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
+                Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
                 if (decOf(boxResult) matches tagged Valid .kr) begin
-                  Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
-                  Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
                   // magnitude order from the subtraction (a digit beyond
                   // the 32nd makes the storage operand the larger)
                   Cmp3 m = kHi ? CmpLow
@@ -3917,7 +3933,13 @@ function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
                     : (as_ == 0) ? m
                     : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
                 end else begin
-                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False, steps: sauNoSteps });
+                  // STEPPED (fidelity_plan.md A3 (b) step 3, 2026-11-25),
+                  // except the immediate compares, whose row takes the
+                  // address field's bytes out (eboxClocks) and keeps half
+                  // (a)'s contract.  `early`: the signs alone decide it.
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False,
+                                steps: immediate ? sauNoSteps
+                                     : vflDecFieldSteps(cx, fieldCmp ? SauStCmpF : SauStCmp, as_ != bs_) });
                   needsRead = tagged Valid 0;
                 end
               end
@@ -4139,7 +4161,11 @@ function VflArm vflStoreFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool decAsk = decRound && !isValid(decOf(boxResult));
               DecRsp decRsp = validValue(decOf(boxResult));
               Maybe#(BoxReq) decReq = tagged Valid (tagged BoxDec DecReq {
-                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False, steps: sauNoSteps });
+                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False,
+                // STEPPED (fidelity_plan.md A3 (b) step 4): the round's
+                // cycles, StretchSAU's sauRndPasses.
+                steps: SauAddSteps { passes: fromInteger(sauRndPasses), top: 0, osb: 0, b0: 0,
+                                     mg: False, cls: SauStRnd, early: False } });
               Bit#(128) decAccU = acc.mag >> offDec;
               Bit#(128) decAcc = (decRound ? decRsp.r : acc.mag) >> offDec;
               Bit#(7) decNumLen = (vi.m.unsign == 1) ? len_
@@ -4512,7 +4538,8 @@ function VflArm vflMemAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
               Bool dSub = (dOpnd.sign != dAccSh.sign);
               Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
-                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False, steps: sauNoSteps });
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False,
+                                              steps: vflDecFieldSteps(cx, addOne ? SauStOne : SauStMem, False) });
               Bool dDec = (vi.m.decimal == 1);
               Bool dAsk = dDec && !isValid(decOf(boxResult));
               DecRsp dr = validValue(decOf(boxResult));
@@ -5083,7 +5110,8 @@ function VflArm vflConvertFamily(StretchStorage st, VflCtx cx, VflArm a0);
               Bit#(128) lcvIn = lcvToDec ? zeroExtend(lcvNumeric & lcvMask)
                                          : zeroExtend(lcvDg);
               if (cvtOf(boxResult) matches tagged Invalid) begin
-                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: lcvToDec, v: lcvIn });
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: lcvToDec, v: lcvIn,
+                                       steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, !lcvToDec), accS: False } });
                 needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
               end else begin
               CvtRsp cr = validValue(cvtOf(boxResult));
@@ -5246,7 +5274,8 @@ function VflArm vflConvertFamily(StretchStorage st, VflCtx cx, VflArm a0);
             Bit#(128) cvIn = (vi.m.decimal == 0) ? zeroExtend(cvSrc)
                            : zeroExtend(cvDigits & 64'h0FFFFFFFFFFFFFFF);
             if (cvtOf(boxResult) matches tagged Invalid) begin
-              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: cvIn });
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: cvIn,
+                                     steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, vi.m.decimal == 1), accS: True } });
               needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
             end else if (vi.m.decimal == 0) begin
               CvtRsp cr = validValue(cvtOf(boxResult));
@@ -5371,7 +5400,8 @@ function VflArm vflConvertTransitFamily(StretchStorage st, VflCtx cx, VflArm a0)
               match {.ltDg, .ltNd} = decFieldDigits(valRaw, numBits, bsz);
               Bit#(128) ltIn = (vi.m.decimal == 0) ? zeroExtend(valRaw) : zeroExtend(ltDg);
               if (cvtOf(boxResult) matches tagged Invalid) begin
-                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: ltIn });
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: ltIn,
+                                       steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, vi.m.decimal == 1), accS: False } });
                 needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
               end else begin
               CvtRsp cr = validValue(cvtOf(boxResult));
@@ -5494,7 +5524,17 @@ function VflArm vflConvertTransitFamily(StretchStorage st, VflCtx cx, VflArm a0)
                 ind = setResultIndicatorsF(ind, res);
               end
             end else begin
-              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: toDec, v: cvtIn });
+              // STEPPED (fidelity_plan.md A3 (b) step 5): B-D with Table 3's
+              // s and u/8 from the data.  D-B is NOT stepped from the data:
+              // its s/4 is held at the fitted 1 (3 passes with the
+              // equation's 2).  At the CHOSEN field above, the atlas's
+              // accumulator (+1 at offset 20, PDF 113) gives s/4 = 6 at the
+              // first DCV and more at each repetition, against PDF 139 /
+              // 166's flat 18 clocks at every field: MEASURED, 96 cells
+              // +55.8 away.  The field or the term is wrong; which is open.
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: toDec, v: cvtIn,
+                                     steps: SauCvtSteps { fixed: vflCvtFieldPasses(vi.code, len_, bsz, vi.m.unsign == 0, !toDec) + (toDec ? 0 : 1),
+                                                          accS: toDec } });
               needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
             end
             end
@@ -9399,7 +9439,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                           ? tagged Valid boxKind : tagged Invalid;
   method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
                                 ? divBox.response().fpExtra : 0;
-  method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && boxKind == 1 && sau.responseReady())
+  method Maybe#(Bit#(16)) boxOwnClocks() = (boxWait && (boxKind == 1 || boxKind == 2) && sau.responseReady())
                                            ? sau.ownClocks() : tagged Invalid;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);

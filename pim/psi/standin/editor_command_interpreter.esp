@@ -24,15 +24,31 @@
 %     pimos_window_process put/2 @eb; the atom `exit`, pimos_window_editor
 %     after close/3 @6a-73) and the keys the coordinator gives the window
 %     while it is selected (coordinator.esp, {key, Code});
-%   - a request is run on the window (pmacs_request.esp); a key: 13
-%     (RETURN) is the editor's carriage_return/1, so pimos_window_editor's
-%     held before/after demons run (@2bd, @2c8: the after-demon answers a
-%     pending getl, $or$4/2 @4b7-4cc), any other code is inserted at the
-%     point (Pmacs's self-insert; the minimal binding set is OURS, gap G6:
-%     no other key is bound); `exit` ends the loop;
-%   - after each input the buffer is redisplayed, as an Emacs redisplays
-%     after a command (INFERENCE: Pmacs is "Emacs-like", IPSJ 114007,
-%     PROSE).
+%   - a request is run on the window (pmacs_request.esp); window M10:
+%     the window's input_data/2 wraps its datum in a heap vector {data, X} (OURS), so a
+%     request is told from an input without a type test;
+%   - window M10: every other input (a key code, an atom: exit, a mouse
+%     button's mouse#B, an EDITOR MENU item's value) is looked up in the
+%     editor's binding tables, `:command(Editor, Input, Method)` and,
+%     after a prefix (control_x, control_c), `:control_x(..)` or
+%     `:control_c(..)` (the form HELD: standard_editor.esp's head
+%     comment), first answer; the method is sent to the editor with no
+%     other argument, `:refute(Editor, Method, {})` (class `class`'s
+%     dynamic call, TM-388 p46, kl0); a failing command is the editor's
+%     command_failed/2 (a beep); an unbound printing character is inserted
+%     at the point of the buffer the editor visits (Pmacs's self-insert,
+%     OURS); any other unbound input is the editor's undefined_key/2.  So
+%     RETURN is carriage_return/1 through the default `:command(E, key#cr,
+%     carriage_return)` (OURS), and pimos_window_editor's held before/after
+%     demons run as before (@2bd, @2c8: the after-demon answers a pending
+%     getl, $or$4/2 @4b7-4cc); the atom `exit` (the window's datum, or put
+%     by pimos_window_editor after close/3) is looked up like any input:
+%     pimos_window_editor's held command/3 @1c binds it to exit, which
+%     is why INFERENCE has the loop read it through the table; the
+%     editor's exit/1 runs, then the loop ends (as M4's loop ended on it);
+%   - after each input the window is redisplayed (pmacs_window refresh/1),
+%     as an Emacs redisplays after a command (INFERENCE: Pmacs is
+%     "Emacs-like", IPSJ 114007, PROSE).
 
 class editor_command_interpreter has
 
@@ -50,8 +66,11 @@ class editor_command_interpreter has
 instance
 
 % `original_buffer` is HELD (the slot name pimos_window_editor reads); the
-% others OURS.
+% others OURS.  Window M10: `buffer`, the buffer set_input_buffer/2 gave
+% the window (0: the original one); `prefix`, the prefix table the next
+% input is looked up in (none, control_x, control_c); `done`, set by exit.
 attribute window := 0, editor := 0, original_buffer := 0, input := 0;
+attribute buffer := 0, prefix := none, done := 0;
 
 % INTERPOLATED (body OURS) from pimos_window_process $or$0/3 @1a4 and the
 % IFS callers above.
@@ -63,18 +82,58 @@ attribute window := 0, editor := 0, original_buffer := 0, input := 0;
 % the head comment.
 :input(I, Data) :- :put(I!input, Data);
 
+% :buffer(I, B) -- window M10, OURS selector: the buffer the window's
+% editor visits (set_buffer/2), else the original one.
+% INTERPOLATED (selector and body OURS): see the head comment.
+:buffer(I, B) :- B0 = I!buffer, B0 \== 0, !, B = B0;
+:buffer(I, B) :- B = I!original_buffer;
+
+% :set_buffer(I, B) -- window M10, OURS selector (pmacs_window
+% set_input_buffer/2).
+% INTERPOLATED (selector and body OURS): see the head comment.
+:set_buffer(I, B) :- I!buffer := B;
+
 local
 
-loop(I) :- :get(I!input, X), run(I, X);
+% window M10: one input, then (unless it was exit) the window redisplayed
+loop(I) :- :get(I!input, X), run(I, X), then(I);
 
-run(_, exit) :- !;
-run(I, X) :- integer(X), !, key(I, X), :redisplay(I!original_buffer), loop(I);
-run(I, Request) :-
-        request(I, Request, Request!selector),
-        :redisplay(I!original_buffer), loop(I);
+then(I) :- I!done == 1, !, I!done := 0;
+then(I) :- :refresh(I!window), loop(I);
 
-key(I, 13) :- !, :carriage_return(I!editor);
-key(I, C) :- :insert_code(I!original_buffer, C);
+% a window's datum (input_data/2: a request, or the atom exit) or an input
+% (a key, an atom from a menu or a mouse button)
+run(I, {data, D}) :- !, datum(I, D);
+run(I, X) :- input(I, X);
+
+datum(I, exit) :- !, input(I, exit);
+datum(I, Request) :- request(I, Request, Request!selector);
+
+% window M10: the binding tables (see the head comment)
+input(I, X) :- P = I!prefix, P \== none, !, I!prefix := none, prefixed(I, P, X);
+input(I, X) :- command_of(I!editor, X, M), !, do(I, M);
+input(I, X) :- printable(X), !, :current_buffer(I!editor, B), :insert_code(B, X);
+input(I, X) :- :undefined_key(I!editor, X);
+
+prefixed(I, control_x, X) :- control_x_of(I!editor, X, M), !, do(I, M);
+prefixed(I, control_c, X) :- control_c_of(I!editor, X, M), !, do(I, M);
+prefixed(I, P, X) :- :undefined_key(I!editor, {P, X});
+
+command_of(E, X, M) :- :command(E, X, M), !;
+control_x_of(E, X, M) :- :control_x(E, X, M), !;
+control_c_of(E, X, M) :- :control_c(E, X, M), !;
+
+do(I, control_x) :- !, I!prefix := control_x;
+do(I, control_c) :- !, I!prefix := control_c;
+do(I, exit) :- !, :refute(I!editor, exit, {}), I!done := 1;
+do(I, M) :- :refute(I!editor, M, {}), !;
+do(I, M) :- :command_failed(I!editor, M);
+
+% a character: a JIS code (window.md §1.2: 16-bit JIS, ASCII-range text as
+% 16#23xx) or a printing ASCII code (OURS); not a control, DEL or a named
+% key (psi/espc.py KEY_CODES, 16#8001..)
+printable(X) :- integer(X), X >= 32, X < 127, !;
+printable(X) :- integer(X), X >= 16#"2121", X =< 16#"7E7E";
 
 % the one request the route makes (pmacs_request.esp); any other is sent
 % to the window under a selector no class has, so kl0 refuses it aloud

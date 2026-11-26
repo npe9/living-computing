@@ -208,5 +208,76 @@ class TestGlyph(unittest.TestCase):
         self.assertEqual(a, b)
 
 
+class TestExtension(unittest.TestCase):
+    """The 2026-11-26 extension (winfb.py header): read and target.  Each
+    expected word is written out by hand."""
+
+    def test_read_words(self):
+        # dots 3..12 of rows 1, 2 (test_unaligned_fill_bytes' fill)
+        fr = run('fill 3 1 10 2 set\nread 0 1 16 1\nread 3 1 10 2\n'
+                 'read 2 1 12 1\nread 0 0 33 1\nread 13 1 3 1')
+        self.assertEqual(fr.reads, [0x1ff8, 0xffc0, 0xffc0, 0x7fe0,
+                                    0, 0, 0, 0])
+        self.assertEqual(fr.count(), 20)          # reading draws nothing
+        fr = run('fill 14 0 4 1 set\nread 12 0 8 1\nread 14 0 17 1')
+        self.assertEqual(fr.reads, [0x3c00, 0xf000, 0x0000])
+
+    def test_read_clip(self):
+        fr = run('fill 1278 1022 2 2 set\nread 1276 1021 64 64\n'
+                 'read 1280 0 4 4\nread 0 1024 4 4\nread 5 5 0 9\n'
+                 'read 5 5 9 0\nread 1279 1023 1 1')
+        # 4 dots wide (1276..1279), 3 rows (1021..1023): one word a row
+        self.assertEqual(fr.reads, [0x0000, 0x3000, 0x3000, 0x8000])
+        self.assertEqual(fr.status, [F.OK] * 7)
+
+    def test_target_area_words(self):
+        # an area of 20 x 3 dots at word 100, pitch 2: row j is words
+        # 100 + 2j, 101 + 2j; dots 16..19 are bits 15..12 of the second
+        fr = run('target 0 1 100 2 20 3\nfill 0 0 20 3 set\n'
+                 'fill 18 0 5 1 xor\nline 0 2 19 2 1 43690 reset')
+        self.assertEqual(fr.save[100:106], [0xffff, 0xc000, 0xffff, 0xf000,
+                                            0x5555, 0x5000])
+        self.assertEqual(fr.save[99], 0)
+        self.assertEqual(fr.save[106], 0)
+        self.assertEqual(fr.count(), 0)           # the frame untouched
+        fr = run('target 0 1 100 2 20 3\nfill 0 0 20 3 set\n'
+                 'target 1 1 100 2 20 3\nread 15 1 8 2\n'
+                 'target 0 0 0 0 0 0\ncopy 0 0 20 3 7 9 copy\n'
+                 'glyph 0 0x2341 100 100 copy\ntarget 0 1 200 1 11 14\n'
+                 'target 1 0 0 0 0 0\ncopy 100 100 11 14 0 0 copy\n'
+                 'target 1 1 200 1 11 14\nread 0 0 11 14')
+        self.assertEqual(fr.reads[:2], [0xf800, 0xf800])   # 5 dots: 15..19
+        self.assertEqual(fr.count(), 60 + 48)
+        self.assertEqual([fr.dot(7 + i, 9 + j) for j in range(3) for i in range(20)],
+                         [1] * 60)
+        self.assertEqual(sum(bin(v).count('1') for v in fr.reads[2:]), 48)
+
+    def test_target_refusals(self):
+        fr = run('target 0 1 0 0 16 4\ntarget 0 1 0 1 17 4\n'
+                 'target 0 1 0 256 4 4\ntarget 0 1 65530 4 64 2\n'
+                 'target 0 1 0 4 0 4\ntarget 0 1 0 4 4 0\n'
+                 'target 0 1 65532 4 64 1\n'
+                 'target 0 1 10 4 64 4\ntarget 1 1 12 4 64 4\n'
+                 'copy 0 0 4 4 0 0 copy\ntarget 1 1 10 4 64 4\n'
+                 'copy 0 0 4 4 1 0 copy\ntarget 1 1 26 4 64 4\n'
+                 'copy 0 0 4 4 1 0 copy')
+        B = F.BADSURF
+        self.assertEqual(fr.status, [B, B, B, B, B, B, F.OK, F.OK, F.OK,
+                                     B, F.OK, F.OK, F.OK, F.OK])
+        fr = F.Frame()
+        fr.run([(0xb0, [2, 0, 0, 0, 0, 0]), (0xb0, [0, 2, 0, 0, 0, 0]),
+                (0xa5, [0, 0, 1, 1, 0, 0]), (0x80, [0] * 6), (0x90, [0] * 6),
+                (0xc0, [0] * 6), (0, [0] * 6)])
+        self.assertEqual(fr.status, [F.BADOP] * 6)
+        self.assertEqual((fr.dst, fr.src, fr.reads), (None, None, []))
+
+    def test_save_restore_stay_on_the_frame(self):
+        fr = run('fill 3 3 9 9 set\ntarget 0 1 0 4 64 4\n'
+                 'target 1 1 0 4 64 4\nsave 0 0 0 16 16 1000\n'
+                 'fill 0 0 16 16 xor\nrestore 0 copy')
+        self.assertEqual(fr.count(), 81)
+        self.assertEqual(fr.save[1003], 0x1ff0)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -49,7 +49,16 @@ its low nibble the raster op R:
   5     save  id x y w h base         id    x     y     w     h      base
   6     restore id R                  id    -     -     -     -      -
   7     dump                          -     -     -     -     -      -
-  8-f   reserved (OURS: patterns etc. later); answered BADOP
+  8, 9  reserved; answered BADOP
+  a     read  x y w h                 x     y     w     h     -      -
+  b     target which kind base pitch w h  which kind base pitch w     h
+  c-f   reserved; answered BADOP
+
+  (a and b are the 2026-11-26 EXTENSION of the frozen set, OURS and
+  owner-approved: docs/simpos/m8_stops.md §7, window_hardware_plan.md
+  §2.4 "The 2026-11-26 extension", and the section of that name below.
+  8 and 9 stay reserved so that the streams written before it, which use
+  0x90 and 0x93 as reserved records, mean what they meant.)
 
   R: 0 set (d | s), 1 reset (d & ~s), 2 xor (d ^ s), 3 copy (s),
      4 reverse (~s); 5-f answered BADOP, nothing drawn, for every
@@ -69,7 +78,9 @@ status file; the bench writes the same file):
   drawn in place of a code it lacks, so a gap is never silent; with no
   0xffff record nothing is drawn), 04 BADSAVE (id >= 16, or the area
   would pass the end of bitmap memory), 05 NOSAVE (restore of an id
-  never saved).  Whatever the status, a refused command draws nothing.
+  never saved), 06 BADSURF (the extension: a target area that bitmap
+  memory cannot hold, or a copy between two different areas that share
+  words).  Whatever the status, a refused command draws nothing.
 
 Coordinates and clipping (OURS).  All operands are unsigned, so only the
 right and bottom edges clip (the plan's §2.4: the box clips only to the
@@ -108,8 +119,51 @@ screen; windows are clipped by the stand-in window manager).
   - restore id R: the saved rectangle is drawn back where it was saved,
     through R (normally copy).  The entry stays, so restore can repeat.
 
+THE 2026-11-26 EXTENSION (OURS, owner-approved; docs/simpos/m8_stops.md):
+drawing targets and reading dots back.  Basis: TM-225 p10 (PROSE: a
+hidden window's image lives in a save area of the display's bitmap
+memory, and output to a hidden window writes that area), TM-125 p17
+(PRINTED-INTERFACE: get_point_value/4 reads a dot), TM-115 p82 (PROSE:
+1.0's bitmap areas loaded from strings).  The command format, the
+operands and every rule below are OURS.
+  - A SURFACE is the frame (1,280 x 1,024, as above) or an AREA of bitmap
+    memory (base, pitch, w, h): w x h dots, row j's dots from bit 15 of
+    word base + j * pitch (MSB leftmost, as a save area's rows).  The box
+    has two surface registers, the DESTINATION (where fill, line, glyph
+    and copy draw) and the SOURCE (where copy and read take dots from);
+    both are the frame at reset.  save, restore and dump are unchanged:
+    they always move dots between the frame and bitmap memory.  The host
+    allocates areas and save areas (OURS) so that they share no words.
+    Bitmap memory is all 0 at reset, as the frame is (OURS): an area or
+    a pad word reads 0 until it is written.  bsv/WinFbBox.bsv clears its
+    bitmap RAM at reset beside the frame, inside the frame's 81,920
+    cycles, so reset takes no longer (window_hardware_plan.md §2.4).
+  - target which kind base pitch w h: which 0 sets the destination, 1 the
+    source; kind 0 is the frame (base..h ignored), 1 an area.  BADOP if
+    which > 1 or kind > 1; BADSURF (the register unchanged) if kind 1 and
+    w = 0, h = 0, pitch = 0, pitch > 255, pitch < ceil(w / 16) or
+    base + pitch * h > 65,536.  R is ignored.
+  - On an area every primitive clips to the area's w x h as it clips to
+    the frame's 1,280 x 1,024 (the right and bottom edges); a row's dots
+    past w (its last word's pad) are never written.
+  - copy runs from the source surface to the destination surface:
+    nothing if sx >= the source's w or dx >= the destination's w (sy, dy
+    likewise); else w := min(w, sw - sx, dw - dx), h likewise.  The
+    source is read whole before anything is written (as before).  BADSURF,
+    nothing drawn, when both are areas, not the same area (equal base and
+    pitch), and their words [base, base + pitch * h) meet: the RTL's
+    scan-order rule for an overlapping copy needs one coordinate system.
+  - read x y w h: the rectangle of the SOURCE surface, cut as a fill is
+    cut, is answered as data words (as a dump's frame is), ceil(w'/16)
+    words a row, row-major, each row's dots from bit 15 of its first word
+    and the pad dots of its last word 0; then its status (OK).  A cut
+    rectangle with no dots answers no words.  R is ignored.
+  - The reference keeps the read words in `Frame.reads`, in order; `run`
+    writes them to a fourth file, one word a line in 4 hex digits, which
+    the bench writes too (win_read.txt).
+
 Use:
-    python3 -I psi/winfb.py run STREAM OUT.pbm STATUS.txt
+    python3 -I psi/winfb.py run STREAM OUT.pbm STATUS.txt [READS.txt]
     python3 -I psi/winfb.py asm MNEMONICS.txt STREAM     (mnemonic -> stream)
     python3 -I psi/winfb.py gen NAME [SEED] > STREAM     (the bench streams)
     python3 -I psi/winfb.py fonthex OUT.hex              (test_11 words, BRAM load)
@@ -135,11 +189,14 @@ SAVE_WORDS = 65536          # OURS
 SAVE_SLOTS = 16             # OURS
 
 END, FILL, LINE, GLYPH, COPY, SAVE, RESTORE, DUMP = range(8)
-PRIMS = ['end', 'fill', 'line', 'glyph', 'copy', 'save', 'restore', 'dump']
-NARGS = [0, 4, 6, 4, 6, 6, 1, 0]
-HAS_ROP = [False, True, True, True, True, False, True, False]
+READ, TARGET = 10, 11           # the 2026-11-26 extension (the header)
+PRIMS = ['end', 'fill', 'line', 'glyph', 'copy', 'save', 'restore', 'dump',
+         None, None, 'read', 'target']
+NARGS = [0, 4, 6, 4, 6, 6, 1, 0, 0, 0, 4, 6]
+HAS_ROP = [False, True, True, True, True, False, True, False, False, False,
+           False, False]
 ROPS = ['set', 'reset', 'xor', 'copy', 'reverse']
-OK, BADOP, BADFONT, MISSING, BADSAVE, NOSAVE = range(6)
+OK, BADOP, BADFONT, MISSING, BADSAVE, NOSAVE, BADSURF = range(7)
 PBM_HEADER = b'P4\n%d %d\n' % (W, H)
 
 
@@ -221,6 +278,12 @@ class Frame:
         self.font = font
         self.dumps = []              # PBM images, one per dump / end
         self.status = []
+        # the 2026-11-26 extension: the destination and source surfaces
+        # (None = the frame, else an area (base, pitch, w, h)) and the
+        # words answered by read
+        self.dst = None
+        self.src = None
+        self.reads = []
 
     # -- helpers -----------------------------------------------------
     def dot(self, x, y):
@@ -236,37 +299,83 @@ class Frame:
     def span(self, x, w):
         return ((1 << w) - 1) << (W - x - w)
 
-    def put_rect(self, x, y, w, h, r, src_rows):
-        """Draw rows of w bits (ints, MSB = leftmost) at (x, y), cut."""
-        if x >= W or y >= H or w == 0 or h == 0:
+    # a surface's size, its row width in bits, and its rows (an area's row
+    # j is the int of its pitch words, MSB = dot 0)
+    @staticmethod
+    def dims(s):
+        return (W, H) if s is None else (s[2], s[3])
+
+    @staticmethod
+    def bits(s):
+        return W if s is None else 16 * s[1]
+
+    def get_row(self, s, y):
+        if s is None:
+            return self.rows[y]
+        base, pitch = s[0] + y * s[1], s[1]
+        v = 0
+        for k in range(pitch):
+            v = (v << 16) | self.save[base + k]
+        return v
+
+    def set_row(self, s, y, v):
+        if s is None:
+            self.rows[y] = v
             return
-        cw, ch = min(w, W - x), min(h, H - y)
+        base, pitch = s[0] + y * s[1], s[1]
+        for k in range(pitch):
+            self.save[base + k] = (v >> (16 * (pitch - 1 - k))) & 0xffff
+
+    def put_rect(self, x, y, w, h, r, src_rows, s=None):
+        """Draw rows of w bits (ints, MSB = leftmost) at (x, y) of surface
+        S (the frame when None), cut to it."""
+        sw, sh = self.dims(s)
+        if x >= sw or y >= sh or w == 0 or h == 0:
+            return
+        cw, ch = min(w, sw - x), min(h, sh - y)
+        nb = self.bits(s)
         for j in range(ch):
-            s = src_rows[j] >> (w - cw)          # keep the left cw dots
-            sh = W - x - cw
-            self.rows[y + j] = rop(r, s << sh, self.rows[y + j],
-                                   ((1 << cw) - 1) << sh)
+            src = src_rows[j] >> (w - cw)        # keep the left cw dots
+            sh_ = nb - x - cw
+            self.set_row(s, y + j, rop(r, src << sh_, self.get_row(s, y + j),
+                                       ((1 << cw) - 1) << sh_))
+
+    def get_rect(self, s, x, y, w, h):
+        """The rows of the w x h rectangle at (x, y) of surface S (already
+        cut to it), as ints of w bits, MSB = leftmost."""
+        nb = self.bits(s)
+        return [(self.get_row(s, y + j) >> (nb - x - w)) & ((1 << w) - 1)
+                for j in range(h)]
 
     # -- primitives ----------------------------------------------------
     def fill(self, x, y, w, h, r):
-        self.put_rect(x, y, w, h, r, [(1 << w) - 1] * h)
+        self.put_rect(x, y, w, h, r, [(1 << w) - 1] * h, self.dst)
         return OK
 
     def copy(self, sx, sy, w, h, dx, dy, r):
-        if sx >= W or dx >= W or sy >= H or dy >= H:
+        S, D = self.src, self.dst
+        if S is not None and D is not None and S[:2] != D[:2]:
+            s0, s1 = S[0], S[0] + S[1] * S[3]
+            d0, d1 = D[0], D[0] + D[1] * D[3]
+            if s0 < d1 and d0 < s1:
+                return BADSURF
+        (sw, sh), (dw, dh) = self.dims(S), self.dims(D)
+        if sx >= sw or dx >= dw or sy >= sh or dy >= dh:
             return OK
-        w = min(w, W - sx, W - dx)
-        h = min(h, H - sy, H - dy)
+        w = min(w, sw - sx, dw - dx)
+        h = min(h, sh - sy, dh - dy)
         if w == 0 or h == 0:
             return OK
-        src = [(self.rows[sy + j] >> (W - sx - w)) & ((1 << w) - 1)
-               for j in range(h)]                 # read whole, then write
-        self.put_rect(dx, dy, w, h, r, src)
+        src = self.get_rect(S, sx, sy, w, h)      # read whole, then write
+        self.put_rect(dx, dy, w, h, r, src, D)
         return OK
 
     def line(self, x1, y1, x2, y2, width, style, r):
         if width == 0:
             return OK
+        s = self.dst
+        sw, sh = self.dims(s)
+        nb = self.bits(s)
         dx, dy = abs(x2 - x1), -abs(y2 - y1)
         sx = 1 if x1 < x2 else -1
         sy = 1 if y1 < y2 else -1
@@ -276,9 +385,9 @@ class Frame:
             if (style >> (15 - (i & 15))) & 1:
                 for k in range(width):
                     px, py = (x, y + k) if xmajor else (x + k, y)
-                    if px < W and py < H:
-                        m = 1 << (W - 1 - px)
-                        self.rows[py] = rop(r, m, self.rows[py], m)
+                    if px < sw and py < sh:
+                        m = 1 << (nb - 1 - px)
+                        self.set_row(s, py, rop(r, m, self.get_row(s, py), m))
             if x == x2 and y == y2:
                 break
             e2 = 2 * err
@@ -304,7 +413,7 @@ class Frame:
                 return st
         gx, gy, gw, gh, _bias = rec
         self.put_rect(x, y, gw, gh, r,
-                      [f.bits(gx, gy, gw, j) for j in range(gh)])
+                      [f.bits(gx, gy, gw, j) for j in range(gh)], self.dst)
         return st
 
     def save_area(self, sid, x, y, w, h, base):
@@ -346,6 +455,36 @@ class Frame:
         self.put_rect(x, y, w, h, r, src)
         return OK
 
+    # -- the 2026-11-26 extension ----------------------------------------
+    def read(self, x, y, w, h):
+        s = self.src
+        sw, sh = self.dims(s)
+        if x >= sw or y >= sh or w == 0 or h == 0:
+            return OK
+        w, h = min(w, sw - x), min(h, sh - y)
+        pitch = (w + 15) // 16
+        for v in self.get_rect(s, x, y, w, h):
+            v <<= 16 * pitch - w
+            for k in range(pitch):
+                self.reads.append((v >> (16 * (pitch - 1 - k))) & 0xffff)
+        return OK
+
+    def target(self, which, kind, base, pitch, w, h):
+        if which > 1 or kind > 1:
+            return BADOP
+        if kind == 0:
+            s = None
+        elif (w == 0 or h == 0 or pitch == 0 or pitch > 255 or
+              16 * pitch < w or base + pitch * h > SAVE_WORDS):
+            return BADSURF
+        else:
+            s = (base, pitch, w, h)
+        if which == 0:
+            self.dst = s
+        else:
+            self.src = s
+        return OK
+
     # -- the stream ------------------------------------------------------
     def command(self, op, a):
         """Run one decoded command; returns its status (None for end)."""
@@ -353,7 +492,7 @@ class Frame:
         if prim == END:
             self.dumps.append(self.pbm())
             return None
-        if prim > DUMP or r > 4:
+        if prim > TARGET or prim in (8, 9) or r > 4:
             st = BADOP
         elif prim == FILL:
             st = self.fill(a[0], a[1], a[2], a[3], r)
@@ -367,6 +506,10 @@ class Frame:
             st = self.save_area(*a)
         elif prim == RESTORE:
             st = self.restore(a[0], r)
+        elif prim == READ:
+            st = self.read(a[0], a[1], a[2], a[3])
+        elif prim == TARGET:
+            st = self.target(*a)
         else:
             self.dumps.append(self.pbm())
             st = OK
@@ -391,7 +534,7 @@ def encode(op, a):
 
 def mnemonic(op, a):
     prim, r = op >> 4, op & 15
-    if prim > DUMP:
+    if prim >= len(PRIMS) or PRIMS[prim] is None:
         return 'reserved %02x' % op
     s = PRIMS[prim] + ''.join(' %d' % v for v in a[:NARGS[prim]])
     if HAS_ROP[prim]:
@@ -631,6 +774,120 @@ def _rand_stream(seed, n, prims):
     return '\n'.join(L)
 
 
+# the 2026-11-26 extension's streams (read and target; the header)
+def s_reads(_seed):
+    """Reads of the frame: every alignment of a row's first and last dot,
+    widths 1, 15, 16, 17, 33, clipped at both edges, empty, and a read of
+    what was just drawn by each primitive (a read must not change the
+    frame: the dumps around them check it)."""
+    L = ['fill 3 3 40 9 set', 'fill 5 4 30 5 xor', 'line 0 20 100 25 2 61680 set',
+         'glyph 0 9025 60 0 copy', 'fill 1270 1015 10 9 set', 'dump']
+    for x0 in (0, 1, 7, 15, 16, 17, 31):
+        for w in (1, 15, 16, 17, 33):
+            L.append('read %d 3 %d 2' % (x0, w))
+    L += ['read 0 0 100 30', 'read 60 0 11 14', 'read 1270 1015 64 64',
+          'read 1279 1023 5 5', 'read 1280 0 4 4', 'read 0 1024 4 4',
+          'read 10 10 0 4', 'read 10 10 4 0', 'dump', 'end']
+    return '\n'.join(L)
+
+
+def s_targets(_seed):
+    """Drawing on areas of bitmap memory and copying between surfaces."""
+    L = [  # an area 70 x 30 at word 1000, pitch 5 (80 dots; 10 pad dots)
+         'target 0 1 1000 5 70 30', 'fill 0 0 70 30 set', 'fill 3 2 50 7 xor',
+         'line 0 0 69 29 1 65535 reset', 'line 60 0 10 25 3 52428 xor',
+         'glyph 0 9025 20 12 copy', 'glyph 0 9026 65 20 set',     # cut at the right
+         'fill 66 25 40 40 xor',                                  # cut on two sides
+         'target 1 1 1000 5 70 30', 'read 0 0 70 30', 'read 63 27 20 20',
+         # the area onto the frame, frame to area, then area to area
+         'target 0 0 0 0 0 0', 'copy 0 0 70 30 101 201 copy',
+         'copy 5 5 70 30 300 300 xor', 'dump',
+         'target 1 0 0 0 0 0', 'target 0 1 3000 3 40 20',
+         'fill 0 0 40 20 reset', 'copy 98 199 40 20 0 0 copy',
+         'target 1 1 3000 3 40 20', 'read 0 0 40 20',
+         'target 0 1 1000 5 70 30', 'copy 0 0 40 20 13 4 reverse',
+         'target 1 1 1000 5 70 30', 'read 0 0 70 30',
+         # one area onto itself: the scan order of an overlapping copy
+         'target 0 1 1000 5 70 30', 'copy 0 0 60 25 3 2 copy',
+         'copy 4 3 60 25 0 0 copy', 'copy 0 0 60 25 9 0 copy', 'read 0 0 70 30',
+         # areas that share words: BADSURF, nothing drawn
+         'target 1 1 1003 5 70 30', 'copy 0 0 10 10 0 0 copy', 'read 0 0 70 30',
+         # refused targets (the registers unchanged)
+         'target 0 1 0 0 16 4', 'target 0 1 0 1 17 4', 'target 0 1 0 256 4 4',
+         'target 0 1 65530 4 64 2', 'target 0 1 0 4 0 4', 'target 0 1 0 4 4 0',
+         'target 2 0 0 0 0 0', 'target 0 2 0 0 0 0',
+         'fill 0 0 4 4 set', 'read 0 0 16 1',
+         'target 0 1 65532 4 64 1', 'fill 0 0 64 1 set', 'target 1 1 65532 4 64 1',
+         'read 0 0 64 1',
+         # a save area and an area: save and restore stay frame <-> memory
+         'target 1 0 0 0 0 0', 'target 0 0 0 0 0 0',
+         'save 0 101 201 70 30 2000', 'fill 100 200 80 40 xor', 'restore 0 copy',
+         'target 1 1 2000 5 70 30', 'read 0 0 70 30', 'end']
+    return '\n'.join(L)
+
+
+def _rand_x(seed, targets):
+    """Every primitive with reads (and, when TARGETS, targets) mixed in,
+    the coordinates drawn for the surface in use."""
+    rnd = random.Random(seed)
+    areas = [(0, 4, 64, 40), (200, 7, 100, 60), (700, 1, 16, 9), (900, 25, 400, 30),
+             (2000, 5, 70, 30), (2050, 5, 70, 30), (65536 - 2 * 40, 2, 32, 40)]
+    dst = src = (W, H)
+
+    def coord(lim):
+        return rnd.choice([rnd.randrange(lim), rnd.randrange(lim + 16),
+                           rnd.randrange(min(lim, 32)), max(0, lim - rnd.randrange(1, 20))])
+    L = []
+    for _ in range(500):
+        p = rnd.choice(['fill'] * 4 + ['copy'] * 4 + ['line'] * 3 + ['glyph'] * 2 +
+                       ['read'] * 3 + ['target'] * (3 if targets else 0) +
+                       ['save', 'restore', 'dump'])
+        r = rnd.choice(ROPS)
+        if p == 'target':
+            which = rnd.randrange(2)
+            if rnd.random() < 0.3:
+                L.append('target %d 0 0 0 0 0' % which)
+                sz = (W, H)
+            elif rnd.random() < 0.1:
+                L.append('target %d 1 %d %d %d %d' % (which, rnd.randrange(65536), rnd.randrange(300),
+                                                      rnd.randrange(5000), rnd.randrange(300)))
+                continue      # maybe refused: the sizes below may be stale (they only steer coordinates)
+            else:
+                b, pt, w, h = rnd.choice(areas)
+                L.append('target %d 1 %d %d %d %d' % (which, b, pt, w, h))
+                sz = (w, h)
+            if which:
+                src = sz
+            else:
+                dst = sz
+        elif p == 'fill':
+            L.append('fill %d %d %d %d %s' % (coord(dst[0]), coord(dst[1]), rnd.randrange(0, 90),
+                                              rnd.randrange(0, 50), r))
+        elif p == 'copy':
+            L.append('copy %d %d %d %d %d %d %s' % (coord(src[0]), coord(src[1]), rnd.randrange(0, 120),
+                                                    rnd.randrange(0, 60), coord(dst[0]), coord(dst[1]), r))
+        elif p == 'line':
+            L.append('line %d %d %d %d %d %d %s' % (coord(dst[0]), coord(dst[1]), coord(dst[0]),
+                                                    coord(dst[1]), rnd.choice([0, 1, 1, 2, 3]),
+                                                    rnd.choice([0xffff, rnd.randrange(65536)]), r))
+        elif p == 'glyph':
+            L.append('glyph 0 %d %d %d %s' % (rnd.choice([0x2341 + rnd.randrange(26), 0x2330 + rnd.randrange(10),
+                                                          rnd.randrange(65536)]),
+                                              coord(dst[0]), coord(dst[1]), r))
+        elif p == 'read':
+            L.append('read %d %d %d %d' % (coord(src[0]), coord(src[1]), rnd.randrange(0, 70),
+                                           rnd.randrange(0, 12)))
+        elif p == 'save':
+            L.append('save %d %d %d %d %d %d' % (rnd.randrange(17), coord(W), coord(H), rnd.randrange(0, 90),
+                                                 rnd.randrange(0, 40), rnd.randrange(0, 65000)))
+        elif p == 'restore':
+            L.append('restore %d %s' % (rnd.randrange(17), r))
+        else:
+            L.append('dump')
+    L.append('end')
+    return '\n'.join(L)
+
+
 def s_rand_h0(seed):
     return _rand_stream(seed, 400, ['fill'] * 5 + ['copy'] * 4 +
                         ['save', 'restore', 'restore', 'dump'])
@@ -640,6 +897,14 @@ def s_rand_h1(seed):
     return _rand_stream(seed, 400, ['fill'] * 3 + ['copy'] * 3 +
                         ['save', 'restore', 'dump'] + ['line'] * 3 +
                         ['glyph'] * 4)
+
+
+def s_rand_r(seed):
+    return _rand_x(seed, False)
+
+
+def s_rand_x2(seed):
+    return _rand_x(seed, True)
 
 
 # name -> (builder, seed, milestone)
@@ -655,6 +920,14 @@ STREAMS = {
     'lines': (s_lines, 0, 'H1'),
     'rand_h1_1': (s_rand_h1, 11, 'H1'),
     'rand_h1_2': (s_rand_h1, 12, 'H1'),
+    # the 2026-11-26 extension: read X1, target X2 (milestone labels OURS)
+    'reads': (s_reads, 0, 'X1'),
+    'rand_r_1': (s_rand_r, 31, 'X1'),
+    'rand_r_2': (s_rand_r, 32, 'X1'),
+    'targets': (s_targets, 0, 'X2'),
+    'rand_x2_1': (s_rand_x2, 21, 'X2'),
+    'rand_x2_2': (s_rand_x2, 22, 'X2'),
+    'rand_x2_3': (s_rand_x2, 23, 'X2'),
 }
 
 
@@ -667,6 +940,18 @@ def gen(name, seed=None):
         text = text.replace(line_of(END << 4, []),
                             line_of(0x93, [1, 1, 5, 5, 0, 0]) + '\n' +
                             line_of(0x17, [1, 1, 5, 5, 0, 0]) + '\n' +
+                            line_of(END << 4, []))
+    if name == 'reads':
+        # the extension's raw records: read and target with reserved ops
+        # (BADOP, nothing read, the register unchanged), the reserved
+        # primitives 8, 9 and c, and a read after them (the frame)
+        text = text.replace(line_of(END << 4, []),
+                            line_of(0xa5, [0, 0, 16, 1, 0, 0]) + '\n' +
+                            line_of(0xbf, [0, 1, 0, 4, 64, 4]) + '\n' +
+                            line_of(0x80, [0, 0, 16, 1, 0, 0]) + '\n' +
+                            line_of(0x90, [0, 1, 0, 4, 64, 4]) + '\n' +
+                            line_of(0xc0, [0, 0, 16, 1, 0, 0]) + '\n' +
+                            line_of(0xa0, [0, 3, 16, 1, 0, 0]) + '\n' +
                             line_of(END << 4, []))
     return text
 
@@ -690,6 +975,9 @@ def main(argv):
             fh.write(b''.join(fr.dumps))
         with open(argv[3], 'w') as fh:
             fh.write(''.join('%02x\n' % s for s in fr.status))
+        if len(argv) > 4:
+            with open(argv[4], 'w') as fh:
+                fh.write(''.join('%04x\n' % v for v in fr.reads))
     elif cmd == 'asm':
         with open(argv[1]) as fh:
             text = assemble(fh.read())

@@ -25,6 +25,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
 | `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`; since step 3i, the interpolated `boot_process`; since step 3j, the interpolated `context` and `as_resource` (basis table in "Step 3j"); since step 3k, the interpolated `date_time` (basis table in "Step 3k"). |
+| `test_boot_route.py` | Step 3o: the boot route's B8 top level, the debugger stand-in as the listener with TM-134 p71's dialogue typed, and the timer's alarms. It is in `../run_tests.sh` and takes about 10 s. `--png DIR` writes its screen. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -44,6 +45,7 @@ From `pim/`:
     python3 -I psi/kl0.py census --fep --recipes      # the same, receivers made by their held creators
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
+    python3 -I psi/test_boot_route.py             # step 3o, the debugger's listener (~10 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
     python3 -I psi/espc.py behave [-v]            # compiled paragraph against paragraph.ptf
     python3 -I psi/espc.py compile psi/standin/stream.esp --package simpos --listing
@@ -361,10 +363,16 @@ MEASURED facts the witnesses settled:
   So `Y =< H/2` compiles to `67 H Y`.
 - A hash table's entry target is the stored offset + 1.
 
-OURS: a disjunction `$or$N` (header kind 0x12) keeps its caller's
-barrier, so its `!` (d0) cuts the whole clause. This agrees with
-`pic/1`'s `$or$3/1`, whose `!` is d0 with A1 already overwritten, but
-no test discriminates it.
+PRINTED (since 2026-11-26): a disjunction `$or$N` (header kind 0x12) is
+entered with its own barrier, so its `!` (d0) cuts only the
+disjunction's alternatives, not the clause's. TM-388 §4.6 p.111
+(Example 2) and App. G pp.161-162 say so ("differently from ! of
+Prolog"). Held code relies on it: kappa2 stwin.esp `get_number/3`
+answers `Number = abort` after an inner `!, fail`, and pb/hash.esp
+`search_and_get/5` writes `!, relative_cut_and_fail(1)`, which would be
+plain `fail` if `!` cut the clause. Until then kl0 kept the caller's
+barrier (OURS: `pic/1`'s `$or$3/1`, `!` as d0 with A1 overwritten, fits
+both readings). `test_espc.py` NestedDisjunction discriminates it.
 
 **Method dispatch** goes through `Librarian.send` and runs TM-388
 §3.4's combined method: before-demons, then the primaries as
@@ -879,8 +887,9 @@ method.
   - What does not:
     - `pathname`'s `get_last/4` refuses. It searches backwards (B > E),
       which no witness shows.
-    - The `qsort`/`partition` pair (`->`) and `set_names/3`
-      (`set_substring/4`) are refused, and pinned.
+    - `set_names/3` (`set_substring/4`) is refused, and pinned. The
+      `qsort`/`partition` pair (`->`) compiles since 2026-11-26
+      (section "If-then-else").
 - **Symbolizer** (INTERPOLATED). `get_number/3` (number out, string in)
   and `get_number_string/3` (number in, string out) work on integers,
   in decimal with a leading `-`, from their call sites (cil
@@ -4179,10 +4188,11 @@ head).
 now raises `CompileRefusal('stand-in', ...)` naming the predicate and the
 reason. Before, the predicate was dropped and showed only at run time as
 "not in the stand-in"; date_time's first `get_value/8` (`/ 3600000`) was
-lost that way while this was written. The nine known refusals, HELD-SOURCE
-bodies of `e_string`, `name` and `pathname` (if-then-else,
-`set_substring/4`), are listed in `espc.KNOWN_STANDIN_REFUSALS`; the test
-checks that list equals the refusals exactly.
+lost that way while this was written. The known refusals, HELD-SOURCE
+bodies of `pathname` (`set_substring/4`), are listed in
+`espc.KNOWN_STANDIN_REFUSALS`; the test checks that list equals the
+refusals exactly. (Nine until 2026-11-26: `e_string`'s and `name`'s
+sorts, refused at an if-then-else, compile since `->` does.)
 
 **Tests** (`test_espc.py` `Window`):
 
@@ -4457,7 +4467,8 @@ SHOW, HIDE, RESHAPE, MOVE, EXPAND, MENU, PERMISSION, EXIT.
 
 Not offered, each for want of what it acts on:
 - ATTRIBUTE: TM-125 p7 Fig. 4's choice window, with typed values. Choice
-  windows are milestone M9.
+  windows are milestone M9 (offered since: "Window M9" below, with
+  PERMISSION only, and the manipulator has nine items).
 - HARDCOPY: no printer is modelled (window.md §2.2 `hardcopy/2
   (W,laser_printer)`, USAGE).
 - SUPERIOR and INFERIOR: they move the "editing base" along the window
@@ -4495,7 +4506,8 @@ own size, which gives back the same cells.
 | `test_win_m7_console_move` | (changed) RESHAPE of PIMOS's console to 351 x 251 dots gives 31 x 16 cells, its buffer wrapped at 31 columns |
 
 Pins moved, each accounted in the test's header:
-- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items);
+- `test_win_m7_manip`: the manipulator's height 87 -> 151 (eight items;
+  167 with nine since window M9's ATTRIBUTE);
   its screen `window_manipulator.png`;
 - `test_win_m7_console_move`: RESHAPE's pane 523 x 219 -> 347 x 247;
 - the census pins (`test_fep_census`, `test_step3f_census_recipes`,
@@ -4575,18 +4587,14 @@ Clipping (OURS):
 Refused loudly (a send of `graphics_refused/2`, which no class has):
 - a slanted line leaving the inside;
 - a line style other than solid;
-- a fill pattern other than `fix` (`light_paint` and TM-785's patterns
-  have no printed look);
+- a fill pattern other than `fix` (until M8's rest: now an unknown
+  pattern only);
 - an unknown command in a batch;
 - drawing on a window not on the screen.
 
-**M8 is partial.** Not done, for want of a held caller on the route or a
-printed look: circles, arcs, ellipses, polygons, fill patterns other than
-`fix` (so g_window's bar views, whose `draw_filled_rectangle` carries a
-held pattern, refuse), `copy/9` between windows, `paint/5`, images
-(`restore_image`), and `get_marker_position/4`. The paragraph icons'
-`restore/7` reads image classes and colour tables, which is a step of
-its own.
+**M8 was partial at this merge** (20efface). Circles, arcs, ellipses,
+polygons, patterns, `copy/9`, `paint/5` and images followed in "Window
+M8's rest" below.
 
 **Test** `test_win_m8_graphics`. A 40 x 20 window is made at (100, 100)
 after the Login PIMOS run. Each drawing is compared with a frame built
@@ -4638,7 +4646,600 @@ by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run):
 | P10 | a changed permission does not wake the writer | permission change only |
 | P11 | a killed window's waiters kept | permission change only |
 | P12 | the `permission(P)` create option ignored | permission change only |
-| P13 | the coordinator's own process held back (bypass removed) | NOTHING: the bypass is unpinned, no run on the route reaches it |
+| P13 | the coordinator's own process held back (bypass removed) | NOTHING at this merge; since "Window M7's rest, pinned" below, `test_win_m7_coordinator_writes` only (ERROR) |
+
+### Window M8's rest: patterns, images, shapes, copy/9 (2026-11-26)
+
+M8 is done, except `paint/5` (a STOP, below), `save_image/6`, off-screen
+windows and `get_marker_position/4`. Only the frozen winfb primitives are
+used: patterns and images are drawn as winfb's styled `line` (its 16-bit
+style operand, MSB first), reached by a new kl0 model
+`simpos##bitmap_display` `line/8` (`windev.py`). No primitive was added,
+so the hardware contract is unchanged.
+
+**Fill patterns** (`draw_filled_rectangle/8`, the filled shapes):
+- the named patterns `light_paint`, `dotted`, `mesh`, `small_mesh`,
+  `left_hatch`, `right_hatch` (window.md §2.5), 4 rows of one word each
+  (`window_pane.esp` `named/3`). `light_paint` is HELD-DERIVED: the held
+  paragraph images were saved from a window filled `fix, set` and then
+  `light_paint, reset`, and `profiler_mono_selector_image` has 16#"7777"
+  on every even row and 16#"DDDD" on every odd one, so `light_paint` is
+  16#"8888" / 16#"2222" (measured in `test_win_m8_images`). Its phase,
+  and the other names' looks, are OURS;
+- a held pattern string (256 words, made by paragraph `bar_v.esp`
+  `set_pattern/2`, which writes each word four times) read as a 64 x 64
+  tile, 4 words a row (INFERENCE). The tile is anchored at the inside's
+  top-left (OURS). This needed kl0's **blt 44 `divide_with_remainder`**
+  (`kl0_opcodes.tsv`, KNOWN-PLAINTEXT: cil `cil_kl0.esp:119-120`; witness
+  `paragraph##bar_v` `set_pattern/2` @211-214). Its four census rows move
+  in `test_kl0.py` (each to the next refusal, accounted there).
+
+**Images**: `restore_image/6` draws a `double_bytes` string, ceil(W/16)
+words a row, MSB leftmost, opaque (the area reset, then the 1 dots set;
+OURS). `get_label_height/2` answers the label strip's height. A new
+stand-in class `bitmap` answers `get_plane_count/2` = 1, so the held
+image code takes its monochrome path. The held paragraph
+`type_switch_icon` `draw/6` runs from the .ptf: three held `draw_box`
+frames, then the icon through the held `restore/7` -> `adjust_pos` ->
+`restore_image/6`. The icon's place is the held `adjust_pos`'s (its Y is
+Y0 + the label height - 24), with OUR label height of 16
+(`get_label_height/2`, OURS: no source gives the strip's height).
+
+**Shapes**: `draw_circle/7` (PRINTED WINCS p3), `draw_ellipse/8`,
+`draw_arc/9`, `draw_elliptical_arc/10`, `draw_fan/9`,
+`draw_filled_circle/5` (USAGE gog) and `/7`, `draw_filled_ellipse/7`,
+`draw_filled_fan/9`, `draw_graph/2`, `/9`, `draw_polygon/2`, `/9`
+(TM-785 p40's vectors; the arity INFERENCE from their length), each also
+through `execute_graphics_command/2`. One printed vector is refused
+loudly: TM-785 p40's `draw_filled_ellipse` `{200, 0, 100, 1, dotted, set}`
+has six elements, the filled circle's layout with its `1`, so it reads
+either as an ellipse 1 dot high or as no ellipse (OURS: ambiguous). The dots are OURS
+(`window_pane.esp` `shape_in/9`): a disc is x*x + y*y =< R*R + R, an
+ellipse scales the disc's half-width, an outline is the shape less the
+shape W dots smaller, and a sector is tested by cross products with a
+rounded sine table (angles in whole degrees, anticlockwise from the
+right, per TM-785 p13-14's prose). Each row is drawn as spans that do not
+overlap, so exclusive_or draws each dot once. A fan is the arc and its two
+radii; a polygon is closed, a graph is not (OURS). Refused loudly: a style
+other than solid, a width under 1, an integer op (TM-785's colour
+numbers: the screen has none), a negative angle, an unknown pattern.
+
+**copy/9** `(W, Src, SX, SY, DX, DY, Width, Height, Op)` (USAGE icotext
+`util_scroll.esp:211`; the direction is INFERENCE) copies between two shown
+windows with the frozen screen copy, save and restore
+(`window_pane.esp` `copy_in/9`; a new `save_memory` `restore/3` draws a
+saved area through an op). Neither window's other dots change, whatever
+covers either (OURS). Refused loudly: the held matrix form
+`(W, DX, DY, Src, SX, SY, W, H, {Matrix})` (a scaled copy), a source not
+shown, an area outside an inside, an integer op. The held caller itself
+cannot run: its source is a 2000 x 2000 `hide_window` that is never shown.
+That is an off-screen bitmap, which the frozen device lacks (save memory
+holds 65,536 words; that image needs 250,000).
+
+**paint/5 is a STOP.** `(W, X, Y, Pattern, Op)` (USAGE kappa2 `pdim.esp:606`)
+is a seed fill (INFERENCE). Finding the region's edge needs the frame's
+dots, and no frozen primitive gives a dot's value to the program (fill,
+line, glyph and copy write; save and restore move dots unseen). It is
+refused loudly rather than given a new primitive.
+
+**Held caller that does not run**: kappa `make_copyright/2`
+(`MOPMANAGER.ESP:154`, `draw_circle(Window,16,22,10,1,solid,set)`) draws
+before its window is activated and uses `#font_13`. Its arguments are
+drawn on a shown window in `test_win_m8_shapes`.
+
+**Tests**:
+- `test_win_m8_patterns`: the held `g_window` `draw_list_b/8` bar views
+  (their pattern strings from the held `set_pattern/2`) against a
+  dot-by-dot reference; the named patterns; XOR; refusals.
+- `test_win_m8_images`: plane count; the held selector image's row
+  parity; `restore_image/6` opaque; the held `type_switch_icon` `draw/6`.
+- `test_win_m8_shapes`: each shape against a Python repeat of the rules,
+  dot by dot; the TM-785 vectors; XOR twice; refusals.
+- `test_win_m8_copy`: a block copied into a second window; with
+  exclusive_or; a covered destination and a covered source; refusals and
+  `paint/5`.
+- `test_win_m8_rest_screen`: the screen below, pinned.
+
+Screen: `../docs/simpos/screens/window_graphics_rest.png` (`winshot.py`
+stage `graphics_rest`): the held bar views and icon, and the shapes.
+
+**Injections, OBSERVED** (2026-11-26; each from a backup copy, restored
+by copy, `cmp` clean; Window, `test_fep_bridge.py`, `test_kl0.py` run,
+then each rerun at the final code with the Window tests, the other two
+modules having failed nothing in the first run; "rest screen" is
+`test_win_m8_rest_screen`, whose pinned screen draws them all):
+
+| | injection | fails |
+|---|---|---|
+| E3 | the six-element `draw_filled_ellipse` vector drawn | shapes only |
+| G10 | a styled piece not turned by its column | patterns, shapes (the light_paint disc), rest screen |
+| G11 | a pattern string read one word a row | patterns, rest screen |
+| G12 | blt 44's quotient and remainder swapped | patterns, rest screen |
+| G13 | an image drawn transparent | images, rest screen |
+| G14 | `get_plane_count/2` answers 3 | images, rest screen (ERROR) |
+| G15 | the disc rule without + R | shapes, rest screen |
+| G16 | a sweep over 180 degrees taken as narrow | shapes, rest screen |
+| G17 | no inner ellipse (outlines filled) | shapes, rest screen |
+| G18 | the polygon not closed | shapes, rest screen |
+| G19 | `draw_fan/9` without its first radius | shapes only |
+| G20 | an outline's op not checked | shapes only |
+| G21 | the second quadrant's cosine not negated | shapes only |
+| C1 | `copy_in/9` does not draw the destination's dots back before Op (first run: NOTHING failed; the first copy is exclusive_or since) | copy only |
+| C2 | the copy drawn `copy` whatever Op | copy only |
+| C3 | the screen under the source's block not drawn back | copy only |
+| C4 | the source saved without `uncover/3` | copy only |
+
+### Window M8's stops resolved (2026-11-26)
+
+The owner's "do it" (2026-11-26) on `../docs/simpos/m8_stops.md`: its
+recommendations, in its §7 order, one commit a step.
+
+**Step 1: the held `draw_filled_ellipse` forms and `rough_dotted`.**
+- `/8` `(W, CX, CY, RX, RY, _, Pattern, Op)` (USAGE icotext
+  `imi_draw_win.esp:250-282`, `util_scroll.esp` forwarders) and `/6`
+  `(W, CX, CY, RX, RY, Op)`, pattern fix (USAGE gog `CGS_DEMO.ESP:416,
+  :424`). `/7` is kept, relabelled INFERENCE (only TM-785 p40's defective
+  vector). `execute_graphics_command/2`'s seven-element vector is `/8`;
+  the printed six-element vector stays refused, now because no held
+  method has that arity (m8_stops.md §6).
+- `rough_dotted` (kappa2 `pdim.esp:1094` and seven more held programs):
+  density INFERENCE (sparser than `dotted`: examds `sl_draw.win`'s
+  thresholds, paragraph `rmon.esp`'s order), dots OURS (`8888, 0, 2222,
+  0`). No held image shows it.
+- Neither held caller compiles under espc (icotext: 52 refused predicates;
+  gog `CGS_DEMO.ESP`: its macro bank `moji` is not held), so
+  `test_win_m8_stops_ellipse` replays their calls, transcribed.
+- Injections, OBSERVED (Window, `test_fep_bridge.py`, `test_kl0.py`):
+  S1 `/8` drawn with fix: stops_ellipse only; S2 `/6` drawn exclusive_or:
+  first NOTHING (drawn on white), then, the /6 drawn over a half-black
+  block, stops_ellipse only; S3 rough_dotted's rows swapped:
+  stops_ellipse and patterns.
+
+**Step 2: reading dots back (the 2026-11-26 extension of the winfb
+contract, OURS, owner-approved).**
+- `winfb.py` prim `a`, `read x y w h`. The rectangle is cut as a fill is
+  cut and answered as data words: ceil(w'/16) a row, the pad dots 0, then
+  OK. Prims 8, 9 and b-f stay BADOP. The format is in
+  `../docs/simpos/window_hardware_plan.md` §2.4.
+  - The 11 older streams are byte-identical to the frozen reference.
+  - Three new gen streams (`reads`, `rand_r_1`, `rand_r_2`) and
+    `bsv/win_streams/reads_stall.txt` (under `+stall`).
+  - `bsv/WinFbBox.bsv` reads in lockstep with it: a blit from the frame
+    whose sink is the response queue (rule `sCollectRead`), its status
+    after the words.
+  - The bench writes `win_read.txt`, and `run_win_tb.sh` compares it too.
+    Its header records injections R1-R3.
+- `windev.py` `read/7` writes the words into the caller's string in one
+  `set_codes`. On top of it (`standin/window_pane.esp` `read_in/6`,
+  `point_in/4`, `paint_in/5`; `standard_io_window.esp`):
+  - `save_image/6`, `get_point_value/4` and `set_point_value/4`;
+  - `paint/5`, a seed fill. The region is the dots 4-connected to the
+    seed with the seed's value: INFERENCE and OURS. It is found by a
+    scanline search on rows read once each, then drawn span by span, so a
+    pattern's 0 dots cannot feed the search.
+  - Reads go through `uncover/3` and take the cursor off, as drawing does.
+- `test_win_m8_stops_read` covers:
+  - `save_image/6` of a 40-wide block, open and covered;
+  - point values;
+  - gog `DISPPBMS.esp:116-118`'s painted triangle and cil
+    `es_gin.esp:1752-1762`'s `draw_triangle`, both transcribed (neither
+    class compiles under espc);
+  - kappa2's patterned `paint(W, 1, 1, Pattern, set)` form inside an
+    outline;
+  - the refusals.
+  Its header records the injections.
+- MEASURED cost: paint tests dot by dot. A 78 x 48 region (3,744 dots)
+  takes about 1 s. A 120,000-dot region passes kl0's 20,000,000-step
+  limit. kappa2's icons are 61 x 64 (`pdim.esp:573-574`), within the
+  measured size. Open item: test whole words for large regions.
+- Not yet run: the held callers paragraph `make/3` (`p_imag.esp` go1-go6),
+  gog and cil. paragraph draws into windows that are never shown, which
+  needs step 3 (drawing targets); its saved `profiler_icon_image1..6` are
+  then the independent oracle of `save_image`'s layout. Until then the
+  test's expected words repeat the implementation's own row and bit order.
+- Open item for the host link (`bsv/WinLink.bsv`, the hardware agent's
+  file, not changed here). The TX frames data as 64-word records
+  (`wLeft <= 64`), and `sendData` takes 64 answers without looking at
+  `isData`. So a read whose word count is not a multiple of 64 would have
+  its status, and the answers after it, sent as data words. This is from
+  reading the rule; it has not been run.
+
+**Step 3a: drawing targets in the winfb contract (the same extension,
+OURS, owner-approved).** Python and RTL only; no stand-in uses them yet.
+- `winfb.py` prim `b`, `target which kind base pitch w h`, sets the
+  destination (which 0) or the source (1) surface: the frame (kind 0) or
+  an area of the 65,536-word bitmap memory (kind 1). BADSURF (6) refuses
+  an area that memory cannot hold, and a copy between two different areas
+  that share words. fill, line and glyph draw on the destination; copy
+  and read take dots from the source. save, restore and dump stay on the
+  frame. Bitmap memory is 0 at reset. The rules are in
+  `../docs/simpos/window_hardware_plan.md` §2.4.
+  - The 11 frozen streams and `reads`, `rand_r_1`, `rand_r_2` give the
+    same output as before.
+  - New gen streams: `targets`, `rand_x2_1..3`. New directed stream:
+    `bsv/win_streams/targets_stall.txt`.
+- `bsv/WinFbBox.bsv` runs them in lockstep. It has the surface registers,
+  a setup cycle for base + row x pitch (`blitSetup`, `lSetup`), and a
+  line engine stepped by the pitch, with no per-dot multiply. It clears
+  the bitmap RAM at reset beside the frame. Injections T1-T4 are in
+  `run_win_tb.sh`'s header; synthesis is in the plan's §5.1.
+- Next is step 3b: the stand-in's hidden windows draw into areas. That
+  makes paragraph's `p_imag.esp` runnable.
+
+**Step 3b: windows drawn before they are shown, or never shown (OURS
+bodies).**
+- A window drawn on before `activate/1` gets a surface pane
+  (`standin/window_pane.esp` `create_surface/5`).
+  - Its inside is an area of bitmap memory, `ceil(Iw/16)` words a row,
+    taken from `save_memory.esp`'s first-fit list (new `allocate/3` and
+    `free/2`; a surface's id is `-1 - Base`, never a device slot).
+  - The area is cleared on allocation (OURS: TM-115 p44 says 1.0's areas
+    are not).
+  - The inside is the window's `size(Wd, Ht)` in dots (paragraph's form),
+    or its size in cells.
+- `coordinator.esp` `uncover/3` aims the device at the area (`windev.py`
+  `surface/5`), and `unpeel/2` aims it back at the frame.
+  - Every shown pane's `uncover/3` aims at the frame first. So a drawing
+    refused inside a surface pane's uncover cannot leave a shown window
+    drawing into the area.
+  - `windev` sends target records only when the surface changes, so runs
+    that draw only on the frame stream what they streamed before.
+- `activate/1` copies the surface into the new pane's inside (`windev`
+  `show/7`) and frees the area. `kill/1` of a window never shown frees it.
+  A `size(Wd, Ht)` window, when shown, gets as many cells as fit.
+- Refused loudly:
+  - copy/9 to or from a window never shown (`surface_copy`);
+  - a surface bitmap memory cannot hold (`bitmap_memory`). icotext's
+    2000 x 2000 canvas needs 250,000 words; the memory is 65,536 words of
+    block RAM until H8 moves it to SDRAM.
+- `test_win_m8_stops_surface` covers:
+  - the HELD paragraph `make/3` (p_imag.esp go1-go6), run through its
+    public `make_image_class_file/3`, with a harness model in place of its
+    file-writing `:write/4`. Each image is made into a 500 x 400 window
+    that is never shown. The frame is unchanged and no area is left.
+  - kappa2's paint before activate;
+  - the refused-uncover case;
+  - icotext's canvas;
+  - the stream replaying to the same frame and bitmap memory.
+- **Open: the paragraph images do not match the held
+  `profiler_icon_image1..6`; every word differs.** The counts are pinned
+  as `PARAGRAPH_GAP`, MEASURED, not a target. Image 5 (lines only) shows
+  three causes:
+  - the stand-in's light_paint phase is 3 dots off (its anchor at the
+    inside is OURS);
+  - the box lines lie about 8 rows higher;
+  - they are drawn black where the held image is white.
+  So the stand-in's `draw_line` geometry and ops (OURS) are not the
+  PSI's. This is the first independent oracle for them. Fixing it needs
+  the line semantics re-derived from these images, which is not done
+  here.
+
+**Step 4: copy/9's matrix form, whole scales.** `(W, DX, DY, Src, SX,
+SY, Width, Height, {A, B, C, D, E, F})` (USAGE icotext
+`util_scroll.esp:218-224`). The matrix is read as a row-major 2 x 3
+affine map (INFERENCE, m8_stops.md §5).
+- Stood in (`window_pane.esp` `magnify_in/10`): whole scales A, E >= 1,
+  B = C = D = F = 0. Each source dot becomes A x E dots (nearest dot,
+  OURS), drawn opaque. It runs above the device line: a read of the
+  source (step 2), then rows drawn as images. No RTL was needed.
+- Refused loudly: rotation and shear, an offset, scales that are not
+  whole (the held `Min/Max`, the commented-out 0.8 and 1.5), a
+  destination leaving the inside.
+- `magnify` and `expand/9` are not stood in: no source fixes their
+  arguments (euod's layout is INFERENCE only).
+- icotext's own call still refuses, because its source is the 2000 x 2000
+  canvas (`bitmap_memory`, H8).
+- `test_win_m8_stops_matrix` covers {2,0,0,0,2,0} and {3,0,0,0,1,0}
+  against a dot-by-dot reference, and the refusals. Its header records
+  the injections.
+
+### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
+
+Injection P13 (the coordinator's own process held back like any writer)
+failed nothing at merge 20efface: no run on the route made the
+coordinator write into a covered window whose permission is not `out`.
+`test_win_m7_coordinator_writes` now makes one. A test class (OURS
+harness, as `test_win_m7_has_been_selected`; kappa `pbwin.esp:72` is the
+held after-demon on `has_been_selected/1`) writes a line into its partner
+from that demon. The partner has `permission(wait)` and is covered. The
+probe is shown while `simpos##process`'s current process is the
+coordinator's (the direct send stands for the coordinator process's own
+`event/2`). The line goes in at once, the cover's dots are unchanged, and
+there is no waiter. From another process the same write waits (a waiter
+of kind `wait`). P13 now ERRORS that test (would suspend), nothing else.
+
+### Window M9: choice windows, and the manipulator's ATTRIBUTE (2026-11-26)
+
+A new stand-in `standard_choice_window` (window.md §2.10, §3.4) serves the
+HELD pimfep superviser's error mode menu. Its local
+`create_error_mode_menu/1` @48a creates the window with a `choice_list`
+of three label lines and a `choose` field (`error_mode`, on/off) and
+`label_flag(off)`. Then `refute_sub_command/2` @36c-3b0 sends
+`set_item_value/3`, `get_size/3`, `set_position/3`, `activate/1`,
+`read/2` (it expects `[{error_mode, V}]`) and `deactivate/1`.
+
+The fields:
+- label lines (7 elements);
+- text fields: shown with their default and read back as it. THE TEXT IS
+  NOT EDITED (OURS: no held caller on the route edits one);
+- `choose`: one of N, the current value in reverse video (SCREENSHOT
+  TM-125 p7 Fig. 4); a click on a Text makes it current;
+- `boolean`: as `choose`, with "yes" and "no" (OURS words).
+
+The bottom row holds `do_it` and `abort` (Fig. 4). The window adds them
+itself (INFERENCE: the held list has none, and the `..._with_no_execute`
+classes are the ones without do_it). `read/2` waits on the window's own
+stream: do_it gives `[{Key, Value}, ...]` for the keyed fields in item
+order, abort gives `abort`.
+
+The look is OURS: a `window_pane` of one row a field plus the button row,
+one cell wider than the widest row. The coordinator keeps the shown
+choice windows (`add_choice/2`, `remove_choice/2`), and a left click on one
+goes to its `choose/3`, not to a selection. Deactivating draws back what
+was under the sheet, and the selected window's cursor, which
+`cursor_aside/1` took off when the sheet was drawn. A choice window is
+not a window the user arranges (OURS): a middle click on one opens no
+manipulator, and MENU's submenu leaves it out. It has a `permission` of
+`out` and no title, the slots the coordinator reads of every window.
+
+**ATTRIBUTE** (TM-125 p8, between PERMISSION and EXIT) opens a choice
+window at the mouse, owned by the coordinator. It is made with
+`create/4`'s owner, and its ending arrives as `choice_done/3`, since the
+coordinator's process may not wait in `read/2`. Of Fig. 4's fields, only
+PERMISSION is offered (OURS): it is the one attribute the stand-ins keep
+that the sheet may set. do_it sets it (`set_permission/2`) and wakes the
+writers. The manipulator now has nine items, so EXIT is item 8, and the
+manipulator screens are re-rendered (their pins moved, each listed in
+`test_espc.py`).
+
+**Census.** pimfep superviser `error_mode_menu/2` goes from refused to
+success in both census tests. Before, its create/3 met a missing class.
+The row count is unchanged.
+
+**Tests**:
+- `test_win_m9_choice`: the held menu (made by the .ptf) is drawn and
+  read back as text, a click on `off` moves the reversal, and
+  do_it/`read/2` gives `[{error_mode, off}]`. Deactivate restores the
+  frame. Abort gives `abort`. An unknown key is refused.
+- `test_win_m9_attribute`: ATTRIBUTE on window 2 of the manipulator run,
+  PERMISSION `wait` clicked, then do_it: window 2's permission becomes
+  `wait` and the sheet is gone; with abort, it is unchanged. The sheet's
+  owner is the coordinator's own process (so manager/1's bypass is live
+  on this route); a middle click on it opens nothing; MENU lists the two
+  requester windows and not it.
+
+- `test_win_m9_choice_screen`: the menu's screen pinned; the committed
+  PNGs decode to their pins.
+
+Screens: `../docs/simpos/screens/choice_window.png` (stage `choice`),
+`manipulator_attribute.png` (stage `attribute`); `window_manipulator.png`
+re-rendered (nine items).
+
+**Injections, OBSERVED** (2026-11-26; as above, each rerun at the final
+code; M9 attribute is `test_win_m9_attribute`, whose sheet is a choice
+window too):
+
+| | injection | fails |
+|---|---|---|
+| M1 | a click on an option does not change the value | M9 choice, M9 attribute |
+| M2 | a click on a choice window goes to a selection | M9 choice (ERROR), M9 attribute |
+| M3 | deactivate does not give the cursor back | M9 choice, M9 attribute |
+| M4 | read/2 returns the defaults (the plan's injection; first run NOTHING failed, the one edit ended on the held default; an edit to `on` added) | M9 choice, M9 attribute |
+| A1 | ATTRIBUTE's do_it sets nothing | M9 attribute only |
+| E1 | a middle click on a choice window opens the manipulator on it | M9 attribute only |
+| E2 | MENU's submenu lists the choice windows | M9 attribute only |
+| P13 | (above) | coordinator writes only (ERROR) |
+
+### Window M10: Pmacs proper (2026-11-26)
+
+Three held programs now run whole on the Pmacs stand-ins, each started
+from an item added to the system menu (OURS harness classes, in
+`test_espc.py` `Window.M10_HARNESS`):
+- disc `exshow.esp` (IFS source): `exec_show_tmp go/3` makes a
+  `pmacs_window` (title, `size(1100,700)`, `position(0,0)`), creates the
+  pooled buffer "boot" (`create/4`, or `get_buffer_instance/3` and
+  `reset/1` when the name is taken), `read_file/4`s `me:boot.init`,
+  `set_input_buffer/2`, `activate/1`, `set_font/2`, `flash/1`,
+  `command_interpret/1`, then `kill/1`. Its class slot `font` is
+  initialised from `font:kanji_28.font`, which is not held: the run gives
+  that name a directory entry for test_11 (OURS substitute, in the run
+  only). Without it the class is refused at that slot.
+- cal-esp `cal2.12/cal_pmacs.esp`: `cal_pmacs_window` (a `pmacs_window`
+  whose `editor` slot holds `#cal_pmacs_editor`) and `cal_pmacs run/4`
+  (load, `set_input_buffer/2`, `goto_beginning/1`,
+  `set_input_position/1`, `activate/1`, `command_interpret/1`,
+  `deactivate/1`, `current_buffer/2`, save). The held editor's own
+  `:command(Editor,pf#11,cal_menu)` is found before the stand-in
+  defaults; pf#11 runs the held `cal_menu/1`, refused at the class it
+  creates, `cal_op_menu` (cal's, not loaded).
+- papyrus `demo/EDITOR/my_select.esp.1`: `my_buffer_selecter`, a
+  `pmacs_standard_editor` heir with after-demons on `select_buffer/1,2`
+  and `list_buffers/1`. Its two other natures (papyrus classes, not
+  loaded) are empty classes here. C-x b runs the stand-in primaries (the
+  window visits the next pooled buffer), then the held demon, refused at
+  its first send, `show_mode_menu/2`.
+
+**The key macros** (`espc.py` key_constant; gap G2). `mouse#B` is the
+atom named `mouse#B` (HELD: the names are in the .ptf symbol tables).
+`key#N`, `control#"c"` and `pf#N` are integers (INFERENCE: no such atom
+is held). Their values are OURS (ASCII where there is one, C-x = 24,
+pf#N = 16#8100 + N), except key#lf = 10. The held cells witness two of
+them: kappa2 KMACS2.ESP `command/3` and DUMP.ESP `dumpLine/6.11#1`
+compile exact only with mouse#r the atom and key#lf 10 (each injection
+loses exactly that row). With the macros, held code that was refused
+compiles: kappa2 12,871 -> 12,963 compared, 1,514 -> 1,518 exact, none
+lost; paragraph 1,280 -> 1,286 compared, none exact. Paragraph's
+`as_view_select_window read/2` nests five deep, and two of its `$or$`s
+pair with another arity: espc FLATTENED `(A ; B) ; C` into one `$or$`
+where the held compiler keeps the inner one its own predicate, a
+behavioural difference under cuts (fixed 2026-11-26; see "Nested
+disjunctions and the cut in a `$or$`"). dedit.esp compiles whole since
+`->` does (its `exit` was refused before; `test_win_m10_dedit_compiles`);
+cal_pmacs.esp, my_select.esp.1, exshow.esp compile whole.
+
+**The stand-ins** (selectors HELD where held code sends them, bodies OURS):
+- `editor_text_buffer`: the buffer pool, a class slot (PROSE IPSJ
+  114007: buffers "registered in a buffer pool and reachable by name");
+  `create/4` fails on a taken name (exshow relies on it); a buffer's
+  number is its order of creation from 1. Navigation (`move_to_first/1`,
+  `next_line/2` and the rest), `load_file/2`, `contents/2`, `saved/2`.
+  The OURS `create/3` of window M4 is renamed `new_buffer/3` (the held
+  `create/3` is `(Class, ^Buffer, Size)`).
+- `standard_editor`: the default binding tables, `:command(Editor, Key,
+  Method)` and `:control_x(..)` (the form HELD: pimos_window_editor
+  command/3, dedit control_c/3, papyrus my_save), and the commands. OURS,
+  gap G6: C-f/b/n/p/a/e/d/k, DEL and BS, the arrows, RETURN, C-x C-s
+  (save), C-x C-z and C-x C-c (exit), C-x C-b (list buffers), C-x b (the
+  next pooled buffer: no prompt is stood in), mouse#r (the EDITOR MENU).
+  A save writes a NEW VERSION of the file (kl0 `binary_file
+  new_version/3`; INFERENCE from TR-524 p9: versions are assigned by the
+  file system, old ones kept), and echoes `Written! <path>`.
+- `editor_command_interpreter`: each input is looked up in the editor's
+  tables (first answer, so a held subclass's clauses come first), the
+  method sent with `:refute(Editor, M, {})`; a printing character is
+  inserted; anything else is `undefined_key/2` (a beep, `Undefined key`).
+  `exit` (the held table binds it) ends the loop after the editor's
+  `exit/1`. After each input the window is redisplayed.
+- `pmacs_display` (OURS class, not a SIMPOS name): the screen of a window
+  that visits a buffer (`set_input_buffer/2`): the text rows, the mode
+  line `PMACS(fundamental)(C,R) *-N* Name Path --Top--` reversed, the
+  echo line (SCREENSHOT IPSJ 36239 p5-6, IPSJ 114012 Fig. 2; the fields
+  per window.md §2.11; layout OURS). Only the rows that changed are
+  drawn. The first shown line moves only to keep the point's line on
+  the screen; the place field is `--Top--`, `--Bot--` or `--N%--` (N the
+  first shown line's share of the lines, OURS) (`test_win_m10_scroll`).
+  Implemented but NOT exercised by any test: `status_window(off)` (no
+  mode line), a point past the last column (no cursor), and exshow's
+  fallback when the buffer name is taken (`get_buffer_instance/3`,
+  `reset/1`). It draws with two new `window_pane` methods, `draw_row/4` and
+  `set_cursor/3`, over the existing bitmap_display primitives. **No
+  device primitive was added**: the frame interface the viewer will tee
+  is unchanged. A window that never visits a buffer (PIMOS's console)
+  keeps M4's plain text screen.
+- `pmacs_window`: the `editor` slot names a subclass's editor class
+  (HELD cal_pmacs_window), the held create options (title, position,
+  size in dots or cells, `status_window(off)`), the echo line, the right
+  button, menu values, `kill/1` and `deactivate/1` off the screen,
+  `set_input_position/1` (meaning UNKNOWN: nothing).
+- the coordinator: the right button goes to the window under the mouse
+  (`right_click/3`); `editor_menu/3` opens the EDITOR MENU there, its
+  items verbatim from IPSJ 36239 p5, one column (OURS); a chosen item's
+  value goes to the window's input. Only ABORT, List Buffers and Save
+  All Files are stood in; the other five refuse loudly.
+- `pmacs_standard_editor`: a `standard_editor` heir (INFERENCE).
+
+**A bug found on the way**: `pmacs_window input_data/2` first wrapped
+its datum as the term `{data, X}`. The held `pimos_window_process` loop
+backtracks after putting it, and the binding of the term's elements was
+undone (the README "Open" item on vectors in slots). The console tape's
+replay met `{_, _}` and diverged at exchange 11. The datum is now a heap
+vector (`new_heap_vector/2`, as list_index.esp's entries); injection X1
+puts the term back.
+
+**Census.** 1,485 -> 1,521 rows: 35 new rows inherited by
+pimos_window and pimos_window_editor, then `set_input_position/1`
+(success), 36 in all; no held row changes outcome; the
+held `select_buffer/4` moves its stop past `get_buffer_instance/3`
+(row by row in `test_fep_census`, `test_step3f_census_recipes`).
+
+**Tests**: `test_win_m10_exshow` (the screen, an edit saved as version
+2 with version 1 kept, exit kills the window, the class refused without
+the substitute font), `test_win_m10_keys` (the bindings against an
+Emacs's result; undefined keys), `test_win_m10_menu` (the eight items,
+List Buffers, Save All Files, ABORT, a click away, Set Font refused),
+`test_win_m10_cal`, `test_win_m10_select`, `test_win_m10_scroll` (the
+first shown line and the place field), `test_win_m10_dedit_compiles`.
+Screens:
+`../docs/simpos/screens/pmacs_editor.png` (stage `pmacs`),
+`editor_menu.png` (stage `editor_menu`).
+
+**Injections, OBSERVED** (2026-11-26; each in a private copy of `psi/`,
+the worktree untouched; test_espc.py, test_fep_bridge.py and test_kl0.py
+run; all else OK):
+
+| | injection | fails |
+|---|---|---|
+| K1 | C-d bound to backward_character | first run NOTHING (the keys sequence killed the line, hiding the deleted character); sequence changed (C-d before C-e); then M10 keys |
+| S1 | a save overwrites the latest version (kl0 new_version keeps the number; the plan's injection) | M10 exshow, M10 menu (ERROR) |
+| D1 | the mode line drawn plain, not reversed | M10 exshow, M10 menu (its pinned frame) |
+| D2 | a text row once drawn is never drawn again | M10 exshow, keys, menu, cal |
+| M1 | an EDITOR MENU item's value not given to the window | M10 menu; test_fep_census (menu_chosen/2 row success) |
+| R1 | the right button not routed to the window | M10 menu (ERROR) |
+| V1 | set_input_buffer/2 does not tell the interpreter | M10 exshow, menu; keys, cal, select (ERROR); test_fep_census |
+| C1 | the editor class from the option only (a subclass's slot ignored) | M10 cal |
+| P1 | select_buffer/2's primary does nothing | M10 select; test_fep_census |
+| X1 | the window's datum as the term {data, X} again (the bug found) | M4 console, M6 selection, M7 console move; test_fep_bridge.py Console |
+| Q1 | scrolled/2 never moves the first shown line | M10 scroll |
+| Q2 | place/3's `--Bot--` clause removed | M10 scroll |
+
+### Step 3o: the debugger's listener, TM-134's dialogue typed into it (2026-11-26)
+
+The boot route's B8 (`../docs/simpos/boot_route.md` §4.9) had one top
+level, the system menu. SIMPOS has a second (§1 of that page): the
+debugger, "for debugging but also an ESP listener" (`shell.md` §5.4),
+and the dialogue that starts a program in a new process is typed there
+(TM-134 PDF p71, folio 67). The step's recorded next item, keyboard
+input past the requester's prompt, was already done by step 3m (and
+per-window focus by window M7); the menu path's create, create
+(#process), activate was already `coordinator.esp` `start/2` (step 3l).
+What step 3o adds is the listener. Every inference is in
+`../docs/simpos/source_check_2026-11-24.md` §14. Tests:
+`test_boot_route.py` (a new file; in `../run_tests.sh`).
+
+| What runs | Label | Test |
+|---|---|---|
+| The held login.com's first item, `{"debugger", simpos##debugger}`, chosen with the mouse on the SYSTEM MENU, starts `standin/debugger.esp` in a new process (the coordinator's `start/2`, step 3l) | item HELD; the class lost, the stand-in OURS | `test_step3o_dialogue` |
+| The window `debugger_1` (the count INFERENCE), the prompt `:- ` on the line of the goal typed (`debugger_window.esp` `putt/2`, INFERENCE), `> Success !!` / `> Fail !!` and a blank line, a `Variable Window` of `Name = $class,` ... `;` | SCREENSHOT TM-134 PDF p68, p71; TM-125 Fig 4 | `test_step3o_dialogue`, `test_step3o_variables` |
+| A line read with the window's `getl/2` (window M1's path: `{key, Code}` to the selected window), read as a goal by `kl0.py` `debugger_read_goal` (`esp_reader.py` `read_goal`, the prefixes `:` and `#`), run with `refute/3`; variables kept from goal to goal | reader and run OURS; persistence INFERENCE (Fig. 6-4) | all four |
+| TM-134 p71's three goals with the held `pimfep##pimos_login_requester` for the printed-in-part `hypocycloid_drawer`: `:activate` returns at once and the prompt comes back while the requester runs in `Proc`, a child of the debugger's process; its dialogue then equals the menu path's (`test_step3m_keyboard`) | PRINTED dialogue and prose; the requester HELD | `test_step3o_dialogue` |
+| `:create(#process,Proc).` again: `> Fail !!` (Proc keeps its value); a line that does not read: `> Syntax error !!` (OURS text); a new variable joins the Variable Window | INFERENCE / OURS | `test_step3o_variables` |
+| The subroutine form `:create(#c,R), :goal(R).` runs in the debugger's process: no prompt comes back | PROSE TM-134 PDF p69; TM-786 p5 | `test_step3o_subroutine_form` |
+| B4: the held `pimos_timer` alarm 303 already ran on the earlier stand-ins and is pinned now; `alarm_watch on_at/2` is new, so 302 runs too; both reply `{Id, 1, 9}` (9 = wake_up), at once (no clock) | INTERPOLATED from the held send @14e; the reply HELD (@12b-131) | `test_step3o_timer_alarms` |
+
+The screen (`test_step3o_dialogue`, pinned by its PBM sha256;
+`../docs/simpos/screens/debugger_dialogue.png`, written by
+`python3 -I psi/test_boot_route.py --png DIR`): `debugger_1` at the right
+with the three goals and their answers and the prompt again, the
+Variable Window under it, and the requester's window, cleared after the
+password, showing `Network error.`.
+
+Open item 4 of step 3l (`boot_route.md` §5 item 2), where the sources
+allow: blt 0d was done in step 3n; `get_interpreter/2` and
+`has_been_reshaped/1` have been stood in since window M4 and M7 (recorded
+now in "Open"); 303 ran already and is now pinned, 302 is new, but a delayed alarm needs a clock (open); blt
+a8 (9 held uses, all in pimscsi without source) and `terminate_core`'s
+PCB word 15 (read at `pseudo_pe_process` @3bb and given to
+`remove_only/2`, written by no held cell) stay blocked.
+
+**Injections, OBSERVED** (2026-11-26; each in a private copy of `psi/`,
+the worktree untouched; `test_boot_route.py`, `test_espc.py` and
+`test_kl0.py` run; all else OK):
+
+| | injection | fails |
+|---|---|---|
+| D1 | `bind/2` gives no name its earlier value | `_dialogue`, `_variables` (refused at the third goal: activate/2 to an unbound receiver) |
+| D2 | a send of activate/2 runs the object's goal/1 in the debugger's process | `_dialogue`, `_variables` |
+| D3 | `;` after every binding in the Variable Window | `_dialogue`, `_variables` |
+| D4 | the reader takes a method call's arguments in reverse | `_reader`, `_dialogue`, `_variables`, `_subroutine_form` |
+| D5 | a failed goal answered `> Success !!` | `_variables` |
+| T1 | `alarm_watch on_at/2` fails | `test_step3o_timer_alarms` |
+
+test_espc.py and test_kl0.py stayed OK in all six. Then, with
+`test_boot_route.py` only:
+
+| | injection | fails |
+|---|---|---|
+| S1 | a send of goal/1 succeeds without running the goal | `_subroutine_form` (ERROR: no requester window) |
+| P1 | `putt/2` ends its line | `_dialogue` (the cells and the frame's sha) |
+| T2 | `alarm_watch on_after/2` fails | `test_step3o_timer_alarms` |
+
+**Census.** Unchanged: `test_espc.py`'s and `test_kl0.py`'s census pins
+pass with the two new classes and `on_at/2` (2026-11-26). No held class
+inherits `debugger` or `debugger_window`, and the census's
+`pimos_timer` rows never reach `on_at/2` (`kl0.py census --fep`, rerun
+2026-11-26: `on_at/4` and `on_after/4` fail on their unbound count,
+`do_on_at/4` and `do_on_after/4` refuse at `allow_forced_event/1` to an
+unbound receiver, as before).
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
@@ -4753,6 +5354,291 @@ refusal lists); kl0's census rows
 `Language.test_multiply` (its injection, `*` as blt 40, fails it and
 test_kappa2's exact count).
 
+## Nested disjunctions and the cut in a `$or$` (2026-11-26)
+
+Two fixes, one in espc and one in kl0. Found at window M10.
+
+**espc: a disjunction's alternatives are its right spine** (`espc.py`
+`alternatives/1`, used by `number_ors` and `disjunction`).
+- `A ; B ; C` and `A ; (B ; C)` are one `$or$` of three clauses.
+- `(A ; B) ; C` is two `$or$`s: the outer one's first clause calls the
+  inner one. espc used to flatten it into one `$or$` of three clauses.
+
+The rule is MEASURED on the held code. Every left-nested disjunction in
+the census sources has the held `$or$` paths and arities the rule gives.
+There are seven:
+- paragraph p_menu.esp: `as_view_select_window read/2`;
+- kappa2 user_if/pb/stwin.esp (lines 90-104 and 112-125):
+  `pb_status_window get_number/3` and `get_font/3`;
+- kappa2 `kappaMDM_parse parse_occ/3`;
+- kappa2 `kappaCCT copy_table/1`;
+- kappa2 `pb_bck_cell search_enzan_code/7`, twice. That predicate is
+  refused, so it is checked only for the `$or$`s espc compiles.
+
+utter has none. The stand-ins, the M10 held members, the printed
+listings and the ESP in the tests have none either (a scan of their
+parse trees), so nothing outside the census changes.
+
+`read/2` also settles the right-hand case: its parenthesised right
+argument `alt ; (C==mouse#l, ... ; !, Code='$$nil')` is one `$or$`. A
+separate `$or$` would share four variables, but held `#1#1` has arity 3
+and the tree is five deep, not six.
+
+The clearest witness is held `get_number/3`, whose source is
+`((equal_string(N,""),!,fail ; :get_number(#symbolizer,Number,N)) ;
+Number = abort)`:
+- `#1` is `c4` / call `#1#1` / `c0` / get `abort`;
+- `#1#1` is `e4`, the `""` test, `d5` (`!, fail`) / `e0`, the send.
+
+**kl0: a `$or$` has its own cut barrier** (`call_local` enters a kind
+0x12 predicate like any other). Until now kl0 kept the caller's barrier,
+so a cut in any disjunction cut the whole clause. That is Prolog's rule,
+not ESP's:
+- PRINTED, TM-388 §4.6 p.111 (PDF p.123), `!`: "If ! is used in an OR
+  clause, the alternative of the OR clause is cut". Its Example 2 shows
+  that the clause's own alternative is not cut.
+- PRINTED, TM-388 App. G pp.161-162 (PDF pp.173-174): in Prolog the `!`
+  also cuts the clause's alternative; in ESP it does not, and
+  `relative_cut(1)` gives Prolog's effect "only after compilation".
+- HELD-SOURCE: `get_number/3`'s `Number = abort` and `read/2`'s
+  `Code='$$nil'` are dead code under the clause-wide cut.
+  pb/hash.esp `search_and_get/5` writes `!, relative_cut_and_fail(1)`
+  in a disjunction, which would be plain `fail` if `!` already cut the
+  clause. Its held `$or$` has a `pmi db` there (rowed 2026-11-26 as
+  relative_cut_and_fail, section "If-then-else").
+- The manual does not state the nesting rule. That comes from the held
+  rows.
+
+Under the old kl0 the espc fix changed structure only: the probe below
+gave `[]` at Y=0 with two `$or$`s as with one.
+
+**Effects** (`espc.py check`, row by row against the flattening restored
+by a monkeypatch):
+
+| | paragraph | kappa2 |
+|---|---|---|
+| compared | 1,286 -> 1,289 | 12,963 -> 12,967 |
+| exact | 258 (unchanged) | 1,518 (unchanged) |
+| `$or$` paired with another arity | 2 -> 0 | 21 -> 18 |
+| compiled only | 2 -> 0 | 134 (unchanged) |
+| held `$or$` with no compiled counterpart | 11 -> 8 | 248 -> 244 |
+
+- In paragraph, the two pairs were read/2's `#1#1#1#1` and `#1#1#1#2`
+  (held arity 3, ours 2).
+- In kappa2, the three pairs that went are `copy_table/1.11#2#1`
+  (held 2, ours 3) and the two `search_enzan_code/7.11#5#{3,5}#2#2#1`
+  (held 9, ours 6). The 18 that remain are not nesting; they were not
+  examined.
+- No compared row got worse:
+  - `get_number`/`get_font` `#1` and `copy_table/1.11#2#1` moved from
+    `other` to `moves and environment` and `clause order`;
+  - the new inner `$or$`s compare as `registers`, `other` or
+    `clause order`.
+- The held arity-9 `search_enzan_code …#2#2#1` was paired with our
+  flattened arity-6 `$or$` before. It is now its own `$or$` and is
+  refused (it calls the refused `check_value_attribute/3`), so it counts
+  as `$or$ of a refused predicate`. This is why kappa2's
+  "calls a refused local" goes 3,336 -> 3,338.
+- Utter is unchanged.
+- Under the new kl0 rule, test_kl0.py, the behave census, the FEP census
+  pins and the `QC_WIN=1` window benches are unchanged (19 of 20 quick
+  checks passed; test_espc.py failed only on the two pins this change
+  moves).
+
+**Test**: `test_espc.py` NestedDisjunction.
+- Shape: `p :- ((Y<1,!,fail ; Y>=5,R=b) ; R=c)` gives `$or$0` with two
+  clauses, calling `$or$1` with two. The flat `q` gives one `$or$` of
+  three.
+- kl0: at Y=0, `p` answers `[[0, c]]` and `q` answers `[]`. Y=3 and
+  Y=7 are controls.
+- Held rows: `get_number`/`get_font` `#1` and `#1#1` are compared at the
+  held arity, with `semantic` forms equal for three of them, and read/2's
+  `#1#1#1#1#1-3` are compared.
+- The injections and their observed failures are in the class header.
+
+## If-then-else, `relative_cut_and_fail` and the `$or$` arity pairs (2026-11-26)
+
+The open items of the section above. Three changes in espc, one in kl0,
+one opcode row.
+
+**What the sources say about `->`.**
+- PRINTED, TM-388 App. B p.142 (PDF p.154): `->` is an operator, xfy
+  1040, below `;` (1150) and above `,` (1000). So `C -> T ; E` reads as
+  `;(->(C,T), E)`, and `C1 -> T1 ; C2 -> T2 ; E` as
+  `;(->(C1,T1), ;(->(C2,T2), E))`.
+- PRINTED, TM-388 §5.2 pp.119-120 (PDF pp.131-132): "ESP does not have
+  ... IF THEN ELSE"; a conditional branch is written `Q :- P, !, S1;
+  Q :- S2`. The manual prints no meaning for `->`.
+- So the meaning is HELD-SOURCE, from the held rows below. The census
+  sources hold 243 `->`: 238 as an alternative with something after it,
+  5 as the last alternative, none as a bare goal.
+
+**espc: `C -> T` in a disjunction is the `$or$` clause `C, !, T`**
+(`espc.py` `if_then`).
+- MEASURED: kappa2 IXMRSRHV.ESP `(Status = found -> Set_position =
+  @rsr_mini_set_posi ; true)` is held
+  `point_forward_or_backward_RSR/8.11#1`: `e4`, get `found`, `d0`, put
+  2047, `f0` / `e0`, `f0`. Ours is cell for cell the same (`exact`).
+- The cut is local to the `$or$` (kl0 gives each `$or$` its own
+  barrier), so it removes the later alternatives and C's own choice
+  points, as an if-then-else must.
+- A chain is one `$or$`, one clause per alternative. MEASURED: held
+  `kappaBFM_MDB_manager delete_buffer_object_1/5.11#1` (KP_BFMMM.ESP,
+  three alternatives) is `c4 .. d0 .. c2 .. d0 .. c0`, arity 4. Ours has
+  the same arity, and the same cuts and sends in the same order.
+- A bare `(C -> T)` that is not an alternative of a `;` still refuses:
+  the census has none, so there is no witness.
+
+**A last alternative `C -> T` has an implicit `; true`.** When no
+condition holds, the disjunction succeeds. This is not Prolog's
+`(C -> T)`, which fails. MEASURED on three held predicates:
+- IXMDELRSR.ESP `flag_maintenance_HV/8`, source `(Info == empty -> true ;
+  Info == first_set -> true ; Info == last_set -> true)`. Held `#1` is
+  three `f2` tests. Each test's else goes to the next test, and the
+  last else goes to a final `f0` (proceed).
+- IXMISRHV.ESP `search_set_root_to_leaf2/8`'s first clause: the last
+  test is `f4 00 01 01`, and its else is a `f1`.
+- PCPCLDAP.ESP `make_new_info_list/5`: `#1`'s else is `f0`.
+
+espc appends a `true` clause to such a `$or$`.
+
+**The held compiler inlines some `->` into the caller.** MEASURED,
+kappa2 (a scratch survey of each caller's `$or$` count, source against
+held):
+- The rule: the disjunction is the clause's last goal, and its first
+  alternative's condition is one test with a test-and-branch opcode
+  (`==`, `\==`, `<`, `>`, `=<`, `>=`, `atom/1`, `integer/1`,
+  `unbound/1`).
+- What the held code does then: the test branches in the caller, the
+  then-part follows it inline, and the else is the rest. When two or
+  more alternatives remain, the rest is a `$or$`. Example: held
+  `kappaIXM_RSR_heap search_set/11`'s `blt f4 02 00 09`, with `#1`
+  holding `Q = 0 -> ... ; error` as two clauses.
+- How well the rule fits: of the 48 such disjunctions that are their
+  caller's only `$or$`, 41 are inlined by the count (4 of the other 7
+  have three alternatives, where a first one inlined and the rest a
+  `$or$` gives the same count). Apart from the two below, no disjunction
+  that is not last, or whose condition is not one such test, is inlined.
+- Exceptions:
+  - Three disjunctions fit the rule but keep their `$or$`:
+    `delete_BI/5`, `set_free_buffer_object/4` and `release_work_string/2`.
+    `delete_BI/5`'s `$or$` has a test-and-branch inside, with no choice
+    point.
+  - Two whose conditions are two tests are inlined:
+    `search_element/12.11#2` and `get_contents/4`.
+  - What decides these cases is not settled.
+
+espc keeps the `$or$`, which gives the same answers. Generating the
+inline form would be new code: espc emits no `f0`/`f2`/`f4`/`f5`/`e1`.
+
+`espc.py check` gives a caller that fits the rule its own cause, `under
+an inlined ->` (`peels_into_caller`, `ClassCompiler.peeled`). Its
+`$or$`s are numbered apart from the held ones, so the check does not
+pair them. Before this, 22 such rows were compared against the wrong
+held `$or$`.
+
+**espc bug fixed: a lifted head expression's variables.** In a head
+argument `No1 + No2`, espc makes a fresh variable and unifies it after
+the body. A disjunction in the body did not count No1 as shared, so it
+bound a variable of its own. MEASURED: kappa2 REPDB.ESP
+`count_element(CFT, Bit_count, Count_limit, [P1|PR], No1 + No2) :-
+(and(CFT,P1,0), !, No1 = 0 ; No1 = 1), ...` is held
+`count_element/5.11#1` with arity 3 and No1 in A1. Ours had arity 2.
+`get_used_lpn/5` had the same bug, refused as `unbound input`; it now
+compiles (`moves and environment`).
+
+**pmi db is relative_cut_and_fail** (`kl0_opcodes.tsv`, hand-written as
+every row is; KNOWN-PLAINTEXT).
+- All three held uses pair with `relative_cut_and_fail(1)` in source:
+  - pb/hash.esp:166-168, `search_and_get/5.11#1`;
+  - hash.esp:344, `search_and_remove/6.11#1`;
+  - KP_MDMART.ESP:58, `add_record/5.35#2#1#1`.
+  Each is `a7 00 00 01` (the 1 into A0), `db 00 00 00`, then the proceed.
+- The meaning is PRINTED, TM-388 4.6 p.112 (PDF p.124):
+  relative_cut_and_fail fails after `relative_cut(Level)`.
+  relative_cut cuts "all alternatives below the level specified by
+  argument Level (the depth of levels backward from the current
+  level)". Example 1 on p.112, `P :- (Q, relative_cut(1), R ; S)`, cuts
+  S and P's next clause. That is back to the barrier of the `$or$`'s
+  caller.
+- INFERENCE: Level is read from A0, because the operand bytes are
+  `00 00 00` in all three uses.
+- kl0 (`op_relative_cut_and_fail`): each entry barrier is now a `Level`,
+  an int that keeps its caller's (`up`). db cuts to `b0.up` and fails.
+  Only Level 1 and zero operand bytes are witnessed; anything else
+  refuses.
+- OURS: a last call counts as a level. The manual does not say.
+- espc emits it as the held code has it, as a last goal only. The three
+  held predicates stay refused for other reasons (`increment/2`, a
+  back-quoted macro term), so they are not compared.
+
+**The `$or$`s paired with another arity** (kappa2 18 -> 10, examined
+one by one with `espc.py check` and the held dumps):
+- 4 were under an inlined `->`. They are no longer paired.
+- 2 were under an inlined `unbound/1` test (`check_search_index_value/11`
+  `#1`), so `unbound` is in the rule.
+- 2 were the lifted-head bug: `count_element/5.11#1` and
+  `get_used_lpn/5.11#1#1`.
+- 9 of the 10 left come from the held code order, an artifact of
+  `canonical()`, not of espc:
+  - First-argument indexing puts a list clause's code before the `[]`
+    clause's. Held `search_ch_list_loop/8` is `c9` on the list, then
+    clauses 2 and 3, then clause 1; its `c5`/`c3`/`c1` chain gives the
+    source order.
+  - `canonical()` numbers held `$or$`s in code order, so pairs swap:
+    `search_ch_list_loop/8`, `search_delimiter_loop/5`,
+    `get_substring_value/6`, `set_item/2` and `get_table_option/3`.
+- 1, `merge_occ_element/11.11#6`, comes after a clause espc's reader
+  cannot parse: kappa2 kernel/pcm/PCPROPMG.ESP:508, `To_number1 <
+  To_number2, !` followed by a goal with no comma. The held reader accepted it, so the later
+  `$or$`s shift by one.
+
+None of the 10 is an espc code-generation bug.
+
+**Effects** (`espc.py check`, row by row against the commit before):
+
+| | kappa2 |
+|---|---|
+| compared | 12,967 -> 13,133 |
+| exact | 1,518 -> 1,530 |
+| refused | 5,021 -> 4,832 (`if-then-else ->` 129 -> 0) |
+| compiled only | 134 -> 89 |
+| under an inlined `->` (new) | 116 |
+| `$or$` paired with another arity | 18 -> 10 |
+
+- The 12 new exact rows: `delete_MDBbuffer/5`, `check_occ/2` and
+  `get_child_info/5` were refused before, and nine `$or$`s were
+  compared as `other`, for example `point_forward_or_backward_RSR/8.11#1`.
+  A predicate refused at its `->` kept the `$or$` clauses compiled before
+  the refusal, and those partial `$or$`s were compared.
+- Paragraph and utter are unchanged.
+- The stand-ins: `e_string`'s and `name`'s sorts (HELD-SOURCE
+  `partition/4` with `->`) now compile.
+  `espc.KNOWN_STANDIN_REFUSALS` is down to `pathname`'s two. M10's
+  dedit.esp compiles whole.
+
+**Test**: `test_espc.py` `IfThenElse`.
+- Shape:
+  - a chain is one `$or$` with `d0` after each condition;
+  - a no-else chain ends in a lone `f0` clause;
+  - relative_cut_and_fail(1) is `a7 00 00 01, db, f0`;
+  - a bare `->` refuses.
+- kl0:
+  - the chain answers a, b, c;
+  - `(gen(X), X > 1 -> R = X ; R = none)` answers only `2`;
+  - with no condition true, the no-else chain succeeds with R unbound;
+  - `hh(0, R)` fails, because relative_cut_and_fail(1) takes `hh`'s
+    second clause too;
+  - `kk(0, R)` with `!, fail` still answers `two`.
+- Held rows:
+  - `point_forward_or_backward_RSR/8.11#1` is exact;
+  - `delete_buffer_object_1/5.11#1` has the held arity and cut/send
+    order;
+  - `search_set2/11` and `search_set/11`'s `$or$`s are `under an inlined
+    ->`;
+  - `count_element/5.11#1` has arity 3.
+- The injections and their observed failures are in the class header.
+
 ## Open
 
 - **espc drops a method named `div` or `mod` silently.** `:div(C,X) :-
@@ -4771,7 +5657,11 @@ test_kappa2's exact count).
   choice window, M9), HARDCOPY (no printer) and SUPERIOR/INFERIOR (no
   window hierarchy); the look of the notify window (none printed; OURS
   now); TM-225's default permission ① wait (the stand-ins default to
-  `out`); Pmacs proper (M10). `pmacs_window` getl/2 is not stood in (the
+  `out`); Pmacs proper (M10: done in part, section "Window M10"; open
+  there: Pmacs's other commands, a prompt for C-x b, five EDITOR MENU
+  items, papyrus and cal run only through their editor classes, not
+  whole; the M9 leftovers, not attempted in M10: a second ATTRIBUTE while a sheet is up and
+  editing a choice window's text field). `pmacs_window` getl/2 is not stood in (the
   census's dump_log/1 stops there); M8's shapes beyond lines,
   rectangles and strings, images and markers. Sections "Window M7's rest"
   and "Window M8".
@@ -4780,10 +5670,23 @@ test_kappa2's exact count).
   clause body with no head (a comment line ate the head) compiled
   without a complaint: **FIXED 2026-11-25** (section "Window M7: the
   manipulator and keyboard focus", `test_espc_swallowed_head`).
+- **espc flattens `(A ; B) ; C` into one `$or$`** (`flat/2` in
+  `disjunction/3`; found 2026-11-26 by a compile probe:
+  `((Y<1,!,fail ; Y>=1,!,fail) ; R=c)` gives a single local `$or$0/2` of
+  three clauses). The held compiler keeps the inner disjunction its own
+  `$or$` (paragraph `as_view_select_window read/2`'s rows sit one level
+  deeper). A cut is local to its `$or$`, so the difference is
+  behavioural: held, `A, !, X` with X failing still tries C; ours does
+  not. **FIXED 2026-11-26**, section "Nested disjunctions and the cut
+  in a `$or$`". The fix also found a second bug, in kl0: a `$or$` kept
+  its caller's cut barrier, so a cut in any disjunction cut the whole
+  clause, against TM-388 p.111. Fixed in the same section.
 - **A vector stored in a slot keeps its variables** (kl0 `resolve_value`
   copies only lists): a binding undone on backtracking empties the
   stored vector's element. Found in window M4 (`pmacs_request.esp`'s
-  head); how the PSI copied a slot's value is not printed.
+  head); how the PSI copied a slot's value is not printed. Met again in
+  window M10 on a stream (`{data, X}` put by `input_data/2`), worked
+  around with a heap vector (injection X1).
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still
@@ -4838,6 +5741,11 @@ test_kappa2's exact count).
         `cal2.12/scawin.esp`:68; kwic-esp `doc/classSpec.IO2`:2232
         documents kwic's own). What the default primary does is not
         printed. A no-op would be a guess.
+      - (Step 3o, recorded: both are stood in since the window
+        milestones, `pmacs_window.esp` get_interpreter/2 since M4 and
+        has_been_reshaped/1 in `pmacs_window.esp` and
+        `standard_io_window.esp` since M7; INTERPOLATED selectors, OURS
+        bodies. SIMPOS's own bodies are still not printed.)
     - The census's unbound request arguments: device replies refuse at
       `set_string_element` on an unbound argument (25 rows plain, 45
       with recipes). Step 3g: the recipe census gives requests (OURS
@@ -4926,7 +5834,8 @@ test_kappa2's exact count).
   `enter_atom/3`, are modelled (OURS, INTERPOLATED). The run-time
   lookup order is an INFERENCE.
 - **The compiler's unwitnessed constructs.** These have no witnessed
-  compiled form yet: `=\=`, `->` and `not`; of `with_macro`, the
+  compiled form yet: `=\=` and `not` (`->` since 2026-11-26, section
+  "If-then-else"; a bare `(C -> T)` with no `;` still refuses); of `with_macro`, the
   rules with a tail and `==>`. Vectors of one, five, six or n elements
   now have interpreter rows (pmi b1, b5, b6, b7, step 3e), but
   `espc.py` does not emit them yet.

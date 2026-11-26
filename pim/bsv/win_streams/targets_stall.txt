@@ -1,0 +1,83 @@
+# targets_stall.txt: drawing targets (prim b, the 2026-11-26 extension; psi/winfb.py's
+# header, OURS) under +stall.  Areas used (words): A [1000, 1150), B [3000, 3060),
+# C [4000, 4040), D [4040, 4080), the save area [6000, 6150).
+#
+# area A: 70 x 30 at word 1000, pitch 5 (80 dots a row, 10 pad dots)
+target 0 1 1000 5 70 30
+fill 2 1 50 20 set
+fill 7 4 30 9 xor
+line 0 29 69 0 1 65535 xor
+# a wide x-major pen cut at the right and the bottom; a y-major one cut at the right
+line 50 20 90 40 3 65535 set
+line 65 5 75 29 2 61680 set
+line 69 29 0 0 2 52428 xor
+glyph 0 9025 62 20 copy
+fill 60 25 40 40 xor
+# A's words seen 80 x 30 (the same base and pitch, another w): the pad dots stay 0
+target 1 1 1000 5 80 30
+read 0 0 80 30
+target 1 1 1000 5 70 30
+read 0 0 70 30
+read 63 27 20 20
+# one area onto itself: rows bottom-up (dy > sy), top-down (dy < sy), words right to
+# left (dy = sy, dx > sx), left to right (dy = sy, dx < sx)
+copy 0 0 50 20 3 2 copy
+copy 5 4 50 20 1 0 copy
+copy 0 10 60 8 9 10 copy
+copy 12 12 50 8 2 12 xor
+# the source A seen 80 x 30: still the same area (equal base and pitch), cut to A's 70
+target 1 1 1000 5 80 30
+copy 0 0 80 30 0 1 copy
+target 1 1 1000 5 70 30
+read 0 0 70 30
+# area -> frame, then frame -> area (B), then B -> A
+target 0 0 0 0 0 0
+copy 0 0 70 30 101 201 copy
+copy 10 5 70 30 1250 1010 xor
+dump
+target 1 0 0 0 0 0
+target 0 1 3000 3 40 20
+copy 95 195 40 20 0 0 copy
+copy 1270 1015 40 20 30 10 copy
+target 1 1 3000 3 40 20
+read 0 0 40 20
+target 0 1 1000 5 70 30
+copy 0 0 40 20 20 5 reverse
+target 1 1 1000 5 70 30
+read 0 0 70 30
+# adjacent areas C and D share no word: copies between them draw, both ways
+target 0 1 4000 4 64 10
+fill 0 0 64 10 set
+fill 3 3 20 4 reset
+target 0 1 4040 4 64 10
+target 1 1 4000 4 64 10
+copy 0 0 64 10 0 0 copy
+target 0 1 4000 4 64 10
+target 1 1 4040 4 64 10
+copy 1 1 63 9 0 0 xor
+target 1 1 4000 4 64 10
+read 0 0 64 10
+target 1 1 4040 4 64 10
+read 0 0 64 10
+# one word shared ([4039, 4079) and C): BADSURF, nothing drawn, also for an empty copy
+# and a copy outside the source
+target 1 1 4039 4 64 10
+copy 0 0 64 10 0 0 reverse
+copy 0 0 0 0 0 0 copy
+copy 100 100 5 5 0 0 copy
+target 1 1 4000 4 64 10
+read 0 0 64 10
+# save and restore with both registers areas: still frame <-> memory
+target 0 1 1000 5 70 30
+target 1 1 1000 5 70 30
+save 0 101 201 70 30 6000
+fill 0 0 70 30 xor
+restore 0 reverse
+target 1 1 6000 5 70 30
+read 0 0 70 30
+target 1 1 1000 5 70 30
+read 0 0 70 30
+target 0 0 0 0 0 0
+target 1 0 0 0 0 0
+read 100 200 72 32
+end

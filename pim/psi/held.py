@@ -147,6 +147,29 @@ def src_files(name, root=None, suffixes=None):
     return out
 
 
+# window M10 (2026-11-26): single held IFS sources the Pmacs tests compile
+# (psi/test_espc.py Window.test_win_m10_*), read in memory, never written:
+# name -> (archive under docs/nonlocal, member, member of an inner tar or
+# None).  The archives are ICOT IFS releases in git (docs/nonlocal/
+# IFS_MANIFEST.md rows for disc, cal-esp and papyrus).
+MEMBERS = {
+    'exshow': ('ifs/natural-lang/simpos/disc.tar.Z', 'exshow.esp', None),
+    'cal_pmacs': ('ifs/kbms-clp/simpos/cal-esp.tar.Z', 'cal2.12/cal_pmacs.esp', None),
+    'dedit': ('ifs/kbms-clp/simpos/cal-esp.tar.Z', 'deb2.12/dedit.esp', None),
+    'my_select': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_select.esp.1'),
+}
+
+
+def member_text(name):
+    """The source text of MEMBERS[NAME], decoded byte for byte (latin-1:
+    the comments' JIS escapes are kept as they are; the code is ASCII)."""
+    arch, mem, inner = MEMBERS[name]
+    raw = _cached(arch).extractfile(mem).read()
+    if inner is not None:
+        raw = tarfile.open(fileobj=io.BytesIO(raw)).extractfile(inner).read()
+    return raw.decode('latin-1')
+
+
 def present(root):
     """The packages whose .ptf is in ROOT."""
     return [p for p in PTF if root and os.path.exists(ptf_path(root, p))]

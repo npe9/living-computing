@@ -155,6 +155,10 @@
    from a backup, restored by cp, cmp-checked, observed: answering a new
    empty list fails test_step3g_invocation_stack, test_fep_census and
    test_step3f_census_recipes; test_kl0.py passes.
+17. Nested disjunctions (2026-11-26, NestedDisjunction): `(A ; B) ; C`
+   is two $or$s as in the held code (espc.py alternatives/1), and kl0
+   gives a $or$ its own cut barrier (TM-388 4.6 p.111); the injections
+   are in the class header.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -262,6 +266,20 @@ def check():
     if _CHECK is None:
         _CHECK = espc.check('paragraph')
     return _CHECK
+
+
+_KAPPA2 = None
+
+
+def kappa2():
+    """(held library, espc.check('kappa2')), computed once."""
+    global _KAPPA2
+    if _KAPPA2 is None:
+        import librarian as LB
+        lib = LB.Librarian()
+        lib.load_held(pkgs=espc.PROGRAMS['kappa2'])
+        _KAPPA2 = lib, espc.check('kappa2', lib)
+    return _KAPPA2
 
 
 def compile_one(text):
@@ -485,8 +503,34 @@ class Structure(unittest.TestCase):
         # 1234 / 256 before step 3d's rows (vector_to_list, set_subvector,
         # `{}` and four-element vectors): none lost.  1241 / 258 before
         # X*Y on two registers (blt 42, 2026-11-25): 39 refused predicates
-        # compile, none exact, no compared one changes its class
-        self.assertEqual((c['pred compared'], c['pred exact']), (1280, 258))
+        # compile, none exact, no compared one changes its class.  1280 /
+        # 258 before window M10's key macros (mouse#B, key#N, control#"c",
+        # pf#N: espc.py key_constant; row by row against the macros
+        # disabled, 2026-11-26): as_view_select_window read/2 (p_menu.esp)
+        # and time_graph_window read_com/2 compile (refused -> moves and
+        # environment), and read/2's $or$s are compared (4 other, 3 held
+        # only); none exact, no compared row changes its class.  But
+        # read/2 nests five deep, and the held compiler puts its three
+        # X-range disjunctions one level deeper than espc does
+        # (read/2.35#1#1#1#1#1-3 held, #1#1#1#3 and #1#1#2 ours): so two
+        # $or$s are paired with another arity and two are compiled only,
+        # the first such rows.  FOUND (2026-11-26, a compile probe): espc
+        # flattens a parenthesised disjunction that is an outer one's first
+        # alternative, `(A ; B) ; C`, into ONE $or$ of three clauses
+        # (espc.py flat/2 in disjunction/3; the probe `((Y<1,!,fail ;
+        # Y>=1,!,fail) ; R=c)` gives the single local $or$0/2), and the
+        # held rows (one level deeper, three leaves under it) fit the held
+        # compiler keeping the inner $or$ its own predicate.  A cut is
+        # local to its $or$, so this is a BEHAVIOURAL difference, not only
+        # numbering: held, `A, !, X` with X failing fails the inner $or$
+        # and C is still tried; ours, the cut commits past C.
+        # FIXED 2026-11-26 (espc.py alternatives/1; NestedDisjunction):
+        # 1,289 compared, 258 exact.  read/2's three X-range $or$s
+        # (#1#1#1#1#1-3) are compared ('other', like the rest of read/2),
+        # #1#1#1#1 and #1#1#1#2 pair at the held arity 3 (2 before), the
+        # two compiled-only rows are gone, and #1#1 other -> moves and
+        # environment.  Both invariants are back to 0
+        self.assertEqual((c['pred compared'], c['pred exact']), (1289, 258))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -509,6 +553,268 @@ class Structure(unittest.TestCase):
                                                   'search_num/4 35'])):
             for p in preds:
                 self.assertEqual(got[(cid, p)], 'exact', (cid, p))
+
+
+class NestedDisjunction(unittest.TestCase):
+    """`(A ; B) ; C` is two $or$s, the inner one called from the outer
+    one's first clause; `A ; B ; C` and `A ; (B ; C)` are one $or$ of
+    three clauses (espc.py alternatives/1: a disjunction's alternatives
+    are its right spine).  MEASURED on the held code: every left-nested
+    disjunction in the census sources (seven: paragraph p_menu.esp
+    as_view_select_window :read/2; kappa2 stwin.esp pb_status_window
+    :get_number/3 and :get_font/3, kappaMDM_parse parse_occ/3, kappaCCT
+    copy_table/1, two in pb_bck_cell search_enzan_code/7) has the held
+    $or$ paths and arities this rule gives (search_enzan_code's only
+    where espc compiles them: the predicate is refused), and read/2's
+    parenthesised right argument is one $or$ (held #1#1 has arity 3, a
+    separate $or$ would share 4).  utter, psi/standin, the M10 held
+    members, the printed listings and the ESP in the tests have none.
+
+    It is behavioural because a cut is local to its $or$ (PRINTED:
+    TM-388 4.6 p.111, PDF p.123, Example 2, and App. G pp.161-162: in
+    Prolog the cut "cuts also" the clause's alternative, in ESP it does
+    not).  kl0 gives a $or$ its own barrier since 2026-11-26 (it kept
+    the caller's before, so a cut in any $or$ cut the clause).  The held
+    stwin.esp get_number/3 is the case: `((equal_string(N,""),!,fail ;
+    :get_number(#symbolizer,Number,N)) ; Number = abort)` answers
+    `abort` on an empty line only if the cut stays in the inner $or$;
+    held get_number/3.35#1 is c4 / call #1#1 / c0 / get abort, and #1#1
+    holds the d5 (`!, fail`) and the send.
+
+    Injections (2026-11-26, observed; each into the working file from a
+    backup copy, restored by cp, cmp clean):
+    - A, espc.py alternatives/1 returning flat(t, ';') again (the
+      flattening): test_shape, test_cut_scope_on_kl0 (p at Y=0 gives
+      `[]`), test_held_rows, Structure.test_counts (1,286) and
+      MacroBank.test_kappa2 (12,963) fail; nothing else (110 run).
+    - B, kl0.py call_local not entering a kind 0x12 predicate again (a
+      $or$ keeps its caller's barrier): only test_cut_scope_on_kl0 fails
+      (p at Y=0 gives `[]`); test_kl0.py passes (49 tests), so nothing
+      else in either file depended on the clause-wide cut.
+    """
+    T = '''class t has
+:p(C, Y, R) :- ((Y < 1, !, fail ; Y >= 5, R = b) ; R = c);
+:q(C, Y, R) :- (Y < 1, !, fail ; Y >= 5, R = b ; R = c);
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        ts, failed = espc.compile_text(cls.T, 'user')
+        assert not failed and not any(t.refusals for t in ts)
+        (cls.t,) = ts
+        cls.m = K.Machine(espc.library(ts))
+
+    def test_shape(self):
+        # p: $or$0 (two clauses, the first calling $or$1), $or$1 (two);
+        # q: $or$2, three clauses
+        t = self.t
+        ors = {p.name: p for p in t.preds() if p is not None and p.kind == 0x12}
+        self.assertEqual(sorted((n, p.arity) for n, p in ors.items()),
+                         [('$or$0', 2), ('$or$1', 2), ('$or$2', 2)])
+        choice = {n: [op for _tag, op, _a, _b in code(t, n) if op in (0xe4, 0xe2, 0xe0)]
+                  for n in ors}
+        self.assertEqual(choice, {'$or$0': [0xe4, 0xe0], '$or$1': [0xe4, 0xe0],
+                                  '$or$2': [0xe4, 0xe2, 0xe0]})
+        self.assertEqual(sorted(v for v in espc.canonical(t).values() if '#' in v),
+                         ['p/3.25#1', 'p/3.25#1#1', 'q/3.25#1'])
+
+    def test_cut_scope_on_kl0(self):
+        # Y=0: p's cut fails only the inner $or$, so R = c is still tried;
+        # q's cut is in the one $or$ and commits past R = c.  Y=3 and Y=7
+        # are controls (every rule agrees)
+        got = {sel: [K.call_class_method(self.m, 'user##t', sel, [y, K.Var()]) for y in (0, 3, 7)]
+               for sel in ('p', 'q')}
+        self.assertEqual(repr(got['p']), '[[[0, c]], [[3, c]], [[7, b], [7, c]]]')
+        self.assertEqual(repr(got['q']), '[[], [[3, c]], [[7, b], [7, c]]]')
+
+    def test_held_rows(self):
+        lib, r = kappa2()
+        cid = 'kappa##pb_status_window'
+        rows = {x[1]: x[2] for x in r['rows'] if x[0] == cid and '#' in x[1]}
+        self.assertEqual(rows, {'get_number/3.35#1 12': 'moves and environment',
+                                'get_number/3.35#1#1 12': 'registers',
+                                'get_font/3.35#1 12': 'moves and environment',
+                                'get_font/3.35#1#1 12': 'other'})
+        ht, t = lib.templates[cid], r['templates'][cid]
+        ch, cn = espc.canonical(ht), espc.canonical(t)
+        hs = {ch[p.offset]: p for p in ht.preds() if p is not None}
+        cs = {cn[p.offset]: p for p in t.preds() if p is not None}
+        for k in ('get_number/3.35#1', 'get_number/3.35#1#1', 'get_font/3.35#1'):
+            self.assertEqual(hs[k].arity, cs[k].arity, k)
+            self.assertEqual(espc.semantic(espc.normal(t, cs[k], espc._pool_ours, cn)),
+                             espc.semantic(espc.normal(ht, hs[k], espc._pool_held, ch)), k)
+        # the outer $or$ calls the inner one, then `Number = abort`
+        self.assertEqual(espc.semantic(espc.normal(t, cs['get_number/3.35#1'], espc._pool_ours, cn)),
+                         [('call', 'get_number/3.35#1#1'), ('const', 'abort')])
+        # paragraph read/2: the three X-range $or$s, one level deeper, compared
+        got = {x[1]: x[2] for x in check()['rows'] if x[0] == 'paragraph##as_view_select_window'}
+        for k in ('read/2.35#1#1#1#1#1 12', 'read/2.35#1#1#1#1#2 12', 'read/2.35#1#1#1#1#3 12'):
+            self.assertEqual(got[k], 'other', k)
+
+
+class IfThenElse(unittest.TestCase):
+    """`C -> T ; E` is a $or$ whose clause is `C, !, T` (espc.py if_then);
+    a chain `C1 -> T1 ; C2 -> T2 ; E` is one $or$ of three clauses; a last
+    alternative `C -> T` with no else has an implicit `; true`; and
+    relative_cut_and_fail(1) is pmi db (kl0_opcodes.tsv).
+
+    Sources.  TM-388 prints `->` only as an operator (App. B p.142, PDF
+    p.154: xfy 1040, below `;`); §5.2 pp.119-120 (PDF pp.131-132) says
+    ESP has no IF THEN ELSE and writes it `Q :- P, !, S1 ; Q :- S2`.  The
+    rest is the held code (kappa2):
+    - IXMRSRHV.ESP `(Status = found -> Set_position = @rsr_mini_set_posi ;
+      true)` is held point_forward_or_backward_RSR/8.11#1, e4 / get found /
+      d0 / put 2047 / f0 / e0 / f0; ours is cell for cell the same (exact).
+    - KP_BFMMM.ESP delete_buffer_object_1/5's three-way chain is one held
+      $or$ (c4 .. d0 .. c2 .. d0 .. c0) of arity 4.
+    - No else: IXMDELRSR.ESP flag_maintenance_HV/8 `(Info == empty -> true
+      ; Info == first_set -> true ; Info == last_set -> true)` is held
+      #1: three `f2` tests, each else to the next, the last else to a
+      final `f0`: when no test holds the $or$ succeeds.  The same in
+      IXMISRHV.ESP search_set_root_to_leaf2/8 (`f4 .. 01`, the else on
+      `f1`) and PCPCLDAP.ESP make_new_info_list/5 (#1's else on `f0`).
+      Not Prolog's `(C -> T)`, which fails.
+    - The held compiler inlines a `->` into its caller when the
+      disjunction is the clause's last goal and C is one test with a
+      test-and-branch form (espc.py peels_into_caller; MEASURED: of the
+      48 such disjunctions that are the only one of their caller, 41 are
+      inlined by the count; apart from two with a two-test C, never one
+      that is not last or whose C is not such a test).
+      espc keeps the $or$ (the same answers); `check` does not pair that
+      caller's $or$s ('under an inlined ->'), which it mispaired before.
+    - relative_cut_and_fail(1): all three held uses (pb/hash.esp:168 and
+      :344, KP_MDMART.ESP:58) are `a7 00 00 01, db 00 00 00` and the
+      proceed; TM-388 4.6 p.112 (PDF p.124) prints its meaning.
+
+    Injections (2026-11-26, observed; each into the working file from a
+    backup copy, restored by cp, cmp clean): see the end of this class.
+    """
+    T = '''class t has
+:p(C, X, R) :- (X < 1 -> R = a ; X < 5 -> R = b ; R = c);
+:g(C, R) :- (gen(X), X > 1 -> R = X ; R = none);
+:n(C, X, R) :- (X == a -> R = 1 ; X == b -> R = 2);
+:h(C, X, R) :- hh(X, R);
+:k(C, X, R) :- kk(X, R);
+:hg(C, X, R) :- hgg(X, R);
+:hi(C, X, R) :- hii(X, R);
+local
+gen(1); gen(2); gen(3);
+hh(X, R) :- (X == 0, !, relative_cut_and_fail(1) ; R = one);
+hh(_, two);
+kk(X, R) :- (X == 0, !, fail ; R = one);
+kk(_, two);
+hgg(X, R) :- gen(_), (X == 0, !, relative_cut_and_fail(1) ; R = one);
+hgg(_, two);
+hii(X, R) :- (X == 0, gen(_), relative_cut_and_fail(1) ; R = one);
+hii(_, two);
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        ts, failed = espc.compile_text(cls.T, 'user')
+        assert not failed and not any(t.refusals for t in ts), (failed, [t.refusals for t in ts])
+        (cls.t,) = ts
+        cls.m = K.Machine(espc.library(ts))
+
+    def run_(self, sel, *args):
+        return K.call_class_method(self.m, 'user##t', sel, list(args) + [K.Var()])
+
+    def or_of(self, path):
+        (name,) = [n for n, p in self.t.or_path.items() if p == path]
+        return name
+
+    def test_shape(self):
+        ops = lambda path: [op for _t, op, _a, _b in code(self.t, self.or_of(path))]
+        # p: one $or$, three clauses; the two `->` clauses cut after the test
+        p = ops('p/3.25#1')
+        self.assertEqual([o for o in p if o in (0xe4, 0xe2, 0xe0, 0xd0)],
+                         [0xe4, 0xd0, 0xe2, 0xd0, 0xe0])
+        # n: the two `->` clauses and the implicit `true`, a lone proceed
+        n = ops('n/3.25#1')
+        self.assertEqual([o for o in n if o in (0xe4, 0xe2, 0xe0, 0xd0)],
+                         [0xe4, 0xd0, 0xe2, 0xd0, 0xe0])
+        self.assertEqual(n[-2:], [0xe0, 0xf0])
+        # relative_cut_and_fail(1): the held search_and_get/5.11#1 tail
+        h = code(self.t, self.or_of('hh/2.11#1'))
+        i = [x[1] for x in h].index(0xdb)
+        self.assertEqual(h[i - 1:i + 2], [(0x20, 0xa7, 0, 0), (0x20, 0xdb, 0, 0), (0x20, 0xf0, 0, 0)])
+        # a bare `->` (no `;`) has no witness and still refuses
+        ts, _f = espc.compile_text('class u has\n:r(C,X,R) :- (X == 1 -> R = 2);\nend.', 'user')
+        self.assertEqual([(r[0][:2], r[1]) for r in ts[0].refusals], [(('r', 3), 'if-then-else ->')])
+
+    def test_on_kl0(self):
+        self.assertEqual(repr([self.run_('p', x) for x in (0, 3, 7)]),
+                         '[[[0, a]], [[3, b]], [[7, c]]]')
+        # the cut takes gen/1's other answers and the else with it
+        self.assertEqual(repr(self.run_('g')), '[[2]]')
+        got = [self.run_('n', K.Atom(a) if hasattr(K, 'Atom') else a) for a in ('a', 'b', 'c')]
+        self.assertEqual(repr(got[:2]), '[[[a, 1]], [[b, 2]]]')
+        # no test holds: n succeeds once, R unbound
+        self.assertEqual(len(got[2]), 1)
+        self.assertIsInstance(K.deref(got[2][0][1]), K.Var)
+
+    def test_relative_cut_and_fail_on_kl0(self):
+        # hh's $or$ cuts back to hh's caller level: hh's second clause goes
+        # too, so h(0) fails; kk's `!, fail` cuts only its $or$ (TM-388
+        # p.111), so k(0) still answers `two`.  X=1 is the control
+        self.assertEqual(repr([self.run_('h', x) for x in (0, 1)]),
+                         '[[], [[1, one], [1, two]]]')
+        self.assertEqual(repr([self.run_('k', x) for x in (0, 1)]),
+                         '[[[0, two]], [[1, one], [1, two]]]')
+        # The level is the $or$'s caller's even after a call returned
+        # before the $or$ (hgg: gen/1 leaves choice points) or inside the
+        # clause before db (hii; held add_record/5.35#2#1#1 @533-536 sends
+        # set_status/6 before its db): both fail at X=0
+        self.assertEqual(repr([self.run_('hg', x) for x in (0, 1)]),
+                         '[[], [[1, one], [1, one], [1, one], [1, two]]]')
+        self.assertEqual(repr([self.run_('hi', x) for x in (0, 1)]),
+                         '[[], [[1, one], [1, two]]]')
+
+    def test_held_rows(self):
+        lib, r = kappa2()
+        rows = {(x[0], x[1]): x[2] for x in r['rows']}
+        self.assertEqual(rows[('kappa##kappaIXM_RSR_heap', 'point_forward_or_backward_RSR/8.11#1 12')],
+                         'exact')
+        cid, k = 'kappa##kappaBFM_MDB_manager', 'delete_buffer_object_1/5.11#1'
+        ht, t = lib.templates[cid], r['templates'][cid]
+        ch, cn = espc.canonical(ht), espc.canonical(t)
+        hp = [p for p in ht.preds() if p is not None and ch[p.offset] == k][0]
+        cp = [p for p in t.preds() if p is not None and cn[p.offset] == k][0]
+        self.assertEqual((hp.arity, cp.arity), (4, 4))
+        cut_sends = lambda t_, p_, c_, pool: [x for x in espc.semantic(espc.normal(t_, p_, pool, c_))
+                                              if x[0] in ('cut', 'send')][:6]
+        self.assertEqual(cut_sends(t, cp, cn, espc._pool_ours), cut_sends(ht, hp, ch, espc._pool_held))
+        # a caller whose `->` the held compiler inlined: its $or$s not paired
+        for n in ('search_set2/11.11#1 12', 'search_set2/11.11#3 12', 'search_set/11.11#1 12'):
+            self.assertEqual(rows[('kappa##kappaIXM_RSR_heap', n)], 'under an inlined ->', n)
+        # a lifted head expression's variables are shared with a $or$:
+        # REPDB.ESP count_element/5 (`No1 + No2` in the head) is held
+        # #1 of arity 3; ours was 2 (No1 left out)
+        cid = 'kappa##with_kappaREP_database'
+        t = r['templates'][cid]
+        (cp,) = [p for p in t.preds() if p is not None and espc.canonical(t)[p.offset] == 'count_element/5.11#1']
+        self.assertEqual(cp.arity, 3)
+
+    # Injections, observed (2026-11-26):
+    # (each in a private copy of pim/psi; whole test_espc.py (114 tests)
+    # and test_kl0.py (49) run each time, test_kl0 OK in all five)
+    # - A, if_then returning `C, T` (no cut): test_held_rows ('other' !=
+    #   'exact'), test_on_kl0 (p answers every later branch too),
+    #   test_shape (no d0) and MacroBank.test_kappa2 (exact 1521 != 1530)
+    #   FAIL, nothing else.
+    # - B, the implicit `; true` dropped: test_on_kl0 (n(c) 0 answers)
+    #   and test_shape FAIL, nothing else.
+    # - C, kl0 op_relative_cut_and_fail cutting to self.b0 (the $or$'s
+    #   own barrier, a plain `!, fail`): test_relative_cut_and_fail_on_kl0
+    #   FAIL (h(0) answers [0, two]), nothing else.  Re-run after the hg/hi
+    #   cases were added, with the h assertion deleted from the copy:
+    #   the hg assertion FAILs (hg(0) answers [0, two]).
+    # - D, peels_into_caller always False: test_held_rows ('moves and
+    #   environment' != 'under an inlined ->') and MacroBank.test_kappa2
+    #   (compared 13167 != 13133) FAIL, nothing else.
+    # - E, add_clause's head_vars from the lifted values only:
+    #   test_held_rows (count_element arity 2 != 3) and
+    #   MacroBank.test_kappa2 (13131 != 13133) FAIL, nothing else.
 
 
 class Behaviour(unittest.TestCase):
@@ -599,7 +905,7 @@ end.'''
         # Of the exact ones, 822 are in the 406 classes with a bank, and
         # 109 of those have source clauses that a bank rule changed: the
         # expansion meets the held cells (structural witness).
-        r = espc.check('kappa2')
+        _lib, r = kappa2()
         c = r['counts']
         self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
@@ -608,7 +914,69 @@ end.'''
         # with X*Y on two registers (blt 42, 2026-11-25): 12,871 compared,
         # 1,514 exact (with_kappaMDU_table_with_pp tab/3 newly exact; no
         # compared predicate changes its class)
-        self.assertEqual((c['pred compared'], c['pred exact']), (12871, 1514))
+        # with window M10's key macros (mouse#B, key#N, control#"c", pf#N;
+        # row by row against them disabled, 2026-11-26): 12,963 compared,
+        # 1,518 exact: kappaFMP_editor2 command/3, kappaFMP_kappa_file_
+        # manipulator describe/3 and kappaLUU_load get_new_table_name/4
+        # refused -> exact, kappaFMP_dump dumpLine/6.11#1 other -> exact;
+        # none lost; 10 compared rows other -> moves and environment and
+        # one other -> clause order, closer to the held cells
+        # with `(A ; B) ; C` kept as two $or$s (2026-11-26,
+        # NestedDisjunction; row by row against the flattening): 12,967
+        # compared, 1,518 exact.  Six left-nested disjunctions: their new
+        # inner $or$s are compared (get_number/3.35#1#1 registers,
+        # get_font/3.35#1#1 other, parse_occ/3.35#1#1 other,
+        # copy_table/1.11#2#1#1 clause order) and outer ones move closer
+        # (get_number and get_font #1 other -> moves and environment,
+        # copy_table/1.11#2#1 other -> clause order).  In pb_bck_cell's
+        # refused search_enzan_code/7, #5#3#2#2#1#1 and #5#5#2#2#1#1 and
+        # their #1s now pair at the held arity 6 (moves and environment,
+        # 'other' or not compared before), while the held arity-9
+        # #...#2#2#1s, paired with our flattened arity-6 $or$s before, are
+        # now ours apart and refused (they call the refused
+        # check_value_attribute/3), so they count as `$or$ of a refused
+        # predicate`
+        # with `->` compiled (2026-11-26, IfThenElse; row by row against
+        # the commit before): 13,133 compared, 1,530 exact.  189 predicates
+        # refused before compile (refused 5,021 -> 4,832; 'if-then-else
+        # ->' 129 -> 0).  12 new exact rows: delete_MDBbuffer/5, check_occ/2
+        # and get_child_info/5 (refused before) and nine $or$s compared as
+        # 'other' before, e.g. point_forward_or_backward_RSR/8.11#1 (a
+        # predicate refused at its `->` kept the $or$ clauses compiled
+        # before the refusal, and they were compared).  116 rows are
+        # 'under an inlined ->' (espc.py peels_into_caller): 41 compiled
+        # only, 22 other and 4 more compared (mispaired) before.  A lifted
+        # head expression's variables now count as the clause's (espc.py
+        # add_clause): get_used_lpn/5 refused ('unbound input') -> moves
+        # and environment, count_element/5.11#1 at the held arity 3
+        self.assertEqual((c['pred compared'], c['pred exact']), (13133, 1530))
+        self.assertEqual(c['pred under an inlined ->'], 116)
+        self.assertEqual(c['pred compiled only'], 89)
+        # 21 before the nesting fix; the three gone are copy_table/1.11#2#1
+        # (held arity 2, ours 3) and the two search_enzan_code #...#2#2#1
+        # (9, 6).  18 -> 10 with `->`, examined (psi/README.md
+        # "If-then-else"): 4 were under an inlined `->` (now not paired),
+        # 2 under an `unbound/1` test inlined (check_search_index_value/11
+        # #1), 2 were espc's lifted-head bug (count_element/5.11#1,
+        # get_used_lpn/5.11#1#1).  Of the 10 left, 9 are held code order:
+        # first-argument indexing puts a list clause's code before the
+        # `[]` clause's, and canonical() numbers held $or$s in code order
+        # (search_ch_list_loop/8, search_delimiter_loop/5,
+        # get_substring_value/6, set_item/2, get_table_option/3); one,
+        # merge_occ_element/11.11#6, follows a clause espc's reader cannot
+        # parse (PCPROPMG.ESP:508: `!` then a goal with no comma), so the later
+        # $or$s shift by one.  None is an espc code generation bug
+        self.assertEqual(c['$or$ paired with another arity'], 10)
+        # the held cells witness two of the key macros' values (espc.py
+        # key_constant): KMACS2.ESP `:command(Self,mouse#r,kappa_menu)` is
+        # exact only with mouse#r the atom named `mouse#r`, and DUMP.ESP
+        # dumpLine/6's `Char == key#lf` only with key#lf = 10.  Injected
+        # (scratch monkeypatch of key_constant, 2026-11-26): key#lf -> 11
+        # loses exactly dumpLine/6.11#1 (1,517 exact); mouse#r named
+        # `mouse#rx` loses exactly command/3 (1,517)
+        exact = {(x[0], x[1]) for x in r['rows'] if x[2] == 'exact'}
+        self.assertIn(('kappa##kappaFMP_editor2', 'command/3 35'), exact)
+        self.assertIn(('kappa##kappaFMP_dump', 'dumpLine/6.11#1 12'), exact)
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
         # internal: 2 before step 3c (the PCM add_to_ele_by_search/10
@@ -704,20 +1072,27 @@ class Standins(unittest.TestCase):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##abort_handler', 'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
-            'simpos##binary_file', 'simpos##boot_process',
+            'simpos##binary_file', 'simpos##bitmap', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##buffer_region', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##coordinator',
-            'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
+            'simpos##coordinator_program', 'simpos##date_time', 'simpos##debugger',
+            'simpos##debugger_window', 'simpos##directory',
             'simpos##e_string', 'simpos##editor_command_interpreter', 'simpos##editor_text_buffer',
             'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##marker',       # window M8's markers (2026-11-26)
             'simpos##menu_pane',
             'simpos##message', 'simpos##monogyny_list_index', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name', 'simpos##network_subsystem',
-            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_request', 'simpos##pmacs_window',
+            'simpos##password_list', 'simpos##pathname',
+            'simpos##pmacs_display',        # window M10 (2026-11-26)
+            'simpos##pmacs_request',
+            'simpos##pmacs_standard_editor',        # window M10
+            'simpos##pmacs_window',
             'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
-            'simpos##save_memory', 'simpos##semaphore', 'simpos##standard_editor',
+            'simpos##save_memory', 'simpos##semaphore',
+            'simpos##standard_choice_window',       # window M9 (2026-11-26)
+            'simpos##standard_editor',
             'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##status_band',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##tcpip_network_subsystem', 'simpos##time',
@@ -725,14 +1100,9 @@ class Standins(unittest.TestCase):
             'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
         # predicates espc refuses; every other stand-in compiles whole
+        # (e_string's and name's sorts, refused at partition/4's
+        # if-then-else, compile since `->` did, 2026-11-26)
         held = {
-            'simpos##e_string': {('string_sort', 3): 'calls a refused local',
-                                 ('string_sort', 2): 'calls a refused local',
-                                 ('qsort', 3): 'calls a refused local',
-                                 ('partition', 4): 'if-then-else ->'},
-            'simpos##name': {('sort', 3): 'calls a refused local',
-                             ('qsort', 3): 'calls a refused local',
-                             ('partition', 4): 'if-then-else ->'},
             'simpos##pathname': {('append_names', 3): 'calls a refused local',
                                  ('set_names', 3): 'built-in set_substring/4'},
         }
@@ -1450,7 +1820,26 @@ end.''', 'simpos')
         # window M7's rest (2026-11-26): 1,483 -> 1,485 rows, pmacs_window's
         # set_permission/2 and has_been_selected/1 inherited by
         # pimos_window, both success; no other row changes.  823 / 239 / 406
-        self.assertEqual((len(rows), out), (1485, {'success': 823, 'failure': 239, 'refused': 406, 'exception': 16,
+        # window M9 (2026-11-26): pimfep superviser error_mode_menu/2
+        # refused -> success (its held create_error_mode_menu/1 reaches
+        # the new standard_choice_window stand-in; before, the class was
+        # missing); rows unchanged.  824 / 239 / 405
+        # window M10 (row by row against f825683e's stand-ins, 2026-11-26):
+        # 1,485 -> 1,520 rows (1,521 below), all 35 new rows inherited from stand-ins, no
+        # row removed, no held row changes outcome.  pimos_window gets 8 of
+        # pmacs_window's new methods: clear_echo_area/1, echo/2, kill/1
+        # success; current_buffer/2, menu_chosen/2, refresh/1,
+        # right_click/3, set_input_buffer/2 refused at the census window's
+        # unset interpreter (slot constant).  pimos_window_editor gets 27 of
+        # standard_editor's: abort/1, control_x/3, exit/1, save_all_files/1,
+        # show_menu/1 success; read_file/4 refused (unbound pathname); the
+        # other 21 refused at the census editor's unset window (slot
+        # constant).  The held select_buffer/4 moves its stop from
+        # editor_text_buffer get_buffer_instance/3 (now stood in) to
+        # set_input_buffer/2 on that unset window.  832 / 239 / 432.
+        # Then set_input_position/1 (cal_pmacs run/4) inherited by
+        # pimos_window, success: 1,521 rows, 833 / 239 / 432
+        self.assertEqual((len(rows), out), (1521, {'success': 833, 'failure': 239, 'refused': 432, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1464,8 +1853,9 @@ end.''', 'simpos')
         # 154 -> 158 in window M4: pimos_window input_data/2, typed/2,
         # putl/2 (new rows) and the editor's carriage_return/1 (was
         # 'simpos', now get_interpreter/2 to the census window's unset
-        # editor slot) stop at the census's slot constants
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 158)
+        # editor slot) stop at the census's slot constants; 158 -> 185 in
+        # window M10: the 26 new rows above and select_buffer/4
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 185)
         self.assertEqual(sorted(r[2] for r in rows if r[0] == 'pimfep##pimos_login_requester'
                                 and 'no file system is mounted' in r[5]),
                          ['goal/1', 'initiate/1', 'invoke/1'])
@@ -1576,8 +1966,23 @@ end.''', 'simpos')
         # on the editor_text_buffer stand-in) and carriage_return/1
         # (standard_editor's primary, INFERENCE).  852 / 241 / 373
         # window M7's rest: + set_permission/2, has_been_selected/1 in
-        # pimos_window (success), as in test_fep_census
-        self.assertEqual((len(rows), out), (1485, {'success': 854, 'failure': 241, 'refused': 373,
+        # pimos_window (success), as in test_fep_census.  Window M9:
+        # error_mode_menu/2 refused -> success, as there.  855 / 241 / 372
+        # window M10 (row by row against f825683e's stand-ins): the 35 new
+        # rows of test_fep_census, here (recipes: a window with an
+        # interpreter, an editor with a window) 25 success, 9 failure
+        # (backward_character/1, delete_backward_character/1,
+        # delete_character/1, forward_character/1, insert/2, kill_line/1,
+        # next_line/1, previous_line/1, select_buffer/1: the census
+        # window's empty buffer has no character to move over or delete and
+        # no other line, insert/2's unbound argument is not inserted, and
+        # no buffer is in the pool to select) and
+        # read_file/4 refused (unbound pathname); select_buffer/4 moves its
+        # stop from get_buffer_instance/3 to put/2 on the window's unset
+        # output stream (the step 3g artifact).  No held row changes
+        # outcome.  880 / 250 / 373; set_input_position/1 (as in
+        # test_fep_census) success: 1,521 rows, 881 / 250 / 373
+        self.assertEqual((len(rows), out), (1521, {'success': 881, 'failure': 250, 'refused': 373,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -1586,8 +1991,9 @@ end.''', 'simpos')
         # buffer_name/3, clear/3, reshape/7, reshape_by_mouse/3,
         # set_inside_size/5, set_size/3 go from 'simpos' (an unstood
         # pmacs_window or editor method) to put/2 on the window's unset
-        # output stream (the step 3g artifact, as get_title/3)
-        self.assertEqual(slot_const, 114)
+        # output stream (the step 3g artifact, as get_title/3); window M10:
+        # 114 -> 115, select_buffer/4 (above)
+        self.assertEqual(slot_const, 115)
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -1806,7 +2212,7 @@ end.''', 'simpos')
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
             # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
             # M4/M6: 15 (test_fep_census)
-            self.assertEqual(len(fwd), 1485)    # window M7's rest: two inherited methods
+            self.assertEqual(len(fwd), 1521)    # window M10: 36 inherited methods (test_fep_census)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
@@ -3554,7 +3960,12 @@ class Window(unittest.TestCase):
                           ('manipulator_expand', self.SHOT_PINS['expand']),
                           ('manipulator_menu', self.SHOT_PINS['windows']),
                           ('notify_window', self.SHOT_PINS['notify']),
-                          ('window_graphics', self.GRAPHICS_PIN)):
+                          ('window_graphics', self.GRAPHICS_PIN),
+                          ('window_graphics_rest', self.GRAPHICS_REST_PIN),
+                          ('choice_window', self.CHOICE_PIN),
+                          ('manipulator_attribute', self.SHOT_PINS['attribute']),
+                          ('pmacs_editor', self.M10_PINS['pmacs']),
+                          ('editor_menu', self.M10_PINS['editor_menu'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -3924,7 +4335,10 @@ end.
                             Window.manip_events()['expand']),
             windows=lambda: (login, Window.manip_events()['two'], Window.manip_events()['windows']),
             notify=lambda: (login, Window.manip_events()['two'], Window.permission('notify'),
-                            Window.manip_events()['late']))
+                            Window.manip_events()['late']),
+            # window M9 (test_win_m9_attribute): the manipulator's
+            # ATTRIBUTE sheet open on window 2
+            attribute=lambda: (login, Window.manip_events()['two'], Window.manip_events()['attribute']))
 
     # PERMISSION's submenu items (manip_events' `permission`), for window 2
     @staticmethod
@@ -3938,13 +4352,16 @@ end.
         'popup': ('42bfaa7dd1c4e7d2fc1c703be0569243e5cfc96cf639edd3081db31832c26058', 102627),
         'sweep': ('d329f4fbb05d319a26922c63e309efdc7313863c96e978b88ecddfea82d2b6a9', 101796),
         # window M7, the manipulator (test_win_m7_manip)
-        'manip': ('e7201fee4db6fdf28af78876142391d0f8191e31bf13751c5012c1164ed1cf00', 106491),
+        # (window M9: nine items, ATTRIBUTE added; was e7201fee..., 106,491)
+        'manip': ('ff9467b90860916c1fa447c7c9a7163a70d611e2476ffd32228212064aa3c074', 106916),
         'hidden': ('4501d0323c4d5dcd0fbb9e66972aea3c0072c7e282a1e0e3d41c5eb118cedcd9', 104313),
         'reshaped': ('01b2c46048cf3292391a76cb071dce2b527c0daec656a96eab736ecdaeb0c42b', 105062),
         # window M7's other items and the notify window
         'expand': ('1e84d97537038def372a351fd19b69de090fcbfdf32403058e42daa3cda632f1', 110862),
         'windows': ('271d1a6f63b3952dfd10746b6bffc9dd425b8143c09cc3716031933fe0173d2a', 105702),
         'notify': ('ac6f26d394a276c57554e9281d85eca391f45f59a7385ae39a737fc5cf9cafcb', 106513),
+        # window M9, the manipulator's ATTRIBUTE sheet (test_win_m9_attribute)
+        'attribute': ('c0dcc0832e2713c91e461067b401756ea5b0a9dce6af38b701b438827d53f752', 106884),
     }
 
     def test_win_m6_create_kill(self):
@@ -4162,9 +4579,16 @@ end.
             # submenu; EXIT
             expand=[L('m', 200, 150), L('l', 280, 171 + 7 + 16 * 4)],
             windows=[menu, item(5)],
-            exit=[menu, item(7)],
+            exit=[menu, item(8)],        # window M9: ATTRIBUTE is item 7
             # PERMISSION's submenu at (700, 684): out, wait, show, notify
             permission=[menu, item(6)],
+            # window M9: ATTRIBUTE's sheet at (700, 700) (inside (703, 720),
+            # cells 11 x 14): PERMISSION's `wait` (row 1, column 16),
+            # do_it (row 2, column 2), abort (row 2, column 10)
+            attribute=[menu, item(7)],
+            attribute_wait=[L('l', 703 + 16 * 11 + 5, 720 + 14 + 7)],
+            attribute_do_it=[L('l', 703 + 2 * 11 + 5, 720 + 28 + 7)],
+            attribute_abort=[L('l', 703 + 10 * 11 + 5, 720 + 28 + 7)],
             # window 1 raised by a click while window 2 echoes `local`
             late=Standins.keys('local') + [L('l', 1100, 600)],
             # create/kill's `kill`: the newest requester (window 2)
@@ -4336,9 +4760,10 @@ end.
         self.assertEqual(stop.cause, 'would suspend')
         P = m.get_slot(C, 'menu_pane')
         self.assertEqual([K.resolve(m.get_slot(P, k)) for k in ('x', 'y', 'w', 'h', 'items_top')],
-                         [620, 560, 224, 151, 581])
+                         [620, 560, 224, 167, 581])     # window M9: 151 -> 167, ATTRIBUTE added
         self.assertEqual(windev.read_cells(menu, 633, 563, 18, 1), ['WINDOW MANIPULATOR'])
-        for i, label in enumerate(('SHOW', 'HIDE', 'RESHAPE', 'MOVE', 'EXPAND', 'MENU', 'PERMISSION', 'EXIT')):
+        for i, label in enumerate(('SHOW', 'HIDE', 'RESHAPE', 'MOVE', 'EXPAND', 'MENU', 'PERMISSION',
+                                   'ATTRIBUTE', 'EXIT')):
             n = len(label)
             self.assertEqual(windev.read_cells(menu, 622 + (220 - 11 * n) // 2, 582 + 16 * i, n, 1), [label])
         self.assertEqual((windev.pbm_sha256(menu), menu.count()), self.SHOT_PINS['manip'])
@@ -4786,6 +5211,86 @@ end."""
             ((_o, w),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
             self.assertEqual(m.get_slot(w, 'permission'), K.Atom(want))
 
+    PROBE_WRITER = """
+class probe_writer has
+nature standard_io_window;
+instance
+attribute partner := 0;
+after:has_been_selected(W) :- P = W!partner, :putl(P, "selected");
+end."""
+
+    def test_win_m7_coordinator_writes(self):
+        # M7's rest, the coordinator's own process is never held back
+        # (coordinator.esp "OUTPUT PERMISSION", held_back/3's manager/1):
+        # a window's has_been_selected/1 runs in the coordinator's process
+        # (select_window/2, sent on a click), and here it writes into a
+        # covered window whose permission is wait.  The receiver is a test
+        # class whose after-demon on has_been_selected/1 puts a line on its
+        # partner (OURS harness, as test_win_m7_has_been_selected: kappa
+        # pbwin.esp:72 is the held after-demon on the selector; the
+        # commented-out kappa sheet_obj.esp:433-438 draws in another window
+        # from it).  The windows are made after the Login PIMOS run: A at
+        # (100, 100) with permission(wait), shown, B over part of it
+        # (activated, so A stays selected), the probe at
+        # (700, 100) with A its partner; the probe is shown (show/1 selects
+        # it) while `simpos##process`'s current process is the
+        # coordinator's (OURS: the direct send stands for the coordinator
+        # process's own event/2).  The line goes into A at once (B lifted
+        # and laid back, its dots unchanged; A's uncovered columns show
+        # it), with no waiter.  With the current process another one (any
+        # writer), the same line waits (a waiter on A, kind wait).
+        # Injection, OBSERVED: P13 in test_win_m8_markers's header.
+        import windev
+        A = K.Atom
+        ts, failed = espc.compile_text(self.PROBE_WRITER, 'simpos')
+        self.assertEqual(failed, {})
+        m, _fr, _ = self.later_run(self.manip_events()['login'])
+        for t in ts:
+            m.lib.add(t)
+        m.reset()
+        fr = windev.device(m).frame
+        C = K.ClassRef('simpos##coordinator')
+        PC = K.ClassRef('simpos##process')
+
+        def made(cid, x, y, *more):
+            opts = K.NIL
+            for o in reversed((K.Vec([A('position'), x, y]),) + more):
+                opts = K.Cons(o, opts)
+            ((_o, v),) = K.call_class_method(m, cid, 'create', [opts, K.Var()])
+            return v
+        a = made('simpos##standard_io_window', 100, 100, K.Vec([A('permission'), A('wait')]))
+        self.assertTrue(self.send(m, a, 'show'))
+        b = made('simpos##standard_io_window', 200, 130)
+        self.assertTrue(self.send(m, b, 'activate'))      # A stays selected
+        pb = m.get_slot(b, 'pane')
+        bx, by, bw, bh = (m.get_slot(pb, k) for k in ('x', 'y', 'w', 'h'))
+        under_b = self.block(fr, bx, by, bw, bh)
+        probe = made('simpos##probe_writer', 700, 100)
+        m.set_slot(probe, 'partner', a)
+        current = m.get_slot(PC, 'current')
+        m.set_slot(PC, 'current', m.get_slot(C, 'process'))
+        try:
+            self.assertTrue(self.send(m, probe, 'show'))
+        finally:
+            m.set_slot(PC, 'current', current)
+        self.assertIs(m.get_slot(C, 'selected'), probe)
+        self.assertEqual(self._walk(m.get_slot(C, 'waiters')), [])
+        self.assertEqual(''.join(chr(c & 0xff) for c in self._walk(m.get_slot(a, 'transcript'))[0].codes()),
+                         'selected')     # the ESP string's 16-bit codes, 16#"23xx"
+        self.assertEqual(self.block(fr, bx, by, bw, bh), under_b)
+        pa = m.get_slot(a, 'pane')
+        cw = m.get_slot(pa, 'cw')
+        seen = (bx - m.get_slot(pa, 'left')) // cw
+        self.assertEqual(windev.read_cells(fr, m.get_slot(pa, 'left'), m.get_slot(pa, 'top'), seen, 1),
+                         ['selected'[:seen]])
+        # another process's write to A waits
+        self.assertNotEqual(m.get_slot(PC, 'current'), m.get_slot(C, 'process'))
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, a, 'putl', K.Str('later'))
+        self.assertEqual(e.exception.cause, 'would suspend')
+        self.assertEqual([K.resolve(self._walk(v)[2]) for v in self._walk(m.get_slot(C, 'waiters'))],
+                         [A('wait')])
+
     # window M8, graphics (standard_io_window.esp and window_pane.esp
     # "Window M8"): a window of 40 x 20 cells made at (100, 100) after the
     # Login PIMOS run (OURS harness, as test_win_m7_has_been_selected),
@@ -4845,8 +5350,10 @@ end."""
         #   - a fill at (430, 270), 50 x 50, cut to the inside: 10 x 10;
         #   - transfer/8 (copy) of the box to (220, 10);
         #   - get_mouse_position/3 after a move to (150, 160): (47, 40);
-        #   - refused loudly: a dotted line, the light_paint pattern, a
-        #     slanted line leaving the inside, an unknown command.
+        #   - refused loudly: a dotted line, an unknown pattern (light_paint
+        #     until M8's rest: test_win_m8_patterns), a slanted line leaving
+        #     the inside, an unknown command (draw_bars; draw_arc until M8's
+        #     rest: test_win_m8_shapes).
         # Injections, OBSERVED (2026-11-26; each from a backup copy,
         # restored by copy, cmp clean; Window, test_fep_bridge.py and
         # test_kl0.py run, all else OK):
@@ -4915,9 +5422,9 @@ end."""
         self.assertEqual([K.resolve(v) for v in xy], [47, 40])
         # loud refusals; the frame unchanged
         for sel, args in (('draw_line', [0, 0, 10, 0, 1, K.Atom('dotted'), K.Atom('set')]),
-                          ('draw_filled_rectangle', [0, 0, 5, 5, 0, K.Atom('light_paint'), K.Atom('set')]),
+                          ('draw_filled_rectangle', [0, 0, 5, 5, 0, K.Atom('zigzag'), K.Atom('set')]),
                           ('draw_line', [400, 0, 460, 30]),
-                          ('execute_graphics_command', [K.Cons(K.Vec([K.Atom('draw_arc'), K.Vec([1, 2])]),
+                          ('execute_graphics_command', [K.Cons(K.Vec([K.Atom('draw_bars'), K.Vec([1, 2])]),
                                                                K.NIL)])):
             with self.assertRaises(K.Refusal) as e:
                 self.send(m, w, sel, *args)
@@ -5039,6 +5546,1274 @@ end."""
         self.assertEqual(fr.rows, rows)
         self.assertEqual(len(self._walk(m.get_slot(S, 'used'))), used)
 
+    # window M8's rest: the named patterns' looks (OURS, window_pane.esp
+    # named/3), a word for each of 4 rows
+    NAMED_PATTERNS = {'light_paint': [0x8888, 0x2222, 0x8888, 0x2222], 'dotted': [0xAAAA, 0, 0xAAAA, 0],
+                      'mesh': [0xFFFF, 0x8888, 0x8888, 0x8888],
+                      'small_mesh': [0xAAAA, 0x5555, 0xAAAA, 0x5555],
+                      'left_hatch': [0x8888, 0x4444, 0x2222, 0x1111],
+                      'right_hatch': [0x1111, 0x2222, 0x4444, 0x8888],
+                      # window M8's stops (2026-11-26): density INFERENCE, dots OURS
+                      'rough_dotted': [0x8888, 0, 0x2222, 0]}
+
+    def pattern_dot(self, p, x, y):
+        # the reference: pattern P's dot at inside (X, Y), the tile
+        # anchored at the inside's top-left; a pattern string a 64 x 64
+        # tile of 4 words a row (INFERENCE, standard_io_window.esp
+        # "PATTERNS")
+        if isinstance(p, K.Atom):
+            wd = self.NAMED_PATTERNS[p.name][y % 4]
+        else:
+            wd = p.codes()[(y % 64) * 4 + (x % 64) // 16]
+        return (wd >> (15 - x % 16)) & 1
+
+    def pattern_fill(self, want, p, x, y, wd, ht, iw=440, ih=280):
+        # the reference fill (set) of P over (X, Y, WD, HT) cut to the inside
+        X0, Y0 = self.GRAPHICS_AT
+        for yy in range(max(y, 0), min(y + ht, ih)):
+            for xx in range(max(x, 0), min(x + wd, iw)):
+                if self.pattern_dot(p, xx, yy):
+                    want.rows[Y0 + yy] |= 1 << (1279 - X0 - xx)
+
+    def held_patterns(self, m):
+        # the HELD paragraph##bar_v local set_pattern/2 (bar_v.esp:333-362)
+        # for N = 0..5, run on the compiled .ptf
+        cid = 'paragraph##bar_v'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        out = []
+        for n in range(6):
+            m.reset()
+            v = K.Var()
+            (got,) = [K.resolve(v) for _ in m.solve((m.code(cid), ps[('set_pattern', 2)].offset), [n, v])]
+            out.append(got)
+        return out
+
+    def test_win_m8_patterns(self):
+        # M8's rest, fill patterns (window.md §2.5; standard_io_window.esp
+        # "PATTERNS", window_pane.esp pattern_in/7): draw_filled_rectangle/8
+        # with a pattern other than fix, drawn as styled lines of the
+        # frozen device line (windev line/8, winfb's style operand).
+        #   - the HELD bar_v set_pattern/2 (needs blt 44, kl0_opcodes.tsv)
+        #     gives light_paint, a string, dotted and three strings for N
+        #     = 0..5; each string is 256 words, the set_pattern1 words each
+        #     four times running;
+        #   - the HELD paragraph##g_window local draw_list_b/8 (g_window.esp
+        #     :160-183, the mono bar list) with those six patterns and the
+        #     numbers 1..6, its list given to execute_graphics_command/2:
+        #     each 17 x 11 bar equals the reference (pattern_dot: a string
+        #     read as a 64 x 64 tile, 4 words a row, INFERENCE), and its
+        #     number is read back beside it;
+        #   - the six named patterns and a rectangle cut at the inside's
+        #     left edge, against a frame built dot by dot;
+        #   - exclusive_or twice erases a patterned fill;
+        #   - refused loudly: an unknown pattern name, a string not of 256
+        #     words; the frame unchanged.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
+        #   G10 styled/6 does not turn the word by the piece's column:
+        #       this test, test_win_m8_shapes (its light_paint disc) and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G11 row_words/6 reads a pattern string 1 word a row: this test
+        #       and test_win_m8_rest_screen FAIL, nothing else.
+        #   G12 blt 44 puts the quotient where the remainder goes: this
+        #       test and test_win_m8_rest_screen FAIL, nothing else
+        #       (test_kl0's census does not run set_pattern/2's values).
+        import windev
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        pats = self.held_patterns(m)
+        self.assertEqual([p.name if isinstance(p, K.Atom) else len(p.codes()) for p in pats],
+                         ['light_paint', 256, 'dotted', 256, 256, 256])
+        self.assertEqual(pats[5].codes()[:8], [0x5555] * 4 + [0xAAAA] * 4)
+        self.assertEqual(pats[1].codes()[:32], [0x1010] * 4 + [0] * 12 + [0x0101] * 4 + [0] * 12)
+        # the held g_window mono bar list
+        cid = 'paragraph##g_window'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        ((_n, font),) = K.call_class_method(m, 'simpos##font', 'create', [K.Str('font:test_11.font'), K.Var()])
+        items = K.NIL
+        for i in reversed(range(6)):
+            items = K.Cons(pats[i], K.Cons(i + 1, items))
+        m.reset()
+        dl = K.Var()
+        (dl,) = [K.resolve(dl) for _ in m.solve((m.code(cid), ps[('draw_list_b', 8)].offset),
+                                                [10, 10, 1, items, dl, font, 30, 280])]
+        self.assertTrue(self.send(m, w, 'execute_graphics_command', dl))
+
+        def region(f, x, y, wd, ht):
+            return [(f.rows[Y0 + y + j] >> (1280 - X0 - x - wd)) & ((1 << wd) - 1) for j in range(ht)]
+        for i, p in enumerate(pats):
+            y = 10 + 18 * i
+            ref = winfb.Frame()
+            self.pattern_fill(ref, p, 10, y + 3, 17, 11)
+            self.assertEqual(region(fr, 10, y + 3, 17, 11), region(ref, 10, y + 3, 17, 11), i)
+            self.assertEqual(windev.read_cells(fr, X0 + 33, Y0 + y, 1, 1), [str(i + 1)])
+        # the named patterns, and one cut at the left edge
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        for i, name in enumerate(sorted(self.NAMED_PATTERNS)):
+            p, x, y = K.Atom(name), 5 + i * 70, 5
+            self.assertTrue(self.send(m, w, 'draw_filled_rectangle', x, y, 67, 83, 1, p, K.Atom('set')))
+            self.pattern_fill(want, p, x, y, 67, 83)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', -7, 100, 53, 61, 0, pats[4], K.Atom('set')))
+        self.pattern_fill(want, pats[4], -7, 100, 53, 61)
+        self.assertEqual(fr.rows, want.rows)
+        # exclusive_or twice
+        n0 = fr.count()
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 100, 100, 77, 50, 1, pats[5],
+                                  K.Atom('exclusive_or')))
+        self.assertEqual(fr.count() - n0, sum(self.pattern_dot(pats[5], x, y)
+                                              for x in range(100, 177) for y in range(100, 150)))
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 100, 100, 77, 50, 1, pats[5],
+                                  K.Atom('exclusive_or')))
+        self.assertEqual(fr.rows, want.rows)
+        # refusals
+        bad = K.Str('')
+        bad.set_codes([0x5555] * 16)
+        for pt in (K.Atom('zigzag'), bad):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, 'draw_filled_rectangle', 0, 0, 5, 5, 0, pt, K.Atom('set'))
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, want.rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def image_ref(self, want, codes, x, y, wd, ht):
+        # the reference restore_image/6: WD x HT dots at inside (X, Y),
+        # ceil(WD/16) words a row, MSB leftmost, opaque
+        X0, Y0 = self.GRAPHICS_AT
+        n = (wd + 15) // 16
+        for j in range(ht):
+            for i in range(wd):
+                bit = 1 << (1279 - X0 - x - i)
+                if (codes[j * n + i // 16] >> (15 - i % 16)) & 1:
+                    want.rows[Y0 + y + j] |= bit
+                else:
+                    want.rows[Y0 + y + j] &= ~bit
+
+    def test_win_m8_images(self):
+        # M8's rest, images (window.md §2.5; standard_io_window.esp
+        # "IMAGES", window_pane.esp image_in/6, bitmap.esp):
+        #   - :get_plane_count(#bitmap, N) is 1, so the HELD
+        #     profiler_icon_image_lib's class slot `color` (initialised by
+        #     its color_check2/1) is 1, the monochrome path;
+        #   - light_paint MEASURED: the HELD profiler_mono_selector_image
+        #     (p_v_imag.esp:151-152, :228: fix set, light_paint reset, saved
+        #     at the inside's (0, 0)) has 16#"7777" only on even rows and
+        #     16#"DDDD" only on odd ones, the complement of window_pane.esp's
+        #     light_paint (8888, 2222);
+        #   - restore_image/6 of the HELD profiler_icon_image3 (16 x 112)
+        #     over a black block: opaque, equal to the reference; twice,
+        #     the same frame;
+        #   - the HELD paragraph##type_switch_icon :draw/6 (p_icon.esp:170
+        #     -186: three draw_box/5 and :restore(#profiler_icon_image_lib,
+        #     Win, image1, X+1, Y+24, 16, h1), whose restore/7 adjusts Y by
+        #     get_label_height/2 - 24 and sends restore_image/6) equals the
+        #     three held draw_box/5 and the reference image1 at (X+1, Y+24
+        #     + 16 - 24); get_label_height/2 is 16;
+        #   - refused loudly: an image leaving the inside, a string too
+        #     short for its size; the frame unchanged.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
+        #   G13 image_in/6 draws transparent (no reset of the area): this
+        #       test and test_win_m8_rest_screen FAIL, nothing else.
+        #   G14 get_plane_count/2 answers 3: this test FAILS and
+        #       test_win_m8_rest_screen ERRORS, nothing else.
+        import windev
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        self.assertEqual(K.call_class_method(m, 'simpos##bitmap', 'get_plane_count', [K.Var()]), [[1]])
+        self.assertEqual(m.get_slot(K.ClassRef('paragraph##profiler_icon_image_lib'), 'color'), 1)
+
+        def image(cid):
+            ((s,),) = K.call_class_method(m, cid, 'get', [K.Var()])
+            return s.codes()
+        sel = image('paragraph##profiler_mono_selector_image')
+        self.assertEqual(len(sel), 24 * 238)
+        rows = {0x7777: set(), 0xDDDD: set()}
+        for i, c in enumerate(sel):
+            if c in rows:
+                rows[c].add((i // 24) % 2)
+        self.assertEqual(rows, {0x7777: {0}, 0xDDDD: {1}})
+        lp = self.NAMED_PATTERNS['light_paint']
+        self.assertEqual([0xffff & ~0x7777, 0xffff & ~0xDDDD], lp[:2])
+        # restore_image/6, opaque over black
+        img3 = image('paragraph##profiler_icon_image3')
+        self.assertEqual(len(img3), 112)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 0, 0, 40, 130, K.Atom('set')))
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        ((s3,),) = K.call_class_method(m, 'paragraph##profiler_icon_image3', 'get', [K.Var()])
+        self.assertTrue(self.send(m, w, 'restore_image', s3, 10, 10, 16, 112))
+        self.image_ref(want, img3, 10, 10, 16, 112)
+        self.assertEqual(fr.rows, want.rows)
+        self.assertTrue(self.send(m, w, 'restore_image', s3, 10, 10, 16, 112))
+        self.assertEqual(fr.rows, want.rows)
+        # the held icon's draw/6, against its own draw_box/5 and the image
+        lh = K.Var()
+        self.assertTrue(self.send(m, w, 'get_label_height', lh))
+        self.assertEqual(K.resolve(lh), 16)
+        ic = K.make_instance(m, 'paragraph##type_switch_icon')
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(ic, 'draw', [100, 20, 20, 84, w, ic])))
+        m2, w2 = self.graphics_window()
+        self.assertTrue(self.send(m2, w2, 'draw_filled_rectangle', 0, 0, 40, 130, K.Atom('set')))
+        self.assertTrue(self.send(m2, w2, 'restore_image', s3, 10, 10, 16, 112))
+        for k in range(3):
+            self.assertEqual(self.held_draw_box(m2, w2, 100, 20 + 28 * k, 19, 28), 1)
+        ref = winfb.Frame()
+        ref.rows = list(windev.device(m2).frame.rows)
+        self.image_ref(ref, image('paragraph##profiler_icon_image1'), 101, 20 + 24 + 16 - 24, 16, 84)
+        self.assertEqual(fr.rows, ref.rows)
+        # refusals
+        rows = list(fr.rows)
+        for args in ((s3, 430, 10, 16, 112), (s3, 10, 10, 16, 113)):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, 'restore_image', *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    # window M8's rest, shapes: the reference dots of window_pane.esp
+    # shape_in/9 (OURS rules, its header), repeated here dot by dot
+    SINE = [0, 18, 36, 54, 71, 89, 107, 125, 143, 160, 178, 195, 213, 230, 248, 265, 282, 299,
+            316, 333, 350, 367, 384, 400, 416, 433, 449, 465, 481, 496, 512, 527, 543, 558, 573,
+            587, 602, 616, 630, 644, 658, 672, 685, 698, 711, 724, 737, 749, 761, 773, 784, 796,
+            807, 818, 828, 839, 849, 859, 868, 878, 887, 896, 904, 912, 920, 928, 935, 943, 949,
+            956, 962, 968, 974, 979, 984, 989, 994, 998, 1002, 1005, 1008, 1011, 1014, 1016,
+            1018, 1020, 1022, 1023, 1023, 1024, 1024]
+
+    def unit(self, d):
+        q, r = divmod(d % 360, 90)
+        sr, cr = self.SINE[r], self.SINE[90 - r]
+        return [(cr, sr), (-sr, cr), (-cr, -sr), (sr, -cr)][q]
+
+    def shape_dots(self, rx, ry, wd, angles=None):
+        # the dots (dx, dy) from the centre (dy down) of shape_in/9
+        def h(r, y):
+            x = r
+            while x * x > r * r + r - y * y:
+                x -= 1
+            return x
+
+        def half(a, b, hh):
+            return a if b == 0 else a * hh // b
+        ri = ry - wd
+        sec = None
+        if angles and angles[0] % 360 != angles[1] % 360:
+            sec = (self.unit(angles[0]), self.unit(angles[1]),
+                   (angles[1] - angles[0]) % 360 > 180)
+        dots = set()
+        for y in range(ry + 1):
+            a = half(rx, ry, h(ry, y))
+            b = None
+            if wd > 0 and ri >= 0 and rx - wd >= 0 and y <= ri:
+                b = half(rx - wd, ri, h(ri, y))
+            for u in ([y] if y == 0 else [y, -y]):
+                for x in range(-a, a + 1):
+                    if b is not None and abs(x) <= b:
+                        continue
+                    if sec:
+                        (c1, s1), (c2, s2), wide = sec
+                        i1, i2 = c1 * u - s1 * x >= 0, c2 * u - s2 * x <= 0
+                        if not ((i1 or i2) if wide else (i1 and i2)):
+                            continue
+                    dots.add((x, -u))
+        return dots
+
+    def rim(self, cx, cy, r, a):
+        c, s = self.unit(a)
+        return cx + (r * c + 512) // 1024, cy - (r * s + 512) // 1024
+
+    def put_dots(self, want, cx, cy, dots, pattern=None, iw=440, ih=280):
+        X0, Y0 = self.GRAPHICS_AT
+        for dx, dy in dots:
+            x, y = cx + dx, cy + dy
+            if 0 <= x < iw and 0 <= y < ih and (pattern is None or self.pattern_dot(pattern, x, y)):
+                want.rows[Y0 + y] |= 1 << (1279 - X0 - x)
+
+    def put_line(self, want, x1, y1, x2, y2, wd, op=0):
+        # draw_line_in/7's line, op OP (0 set, 2 exclusive_or): a fill when level or upright, else
+        # the device line (windev line/7, style all ones)
+        import winfb
+        X0, Y0 = self.GRAPHICS_AT
+        if y1 == y2:
+            want.command(winfb.FILL << 4 | op, [X0 + min(x1, x2), Y0 + y1, abs(x2 - x1) + 1, wd, 0, 0])
+        elif x1 == x2:
+            want.command(winfb.FILL << 4 | op, [X0 + x1, Y0 + min(y1, y2), wd, abs(y2 - y1) + 1, 0, 0])
+        else:
+            want.command(winfb.LINE << 4 | op, [X0 + x1, Y0 + y1, X0 + x2, Y0 + y2, wd, 0xffff])
+
+    def test_win_m8_shapes(self):
+        # M8's rest, shapes (window.md §2.5; standard_io_window.esp
+        # "SHAPES", window_pane.esp shape_in/9, fan_in/8, lines_in/5):
+        # the selectors and argument orders PRINTED WINCS p3 and
+        # PRINTED-INTERFACE TM-785 p40, the dots OURS, each drawing checked
+        # against shape_dots/4 (the rules repeated dot by dot) or the winfb
+        # commands of its lines:
+        #   - draw_circle/7 (the HELD kappa make_copyright/2 arguments,
+        #     MOPMANAGER.ESP:154 `(Window,16,22,10,1,solid,set)`, and a
+        #     3-dot outline), draw_filled_circle/5, draw_ellipse/8,
+        #     draw_filled_ellipse/7 cut to the inside;
+        #   - draw_arc/9 280 to 40 (through 0: the TM-785 p40 angles),
+        #     draw_elliptical_arc/10 95 to 170, draw_filled_fan/9 30 to 300
+        #     (a sweep of 270, wider than 180);
+        #   - draw_fan/9: the arc and its two slanted radii;
+        #   - draw_filled_circle/7 with light_paint (pattern_dot/4's dots);
+        #   - draw_graph/2 (the held kwic scrolls.esp:1135 form: a list of
+        #     (X, Y)) open, draw_polygon/9 closed;
+        #   - execute_graphics_command/2 with TM-785 p40's vectors
+        #     draw_circle {CX, CY, R, W, St, Op} and draw_arc;
+        #   - exclusive_or twice erases a filled fan and an arc;
+        #   - refused loudly, the frame unchanged: style dotted, an integer
+        #     (colour) op, a negative angle, width 0, a polygon leaving the
+        #     inside, a fan whose radius leaves it, an unknown pattern.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
+        #   G15 the disc rule x*x + y*y =< R*R (no + R): this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G16 a sweep over 180 degrees taken as narrow: this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G17 no inner ellipse (every outline filled): this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G18 the polygon not closed: this test and
+        #       test_win_m8_rest_screen FAIL, nothing else.
+        #   G19 draw_fan/9 without its first radius: this test FAILS,
+        #       nothing else.
+        #   G20 an outline's op not checked (an integer colour op sent on):
+        #       this test FAILS, nothing else.
+        #   G21 the second quadrant's cosine not negated: this test FAILS,
+        #       nothing else.
+        #   E3 TM-785 p40's six-element draw_filled_ellipse vector drawn
+        #      (read as {CX, CY, RX, RY, Pattern, Op}), not refused: this
+        #      test FAILS, nothing else (test_fep_bridge.py,
+        #      test_kl0.py also run: OK).
+        import windev
+        import winfb
+        A = K.Atom
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        S, SET = A('solid'), A('set')
+
+        def drawn(sel, *args):
+            self.assertTrue(self.send(m, w, sel, *args), sel)
+            self.assertEqual(fr.rows, want.rows, sel)
+        self.put_dots(want, 16, 22, self.shape_dots(10, 10, 1))
+        drawn('draw_circle', 16, 22, 10, 1, S, SET)
+        self.put_dots(want, 60, 60, self.shape_dots(40, 40, 3))
+        drawn('draw_circle', 60, 60, 40, 3, S, SET)
+        self.put_dots(want, 160, 60, self.shape_dots(30, 30, 0))
+        drawn('draw_filled_circle', 160, 60, 30, SET)
+        self.put_dots(want, 300, 60, self.shape_dots(60, 25, 2))
+        drawn('draw_ellipse', 300, 60, 60, 25, 2, S, SET)
+        self.put_dots(want, 420, 260, self.shape_dots(40, 30, 0))
+        drawn('draw_filled_ellipse', 420, 260, 40, 30, A('fix'), SET)
+        self.put_dots(want, 60, 180, self.shape_dots(50, 50, 4, (280, 40)))
+        drawn('draw_arc', 60, 180, 50, 280, 40, 4, S, SET)
+        self.put_dots(want, 200, 180, self.shape_dots(60, 30, 3, (95, 170)))
+        drawn('draw_elliptical_arc', 200, 180, 60, 30, 95, 170, 3, S, SET)
+        self.put_dots(want, 340, 200, self.shape_dots(50, 50, 0, (30, 300)))
+        drawn('draw_filled_fan', 340, 200, 50, 30, 300, 1, A('fix'), SET)
+        # draw_fan/9: the arc, then the radii (slanted at 20 and 130)
+        self.put_dots(want, 120, 240, self.shape_dots(30, 30, 1, (20, 130)))
+        for a in (20, 130):
+            x, y = self.rim(120, 240, 30, a)
+            self.put_line(want, 120, 240, x, y, 1)
+        drawn('draw_fan', 120, 240, 30, 20, 130, 1, S, SET)
+        lp = A('light_paint')
+        self.put_dots(want, 250, 250, self.shape_dots(25, 25, 0), lp)
+        drawn('draw_filled_circle', 250, 250, 25, 1, lp, SET)
+        # polylines: the graph open, the polygon closed
+        pts = [(380, 100), (430, 100), (430, 140), (390, 130)]
+
+        def plist(ps):
+            out = K.NIL
+            for x, y in reversed(ps):
+                out = K.Cons(K.Vec([A(','), x, y]), out)
+            return out
+        for (x1, y1), (x2, y2) in zip(pts, pts[1:]):
+            self.put_line(want, x1, y1, x2, y2, 1, 2)     # exclusive_or: the shared ends cancel
+        drawn('draw_graph', plist(pts))
+        tri = [(10, 100), (40, 100), (25, 130)]
+        for (x1, y1), (x2, y2) in zip(tri, tri[1:] + tri[:1]):
+            self.put_line(want, x1, y1, x2, y2, 2)
+        drawn('draw_polygon', plist(tri), 0, 0, 400, 400, 2, S, SET)
+        # execute_graphics_command/2 with TM-785 p40's vectors
+        self.put_dots(want, 420, 20, self.shape_dots(15, 15, 1))
+        self.put_dots(want, 420, 20, self.shape_dots(10, 10, 2, (280, 40)))
+        cmds = K.Cons(K.Vec([A('draw_circle'), K.Vec([420, 20, 15, 1, S, SET])]),
+                      K.Cons(K.Vec([A('draw_arc'), K.Vec([420, 20, 10, 280, 40, 2, S, SET])]), K.NIL))
+        drawn('execute_graphics_command', cmds)
+        # exclusive_or: once each dot, twice none
+        rows = list(fr.rows)
+        X = A('exclusive_or')
+        self.assertTrue(self.send(m, w, 'draw_filled_fan', 200, 120, 20, 300, 60, 1, A('fix'), X))
+        self.assertNotEqual(fr.rows, rows)
+        self.assertTrue(self.send(m, w, 'draw_filled_fan', 200, 120, 20, 300, 60, 1, A('fix'), X))
+        self.assertTrue(self.send(m, w, 'draw_arc', 60, 60, 40, 0, 180, 2, S, X))
+        self.assertTrue(self.send(m, w, 'draw_arc', 60, 60, 40, 0, 180, 2, S, X))
+        self.assertEqual(fr.rows, rows)
+        for args in [('draw_circle', 100, 100, 10, 1, A('dotted'), SET),
+                     ('draw_circle', 100, 100, 10, 1, S, 1),
+                     ('draw_arc', 100, 100, 10, 0, -1, 1, S, SET),
+                     ('draw_ellipse', 100, 100, 10, 5, 0, S, SET),
+                     ('draw_polygon', plist([(10, 10), (450, 20), (10, 30)]), 0, 0, 0, 0, 1, S, SET),
+                     ('draw_fan', 100, 20, 40, 60, 120, 1, S, SET),
+                     ('draw_filled_circle', 100, 100, 10, 1, A('zigzag'), SET),
+                     # TM-785 p40's six-element draw_filled_ellipse vector,
+                     # ambiguous (standard_io_window.esp command/4)
+                     ('execute_graphics_command',
+                      K.Cons(K.Vec([A('draw_filled_ellipse'), K.Vec([200, 50, 100, 1, A('fix'), SET])]), K.NIL))]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def test_win_m8_stops_ellipse(self):
+        # Window M8's stops, item 5 (docs/simpos/m8_stops.md §6, §7 step 1):
+        # the held draw_filled_ellipse forms and the rough_dotted pattern.
+        #   - /8 `(W, CX, CY, RX, RY, 0, fix, set|reset)`: the HELD icotext
+        #     imi_draw_win.esp:250-253 node, its two calls with
+        #     XX = 100, Y = 60, L = 3, FS = 16 transcribed (the class does
+        #     not compile under espc: 52 of its predicates are refused),
+        #     the shadow `set` 5 right and 3 down, the node `reset` over it;
+        #   - /6 `(W, CX, CY, RX, RY, Op)`: the HELD gog CGS_DEMO.ESP:416
+        #     form (its class needs gog's macro bank `moji`, not held), fix;
+        #   - /8 with rough_dotted, and a draw_filled_rectangle/8 with it:
+        #     pattern_dot's dots (density INFERENCE, dots OURS);
+        #   - kappa2 pdim.esp:1081-1101 get_paint_pattern/2's five names are
+        #     all patterns of the stand-in now (:pattern/2);
+        #   - execute_graphics_command/2 with a seven-element vector: the /8;
+        #   - TM-785 p40's six-element vector still refused loudly.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   S1 /8 drawn with fix whatever its pattern: this test FAILS,
+        #      nothing else.
+        #   S2 /6 drawn with exclusive_or whatever its op: first run, with
+        #      the /6 drawn on white: NOTHING failed (xor = set there); the
+        #      /6 is drawn over a half-black block since, and then this test
+        #      FAILS, nothing else (Window run).
+        #   S3 rough_dotted's rows 0 and 2 swapped: this test and
+        #      test_win_m8_patterns FAIL, nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        want = winfb.Frame()
+        want.rows = list(fr.rows)
+        SET, RESET, FIX = A('set'), A('reset'), A('fix')
+
+        def drawn(sel, *args):
+            self.assertTrue(self.send(m, w, sel, *args), sel)
+            self.assertEqual(fr.rows, want.rows, sel)
+        # icotext's node: XX + L*FS/2 = 124, Y + FS/2 + 4 = 72, (L+1)*FS/2 = 32,
+        # (FS+L)/2 + 4 = 13
+        XX, Y, L, FS = 100, 60, 3, 16
+        cx, cy, rx, ry = XX + L * FS // 2, Y + FS // 2 + 4, (L + 1) * FS // 2, (FS + L) // 2 + 4
+        self.put_dots(want, cx + 5, cy + 3, self.shape_dots(rx, ry, 0))
+        drawn('draw_filled_ellipse', cx + 5, cy + 3, rx, ry, 0, FIX, SET)
+        X0, Y0 = self.GRAPHICS_AT
+        for dx, dy in self.shape_dots(rx, ry, 0):
+            want.rows[Y0 + cy + dy] &= ~(1 << (1279 - X0 - cx - dx))
+        drawn('draw_filled_ellipse', cx, cy, rx, ry, 0, FIX, RESET)
+        self.assertGreater(fr.count(), 0)
+        # gog's /6, set over a block that covers its left half (an op other
+        # than set shows there)
+        want.command(winfb.FILL << 4, [X0 + 250, Y0 + 30, 50, 61, 0, 0])
+        drawn('draw_filled_rectangle', 250, 30, 50, 61, SET)
+        self.put_dots(want, 300, 60, self.shape_dots(48, 24, 0))
+        drawn('draw_filled_ellipse', 300, 60, 48, 24, SET)
+        # rough_dotted
+        rd = A('rough_dotted')
+        for name in ('right_hatch', 'left_hatch', 'small_mesh', 'rough_dotted', 'dotted'):
+            m.reset()
+            self.assertTrue(K.call_class_method(m, 'simpos##window_pane', 'pattern', [A(name)]), name)
+        self.put_dots(want, 100, 200, self.shape_dots(60, 30, 0), rd)
+        drawn('draw_filled_ellipse', 100, 200, 60, 30, 1, rd, SET)
+        self.pattern_fill(want, rd, 250, 150, 70, 50)
+        drawn('draw_filled_rectangle', 250, 150, 70, 50, 1, rd, SET)
+        self.assertEqual(sum(self.pattern_dot(rd, x, y) for x in range(16) for y in range(4)), 8)
+        # execute_graphics_command/2: the seven-element vector is the /8
+        self.put_dots(want, 380, 230, self.shape_dots(30, 20, 0), A('small_mesh'))
+        drawn('execute_graphics_command',
+              K.Cons(K.Vec([A('draw_filled_ellipse'), K.Vec([380, 230, 30, 20, 1, A('small_mesh'), SET])]), K.NIL))
+        rows = list(fr.rows)
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, w, 'execute_graphics_command',
+                      K.Cons(K.Vec([A('draw_filled_ellipse'), K.Vec([200, 0, 100, 1, A('dotted'), SET])]), K.NIL))
+        self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    IW, IH = 440, 280                   # graphics_window's inside
+
+    def flood4(self, fr, x, y):
+        # the reference region of paint_in/5 (OURS): the dots 4-connected
+        # to the inside's (x, y) with its value, inside the inside
+        X0, Y0 = self.GRAPHICS_AT
+
+        def dot(i, j):
+            return (fr.rows[Y0 + j] >> (1279 - X0 - i)) & 1
+        v, seen, todo = dot(x, y), set(), [(x, y)]
+        while todo:
+            i, j = todo.pop()
+            if (i, j) in seen or not (0 <= i < self.IW and 0 <= j < self.IH) or dot(i, j) != v:
+                continue
+            seen.add((i, j))
+            todo += [(i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)]
+        return seen
+
+    # MEASURED 2026-11-26, NOT A TARGET: words of each paragraph image
+    # (save_image/6 of go1-go6) that differ from the held
+    # profiler_icon_image1..6 (see test_win_m8_stops_surface)
+    PARAGRAPH_GAP = {1: 84, 2: 56, 3: 112, 4: 140, 5: 80, 6: 56}
+
+    def test_win_m8_stops_surface(self):
+        # Window M8's stops, step 3 (docs/simpos/m8_stops.md §2, §7):
+        # windows drawn on before they are shown, or never shown, draw into
+        # a surface pane, an area of bitmap memory (window_pane.esp
+        # create_surface/5; winfb's target, the 2026-11-26 extension;
+        # coordinator.esp uncover/3 aims the device at it):
+        #   - the HELD paragraph profiler_icon_image_lib make/3
+        #     (p_imag.esp:111-129, run through its public
+        #     make_image_class_file/3) runs go1-go6, each into a 500 x 400
+        #     window it never activates (size(500, 400), label_flag(off),
+        #     ...), killed after its save_image/6; the frame is unchanged,
+        #     bitmap memory holds no area afterwards, and each image has the
+        #     held image's length.  Its :write/4 is replaced by a harness
+        #     model that keeps the string (OURS: the files are not wanted).
+        #     THE IMAGES DO NOT MATCH the held profiler_icon_image1..6:
+        #     every word differs (PARAGRAPH_GAP, MEASURED).  Image 5 (lines
+        #     only) shows why: the light_paint phase is 3 dots off (OURS
+        #     anchor at the inside), and the boxes' lines lie about 8 rows
+        #     higher and are drawn black where the held image is white, so
+        #     the draw_line geometry and ops of the stand-in (OURS) differ
+        #     from the PSI's; not tuned here (psi/README.md, open item);
+        #   - kappa2 pdim.esp:579-606's order: a 61 x 64 window painted at
+        #     (1, 1) before activate (light_paint), then activated: the shown
+        #     inside holds the painted dots (cut to the cells that fit);
+        #   - a surface pane's uncover/3 with no unpeel/2 after it (a drawing
+        #     refused there), then a fill in a shown window: it lands on the
+        #     frame (uncover/3 aims every shown pane at the frame);
+        #   - icotext util_scroll.esp's 2000 x 2000 canvas (250,000 words)
+        #     refuses loudly at its first drawing: bitmap_memory (65,536
+        #     words of block RAM until H8, SDRAM);
+        #   - copy/9 from a window never shown refuses loudly (surface_copy).
+        #   - the device's stream replays to the same frame AND bitmap
+        #     memory (winfb.run_stream).
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   Q1 a shown pane's uncover/3 does not aim at the frame: this
+        #      test FAILS (the fill after the unpeeled uncover lands in the
+        #      area), nothing else.
+        #   Q2 a surface not cleared on allocation: this test FAILS (the
+        #      kappa2 check, the cause not looked into), nothing else.
+        #   Q3 activate/1 does not copy the surface: this test FAILS,
+        #      nothing else.
+        #   Q4 kill/1 does not free a surface: this test ERRORS (INFERENCE,
+        #      not checked: six 12,800-word areas outgrow 65,536), nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        SET = A('set')
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        d = windev.device(m)
+        fr = d.frame
+        before = list(fr.rows)
+        got = {}
+        key = ('paragraph##profiler_icon_image_lib', 'class', 'write', 4)
+
+        def write(mm):
+            got[K.deref(mm.x[2]).name] = list(K.deref(mm.x[0]).codes())
+            return mm.proceed()
+        K.SIMPOS_MODELS[key] = write
+        try:
+            L = K.NIL
+            for i in range(6, 0, -1):
+                L = K.Cons(K.Vec([A('profiler_icon_image%d' % i), K.Str('f%d' % i)]), L)
+            m.reset()
+            self.assertTrue(K.call_class_method(m, 'paragraph##profiler_icon_image_lib',
+                                                'make_image_class_file', [K.Str('x'), L]))
+        finally:
+            del K.SIMPOS_MODELS[key]
+        self.assertEqual(fr.rows, before)
+        def ids():
+            out, c = [], K.deref(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))
+            while isinstance(c, K.Cons):
+                out.append(K.deref(K.deref(c.args[0]).args[0]))
+                c = K.deref(c.args[1])
+            return out
+        self.assertEqual([i for i in ids() if i < 0], [])     # no surface left
+        gap = {}
+        for i in range(1, 7):
+            ((h,),) = K.call_class_method(m, 'paragraph##profiler_icon_image%d' % i, 'get', [K.Var()])
+            held = h.codes()
+            mine = got['profiler_icon_image%d' % i]
+            self.assertEqual(len(mine), len(held), i)
+            gap[i] = sum(1 for a, b in zip(mine, held) if a != b)
+        self.assertEqual(gap, self.PARAGRAPH_GAP)
+        # kappa2's order: paint before activate
+        opts = K.Cons(K.Vec([A('size'), 61, 64]),
+                      K.Cons(K.Vec([A('position'), 700, 500]), K.NIL))
+        ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, v, 'paint', 1, 1, A('light_paint'), SET))
+        self.assertEqual(fr.rows, before)
+        self.assertTrue(self.send(m, v, 'activate'))
+        P = m.get_slot(v, 'pane')
+        L_, T_, iw, ih = (m.get_slot(P, k) for k in ('left', 'top', 'iw', 'ih'))
+        self.assertEqual(m.get_slot(P, 'surface'), 0)
+        for j in range(ih):
+            for i in range(iw):
+                self.assertEqual((fr.rows[T_ + j] >> (1279 - L_ - i)) & 1,
+                                 self.pattern_dot(A('light_paint'), i, j), (i, j))
+        # a surface pane's uncover with no unpeel, then a shown window's fill
+        ((_o, u),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [K.NIL, K.Var()])
+        self.assertTrue(self.send(m, u, 'draw_filled_rectangle', 0, 0, 10, 10, SET))
+        U = m.get_slot(u, 'pane')
+        self.assertNotEqual(m.get_slot(U, 'surface'), 0)
+        m.reset()
+        self.assertTrue(K.call_class_method(m, 'simpos##coordinator', 'uncover', [U, K.Var()]))
+        self.assertIsNotNone(d.aim)
+        rows = list(fr.rows)
+        self.assertTrue(self.send(m, w, 'draw_filled_rectangle', 0, 0, 8, 1, SET))
+        self.assertIsNone(d.aim)
+        self.assertNotEqual(fr.rows, rows)
+        self.assertEqual(fr.rows[Y0] >> (1280 - X0 - 8) & 0xff, 0xff)
+        # icotext's canvas; copy from a window never shown
+        opts = K.Cons(K.Vec([A('size'), 2000, 2000]), K.NIL)
+        ((_o, big),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        rows = list(fr.rows)
+        for obj, args in [(big, ('draw_filled_rectangle', 0, 0, 10, 10, SET)),
+                          (w, ('copy', u, 0, 0, 20, 20, 10, 10, A('copy')))]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, obj, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(m.get_slot(big, 'pane'), 0)
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'simpos##save_memory', 'allocate', [250000, K.Var()]), [])
+        self.assertEqual(fr.rows, rows)
+        self.assertTrue(self.send(m, u, 'kill'))
+        self.assertEqual(m.get_slot(U, 'surface'), 0)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        again = winfb.run_stream(d.stream_text())
+        self.assertEqual(again.pbm(), fr.pbm())
+        self.assertEqual(again.save, fr.save)
+
+    def test_win_m8_stops_matrix(self):
+        # Window M8's stops, step 4 (docs/simpos/m8_stops.md §5): copy/9's
+        # matrix form `(W, DX, DY, Src, SX, SY, Width, Height, {A, B, C, D,
+        # E, F})` (USAGE icotext util_scroll.esp:218-224; the row-major
+        # 2 x 3 layout INFERENCE), whole scales only, nearest dot, opaque
+        # (window_pane.esp magnify_in/10, OURS):
+        #   - icotext's {2,0,0,0,2,0}: a 30 x 20 block of the graphics
+        #     window (a disc and a line) drawn 60 x 40 at (200, 100), each
+        #     destination dot the source dot (x'/2, y'/2), the rest of the
+        #     frame unchanged;
+        #   - {3,0,0,0,1,0} from a second window into the graphics window;
+        #   - refused loudly, the frame unchanged: shear {1,1,0,0,1,0}, an
+        #     offset {2,0,5,0,2,0}, a scale 0, a destination leaving the
+        #     inside.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK):
+        #   M5 spread/6 sets dots X+1 .. X+A (one dot right): this test
+        #      FAILS, nothing else.
+        #   M6 each source row drawn once, not E times: this test FAILS,
+        #      nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        SET = A('set')
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        self.assertTrue(self.send(m, w, 'draw_filled_circle', 12, 10, 8, SET))
+        self.assertTrue(self.send(m, w, 'draw_line', 0, 19, 29, 0, 1, A('solid'), SET))
+
+        def dot(rows, x, y):
+            return (rows[y] >> (1279 - x)) & 1
+
+        def magnified(before, sx, sy, wd, ht, dx, dy, a, e):
+            want = list(before)
+            for j in range(ht * e):
+                for i in range(wd * a):
+                    bit = 1 << (1279 - dx - i)
+                    if dot(before, sx + i // a, sy + j // e):
+                        want[dy + j] |= bit
+                    else:
+                        want[dy + j] &= ~bit
+            return want
+        before = list(fr.rows)
+        self.assertGreater(sum(dot(before, X0 + i, Y0 + j) for i in range(30) for j in range(20)), 150)
+        self.assertTrue(self.send(m, w, 'copy', 200, 100, w, 0, 0, 30, 20, K.Vec([2, 0, 0, 0, 2, 0])))
+        self.assertEqual(fr.rows, magnified(before, X0, Y0, 30, 20, X0 + 200, Y0 + 100, 2, 2))
+        opts = K.Cons(K.Vec([A('position'), 700, 100]),
+                      K.Cons(K.Vec([A('size'), K.Vec([A('ch'), 10]), K.Vec([A('ch'), 3])]), K.NIL))
+        ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, v, 'activate'))
+        self.assertTrue(self.send(m, v, 'draw_filled_rectangle', 3, 2, 9, 5, SET))
+        V = m.get_slot(v, 'pane')
+        L, T_ = m.get_slot(V, 'left'), m.get_slot(V, 'top')
+        before = list(fr.rows)
+        self.assertTrue(self.send(m, w, 'copy', 300, 200, v, 0, 0, 20, 10, K.Vec([3, 0, 0, 0, 1, 0])))
+        self.assertEqual(fr.rows, magnified(before, L, T_, 20, 10, X0 + 300, Y0 + 200, 3, 1))
+        rows = list(fr.rows)
+        for mat in ([1, 1, 0, 0, 1, 0], [2, 0, 5, 0, 2, 0], [0, 0, 0, 0, 2, 0]):
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, 'copy', 10, 10, w, 0, 0, 10, 10, K.Vec(mat))
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, w, 'copy', 400, 10, w, 0, 0, 30, 20, K.Vec([2, 0, 0, 0, 2, 0]))
+        self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def test_win_m8_stops_read(self):
+        # Window M8's stops, step 2 (docs/simpos/m8_stops.md §3, §4, §7):
+        # reading dots back on winfb's read (the 2026-11-26 extension, OURS
+        # and owner-approved; psi/windev.py read/7, window_pane.esp
+        # read_in/6, point_in/4, paint_in/5):
+        #   - save_image/6 `(W, String, X, Y, Width, Height)` (USAGE
+        #     paragraph p_imag.esp:198) fills the caller's string with the
+        #     rectangle, ceil(Width/16) words a row, MSB leftmost, pad dots
+        #     0, a 40-wide read (8 pad dots a row) over a filled disc and a
+        #     line; again while another window covers part of it: the same
+        #     words (uncover/3), the frame unchanged;
+        #   - get_point_value/4 on a black and a white dot; set_point_value/4
+        #     1 then 0 (TM-125 p17, PRINTED-INTERFACE: 0/1);
+        #   - paint/5: gog DISPPBMS.esp:116-118's filled triangle
+        #     (draw_polygon/2, then `:paint(W, X+10, Y+10, fix, set)`) and
+        #     cil es_gin.esp:1752-1762's draw_triangle (three 1-dot lines,
+        #     then two paints), both TRANSCRIBED (neither class compiles
+        #     under espc: gog's wait/1 and dot_zahyo/4, cil's
+        #     draw_line_in_window/8 are refused), each against flood4's
+        #     4-connected region; kappa2 pdim.esp:606's `paint(W, 1, 1,
+        #     Pattern, set)` with a pattern (its 0 dots leave the frame);
+        #   - refused loudly, the frame unchanged: a read leaving the
+        #     inside, a string too short, set_point_value 2, paint with an
+        #     integer op.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py,
+        # test_kl0.py and test_winfb.py run, all else OK):
+        #   P1 the search's next rows widened by a dot each side, unclipped:
+        #      this test ERRORS (the cause not looked into; P1b is the
+        #      clipped form), nothing else.
+        #   P1b the same, clipped to the inside (8-connected): this test
+        #      ERRORS at gog's triangle, kl0 StepLimit 20,000,001 (the fill
+        #      leaks through the one-dot diagonal into the whole inside),
+        #      nothing else.
+        #   P2 windev read/7 writes the words from element 1: this test
+        #      FAILS, nothing else.
+        #   P3 point_in/4 takes the word's last dot: this test FAILS,
+        #      nothing else.
+        #   P4 set_point_value 0 draws with set: this test FAILS, nothing
+        #      else.
+        #   P5 winfb's read sets each row's last pad dot: test_winfb
+        #      test_read_words and test_read_clip and this test FAIL
+        #      (test_winfb and Window run).
+        #   P6 read_in/6 without uncover/3 and unpeel/2: this test FAILS
+        #      (the covered save_image), nothing else.
+        # Not covered: paint/5 on a covered window, and the cursor (the
+        # graphics window is never selected).
+        import windev
+        import winfb
+        A = K.Atom
+        SET = A('set')
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+        self.assertTrue(self.send(m, w, 'draw_filled_circle', 30, 20, 15, SET))
+        self.assertTrue(self.send(m, w, 'draw_line', 0, 0, 59, 39, 1, A('solid'), SET))
+
+        def want_words(x, y, wd, ht):
+            n = (wd + 15) // 16
+            out = []
+            for j in range(ht):
+                v = (fr.rows[Y0 + y + j] >> (1280 - X0 - x - wd)) & ((1 << wd) - 1)
+                v <<= 16 * n - wd
+                out += [(v >> (16 * (n - 1 - k))) & 0xffff for k in range(n)]
+            return out
+
+        def saved(x, y, wd, ht, extra=0):
+            st = K.Str('')
+            st.set_codes([0x1234] * (((wd + 15) // 16) * ht + extra))
+            self.assertTrue(self.send(m, w, 'save_image', st, x, y, wd, ht))
+            return st.codes()
+        before = list(fr.rows)
+        got = saved(5, 3, 40, 30, 2)
+        self.assertEqual(got[:-2], want_words(5, 3, 40, 30))
+        self.assertEqual(got[-2:], [0x1234, 0x1234])
+        self.assertGreater(sum(bin(c).count('1') for c in got[:-2]), 300)
+        self.assertEqual(fr.rows, before)
+        # covered: another window over part of the rectangle
+        opts = K.Cons(K.Vec([A('position'), 120, 130]),
+                      K.Cons(K.Vec([A('size'), K.Vec([A('ch'), 6]), K.Vec([A('ch'), 2])]), K.NIL))
+        ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        self.assertTrue(self.send(m, v, 'activate'))
+        covered = list(fr.rows)
+        self.assertNotEqual(covered, before)
+        self.assertEqual(saved(5, 3, 40, 30), got[:-2])
+        self.assertEqual(fr.rows, covered)
+        K.call_class_method(m, 'simpos##coordinator', 'select_window', [w])
+        # points
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 30, 20, V))
+        self.assertEqual(K.deref(V), 1)
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
+        self.assertEqual(K.deref(V), 0)
+        self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 1))
+        self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 1)
+        V = K.Var()
+        self.assertTrue(self.send(m, w, 'get_point_value', 100, 100, V))
+        self.assertEqual(K.deref(V), 1)
+        self.assertTrue(self.send(m, w, 'set_point_value', 100, 100, 0))
+        self.assertEqual((fr.rows[Y0 + 100] >> (1279 - X0 - 100)) & 1, 0)
+
+        def painted(x, y, sel_args):
+            region = self.flood4(fr, x, y)
+            want = list(fr.rows)
+            for i, j in region:
+                want[Y0 + j] |= 1 << (1279 - X0 - i)
+            self.assertTrue(self.send(m, w, 'paint', *sel_args))
+            self.assertEqual(fr.rows, want)
+            return region
+        # gog's filled triangle at X = 200, Y = 50
+        X, Y = 200, 50
+        def plist(ps):
+            out = K.NIL
+            for x, y in reversed(ps):
+                out = K.Cons(K.Vec([A(','), x, y]), out)
+            return out
+        self.assertTrue(self.send(m, w, 'draw_polygon', plist(
+            [(X + 10, Y + 1), (X + 2, Y + 15), (X + 18, Y + 15), (X + 10, Y + 1)])))
+        r = painted(X + 10, Y + 10, (X + 10, Y + 10, A('fix'), SET))
+        self.assertTrue(30 < len(r) < 120, len(r))
+        # cil's draw_triangle at X = 300, Y = 100 (H = 5)
+        X, Y = 300, 100
+        X2, Y2, Y3, X3 = X + 5, Y - 5, Y + 5, X + 5 - 2
+        for a in [(X, Y, X2, Y2), (X, Y, X2, Y3), (X2, Y2, X2, Y3)]:
+            self.assertTrue(self.send(m, w, 'draw_line', *a, 1, A('solid'), SET))
+        for y in (Y + 2, Y - 2):
+            r = painted(X3, y, (X3, y, A('fix'), SET))
+            self.assertTrue(5 < len(r) < 60, len(r))
+        # kappa2's paint/5 form with a pattern (pdim.esp:606 seeds an icon's
+        # inside at (1, 1)): here the inside of an 80 x 50 outline at
+        # (330, 200), seeded at its (1, 1); the pattern's 0 dots stay white.
+        # (A region of the whole 440 x 280 inside, ~120,000 dots, passed
+        # kl0's 20,000,000-step limit, MEASURED 2026-11-26: paint_in/5
+        # tests dot by dot; README open item.)
+        self.assertTrue(self.send(m, w, 'draw_rectangle', 330, 200, 80, 50, 1, A('solid'), SET))
+        rows = list(fr.rows)
+        region = self.flood4(fr, 331, 201)
+        self.assertEqual(len(region), 78 * 48)
+        self.assertTrue(self.send(m, w, 'paint', 331, 201, A('small_mesh'), SET))
+        for j in range(self.IH):
+            for i in range(self.IW):
+                d = (fr.rows[Y0 + j] >> (1279 - X0 - i)) & 1
+                was = (rows[Y0 + j] >> (1279 - X0 - i)) & 1
+                if (i, j) in region:
+                    self.assertEqual(d, self.pattern_dot(A('small_mesh'), i, j), (i, j))
+                else:
+                    self.assertEqual(d, was, (i, j))
+        rows = list(fr.rows)
+        short = K.Str('')
+        short.set_codes([0] * 5)
+        for args in [('save_image', short, 0, 0, 16, 10),
+                     ('save_image', K.Str(''), 430, 0, 40, 1),
+                     ('set_point_value', 1, 1, 2),
+                     ('paint', 1, 1, A('fix'), 1)]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def block(self, fr, x, y, w, h):
+        # the dots of the screen rectangle, row by row
+        return [(fr.rows[y + j] >> (1280 - x - w)) & ((1 << w) - 1) for j in range(h)]
+
+    def test_win_m8_copy(self):
+        # M8's rest, copy/9 between windows (window.md §2.5; USAGE icotext
+        # util_scroll.esp:211 `(W, Src, SX, SY, DX, DY, Width, Height, Op)`,
+        # the direction INFERENCE; window_pane.esp copy_in/9, OURS):
+        #   - a 60 x 40 block of the graphics window (a filled circle and a
+        #     line) copied into a second window at (20, 20) of its inside
+        #     (exclusive_or onto the empty block): the block's dots there,
+        #     the rest of both windows unchanged;
+        #   - copied again with exclusive_or: the second window's block
+        #     cleared (dots XOR themselves), the frame as before;
+        #   - with copy into the second window while a third covers part
+        #     of it: the third's dots unchanged, and once the second is
+        #     selected (raised) its block shows the source's dots;
+        #   - with exclusive_or while a fourth window covers part of the
+        #     source: the fourth's dots unchanged, the copy cleared;
+        #   - refused loudly, the frame unchanged: the other held form
+        #     (an integer second argument: util_scroll.esp:218's matrix
+        #     copy, here a rotation: step 4 stands in only scales), a
+        #     source not shown (util_scroll's hide_window), an
+        #     area leaving the inside, a colour (integer) op.
+        # paint/5 (USAGE kappa2 pdim.esp:606) with an integer (colour) op is
+        # refused loudly too (it was a STOP until step 2 of m8_stops.md;
+        # test_win_m8_stops_read).
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
+        #   C1 copy_in/9 does not draw the destination's own dots back (D)
+        #      before the copy goes on through Op: this test FAILS, nothing
+        #      else.  (First run, with the first copy `copy` onto the empty
+        #      block: NOTHING failed, since D does not matter to `copy`;
+        #      the first copy is exclusive_or since.)
+        #   C2 the copy drawn `copy` whatever Op: this test FAILS, nothing
+        #      else.
+        #   C3 the screen under the source's block (B) not drawn back: this
+        #      test FAILS, nothing else.
+        #   C4 the source saved without uncover/3 (its covers' dots
+        #      copied): this test FAILS, nothing else.
+        import windev
+        import winfb
+        A = K.Atom
+        X0, Y0 = self.GRAPHICS_AT
+        m, w = self.graphics_window()
+        fr = windev.device(m).frame
+
+        def made(x, y, cols, rows):
+            opts = K.Cons(K.Vec([A('position'), x, y]),
+                          K.Cons(K.Vec([A('size'), K.Vec([A('ch'), cols]), K.Vec([A('ch'), rows])]), K.NIL))
+            ((_o, v),) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+            self.assertTrue(self.send(m, v, 'activate'))
+            return v
+        self.assertTrue(self.send(m, w, 'draw_filled_circle', 30, 20, 15, A('set')))
+        self.assertTrue(self.send(m, w, 'draw_line', 0, 0, 59, 39, 1, A('solid'), A('set')))
+        src = self.block(fr, X0 + 0, Y0 + 0, 60, 40)
+        self.assertGreater(sum(bin(r).count('1') for r in src), 700)
+        w2 = made(700, 100, 20, 10)
+        P2 = m.get_slot(w2, 'pane')
+        L2, T2 = m.get_slot(P2, 'left'), m.get_slot(P2, 'top')
+        before = list(fr.rows)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('exclusive_or')))
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), src)
+        want = winfb.Frame()
+        want.rows = list(before)
+        for j, r in enumerate(src):
+            y = T2 + 20 + j
+            want.rows[y] = want.rows[y] & ~(((1 << 60) - 1) << (1280 - L2 - 20 - 60)) | (r << (1280 - L2 - 20 - 60))
+        self.assertEqual(fr.rows, want.rows)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('exclusive_or')))
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), [0] * 40)
+        self.assertEqual(fr.rows, before)
+        # a third window over part of the second
+        w3 = made(760, 130, 10, 4)
+        P3 = m.get_slot(w3, 'pane')
+        x3, y3, wd3, ht3 = (m.get_slot(P3, k) for k in ('x', 'y', 'w', 'h'))
+        over = self.block(fr, x3, y3, wd3, ht3)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('copy')))
+        self.assertEqual(self.block(fr, x3, y3, wd3, ht3), over)
+        self.assertNotEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), src)
+        K.call_class_method(m, 'simpos##coordinator', 'select_window', [w2])
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), src)
+        # a fourth window over part of the source block: copied with
+        # exclusive_or onto its own copy, the second window's block clears,
+        # the fourth's dots unchanged
+        w4 = made(130, 125, 6, 2)
+        P4 = m.get_slot(w4, 'pane')
+        x4, y4, wd4, ht4 = (m.get_slot(P4, k) for k in ('x', 'y', 'w', 'h'))
+        over = self.block(fr, x4, y4, wd4, ht4)
+        self.assertTrue(self.send(m, w2, 'copy', w, 0, 0, 20, 20, 60, 40, A('exclusive_or')))
+        self.assertEqual(self.block(fr, x4, y4, wd4, ht4), over)
+        self.assertEqual(self.block(fr, L2 + 20, T2 + 20, 60, 40), [0] * 40)
+        rows = list(fr.rows)
+        (_o, hidden), = K.call_class_method(m, 'simpos##standard_io_window', 'create', [K.NIL, K.Var()])
+        for args in [('copy', 0, 0, w, 0, 0, 60, 40, K.Vec([0, 1, 0, 1, 0, 0])),
+                     ('copy', hidden, 0, 0, 20, 20, 60, 40, A('copy')),
+                     ('copy', w, 0, 0, 200, 20, 60, 40, A('copy')),
+                     ('copy', w, 0, 0, 20, 20, 60, 40, 1),
+                     ('paint', 1, 1, A('light_paint'), 1)]:
+            with self.assertRaises(K.Refusal) as e:
+                self.send(m, w2, *args)
+            self.assertIn('graphics_refused', str(e.exception.detail))
+        self.assertEqual(fr.rows, rows)
+        self.assertEqual(set(fr.status), {winfb.OK})
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+
+    def graphics_rest_run(self):
+        # the screen of psi/winshot.py's `graphics_rest` stage (window M8's
+        # rest): in the 40 x 20 graphics window, the HELD g_window bar
+        # views (draw_list_b/8 with the held set_pattern/2 strings), the
+        # HELD type_switch_icon draw/6 (boxes and its image), and the
+        # shapes: a circle outline, an arc, a light_paint fan, a filled
+        # ellipse, a polygon.  -> (machine, frame)
+        import windev
+        A = K.Atom
+        m, w = self.graphics_window()
+        pats = self.held_patterns(m)
+        cid = 'paragraph##g_window'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        ((_n, font),) = K.call_class_method(m, 'simpos##font', 'create', [K.Str('font:test_11.font'), K.Var()])
+        items = K.NIL
+        for i in reversed(range(6)):
+            items = K.Cons(pats[i], K.Cons(i + 1, items))
+        m.reset()
+        dl = K.Var()
+        (dl,) = [K.resolve(dl) for _ in m.solve((m.code(cid), ps[('draw_list_b', 8)].offset),
+                                                [10, 10, 1, items, dl, font, 30, 280])]
+        self.assertTrue(self.send(m, w, 'execute_graphics_command', dl))
+        ic = K.make_instance(m, 'paragraph##type_switch_icon')
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(ic, 'draw', [300, 20, 20, 84, w, ic])))
+        S, SET = A('solid'), A('set')
+        self.assertTrue(self.send(m, w, 'draw_circle', 380, 60, 40, 2, S, SET))
+        self.assertTrue(self.send(m, w, 'draw_arc', 380, 60, 28, 280, 40, 3, S, SET))
+        self.assertTrue(self.send(m, w, 'draw_filled_fan', 360, 200, 50, 30, 300, 1, A('light_paint'), SET))
+        self.assertTrue(self.send(m, w, 'draw_filled_ellipse', 250, 230, 40, 20, A('fix'), SET))
+        pts = K.NIL
+        for x, y in reversed([(220, 130), (290, 130), (255, 180)]):
+            pts = K.Cons(K.Vec([A(','), x, y]), pts)
+        self.assertTrue(self.send(m, w, 'draw_polygon', pts, 0, 0, 400, 400, 2, S, SET))
+        return m, windev.device(m).frame
+
+    def test_win_m8_rest_screen(self):
+        # the pinned frame of graphics_rest_run (psi/winshot.py
+        # `graphics_rest`, docs/simpos/screens/window_graphics_rest.png)
+        import windev
+        m, fr = self.graphics_rest_run()
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.GRAPHICS_REST_PIN)
+
+    GRAPHICS_REST_PIN = ('54cf1490c64bc06f167057ab9c5800652588eece19c56c45f5a861f695ca1512', 110989)
+
+    def choice_run(self):
+        # the screen of psi/winshot.py's `choice` stage (window M9): the
+        # HELD pimfep superviser's error mode menu (error_mode_menu/2 on
+        # the .ptf), error_mode set on, at (300, 200), activated, after the
+        # Login PIMOS run.  -> (machine, frame, menu)
+        import windev
+        m, fr, _ = self.later_run(self.manip_events()['login'])
+        m.reset()
+        sup = K.make_instance(m, 'pimfep##pimos_fep_superviser')
+        v = K.Var()
+        self.assertTrue(self.send(m, sup, 'error_mode_menu', v))
+        menu = K.resolve(v)
+        self.assertTrue(self.send(m, menu, 'set_item_value', K.Atom('error_mode'), K.Atom('on')))
+        self.assertTrue(self.send(m, menu, 'set_position', 300, 200))
+        self.assertTrue(self.send(m, menu, 'activate'))
+        return m, fr, menu
+
+    CHOICE_PIN = ('0633597d7e5c582173f43f37130de60beea360634ad5fe5bbf6a61940374eb5e', 103105)
+
+    def test_win_m9_choice_screen(self):
+        # the pinned frame of choice_run (psi/winshot.py `choice`,
+        # docs/simpos/screens/choice_window.png); the committed PNGs
+        # decode to their pins (assert_shots)
+        import windev
+        m, fr, _menu = self.choice_run()
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.CHOICE_PIN)
+        self.assert_shots()
+
+    # the error mode menu's outer size: 15 x 5 cells of the default font
+    # (11 x 14 dots), window_pane.esp's layout (OURS)
+    CHOICE_SIZE = (171, 93)
+
+    def test_win_m9_attribute(self):
+        # M9, the manipulator's ATTRIBUTE (TM-125 p8; Fig. 4's sheet;
+        # coordinator.esp manipulate/3, choice_done/3): in the run of two
+        # requester windows, the manipulator opened on window 2 and its
+        # ATTRIBUTE item clicked: a choice window at the mouse, owned by
+        # the coordinator, its PERMISSION field (OURS: Fig. 4's one field
+        # the stand-ins keep) showing window 2's own `out` reversed.
+        # `wait` clicked, then do_it: window 2's permission is wait, the
+        # sheet is gone, and the frame is the run's before the
+        # manipulator (the selected window's cursor back).  `wait`, then
+        # abort: the permission stays out.  The events are the run's own
+        # (later_run batches through the coordinator's stream).
+        # Injections, OBSERVED: see test_win_m9_choice's header (M1-M4,
+        # A1, E1, E2).
+        E = self.manip_events()
+        C = K.ClassRef('simpos##coordinator')
+        login, two = E['login'], E['two']
+        m, base, _ = self.later_run(login, two)
+        m, sheet, _ = self.later_run(login, two, E['attribute'])
+        M = K.resolve(m.get_slot(C, 'sheet'))
+        (w2, s), = [self._walk(M)]
+        self.assertEqual(s.cid, 'simpos##standard_choice_window')
+        self.assertEqual(self._walk(m.get_slot(C, 'choices')), [s])
+        P = m.get_slot(s, 'pane')
+        self.assertEqual([m.get_slot(P, k) for k in ('x', 'y', 'left', 'top')], [700, 700, 703, 720])
+        import windev
+        self.assertEqual(windev.read_cells(sheet, 703, 720, 16, 1), ['WINDOW ATTRIBUTE'])
+        self.assertEqual(windev.read_cells(sheet, 703 + 15 * 11, 734, 4, 1), ['wait'])
+        self.assertEqual((windev.pbm_sha256(sheet), sheet.count()), self.SHOT_PINS['attribute'])
+        # the sheet is owned by the coordinator's own process, so its
+        # writes go through manager/1's bypass in this run
+        owners = [self._walk(o) for o in self._walk(m.get_slot(C, 'owners'))]
+        self.assertIn([s, K.deref(m.get_slot(C, 'process'))], owners)
+        self.assertNotEqual(K.deref(m.get_slot(C, 'process')), 0)
+        # the sheet is not a window the user arranges: a middle click on
+        # it opens no manipulator, and MENU's submenu does not list it
+        import fep_bridge as FB
+        m, mid, _ = self.later_run(login, two, E['attribute'], [FB.mouse('m', 720, 740)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(mid.rows, sheet.rows)
+        m, _, _ = self.later_run(login, two, E['attribute'], E['windows'])
+        Mp = K.deref(m.get_slot(C, 'menu_pane'))
+        listed = [K.deref(K.deref(i).args[1]) for col in self._walk(m.get_slot(Mp, 'columns'))
+                  for i in self._walk(col)]
+        S2 = self._walk(m.get_slot(C, 'choices'))
+        self.assertEqual(len(listed), 2)
+        self.assertEqual(len(S2), 1)
+        self.assertNotIn(S2[0], listed)
+        m, done, _ = self.later_run(login, two, E['attribute'], E['attribute_wait'], E['attribute_do_it'])
+        w2 = self.manip_check(m, done, [self.MANIP_W2, self.MANIP_W1])[0]
+        self.assertEqual(m.get_slot(w2, 'permission'), K.Atom('wait'))
+        self.assertEqual((m.get_slot(C, 'sheet'), self._walk(m.get_slot(C, 'choices'))), (K.NIL, []))
+        self.assertEqual(done.rows, base.rows)
+        m, kept, _ = self.later_run(login, two, E['attribute'], E['attribute_wait'], E['attribute_abort'])
+        w2 = self.manip_check(m, kept, [self.MANIP_W2, self.MANIP_W1])[0]
+        self.assertEqual(m.get_slot(w2, 'permission'), K.Atom('out'))
+        self.assertEqual(kept.rows, base.rows)
+
+    def test_win_m9_choice(self):
+        # M9, the choice window (window.md §2.10, §3.4;
+        # standard_choice_window.esp): the HELD pimfep superviser's error
+        # mode menu.  After the Login PIMOS run, a pimos_fep_superviser
+        # instance's held error_mode_menu/2 (the .ptf: it runs the held
+        # local create_error_mode_menu/1 @48a, whose create/3 carries the
+        # choice_list and label_flag(off)) gives the menu; then
+        # refute_sub_command/2 @36c-3b0's sends (OURS harness: the sends
+        # copied, the FEP object's own steps left out): set_item_value/3
+        # error_mode on, get_size/3, set_position/3, activate/1:
+        #   - the sheet: "   ERROR Mode", then the choose row with `on`
+        #     reversed (OURS look), the button row " do_it  abort ";
+        #   - a left click on `off` (the coordinator's event/2) reverses
+        #     `off` instead, and the coordinator selects nothing;
+        #   - a click on do_it, then read/2: [{error_mode, off}], the
+        #     held `R = [{error_mode, V}]` shape;
+        #   - deactivate/1: the frame as before activate/1 (the selected
+        #     window's cursor back), no window or choice left in the
+        #     coordinator;
+        #   - activated again, `on` clicked (away from the held default
+        #     off), do_it: [{error_mode, on}]; then abort clicked: read/2
+        #     gives abort;
+        #   - set_item_value/3 on a key the menu lacks refuses loudly.
+        # Injections, OBSERVED (2026-11-26; each from a backup copy,
+        # restored by copy, cmp clean; Window, test_fep_bridge.py and
+        # test_kl0.py run, all else OK; rerun at the final code with the
+        # Window tests, the results below):
+        #   M1 a click on an option does not change the field's value:
+        #      this test and test_win_m9_attribute FAIL, nothing else.
+        #   M2 the coordinator sends a click on a choice window to a
+        #      selection (no choose/3): this test ERRORS and
+        #      test_win_m9_attribute FAILS, nothing else.
+        #   M3 deactivate/1 does not give the selected window its cursor
+        #      back: this test and test_win_m9_attribute FAIL, nothing
+        #      else.
+        #   M4 read/2 returns the fields' defaults, not their values (the
+        #      plan's injection): first run, NOTHING failed (the one edit
+        #      ended on the held default, off); with the edit to `on`
+        #      added, this test and test_win_m9_attribute FAIL, nothing
+        #      else.
+        #   A1 ATTRIBUTE's do_it sets nothing (attribute_set/2 ignores the
+        #      result): test_win_m9_attribute FAILS, nothing else.
+        #   E1 a middle click on a choice window opens the manipulator on
+        #      it (no not_choice/2): test_win_m9_attribute FAILS, nothing
+        #      else (test_fep_bridge.py,
+        #      test_kl0.py also run: OK).
+        #   E2 MENU's listed/3 lists the choice windows:
+        #      test_win_m9_attribute FAILS, nothing else
+        #      (test_fep_bridge.py, test_kl0.py also run: OK).
+        import fep_bridge as FB
+        import windev
+        A = K.Atom
+        m, fr, _ = self.later_run(self.manip_events()['login'])
+        m.reset()
+        C = K.ClassRef('simpos##coordinator')
+        sup = K.make_instance(m, 'pimfep##pimos_fep_superviser')
+        v = K.Var()
+        self.assertTrue(self.send(m, sup, 'error_mode_menu', v))
+        menu = K.resolve(v)
+        self.assertEqual(menu.cid, 'simpos##standard_choice_window')
+        self.assertTrue(self.send(m, menu, 'set_item_value', A('error_mode'), A('on')))
+        wv, hv = K.Var(), K.Var()
+        self.assertTrue(self.send(m, menu, 'get_size', wv, hv))
+        self.assertEqual((K.resolve(wv), K.resolve(hv)), self.CHOICE_SIZE)
+        self.assertTrue(self.send(m, menu, 'set_position', 300, 200))
+        before = list(fr.rows)
+        self.assertTrue(self.send(m, menu, 'activate'))
+        pane = m.get_slot(menu, 'pane')
+        left, top, cw, ch = (m.get_slot(pane, k) for k in ('left', 'top', 'cw', 'ch'))
+
+        def row(r, c0, n, inverted=()):
+            # row R's cells C0.. read back, the INVERTED cells first
+            # inverted again in a copy of the frame
+            import winfb
+            f = winfb.Frame()
+            f.rows = list(fr.rows)
+            for c, k in inverted:
+                f.command(winfb.FILL << 4 | 2, [left + c * cw, top + r * ch, k * cw, ch, 0, 0])
+            return windev.read_cells(f, left + c0 * cw, top + r * ch, n, 1)[0]
+        self.assertEqual(row(0, 0, 13), '   ERROR Mode')
+        self.assertEqual(row(2, 0, 11, [(5, 2)]), '     on off')
+        self.assertNotEqual(row(2, 5, 2), 'on')
+        self.assertEqual(row(4, 0, 14), ' do_it  abort')     # read_cells drops the trailing space
+
+        def click(c, r):
+            K.call_class_method(m, 'simpos##coordinator', 'event',
+                                [FB.mouse('l', left + c * cw + cw // 2, top + r * ch + ch // 2)])
+        selected = m.get_slot(C, 'selected')
+        click(9, 2)
+        self.assertEqual(row(2, 0, 11, [(8, 3)]), '     on off')
+        self.assertEqual(row(2, 5, 2), 'on')
+        self.assertIs(m.get_slot(C, 'selected'), selected)
+        click(2, 4)
+        r = K.Var()
+        self.assertTrue(self.send(m, menu, 'read', r))
+        self.assertEqual(repr(K.resolve(r)), repr(K.Cons(K.Vec([A('error_mode'), A('off')]), K.NIL)))
+        self.assertTrue(self.send(m, menu, 'deactivate'))
+        self.assertEqual(fr.rows, before)
+        self.assertNotIn(menu, self._walk(m.get_slot(C, 'windows')))
+        self.assertEqual(self._walk(m.get_slot(C, 'choices')), [])
+        self.assertTrue(self.send(m, menu, 'activate'))
+        # the field edited away from its default (the held default is
+        # off): `on` clicked, then do_it
+        click(6, 2)
+        self.assertEqual(row(2, 0, 11, [(5, 2)]), '     on off')
+        click(2, 4)
+        r = K.Var()
+        self.assertTrue(self.send(m, menu, 'read', r))
+        self.assertEqual(repr(K.resolve(r)), repr(K.Cons(K.Vec([A('error_mode'), A('on')]), K.NIL)))
+        click(10, 4)
+        r = K.Var()
+        self.assertTrue(self.send(m, menu, 'read', r))
+        self.assertEqual(K.resolve(r), A('abort'))
+        self.assertTrue(self.send(m, menu, 'kill'))
+        self.assertEqual(fr.rows, before)
+        with self.assertRaises(K.Refusal) as e:
+            self.send(m, menu, 'set_item_value', A('colour'), A('on'))
+        self.assertIn('choice_refused', str(e.exception.detail))
+
     def test_win_m8_markers(self):
         # M8, markers (window.md §2.6; standard_io_window.esp "MARKERS",
         # marker.esp): selectors PRINTED-INTERFACE TM-125 p17, bodies OURS.
@@ -5073,9 +6848,13 @@ end."""
         #   P12 create/3 ignores the permission(P) option:
         #      test_win_m7_permission_change FAILS, nothing else.
         #   P13 the coordinator's own process held back like a writer
-        #      (manager/1 bypass removed): NOTHING fails.  No run on the
-        #      route makes the coordinator redraw a covered window whose
-        #      permission is not out, so the bypass is UNPINNED.
+        #      (manager/1 bypass removed): first run (merge 20efface)
+        #      NOTHING failed, no run on the route making the coordinator
+        #      write into a covered window whose permission is not out.
+        #      Since test_win_m7_coordinator_writes (a has_been_selected/1
+        #      demon writing into a covered `wait` window from the
+        #      coordinator's process): that test ERRORS (would suspend),
+        #      nothing else.
         import windev
         import winfb
         X0, Y0 = self.GRAPHICS_AT
@@ -5122,6 +6901,466 @@ end."""
         with self.assertRaises(K.Refusal) as e:
             self.send(m, w, 'create_marker', 0, 0, 8, 8, K.Atom('circle'), K.Var())
         self.assertIn('graphics_refused', str(e.exception.detail))
+
+    # -- window M10 (2026-11-26): Pmacs proper ------------------------------
+    # The held programs run whole on the stand-ins, each started as a user
+    # would start a program: an item added to the system menu (OURS, as
+    # the M6/M7 runs add events), chosen after the Login PIMOS run.  The
+    # harness classes are OURS: an as_program heir whose goal/1 calls the
+    # held entry, and for cal_pmacs the four methods its run/4 asks of the
+    # cal program object (cal's own, not loaded).  exshow's class slot
+    # `font` is read from `font:kanji_28.font`, which is not held: the run
+    # gives that name a directory entry for the held test_11 font (OURS
+    # substitute, made in the run only; without it the class is refused,
+    # test_win_m10_exshow).
+    M10_HARNESS = {
+        'exshow': ('exshow', """class m10_exshow has
+nature as_program;
+instance
+:goal(P) :- :go(#exec_show_tmp, "boot", "me:boot.init");
+end."""),
+        'cal': ('cal_pmacs', """class m10_cal has
+nature as_program;
+attribute saved := 0;
+:keep(Class, B) :- Class!saved := B;
+instance
+% cal's program object's slot that run/4 sets to the Pmacs window and back
+attribute cur_window := 0;
+:goal(P) :- :run(#cal_pmacs, "me:boot.init", "me:user.cal", P);
+:get_file_menu(P, P);
+:get_pmacs_window(P, W) :-
+    :create(#cal_pmacs_window, [title("cal"), size(500, 250), position(100, 100)], W);
+:load_file_to_buffer(P, File, B) :-
+    :create(#editor_text_buffer, B, "cal", 0),
+    :retrieve(#directory, F, File, _),
+    :load_file(B, F);
+:save_buffer(P, File, B) :- :keep(#m10_cal, B);
+end."""),
+        # papyrus's my_buffer_selecter (my_select.esp.1) with its two other
+        # natures, papyrus classes not loaded, as empty classes (OURS)
+        'select': ('my_select', """class my_proof_editor has
+end.
+class my_mode_changer has
+end.
+class m10_select has
+nature as_program;
+instance
+:goal(P) :-
+    :create(#pmacs_window, [editor(#my_buffer_selecter), title("papyrus"),
+                            size(500, 250), position(100, 100)], W),
+    :create(#editor_text_buffer, B1, "one", 0),
+    :create(#editor_text_buffer, B2, "two", 0),
+    :set_input_buffer(W, B1),
+    :activate(W),
+    :get_interpreter(W, I),
+    :command_interpret(I);
+end."""),
+    }
+    M10_CLICK = (200, 150)          # inside every M10 program's window
+    C_X, C_S, C_Z = 24, 19, 26
+
+    @staticmethod
+    def m10_key(c):
+        return K.Vec([K.Atom('key'), c])
+
+    @classmethod
+    def m10_keys(cls, text):
+        return [cls.m10_key(c) for c in K.Str(text).codes()]
+
+    @staticmethod
+    def m10_entry(m, d, name):
+        got = [K.deref(e.args[1]) for e in Window._walk(m.get_slot(d, 'entries'))
+               if K.deref(e.args[0]).text == name]
+        return got[0] if got else None
+
+    @staticmethod
+    def m10_node(m, path):
+        d = m.get_slot(K.ClassRef('simpos##directory'), 'root')
+        for name in path.strip('>').split('>'):
+            d = Window.m10_entry(m, d, name)
+        return d
+
+    def m10_start(self, m, prog, font):
+        # the substitute font entry, the added menu item, and the events
+        # that choose it
+        import fep_bridge as FB
+        if font:
+            fd = self.m10_node(m, '>sys>font')
+            t11 = self.m10_entry(m, fd, 'test_11.font')
+            m.set_slot(fd, 'entries', K.Cons(K.Vec([K.Str('kanji_28.font'), t11]),
+                                             m.get_slot(fd, 'entries')))
+        C = K.ClassRef('simpos##coordinator')
+        item = K.Vec([FB.jstr('M10'), K.Atom('m10_' + prog)])
+        m.set_slot(C, 'menu', K.Cons(K.Cons(item, K.NIL), m.get_slot(C, 'menu')))
+        return [K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), FB.jstr('M10')])]
+
+    def pmacs_run(self, prog, *batches, font=True):
+        # later_run with the held source and the harness compiled in, the
+        # program started at the first quiet moment after the login, then
+        # each of BATCHES at the next one, the first after a left click in
+        # the window (it selects it).  -> (machine, frame, the refusal
+        # that ended the run)
+        import fep_bridge as FB
+        import held
+        import windev
+        member, harness = self.M10_HARNESS[prog]
+        psi = FB.PsiSide()
+        m = psi.m
+        for src in (held.member_text(member), harness):
+            ts, failed = espc.compile_text(src, 'simpos')
+            self.assertEqual(failed, {})
+            for t in ts:
+                m.lib.add(t)
+        psi.user = [FB.mouse('rr', *FB.MENU_AT), FB.mouse('l', *FB.LOGIN_ITEM_AT)]
+        rest = [lambda mm: self.m10_start(mm, prog, font)] + [list(b) for b in batches]
+        if len(rest) > 1:
+            rest[1] = [FB.mouse('l', *self.M10_CLICK)] + rest[1]
+
+        def exchange(out):
+            if rest and not psi.shell:
+                b = rest.pop(0)
+                psi.shell, psi.getl = list(b(m) if callable(b) else b), True
+            return []
+        stop = psi.run(exchange)
+        self.assertEqual((rest, psi.shell), ([], []))
+        return m, windev.device(m).frame, stop
+
+    def m10_window(self, m):
+        # the run's Pmacs window (the coordinator's pmacs_window or heir)
+        ws = [w for w in self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'windows'))
+              if 'pmacs' in w.cid]
+        return ws[0] if ws else None
+
+    def m10_rows(self, m, fr):
+        # the window's text rows read back from the frame, reverse video
+        # read as plain text: -> (rows, the set of reversed (row, column))
+        import windev
+        w = self.m10_window(m)
+        P = m.get_slot(w, 'pane')
+        left, top, cols, rows = (m.get_slot(P, k) for k in ('left', 'top', 'cols', 'rows'))
+        out, rev = [], set()
+        for r, line in enumerate(windev.read_cells(fr, left, top, cols, rows)):
+            s, c, i = '', 0, 0
+            while i < len(line):
+                if line[i] == '[' and i + 2 < len(line) and line[i + 2] == ']':
+                    s, i = s + line[i + 1], i + 3
+                    rev.add((r, c))
+                elif line[i] == '#':
+                    s, i = s + ' ', i + 1
+                    rev.add((r, c))
+                else:
+                    s, i = s + line[i], i + 1
+                c += 1
+            out.append(s.rstrip())
+        return out, rev
+
+    def m10_buffer_text(self, m, w=None):
+        w = w or self.m10_window(m)
+        I = m.get_slot(w, 'interpreter')
+        return self.m10_text(m, m.get_slot(I, 'buffer'))
+
+    def m10_text(self, m, B):
+        import simpos_fs
+        v = K.Var()
+        self.assertTrue(self.send(m, B, 'contents', v))
+        return simpos_fs.text_of(K.resolve(v).codes())
+
+    def m10_versions(self, m):
+        # boot.init's versions in >sys>user>pmpsi: {version: (full name, text)}
+        import simpos_fs
+        d = self.m10_node(m, '>sys>user>pmpsi')
+        out = {}
+        for e in self._walk(m.get_slot(d, 'entries')):
+            if K.deref(e.args[0]).text == 'boot.init':
+                f = K.deref(e.args[1])
+                out[m.get_slot(f, 'version')] = (m.get_slot(f, 'full_name').text,
+                                                 simpos_fs.text_of(m.get_slot(f, 'contents').codes()))
+        return out
+
+    # the mode line of exshow's window (pmacs_display.esp, OURS layout from
+    # the screenshots): 99 x 46 text cells, buffer 1 "boot", the file
+    M10_MODE = 'PMACS(fundamental)(99,46) *-1* boot >sys>user>pmpsi>boot.init.%d --Top--'
+    M10_PINS = {
+        'pmacs': ('38ff75a3312808cd9c28ca38de9d94ca5a20ecc8f36aa9a0fd7bd2993f91b204', 131806),
+        'editor_menu': ('a1ec90b6d649a416b562ca341112d4ef7c5d24b25b55e181d2669e050acc6374', 136585),
+    }
+
+    @classmethod
+    def m10_shots(cls):
+        # the event batches of the two pinned M10 screens (psi/winshot.py
+        # `pmacs` and `editor_menu`): exshow's window after `Hi`, C-n, `x`,
+        # C-x C-s; the EDITOR MENU opened after `Hi`
+        import fep_bridge as FB
+        k = cls.m10_key
+        return dict(pmacs=(cls.m10_keys('Hi') + [k(14)] + cls.m10_keys('x') + [k(cls.C_X), k(cls.C_S)],),
+                    editor_menu=(cls.m10_keys('Hi'), [FB.mouse('r', 300, 200)]))
+
+    def test_win_m10_exshow(self):
+        # M10: the HELD disc/exshow.esp (IFS source) runs whole on the
+        # Pmacs stand-ins.  Its exec_show_tmp go/3 makes a pmacs_window
+        # ([title("boot"), size(1100,700), position(0,0)]), creates the
+        # buffer "boot" in the pool (create/4), read_file/4s me:boot.init
+        # into it, set_input_buffer/2, activate/1, set_font/2 (its class
+        # slot's font), flash/1, then command_interpret/1:
+        #   - the screen: the file's lines, the mode line reversed over the
+        #     whole row, the echo line `Read! >sys>user>pmpsi>boot.init.1`;
+        #   - `Hi`, C-n, `x`, C-x C-s: the text edited at the point (C-n
+        #     keeps the column, or the line's end), the new version
+        #     boot.init.2 written with it, version 1 kept, the echo line
+        #     `Written! ...boot.init.2`, the mode line naming version 2;
+        #     the frame pinned (psi/winshot.py `pmacs`);
+        #   - `Hi`, then C-x C-z: the loop ends and exshow kill/1s the
+        #     window: off the coordinator's list, the program ended,
+        #     nothing written;
+        #   - without the substitute font entry the class is refused at its
+        #     slot's initial value (when set_font/2 first reads it).
+        # Injections, OBSERVED: the table after test_win_m10_keys.
+        import windev
+        X, S, Z = self.C_X, self.C_S, self.C_Z
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('exshow')
+        self.assertEqual(stop.cause, 'would suspend')
+        w = self.m10_window(m)
+        self.assertEqual((w.cid, m.get_slot(w, 'title').text), ('simpos##pmacs_window', 'boot'))
+        v = self.m10_versions(m)
+        self.assertEqual(sorted(v), [1])
+        name1, t1 = v[1]
+        self.assertEqual(name1, '>sys>user>pmpsi>boot.init.1')
+        lines = t1.split('\n')
+        self.assertEqual(lines[1], '[')
+        rows, rev = self.m10_rows(m, fr)
+        self.assertEqual(len(rows), 48)
+        self.assertEqual(rows[:len(lines)], [ln[:99] for ln in lines])
+        self.assertEqual(rows[46], self.M10_MODE % 1)
+        self.assertEqual({c for r, c in rev if r == 46}, set(range(99)))
+        self.assertEqual(rows[47], 'Read! >sys>user>pmpsi>boot.init.1')
+        m, fr, stop = self.pmacs_run('exshow', *self.m10_shots()['pmacs'])
+        want = ['Hi' + lines[0], '[x'] + lines[2:]
+        self.assertEqual(self.m10_versions(m), {1: (name1, t1),
+                                                2: ('>sys>user>pmpsi>boot.init.2', '\n'.join(want))})
+        self.assertEqual(self.m10_buffer_text(m), '\n'.join(want))
+        rows, rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[:len(want)], want)
+        self.assertIn((1, 2), rev)          # the cursor, after the x
+        self.assertEqual(rows[46], self.M10_MODE % 2)
+        self.assertEqual(rows[47], 'Written! >sys>user>pmpsi>boot.init.2')
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.M10_PINS['pmacs'])
+        m, fr, stop = self.pmacs_run('exshow', self.m10_keys('Hi'), [k(X), k(Z)])
+        self.assertIsNone(self.m10_window(m))
+        self.assertIn('has ended', stop.detail)
+        self.assertEqual(sorted(self.m10_versions(m)), [1])
+        m, fr, stop = self.pmacs_run('exshow', font=False)
+        self.assertEqual((stop.cause, stop.detail), ('class not generated', 'simpos##exec_show_tmp class '
+                                                     'slot font: its initialisation fails'))
+
+    def test_win_m10_keys(self):
+        # M10, the default bindings (standard_editor.esp, OURS, gap G6) on
+        # exshow's buffer: `ab`, C-b, C-d, C-e, DEL, `Z`, C-n, C-a, C-k,
+        # C-k, `Q`, C-p, `R`, C-f, `S` give the text an Emacs gives (line
+        # 1, `[`, killed with its newline; C-n and C-p keep the column or
+        # take the line's end), shown on the screen; the mode line still
+        # names version 1 (nothing saved).  Then the help key (bound to
+        # nothing) echoes `Undefined key`, the text unchanged, and so does
+        # C-x q (q bound in no prefix table).
+        # Injections, OBSERVED: see the table below this test.
+        k = self.m10_key
+        ks = self.m10_keys
+        seq = (ks('ab') + [k(2), k(4), k(5), k(127)] + ks('Z') + [k(14), k(1), k(11), k(11)] + ks('Q')
+               + [k(16)] + ks('R') + [k(6)] + ks('S'))
+        m, fr, stop = self.pmacs_run('exshow', seq)
+        lines = self.m10_versions(m)[1][1].split('\n')
+        self.assertEqual(lines[1], '[')
+        want = ['aR' + lines[0][0] + 'S' + lines[0][1:-1] + 'Z', 'Q' + lines[2]] + lines[3:]
+        self.assertEqual(self.m10_buffer_text(m), '\n'.join(want))
+        rows, _rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[:len(want)], [ln[:99] for ln in want])
+        self.assertEqual(rows[46], self.M10_MODE % 1)
+        self.assertEqual(rows[47], 'Read! >sys>user>pmpsi>boot.init.1')
+        m, fr, stop = self.pmacs_run('exshow', seq + [k(0x8006)])
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Undefined key')
+        self.assertEqual(self.m10_buffer_text(m), '\n'.join(want))
+        m, fr, stop = self.pmacs_run('exshow', [k(self.C_X)] + ks('q'))
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Undefined key')
+
+    def test_win_m10_scroll(self):
+        # M10, the display's scrolling and the mode line's place field
+        # (pmacs_display.esp scrolled/2, drop_lines/3, place/3, all OURS):
+        # 50 RETURNs at the start of exshow's buffer (62 lines, 46 text
+        # rows) put the point on line 50, so the first shown line is 5
+        # (the point's line the last row) and the place `--8%--`
+        # (5 * 100 / 62); C-n x 6: line 11, `--17%--` (two digits); C-n x 20
+        # (the last line): `--Bot--`; then C-p x 60: line 1 above the
+        # screen, the first shown line 1, `--1%--`; C-p: `--Top--`.  The
+        # screen's rows are the buffer's lines from the first shown one.
+        # Implemented, NOT exercised by any test: status_window(off) (no
+        # mode line), a point past the last column (no cursor).
+        # Injections, OBSERVED: the table after test_win_m10_keys (Q1, Q2).
+        k = self.m10_key
+        R = [k(13)] * 50
+        mode = self.M10_MODE.replace(' --Top--', ' --%s--') % (1, '%s')
+        for seq, top, place in ((R, 5, '8%'), (R + [k(14)] * 6, 11, '17%'),
+                                (R + [k(14)] * 20, 16, 'Bot'),
+                                (R + [k(14)] * 20 + [k(16)] * 60, 1, '1%'),
+                                (R + [k(14)] * 20 + [k(16)] * 61, 0, 'Top')):
+            m, fr, stop = self.pmacs_run('exshow', seq)
+            lines = self.m10_buffer_text(m).split('\n')
+            self.assertEqual(len(lines), 62)
+            D = m.get_slot(self.m10_window(m), 'display')
+            self.assertEqual(K.deref(m.get_slot(D, 'top')), top)
+            rows, _rev = self.m10_rows(m, fr)
+            shown = [ln[:99].rstrip() for ln in lines[top:top + 46]]
+            self.assertEqual(rows[:46], shown + [''] * (46 - len(shown)))
+            self.assertEqual(rows[46], mode % place)
+
+    # Window M10 injections, OBSERVED (2026-11-26; each in a private copy
+    # of psi/, the worktree untouched; test_espc.py, test_fep_bridge.py and
+    # test_kl0.py run; all else OK):
+    #   K1 C-d bound to backward_character: first run NOTHING failed (the
+    #      keys test's sequence then killed the line, hiding the deleted
+    #      character); the sequence was changed (C-d before C-e), then M10
+    #      keys FAIL/ERROR, nothing else.
+    #   S1 a save overwrites the latest version (kl0 new_version keeps the number; the plan's injection): M10 exshow, M10 menu (ERROR) FAIL/ERROR, nothing else.
+    #   D1 the mode line drawn plain, not reversed: M10 exshow, M10 menu (its pinned frame) FAIL/ERROR, nothing else.
+    #   D2 a text row once drawn is never drawn again: M10 exshow, keys, menu, cal FAIL/ERROR, nothing else.
+    #   M1 an EDITOR MENU item's value not given to the window: M10 menu; test_fep_census (menu_chosen/2 row success) FAIL/ERROR, nothing else.
+    #   R1 the right button not routed to the window: M10 menu (ERROR) FAIL/ERROR, nothing else.
+    #   V1 set_input_buffer/2 does not tell the interpreter: M10 exshow, menu; keys, cal, select (ERROR); test_fep_census FAIL/ERROR, nothing else.
+    #   C1 the editor class from the option only (a subclass's slot ignored): M10 cal FAIL/ERROR, nothing else.
+    #   P1 select_buffer/2's primary does nothing: M10 select; test_fep_census FAIL/ERROR, nothing else.
+    #   X1 the window's datum as the term {data, X} again (the bug found): M4 console, M6 selection, M7 console move; test_fep_bridge.py Console FAIL/ERROR, nothing else.
+    #   Q1 scrolled/2 never moves the first shown line: M10 scroll FAIL, nothing else.
+    #   Q2 place/3's --Bot-- clause removed: M10 scroll FAIL, nothing else.
+
+    # the EDITOR MENU's items (standard_editor.esp show_menu/1: verbatim
+    # from IPSJ 36239 p5), opened by the right button at (300, 200)
+    M10_MENU = ['ABORT', 'List Buffers', 'Save All Files', 'Set Font', 'Set Echo Font',
+                'Set Window Size', 'From Whiteboard', 'To Whiteboard']
+
+    @staticmethod
+    def m10_item(i):
+        # a left click on item I of the EDITOR MENU opened at (300, 200)
+        # (its items from y 221, 16 dots each: menu_pane.esp's layout)
+        import fep_bridge as FB
+        return FB.mouse('l', 320, 221 + 16 * i + 8)
+
+    def test_win_m10_menu(self):
+        # M10, the EDITOR MENU (IPSJ 36239 p5, SCREENSHOT; window.md §2.11):
+        # with exshow's window up and `Hi` typed, the right button on it
+        # (the coordinator gives the window right_click/3; its input gets
+        # mouse#r, bound to show_menu by standard_editor's table) opens a
+        # pop-up titled EDITOR MENU at the mouse with the eight items, one
+        # column (OURS); the frame pinned (psi/winshot.py `editor_menu`).
+        #   - List Buffers: the menu closes, the echo line `Buffers: boot`;
+        #   - Save All Files: the modified buffer written, version 2, echo
+        #     `Written! ...boot.init.2`;
+        #   - ABORT: the menu closes, nothing else (the frame as before the
+        #     right button);
+        #   - Set Font: refused loudly, set_font_by_menu/1 not stood in;
+        #   - a left click away from the menu closes it, no item chosen.
+        # Injections, OBSERVED: the table after test_win_m10_keys.
+        import fep_bridge as FB
+        import windev
+        C = K.ClassRef('simpos##coordinator')
+        hi = self.m10_keys('Hi')
+        right = [FB.mouse('r', 300, 200)]
+        m, before, _ = self.pmacs_run('exshow', hi)
+        before = list(before.rows)
+        m, fr, stop = self.pmacs_run('exshow', *self.m10_shots()['editor_menu'])
+        self.assertEqual(stop.cause, 'would suspend')
+        M = m.get_slot(C, 'menu_pane')
+        x, y, wd, it = (K.resolve(m.get_slot(M, k)) for k in ('x', 'y', 'w', 'items_top'))
+        self.assertEqual((x, y, it), (300, 200, 221))
+        self.assertEqual(windev.read_cells(fr, x + 2, y + 3, wd // 11, 1), ['   EDITOR MENU'])
+        for i, label in enumerate(self.M10_MENU):
+            # each label centred (menu_pane.esp), so read at every offset
+            self.assertTrue(any(label in windev.read_cells(fr, x + 2 + d, it + 16 * i + 1, (wd - 4) // 11, 1)[0]
+                                for d in range(11)), label)
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.M10_PINS['editor_menu'])
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(1)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Buffers: boot')
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(2)])
+        self.assertEqual(self.m10_rows(m, fr)[0][47], 'Written! >sys>user>pmpsi>boot.init.2')
+        self.assertEqual(self.m10_versions(m)[2][1].split('\n')[0][:4], 'Hi% ')
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(0)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(fr.rows, before)
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [FB.mouse('l', 800, 100)])
+        self.assertEqual(K.deref(m.get_slot(C, 'menu_pane')), 0)
+        self.assertEqual(fr.rows, before)
+        m, fr, stop = self.pmacs_run('exshow', hi, right, [self.m10_item(3)])
+        self.assertIn('standard_editor:set_font_by_menu/1 (not in the stand-in)', stop.detail)
+
+    def test_win_m10_cal(self):
+        # M10, cal's Pmacs (HELD cal2.12/cal_pmacs.esp, IFS source): its
+        # cal_pmacs_window (a pmacs_window whose `editor` slot is
+        # #cal_pmacs_editor) gets a cal_pmacs_editor, so the held editor
+        # class's own binding `:command(Editor,pf#11,cal_menu)` comes
+        # before the stand-in defaults.  The held cal_pmacs run/4 runs
+        # whole (its cal program object OURS, M10_HARNESS):
+        # load_file_to_buffer, get_pmacs_window (title, size(500,250),
+        # position(100,100): 44 x 14 text cells), set_input_buffer/2,
+        # goto_beginning/1, set_input_position/1, activate/1,
+        # command_interpret/1:
+        #   - `ab` typed: the buffer's text, the default keys still bound;
+        #   - pf#11: the held cal_menu/1 runs, and is refused at the class
+        #     it creates, cal_op_menu (cal's, not loaded);
+        #   - C-x C-z: the loop ends, run/4 deactivate/1s the window (off
+        #     the screen), takes current_buffer/2 and save_buffer/3s it: the
+        #     buffer kept by the harness has the edited text; the program
+        #     ends.
+        # Injections, OBSERVED: the table after test_win_m10_keys.
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('cal', self.m10_keys('ab'))
+        w = self.m10_window(m)
+        self.assertEqual((w.cid, K.deref(m.get_slot(w, 'editor')).cid),
+                         ('simpos##cal_pmacs_window', 'simpos##cal_pmacs_editor'))
+        self.assertEqual([m.get_slot(w, s) for s in ('x', 'y', 'columns', 'rows')], [100, 100, 44, 16])
+        t1 = self.m10_versions(m)[1][1]
+        self.assertEqual(self.m10_buffer_text(m), 'ab' + t1)
+        rows, _rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[0], ('ab' + t1)[:44])
+        self.assertEqual(rows[14][:36], 'PMACS(fundamental)(44,14) *-1* cal >')
+        m, fr, stop = self.pmacs_run('cal', self.m10_keys('ab') + [k(0x8100 + 11)])
+        self.assertEqual(stop.detail, 'send simpos##cal_op_menu:create/2 (class class not loaded)')
+        m, fr, stop = self.pmacs_run('cal', self.m10_keys('ab') + [k(self.C_X), k(self.C_Z)])
+        self.assertIsNone(self.m10_window(m))
+        self.assertIn('has ended', stop.detail)
+        B = K.deref(m.get_slot(K.ClassRef('simpos##m10_cal'), 'saved'))
+        self.assertEqual(self.m10_text(m, B), 'ab' + t1)
+
+    def test_win_m10_select(self):
+        # M10, papyrus's my_buffer_selecter (HELD demo/EDITOR/
+        # my_select.esp.1, IFS source): a pmacs_standard_editor heir with
+        # after-demons on select_buffer/1, select_buffer/2 and
+        # list_buffers/1 (no primaries: SIMPOS's are combined with them,
+        # window.md §2.12).  A pmacs_window made with
+        # editor(#my_buffer_selecter), visiting buffer "one" of the pool
+        # [two, one]: C-x b (select_buffer/1, the stand-in's next pooled
+        # buffer) runs the stand-in primaries, the window now visits
+        # "two", then the held after-demon of select_buffer/2, which is
+        # refused at its first send, show_mode_menu/2 (papyrus's
+        # my_mode_changer, not loaded: an empty class here).
+        # Injections, OBSERVED: the table after test_win_m10_keys (P1).
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('select', [k(self.C_X)] + self.m10_keys('b'))
+        w = self.m10_window(m)
+        E = K.deref(m.get_slot(w, 'editor'))
+        self.assertEqual(E.cid, 'simpos##my_buffer_selecter')
+        I = m.get_slot(w, 'interpreter')
+        self.assertEqual(m.get_slot(m.get_slot(I, 'buffer'), 'name').text, 'two')
+        self.assertIn('my_buffer_selecter:show_mode_menu/2', stop.detail)
+
+    def test_win_m10_dedit_compiles(self):
+        # M10: cal's dedit.esp (HELD cal-esp deb2.12, the editor whose
+        # control_c/control_x tables window.md §5.2 cites) compiles with the
+        # key macros, one class, whole since `->` compiles (2026-11-26; its
+        # exit/1, an if-then-else, was refused before); it is not run (its
+        # editor class needs cal's other classes).
+        import held
+        ts, failed = espc.compile_text(held.member_text('dedit'), 'simpos')
+        self.assertEqual(failed, {})
+        self.assertEqual([t.refusals for t in ts], [[]])
 
 if __name__ == '__main__':
     unittest.main()

@@ -155,6 +155,10 @@ def checksum(cells):
 
 
 class Collector:
+    # cells that move into a structure copied after them (a variable;
+    # a PE adds its external cells, pimm_pe.py)
+    VAR_TAGS = (pimm.UNDF, pimm.HOOK)
+
     def __init__(self, m):
         self.m = m
         self.mem = m.mem
@@ -225,7 +229,7 @@ class Collector:
         new = self.alloc(n)
         for i in range(n):
             c = self.get(a + i) if fw[i] is None else self.get(fw[i])
-            if fw[i] is not None and c[0] & ~1 in (pimm.UNDF, pimm.HOOK):
+            if fw[i] is not None and c[0] & ~1 in self.VAR_TAGS:
                 self.put(fw[i], (pimm.REF, new + i))     # the variable moves in
             self.put(new + i, c)
             self.put(a + i, (GCFWD, new + i))
@@ -416,6 +420,14 @@ class Collector:
             else:
                 p += 1
 
+    def more_roots(self):
+        """Roots a subclass adds (a PE's export table), copied before the
+        scan."""
+
+    def after_scan(self):
+        """After the scan, the from-space still readable (a PE's import
+        table: weak)."""
+
     def run(self):
         m = self.m
         # the roots
@@ -431,8 +443,10 @@ class Collector:
         self.counts['scsi'] = len(waiting)
         cur = self.shoen(m.shoen) if m.shoen else 0
         self.counts['cur_shoen'] = int(cur != 0)
+        self.more_roots()
         self.scan()
         self.links()
+        self.after_scan()
         new_cells = [self.get(a) for a in range(self.to, self.top)]
         total = checksum(new_cells)
         # the from-space is dead: removed, so that a pointer into it
@@ -467,4 +481,6 @@ class Collector:
 
 
 def collect(m):
-    return Collector(m).run()
+    """One collection of m, by its class's collector if it names one
+    (a PE, pimm_pe.py), else this one."""
+    return getattr(m, 'Collector', Collector)(m).run()

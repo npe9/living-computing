@@ -43,6 +43,9 @@ python3 -I psi/test_espc.py
 echo "=== PSI side: the held SIMPOS FEP logs into PIMOS (step 3n; the live run's tape replayed, the live run opt-in) ==="
 python3 -I psi/test_fep_bridge.py
 
+echo "=== PSI side: the SIMPOS top level, the debugger's listener starts a held program in a new process (step 3o) ==="
+python3 -I psi/test_boot_route.py
+
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 
@@ -51,6 +54,15 @@ python3 ref/pimm/test_jtoa.py
 
 echo "=== PIM/m reference model alone: the IPL's own SCSI file service (prototype) ==="
 python3 ref/pimm/ref_scsi.py
+
+echo "=== PIM/m reference model, several PEs (rung M1, docs/multi_pe.md): PIMOS's seqgc and gc on 1, 2, 4 PEs ==="
+python3 ref/pimm/m1_gc.py
+echo "=== PIM/m reference model, several PEs (rung M2, docs/multi_pe.md): %read, %answer_value, structures across PEs; PIMOS's heap monitors on 1, 2, 4 PEs ==="
+python3 ref/pimm/m2_read.py
+echo "=== PIM/m reference model, several PEs (rung M3, docs/multi_pe.md): white and black tables, WEC, collections with live tables ==="
+python3 ref/pimm/m3_gc.py
+echo "=== PIM/m reference model, several PEs (rung M4, docs/multi_pe.md): the shoen across PEs, foster parents, WTC, %terminated, control and statistics ==="
+python3 ref/pimm/m4_shoen.py
 
 echo "=== PIM/m core (Bluespec) in lockstep with the reference model ==="
 bsv/run_pimm_lockstep.sh

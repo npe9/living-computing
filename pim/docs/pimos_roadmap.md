@@ -541,7 +541,17 @@ addressing rule on a layout known from elsewhere.*
 
 - Multiple PEs: goal distribution (`@node` pragmas), inter-PE messages
   over the existing mesh, distributed unification and the export
-  tables. Needs its own firmware evidence.
+  tables. Needs its own firmware evidence. *2026-11-26: the evidence
+  survey, the rungs M1..M7 and their oracles are `multi_pe.md`. In
+  brief: the PIM/m firmware's message bytes are lost; the held Pseudo
+  PIM/m archive is configured as a multi-PE (Pseudo Multi-PSI) system,
+  an 8 x 4 PE grid with one PE in use, and its console names the 26
+  message kinds with their codes (VPIM's numbering); PIMOS's tag table
+  holds VPIM's exported-variable and external-cell tags; `@node` is
+  the one instruction 23:65; the oracles are PIMOS's own `seqgc` and
+  `gc` commands and the primer's `sample9`. M1 is reached on the
+  reference model (`ref/pimm/pimm_pe.py`, `m1_gc.py`, `multi_pe.md`
+  §5); the core stays one PE until M7.*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
@@ -611,7 +621,13 @@ searched for, is in `environment_audit.md` (area L). Two things
 already held bear on them: VPIM (a PIM-family runtime, `vpim.tar.Z`)
 and the PIMOS source tree, which carries per-machine variants; the
 `INSTALL` of the held 3.6 objects names "Pseudo Multi-PSI" beside
-"Pseudo PIM/M". No rungs are set until the audit's searches report.
+"Pseudo PIM/M". The audit's searches reported on 2026-11-26:
+`other_pims.md` gives the per-machine tables and verdicts. Multi-PSI/V2
+ranks first. At the KL1-B and system level it is PIM/m with a mesh
+network and a network-attached FEP, and PIMOS 3.6 can be rebuilt for it
+with three configuration switches changed. Its rungs, MP0..MP6, are in
+that document's §4. PIM/p, PIM/i, PIM/c and PIM/k follow in that order.
+Each is a reconstruction (OURS) gated on the lost VPIM toolchain.
 
 ## 8. What stops now
 

@@ -97,6 +97,58 @@ class window_pane has
         Pane!under := Area,
         frame(Pane);
 
+% :create_surface(#window_pane, Iw, Ih, Font, Pane) -- window M8's stops,
+% step 3 (selector and body OURS; m8_stops.md §2, §7): the pane of a
+% window drawn on before it is shown, or never shown (paragraph p_imag.esp
+% go1-go6 draw into windows they never activate; TM-125 ch.4 PROSE: the
+% bare_window mixin "allocates the bitmap area").  Its inside, Iw x Ih
+% dots, is an area of bitmap memory (save_memory.esp allocate/3, ceil(Iw/16)
+% words a row), cleared (OURS: TM-115 p44 says 1.0's bitmap areas are not
+% cleared on allocation; a cleared one is the stand-in's choice), with its
+% inside at the area's (0, 0): left = top = 0, no border, no title.  The
+% drawing methods reach it through coordinator.esp uncover/3, which aims
+% the device at the area (aim/1) and unpeel/2 back at the frame.  A size
+% bitmap memory cannot hold refuses loudly (graphics_refused/2,
+% bitmap_memory): its 65,536 words are block RAM until H8 (SDRAM).
+% INTERPOLATED (selector and body OURS): create_surface; basis above.
+:create_surface(Class, Iw, Ih, Font, Pane) :-
+        value((Iw + 15) / 16, N), times(Ih, N, 0, Size),
+        Iw > 0, Ih > 0, :allocate(#save_memory, Size, Area), !,
+        :new(Class, Pane),
+        metrics(Font, Id, Cw, Ch),
+        Pane!font := Id, Pane!cw := Cw, Pane!ch := Ch,
+        Pane!iw := Iw, Pane!ih := Ih, Pane!w := Iw, Pane!h := Ih,
+        Pane!pitch := N, Pane!surface := Area,
+        cells(Iw, Cw, Cols), cells(Ih, Ch, Rows),
+        Pane!cols := Cols, Pane!rows := Rows,
+        :aim(Pane),
+        :fill(#bitmap_display, 0, 0, Iw, Ih, reset),
+        :surface(#bitmap_display, frame);
+:create_surface(_, _, _, _, _) :- :graphics_refused(#window_pane, bitmap_memory);
+
+% :cell_of(#window_pane, Font, Cw, Ch) -- window M8's stops (selector and
+% body OURS): the cell of Font (0: the device's default), as create/7
+% lays it out.
+% INTERPOLATED (selector and body OURS): cell_of; basis above.
+:cell_of(_, Font, Cw, Ch) :- metrics(Font, _, Cw, Ch);
+
+% :pattern(#window_pane, Pattern) -- window M8's rest (selector and body
+% OURS): Pattern is one pattern_in/7 draws: a name below, or a held
+% pattern string of 256 words.
+% INTERPOLATED (selector and body OURS): pattern; basis above and at
+% pattern_in/7.
+:pattern(_, P) :- named(P, 0, _), !;
+:pattern(_, P) :- string(P, N, _), N == 256;
+
+% :outer_size(#window_pane, Cols, Rows, Font, W, H) -- window M9 (selector
+% and body OURS): the outer size in dots of a pane of Cols x Rows cells of
+% Font (0: the device's default), as create/7 lays it out.
+% INTERPOLATED (selector and body OURS): outer_size; basis above.
+:outer_size(_, Cols, Rows, Font, W, H) :-
+        metrics(Font, _, Cw, Ch),
+        times(Cols, Cw, 0, Iw), times(Rows, Ch, 0, Ih),
+        value(Iw + 6, W), value(Ih + Ch + 9, H);
+
 instance
 
 % OURS representation: the outer rectangle (x, y, w, h), the inside's
@@ -115,6 +167,40 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
 % the pane is lifted off the screen for a restack, the area holding its
 % own dots (0: on the screen).
 attribute under := 0, image := 0;
+% window M8's stops, step 3, OURS: a surface pane's area of bitmap memory
+% (save_memory.esp [Id, Base, Size]; 0: the pane is on the frame) and its
+% words a row.
+attribute surface := 0, pitch := 0;
+
+% :aim(Pane) -- window M8's stops, step 3 (selector and body OURS): the
+% device's surfaces set to the pane's: its area, or the frame.
+% INTERPOLATED (selector and body OURS): aim; basis at create_surface/5.
+:aim(Pane) :- Pane!surface = [_, Base, _], !,
+        :surface(#bitmap_display, Base, Pane!pitch, Pane!iw, Pane!ih);
+:aim(_) :- :surface(#bitmap_display, frame);
+
+% :shown_in(Pane, Q) -- window M8's stops, step 3 (selector and body OURS):
+% the surface pane's dots copied into the inside of the shown pane Q (cut
+% to the smaller of the two), and its area freed.  The copy is the
+% device's (windev show/7), under uncover/3 as any drawing.
+% INTERPOLATED (selector and body OURS): shown_in; basis at
+% create_surface/5.
+:shown_in(Pane, Q) :- Pane!surface = [_, Base, _], !,
+        low_end(Pane!iw, Q!iw, W), low_end(Pane!ih, Q!ih, H),
+        :uncover(#coordinator, Q, Lifted),
+        cursor_off(Q),
+        :show(#bitmap_display, Base, Pane!pitch, W, H, Q!left, Q!top),
+        cursor_on(Q),
+        :unpeel(#coordinator, Lifted),
+        :free(Pane);
+:shown_in(_, _);
+
+% :free(Pane) -- window M8's stops, step 3 (selector and body OURS): a
+% surface pane's area given back (a killed window that was never shown).
+% INTERPOLATED (selector and body OURS): free; basis at create_surface/5.
+:free(Pane) :- Pane!surface \== 0, !,
+        :free(#save_memory, Pane!surface), Pane!surface := 0;
+:free(_);
 
 % Window M7, restacking (OURS selectors and bodies; the mechanism PROSE
 % TM-225 p10 and TM-126 p5, window.md §4.1 "Implementation": a hidden
@@ -239,6 +325,35 @@ attribute under := 0, image := 0;
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
 
+% :draw_row(Pane, Row, Codes, Op) -- window M10 (selector and body OURS),
+% for a Pmacs window's screen (pmacs_display.esp): text row Row cleared and
+% Codes drawn in it from column 0, the ones past the last column left
+% out; with Op `reverse` the row is then inverted by exclusive_or (the
+% reversed mode line, window.md §2.11, SCREENSHOT).  The cursor is not
+% moved.
+% INTERPOLATED (selector and body OURS): basis above.
+:draw_row(Pane, Row, Codes, Op) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        value(Pane!top + Row * Pane!ch, Y),
+        :fill(#bitmap_display, Pane!left, Y, Pane!iw, Pane!ch, reset),
+        row_glyphs(Pane, Codes, 0, Pane!left, Y),
+        row_reversed(Pane, Y, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :set_cursor(Pane, Col, Row) -- window M10 (selector and body OURS): the
+% cursor to cell (Col, Row) (a Pmacs window's point, pmacs_display.esp).
+% INTERPOLATED (selector and body OURS): basis above.
+:set_cursor(Pane, Col, Row) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        Pane!col := Col, Pane!row := Row,
+        value(Pane!left + Col * Pane!cw, X), value(Pane!top + Row * Pane!ch, Y),
+        Pane!cx := X, Pane!cy := Y,
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
 % :select(Pane) and :deselect(Pane) -- INTERPOLATED (body OURS) from
 % TM-126 p7 (PROSE, window.md §4.1): the selected window shows its
 % cursor.
@@ -337,7 +452,502 @@ attribute under := 0, image := 0;
         :unpeel(#coordinator, Lifted);
 :transfer_in(Pane, _, _, _, _, _, _, _) :- :graphics_refused(Pane, transfer);
 
+% :pattern_in(Pane, X, Y, Width, Height, Pattern, Op) -- window M8's rest
+% (2026-11-26), INTERPOLATED (selector and body OURS) from window.md §2.5
+% draw_filled_rectangle/8: the rectangle, cut to the inside, filled with a
+% pattern through Op.  A pattern is a tile of rows of 16-bit words, MSB
+% leftmost (the frame's order): a named one (standard_io_window.esp
+% "PATTERNS", its look OURS) is 4 rows of one word, a held pattern string
+% (256 words) 64 rows of 4 words (INFERENCE, standard_io_window.esp).  The
+% tile is anchored at the inside's top-left (OURS).  Each row is drawn as
+% styled lines of the frozen device line (psi/windev.py line/8, winfb's
+% style operand): one line when the row's words are equal, else one a
+% 16-dot piece; a piece whose word is 0 is not sent.  A 0 dot of the
+% pattern leaves the frame's dot as it was, whatever Op (OURS: the
+% device's line plots only the style's 1 dots).
+:pattern_in(Pane, X, Y, W, H, P, Op) :-
+        cut(X, X + W, Pane!iw, X1, W1), cut(Y, Y + H, Pane!ih, Y1, H1),
+        W1 > 0, H1 > 0, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        pattern_rows(Pane, P, X1, X1 + W1 - 1, Y1, Y1 + H1, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:pattern_in(_, _, _, _, _, _, _);
+
+% :image_in(Pane, S, X, Y, Width, Height) -- window M8's rest (2026-11-26),
+% INTERPOLATED (selector and body OURS) from window.md §2.5's image
+% methods: restore_image/6 (USAGE paragraph p_imag.esp:22, p_v_imag.esp:19)
+% draws the image string S at (X, Y), Width x Height dots, ceil(Width/16)
+% words a row, MSB leftmost (the held image classes: profiler_icon_image3
+% is 112 words for its 16 x 112, p_m_image3.esp and p_imag.esp h3 := 112;
+% the row order and the bit order are INFERENCE: the frame's own).  OURS
+% look: the image is opaque (the area reset, then the 1 dots set); each
+% row is sent as styled lines of the frozen device line (windev line/8),
+% one for each run of equal non-zero words.  The image must lie wholly
+% inside and S hold its words, or the method refuses loudly.
+:image_in(Pane, S, X, Y, W, H) :-
+        inside(Pane, X, Y, W, H), value((W + 15) / 16, N),
+        string(S, L, _), value(H * N, Need), L >= Need, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        fill_cut(Pane, X, Y, W, H, reset),
+        image_rows(Pane, S, X, Y, W, N, 0, H),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:image_in(Pane, _, _, _, _, _) :- :graphics_refused(Pane, image);
+
+% :shape_in(Pane, CX, CY, RX, RY, Width, Angles, Pattern, Op) -- window
+% M8's rest (2026-11-26), INTERPOLATED (selector and body OURS) from
+% window.md §2.5's centre-first shapes (draw_circle/7 PRINTED WINCS p3;
+% draw_ellipse, draw_arc, draw_elliptical_arc, draw_fan and the filled
+% forms PRINTED-INTERFACE TM-785 p40, their elements 0 and 1 the centre:
+% TM-785 p33-35's modify/6 adjusts X at 0 and Y at 1).  No source shows
+% which dots a shape covers; THE DOTS ARE OURS, each defined by integer
+% arithmetic that psi/test_espc.py's reference repeats dot by dot:
+%   - a disc of radius R: the dots (x, y) from the centre with
+%     x*x + y*y =< R*R + R; an ellipse RX x RY: on each row y (|y| =< RY)
+%     the disc of radius RY's half-width h there, scaled to RX * h / RY
+%     (truncated);
+%   - Width 0 fills; Width W > 0 is the outline W dots wide inward: the
+%     ellipse less the ellipse (RX - W) x (RY - W) (nothing less when
+%     either is negative);
+%   - Angles: `all`, or {A1, A2}, whole degrees >= 0, from A1 to A2
+%     anticlockwise (TM-785 p13-14 PROSE: the arc is drawn anticlockwise),
+%     0 at the centre's right (INFERENCE; the TM-785 p40 values are 280,
+%     40, 95, 170).  Ck and Sk are the cosine and sine of Ak times 1024,
+%     rounded (OURS table sine/2); a dot (x, u) (u up) is in when it is not
+%     clockwise of A1 and not anticlockwise of A2 (C1*u - S1*x >= 0 and
+%     C2*u - S2*x =< 0): both when the sweep is at most 180 degrees,
+%     either when it is more; equal angles (mod 360) are the whole shape;
+%   - drawn a row at a time as spans that do not overlap (so exclusive_or
+%     draws each dot once), each cut to the inside; Pattern fix fills
+%     them, any other pattern draws them as pattern_in/7 does.
+:shape_in(Pane, CX, CY, RX, RY, Wd, As, Pat, Op) :-
+        sector(As, Sec),
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        value(RY - Wd, RI),
+        shape_rows(Pane, CX, CY, RX, RY, Wd, RI, Sec, Pat, Op, 0, RY, RI),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :fan_in(Pane, CX, CY, R, A1, A2, Width, Op) -- window M8's rest
+% (2026-11-26), INTERPOLATED (selector and body OURS) from window.md §2.5
+% draw_fan/9 (PRINTED-INTERFACE TM-785 p40): the arc of shape_in/9, Width
+% dots wide, and the two radii from the centre to the circle at A1 and A2
+% (each draw_line_in/7's line, Width dots wide; the end the centre plus R
+% times the angle's cosine and minus R times its sine, over 1024, rounded:
+% OURS).  The dots where the radii meet the arc and each other are drawn
+% by each (OURS: under exclusive_or they cancel).  A radius leaving the
+% inside is refused before anything is lifted.
+:fan_in(Pane, CX, CY, R, A1, A2, Wd, Op) :-
+        rim(CX, CY, R, A1, X1, Y1), rim(CX, CY, R, A2, X2, Y2),
+        drawable(Pane, CX, CY, X1, Y1, Wd), drawable(Pane, CX, CY, X2, Y2, Wd), !,
+        sector({A1, A2}, Sec),
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        value(R - Wd, RI),
+        shape_rows(Pane, CX, CY, R, R, Wd, RI, Sec, fix, Op, 0, R, RI),
+        line_in(Pane, CX, CY, X1, Y1, Wd, Op),
+        line_in(Pane, CX, CY, X2, Y2, Wd, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:fan_in(Pane, _, _, _, _, _, _, _) :- :graphics_refused(Pane, fan);
+
+% :lines_in(Pane, Points, Close, Width, Op) -- window M8's rest
+% (2026-11-26), INTERPOLATED (selector and body OURS) from window.md §2.5
+% draw_graph/2, /9 and draw_polygon/2, /9: the polyline through Points (a
+% list of (X, Y), the term ','(X, Y): USAGE kwic scrolls.esp:1135), each
+% segment draw_line_in/7's line, Width dots wide; Close 1 (the polygon,
+% OURS) adds the segment from the last point back to the first.  A dot
+% two segments share is drawn by both (OURS).  Drawn only when every
+% segment may be drawn (a slanted one lies wholly inside), else refused
+% loudly before anything is lifted, as draw_line_in/7.
+:lines_in(Pane, Ps, Close, Wd, Op) :-
+        closed(Ps, Close, Qs), segments_drawable(Pane, Qs, Wd), !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        segments(Pane, Qs, Wd, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:lines_in(Pane, _, _, _, _) :- :graphics_refused(Pane, line);
+
+% :copy_in(Pane, Src, SX, SY, DX, DY, Width, Height, Op) -- window M8's
+% rest (2026-11-26), INTERPOLATED (selector and body OURS) from window.md
+% §2.5 copy/9 (USAGE icotext util_scroll.esp:211 `:copy(W, W!hide_window,
+% W!posX, W!posY, 0, 0, SizeX, SizeY, copy)`: from the second window's
+% (SX, SY) to the first's (DX, DY), the direction INFERENCE): the block of
+% the source pane's inside drawn into this pane's inside through Op.  Both
+% areas must lie wholly inside, else the method refuses loudly before
+% anything is lifted.  With only the frozen device (screen copy, save and
+% restore): the source's dots are saved while it is uncovered (A); then,
+% with this pane uncovered, its block (D) and the screen under the
+% source's block (B) are saved, A is drawn back at the source's place, the
+% block copied to this pane `copy` and saved (E), B and D drawn back, and
+% E drawn through Op (save_memory.esp restore/3).  So neither window's
+% other dots change, whatever lies over or between them (OURS).
+:copy_in(Pane, Src, SX, SY, DX, DY, W, H, Op) :-
+        inside(Src, SX, SY, W, H), inside(Pane, DX, DY, W, H), !,
+        value(Src!left + SX, AX), value(Src!top + SY, AY),
+        value(Pane!left + DX, BX), value(Pane!top + DY, BY),
+        :uncover(#coordinator, Src, L1),
+        cursor_off(Src),
+        :save(#save_memory, AX, AY, W, H, A),
+        cursor_on(Src),
+        :unpeel(#coordinator, L1),
+        :uncover(#coordinator, Pane, L2),
+        cursor_off(Pane),
+        :save(#save_memory, BX, BY, W, H, D),
+        :save(#save_memory, AX, AY, W, H, B),
+        :restore(#save_memory, A),
+        :copy(#bitmap_display, AX, AY, W, H, BX, BY, copy),
+        :save(#save_memory, BX, BY, W, H, E),
+        :restore(#save_memory, B),
+        :restore(#save_memory, D),
+        :restore(#save_memory, E, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, L2);
+:copy_in(Pane, _, _, _, _, _, _, _, _) :- :graphics_refused(Pane, copy);
+
+% Window M8's stops, step 2 (2026-11-26): READING DOTS BACK, on the device's
+% read (psi/windev.py read/7, winfb's 2026-11-26 extension, OURS and
+% owner-approved: docs/simpos/m8_stops.md §3, §4).  Each read goes through
+% uncover/3 and unpeel/2 and takes the block cursor off, as a drawing does,
+% so the dots read are the window's own.  1 = black (the frame's).
+%
+% :read_in(Pane, S, X, Y, Width, Height) -- INTERPOLATED (selector and body
+% OURS) from window.md §2.5 save_image/6 (USAGE paragraph p_imag.esp:198,
+% the inverse of restore_image/6): the inside's rectangle into the string S
+% from element 0, ceil(Width/16) words a row, MSB leftmost, the pad dots 0
+% (image_in/6's layout).  The rectangle must lie wholly inside and S hold
+% its words, or the method refuses loudly.
+:read_in(Pane, S, X, Y, W, H) :-
+        inside(Pane, X, Y, W, H), value((W + 15) / 16, N),
+        string(S, L, _), value(H * N, Need), L >= Need, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        :read(#bitmap_display, Pane!left + X, Pane!top + Y, W, H, S, _),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:read_in(Pane, _, _, _, _, _) :- :graphics_refused(Pane, read);
+
+% :point_in(Pane, X, Y, ^Value) -- INTERPOLATED (selector OURS) from TM-125
+% p17's get_point_value/4 (PRINTED-INTERFACE: "the value (0/1) of the
+% pixel"; body OURS): a 1 x 1 read.  A dot outside the inside refuses.
+:point_in(Pane, X, Y, V) :-
+        inside(Pane, X, Y, 1, 1), !,
+        new_string(S, 1, 16),
+        :read_in(Pane, S, X, Y, 1, 1),
+        string_element(S, 0, Wd), bit(0, Wd, V);
+:point_in(Pane, _, _, _) :- :graphics_refused(Pane, point);
+
+% :magnify_in(Pane, Q, SX, SY, Width, Height, DX, DY, A, E) -- window M8's
+% stops, step 4 (selector and body OURS; standard_io_window.esp "THE
+% MATRIX FORM"): Q's Width x Height dots at (SX, SY) read (read_in/6),
+% each source dot made A x E dots (nearest dot), drawn opaque at Pane's
+% (DX, DY) a row at a time (image_in/6).  Both rectangles must lie inside,
+% or the method refuses loudly.
+% INTERPOLATED (selector and body OURS): magnify_in; basis above.
+:magnify_in(Pane, Q, SX, SY, W, H, DX, DY, A, E) :-
+        inside(Q, SX, SY, W, H), value(W * A, W2), value(H * E, H2),
+        inside(Pane, DX, DY, W2, H2), !,
+        value((W + 15) / 16, N), value(N * H, Size), new_string(S, Size, 16),
+        :read_in(Q, S, SX, SY, W, H),
+        value((W2 + 15) / 16, N2), new_string(R, N2, 16),
+        magnified(Pane, S, N, W, R, N2, W2, A, E, DX, DY, 0, H);
+:magnify_in(Pane, _, _, _, _, _, _, _, _, _) :- :graphics_refused(Pane, matrix_copy);
+
+% :paint_in(Pane, X, Y, Pattern, Op) -- INTERPOLATED (selector OURS) from
+% window.md §2.5 paint/5 (USAGE kappa2 user_if/pb/pdim.esp:606
+% `:paint(OPicon1, 1, 1, Pattern1, set)`, gog DISPPBMS.esp:117, cil
+% es_gin.esp:1761): a seed fill.  THE REGION IS INFERENCE AND OURS: no
+% source says which dots paint/5 fills.  Here (docs/simpos/m8_stops.md §4)
+% it is the dots 4-connected to (X, Y) inside the inside whose value is
+% the seed's (OURS: a boundary-colour form would take one more argument,
+% which no held caller passes; 4-connected, INFERENCE: an 8-connected fill
+% leaks through a one-dot diagonal outline, such as gog's triangle).  The
+% region is found first (a scanline fill, its rows read as needed, one
+% device read a row) and then drawn row by row as span/6 draws a filled
+% shape's spans (Pattern fix or a pattern, through Op), so a pattern's 0
+% dots, which leave the frame as it was, cannot feed the search.  A seed
+% outside the inside paints nothing (OURS).
+:paint_in(Pane, X, Y, Pt, Op) :-
+        X >= 0, Y >= 0, X < Pane!iw, Y < Pane!ih, !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        value(Pane!ih, H),
+        new_heap_vector(Rows, H), new_heap_vector(Spans, H),
+        dot_at(Pane, Rows, X, Y, V),
+        seeds(Pane, Rows, Spans, V, [{X, Y}]),
+        painted(Pane, Spans, 0, Pt, Op),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:paint_in(_, _, _, _, _);
+
 local
+
+% window M8's stops, reading dots back (OURS, see read_in/6, paint_in/5)
+% the dot of word Wd at B (0 = its MSB, the leftmost dot): espc divides by
+% constants only (immediates 0..255, so the larger powers in steps), one
+% clause a position
+bit(0, Wd, D) :- !, value(Wd / 128 / 128 / 2, Q), odd(Q, D);
+bit(1, Wd, D) :- !, value(Wd / 128 / 128, Q), odd(Q, D);
+bit(2, Wd, D) :- !, value(Wd / 128 / 64, Q), odd(Q, D);
+bit(3, Wd, D) :- !, value(Wd / 64 / 64, Q), odd(Q, D);
+bit(4, Wd, D) :- !, value(Wd / 128 / 16, Q), odd(Q, D);
+bit(5, Wd, D) :- !, value(Wd / 128 / 8, Q), odd(Q, D);
+bit(6, Wd, D) :- !, value(Wd / 128 / 4, Q), odd(Q, D);
+bit(7, Wd, D) :- !, value(Wd / 128 / 2, Q), odd(Q, D);
+bit(8, Wd, D) :- !, value(Wd / 128, Q), odd(Q, D);
+bit(9, Wd, D) :- !, value(Wd / 64, Q), odd(Q, D);
+bit(10, Wd, D) :- !, value(Wd / 32, Q), odd(Q, D);
+bit(11, Wd, D) :- !, value(Wd / 16, Q), odd(Q, D);
+bit(12, Wd, D) :- !, value(Wd / 8, Q), odd(Q, D);
+bit(13, Wd, D) :- !, value(Wd / 4, Q), odd(Q, D);
+bit(14, Wd, D) :- !, value(Wd / 2, Q), odd(Q, D);
+bit(15, Wd, D) :- odd(Wd, D);
+
+odd(Q, D) :- value(Q - (Q / 2) * 2, D);
+
+% the dot (X, Y) of the inside, from row Y's words (read once: Rows holds
+% 0 or the row's string)
+dot_at(Pane, Rows, X, Y, V) :-
+        row_of(Pane, Rows, Y, S),
+        value(X / 16, K), string_element(S, K, Wd),
+        value(X - K * 16, B), bit(B, Wd, D), V = D;
+
+row_of(_, Rows, Y, S) :- vector_element(Rows, Y, S), S \== 0, !;
+row_of(Pane, Rows, Y, S) :-
+        value((Pane!iw + 15) / 16, N), new_string(S, N, 16),
+        :read(#bitmap_display, Pane!left, Pane!top + Y, Pane!iw, 1, S, _),
+        set_vector_element(Rows, Y, S);
+
+% the scanline search: a stack of seeds; a seed of value V not yet in a
+% span gives its row's maximal run [L, R] (Spans holds each row's list of
+% {L, R}), and each run of V dots in [L, R] on the rows above and below
+% gives a seed
+seeds(_, _, _, _, []) :- !;
+seeds(Pane, Rows, Spans, V, [{X, Y} | Q]) :-
+        dot_at(Pane, Rows, X, Y, V), vector_element(Spans, Y, Ss), not_in(Ss, X), !,
+        left_end(Pane, Rows, V, X, Y, L), right_end(Pane, Rows, V, X, Y, R),
+        set_vector_element(Spans, Y, [{L, R} | Ss]),
+        next_row(Pane, Rows, V, L, R, Y - 1, Q, Q1),
+        next_row(Pane, Rows, V, L, R, Y + 1, Q1, Q2),
+        seeds(Pane, Rows, Spans, V, Q2);
+seeds(Pane, Rows, Spans, V, [_ | Q]) :- seeds(Pane, Rows, Spans, V, Q);
+
+not_in(0, _) :- !;                      % a row with no span yet (the vector's 0)
+not_in([], _) :- !;
+not_in([{L, _} | Ss], X) :- X < L, !, not_in(Ss, X);
+not_in([{_, R} | Ss], X) :- X > R, not_in(Ss, X);
+
+left_end(Pane, Rows, V, X, Y, L) :-
+        X > 0, dot_at(Pane, Rows, X - 1, Y, V), !, left_end(Pane, Rows, V, X - 1, Y, L);
+left_end(_, _, _, X, _, X);
+
+right_end(Pane, Rows, V, X, Y, R) :-
+        X + 1 < Pane!iw, dot_at(Pane, Rows, X + 1, Y, V), !,
+        right_end(Pane, Rows, V, X + 1, Y, R);
+right_end(_, _, _, X, _, X);
+
+next_row(_, _, _, _, _, Y, Q, Q) :- Y < 0, !;
+next_row(Pane, _, _, _, _, Y, Q, Q) :- Y >= Pane!ih, !;
+next_row(Pane, Rows, V, L, R, Y, Q, Q1) :- runs(Pane, Rows, V, L, R, Y, 0, Q, Q1);
+
+runs(_, _, _, X, R, _, _, Q, Q) :- X > R, !;
+runs(Pane, Rows, V, X, R, Y, In, Q, Q1) :-
+        dot_at(Pane, Rows, X, Y, V), !,
+        pushed(In, X, Y, Q, Q0),
+        runs(Pane, Rows, V, X + 1, R, Y, 1, Q0, Q1);
+runs(Pane, Rows, V, X, R, Y, _, Q, Q1) :- runs(Pane, Rows, V, X + 1, R, Y, 0, Q, Q1);
+
+pushed(0, X, Y, Q, [{X, Y} | Q]) :- !;
+pushed(_, _, _, Q, Q);
+
+% the region drawn: each row's spans (disjoint: a seed inside a span is
+% never searched again), top to bottom
+painted(Pane, _, Y, _, _) :- Y >= Pane!ih, !;
+painted(Pane, Spans, Y, Pt, Op) :-
+        vector_element(Spans, Y, Ss), spans(Pane, Ss, Y, Pt, Op),
+        painted(Pane, Spans, Y + 1, Pt, Op);
+
+spans(_, 0, _, _, _) :- !;
+spans(_, [], _, _, _) :- !;
+spans(Pane, [{L, R} | Ss], Y, Pt, Op) :- span(Pane, L, R, Y, Pt, Op), spans(Pane, Ss, Y, Pt, Op);
+
+% window M8's stops, step 4 (OURS, see magnify_in/10): source row J
+% spread into R, then R drawn E times
+magnified(_, _, _, _, _, _, _, _, _, _, _, J, H) :- J >= H, !;
+magnified(Pane, S, N, W, R, N2, W2, A, E, DX, DY, J, H) :-
+        zeroed(R, 0, N2),
+        value(J * N, Base),
+        spread(S, Base, 0, W, A, R),
+        value(DY + J * E, Y),
+        rows_of(Pane, R, DX, Y, W2, 0, E),
+        magnified(Pane, S, N, W, R, N2, W2, A, E, DX, DY, J + 1, H);
+
+zeroed(_, K, N) :- K >= N, !;
+zeroed(R, K, N) :- set_string_element(R, K, 0), zeroed(R, K + 1, N);
+
+spread(_, _, I, W, _, _) :- I >= W, !;
+spread(S, Base, I, W, A, R) :-
+        value(I / 16, K), string_element(S, Base + K, Wd),
+        value(I - K * 16, B), bit(B, Wd, 1), !,
+        value(I * A, X), dots_set(R, X, X + A),
+        spread(S, Base, I + 1, W, A, R);
+spread(S, Base, I, W, A, R) :- spread(S, Base, I + 1, W, A, R);
+
+dots_set(_, X, E) :- X >= E, !;
+dots_set(R, X, E) :-
+        value(X / 16, K), value(X - K * 16, B), weight(B, P),
+        string_element(R, K, Old), value(Old + P, New), set_string_element(R, K, New),
+        dots_set(R, X + 1, E);
+
+rows_of(_, _, _, _, _, I, E) :- I >= E, !;
+rows_of(Pane, R, X, Y, W, I, E) :-
+        :image_in(Pane, R, X, Y + I, W, 1), rows_of(Pane, R, X, Y, W, I + 1, E);
+
+% the weight of dot B of a word (0 = its MSB)
+weight(0, 16#"8000") :- !;
+weight(1, 16#"4000") :- !;
+weight(2, 16#"2000") :- !;
+weight(3, 16#"1000") :- !;
+weight(4, 16#"0800") :- !;
+weight(5, 16#"0400") :- !;
+weight(6, 16#"0200") :- !;
+weight(7, 16#"0100") :- !;
+weight(8, 16#"0080") :- !;
+weight(9, 16#"0040") :- !;
+weight(10, 16#"0020") :- !;
+weight(11, 16#"0010") :- !;
+weight(12, 16#"0008") :- !;
+weight(13, 16#"0004") :- !;
+weight(14, 16#"0002") :- !;
+weight(15, 1);
+
+% window M8's rest, images (OURS, see image_in/6)
+image_rows(_, _, _, _, _, _, J, H) :- J >= H, !;
+image_rows(Pane, S, X, Y, W, N, J, H) :-
+        value(J * N, Base),
+        image_runs(Pane, S, X, Y + J, W, N, Base, 0),
+        image_rows(Pane, S, X, Y, W, N, J + 1, H);
+
+image_runs(_, _, _, _, _, N, _, K) :- K >= N, !;
+image_runs(Pane, S, X, Y, W, N, Base, K) :-
+        string_element(S, Base + K, 0), !,
+        image_runs(Pane, S, X, Y, W, N, Base, K + 1);
+image_runs(Pane, S, X, Y, W, N, Base, K) :-
+        string_element(S, Base + K, Wd),
+        run_end(S, Base, N, K, Wd, E),
+        value(X + K * 16, X1), value(X + E * 16 + 15, X2a), low_end(X2a, X + W - 1, X2),
+        :line(#bitmap_display, Pane!left + X1, Pane!top + Y, Pane!left + X2,
+              Pane!top + Y, 1, Wd, set),
+        image_runs(Pane, S, X, Y, W, N, Base, E + 1);
+
+run_end(S, Base, N, K, Wd, E) :- K + 1 < N, string_element(S, Base + K + 1, Wd), !,
+        run_end(S, Base, N, K + 1, Wd, E);
+run_end(_, _, _, K, _, K);
+
+% window M8's rest, patterns (OURS, see pattern_in/7)
+pattern_rows(_, _, _, _, Y, E, _) :- Y >= E, !;
+pattern_rows(Pane, P, X1, X2, Y, E, Op) :-
+        row_words(P, Y, W0, W1, W2, W3),
+        pattern_row(Pane, X1, X2, Y, W0, W1, W2, W3, Op),
+        pattern_rows(Pane, P, X1, X2, Y + 1, E, Op);
+
+% a named pattern's row (4 rows of one word), a string's (64 rows of 4)
+row_words(P, Y, W, W, W, W) :- named(P, 0, _), !,
+        rem4(Y, R), named(P, R, W);
+row_words(P, Y, W0, W1, W2, W3) :-
+        rem64(Y, R), value(R * 4, I),
+        string_element(P, I, W0), string_element(P, I + 1, W1),
+        string_element(P, I + 2, W2), string_element(P, I + 3, W3);
+
+pattern_row(Pane, X1, X2, Y, W, W, W, W, Op) :- !,
+        styled(Pane, X1, X2, Y, W, Op);
+pattern_row(Pane, X1, X2, Y, W0, W1, W2, W3, Op) :-
+        pieces(Pane, X1, X2, Y, {W0, W1, W2, W3}, Op);
+
+pieces(_, X, X2, _, _, _) :- X > X2, !;
+pieces(Pane, X, X2, Y, Ws, Op) :-
+        rem16(X, R), value(X + 15 - R, E0), low_end(E0, X2, E),
+        rem64(X, Q), value(Q / 16, K), vector_element(Ws, K, W),
+        styled(Pane, X, E, Y, W, Op),
+        pieces(Pane, E + 1, X2, Y, Ws, Op);
+
+low_end(A, B, A) :- A =< B, !;
+low_end(_, B, B);
+
+% one row piece from X1 to X2 (inside dots) whose dots are the word W at
+% the tile's columns: the style is W turned left by X1's column in it
+styled(_, _, _, _, 0, _) :- !;
+styled(Pane, X1, X2, Y, W, Op) :-
+        rem16(X1, S), rotated(W, S, St),
+        :line(#bitmap_display, Pane!left + X1, Pane!top + Y, Pane!left + X2,
+              Pane!top + Y, 1, St, Op);
+
+% W turned left by S bits in 16, one bit at a time (OURS arithmetic: espc
+% emits no shift, and X/Y only by a constant)
+rotated(W, 0, W) :- !;
+rotated(W, S, R) :- turned(W, W1), rotated(W1, S - 1, R);
+
+turned(W, R) :- W >= 16#"8000", !, Top = 16#"FFFF", value(W + W - Top, R);
+turned(W, R) :- value(W + W, R);
+
+% the named patterns, a word for each of 4 rows.  The names are the held
+% and printed ones (window.md §2.5 "Fill pattern"): light_paint (USAGE
+% paragraph p_imag.esp go1/1, bar_v.esp set_pattern/2), dotted (bar_v.esp
+% set_pattern/2; TM-785 p40), right_hatch (USAGE bar2_v.esp:263), mesh,
+% left_hatch, small_mesh (PRINTED-INTERFACE TM-785 p40).
+% light_paint's dots are HELD-DERIVED: paragraph's image classes were made
+% by filling a window `fix, set`, then `light_paint, reset`, drawing on it
+% and save_image/6 (p_imag.esp go1/1 :175-198, p_v_imag.esp :151-152,
+% :228), so their background words are the complement of light_paint:
+% profiler_mono_selector_image (saved at the inside's (0, 0)) has 16#"7777"
+% on every even row and 16#"DDDD" on every odd one, that is light_paint =
+% 16#"8888", 16#"2222" (MEASURED on the held .ptf, test_win_m8_images).
+% The icon images (saved at (52, 58) and others) show the same lattice, a
+% dot every 4 columns, the rows 2 columns apart, at another phase; so the
+% anchor is not the inside's top-left in every window (INFERENCE: the
+% screen's, with the windows' places unknown), and the phase here, the
+% selector's at the inside's top-left, is OURS.  The other names' looks
+% are OURS: no source shows a dot of them.
+named(light_paint, 0, 16#"8888") :- !;
+named(light_paint, 2, 16#"8888") :- !;
+named(light_paint, _, 16#"2222") :- !;
+named(dotted, 0, 16#"AAAA") :- !;
+named(dotted, 2, 16#"AAAA") :- !;
+named(dotted, _, 0) :- !;
+% rough_dotted (USAGE kappa2 user_if/pb/pdim.esp:1094 get_paint_pattern/2,
+% fcell.esp; paragraph g_window.esp, bar2_v.esp; kl1graph screen.esp;
+% added 2026-11-26, docs/simpos/m8_stops.md §4).  No held image shows a
+% dot of it.  Its DENSITY is INFERENCE: sparser than dotted, as the held
+% scales order them (examds diag/sl_draw.win: 0 < CL =< 0.2 rough_dotted,
+% 0.2 < CL =< 0.4 dotted; paragraph pmeter/rmon.esp make_pattern/2: 2 a
+% 2-in-128 pattern, 3 rough_dotted, 4 dotted).  Its dots are OURS: one in
+% 8, every 4 columns on every other row, the rows 2 columns apart.
+named(rough_dotted, 0, 16#"8888") :- !;
+named(rough_dotted, 2, 16#"2222") :- !;
+named(rough_dotted, _, 0) :- !;
+named(mesh, 0, 16#"FFFF") :- !;
+named(mesh, _, 16#"8888") :- !;
+named(small_mesh, 0, 16#"AAAA") :- !;
+named(small_mesh, 2, 16#"AAAA") :- !;
+named(small_mesh, _, 16#"5555") :- !;
+named(left_hatch, 0, 16#"8888") :- !;
+named(left_hatch, 1, 16#"4444") :- !;
+named(left_hatch, 2, 16#"2222") :- !;
+named(left_hatch, _, 16#"1111") :- !;
+named(right_hatch, 0, 16#"1111") :- !;
+named(right_hatch, 1, 16#"2222") :- !;
+named(right_hatch, 2, 16#"4444") :- !;
+named(right_hatch, _, 16#"8888");
+
+% the remainder of V >= 0 by 4, 16 and 64
+rem4(V, R) :- value(V - V / 4 * 4, R);
+rem16(V, R) :- value(V - V / 16 * 16, R);
+rem64(V, R) :- value(V - V / 64 * 64, R);
 
 moved(Pane, X, Y) :- X == Pane!x, Y == Pane!y, !;
 moved(Pane, X, Y) :-
@@ -359,6 +969,10 @@ moved(Pane, X, Y) :-
 % N x C as a sum (OURS: see the slots)
 times(0, _, P, P) :- !;
 times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
+
+% the cells of size C that fit in N dots, at least 1 (a surface pane's)
+cells(N, C, 1) :- N < C + C, !;
+cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
 
 metrics(0, Id, Cw, Ch) :- !, :default_font(#bitmap_display, Id, Cw, Ch);
 metrics(Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;
@@ -458,6 +1072,17 @@ put_codes(Pane, S, I, N) :-
         put_char(Pane, C),
         put_codes(Pane, S, I + 1, N);
 
+% window M10 (OURS, see draw_row/4)
+row_glyphs(_, [], _, _, _) :- !;
+row_glyphs(Pane, _, C, _, _) :- C >= Pane!cols, !;
+row_glyphs(Pane, [Code | Codes], C, X, Y) :-
+        :glyph(#bitmap_display, Pane!font, Code, X, Y, copy),
+        row_glyphs(Pane, Codes, C + 1, X + Pane!cw, Y);
+
+row_reversed(Pane, Y, reverse) :- !,
+        :fill(#bitmap_display, Pane!left, Y, Pane!iw, Pane!ch, exclusive_or);
+row_reversed(_, _, _);
+
 put_list(_, []);
 put_list(Pane, [C | Cs]) :- put_char(Pane, C), put_list(Pane, Cs);
 
@@ -494,5 +1119,261 @@ cursor_on(_);
 block(Pane) :-
         :fill(#bitmap_display, Pane!cx, Pane!cy, Pane!cw, Pane!ch,
               exclusive_or);
+
+% window M8's rest, shapes (OURS, see shape_in/9)
+shape_rows(_, _, _, _, RY, _, _, _, _, _, Y, _, _) :- Y > RY, !;
+shape_rows(Pane, CX, CY, RX, RY, Wd, RI, Sec, Pat, Op, Y, HO, HI) :-
+        shrink(RY, Y, HO, HO1), half(RX, RY, HO1, A),
+        inner(RX, Wd, RI, Y, HI, HI1, B),
+        row_spans(Pane, CX, CY - Y, Y, A, B, Sec, Pat, Op),
+        lower_row(Pane, CX, CY, Y, A, B, Sec, Pat, Op),
+        shape_rows(Pane, CX, CY, RX, RY, Wd, RI, Sec, Pat, Op, Y + 1, HO1, HI1);
+
+lower_row(_, _, _, 0, _, _, _, _, _) :- !;
+lower_row(Pane, CX, CY, Y, A, B, Sec, Pat, Op) :-
+        value(0 - Y, U), row_spans(Pane, CX, CY + Y, U, A, B, Sec, Pat, Op);
+
+% the disc of radius R's half-width on row Y, from the row before's X
+shrink(R, Y, X, X) :- X * X =< R * R + R - Y * Y, !;
+shrink(R, Y, X, H) :- shrink(R, Y, X - 1, H);
+
+% the ellipse's half-width: the disc's H scaled by RX / RY
+half(RX, 0, _, RX) :- !;
+half(RX, RY, H, A) :- udiv(RX * H, RY, A);
+
+% the inner ellipse's half-width on row Y, or none
+inner(RX, Wd, RI, Y, HI, HI1, B) :-
+        Wd > 0, RI >= 0, RX - Wd >= 0, Y =< RI, !,
+        shrink(RI, Y, HI, HI1), half(RX - Wd, RI, HI1, B);
+inner(_, _, _, _, HI, HI, none);
+
+row_spans(Pane, CX, Y, U, A, none, Sec, Pat, Op) :- !,
+        value(0 - A, L), sector_span(Pane, CX, Y, U, L, A, Sec, Pat, Op);
+row_spans(Pane, CX, Y, U, A, B, Sec, Pat, Op) :-
+        value(0 - A, L), value(0 - B - 1, R),
+        sector_span(Pane, CX, Y, U, L, R, Sec, Pat, Op),
+        sector_span(Pane, CX, Y, U, B + 1, A, Sec, Pat, Op);
+
+% the part of the span L..R (from the centre) of row Y in the sector
+sector_span(_, _, _, _, L, R, _, _, _) :- L > R, !;
+sector_span(Pane, CX, Y, _, L, R, all, Pat, Op) :- !,
+        span(Pane, CX + L, CX + R, Y, Pat, Op);
+sector_span(Pane, CX, Y, U, L, R, Sec, Pat, Op) :-
+        sector_row(Sec, U, L1, H1, L2, H2),
+        piece(Pane, CX, Y, L, R, L1, H1, Pat, Op),
+        piece(Pane, CX, Y, L, R, L2, H2, Pat, Op);
+
+piece(Pane, CX, Y, L, R, Lo, Hi, Pat, Op) :-
+        greater(L, Lo, A), lesser(R, Hi, B), A =< B, !,
+        span(Pane, CX + A, CX + B, Y, Pat, Op);
+piece(_, _, _, _, _, _, _, _, _);
+
+greater(A, B, A) :- A >= B, !;
+greater(_, B, B);
+lesser(A, B, A) :- A =< B, !;
+lesser(_, B, B);
+
+% a sector's row U as two intervals of x that do not overlap (the second
+% maybe empty): both half-planes (sweep =< 180) or either (sweep > 180)
+sector_row({C1, S1, C2, S2, 0}, U, L, H, 1, 0) :- !,
+        left_of(C1, S1, U, La, Ha), right_of(C2, S2, U, Lb, Hb),
+        greater(La, Lb, L), lesser(Ha, Hb, H);
+sector_row({C1, S1, C2, S2, _}, U, L1, H1, L2, H2) :-
+        left_of(C1, S1, U, La, Ha), right_of(C2, S2, U, Lb, Hb),
+        either(La, Ha, Lb, Hb, L1, H1, L2, H2);
+
+either(La, Ha, Lb, Hb, L, H, 1, 0) :-
+        La =< Ha, Lb =< Hb, La =< Hb + 1, Lb =< Ha + 1, !,
+        lesser(La, Lb, L), greater(Ha, Hb, H);
+either(La, Ha, Lb, Hb, La, Ha, Lb, Hb);
+
+% {x : C*U - S*x >= 0} on row U, as [Lo, Hi]
+left_of(C, 0, U, Lo, Hi) :- !, value(C * U, P), sides(P, Lo, Hi);
+left_of(C, S, U, Lo, Hi) :- S > 0, !, endless(Lo, _), floor_div(C * U, S, Hi);
+left_of(C, S, U, Lo, Hi) :- endless(_, Hi), ceil_div(0 - C * U, 0 - S, Lo);
+
+% {x : C*U - S*x =< 0} on row U
+right_of(C, 0, U, Lo, Hi) :- !, value(0 - C * U, P), sides(P, Lo, Hi);
+right_of(C, S, U, Lo, Hi) :- S > 0, !, endless(_, Hi), ceil_div(C * U, S, Lo);
+right_of(C, S, U, Lo, Hi) :- endless(Lo, _), floor_div(0 - C * U, 0 - S, Hi);
+
+sides(P, Lo, Hi) :- P >= 0, !, endless(Lo, Hi);
+sides(_, 1, 0);
+
+endless(Lo, Hi) :- Hi = 30000, value(0 - Hi, Lo);
+
+% division by a register (espc emits X/Y only by a constant, OURS): the
+% quotient of N >= 0 by D > 0 by doubling, and the floor and ceiling of
+% N / D for D > 0
+udiv(N, D, 0) :- N < D, !;
+udiv(N, D, Q) :- doubled(D, 1, N, T, B), udiv(N - T, D, Q0), value(Q0 + B, Q);
+
+doubled(T, B, N, T1, B1) :- T + T =< N, !, doubled(T + T, B + B, N, T1, B1);
+doubled(T, B, _, T, B);
+
+floor_div(N, D, Q) :- N >= 0, !, udiv(N, D, Q);
+floor_div(N, D, Q) :- udiv(0 - N + D - 1, D, Q0), value(0 - Q0, Q);
+
+ceil_div(N, D, Q) :- floor_div(0 - N, D, Q0), value(0 - Q0, Q);
+
+% one row piece X1..X2 of row Y (inside dots), cut to the inside: filled,
+% or drawn with a pattern as pattern_in/7's rows
+span(Pane, X1, X2, Y, fix, Op) :- !, fill_cut(Pane, X1, Y, X2 - X1 + 1, 1, Op);
+span(Pane, X1, X2, Y, Pat, Op) :-
+        Y >= 0, Y < Pane!ih, cut(X1, X2 + 1, Pane!iw, X, W), W > 0, !,
+        row_words(Pat, Y, W0, W1, W2, W3),
+        pattern_row(Pane, X, X + W - 1, Y, W0, W1, W2, W3, Op);
+span(_, _, _, _, _, _);
+
+% polylines (lines_in/5)
+closed(Ps, 0, Ps) :- !;
+closed([P | Ps], 1, [P | Qs]) :- ended(Ps, P, Qs);
+
+ended([], P, [P]);
+ended([Q | Ps], P, [Q | Qs]) :- ended(Ps, P, Qs);
+
+segments_drawable(Pane, [P1, P2 | R], Wd) :- !,
+        point(P1, X1, Y1), point(P2, X2, Y2),
+        drawable(Pane, X1, Y1, X2, Y2, Wd),
+        segments_drawable(Pane, [P2 | R], Wd);
+segments_drawable(_, [_], _) :- !;
+segments_drawable(_, [], _);
+
+segments(Pane, [P1, P2 | R], Wd, Op) :- !,
+        point(P1, X1, Y1), point(P2, X2, Y2),
+        line_in(Pane, X1, Y1, X2, Y2, Wd, Op),
+        segments(Pane, [P2 | R], Wd, Op);
+segments(_, _, _, _);
+
+% a point: (X, Y), the term ','(X, Y), is the vector {',', X, Y} (TM-388
+% p.26: a compound term is a vector); {X, Y} too (OURS)
+point(P, X, Y) :- stack_vector(P, N), N == 3, !, vector_element(P, 1, X), vector_element(P, 2, Y);
+point(P, X, Y) :- vector_element(P, 0, X), vector_element(P, 1, Y);
+
+% an angle's cosine and sine times 1024 (OURS: rounded, the table below)
+unit(A, C, S) :-
+        value(A / 90, Q), value(A - Q * 90, R), value(90 - R, R2),
+        sine(R, SR), sine(R2, CR), quadrant(Q, SR, CR, C, S);
+
+quadrant(0, SR, CR, CR, SR) :- !;
+quadrant(1, SR, CR, C, CR) :- !, value(0 - SR, C);
+quadrant(2, SR, CR, C, S) :- !, value(0 - CR, C), value(0 - SR, S);
+quadrant(_, SR, CR, SR, S) :- value(0 - CR, S);
+
+% the sector of the angles: all, or {C1, S1, C2, S2, Wide}
+sector(all, all) :- !;
+sector({A1, A2}, Sec) :- degrees(A1, D1), degrees(A2, D2), arc_of(D1, D2, Sec);
+
+arc_of(D, D, all) :- !;
+arc_of(D1, D2, {C1, S1, C2, S2, Wide}) :-
+        unit(D1, C1, S1), unit(D2, C2, S2), sweep(D1, D2, Sw), wide(Sw, Wide);
+
+sweep(D1, D2, S) :- D2 >= D1, !, value(D2 - D1, S);
+sweep(D1, D2, S) :- Full = 360, value(D2 + Full - D1, S);
+
+wide(S, 1) :- S > 180, !;
+wide(_, 0);
+
+% the point on the circle of radius R at angle A (from the centre)
+rim(CX, CY, R, A, X, Y) :-
+        degrees(A, D), unit(D, C, S),
+        Half = 512, floor_div(R * C + Half, 1024, DX), floor_div(R * S + Half, 1024, DY),
+        value(CX + DX, X), value(CY - DY, Y);
+
+% the angle in 0..359
+degrees(A, D) :- Full = 360, udiv(A, Full, Q), value(A - Q * Full, D);
+
+% sine(D, V): V = round(1024 * sin(D degrees)), D = 0..90 (OURS table)
+sine(0, 0) :- !;
+sine(1, 18) :- !;
+sine(2, 36) :- !;
+sine(3, 54) :- !;
+sine(4, 71) :- !;
+sine(5, 89) :- !;
+sine(6, 107) :- !;
+sine(7, 125) :- !;
+sine(8, 143) :- !;
+sine(9, 160) :- !;
+sine(10, 178) :- !;
+sine(11, 195) :- !;
+sine(12, 213) :- !;
+sine(13, 230) :- !;
+sine(14, 248) :- !;
+sine(15, 265) :- !;
+sine(16, 282) :- !;
+sine(17, 299) :- !;
+sine(18, 316) :- !;
+sine(19, 333) :- !;
+sine(20, 350) :- !;
+sine(21, 367) :- !;
+sine(22, 384) :- !;
+sine(23, 400) :- !;
+sine(24, 416) :- !;
+sine(25, 433) :- !;
+sine(26, 449) :- !;
+sine(27, 465) :- !;
+sine(28, 481) :- !;
+sine(29, 496) :- !;
+sine(30, 512) :- !;
+sine(31, 527) :- !;
+sine(32, 543) :- !;
+sine(33, 558) :- !;
+sine(34, 573) :- !;
+sine(35, 587) :- !;
+sine(36, 602) :- !;
+sine(37, 616) :- !;
+sine(38, 630) :- !;
+sine(39, 644) :- !;
+sine(40, 658) :- !;
+sine(41, 672) :- !;
+sine(42, 685) :- !;
+sine(43, 698) :- !;
+sine(44, 711) :- !;
+sine(45, 724) :- !;
+sine(46, 737) :- !;
+sine(47, 749) :- !;
+sine(48, 761) :- !;
+sine(49, 773) :- !;
+sine(50, 784) :- !;
+sine(51, 796) :- !;
+sine(52, 807) :- !;
+sine(53, 818) :- !;
+sine(54, 828) :- !;
+sine(55, 839) :- !;
+sine(56, 849) :- !;
+sine(57, 859) :- !;
+sine(58, 868) :- !;
+sine(59, 878) :- !;
+sine(60, 887) :- !;
+sine(61, 896) :- !;
+sine(62, 904) :- !;
+sine(63, 912) :- !;
+sine(64, 920) :- !;
+sine(65, 928) :- !;
+sine(66, 935) :- !;
+sine(67, 943) :- !;
+sine(68, 949) :- !;
+sine(69, 956) :- !;
+sine(70, 962) :- !;
+sine(71, 968) :- !;
+sine(72, 974) :- !;
+sine(73, 979) :- !;
+sine(74, 984) :- !;
+sine(75, 989) :- !;
+sine(76, 994) :- !;
+sine(77, 998) :- !;
+sine(78, 1002) :- !;
+sine(79, 1005) :- !;
+sine(80, 1008) :- !;
+sine(81, 1011) :- !;
+sine(82, 1014) :- !;
+sine(83, 1016) :- !;
+sine(84, 1018) :- !;
+sine(85, 1020) :- !;
+sine(86, 1022) :- !;
+sine(87, 1023) :- !;
+sine(88, 1023) :- !;
+sine(89, 1024) :- !;
+sine(90, 1024);
 
 end.

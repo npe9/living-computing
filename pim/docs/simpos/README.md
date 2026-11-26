@@ -594,6 +594,16 @@ and stand-in `simpos##` classes. In order:
        with recipes 837 / 239 / 375. Two held rows really move (the
        front end's `create/6`, the replier's `io/5`); the rest is census
        probing, as listed there.
+   - *2026-11-26, step 3o* (`../../psi/README.md`, "Step 3o";
+     `boot_route.md` §4.9; `source_check_2026-11-24.md` §14): the
+     second top level, the debugger as the ESP listener. The held
+     login.com's `debugger` item starts a stand-in (`debugger_1`, prompt
+     `:- `, `> Success !!`, a Variable Window: TM-134's 1.0 screens), and
+     TM-134 p71's dialogue typed into it starts the held
+     `pimos_login_requester` in a new process; the prompt comes back at
+     once. The timer's alarm 303, which already ran, is pinned, and 302 now
+     runs too (`on_at/2` stood in); no clock, so the alarm comes at once. blt a8 and `terminate_core`'s PCB word 15 were
+     re-examined and stay blocked.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

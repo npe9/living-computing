@@ -474,7 +474,7 @@ Sizes are rough, counted in lines of ESP stand-in plus Python, and include the t
 | M7 | **The window manipulator** (TM-125 p8 items; video), restacking with save areas, `out`/`show` permission | `test_win_m7_manip`: HIDE then SHOW restores a covered window's dots exactly; MOVE and RESHAPE call the held `has_been_reshaped/1` | skip the save-area restore: the restore test fails | ~350 |
 | M8 | **Graphics and markers** (W§2.5-2.6): `draw_line/5-8`, rectangles, filled shapes, `draw_string/4-6`, `transfer/8`, `copy/9`, markers, `get_mouse_position/3` | `test_win_m8_graphics`: the held paragraph `p_icon`/`g_window` draw paths (the `execute_graphics_command/2` batch, W§2.5) give pinned dot counts; XOR twice erases | make `exclusive_or` act as `set`: the erase check fails | ~500 |
 | M9 | **Choice windows and the remaining menu kinds** (W§2.9-2.10, §3.3-3.4) | `test_win_m9_choice`: a held `choice_list` create (pimfep `standard_choice_window`) reads back `[{Key,Value}]` | return the default for an edited field: fails | ~350 |
-| M10 | **Pmacs proper**: buffers, mode line, echo line, the EDITOR MENU, a minimal default key set (OURS, gap G6), the papyrus/cal editor subclasses | `test_win_m10_pmacs`: the held `disc/exshow.esp` sequence (create, get_editor, read_file, command_interpret) edits and saves a file in `simpos_fs` | — | ~1200 |
+| M10 | **Pmacs proper**: buffers, mode line, echo line, the EDITOR MENU, a minimal default key set (OURS, gap G6), the papyrus/cal editor subclasses | `test_win_m10_exshow` (planned as `test_win_m10_pmacs`): the held `disc/exshow.esp` sequence (create, get_editor, read_file, command_interpret) edits and saves a file in `simpos_fs` | a save overwrites the file's version (S1): the exshow and menu tests fail | ~1200 |
 | M11 | **Live view and IFS applications.** The browser canvas; then IFS programs one at a time (W§7's order) once their non-window needs are met | per program, a pinned screen and transcript | — | open |
 
 **Status (2026-11-25):** M5's device layer exists as `../../psi/winfb.py` (framebuffer, the §4.1
@@ -607,8 +607,8 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - **A pop-up over a writing window**: the pop-up is lifted first and laid back last, so the output
   goes into its save area. A sweep's outline is taken off around the write.
 - **The manipulator's items**, in TM-125 p8's order: EXPAND (OURS order of the edges), MENU (the
-  windows by title, OURS), PERMISSION, EXIT are added. Not offered: ATTRIBUTE (a choice window, M9),
-  HARDCOPY (no printer), SUPERIOR/INFERIOR (no window hierarchy).
+  windows by title, OURS), PERMISSION, EXIT are added. Not offered: ATTRIBUTE (a choice window, M9;
+  added since, see the M9 status), HARDCOPY (no printer), SUPERIOR/INFERIOR (no window hierarchy).
 - A writer held back is woken when its permission becomes `out` or `show`; a killed window's
   waiters are dropped (OURS) (`test_win_m7_permission_change`).
 - **`has_been_selected/1`** is sent after a selection (the select notifier's callback; the
@@ -618,8 +618,8 @@ M7's rest"; tests `test_win_m7_permissions`, `test_win_m7_popup_over_writer`, `t
 - Screens: `screens/manipulator_expand.png`, `manipulator_menu.png`, `notify_window.png`;
   `window_manipulator.png` re-rendered (eight items).
 
-**Status (2026-11-26, window M8, partial: lines, rectangles, strings, transfers, markers; shapes,
-patterns and images open)** (`../../psi/README.md` "Window M8"; tests `test_win_m8_graphics`,
+**Status (2026-11-26, window M8, partial at merge 20efface: lines, rectangles, strings, transfers,
+markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m8_graphics`,
 `test_win_m8_forms`, `test_win_m8_markers`):
 - `draw_line/5-8`, `draw_rectangle/5,7,8`, `draw_filled_rectangle/6,8` (pattern `fix`),
   `draw_string/4-6`, `transfer/8`, `execute_graphics_command/2` and `get_mouse_position/3` are
@@ -635,6 +635,74 @@ patterns and images open)** (`../../psi/README.md` "Window M8"; tests `test_win_
   refuse), `copy/9`, `paint/5`, images, `get_marker_position/4` (UNSPECIFIED). Each refuses loudly
   or is not stood in.
 - Screen: `screens/window_graphics.png`.
+
+**Status (2026-11-26, window M8's rest: done but for `paint/5`, a STOP)** (`../../psi/README.md`
+"Window M8's rest"; tests `test_win_m8_patterns`, `test_win_m8_images`, `test_win_m8_shapes`,
+`test_win_m8_copy`, `test_win_m8_rest_screen`):
+- Fill patterns: the named ones (`light_paint` HELD-DERIVED from paragraph's saved images, the
+  others' looks OURS) and the held pattern strings (64 x 64 tiles, INFERENCE), so g_window's
+  bar views run. kl0 gained blt 44 `divide_with_remainder` for the held `set_pattern/2`.
+- Images: `restore_image/6`, `get_label_height/2`, a `bitmap` stand-in (`get_plane_count/2` = 1);
+  the held `type_switch_icon` `draw/6` runs through the held `restore/7`.
+- Shapes: circles, ellipses, arcs, elliptical arcs, fans, the filled forms with patterns,
+  graphs and polygons (TM-785 p40's vectors), their dots OURS and checked dot by dot.
+- `copy/9` between two shown windows, with screen copy, save and restore only. The held caller's
+  off-screen source (a 2000 x 2000 `hide_window`) and the scaled matrix form are refused.
+- **STOP: `paint/5`.** A seed fill needs the frame's dots, and no frozen primitive gives a dot's
+  value to the program, so it is refused loudly. `save_image/6` is not stood in for the same
+  reason.
+- The five refusals (paint, save_image, the off-screen `hide_window`, the matrix `copy/9`, TM-785
+  p40's six-element ellipse) are researched in `m8_stops.md`. It gives the sources, what the PSI
+  did, and a recommended resolution for each.
+- Patterns and images are drawn as winfb's styled `line` (its style operand). No primitive was
+  added, so the hardware contract (§4.1) is unchanged.
+- Screen: `screens/window_graphics_rest.png`.
+
+**Status (2026-11-26, window M9: choice windows)** (`../../psi/README.md` "Window M9"; tests
+`test_win_m9_choice`, `test_win_m9_attribute`, `test_win_m9_choice_screen`):
+- A `standard_choice_window` stand-in serves the HELD pimfep superviser's error mode menu
+  (`create_error_mode_menu/1` on the .ptf, then `refute_sub_command/2`'s sends). Its fields are
+  label lines, text fields (shown, not edited: OURS), choose and boolean fields, with the current
+  value reversed (Fig. 4). It adds a do_it/abort row (INFERENCE). `read/2` gives
+  `[{Key, Value}]` or `abort`. The look is OURS.
+- The manipulator's ATTRIBUTE item opens a choice window with Fig. 4's PERMISSION field only
+  (OURS subset); do_it sets the permission.
+- The plan's injection (return the default for an edited field) at first failed nothing: the
+  test's one edit ended on the held default. The test now edits away from it.
+- Not done: the remaining menu kinds (W§2.9: `standard_temporary_menu`, the multiple-select and
+  multi-column menus), editing a text field, and the other choice-window classes
+  (`temporary_choice_window`, `..._with_no_execute`).
+- Screens: `screens/choice_window.png`, `screens/manipulator_attribute.png`.
+
+**Status (2026-11-26, window M10: Pmacs proper)** (`../../psi/README.md` "Window M10"; tests
+`test_win_m10_exshow`, `test_win_m10_keys`, `test_win_m10_menu`, `test_win_m10_cal`,
+`test_win_m10_select`, `test_win_m10_scroll`, `test_win_m10_dedit_compiles`):
+- Three held programs run whole: disc `exshow.esp` (a file read into a pooled buffer, edited,
+  saved as a new version with the old kept, exit kills the window), cal `cal_pmacs.esp` (its
+  `cal_pmacs_window`'s editor class from the slot, its own pf#11 binding before the defaults) and
+  papyrus `my_select.esp.1` (held after-demons on `select_buffer/2` run after the stand-in
+  primary). Their harness classes are OURS; exshow's missing `kanji_28.font` is a test_11
+  substitute made in the run.
+- The screen: text rows, the reversed mode line `PMACS(fundamental)(C,R) *-N* Name Path --Top--`,
+  the echo line; only changed rows are redrawn; the first shown line follows the point's line
+  (`--Bot--`, `--N%--` when it moves). The EDITOR MENU on the right button, IPSJ 36239
+  p5's eight items; three are stood in, five refuse loudly.
+- Key macros: `mouse#B` atoms (HELD names), key#lf = 10 witnessed by held cells, the other values
+  OURS (G2). Default bindings OURS (G6, Q6).
+- No new device primitive: `window_pane` gained `draw_row/4` and `set_cursor/3` over the frozen
+  set, so the frame interface (§4.1) is unchanged.
+- Found, fixed after M10 (2026-11-26): espc flattened `(A ; B) ; C` into one `$or$`, where the
+  held compiler keeps the inner one. Cuts make it behavioural. kl0 also let a cut in a `$or$` cut
+  the whole clause (`../../psi/README.md` "Nested disjunctions and the cut in a `$or$`").
+- Found and fixed: a term vector put on a stream lost its elements to the sender's backtracking
+  (the console replay diverged); the datum is now a heap vector.
+- Not done: Pmacs's other ~100 commands (search, yank, regions, windows, modes), a prompt for C-x
+  b, the five other menu items, Pmacs's own mode names, scrolling by command, the M9 leftovers, not
+  attempted (a second ATTRIBUTE while a sheet is up; editing a choice window's text field).
+- Screens: `screens/pmacs_editor.png`, `screens/editor_menu.png`.
+
+Also pinned (2026-11-26): the coordinator's own process is never held back (P13), by
+`test_win_m7_coordinator_writes`.
 
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
@@ -654,7 +722,7 @@ step 3l did):
   selected window;
 - EXPAND's order of the edges, MENU's titles, the notify window's look, and `out` as the default
   permission;
-- Pmacs's default bindings.
+- Pmacs's default bindings, the mode line's layout, the EDITOR MENU's one column, C-x b without a prompt, a save as a new version (M10).
 
 ---
 

@@ -326,8 +326,12 @@ class Table(unittest.TestCase):
         # blt 42 and 43, 147 before step 3m's blt 35, 36, f4, f5 and pmi d6,
         # 152 before step 3m's pmi a8, 153 before step 3n's blt 30, pmi 36
         # and blt 0d (INFERENCE), 156 before window M4's blt 69
-        # (not_equal_string, KNOWN-PLAINTEXT on kappa2 KP_UPT.ESP)
-        self.assertEqual(len(rows), 157)
+        # (not_equal_string, KNOWN-PLAINTEXT on kappa2 KP_UPT.ESP), 157
+        # before window M8's rest's blt 44 (divide_with_remainder,
+        # KNOWN-PLAINTEXT on paragraph bar_v.esp:333), 158 before pmi db
+        # (relative_cut_and_fail, KNOWN-PLAINTEXT on kappa2 pb/hash.esp and
+        # KP_MDMART.ESP, 2026-11-26)
+        self.assertEqual(len(rows), 159)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1592,7 +1596,13 @@ class Census(unittest.TestCase):
             # of if_less_than / if_not_less_than (23 -> 28); pimmcsp
             # dummy_kl1_value_cell free/1 succeeds past class_object/2
             # ('no method' 57 -> 56)
-            'no method': 56, 'no slot': 40, 'built-in': 24, 'unbound receiver': 24,
+            # window M8's rest: blt 44 divide_with_remainder rowed: of its 4
+            # rows (time_bottom_icon, time_top_icon draw/6 and draw/2), the
+            # two draw/6 go on to a divide_with_remainder of an unbound
+            # argument ('unbound argument' 28 -> 30), the two draw/2 to an
+            # execute_graphics_command/2 sent to an unbound receiver
+            # ('unbound receiver' 24 -> 26)
+            'no method': 56, 'no slot': 40, 'built-in': 24, 'unbound receiver': 26,
             # step 3d: subtract_immediate with R != A is witnessed, so six
             # methods go further; five stopped at divide_immediate (R != A)
             # and up_down_icon code/4 at an unbound argument.  Step 3e:
@@ -1620,8 +1630,7 @@ class Census(unittest.TestCase):
             # step 3i: pmi c8: mpsicsp csp_user_command create/5 goes on to
             # pmi a6 ('operand' 8 -> 9), graphics_item match/2 to an
             # equal_string on an unbound argument (22 -> 23)
-            'receiver a slot constant': 9, 'unbound argument': 28, 'operand': 7, 'pool': 1,
-            'missing opcode blt 44': 4,
+            'receiver a slot constant': 9, 'unbound argument': 30, 'operand': 7, 'pool': 1,
             # step 3n: pmi 36 rowed: its 3 rows succeed (the count above)
             # step 3g: pmi c3 (retry) witnessed: pe_registers
             # register_type/3 succeeds (its unbound first argument takes

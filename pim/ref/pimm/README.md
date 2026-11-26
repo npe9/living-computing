@@ -136,6 +136,74 @@ instructions (refused: what they change is unsourced) and the
 resource ones acknowledged with nothing counted, no
 unification failure inside a shoen, no built-in exceptions.
 
+**Several PEs (rung M1, 2026-11-26; `docs/multi_pe.md`).**
+`pimm_pe.py` makes a `System` of N PEs, each a `Machine` of its own
+(copied from one loaded machine), with `current_node`, `Goal@node(K)`
+as a `%throw_goal` message, an unbound argument exported and the
+importer's unification of it with an integer or atom sent home as
+`%unify`; VPIM's logical packets, the console's message codes, a FIFO
+per pair of PEs, delivery at a goal switch, the PEs in turn with a
+quota. `python3 ref/pimm/m1_gc.py` (in the suite, about a minute) runs
+PIMOS's own compiled `seqgc:go/0` and `gc:go/0` from
+`pimm_shell360E.sav` on 1, 2 and 4 PEs under two quotas against what
+their source fixes. `pimm.Machine.run` calls the same `goal_switch()`
+the PEs call; one machine's traces are byte-identical to before.
+Reference only: the core is one PE (rung M7).
+
+Rung M2 (2026-11-26): reading across PEs. A goal waiting on an
+external cell sends `%read`; the owner answers with `%answer_value` at
+once or from a reply record hooked on its variable; the reader binds
+its own variable and gives the import back with `%release`.
+Structures go at level 0 (exported) and level 1 (the list cell or
+vector, the elements at level 0); `current_processor`, `unbound/2` and
+`get_heap_size` on the PEs. `python3 ref/pimm/m2_read.py` (in the
+suite, after `m1_gc.py`) runs PIMOS's own compiled heap monitors
+(`h_monitor`, `x_h_monitor` of `pimm_debugger360E.sav`) on 1, 2 and 4
+PEs under two quotas, and bench cases on their `reverse` and `out`;
+`M2_CACHE=PATH` keeps the loaded machine between runs.
+
+Rung M3 (2026-11-26): the tables as the machine had them. MRB off is
+white (a new entry, one `%unify` or `%release`), MRB on black (one
+entry per address, WEC, 2^24 a send, given back by `%read`, `%unify`,
+`%release` and coming home, reclaimed at 0); an imported ID is passed
+on as VPIM does; a PE collects with live tables (`PECollector`: the
+export table a root, the import table weak, a dead import released).
+`python3 ref/pimm/m3_gc.py` (in the suite, after `m2_read.py`) runs
+the heap monitors with collections at every quiescence and checks WEC
+conservation, that every entry is named, and the bench drains. The
+exported variable is retagged `EUNDF`/`EHOOK` while an entry holds it.
+
+Rung M4 (2026-11-26): the shoen across PEs. A shoen's ID is a black
+export entry of its record. A throw from it carries WTC (`wtctu`
+0x400) and resource (`rsctu` 0x1000), and it cannot terminate while
+any WTC is out. On the goal's PE a foster parent is made, which sends
+`%ready` and is given `%supply_wtc`. It throws on, asks for WTC and
+resource, forwards exceptions, answers statistics and ends with
+`%terminated`. The shoen's start, stop and abort go to every live
+foster parent. `python3 ref/pimm/m4_shoen.py` (in the suite, after
+`m3_gc.py`) runs seven parts, each a shoen made by the image's own
+`shoen:execute/4`, on 1, 2 and 4 PEs under two quotas. It checks
+termination, statistics against the reductions counted on every PE,
+the answers, WTC and resource accounting, and that nothing is left.
+`M4_CACHE=PATH` keeps the loaded machine between runs. A code or
+module word in the heap goes between PEs as its module's number and
+offset. The loaded modules are roots of a PE's collector, and a
+module made later (a compiled one) is fetched by the PE that needs it.
+
+Rung M5 (2026-11-26): PIMOS boots on N PEs.
+
+    M5_CACHE=PATH python3 ref/pimm/m5_boot.py LINK.pkl [--n N ...] [--quota Q ...] [--app sample9|qsort ...]
+
+LINK.pkl is the checkpoint `longrun_ipl.py --reference --save` writes.
+The runner collects it once with Loaded as a root (to 1,016,836 live
+cells; the one-PE boot from it is unchanged, 8,595,408 instructions to
+the prompt). It boots PIMOS on a System of N PEs, with the boot goal
+and the FEP on PE 0. At the prompt it compiles and runs the primer's
+`sample9` (placement order 0,1,2,3,0,1,2,3 on 4 PEs) or R8's qsort
+with `@node`, and compares the console and window with the one-PE
+run's. Its last line is `m5 boot: PASS (12 runs)`, after about 7
+minutes. It is a long runner, not in the suite: docs/multi_pe.md 5, M5.
+
     python3 ref/pimm/test_jtoa.py
 
 runs module `jis_to_ascii` from the image against an oracle built from

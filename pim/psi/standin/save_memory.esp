@@ -58,6 +58,16 @@ attribute used := [];
         without(Class!used, Id, Used),
         Class!used := Used;
 
+% :restore(#save_memory, Area, Op) -- window M8's rest (selector and body
+% OURS): as restore/2, the saved dots drawn through Op (the device's
+% restore takes an op, psi/winfb.py), the area freed.
+% INTERPOLATED (selector and body OURS): restore; basis above and in the
+% head comment.
+:restore(Class, [Id, Base, Size], Op) :-
+        :restore(#bitmap_display, Id, Op),
+        without(Class!used, Id, Used),
+        Class!used := Used;
+
 % :put_back(#save_memory, Area) -- window M7, OURS (selector and body):
 % the saved dots drawn back where they were (copy); the area stays in
 % use (window_pane.esp move_to/3 draws it back twice).
@@ -66,7 +76,31 @@ attribute used := [];
 :put_back(Class, [Id, _, _]) :-
         :restore(#bitmap_display, Id, copy);
 
+% :allocate(#save_memory, Size, Area) -- window M8's stops, step 3 (OURS
+% selector and body): Size words of bitmap memory kept for a drawing
+% surface (window_pane.esp create_surface/6), from the same first-fit list
+% as the save areas, so the two never share a word.  A surface has no
+% device slot: its Id is -1 - Base (unique, never a slot).  Fails when no
+% gap of Size words is left below 65,536 (the device's bitmap memory,
+% psi/winfb.py; until H8 moves it to SDRAM).
+% INTERPOLATED (selector and body OURS): allocate; basis above.
+:allocate(Class, Size, [Id, Base, Size]) :-
+        base(Class!used, 0, Size, Base),
+        Base + Size =< 65536,
+        value(0 - 1 - Base, Id),
+        insert(Class!used, [Id, Base, Size], Used),
+        Class!used := Used;
+
+% :free(#save_memory, Area) -- window M8's stops, step 3 (OURS selector
+% and body): a surface's words given back.
+% INTERPOLATED (selector and body OURS): free; basis above.
+:free(Class, [Id, _, _]) :-
+        without(Class!used, Id, Used),
+        Class!used := Used;
+
 local
+
+value(V, V);
 
 times(0, _, P, P) :- !;
 times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);

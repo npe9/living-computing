@@ -1,0 +1,26 @@
+% SCAFFOLDING stand-in, compiled by psi/espc.py into the package `simpos`.
+% It is NOT SIMPOS.  Step 3o (OURS class name): the debugger's windows
+% (standin/debugger.esp), a standard_io_window (standard_io_window.esp)
+% with putt/2, a write with no new line, for the prompt `:- ` with the
+% goal typed after it on its line (SCREENSHOT TM-134 PDF p68, p71; that
+% the window class had such a write is INFERENCE from those screens).
+
+class debugger_window has
+
+nature standard_io_window;
+
+instance
+
+% :putt(W, String) -- INTERPOLATED (selector and body OURS; see above):
+% String joins the history and is drawn at the cursor, which stays on its
+% line.
+:putt(W, S) :-
+        W!history := [S | W!history],
+        drawn_text(W, S);
+
+local
+
+drawn_text(W, S) :- W!pane \== 0, !, :put_string(W!pane, S);
+drawn_text(_, _);
+
+end.

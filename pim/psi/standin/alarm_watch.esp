@@ -15,7 +15,7 @@
 %   - docs/simpos/required/classes.tsv (row `alarm_watch`): create/2,
 %     on_after/2, on_at/2, wait/1.
 % Model (OURS): one process and no clock, so the alarm is set and wait/1
-% returns at once, as if the time had passed.  on_at/2 is not stood in.
+% returns at once, as if the time had passed.  on_at/2 since step 3o.
 
 class alarm_watch has
 
@@ -31,6 +31,14 @@ attribute alarm := 0;
 % INTERPOLATED from: `:on_after(Watch,Time)` (PLAYSLOT.ESP:85, pimos_timer
 % on_after/4).
 :on_after(Watch, Time) :-
+        Watch!alarm := Time;
+% INTERPOLATED (step 3o, 2026-11-26) from: pimfep##pimos_timer's local
+% on_at/4 (held .ptf @136-14e, read 2026-11-26 with fepread/ptfread.py:
+% `:create(#alarm_watch,W)`, `:create(#time,T)`, `:set_count(T,N)`,
+% `:on_at(W,T)`, then wait/1, as its on_after/4 @10c-127) and the
+% classes.tsv row (on_at/2).  As on_after/2: the time is kept, and with no
+% clock wait/1 returns at once (OURS), so a 302 alarm comes at once.
+:on_at(Watch, Time) :-
         Watch!alarm := Time;
 % INTERPOLATED from: `:wait(Watch)` (PLAYSLOT.ESP:86).  OURS: it returns
 % at once (no clock, one process).

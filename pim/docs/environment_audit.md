@@ -523,6 +523,13 @@ work (`psi_acquisition.md` §8).
 
 ### L. The other PIM machines and Multi-PSI
 
+**Searched 2026-11-26: `other_pims.md`** runs the searches this area
+and §5 items 9, 10 and 18 listed. It gives the per-machine held,
+documented and lost tables, a verdict and oracle per machine, the rank
+(Multi-PSI/V2 first, then PIM/p, PIM/i, PIM/c, PIM/k), and rungs MP0..MP6
+for Multi-PSI/V2. Where it and the rows below differ, it is newer. The
+statuses below are updated where it changed them.
+
 The two families (`literature_gaps.md` "The other PIMs", quoting `OV92`
 p. 61): PIM/m and PIM/c interpret KL1-B by horizontal microprogram;
 PIM/p, PIM/i and PIM/k run code below KL1-B. By runtime, Multi-PSI/V2
@@ -572,9 +579,9 @@ system found on Multi-PSI" (same, quoting PDSS `README`).
 | Multi-PSI/V2 | hardware (64 PSI-II PEs, 8x8 mesh, 200 ns) | lineage; L phase | TR-715, TM-696, TM-306 and others (`nonlocal/lit/trtm/`; TM-306 and TM-696 added by P0, `psi_acquisition.md` §5) | behaviour, costs, packet format, free lists, GC; no record field orders (`literature_gaps.md` "The other PIMs" table, Appendix A) | PARTIAL | none | |
 | Multi-PSI/V2 | KL1 microcode (`.mbn` CLEAR/INIT/IMPL, `kl1kp.kbn`, `kl1pat.com`) and Pseudo Multi-PSI for PSI-II | L phase | none | primer (read) names the files | LOST (`icot_software_survey.md` §4, "Not found"; the 23,910-path mirror search used `kbn`, `micro`, `firm`, `csp`, `fep` among its patterns, survey §4) | — | the held `psdpim` is for PSI-III; its `mpsicspR.ptf` is the remote half of a Multi-PSI CSP |
 | Multi-PSI/V2 | CSP and its manual | L phase | none | manual CITED-ONLY | LOST / CITED-ONLY | — | |
-| Multi-PSI/V2 | PIMOS build | L phase | source branches `mpsi` (above); no Multi-PSI object set | — | PARTIAL (source); objects NOT-SEARCHED beyond the IFS tree's file names (see §5) | none | PIMOS 1.x-2.5 ran here first (survey §2.4); that code is LOST |
+| Multi-PSI/V2 | PIMOS build | L phase | source branches `mpsi` (above); `pimos.h` `case(mpsi)` (1995 copy, `archive_search_notes.md` Task 3): `machine_type mpsi` as PIM/m, `fep_interface kl1_network`, `ipl_parameter no`, `extended_floating_point no`; every module the `kl1_network` branches name is in the tree; no Multi-PSI object set | — | HELD-SOURCE (configuration and branches); objects not in any held file (IFS byte grep of all 307 archives for `mpsi_*.sav/.kbn/.mbn`, 2026-11-26, matched only the 3.0 manual naming them); outside sources open (§5 item 12); rebuildable (`other_pims.md` §2.1, rung MP1) | none | PIMOS 1.x-2.5 ran here first (survey §2.4); that code is LOST |
 | Multi-PSI/V2 | simulator | L phase | PDSS (compatible KL1, not a machine simulator) | — | HELD-SOURCE (PDSS) | `ref/pdss/` builds | |
-| Multi-PSI/V1 | hardware and KL1 | lineage | TR-237 (held, unread); TR-439, TR-390 mention it | up to 6 PSI-I PEs; no inter-PE GC (`literature_gaps.md` line 1883) | CITED-ONLY (hardware); software NOT-SEARCHED | none | |
+| Multi-PSI/V1 | hardware and KL1 | lineage | TR-237 (read 2026-11-26, `other_pims.md` §3); TR-439, TR-390 mention it | up to 6 PSI-I PEs; no inter-PE GC (`literature_gaps.md` line 1883); KL1 written in ESP on SIMPOS (TR-237 §4.1) | DOCUMENTED (outline); software not in any held file, outside not searched (it would need SIMPOS, P4) | none | |
 | PIM/p (Fujitsu) | hardware | L phase | TR-577, TR-453, TM-1067, TM-1257, TM-1320, FGCS'92 pp. 414-424, FGCS'94 pp. 80-89 (`literature_gaps.md` "detail" §1; held in `lit/`) | instruction and pipeline level | DOCUMENTED (as far as published) | none | MRB bit position not published |
 | PIM/p | KL1 native code generator, macro library, firmware | L phase | none | — | LOST (`literature_gaps.md` "detail" §8; `icot_software_survey.md` §2.6) | — | |
 | PIM/p | PIMOS build | L phase | `case(pimp)` branches (timer units in usec, float limits); no object set | — | PARTIAL (source); objects NOT-SEARCHED | none | |
@@ -586,10 +593,10 @@ system found on Multi-PSI" (same, quoting PDSS `README`).
 | PIM/c | PIMOS build | L phase | `case(pimc)` (`pimos.vmac:432`, timer unit `usec15`); no object set | — | PARTIAL; objects NOT-SEARCHED | none | |
 | PIM/i (Oki) | hardware | L phase | TR-675, TM-1017, TM-1264 | instruction list and formats; tag layout (lock, GC, MRB, 5-bit type) | PARTIAL | none | |
 | PIM/i | native code, library | L phase | none | — | LOST | — | |
-| PIM/i | PIMOS build | L phase | `case(pimi)` in `scsi.vmac:14` only; it names modules `pimi_scsi`, `pim_scsi` absent from the source tree | — | PARTIAL; the missing modules NOT-SEARCHED elsewhere | none | |
+| PIM/i | PIMOS build | L phase | `case(pimi)` in `scsi.vmac:14` only; it names modules `pimi_scsi`, `pim_scsi` absent from the source tree; `pimos.h` `case(pimi)` | — | PARTIAL; the missing modules not in any held file (VPIM, the 1995 dpool PIMOS and all 307 IFS archives searched 2026-11-26, `other_pims.md` §1); outside sources open (§5 item 12) | none | 3.6 has no `pimi` timer branch (INFERENCE: not buildable as released) |
 | PIM/k (Toshiba) | hardware | L phase | TR-767, TR-768, TR-769, TM-766, TM-1260 | cache hierarchy, processor chip name (IP1704) | PARTIAL | none | |
 | PIM/k | runtime (VPIM hand-ported), native code | L phase | none beyond VPIM | — | LOST | — | |
-| PIM/k | PIMOS build | L phase | no `case(pimk)` anywhere in the 3.6 source (this audit) | — | NOT-SEARCHED elsewhere | none | either PIM/k used a generic (`vpim`/`default`) branch or its build is not in this release (INFERENCE) |
+| PIM/k | PIMOS build | L phase | no `case(pimk)` in the 3.6 source; `pimos.h` (1995) has `case(pimk)` (`machine_type vpim`) | — | configuration HELD; 3.6 branches missing (`other_pims.md` §2.5) | none | the 3.6 timer macro has no `pimk` case (INFERENCE: not buildable as released) |
 | all four | cluster shared memory and its cache-coherence protocols | L phase | papers | `OV92` p. 63 Table 4 ("write-back coherent protocols", via `pim_architecture.md` §6); per machine in `literature_gaps.md` "detail" | PARTIAL | none | the PIM/m caution of §1.1 applies: none of this is PIM/m |
 
 ## 4. What is lost and must be reconstructed, ranked
@@ -631,6 +638,9 @@ reconstructed whether or not the binary is ever read in full.
 | 8 | **A PSI emulator** (ZEUS; none found, searched 2026-11-23, `psi_acquisition.md` §4) | a shortcut for P2 | — | not needed if P2 is built |
 
 ### 4.3 The other PIM machines and Multi-PSI
+
+Per-machine verdicts and the rank of the machines themselves:
+`other_pims.md` §3 (2026-11-26). This table ranks lost items.
 
 | Rank | Lost item | Blocks | A reconstruction would rest on | Attainable fidelity |
 |---|---|---|---|---|
@@ -679,11 +689,14 @@ an item may turn out to be in a document already held.
 8. Rebuilding any `.sav` from source (no attempt on record): needs
    PIMOS's compiler running somewhere.
 9. `pimi_scsi`, `pim_scsi` and any `case(pimk)` in other held KL1
-   (VPIM `src/`, the IFS PIMOS packages): this audit searched only the
-   PIMOS source tree.
+   (VPIM `src/`, the IFS PIMOS packages): **searched 2026-11-26**
+   (`other_pims.md` §1). `case(pimk)` is only in the 1995 `pimos.h`;
+   neither module is in any held file.
 10. VPIM's per-machine conditionals (which parts are PIM/p-, /c-, /i-,
-    /k-specific): not searched; this audit only confirmed by `grep -l`
-    that some VPIM files mention the machines.
+    /k-specific): **searched** (`archive_search_notes.md` Task 3;
+    `other_pims.md` §2.6). There are none; the machines appear in
+    comments only. 74 of the 79 virtual-hardware primitives have no
+    held body.
 
 **Outside (with where to look):**
 
@@ -719,8 +732,8 @@ an item may turn out to be in a document already held.
 17. The FGCS'92 PIM/m benchmark programs as files (roadmap §6 R9
     candidates): the IFS tree and contest sources were not searched for
     them by name.
-18. Multi-PSI/V1 software: nothing on record; TR-237 (held since P0)
-    not read.
+18. Multi-PSI/V1 software: TR-237 **read 2026-11-26** (`other_pims.md`
+    §3): KL1 in ESP on SIMPOS on PSI-I; no file held.
 19. Former ICOT and vendor staff for the IPL, FEP and CSP sources
     (survey §5.2 item 1): no contact on record.
 
@@ -1073,7 +1086,7 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
 | **PIM/m CSP software and manual; `pimm_patch.com`** | `longrun_ipl.py` does the CSP's part (load, link, `make_boot_info`, start) | the real console procedure |
 | **The FEP as software** (the PSI-side program's source; it ran on SIMPOS) | `ref/pimm/fep.py` (OURS), answering from PIMOS's own protocol source; the SD-card FEP emulator in Bluespec (`PimmFepEmu.bsv`), byte-identical to `fep.py` on 9 tapes and 293 commands (c57a2260); 2026-11-24, to the shell's prompt: 714 commands and 12 events, held requests answered by the card's script (the login) | window, socket, directory and most timer services; withheld and unsolicited replies (the login); the PSI's own answer values (being read from `pimfep.ptf`) |
 | **SIMPOS** (all forms) | a measured specification (`simpos/README.md`: 367 system classes, 1,440+706 methods, 353 built-ins); route step 1, the Librarian's loader, done; step 3 started (2026-11-24): ten stand-in classes in `psi/standin/`, labelled scaffolding, each method PRINTED or INTERPOLATED: `process` (TM-100 Fig. 3.1 printed body plus interpolated `self/2`), `stream` (TM-100 Fig. 3.6 printed source), and interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link`, `waiting_frame`. kl0's `new/2` runs slots initialised by code (TM-388 §3.5; arity-1 convention measured on all 424 held initialisers). `pimfep##pimos_timer:stream/2` now succeeds. Step 3b: macro banks expanded; four string built-ins witnessed; `:refute` modelled; interpolated `string` (`append/3`, `copy/3`), partial `symbolizer` (`string_to_list/3`, `list_to_string/3`) and `process:tag_catch/5,6,9`; `on_after/4` now stops at `process:allow_forced_event/1`. Census of pimfep+pimscsi (`kl0.py census --fep`): 515 of 1,228 methods succeed (501 before step 3b), 51 fail cleanly, 662 refuse. Step 3c: printed `channel`, `bounded_channel`, `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11); interpolated `post_queue_for_message`, `semaphore`, `list_index` and `hash_index` (layout from kappa2's `KPPOOL.ESP`/`SVHSH_IDX.ESP`), `process:create/3`, `allow_forced_event/1` and accessors, a minimal `standard_editor`; then nine more opcode rows (blt 01 06 10 16 32 33 40 5c 68, known plaintext), three HELD-SOURCE classes from morphana's `_simpos/` copies (`name`, `e_string`, `pathname`, ICOT Free Software) and the symbolizer's integer `get_number/3`, `get_number_string/3`; census 607 of 1,229 succeed, 101 fail (38 on the census's unbound arguments at a type test), 521 refuse. Step 3d: four opcode rows (blt 6e `vector_to_list`, blt 34 `set_subvector`, pmi b0 `{}`, pmi b4 four-element vector; step 3c's "no witness for b0" was wrong) and three wider operand patterns; census totals unchanged, 93 refused methods get further. Step 3d stand-ins: ten INTERPOLATED classes (`as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time`, minimal `pmacs_window`); census 665 of 1,265 succeed, 113 fail, 487 refuse, none moved out of success. Step 3e: 12 opcode rows (pmi ca, b1, b5, b6, b7; blt f2, 9a, 9b, 50, 51, 54, 55) and R != A for blt 40/49; PRINTED `as_program` (TM-100 Fig. 3.3) with an interpolated program stack in `process`; census outcomes `exception` (uncaught `undefined_method:raise/2`, TM-388 p.59) and the cause `receiver a slot constant` (a census artifact: receivers made by new/2); interpolated `network_node_name` and `pmacs_window`'s editor option and `activity` slot; census 787 of 1,403 succeed, 123 fail, 16 raise, 477 refuse, none moved out of success. Source check applied (2026-11-25, `simpos/source_check_2026-11-24.md` §5 Status): stand-in labels and citations re-checked and corrected (P-s1 to P-s20), opcode mnemonics printed in TM-444/TR-236 said so (P-f2), `time` gains get_count/set_count in the generated tables; census unchanged; opcode rows bound to TM-444/TR-236 mnemonics as INFERENCE with counts, blt 19 V != N executed (six packages 310 / 12 / 208; FEP one method from refused to the step limit); strings unify by storage only (TM-388 p79), string/3 a type test, list_index `equal_key/2`: FEP 789 / 154 / 443 refused / 16 / 1 step limit, one method out of success (a census order effect); step 3f (2026-11-25): `census --fep --recipes` (OURS) makes receivers by their held creators, stopped before the PRINTED `process:activate/2`; kl0 models `library` assign/check_info/get_class_object and `symbolizer:enter_atom/3` (INTERPOLATED); `pmacs_window` geometry, title and display methods (INTERPOLATED); pmi b7 A != 0 witnessed. FEP 1,420 methods (17 new inherited rows), plain 807 / 154 / 442 / 16 / 1, recipes 809 / 154 / 440 / 16 / 1 with slot constants 142 to 86, one real plain move to success | step 2 the KL0 interpreter (in progress); the rest of step 3: pmi c6/ce/ff, blt 0d, 1a and 6f, `stream:see/2`, `process:status/3` and `invocation_stack/2`, `network_node_name:node_full_name/3`, `pmacs_window`'s text protocol, `get_interpreter/2` and `has_been_reshaped/1`, blt 48 R != A; the rest of `symbolizer` (no witnessed atom/string built-in); step 4 the PSI-III microcode emulator |
-| **The ESP compiler, runtime and Librarian** | the loader (step 1); an ESP compiler, `psi/espc.py` (OURS, step 3, 2026-11-24). It emits only opcodes in `kl0_opcodes.tsv`, and anything else is refused by name. All 109 paragraph classes with source compile. 243 of 991 compared predicates are cell for cell identical to `paragraph.ptf`; for kappa2, whose macro banks are now expanded (`with_macro`, TM-388 §3.7.3) so all 739 classes compile, 1,361 of 10,641 (109 through a bank rule), for utter 101 of 521. Paragraph with the string built-ins: 247 of 1,051. The compiled paragraph classes, run alone, give `paragraph.ptf`'s answers to every call `test_kl0.py` makes, and no census method has a different outcome (`psi/test_espc.py`) | the compiler's unwitnessed constructs (`X+Y` on registers, `=\=`, macro rules with a tail or `==>` (40 kappa2 predicates), long vectors, `->`, `not`); first-argument indexing; the runtime is the KL0 interpreter (step 2) |
+| **The ESP compiler, runtime and Librarian** | the loader (step 1); an ESP compiler, `psi/espc.py` (OURS, step 3, 2026-11-24). It emits only opcodes in `kl0_opcodes.tsv`, and anything else is refused by name. All 109 paragraph classes with source compile. 243 of 991 compared predicates are cell for cell identical to `paragraph.ptf`; for kappa2, whose macro banks are now expanded (`with_macro`, TM-388 §3.7.3) so all 739 classes compile, 1,361 of 10,641 (109 through a bank rule), for utter 101 of 521. Paragraph with the string built-ins: 247 of 1,051. The compiled paragraph classes, run alone, give `paragraph.ptf`'s answers to every call `test_kl0.py` makes, and no census method has a different outcome (`psi/test_espc.py`) | the compiler's unwitnessed constructs (`X+Y` on registers, `=\=`, macro rules with a tail or `==>` (40 kappa2 predicates), long vectors, a bare `(C -> T)` with no `;` (`->` in a disjunction compiles since 2026-11-26, psi/README.md "If-then-else"), `not`); first-argument indexing; the runtime is the KL0 interpreter (step 2) |
 | **KL0's definition** (opcode names, built-ins) | opcodes named only from known-plaintext witnesses (`docs/simpos/layers/KL0.md`) | most opcodes; settled as the interpreter meets them |
 | **PIM/m hardware detail** (stage latencies, caches, network packet format) | papers; model choices labelled OURS | cycle accuracy; multi-PE |
 | **Disks, tapes, the PIMOS internal file system** | the held object directory served as `pimos:` by the FEP stand-in | any installation image |
