@@ -312,7 +312,9 @@ Not reached, open:
   no-import injections are caught by a raise, not by a check, and the
   node-0 one only where c is not 0.
 - The bare run's loaded code is not a collector root (the node-0
-  injection shows it); in PIMOS the module table is. M5.
+  injection shows it); in PIMOS the module table is. (Done with M4,
+  below: the modules are roots and code goes by module number; the
+  node-0 injection is now caught by the checks.)
 - (Done at M2: structures are exported.)
 
 **M2 reached on the reference model, 2026-11-26.** `ref/pimm/pimm_pe.py`
@@ -575,3 +577,157 @@ untag, 4 in m3 (`black`: a retagged cell no entry holds); an `EHOOK`
 bound without waking its goals, 73 in m2 (the monitors' answers and
 messages, `chain`, `alias`, paths), and m3 raises
 `gc: the to-space is full`.
+
+**M4 reached on the reference model, 2026-11-26.** `ref/pimm/pimm_pe.py`
+(the shoen across PEs) and `ref/pimm/m4_shoen.py` (the check, in
+`run_tests.sh` after `m3_gc.py`). `pimm.py` and `pimm_gc.py` are
+unchanged, so one machine's traces are byte-identical by construction;
+`m1_gc.py`, `m2_read.py` and `m3_gc.py` still pass (20, 52, 36 runs).
+
+What is modelled, and from where:
+
+- **The shoen ID** is a black export entry of the shoen record
+  (`SHREC`) on its home PE, made at its first throw; its WEC is the
+  negative of the WTC given out (VPIM's WTC, the weighted throw count,
+  kept on the export entry: TM-1044 9; the entry kind OURS). While
+  any WTC is out the shoen's goal count holds one more, so it cannot
+  terminate until all of it is back; then `ended(sh, 0)` as on one PE.
+- **A throw from a shoen** (`f_Send_IntClMsg_ThrowGoal_Sub`) carries the
+  ID, `wtctu` = 0x400 of WTC (PARAM line 128; VPIM's
+  `_WTC_THROW_GOAL_UNIT` agrees) and `rsctu` = 0x1000 of resource, or
+  what is left (PARAM's `rsctu`/`rscsu` preferred to VPIM's 2^16/2^24:
+  INFERENCE that the Pseudo PIM/m firmware used its own PARAM).
+- **A foster parent** (VPIM `f_Get_FP_Ptr`, `f_InitFPSlots`; the manual,
+  `e-shoen.tex`:304, "a new shoen is created on the goal's destination
+  node") is made on the goal's PE at the first goal of a shoen there: a
+  record of the shoen layout, parent 0 (the top of that PE's chain),
+  mask 0 (an exception goes to the shoen), report `INT 0`. It sends
+  `%ready {1, ID, WTC, PE}`; the shoen answers `%supply_wtc` (`wtcsu`
+  = 0x1000000), sending `%stop` or `%abort` first if it is stopped or
+  ended (VPIM `f_ShoenReceiveReady`). It throws on with its own WTC.
+  With less than 0x403 the goal waits, counted as a child, and
+  `%request_wtc` is sent once (`f_ThrowGoalMsgSusp`); `%supply_wtc`
+  sends the waiting goals. When its resource is out it asks
+  `%request_resource` once (`f_FPRequestResource_Sub`). The shoen
+  supplies `rscsu` = 0x10000 while it has that much not out, and
+  otherwise reports `resource_low` (if allowed). The foster parent
+  forwards an exception as `%exception {10, ID, WTC, tag,
+  number, Info, NewCode, NewArgv}` (`f_Send_IntClMsg_Exception`), the
+  shoen reporting it on its own stream; Info's Pe is the foster
+  parent's PE. It answers `%ask_statistics` with `%answer_statistics`
+  (its consumption since the last report). It ends when its count is
+  0, with `%terminated {2, ID, PE, WTC, resource left, used}`
+  (`f_FPTerminateWithUnlockFP_Sub`), all its WTC with it.
+- **Control.** The shoen's `started`, `stopped` and `aborted` (the
+  one-PE report points) are also sent as `%start`, `%stop` and `%abort`
+  to every live foster parent (`f_Send_IntClMsg_ToAllFPs`). Each gets
+  one WTC unit newly given (OURS: VPIM's control WTC is not read).
+  Statistics asks every live foster parent and reports when all have
+  answered. A message to a PE with no foster parent of the ID gives
+  its WTC back (`%return_wtc`; resource `%return_resource`; statistics
+  0).
+- **Accounting.** Resource reported back (`%answer_statistics`,
+  `%terminated`) is charged to the shoen and those above it, half of it
+  its reductions (2 a reduction, `e-shoen.tex`:42), as a local goal's
+  is. Resource out at the foster parents is not available to supply.
+- **OURS**:
+  - Abort at home ends the shoen at once, as on one PE. Late WTC only
+    frees the entry, and a woken goal of an ended foster parent is
+    discarded.
+  - The home and each foster parent are separate records, not VPIM's
+    one `FPREC` layout.
+  - The tables are Python tables of the PE (as since M1).
+- **Code across PEs** (2026-11-26, with M5): a code or module word in
+  the heap goes as `{CODE_ID or MODULE_ID, module number << 24 |
+  offset}`, the number its place in the loaded order. The receiver
+  takes its own copy of that module. VPIM sends a module's external
+  reference and an offset (§1.3), and PIM/m fetches the module by its
+  global identifier (`M92` pp. 430-431). Every PE has the loaded
+  modules, so for them the fetch is a lookup (OURS). A module made
+  after the split (one the compiler loads at the prompt) is numbered
+  by its PE at its first send. A PE without it copies it from that
+  PE at once, without messages (OURS), with what its cells point at
+  outside it: strings, vectors and lists, sharing kept, and the cells
+  of its calls to other modules (a call cell still unbound is a fresh
+  variable, linked where it is called). The modules a PE has are a
+  root of its collector (`PE.mods`, moved by it: PIMOS's module table
+  is one, and VPIM's `f_GCPreProcedure_Sub` keeps the code area), so
+  the M1-M3 refusals of a goal or code word after a collection are
+  gone.
+
+The check, `m4_shoen.py`, has seven parts on M1's machine
+(`pimm_shell360E.sav`). Each is started by the image's own
+`shoen:execute/4`, with `prof`'s `apply_goals/1` placing
+`{Code, ArgV, Node}` goals (`apply_with_pgm@node`). They run on
+(N, c) = (1,0), (2,0), (2,1), (4,0), (4,3), under quota 1 and quota
+1,000,000:
+
+- `spread`: `seqgc:go/0` at node k, so the foster parent throws on.
+- `home`: `gc:go/0` at c.
+- `stop`: `ipl_pool:hash/3` waits on a home variable at k, with
+  `ipl:dummy/2` after it. Statistics are asked while it waits, then
+  stop, the variable is bound, then start.
+- `abort`: the same with abort.
+- `exception`: `ipl:close_fep(shut, 0)` at k, a reduction failure. The
+  bench answers NewCode `ipl:dummy/2`.
+- `nested`: a shoen made inside a foster parent, read at the home by
+  the image's `top:bios_monitor/3`.
+- `resource`: a shoen funded with 16. It is low and not terminated,
+  then it is funded.
+
+What is checked:
+
+- `terminated` comes once and in order.
+- Statistics = 2 x the shoen goals' reductions, counted on every PE as
+  they end, and `return_resource` = what was added less that.
+- The answers: H is bound only after start; the exception's kind and
+  Pe.
+- After every run, WTC and resource are accounted for.
+- At the end there is no foster parent or shoen table, one
+  `%terminated` per `%ready`, and nothing left on any PE (after a
+  drain for abort and exception).
+- Both quotas give the same Reports (numbers aside) and the same
+  answers.
+- Every M4 path marked in `pimm_pe.py` runs.
+
+`m4 shoen: PASS (70 runs)`, about 4 1/2 minutes on a shared machine
+with `M4_CACHE`; loading the sav takes about another 90 s without it.
+Messages at N=4, c=0, quota 1:
+
+| Part | Messages |
+|---|---|
+| `spread` | ready 3, supply_wtc 3, throw 4, unify 3, terminated 3, return_wtc 2, request_resource 1, supply_resource 1 |
+| `stop` | ready 1, throw 2, read 3, answer 3, release 3, stop 1, start 1, ask_statistics 1, answer_statistics 1, terminated 1 |
+| `exception` | exception 1 |
+
+Reductions are printed, not pinned: the schedule moves them, as at M1.
+
+Observed fault injections (each on a private copy of `pimm_pe.py`, the
+whole `m4_shoen.py` run; a raise inside one run is that run's FAIL
+line):
+
+| Injection | Observed |
+|---|---|
+| no extra count while WTC is out (the shoen may terminate with goals elsewhere) | 104 FAIL lines: `spread` and `resource` (shoen tables and goals left, one `%terminated` per `%ready`, low but not terminated), `abort`'s order, `exception` (the report, the two schedules differ, `KeyError: 0`), `nested` (the inner shoen, the monitor, PEs left); `stop` raises `start_shoen of a shoen that is not dormant or stopped` |
+| `%terminated` gives back no WTC | 368: every part with N>1 (WTC not accounted for, tables and goals left, never terminated) |
+| stopped not sent to the foster parents | 8: each N>1 `stop` run raises `start_shoen of a shoen that is not dormant or stopped` (the foster parent ran on and is sent start): caught by the model's refusal, not a check |
+| the consumption in `%terminated` not charged | 96: statistics and `return_resource` in `spread`, `home`, `stop`, `exception`, `nested`, `resource` |
+| a goal to an existing foster parent loses its WTC | 160: `stop` and `abort` (WTC, tables, goals left, terminated) |
+| a foster parent never asks for resource | 104: `spread` and `resource` (low but not terminated, one `%terminated` per `%ready`, tables, goals left) |
+| M1's `current_node` gives node 0, re-run in `m1_gc.py` with the module roots and code by module number | 18 FAIL lines (request order, throw order, node c asks after every `%unify`, messages): caught by the checks, where at M1 it raised `KeyError` |
+| the loaded modules not roots | nothing: `m1_gc.py` and `m4_shoen.py` PASS. No check throws a goal to a PE after it collected; the M1 node-0 run above is the one that does |
+
+Never run: `ready while stopped`, `ready while aborted` (a first goal
+reaching a PE after the shoen was stopped or ended), `aborted foster
+parent drops a waiting throw`.
+
+Not reached at M4, open:
+
+- The exceptions for a bad node number (`illegal_input`,
+  `range_overflow`, `e-shoen.tex` 486-514): still refused.
+- A shoen's node range and relative node numbers (`e-shoen.tex`:428):
+  node numbers are absolute.
+- VPIM's control WTC and its abort, which waits for the foster
+  parents, are not read (OURS above).
+- The loaded modules as roots are not checked by any suite run (the
+  last injection row).

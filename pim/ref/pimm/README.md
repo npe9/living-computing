@@ -173,6 +173,23 @@ the heap monitors with collections at every quiescence and checks WEC
 conservation, that every entry is named, and the bench drains. The
 exported variable is retagged `EUNDF`/`EHOOK` while an entry holds it.
 
+Rung M4 (2026-11-26): the shoen across PEs. A shoen's ID is a black
+export entry of its record. A throw from it carries WTC (`wtctu`
+0x400) and resource (`rsctu` 0x1000), and it cannot terminate while
+any WTC is out. On the goal's PE a foster parent is made, which sends
+`%ready` and is given `%supply_wtc`. It throws on, asks for WTC and
+resource, forwards exceptions, answers statistics and ends with
+`%terminated`. The shoen's start, stop and abort go to every live
+foster parent. `python3 ref/pimm/m4_shoen.py` (in the suite, after
+`m3_gc.py`) runs seven parts, each a shoen made by the image's own
+`shoen:execute/4`, on 1, 2 and 4 PEs under two quotas. It checks
+termination, statistics against the reductions counted on every PE,
+the answers, WTC and resource accounting, and that nothing is left.
+`M4_CACHE=PATH` keeps the loaded machine between runs. A code or
+module word in the heap goes between PEs as its module's number and
+offset. The loaded modules are roots of a PE's collector, and a
+module made later (a compiled one) is fetched by the PE that needs it.
+
     python3 ref/pimm/test_jtoa.py
 
 runs module `jis_to_ascii` from the image against an oracle built from
