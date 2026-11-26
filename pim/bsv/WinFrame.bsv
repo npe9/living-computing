@@ -14,9 +14,12 @@
 //           cycles later (WinFrameLatA): the request is registered, then
 //           every bank is put (a write enables only its bank), and the
 //           80:1 mux after the banks is combinational on the registered
-//           bank select.  H0/H1 had one cycle (mkBRAMCore2); the box now
-//           waits a cycle after each frame read (WinFbBox.bsv fWait), so
-//           its read-modify-write and copy cycle counts grew (its header).
+//           bank select.  H0/H1 had one cycle (mkBRAMCore2).  The word is
+//           valid in that one cycle only (the next put moves selA and
+//           every bank's output), so the box reads port A only through
+//           mkWinMemPipe (WinMemPipe.bsv), which captures each word as it
+//           comes and keeps several reads in flight (WinFbBox.bsv's header
+//           has the cycle counts).
 //   port B  the pixel clock `pclk` (a parameter; the benches pass the
 //           current clock for the one-clock bench): read only, for
 //           mkWinScanOut's fetch.  put(addr); the word is `read` exactly

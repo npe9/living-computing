@@ -97,7 +97,10 @@ echo "== bsc: mkWinUlx3s -> Verilog"
 # (accept's y x 80, the line's address, the glyph index's row x 94) into
 # one, with its input muxes, and the system clock's critical path ran
 # from accept's command through it to the index RAM's write enables
-# (22.89 MHz, MEASURED 2026-11-25).
+# (22.89 MHz, MEASURED 2026-11-25).  The cursor planes (8 x 16 x 32) are
+# kept in LUT RAM (ram_style distributed): since the H3 follow-up their
+# address is registered (WinScanOut.bsv mkWinCursor's two-clock lookup),
+# and yosys then put them in a 157th DP16KD (MEASURED 2026-11-26).
 echo "== yosys: synth_ecp5 (without share)"
 V="$BLUESPECDIR/Verilog"
 # run from the build directory, where $readmemh finds the load files
@@ -118,6 +121,7 @@ V="$BLUESPECDIR/Verilog"
   techmap -map +/mul2dsp.v -map +/ecp5/dsp_map.v -D DSP_A_MAXWIDTH=18 -D DSP_B_MAXWIDTH=18 -D DSP_A_MINWIDTH=2 -D DSP_B_MINWIDTH=2 -D DSP_NAME=\$__MUL18X18
   chtype -set \$mul t:\$__soft_mul
   alumacc; opt; memory -nomap; opt_clean
+  setattr -set ram_style \"distributed\" ulx3s_win_top/*cursor_planes*
   synth_ecp5 -top ulx3s_win_top -run map_ram: -json top.json
 " > yosys.console 2>&1) || { tail -30 "$BUILD/yosys.console" >&2; die "yosys failed"; }
 grep -E "^ +(LUT4|TRELLIS_FF|CCU2C|DP16KD|ODDRX1F|EHXPLLL|TRELLIS_DPR16X4|PFUMX|L6MUX21) " "$BUILD/yosys.log" | tail -8 | sed 's/^/   yosys: /' || true

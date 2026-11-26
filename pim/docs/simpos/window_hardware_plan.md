@@ -651,6 +651,23 @@ critical path, 22.89 MHz before, 33.89 after, MEASURED).
 | 2 | 9,671 | 3,612 | 156 | 34.32 PASS | 78.72 PASS | 411.52 PASS | 1.24 ns |
 | 3 | 9,671 | 3,612 | 156 | 32.65 PASS | 79.43 PASS | 418.24 PASS | 1.53 ns |
 
+**MEASURED, 2026-11-26: after the H3 follow-up** (the box's pipelined stages, §6's H3 status).
+Same tools and script. Two other changes:
+- the cursor's lookup is split over two pixel clocks (`mkWinCursor`, its header);
+- yosys is told to keep the cursor planes in LUT RAM.
+
+A first build without the split failed seed 3: pclk 72.94 MHz at 74.00, on the cursor's subtract,
+plane read and dot select. Seeds 1 and 2 passed at 75.35 and 77.32 (MEASURED).
+
+| seed | TRELLIS_COMB | TRELLIS_FF | DP16KD | sys Fmax (25 MHz) | pclk Fmax (74.00) | sclk Fmax (370.10) | pclk → sclk |
+|---|---|---|---|---|---|---|---|
+| 1 | 10,639 / 83,640 | 4,277 | 156 / 208 | 36.50 PASS | 77.26 PASS | 417.54 PASS | 1.48 ns |
+| 2 | 10,639 | 4,277 | 156 | 34.66 PASS | 80.02 PASS | 412.71 PASS | 1.48 ns |
+| 3 | 10,639 | 4,277 | 156 | 34.82 PASS | 82.59 PASS | 412.71 PASS | 1.47 ns |
+
+yosys's own counts: 7,313 LUT4 (808 more than H3), 4,277 TRELLIS_FF, 156 DP16KD, 646 PFUMX, 6
+L6MUX21 and 142 TRELLIS_DPR16X4. The added DPR16X4 are the stages' small FIFOs.
+
 yosys's own counts: 6,505 LUT4, 3,612 TRELLIS_FF, 156 DP16KD, 559 PFUMX, 32 L6MUX21, 112
 TRELLIS_DPR16X4 (the cursor planes and small FIFOs), 4 ODDRX1F, 1 EHXPLLL. The 156 DP16KD are the
 frame's 80 banks, the save areas' 64 and 12 for the font, the glyph index and the self-test's
@@ -814,8 +831,8 @@ timing constraints (done at H3, below).
 - `../../bsv/WinFrame.bsv` (`mkWinFrame`): the frame banked by hand into 80 DP16KD
   (`mkSyncBRAMCore2`, 1,024 words each), port A in the system clock (registered request,
   latency 2), port B in the pixel clock (registered request and two registered mux levels,
-  latency 4). The box waits a cycle for every frame read (`fWait`); its cycle counts, re-measured,
-  are in its header (a full-screen scroll 384,637 cycles, ~15 ms at 25 MHz).
+  latency 4). At H3 the box waited a cycle for every frame read (a full-screen scroll 384,637
+  cycles, ~15 ms at 25 MHz); the follow-up below removed the wait.
 - `../../bsv/WinUlx3s.bsv`: `mkWinCore` (the box; the scan-out in the pixel domain behind a
   `mkSyncFIFO` of commands; a self-test FSM drawing the mode 0 test card from a load file) and the
   synthesized `mkWinUlx3s` (`mkAsyncReset` per domain; null crossings to the serializer);
@@ -827,6 +844,52 @@ timing constraints (done at H3, below).
   frame of characters and three lines of serial bits are checked. `WinTmdsSerTb` runs all five
   pixel-to-shift alignments.
 - The injected faults and what each failed (OBSERVED) are in `../../bsv/run_win_tb.sh`'s header.
+
+**H3 follow-up (2026-11-25): the drawing speed won back, and better than H1.** H3's banked frame
+answers port A two cycles after a put, and the box waited a cycle on every frame read. Now:
+- `../../bsv/WinMemPipe.bsv` (`mkWinMemPipe`) is a pipelined front for a RAM port. Reads run under
+  credits with two in-order response ports, and each word is captured in the one cycle it is
+  valid.
+- The box is now stages: the blit's source stream, the funnel with a carried source word, and a
+  shared read-modify-write stage with an address interlock (`mkWinPendQ`). The line is split into
+  a Bresenham dot generator and a merge of each word's dots. The dump is a read stream.
+- MEASURED, H3 then H1 in brackets:
+
+  | operation | cycles (H3; H1) |
+  |---|---|
+  | full-screen scroll | 155,205 (384,637; 231,361), about 6.2 ms at 25 MHz |
+  | xor fill 1280×984 | 157,443 (236,161; 157,441) |
+  | 100 glyphs | 6,680 (12,140; 9,772) |
+  | 1,280-dot diagonal | 2,196 (6,401; 5,121) |
+  | save + restore 400×300 | 16,514 (62,102; 46,502) |
+
+  The streams are `../../bsv/win_measure/`, run by `../../bsv/win_measure.sh`.
+- All 11 H0/H1 streams stay byte-identical. So does a new directed stream,
+  `../../bsv/win_streams/pipe.txt`: small-shift overlapping copies each way, wide x-major pens,
+  merged runs and save areas. It runs with the bench refusing responses 3 cycles in 8 (`+stall`).
+- The pipelining's injected faults and what each failed are in `../../bsv/run_win_tb.sh`'s header.
+- `run_win_fpga.sh` passes on all 3 seeds (the table in §5.1).
+
+**H6, the RTL half, built in Bluesim (2026-11-25).**
+- `../../tools/winlink.py` freezes the link (OURS). Down, one frame a command: `A5 SEQ LEN=13`, the
+  104-bit record, then CRC-16/CCITT-FALSE. Up, records `5A SEQ TYPE LEN … CRC`: status, dump data
+  in 64-word records, and errors (CRC, LEN, SEQ).
+- It also holds the receiver's model and the checker.
+- `../../bsv/WinLink.bsv` (`mkWinLink`: UART receiver and transmitter, frame receiver, record
+  sender, each its own module) puts the box behind one `Client`.
+- `../../bsv/WinLinkTb.bsv` puts a host on both lines, at 4 cycles a bit, keeping 8 commands
+  unanswered at most. `../../bsv/run_win_link.sh` (called by `run_win_tb.sh`) runs 6 cases:
+  glyphs, lines and xor_twice clean, then a dropped byte, a flipped bit and a bad LEN.
+  - Every record's CRC is checked.
+  - The error records equal the model's.
+  - The statuses and every dump equal `psi/winfb.py` run on the commands the model accepted.
+  - So the plan's §4 injection "drop one byte: the CRC failure is reported, not drawn" is a
+    passing case.
+  - The RTL injections are in `run_win_link.sh`'s header.
+- Not done:
+  - the board top with the link at 1 Mbaud (divisor 25), and synthesis of it;
+  - the device layer's tee mode and the `test_espc.py` runs through a pipe. Those are in `psi/`
+    and belong to the window software's owner.
 
 Not yet: the board (H4, the owner's step: §5.4). H4 needs the owner to load the bitstream and
 report what the monitor shows; a monitor that refuses 1080p30 needs mode 2 or the 720p fallback

@@ -269,9 +269,14 @@ interface WinCursor;
    method Action shape(Bit#(3) s, Bit#(4) r, Bit#(16) mask, Bit#(16) image);
    method Action place(Bool on, Bit#(12) x, Bit#(11) y, Bit#(3) s);
    method Action frameStart;
-   // (covered with mask 1, image dot) at window pixel (u, v); at a frame
-   // start the pending position is the one that counts
-   method Tuple2#(Bool, Bool) at(Bool fs, Bit#(12) u, Bit#(11) v);
+   // the cursor at window pixel (u, v), in two pixel clocks (H3
+   // follow-up: done in one, the position subtract, the plane RAM's read
+   // and the dot select missed the 74 MHz pixel clock on a seed, MEASURED
+   // 72.94 MHz): look gives (inside the 16 x 16, the dot's column, the
+   // plane row's address); a clock later planeRow(address) gives the row,
+   // mask << 16 | image.  At a frame start the pending position counts.
+   method Tuple3#(Bool, Bit#(4), Bit#(7)) look(Bool fs, Bit#(12) u, Bit#(11) v);
+   method Bit#(32) planeRow(Bit#(7) a);
 endinterface
 
 module mkWinCursor(WinCursor);
@@ -299,15 +304,14 @@ module mkWinCursor(WinCursor);
    method Action frameStart;
       act <= pend;
    endmethod
-   method Tuple2#(Bool, Bool) at(Bool fs, Bit#(12) u, Bit#(11) v);
+   method Tuple3#(Bool, Bit#(4), Bit#(7)) look(Bool fs, Bit#(12) u, Bit#(11) v);
       WinCursorPos c = fs ? pend : act;
       Bit#(12) du = u - c.x;
       Bit#(11) dv = v - c.y;
       Bool hit = c.on && du < 16 && dv < 16;
-      Bit#(32) row = planes.sub({c.s, dv[3:0]});
-      Bit#(5) i = 15 - zeroExtend(du[3:0]);
-      return tuple2(hit && row[16 + i] == 1, row[i] == 1);
+      return tuple3(hit, du[3:0], {c.s, dv[3:0]});
    endmethod
+   method Bit#(32) planeRow(Bit#(7) a) = planes.sub(a);
 endmodule
 
 // ======================================================================
@@ -469,6 +473,7 @@ endinterface
 typedef struct {
    Bool de; Bool hsA; Bool vsA; Bool inWin; Bool last;
    Bit#(4) k; Bool cm; Bool ci; Bool fstart;
+   Bit#(4) cu; Bit#(7) ca;      // the cursor's column and plane row (dl[0] only)
 } WinDl deriving (Bits);
 
 typedef 16 DlDepth;
@@ -480,7 +485,8 @@ module mkWinScanOut#(WinFbScan fb)(WinScanOut);
    Vector#(3, WinTmdsEnc) enc <- replicateM(mkWinTmdsEnc);
 
    WinDl blank = WinDl { de: False, hsA: False, vsA: False, inWin: False,
-                         last: False, k: 0, cm: False, ci: False, fstart: False };
+                         last: False, k: 0, cm: False, ci: False, fstart: False,
+                         cu: 0, ca: 0 };
    Vector#(DlDepth, Reg#(WinDl)) dl <- replicateM(mkReg(blank));
    Reg#(Bool) outStart <- mkReg(False);
    Reg#(Bool) togR <- mkReg(False);
@@ -518,13 +524,21 @@ module mkWinScanOut#(WinFbScan fb)(WinScanOut);
          fetch.lead(t, panX, panY, l);
       end
       if (l.fstart) cursor.frameStart;
-      match {.cm, .ci} = cursor.at(l.fstart, l.u, l.v);
+      match {.chit, .cu, .ca} = cursor.look(l.fstart, l.u, l.v);
       Bit#(4) k = t.half ? zeroExtend(l.u[2:0]) : l.u[3:0];
       Bit#(4) gl = t.half ? 7 : 15;
       dl[0] <= WinDl { de: l.de, hsA: l.hsA, vsA: l.vsA, inWin: l.inWin,
                        last: l.inWin && (k == gl || l.u == t.fw - 1 || l.lineEnd),
-                       k: k, cm: l.inWin && cm, ci: ci, fstart: l.fstart };
-      for (Integer i = 1; i < valueOf(DlDepth); i = i + 1)
+                       k: k, cm: l.inWin && chit, ci: False, fstart: l.fstart,
+                       cu: cu, ca: ca };
+      // the cursor's second clock, between dl[0] and dl[1]
+      WinDl d0 = dl[0];
+      Bit#(32) row = cursor.planeRow(d0.ca);
+      Bit#(5) ci5 = 15 - zeroExtend(d0.cu);
+      d0.cm = d0.cm && row[16 + ci5] == 1;
+      d0.ci = row[ci5] == 1;
+      dl[1] <= d0;
+      for (Integer i = 2; i < valueOf(DlDepth); i = i + 1)
          dl[i] <= dl[i - 1];
 
       // the display stage

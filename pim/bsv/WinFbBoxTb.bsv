@@ -40,9 +40,22 @@ module mkWinFbBoxTb(Empty);
    Reg#(Bit#(17)) words <- mkReg(0);          // data words of the current image
    Reg#(Bit#(32)) cycles <- mkReg(0);
    Reg#(Bit#(32)) cmds <- mkReg(0);
+   // +stall: the bench takes no response 3 cycles in 8, so the box's
+   // response queue backs up into its stages (their credits and queues
+   // are then what keeps a word from being lost; run_win_tb.sh runs the
+   // win_streams/ streams so)
+   Reg#(Bool) stall <- mkReg(False);
 
    rule count;
       cycles <= cycles + 1;
+   endrule
+
+   // a box that stops answering (a lost word, a stuck stage) fails the
+   // stream instead of hanging the suite: the longest stream takes ~3.2M
+   // cycles (2026-11-25)
+   rule watchdog (cycles == 40000000);
+      $display("WinFbBoxTb: no end after %0d cycles (%0d commands sent)", cycles, cmds);
+      $finish(1);
    endrule
 
    rule open (!started);
@@ -53,6 +66,8 @@ module mkWinFbBoxTb(Empty);
          $finish(1);
       end
       fFrame <= f; fStatus <= s;
+      Bool st <- $test$plusargs("stall");
+      stall <= st;
       started <= True;
    endrule
 
@@ -80,7 +95,7 @@ module mkWinFbBoxTb(Empty);
       end
    endrule
 
-   rule drain (started);
+   rule drain (started && (!stall || cycles[2:0] < 5));
       let r <- box.server.response.get;
       if (r.isData) begin
          if (words == 0) $fwrite(fFrame, "P4\n1280 1024\n");
