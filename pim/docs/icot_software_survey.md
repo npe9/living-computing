@@ -570,13 +570,17 @@ AI Repository,
 That copy has now been compared file by file with ours
 (`nonlocal/CMU_MANIFEST.md`, 2026-11-26). We walked all 31 directories and matched each of
 its 100 `.tgz` packages by its `.ltv` listing (member names and sizes)
-against the held archives, then downloaded 20 files and compared them by hash:
-- 8 are byte-identical once decompressed. These include `pimos`, `pimosobj`,
-  `psdpim`, `pimosman`, `pdss`, `pkl1` and `vpim`, all the 12 May 1994
-  release we hold.
-- 79 have the same members as our copies.
-- 5 hold, in one bundle, files that AIST keeps as separate files.
-- 4 are earlier releases: Quixote, proview, kl1graph, and cu-Prolog 3.1.
+against the held archives, then downloaded 23 files and compared them by hash:
+- 8 are byte-identical once decompressed. These include `pimos`, `pimosman`,
+  `pimosobj`, `psdpim`, `pdss`, `pkl1` and `vpim`. Of these, `pimos`,
+  `pimosobj` and `psdpim` are the 12 May 1994 release we hold: their
+  newest members are dated that day.
+- 79 have the same member names and sizes as our copies (not downloaded).
+- 5 hold, in one bundle, files that AIST keeps as separate files. They
+  are hash-identical apart from one typo in newsletter J08.
+- 4 are other releases: earlier Quixote and proview, cu-Prolog 3.1
+  (July 1994, between the held 3.80d and 3.94), and another 1992 packing
+  of kl1graph.
 - 4 exist only at CMU: **KLIC 1.000, 1.100, 1.210 and 1.410** (Dec 1993 to
   Jun 1994, older than the 1.500 we held). They are now in
   `nonlocal/cmu/` with the IFS terms.

@@ -22,12 +22,14 @@ and `lit/` (`LIT_MANIFEST.md`). Nothing was unpacked into the repository, built 
   against every held archive; members were also looked up among loose held files and the
   decompressed sizes of loose `.Z` files, so a CMU bundle of files AIST keeps loose is found.
   No `.ltv` line failed to parse (0 of 100 files).
-- **Verify.** 20 CMU files were downloaded (11.3 MB): the 4 CMU-only and 4 different-version
+- **Verify.** 23 CMU files were downloaded (13.2 MB): the 4 CMU-only and 4 different-version
   packages, and, as a check that the classes are earned, the PIM/PSI and Unix KL1 packages, the
-  newsletters, `info.tgz`, `pimosman.pgz` and `patch12b.gz`. For those, members were compared by
+  newsletters, the three manual bundles, `info.tgz`, `pimosman.pgz` and `patch12b.gz`. For those, members were compared by
   SHA-256 and the whole decompressed tar was hashed.
-- **Not fetched.** The 79 "same members" packages and 5 re-packed bundles (their `.ltv` matches
-  the held copy name for name and byte for byte), and the 5.2 GB archive.org WARC.
+- **Not fetched.** The 79 "same members" packages (their `.ltv` matches the held copy in member
+  names and sizes only; contents not compared: the newsletter J08, same 10,614 bytes and different
+  text, shows a size match is not proof), and the 5.2 GB archive.org WARC. The 5 re-packed bundles
+  were fetched as well (section 4), 23 files and 13.2 MB in all.
 
 ## 2. Classes
 
@@ -35,8 +37,8 @@ and `lit/` (`LIT_MANIFEST.md`). Nothing was unpacked into the repository, built 
 |---|---|---|
 | A identical content | downloaded; the decompressed tar is byte-identical to the held archive's (CMU gzipped the original tar) | 8 |
 | B same members | not downloaded; `.ltv` names and sizes equal the held archive's member list | 79 |
-| C same content, different packing | CMU bundles files AIST holds loose (newsletters, PIMOS and KL1 manuals) | 5 |
-| D different version | same package, a different release; CMU's is the earlier one in all four | 4 |
+| C same content, different packing | downloaded; CMU bundles files AIST holds loose (newsletters, PIMOS and KL1 manuals), members SHA-256 identical to the loose files (decompressed) except one newsletter typo | 5 |
+| D different version | downloaded; same package, a different release or packing: CMU's is the earlier one for Quixote and proview, an intermediate cu-Prolog, and another 1992 packing of kl1graph | 4 |
 | E CMU-only | no held counterpart | 4 |
 
 Other CMU payload files (not `.tgz`):
@@ -45,7 +47,7 @@ Other CMU payload files (not `.tgz`):
 |---|---|---|---|
 | `symbolic/pim_psi/pimosman.pgz` | 652037 | `39c2def4a5bc53a2ee67ce7608f5057347c6279e77e6cc5526b0ab0cc2f1b7b1` | A: decompressed = held `ifs/symbolic-proc/pim-psi/pimosman.ps.Z` decompressed (sha256 `87271744d4fc7cba...`) |
 | `symbolic/unix/aum/patch12b.gz` | 2130 | `335d298bf938c20b39a33b814da6b54671872f93fe10e53793eb0050b3000f2e` | A: decompressed = held `ifs/symbolic-proc/unix/aum-pat-1.2b.Z` decompressed |
-| `readme.txt`, `readme_j.txt` | 14067, 15426 | see section 4 | D: the IFS top-level README "Last Modified on 27-Jun-1994"; held `ifs/README` is the 15-Apr-1996 edition. Its change log already names the PIMOS and psdpim releases of 29 Mar and 12 May 1994 that the held archives are |
+| `readme.txt`, `readme_j.txt` | 14067, 15426 | see section 4 | D: the IFS top-level README "Last Modified on 27-Jun-1994"; held `ifs/README` is the 15-Apr-1996 edition. Its change log names PIMOS and psdpim version-ups of 29 Mar and 12 May 1994; the held `pimos`, `pimosobj` and `psdpim` archives' newest members are dated 1994-05-12, so they are the 12 May release |
 | `reasonng/pimos/argus.txt` | 314 | see section 4 | E: ICOT notice that [31] Argus/V is withdrawn for updating, re-release planned for end of March 1994 (held `ifs/solver-prover/pimos/argus-v.tar.Z` is that later release) |
 | `cesp.txt`, `index.txt`, `0.html` | 637, 6299, 3964 | in `LIT_MANIFEST.md` | already held, SHA-256 identical, under `lit/web/www.cs.cmu.edu/` |
 
@@ -100,7 +102,7 @@ Paths in "held counterpart" are relative to `pim/docs/nonlocal/`.
 | `kbms_clp/simpos/kappa2d2.tgz` | 3356890 | 6 | `ifs/kbms-clp/simpos/kappa2d2.tar.Z` | B same members |  |
 | `kbms_clp/simpos/kappa2d3.tgz` | 8298299 | 4 | `ifs/kbms-clp/simpos/kappa2d3.tar.Z` | B same members |  |
 | `kbms_clp/simpos/knov.tgz` | 121603 | 114 | `ifs/kbms-clp/simpos/knov.tar.Z` | B same members |  |
-| `kbms_clp/unix/cuprolog.tgz` | 167228 | 43 | `ifs/kbms-clp/unix/cuprolog/cupsrc.tar.gz` | D different version | cu-Prolog III **3.1 (July 6, 1994)** (`src/main.c` VERSION); AIST `ifs/` has 3.94 (Jan 27, 1995), `icot-other/pub/cuprolog/cup380d.tar.Z` 3.80d (by file name): CMU is an intermediate release held nowhere else |
+| `kbms_clp/unix/cuprolog.tgz` | 167228 | 43 | `ifs/kbms-clp/unix/cuprolog/cupsrc.tar.gz` | D different version | cu-Prolog III **3.1 (July 6, 1994)** (`src/main.c` VERSION); AIST `ifs/` has 3.94 (Jan 27, 1995), `icot-other/pub/cuprolog/cup380d.tar.Z` is `VERSION "3.80d"` with `main.c` dated 1993-08-28: CMU's is a release held nowhere else, dated between the two |
 | `kbms_clp/unix/dp.tgz` | 193556 | 75 | `ifs/kbms-clp/unix/dp.tgz` | B same members |  |
 | `kbms_clp/unix/m_qxt.tgz` | 104572 | 56 | `ifs/kbms-clp/unix/m-qxt.tgz` | B same members | 62 held members; the 6 extra are the same symlinks, which the .ltv writes as `x symbolic link to y` |
 | `manuals/esp/espps.tgz` | 271649 | 2 | `ifs/manuals/esp/ESPps.tar.Z` | B same members |  |
@@ -108,9 +110,9 @@ Paths in "held counterpart" are relative to `pim/docs/nonlocal/`.
 | `manuals/esp/esptex.tgz` | 110046 | 2 | `ifs/manuals/esp/ESPtex.tar.Z` | B same members |  |
 | `manuals/esp/esptex_j.tgz` | 114654 | 2 | `ifs/manuals/esp/ESPtex-j.tar.Z` | B same members |  |
 | `manuals/kl1/kl1_text.tgz` | 124969 | 45 | `ifs/manuals/kl1/kl1-text.tar.Z` | B same members |  |
-| `manuals/kl1/kl1_tut.tgz` | 368067 | 4 | `loose files` | C same content, different packing | `ifs/manuals/kl1/kl1-tut.{ps,j.ps,dvi}.Z` (sizes match); CMU adds only `0.doc.~1~`, a CMU editor backup |
-| `manuals/pimos/man.tgz` | 1506074 | 2 | `loose files` | C same content, different packing | `ifs/manuals/pimos/man15.ps.Z`, `man30.j.ps.Z` (decompressed sizes match) |
-| `manuals/pimos/primer.tgz` | 57462 | 2 | `loose files` | C same content, different packing | `ifs/manuals/pimos/primer25.tex.Z`, `primer15.j.tex.Z` (decompressed sizes match) |
+| `manuals/kl1/kl1_tut.tgz` | 368067 | 4 | `loose files` | C same content, different packing | `ifs/manuals/kl1/kl1-tut.{ps,j.ps,dvi}.Z`: the 3 documents SHA-256 identical (downloaded); CMU adds only `0.doc.~1~`, a CMU editor backup |
+| `manuals/pimos/man.tgz` | 1506074 | 2 | `loose files` | C same content, different packing | `ifs/manuals/pimos/man15.ps.Z`, `man30.j.ps.Z`: both SHA-256 identical decompressed (downloaded) |
+| `manuals/pimos/primer.tgz` | 57462 | 2 | `loose files` | C same content, different packing | `ifs/manuals/pimos/primer25.tex.Z`, `primer15.j.tex.Z`: both SHA-256 identical decompressed (downloaded) |
 | `nlp/cesp/kwiccesp.tgz` | 717509 | 7 | `ifs/natural-lang/cesp/kwic-cesp.tar.Z` | B same members |  |
 | `nlp/cesp/linguist.tgz` | 311563 | 140 | `ifs/natural-lang/cesp/linguist.tar.Z` | B same members |  |
 | `nlp/cesp/morphana.tgz` | 280330 | 73 | `ifs/natural-lang/cesp/morphana.tar.Z` | B same members |  |
@@ -224,20 +226,28 @@ terms, so they stay out of git (`cmu/.gitignore`). Checksums: `cmu/meta/SHA256SU
 | `newsltr/e01_07.tgz` | 19270 | `78e6a6d390aa4ec06dfcac3a647594915caa9fc1eb35490121dfb64a5921549a` |
 | `newsltr/j01_08.tgz` | 24535 | `d88d62e244cfd77e5b36c379dc0a0a97e9b02afd262f12591e4ee9d21d5dac89` |
 | `info.tgz` | 13040 | `9e4a9abac3a038a0432a9cfe02b3f21949fb3ed7e9684600a7d05a70b259944a` |
+| `manuals/pimos/man.tgz` | 1506074 | `5472702fd890121ad9e623d2d3cfac7e30e0319b4d63e9ff1c36dab946ed6386` |
+| `manuals/pimos/primer.tgz` | 57462 | `dd9b4669a02188d656052da6c37387ba59ee22ca73de8aab37d290df8c51e9cf` |
+| `manuals/kl1/kl1_tut.tgz` | 368067 | `98031a104eb5e21d9b141bba4af65e018d528aed58b4553c2dc494effc548923` |
 
 ## 5. What it means for the open work
 
 - **PIMOS, psdpim, PSI and PIM/m system files: nothing new.** CMU's `pimos.tgz`, `pimosobj.tgz`,
   `psdpim.tgz` and `pimosman.tgz` decompress to tars byte-identical to the held `pimos.tar.Z`,
-  `pimosobj.tar.Z`, `psdpim.tar.Z` and `pimosman.tar.Z`: the 12 May 1994 IFS release (the CMU
-  README's change log). So the CMU copy has no other PIMOS version, no other Pseudo PIM/m or
-  PSI-III microcode (`psdpim/PMPSI.DIR` is the same bytes), and no Multi-PSI or real PIM/m firmware.
+  `pimosobj.tar.Z`, `psdpim.tar.Z` and `pimosman.tar.Z`. The first three are the 12 May 1994 IFS
+  release: their newest members are dated 1994-05-12 and the README change log has a PIMOS and
+  psdpim version-up that day (`pimosman`'s newest member is 1993-03-18). So the CMU copy has no other PIMOS version, no
+  other Pseudo PIM/m or PSI-III microcode (`psdpim/PMPSI.DIR` is the same bytes), and no Multi-PSI or real PIM/m firmware.
   `pimosman.pgz` is the held `pimosman.ps`.
+- **Lead: earlier PIMOS releases existed and neither mirror keeps them.** The README change log
+  (both the CMU 1994 and the held 1996 edition) records IFS PIMOS releases of 18 Sep 1992 ("Object
+  code and source code have ben separated", sic), 29 Mar 1994 and 12 May 1994 (version-ups, with
+  psdpim on the last two). CMU and AIST hold only the 12 May 1994 one.
 - **SIMPOS, the window system, Pmacs, the ESP compiler: none.** CMU has no SIMPOS or PSI system
   file outside `psdpim`. The SIMPOS-side packages (`apps/simpos`, `kbms_clp/simpos`, `nlp/simpos`,
   `reasonng/simpos`) and the ESP manuals are all class B, the same members as the held copies.
-  `kl1graph` (ESP `screen.esp`, `sys92.esp`, KL1 `window.kl1`) is the same sources in a different
-  packing. `cesp.txt` confirms again that Common ESP was never part of IFS.
+  `kl1graph` (ESP `screen.esp`, `sys92.esp`, KL1 `window.kl1`) is the same 1992 sources in a
+  different packing. `cesp.txt` confirms again that Common ESP was never part of IFS.
 - **KLIC 1.x: four releases held nowhere else** (1.000, 1.100, 1.210, 1.410, Dec 1993 to Jun 1994),
   committed. They predate the earliest held KLIC (1.500). KLIC 1.000 ships a short manual
   (`documents/manual/`: `klic`, `io`, `merger`, `vectors`, `strings`, `atomfunct`, `inline`,
@@ -245,5 +255,5 @@ terms, so they stay out of git (`cmu/.gitignore`). Checksums: `cmu/meta/SHA256SU
   the KLIC builds closest in time to PIMOS 3.x KL1; not yet read further.
 - **Newsletters: nothing new.** CMU has E01-E07 and J01-J08; the held tree has these plus E08, E09
   and J09. The 27-Jun-1994 IFS README is an earlier edition of the held 1996 one.
-- **Other versions:** cu-Prolog 3.1, an earlier proview, an earlier Quixote: off the PIM/PSI path,
-  kept for completeness.
+- **Other versions:** cu-Prolog 3.1, an earlier proview, an earlier Quixote and the other kl1graph
+  packing are off the PIM/PSI path and are kept for completeness.
