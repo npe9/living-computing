@@ -573,6 +573,27 @@ M6's rest and M7's save areas"; tests `test_win_m7_save_areas`, `test_win_m6_dat
 - espc now refuses loud when a stand-in predicate is refused (nine known HELD-SOURCE
   refusals listed in `espc.KNOWN_STANDIN_REFUSALS`).
 
+**Status (2026-11-25, window M7: the manipulator and keyboard focus)** (`../../psi/README.md`
+"Window M7: the manipulator and keyboard focus"; tests `test_win_m7_manip`,
+`test_win_m7_keyboard_focus`, `test_espc_swallowed_head`):
+- **M7, done but output permission and the other items.**
+  - The manipulator opens on the middle button over a window (OURS; TM-125 puts it on the system
+    menu, which the held login.com lacks). Its items SHOW, HIDE, RESHAPE and MOVE are verbatim
+    from TM-125 p8.
+  - Restacking lifts the windows above top-down and lays them back bottom-up. Each pane's own
+    dots and its under-area are kept in save areas (PROSE TM-225 p10, TM-126 p5). MOVE copies
+    the dots across in the frame, since winfb's restore is bound to its place. MOVE and RESHAPE
+    send reshape/5 and the held callback `has_been_reshaped/1`.
+  - Pinned against frames built without the manipulator: HIDE then SHOW gives back the frame
+    exactly (the planned pin); a kill under another window equals a run that never made it;
+    MOVE equals a window made there.
+  - Open: output permission (`out`/`wait`/`show`: a covered window that writes still draws over
+    the windows above it, though no tested flow writes to one); the other eight items; a Pmacs
+    RESHAPE that changes the text size.
+- **Keyboard focus.** Each window reads its own input stream, and keys go to the selected window
+  (TM-225 p11). A selection brings its window to the top (INFERENCE, TM-225 p11).
+- Screens: `screens/window_manipulator.png`, `manipulator_hide.png`, `manipulator_reshape.png`.
+
 The look, each choice cited or OURS, is in `window_pane.esp`'s head comment.
 
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like
@@ -587,6 +608,8 @@ step 3l did):
 - the menu geometry: item height = font line height + 2;
 - the save-area allocation (first fit) and the date's clock (fep.py's day, time 0);
 - that the create/kill pop-up comes only for a program already shown;
+- the manipulator on the middle button, its four items, the order of MOVE's copies, and type-ahead
+  to the next selected window;
 - Pmacs's default bindings.
 
 ---

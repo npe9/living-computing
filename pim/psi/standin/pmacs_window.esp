@@ -273,12 +273,17 @@ text_size(Window, 40, 10) :- Window!columns == 0, !;
 text_size(Window, C, R) :- C = Window!columns, R = Window!rows;
 
 % the window on the screen drawn again (has_been_reshaped/1, set_font/2):
-% erased, a new pane, the title, the text, the cursor if selected
+% erased, a new pane, the title, the text, the cursor if selected; since
+% window M7 the windows above it are lifted first and laid back after
+% (coordinator peel/3, unpeel/2), so the new pane is drawn as the top one
+% and the erased one's dots do not go over them
 drawn_again(Window) :- Window!pane == 0, !;
 drawn_again(Window) :-
+        :peel(#coordinator, Window, Lifted),
         :erase(Window!pane),
         pane(Window),
-        reselect(Window);
+        reselect(Window),
+        :unpeel(#coordinator, Lifted);
 
 reselect(Window) :- S = #coordinator!selected, S == Window, !, :select(Window!pane);
 reselect(_);

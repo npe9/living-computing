@@ -38,7 +38,8 @@
 %     window becomes the selected one when it is shown (INFERENCE from
 %     TM-225 p10-11, window.md §4.1: SHOW "changes the selected window",
 %     and the selected window is on top and has the keyboard); a read on a window that is not selected waits (window.md
-%     §4.1, 1.0 rule: only the selected window can be read; OURS: for ever);
+%     §4.1, 1.0 rule: only the selected window can be read; since M7
+%     it waits until keys come to its own stream, below);
 %   - input_data/2 "push[es] a synthetic event onto the window's input"
 %     (USAGE, window.md §2.7).  Here the window's own queue `pending` is
 %     read before the keyboard, and input_data/2 adds at its END (INFERENCE
@@ -98,6 +99,19 @@
 % centres the window on the mouse (window_pane.esp): at the mouse's start
 % (640, 472) that is the old centred place, (417, 411).
 
+% Window M7 (2026-11-25), keyboard focus and the manipulator, OURS bodies:
+%   - each window reads its own input stream (`input`): typed/2 puts the
+%     key there, and the coordinator sends typed/2 to the selected window
+%     only (PROSE TM-225 p11, TM-115 p111: the selected window has the
+%     keyboard).  Until M7 the keys went on the coordinator's one stream,
+%     so the older of two waiting requesters took the next key.  A read
+%     on a window that is not selected waits until keys come to it;
+%   - kill/1 takes the pane off through the coordinator's stack
+%     (take_off/2), so the windows above it are lifted first;
+%   - reshape/5 keeps the manipulator's rectangle and has_been_reshaped/1
+%     makes the pane again there (cells that fit, title, the transcript's
+%     lines), unless a MOVE has already moved the pane there.
+
 class standard_io_window has
 
 % :create(#standard_io_window, Options, W) -- INTERPOLATED (body OURS):
@@ -110,12 +124,16 @@ class standard_io_window has
 
 instance
 
-% OURS representation (see above).  `input` (step 3l) is no longer read:
-% the keyboard is the coordinator's (step 3m).
+% OURS representation (see above).  `input` (step 3l): since window M7
+% the window's own input stream, where typed/2 puts the keys given to it
+% while it is selected (the head comment, "Window M7, keyboard focus").
 attribute options := [], font := 0, label_font := 0, title := 0,
           active := 0, shown := 0, transcript := [], input := 0,
           pending := [], echo := on, history := [], beeps := 0,
           killed := 0, pane := 0, number := 0;
+% window M7, OURS: the rectangle given by reshape/5 ([X, Y, Wd, Ht]; []
+% none).
+attribute place := [];
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
 :set_font(W, F) :- W!font := F;
@@ -181,8 +199,40 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 
 % step 3m, INTERPOLATED (body OURS) from exit_program/1 @28e.
 :kill(W) :-
-        W!killed := 1, W!active := 0, drawn(W, erase),
+        W!killed := 1, W!active := 0, erased(W),
         :remove_window(#coordinator, W);
+
+% :reshape(W, X, Y, Width, Height) -- window M7, INTERPOLATED (body OURS)
+% from window.md §2.1 reshape/5 `(W,X,Y,Wd,Ht)`, "move and resize at
+% once" (USAGE cal-esp cpwindow.esp:85): the new outer rectangle is kept;
+% has_been_reshaped/1 acts on it (the window manipulator sends both,
+% coordinator.esp).
+:reshape(W, X, Y, Wd, Ht) :- W!place := [X, Y, Wd, Ht];
+
+% :has_been_reshaped(W) -- window M7, INTERPOLATED (body OURS) from
+% window.md §2.1, §2.12: the reshape notifier's callback, sent after the
+% geometry is set; its default primary is not printed (psi/README.md
+% "Open").  OURS here: when the kept rectangle is not the pane's (a
+% RESHAPE; a MOVE has moved the pane already), the pane is made again
+% there, as many cells of its font as fit inside (at least 1 x 1), with
+% the title and the lines of the transcript (the lines put since the
+% last clear, oldest first: the echoed codes are not kept, so a typed
+% line is lost), and the cursor if the window is selected.
+:has_been_reshaped(W) :- W!pane == 0, !;
+:has_been_reshaped(W) :- W!place = [X, Y, Wd, Ht], P = W!pane,
+        X == P!x, Y == P!y, Wd == P!w, Ht == P!h, !;
+:has_been_reshaped(W) :- W!place = [X, Y, Wd, Ht], !,
+        P = W!pane,
+        cells(Wd - 6, P!cw, Cols),
+        cells(Ht - P!ch - 9, P!ch, Rows),
+        erased(W),
+        :create(#window_pane, X, Y, Cols, Rows, W!font, Q),
+        W!pane := Q,
+        drawn_title(W),
+        reverse(W!transcript, [], Lines),
+        put_lines(Q, Lines),
+        reselect(W);
+:has_been_reshaped(_);
 
 % :deselect_window(W) -- window M5, INTERPOLATED (selector and body OURS)
 % from TM-126 p7 (PROSE, window.md §4.1): another window was selected,
@@ -199,7 +249,7 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 :selected(W) :- drawn(W, select);
 % INTERPOLATED (selector and body OURS): typed; basis above and in
 % the head comment.
-:typed(W, Code) :- :put(#coordinator!keyboard, Code);
+:typed(W, Code) :- :put(W!input, Code);
 % INTERPOLATED (selector and body OURS): contains; basis above and in
 % the head comment.
 :contains(W, X, Y) :- W!pane \== 0, :contains(W!pane, X, Y);
@@ -209,13 +259,12 @@ attribute options := [], font := 0, label_font := 0, title := 0,
 
 local
 
-% the window's own queue first, then the keyboard if selected
+% the window's own queue first, then the window's own input stream (M7:
+% the keys the coordinator gave it while it was selected, typed/2)
 next_code(W, Code) :- pop(W!pending, Code, Rest), !, W!pending := Rest;
 next_code(W, Code) :-
-        S = #coordinator!selected, S == W, !,
-        :get(#coordinator!keyboard, Code),
+        :get(W!input, Code),
         echo(W, Code);
-next_code(W, Code) :- :create(#stream, Never), :get(Never, Code);
 
 pop([C | R], C, R);
 
@@ -256,8 +305,26 @@ drawn(_, _);
 
 pane_do(clear, P) :- :clear(P);
 pane_do(select, P) :- :select(P);
-pane_do(erase, P) :- :erase(P);
 pane_do(deselect, P) :- :deselect(P);
+
+% window M7: the pane leaves the screen through the coordinator's stack
+erased(W) :- W!pane \== 0, !, :take_off(#coordinator, W);
+erased(_);
+
+% the cells of size C that fit in N dots, at least 1
+cells(N, C, 1) :- N < C + C, !;
+cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
+
+value(V, V);
+
+reverse([], L, L);
+reverse([X | R], L0, L) :- reverse(R, [X | L0], L);
+
+put_lines(_, []);
+put_lines(P, [L | Ls]) :- :put_string(P, L), :new_line(P), put_lines(P, Ls);
+
+reselect(W) :- S = #coordinator!selected, S == W, !, :select(W!pane);
+reselect(_);
 
 drawn_line(W, Line) :- W!pane \== 0, !, :put_string(W!pane, Line), :new_line(W!pane);
 drawn_line(_, _);

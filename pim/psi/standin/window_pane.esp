@@ -45,14 +45,15 @@
 % p10 and TM-126 p5, PROSE, window.md §4.1) and restored when it is
 % erased, so a window killed over another leaves the other's dots as they
 % were when it was covered (what the covered window wrote meanwhile is
-% lost: no output permission is modelled, OURS; and killing a window that
-% lies under a newer one puts its saved dots over the newer one: no
-% restacking).  Since the pane is not
+% lost: no output permission is modelled, OURS).  Since the pane is not
 % clipped, the selected window's block cursor (drawn by exclusive_or) is
 % taken off before a new pane is drawn (coordinator cursor_aside/1, OURS),
 % so it is neither saved under the new pane nor later toggled over it.
-% Restacking (the
-% manipulator's HIDE/SHOW) is not done.
+% Window M7 (2026-11-25): restacking.  A pane can be lifted off (its own
+% dots saved, what was under it drawn back), laid back on top and moved
+% (lift/1, lay/1, move_to/3); the coordinator orders them (coordinator.esp
+% "THE STACK"), so killing a window that lies under a newer one lifts the
+% newer one first and no stale dots are drawn.
 
 class window_pane has
 
@@ -100,8 +101,63 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
           iw := 0, ih := 0, cw := 0, ch := 0, font := 0, cols := 0,
           rows := 0, col := 0, row := 0, cx := 0, cy := 0, want := off,
           cursor := off, title := 0;
-% window M7, OURS: the save area holding the dots under the pane.
-attribute under := 0;
+% window M7, OURS: the save area holding the dots under the pane; while
+% the pane is lifted off the screen for a restack, the area holding its
+% own dots (0: on the screen).
+attribute under := 0, image := 0;
+
+% Window M7, restacking (OURS selectors and bodies; the mechanism PROSE
+% TM-225 p10 and TM-126 p5, window.md §4.1 "Implementation": a hidden
+% window's image is kept in a save area, and restacking copies between
+% the save areas and the frame).  The coordinator (coordinator.esp,
+% "the stack") calls them on the panes top-down and bottom-up, so a
+% pane is always the top one of those on the screen when it is lifted,
+% laid or moved: its rectangle shows its own dots, and its save area
+% `under` the dots of what is below it.
+%
+% :lift(Pane) -- the top pane taken off: its own dots saved, what was
+% under it drawn back.
+% INTERPOLATED (selector and body OURS): lift; basis above.
+:lift(Pane) :-
+        :save(#save_memory, Pane!x, Pane!y, Pane!w, Pane!h, Image),
+        Pane!image := Image,
+        :restore(#save_memory, Pane!under),
+        Pane!under := 0;
+
+% :lay(Pane) -- a lifted pane put back on top: what is under it saved,
+% its own dots drawn back.
+% INTERPOLATED (selector and body OURS): lay; basis above.
+:lay(Pane) :-
+        :save(#save_memory, Pane!x, Pane!y, Pane!w, Pane!h, Under),
+        Pane!under := Under,
+        :restore(#save_memory, Pane!image),
+        Pane!image := 0;
+
+% :lifted(Pane) -- the pane is off the screen for a restack.
+% INTERPOLATED (selector and body OURS): lifted; basis above.
+:lifted(Pane) :- Pane!image \== 0;
+
+% :overlaps(Pane, Other) -- the two outer rectangles share a dot.
+% INTERPOLATED (selector and body OURS): overlaps; basis above.
+:overlaps(Pane, Other) :-
+        Pane!x < Other!x + Other!w, Other!x < Pane!x + Pane!w,
+        Pane!y < Other!y + Other!h, Other!y < Pane!y + Pane!h;
+
+% :move_to(Pane, X, Y) -- the manipulator's MOVE ("move by mouse",
+% PRINTED-INTERFACE TM-125 p8, window.md §4.4): the top pane's outer
+% top-left goes to (X, Y), kept on the screen, its dots with it.  The
+% device's restore draws an area back where it was saved (winfb, frozen),
+% so the dots go across by a copy in the frame (OURS order): the pane's
+% dots saved; what was under it drawn back (the area kept); what is
+% under the new place saved; the pane's dots drawn at the old place and
+% copied to the new; the moved dots saved; the old place's under drawn
+% back again; the moved dots drawn back over it.
+% INTERPOLATED (selector and body OURS): move_to; basis above.
+:move_to(Pane, X0, Y0) :-
+        :get_size(#bitmap_display, Sw, Sh),
+        on_screen(X0, Pane!w, Sw, X),
+        on_screen(Y0, Pane!h, Sh, Y),
+        moved(Pane, X, Y);
 
 % :set_title(Pane, Title) -- INTERPOLATED (body OURS) from window.md §2.2
 % set_title/2 (PRINTED-INTERFACE TM-125 p15) and §4.3 (the label strip):
@@ -177,6 +233,23 @@ attribute under := 0;
         Pane!under := 0;
 
 local
+
+moved(Pane, X, Y) :- X == Pane!x, Y == Pane!y, !;
+moved(Pane, X, Y) :-
+        W = Pane!w, H = Pane!h, Old = Pane!under,
+        :save(#save_memory, Pane!x, Pane!y, W, H, Image),
+        :put_back(#save_memory, Old),
+        :save(#save_memory, X, Y, W, H, Under),
+        :restore(#save_memory, Image),
+        :copy(#bitmap_display, Pane!x, Pane!y, W, H, X, Y, copy),
+        :save(#save_memory, X, Y, W, H, Moved),
+        :restore(#save_memory, Old),
+        :restore(#save_memory, Moved),
+        Pane!under := Under,
+        value(X - Pane!x, Dx), value(Y - Pane!y, Dy),
+        Pane!x := X, Pane!y := Y,
+        Pane!left := Pane!left + Dx, Pane!top := Pane!top + Dy,
+        Pane!cx := Pane!cx + Dx, Pane!cy := Pane!cy + Dy;
 
 % N x C as a sum (OURS: see the slots)
 times(0, _, P, P) :- !;
