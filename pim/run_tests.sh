@@ -63,6 +63,8 @@ echo "=== PIM/m reference model, several PEs (rung M3, docs/multi_pe.md): white 
 python3 ref/pimm/m3_gc.py
 echo "=== PIM/m reference model, several PEs (rung M4, docs/multi_pe.md): the shoen across PEs, foster parents, WTC, %terminated, control and statistics ==="
 python3 ref/pimm/m4_shoen.py
+echo "=== IFS applications on PIMOS (docs/ifs_apps.md): the pinned outcome table, the printed results in their archives, the runner's injections ==="
+python3 -I ref/pimm/ifs_sweep.py --check
 
 echo "=== PIM/m core (Bluespec) in lockstep with the reference model ==="
 bsv/run_pimm_lockstep.sh

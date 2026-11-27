@@ -552,6 +552,20 @@ addressing rule on a layout known from elsewhere.*
   `gc` commands and the primer's `sample9`. M1 is reached on the
   reference model (`ref/pimm/pimm_pe.py`, `m1_gc.py`, `multi_pe.md`
   §5); the core stays one PE until M7.*
+- The IFS applications. *2026-11-26: every held IFS application for
+  PIMOS run on the reference model by its own documentation and sorted
+  (`ifs_apps.md`; `ref/pimm/ifs_sweep.py`, `ifs_rows.py`, the outcome
+  table pinned and checked in `run_tests.sh`). 46 applications: none
+  matches its printed result (MGTP/G runs and differs, R9's count), 10
+  stop, 2 stop at float, laputa and 10 of the 23 NEEDS-SIMPOS were still
+  compiling at their budget, 7 need another host. The ranking of first
+  stops: `set_constant` (the integer 32768 as a goal's argument, an
+  instruction the model lacks) blocks 14, reached by every take typed at
+  the Listener; float 5 first and 8 in all; `wait_value on a structure`
+  5 in all; a second PE (`enqueue_goal_to_processor`) 3; `wait_value` of
+  a variable with itself 3. All 16 held objects no other row loads
+  load; mendels' KL1 half runs to its prompt, the first SIMPOS
+  demonstration candidate.*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
