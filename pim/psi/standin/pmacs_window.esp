@@ -426,6 +426,27 @@ attribute x := 0, y := 0, width := 0, height := 0,
         :insert_string(B, Line), :insert_code(B, 10),
         :redisplay(B);
 
+% MENDELS (2026-11-27): :getl(W, Line) -- INTERPOLATED (selector HELD,
+% body INFERENCE; pmacs.md §5).  USAGE (window.md W§2.14,
+% pmacs_window getl/2 24 uses; MENDELS init_path.esp read_string/3:
+% `:mark(Editor), :set_input_position(W), :insert_string(Buffer, Old),
+% :getl(W, Line)`, the old answer put in the buffer to be edited, then
+% the line read).  INFERENCE, the body (Emacs analogy, as
+% read_with_prompt/3's, pmacs.md §4.5): the keys typed go into the buffer
+% at the point, BS and DEL rub out what was typed, RETURN ends the line;
+% Line is the text from the beginning of the point's line to the point
+% when RETURN is typed (so the old answer read_string/3 put there is part
+% of it, and a prompt putl/2 wrote is not: putl/2 ends its line).  OURS:
+% the newline put after it.
+:getl(Window, Line) :-
+        :current_buffer(Window, B),
+        :current_position(B, P0),
+        :beginning_of_line(B), :current_position(B, From), :move_to(B, P0),
+        line_typed(Window, B, From, 0),
+        :current_position(B, P),
+        :see_position(B, From, P - From, Line),
+        :insert_code(B, 10), :redisplay(B), :refresh(Window);
+
 % Window M4/M6 (selectors and bodies OURS): the coordinator's side of
 % selection, the keyboard and the mouse (coordinator.esp).
 % INTERPOLATED (selector and body OURS): selected; basis above and in
@@ -588,6 +609,21 @@ answered(Window, P, [_ | T], X, Codes) :- rubout(X), !, prompted(Window, P, T, C
 answered(Window, P, [], X, Codes) :- rubout(X), !, prompted(Window, P, [], Codes);
 answered(Window, P, T, X, Codes) :- typable(X), !, prompted(Window, P, [X | T], Codes);
 answered(Window, P, T, _, Codes) :- prompted(Window, P, T, Codes);
+
+% MENDELS (2026-11-27): getl/2's line (see there).  N: the codes typed
+% so far, which a rubout may take back
+line_typed(Window, B, From, N) :-
+        :refresh(Window),
+        :next_input(Window!interpreter, X),
+        line_key(Window, B, From, N, X);
+line_key(_, _, _, _, 13) :- !;
+line_key(Window, B, From, N, X) :- rubout(X), N > 0, !,
+        :current_position(B, P), :delete(B, P - 1, P), :redisplay(B),
+        line_typed(Window, B, From, N - 1);
+line_key(Window, B, From, N, X) :- typable(X), !,
+        :insert_code(B, X), :redisplay(B),
+        line_typed(Window, B, From, N + 1);
+line_key(Window, B, From, N, _) :- line_typed(Window, B, From, N);
 
 rubout(8);
 rubout(127);

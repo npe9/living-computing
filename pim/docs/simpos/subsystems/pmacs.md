@@ -296,6 +296,7 @@ plus the methods and selectors added for them.
 | `find_file/2` | standard_editor | ds_edt :915, my_load :243 | INFERENCE (named buffers RECONSTRUCTED-FROM-MANUAL) |
 | `write_file/4` | standard_editor | ds_edt :760 | INFERENCE (versions RECONSTRUCTED-FROM-MANUAL by analogy) |
 | `read_with_prompt/3` | pmacs_window | ds_edt :767 | INFERENCE |
+| `getl/2` | pmacs_window | kappa2 inwin :298; MENDELS init_path.esp read_string/3 (2026-11-27, psi/mendels.py) | INFERENCE (as read_with_prompt/3, §4.5: typed keys at the point, BS/DEL rub out, RETURN ends; the line is from the start of the point's line, so an old answer put there is edited) |
 | `get_activate_window_count/2` | pmacs_window | ds_edt :1035 | INFERENCE |
 | `exchange_window/1` | pmacs_window | ds_edt :1049 | INFERENCE |
 | `view_next_screen/1`, `view_previous_screen/1` | pmacs_window (and standard_editor, OURS selectors) | window.md §2.14 | RECONSTRUCTED-FROM-MANUAL (KWIC kwod.tex) |

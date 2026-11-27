@@ -330,8 +330,10 @@ class Table(unittest.TestCase):
         # before window M8's rest's blt 44 (divide_with_remainder,
         # KNOWN-PLAINTEXT on paragraph bar_v.esp:333), 158 before pmi db
         # (relative_cut_and_fail, KNOWN-PLAINTEXT on kappa2 pb/hash.esp and
-        # KP_MDMART.ESP, 2026-11-26)
-        self.assertEqual(len(rows), 159)
+        # KP_MDMART.ESP, 2026-11-26), 159 before MENDELS's blt 3e freeze and
+        # 3f melt (KNOWN-PLAINTEXT on paragraph p_vwin.esp:63 and
+        # p_MAIN.esp:407, 2026-11-27)
+        self.assertEqual(len(rows), 161)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run

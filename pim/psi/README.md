@@ -5480,6 +5480,68 @@ to 1,551, all of them inherited by pimos_window and pimos_window_editor;
 no row changes outcome (test_fep_census). The injections are in pmacs.md
 §6.
 
+### MENDELS: the KL1 and ESP halves linked (2026-11-27)
+
+`mendels.py` runs MENDELS (IFS No.61) on both machines at once: its KL1
+half on PIMOS (ref/pimm, from the shell's prompt checkpoint), its ESP half
+compiled by espc.py and run on kl0. They are linked as the real system
+linked them, by the FEP's string I/O: PIMOS's 601 create_string_io
+`mendel##...` reaches the held `pimos_string_io_invoker`, which makes an
+instance of MENDELS's class, and each 620 io(Code, String) reaches that
+class's `:io/4` (`fep_bridge.BridgeFep` with `BRIDGED=(601,)`; the rest
+of the FEP stays `fep.py`'s with the sweep runner's services). The
+furthest point, the route and the next stop are in
+`../docs/ifs_apps.md` §6 item 1; the run is pinned by
+`mendels_tapes/doc.json` and `test_mendels.py` (replay; the live run
+opt-in with `MENDELS_LIVE=PROMPT.pkl`).
+
+    python3 -I psi/mendels.py live PROMPT.pkl [--record TAPE] [--png F]
+    python3 -I psi/mendels.py replay psi/mendels_tapes/doc.json
+    python3 -I psi/mendels.py replay psi/mendels_tapes/doc.json --lenient \
+        --key '>sys>user>MENDELuser' --png mendels_path.png     # the dialog frame
+    python3 -I psi/mendels.py compile [-v]
+
+The PSI side registers the user `pmpsi` with the password '' after the
+mount, because the checkpoint's PIMOS sends that password in its 601s
+(OBSERVED: with only BOOT's password, 601 is answered 5). Its keys are
+the dialog's two lines, `>sys>user>MENDELuser` and `y` (`USER_LINES`).
+
+**espc.py** (each KNOWN-PLAINTEXT on held cells):
+- `repeat`: the goals after it become a `$or$` of one clause that begins
+  `c5 n 00 00`, `c2 00 ff fe` (paragraph view_selector read/2's `$or$4/3`
+  @d32, kappa2 kappaIVT_new_index `$or$0/1` @811; `split_repeat`).
+- the built-ins freeze/2 (blt 3e) and melt/2 (3f), new rows of
+  `kl0_opcodes.tsv` witnessed in paragraph (p_vwin.esp:63,
+  p_MAIN.esp:407); atom/1, heap_vector/2, object/3 and
+  not_equal_string/2, whose rows were already witnessed.
+- a component of the class being compiled is the slot `pkg##class$name`
+  (qxt##name_table class new_expr/2 @4e).
+The paragraph comparison goes from 1,289 to 1,432 predicates compared
+(258 -> 263 exact), kappa2's from 13,133 to 14,406 (1,530 -> 1,777); no
+exact row is lost (test_counts, test_kappa2 have the breakdown).
+
+**kl0.py**: blt 3e freeze and 3f melt (`copy_fresh`: a copy with new
+variables; the ESP manual's meaning, program-e.tex 1895-1939, PRINTED;
+the form OURS). **esp_reader.py**: the infix `::` (PIMOS writes
+`mendel::example1`; its priority OURS).
+
+**Stand-ins** (each method labelled in its file):
+
+| class | file | methods | labels |
+|---|---|---|---|
+| standard_io_buffer | `standin/standard_io_buffer.esp`, `mendels_simpos.py` | create/2; reset/1, reread/1, putl/2, putt/2, gett/2, getl/2 (models) | PRINTED: create and the ESP manual's Example 3 (program-e.tex 6733-6745); INFERENCE: reset, reread, the end-of-text term, putl's newline; OURS: the writer |
+| library_utility | `standin/library_utility.esp`, `mendels_simpos.py` | create/2, set_output/2, load/2; get_packages_with_wildcard/3, get_classes/4, get_classes_with_wildcard/5 (models) | HELD-SOURCE: set_output/2 and load/2 (cil ds_bep.esp, a COPY of the class); INTERPOLATED: create/2 and the queries (USAGE) |
+| as_event_handler | `standin/as_event_handler.esp` | get_instance/3 | INTERPOLATED (body OURS) |
+| symbolizer | `mendels_simpos.py` | is_object/2 (model) | INFERENCE |
+| process | `mendels_simpos.py` | refute_in/5 (model; the catchers not installed) | INTERPOLATED (USAGE), OURS |
+| standard_io_window | `standin/standard_io_window.esp` | deactivate/1, set_name/2, name/2, the create option title(T) | INTERPOLATED (selector PRINTED-INTERFACE or USAGE, body OURS) |
+| pmacs_window | `standin/pmacs_window.esp` | getl/2 | INTERPOLATED (selector HELD, body INFERENCE; `../docs/simpos/subsystems/pmacs.md` §5) |
+| pathname | `standin/pathname.esp` | check_pathname/3 | INTERPOLATED (USAGE MENDELS init_path.esp; body OURS) |
+
+The census grows by one row, pimos_window's inherited getl/2 (1,551 ->
+1,552; test_fep_census has the rows that change outcome). The injections
+are in `test_mendels.py`'s header.
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window

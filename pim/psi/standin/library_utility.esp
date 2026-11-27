@@ -1,0 +1,55 @@
+% SCAFFOLDING stand-in for SIMPOS's class `library_utility` (the
+% Librarian's program interface), compiled by psi/espc.py into the package
+% `simpos`.  It is NOT SIMPOS.  MENDELS (IFS No.61, psi/mendels.py,
+% 2026-11-27).  MINIMAL: what MENDELS's loader sends (loader.esp
+% load_MENDEL/2: create/2, get_packages_with_wildcard/3, set_output/2,
+% get_classes/4, get_classes_with_wildcard/5, load/2).
+%
+% Sources (docs/simpos/subsystems/librarian.md §3, "Instance methods
+% required by held programs"):
+%   - HELD-SOURCE (a COPY of SIMPOS's own class, 6.1): cil src/ds_bep.esp,
+%     `spec_ds##library_utility`: load/2 at :1829-1831 and its
+%     load_one_sub/4 at :1989-2001, which prints `Loading <id>...` per
+%     class to the output; set_output/2 at :3189-3203 (the output window).
+%   - USAGE: get_packages_with_wildcard/3 (papyrus manipulator.esp.1:727),
+%     get_classes_with_wildcard/5 (kwic dbDM.esp:1131), and MENDELS's
+%     get_classes/4 `(UT, Package, all, ^Ids)` (librarian.md's
+%     get_class_names/4 has the same shape, manipulator.esp.1:754).
+% The queries are kl0 models (psi/mendels_simpos.py) over kl0's library:
+% the class ids are the atoms `pkg##class` (INFERENCE: librarian.md's
+% get_direct_superclasses/3 row, `Pkg##Class`).  load/2 does not rebuild
+% a class here: every class of the run is already a class object in kl0's
+% library (OURS), so it prints the COPY's line for each and goes on.
+
+class library_utility has
+
+% :create(#library_utility, UT) -- INTERPOLATED from USAGE (loader.esp:63, and librarian.md
+% §3 create/2,3); the body OURS: no output yet.
+:create(Class, UT) :-
+        :new(Class, UT),
+        UT!output := 0;
+
+instance
+
+% OURS representation: the output window set_output/2 gave (0: none).
+attribute output := 0;
+
+% :set_output(UT, W) -- HELD-SOURCE: ds_bep.esp:3189-3203 (text_window :=
+% Out, for an Out not a librarian_io); OURS: kept, flash not modelled.
+:set_output(UT, W) :- UT!output := W;
+
+% :load(UT, Ids) -- HELD-SOURCE: ds_bep.esp:1829-1831, 1989-2001: per class
+% `Loading <id>...` to the output (the template file found, as for a
+% catalogued and saved class, install.e Step 6-7); the rebuild itself not
+% made here (the class is already loaded: the head comment).
+:load(UT, Ids) :-
+        :loading_lines(#library_utility, Ids, Lines),
+        put_lines(UT!output, Lines);
+
+local
+
+put_lines(0, _) :- !;
+put_lines(_, []) :- !;
+put_lines(W, [L | Ls]) :- :putl(W, L), put_lines(W, Ls);
+
+end.

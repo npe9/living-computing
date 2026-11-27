@@ -128,7 +128,8 @@ class standard_io_window has
         :create(#stream, Input),
         W!input := Input,
         permission(Options, P),
-        W!permission := P;
+        W!permission := P,
+        title_option(Options, W);
 
 instance
 
@@ -147,6 +148,26 @@ attribute place := [];
 % `permission(P)` (USAGE: 63 `out`, 13 `show`) or set_permission/2; `out`
 % when neither is given (OURS: TM-225 p11 makes ① wait the default).
 attribute permission := out;
+
+% MENDELS (2026-11-27): deactivate/1, INTERPOLATED: the selector
+% PRINTED-INTERFACE TM-125 p16 (window.md §2.1); the body OURS, as pmacs_window's (off the screen,
+% kept; activate/1 draws it again): kill/1's without the kill
+:deactivate(W) :- W!active := 0, erased(W), :remove_window(#coordinator, W);
+
+% MENDELS (2026-11-27): the window's name, distinct from its title
+% (window.md §2.2: TM-125 Fig. 4 has separate LABEL and NAME attributes).
+% OURS representation: 0 while no name is set.
+attribute name := 0;
+
+% INTERPOLATED: set_name/2 USAGE (euod RULED/ruled1.esp:623, the call
+% shape); the body OURS: kept.
+:set_name(W, N) :- W!name := N;
+
+% INTERPOLATED: name/2 from MENDELS loader.esp load_MENDEL/2 (`:is_object(
+% #symbolizer, W), :name(W, _)`: a test that the loader has run, its
+% second clause loading the package otherwise).  The body OURS: the name
+% set_name/2 gave; it fails while none is set (0).
+:name(W, N) :- W!name \== 0, N = W!name;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
 :set_font(W, F) :- W!font := F;
@@ -641,6 +662,14 @@ size(Options, 40, 10) :- unbound(Options), !;
 size([{size, {ch, C}, {ch, R}} | _], C, R) :- !;
 size([_ | Os], C, R) :- !, size(Os, C, R);
 size(_, 40, 10);
+
+% MENDELS (2026-11-27): the create option title(T), USAGE (MENDELS
+% loader.esp:12-15, 74-77 `title("WAIT !")`; window.md's option table),
+% as set_title/2 would give it (OURS)
+title_option(Options, _) :- unbound(Options), !;
+title_option([{title, T} | _], W) :- !, W!title := T;
+title_option([_ | Os], W) :- !, title_option(Os, W);
+title_option(_, _);
 
 % the held option permission(P) (window M7); out when none
 permission(Options, out) :- unbound(Options), !;

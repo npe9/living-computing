@@ -21,6 +21,8 @@ held login files' clause syntax (shell.md §4.2.2) and nothing more:
 read_terms(text) -> [term, ...] with kl0 terms (Atom, int, Str, Var,
 Cons, Vec).  A syntax error raises ValueError.
 
+MENDELS (2026-11-27): the infix `::` (200, xfx, OURS priority), see INFIX.
+
 Step 3o (2026-11-26), for the debugger's goals (standin/debugger.esp):
   - the prefix `:` of a method call, `:f(R, A, ...)` read as {':', {f, R,
     A, ...}}, and the prefix `#` of a class, `#c` as {'#', c} (ESP's
@@ -39,12 +41,17 @@ TOKEN = re.compile(r'''
  | (?P<var>[A-Z_][A-Za-z0-9_]*)
  | (?P<atom>[a-z][A-Za-z0-9_]*(?:\#\#[A-Za-z_][A-Za-z0-9_]*)?)
  | (?P<end>\.(?=\s|$))
- | (?P<op>:-|:=|\#\#)
+ | (?P<op>:-|:=|::|\#\#)
  | (?P<pre>[:\#])
  | (?P<punct>[()\[\]{},|])
 ''', re.X)
 
-INFIX = {':-': (1200, 'xfx'), ',': (1000, 'xfy'), ':=': (700, 'xfx')}
+INFIX = {':-': (1200, 'xfx'), ',': (1000, 'xfy'), ':=': (700, 'xfx'),
+         # MENDELS (2026-11-27): `Package::Module`, in the terms PIMOS's KL1
+         # half writes for the ESP half (main.kl1's loaded_library(normal(
+         # [mendel::example1, ...])), OBSERVED on the bridged run), which
+         # SIMPOS's reader must have read.  Its priority OURS
+         '::': (200, 'xfx')}
 
 
 def tokens(text):

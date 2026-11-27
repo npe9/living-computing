@@ -51,6 +51,9 @@ python3 -I psi/test_espc.py
 echo "=== PSI side: the held SIMPOS FEP logs into PIMOS (step 3n; the live run's tape replayed, the live run opt-in) ==="
 python3 -I psi/test_fep_bridge.py
 
+echo "=== PSI side: MENDELS (IFS No.61), its KL1 half on PIMOS and its ESP half on the PSI, linked by string I/O (the live run's tape replayed, the live run opt-in) ==="
+python3 -I psi/test_mendels.py
+
 echo "=== PSI side: the SIMPOS top level, the debugger's listener starts a held program in a new process (step 3o) ==="
 python3 -I psi/test_boot_route.py
 
