@@ -84,7 +84,9 @@ the code where it is done:
   compare with.
 - **STOPS / STOPS(float)**: the first stop named. A refused floating-point
   operation is marked STOPS(float); floating point is on master since
-  the float merge, and no row of the rerun has such a stop.
+  the float merge, and no row of the rerun has such a stop (since the
+  second partial rerun mssd, a NEEDS-OTHER row, has a `float:` stop:
+  a float built-in waiting on an unbound input, which has no stub).
 - **BUDGET**: still running, without an error, when its instruction
   budget was spent.
 - **NEEDS-SIMPOS**: the application has an ESP half that runs on the
@@ -163,8 +165,8 @@ arguments; mmi the guard `list` (23:E3); ldlib and ldlib+alt the
 window's `!ERROR![misc.kl1@0] *** Syntax Error ***` (there before,
 behind the model stop, which the rules take first: not examined),
 compiling on to their 80M budget; mssd `b_floating_point_multiply`
-waiting on an unbound input with no stub (STOPS(float)'s rule, a
-NEEDS-OTHER row); mgtp_n, multialign_run and aya+alt their budgets
+waiting on an unbound input with no stub (a `float:` stop; the row
+stays NEEDS-OTHER); mgtp_n, multialign_run and aya+alt their budgets
 (150M, 60M, 400M; aya+alt past `ayagen.kl1` into `cllib.kl1`). Counts:
 STOPS 7, BUDGET 5 (mgtp_n), the rest unchanged; the undetermined are 22.
 
@@ -353,7 +355,9 @@ What each is:
   (compiled, then `[2]`..`[5]` and the query, OBSERVED), multialign_run
   computes to its 60M budget (`test.res` as before: the sequences,
   `Cut_ratio = 97`, `(U,V,S) = (7,1,0)`, no more yet), mmi stops at the
-  guard `list` (23:E3, a type test the model lacks) after
+  guard `list` (23:E3, `inst_tab.kl1`:190; "Succeeds if X is a
+  list", suspends on an unbound X, PIMOS manual `e-builtin.tex` 62-66,
+  PRINTED; the model lacks it) after
   `" Now intializing DIS?? "`, and H9-07's four rows at
   `enqueue_goal_with_priority` of 12 arguments (below).
 - **`wait_value of a variable with itself` (was 2 first, 4 in all):
@@ -364,11 +368,14 @@ What each is:
   `passive_unify` the same; INFERENCE for PIM/m, whose microcode is
   not held), on both models (`ref_node_alert.py`). Met while compiling:
   H9-07's SYN002 problem, ldlib at `xia.mac`, mssd, and aya's
-  `ayagen.kl1`. Next: ldlib (and ldlib+alt) compiles `xia.mac` and
-  meets `!ERROR! This module can't be accessed :pimosx` at `klib.mac`,
-  then spends its 80M budget; mssd compiles all seven files and stops
+  `ayagen.kl1`. Next: ldlib (and ldlib+alt): its first window error
+  is `!ERROR![misc.kl1@0] *** Syntax Error ***` (earlier in the take,
+  there before but behind the model stop), then past `xia.mac`
+  `!ERROR! This module can't be accessed :pimosx` at `klib.mac`, then
+  its 80M budget spent; mssd compiles all seven files and stops
   at `b_floating_point_multiply waiting on an unbound input (no stub)`
-  (a float built-in with no waiting stub: STOPS(float)); h907_nogc and
+  (a float built-in with no waiting stub: a `float:` stop, the row
+  NEEDS-OTHER); h907_nogc and
   h907_nseq+alt compile the problem, load `mgtpNS7` and meet the
   12-argument goal; aya+alt compiles `ayagen.kl1` (where it waited
   before, after 371,289,179 instructions) and is in `cllib.kl1` at its
@@ -582,8 +589,9 @@ rows cite.
 - `wait_value` of a variable with itself, `enqueue_goal_to_processor`
   on one PE and `set_heap_alert`: done 2026-11-27 (second partial
   rerun, section 2). The Bluespec core still refuses all three
-  (`PimmStages.bsv`: X = X and another node number `E unimp`, no
-  set_heap_alert): no lockstep reaches them.
+  (`PimmStages.bsv` 1016-1017: one variable twice `E unimp`; rule
+  `toProcessor`, 1502-1513: a node other than 0 `E unimp`; no
+  set_heap_alert at all): no lockstep reaches them.
 - The heap alert and the runner's limit: get_heap_size's Size (67.1M)
   is not the sweep's 50M heap limit, so H9-07's 80% alert cannot fire
   before the runner collects; whether Size should report the limit

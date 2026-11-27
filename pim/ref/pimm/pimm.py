@@ -28,7 +28,12 @@ The SCSI built-ins scsi_init and scsi_command run against a device
 that is a Python object (Machine.fep, ref/pimm/fep.py); on the core
 they are bsv/PimmScsiBox.bsv, the device on a port answered from the
 tape this model records (lockstep_scsi.py, with ref_scsi.py's IPL
-parts).  Nothing is on this model alone now.  The core has
+parts).  Nothing is on this model alone now (Machine.ahead).  Not
+gated by it, because the IFS sweep runs with it off, and not on the
+core (no lockstep reaches them): wait_value on a module, a code or a
+shoen's handle (ref_wait_value.py), and wait_value of one variable
+twice, Goal@node(N) for N other than 0 and set_heap_alert
+(ref_node_alert.py), 2026-11-27.  The core has
 since been given read_eagerly, not_equal and wait_vector_1/4/6
 (lockstep_alt.py), b_divide, b_modulo, b_string and
 enqueue_goal_to_processor (lockstep_body.py), string_operation

@@ -78,6 +78,10 @@ script run on it, 2026-11-27; the failures listed are all of them):
   the old enqueue refusal (only 0)      pimm: refused at N = 1, `(0, 1),
                                         1 arguments`, answers 8 of 13
                                         (2 lines); pimm_pe unchanged
+  the old refusal at the stub only      pimm: the bound `q(R, P)` (P = 3)
+    (i_to_processor, `or w[1] != 0`)    refused, `enqueue_goal_to_processor
+                                        (0, 3)`, answers 12 of 13 (2
+                                        lines); pimm_pe unchanged
   pimm_pe's range check removed         pimm_pe: node 1 of 1 thrown to a
     (node_number)                       PE that is not there, refused
                                         otherwise (`code at .. has no
