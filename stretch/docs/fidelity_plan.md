@@ -988,18 +988,36 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
       NEG `*+` cancels to a residue and each later add aligns it 62
       places and normalizes it back. With the three shipped terms the
       tail is +9 (65 against 56); it is not resolved.
-    - OPEN, found after the green run: the recomplement test on exact
-      cancellation.
+    - FIXED 2026-11-26 (it was OPEN, found after the green run): the
+      recomplement test on exact cancellation.
       - Table 2 Note 1 (printed p.3-6, PDF 24; `spec_timing.md`):
         "Recomplementing will only occur if the complemented (following
         pre-shift) fraction is larger in magnitude than unshifted
         fraction."
-      - `fpBoxAddSumR`'s `recomp = sub && t[96] == 0` is also true when
-        the two magnitudes are EQUAL, so an exact cancellation is
-        charged 2 clocks that the note excludes.
-      - On the atlas this happens about once in 10,000 adds (the first
-        NEG `*+`). The fix is `&& d.fb != fsh` plus a bench vector,
-        and it needs its own suite run.
+      - `fpBoxAddSumR`'s `recomp = sub && t[96] == 0` was also true when
+        the two magnitudes are EQUAL, so an exact cancellation was
+        charged 2 clocks that the note excludes. It is now
+        `recomp = sub && t[96] == 0 && d.fb != fsh`. The sum is unchanged
+        (~t, zero either way).
+      - Bench: `mkPauStepTb` vector 10, acc -(.01 x 2^2) + 1 x 1, extra
+        0, sum zero. With the old test, step 10 alone fails
+        ("fpExtra = 2, want 0") and the other four PAU benches pass;
+        reverted by the exact inverse edit.
+      - Decks: the six `*+` decks of the table below (F216B/C/D,
+        F219T-Y, Buchholz B.3, Problem 3.6) were run with and without
+        the fix under STRETCH_HALT_REPORT=1. No halt moves (790, 400,
+        836, 881, 986, 762 both ways), so no pin moves.
+      - Suite on 3d410ee3: GREEN (only the two expected `UNREPRODUCED`
+        p359 FAIL lines); 386 HALTREPORT lines identical to batch58's.
+        `mkPauStepTb` is in the suite ("PAU STEPPING"), so vector 10 is
+        under regression.
+      - Atlas (PDF 42-101, 9,406 cells, its own build-atlas, run before and
+        after on the same tree): 76.8% / 94.6% within 1 / 3 both ways
+        (7,226 / 8,898 cells; the before run reproduces A4's step-3 figure
+        exactly). Compared cell by cell, exactly 8 cells move, all PDF 57
+        NEG `*+` ext columns ((N), A(N), (U), A(U), ni and ix), each by
+        -0.0002 clock: the one exact cancellation in 10,000 adds, 2
+        clocks / 10,000. Every other model time is identical.
   - **`*+` and the rule for done (item 2): HALF MET.**
     - Within 3 is met: 98.8%, against 88.8% before.
     - The median MISSES by 0.0014. It is -1.0014 before and after,
@@ -1056,7 +1074,8 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
     - Problem 3.6's +282: its accumulator holds 2^80, and each of its
       sixteen `*+` aligns a small product about 75 places, 18 Table 2
       cycles each.
-  - Unit bench `mkPauStepTb`, 10 vectors (`tests/run_paustep_test.sh`):
+  - Unit bench `mkPauStepTb`, 10 vectors (11 since the exact-cancellation
+    fix) (`tests/run_paustep_test.sh`):
     - literal clocks: 5 chained, 4 when the preparation answers, 1 for
       a plain add;
     - literal terms.
@@ -1082,6 +1101,119 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
 - `headReady` waits on the units' `responseReady`, not a counter.
 - Exit: `ebusy` has 0 hits. The §1c-audit "expensive datapath" row
   matches.
+
+*A5 record, 2026-11-26.*
+
+- **Step 1, `ebusy` INTO THE UNITS (done, behaviour-preserving).**
+  - The census first. `ebusy` was charged in two places only:
+    - `rl_au_remove`: a branch level's Blosk fig.10 `2 * 6`, or the whole
+      `eboxClocks` row for a level that completes at removal (no unit
+      runs for it);
+    - `rl_exec_resume`, a look-ahead level completing after a read or a
+      unit: the row less the unit's clocks (`budget - boxK`), or for a
+      stepped SAU add the row's fixed part (`sauRowWithUnit - u`).
+    So the BOXED instructions already wait on `responseReady` for the
+    part a unit steps (the level is held in `mkEBox` and `headReady`
+    has `!ebox.busy()`); what `ebusy` counted after the answer is the
+    part no unit steps yet, and for the unboxed paths the whole row.
+  - Now: `mkSAU` and `mkPAU` each have a TERMINATION (`terminate(n)`,
+    `holdTerm()`, `terminated()`, StretchSAU.bsv / StretchPAU.bsv, the
+    interface note). `mkEBox.terminate(fp, n)` hands the clocks owed to
+    `mkPAU` for a floating-point instruction and to `mkSAU` for every
+    other one (CHOSEN: while the head waits on both units, which unit
+    holds the time moves no clock). `headReady` waits on
+    `ebox.unitsTerminated()`. `ebusy`, its `eb` decrement and its eleven
+    writes are gone: 0 hits in `bsv/` (the history comments name it
+    "the E-box countdown").
+  - THE ONE NON-OBVIOUS RULE KEPT: `ebusy` counted down only in a clock
+    in which an instruction-unit arm fired. With a crossing store's tail
+    parked (`st.storeTailPending()` alone in `busyXfer`) no arm fires, so
+    it stood still. The units' count is held the same way: each arm
+    sends `eArm`, and in the clock after one with no arm `rl_term_hold`
+    holds both units (the count is stored as n + 1 so that the read after
+    the units' own decrement sees what `ebusy` held).
+  - Verified:
+    - SHADOW RUN: the new readiness beside `ebusy`, with a rule printing
+      `FAIL A5 TRIPWIRE` on any clock where `ebusy == 0` and
+      `unitsTerminated()` differ. The suite, run in a scratch copy of
+      bsv/*.bsv, decks, strap and tests: 0 tripwire lines over 381
+      HALTREPORT programs. (The copy lacked bsv/'s non-.bsv files and
+      docs/, so the MCP, host-tape, smoke and OCR sections failed to
+      build there; they are covered by the real run below.)
+    - The tripwire is discriminating: on the SHADOW build, with
+      `rl_term_hold` disabled (`False &&` in its guard), the crossing-store
+      decks printed it (vfl_crossing_store, cm_crossing_field,
+      vfl_cross_tomemory; the clock lists were cut by the probe's own
+      `head -8` and are not recorded). That build is gone.
+    - INJECTIONS ON THE SHIPPED TREE (1c140c22, in the worktree, each
+      reverted by the inverse edit, `git status` clean after), six decks
+      with their full run_tests.sh arguments:
+
+      | deck | base | hold off (`rl_term_hold (False && ...)`) | count n, not n + 1 |
+      |---|---|---|---|
+      | vfl_crossing_store | 401 | 396 | 388 |
+      | cm_crossing_field | 329 | 324 | 323 |
+      | vfl_cross_tomemory | 1193 | 1193 | 1190 |
+      | vfl_cross_storewait (`CYCLES=283+-0`) | 283 | 283 | 279, **FAIL** |
+      | Buchholz B.3 | 986 | 986 | 986 |
+      | Problem 3.6 | 762 | 762 | 729 |
+
+      - Hold off: NO suite check fails on these decks; only the
+        HALTREPORT comparison with the base sees it (-5 on two decks).
+        So the hold is guarded by the HALTREPORT diff, not by a pin.
+      - Off by one: the storewait CYCLES pin fails ("cycles = 279, want
+        283 +- 0") and every deck that retires a level moves.
+    - The six `*+` decks: halts identical (790, 400, 836, 881, 986, 762).
+    - Full suite on the committed tree (1c140c22): GREEN, only the two
+      expected `UNREPRODUCED` p359 FAIL lines; all 386 HALTREPORT lines
+      identical, in order, to batch58's GREEN run (the base of this
+      branch, the same stretch/ tree as the Step 0 run, also identical).
+- **Exit, measured honestly: `ebusy` has 0 hits; the "expensive datapath"
+  row does NOT yet fully match.** Piccolo's boxes own their whole
+  multi-cycle time. Here the units own it as two parts: the stepped part
+  (passes, reduction loops) and a termination count that is still the
+  timing table's remainder. The roadmap's own wording ("Countdowns
+  remain only where the machinery is not yet modelled", step 5) is what
+  this is; the count now lives in the unit that will step it. The
+  §1c-audit row is updated to say so.
+- **WHAT IS LEFT OF A5, in order:**
+  1. Unboxed paths into the units. Every instruction that completes at
+     removal (`eboxClocks` row, no unit) and the branch level's 12 are
+     pure termination counts. Each family moves when its unit steps it:
+     the connectives and VFL logic into mkSAU's passes, as A3 did the
+     adds; the plain FP add's terms are measured in A4 and held off
+     (`pauAddStep`).
+  2. The termination's rule-of-arms hold. Removing it is a TIMING change
+     (a crossing store's E-box time one clock shorter when nothing else
+     is pending: -5 on vfl_crossing_store and cm_crossing_field, above); measure it on the WB XOVR atlas columns (PDF 143-169)
+     with A6, not here.
+  3. Roadmap step 7, the `Whole` split. NOT STARTED in this session, and
+     it is not a behaviour-preserving step: Table A-2's levels are parts
+     (`spec_lookahead.md` §5: a VFL ST takes 3 levels, M+ crossing with
+     progressive indexing 6 in a ring of 4), so level occupancy and
+     look-ahead pins move. What §5 says: the E-box must consume a
+     sequence of parts, not one `di` (`execute()`'s signature is the
+     obstacle it names), and of its two allocation shapes it leaves the
+     choice "not settled", warning that shape 2 deadlocks on six levels.
+     PROPOSAL (this session's, not a source's): (a) the part sequence
+     first; (b) one-at-a-time allocation with a residual count (shape
+     1); (c) start with the one-level FP operations (Table A-2: one
+     level, op + opnd -- not `*+`, M+, LFT or D/, which take two), then
+     the two-level FP ones, then VFL (2-3, doubled on a crossing). Whether
+     the one-level FP step is time-neutral is unmeasured; each step
+     records the pins it moves.
+  4. Unit benches for the termination. `terminate` / `holdTerm` /
+     `terminated` have no vector in mkSauStepTb / mkPauStepTb (A3 and A4
+     gave every unit method one). They are covered only through the core
+     (the injections above).
+  5. Stale text, left as it was after the green run (decks and tests are
+     not edited after it): `tests/run_tests.sh` (the df_data_fetch_alarm
+     / interrupt notes, about line 12582-12615), `decks/int_timing_bracket.strap`
+     (header, lines 54-119) and `decks/df_data_fetch_alarm.strap` (line
+     176) describe `ebusy` and rl_interrupt's `ebusy <= eb;` as live;
+     `bsv/README.md` (lines 1399, 1882-1888) and `docs/NEXT.md` (229,
+     4896-4928, 6066) likewise. In the model that decrement is now the
+     arm's `eArm.send`, with the same effect.
 
 ## Phase 3: the store and fetch paths
 

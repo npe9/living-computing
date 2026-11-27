@@ -9281,6 +9281,17 @@ interface EBox;
   // StretchCore decides which kinds release their level (its per-box
   // switches); start()'s beside contract is the same for all.
   method Maybe#(Bit#(3)) laBoxWaiting();
+  // THE UNITS' TERMINATION (fidelity_plan.md A5 step 1, 2026-11-26; the
+  // note at mkSAU's terminated()).  terminate() hands the clocks a
+  // completed look-ahead instruction still owes to the unit that owns it:
+  // mkPAU for a floating-point instruction, mkSAU for every other one
+  // (VFL, connective, I/O, and the branch level's Blosk fig.10 time).
+  // CHOSEN: which unit holds the time changes no clock while the head
+  // waits on both (unitsTerminated); it says where the time will live
+  // when the units overlap (ebox_roadmap.md step 8).
+  method Action terminate(Bool fp, Bit#(16) n);
+  method Action holdTerm();
+  method Bool unitsTerminated();
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
   method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
@@ -9783,6 +9794,16 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       endcase
     end
   endmethod
+
+  method Action terminate(Bool fp, Bit#(16) n);
+    if (fp) pau.terminate(n); else sau.terminate(n);
+  endmethod
+  method Action holdTerm();
+    pau.holdTerm();
+    sau.holdTerm();
+  endmethod
+  method Bool unitsTerminated() = pau.terminated() && sau.terminated();
+
 endmodule
 
 endpackage
