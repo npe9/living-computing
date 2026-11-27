@@ -1065,7 +1065,9 @@ images instead of the disk.
   R23-9695 section 9, printed pp.114-115) for single ECC errors, and
   the model has no ECC or injection, so that half runs as plain stores.
   The checkerboards and one whole pass are clean on the model, and X14
-  steps. All three tests are now run; none states a memory timing, and
+  steps. An injected stuck-at-0 data bit (150000-150777) is caught:
+  the program hangs on its `BRGZ,$` naming 150000. Observed, cause
+  not investigated: the model's `halted()` does not rise on that hang. All three tests are now run; none states a memory timing, and
   all three put the A boxes low, the reverse of `StretchMemory.bsv`'s
   map.
 - I-Box 2 and 3 (`jb_ax2a`, `jb_ax3a`, surveyed only) gate A8.
