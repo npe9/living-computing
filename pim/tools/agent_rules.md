@@ -21,6 +21,10 @@ the practices learned in pim sessions.
 - Full suite before your final commit: `cd pim && ./run_tests.sh >LOG 2>&1`
   in the background, then `python3 pim/tools/suite_verdict.py LOG`. It must
   print `PASS (21 expected FAIL lines)`. Never run two suites in one tree.
+  Write the log to a path unique to your worktree (e.g. under
+  `<scratchpad>/<your-branch>/`), never a shared `scratchpad/suite.log`:
+  two agents' suites once wrote the same file and one verdict was for the
+  other tree. Check the log names your worktree before reporting.
 - New behaviour gets a test proven discriminating. Inject the bug into a
   PRIVATE COPY (or a backup you restore with `cp`, then `cmp`), watch
   which checks fail, and write the OBSERVED failure set into the test or
