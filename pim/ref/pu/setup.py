@@ -120,7 +120,18 @@ FORMS = {
     # the side case put_reused_structure 3,0,2 in u2_append.py tells y
     # from x (31ec writes opd9, the x field).
     'put_reused_structure': ('s_odpf3', 'y'),
+    # U2 (2026-11-27, fifth session): execute's label, the absolute code
+    # address pc + 2 + c16 as pimm.py's i_execute, in MDR2 (no tag).  OURS
+    # (the A stage's address calculation), with support: the entry's
+    # nano-code is OS1F 2, the thesis's (2) "an operand field of the
+    # instruction" (printed p.128), and ODSF 2, the destination read as
+    # MDR2 for collect_list (above); the held words then use MDR2 as the
+    # code address: 4cc2 R04 := {COD, MDR2}, 4ccf MAR1, R04 := {COD,
+    # MDR2}, 4cd3 W10 := {COD, MDR2}.  Only ODSF 2 is run (raises
+    # otherwise).  Injection 'execute_mdr1' (the label in MDR1).
+    'execute': ('label_mdr2', None),
 }
+LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)
 # Entries whose constant operand is the low 8 bits (format r_r_c8,
 # kl1_encoding.md): pu.RULES['sc2f1_ir'] raises where c8 and c16 differ.
 IR_C8 = ('put_reused_structure',)
@@ -233,6 +244,13 @@ def setup(pu, name):
         return start | code << ODPF3_SHIFT
     if mdr == 'label':
         pu.wr[mekbn.MDR1] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
+        return start
+    if mdr == 'label_mdr2':
+        reg = {'MDR1': mekbn.MDR1, 'MDR2': mekbn.MDR2}.get(LABEL_ODSF.get(nc['ODSF']))
+        if reg is None:
+            raise SStageUnknown('label set-up for %s with ODSF %d: not run here'
+                                % (name, nc['ODSF']))
+        pu.wr[reg] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
         return start
     if mdr == 's_tag':
         if imm is None:

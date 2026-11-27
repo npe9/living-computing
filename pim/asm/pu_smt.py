@@ -378,9 +378,24 @@ def side_contracts():
                         '(LISTo), and goes on to the allocating arm 31ee for LISTx',
                         'INFERRED contract (TR-466 4.2: a single-referenced input cons cell is '
                         'reused; thesis Fig. 3-23)')
+
+    def execute_fast(e):
+        # 4cc1 is a JMPF b to 4cc5, taken when the COND it tests holds
+        # (pu.py CJUMP_TAKEN_ON); the contract: with no event pending it is
+        # not taken, whatever the registers hold (R0d, MDR1, YR, ...)
+        return [], ['(not %s)' % e.tested(1)]
+    out['execute_fast'] = ('img2', (0x4cc0, 0x4cc1), [], execute_fast,
+                           "execute's first two words with no asynchronous event pending: "
+                           '4cc1 (JMPF b to 4cc5) is not taken for any register contents, so '
+                           'the routine goes on to 4cc2-4cc3 (R04 := the label, end)',
+                           'INFERRED contract (the slit check, polled once per reduction: '
+                           'literature_gaps.md [P1] s.5.4; pu.py FLAG_CONDS)')
     return out
 
 
+EXEC_DECIDED = (('layout', 'thesis'), ('th_as1_4', 'MDR1'), ('th_as2_0', 'zero'),
+                ('th_alf_1', 'sub'), ('sd1_1', 'XR'), ('sd2_1', 'YR'), ('th_adf_0', 'none'),
+                ('th_as2_1', 'YR'), ('th_as1_2', 'YR'))
 SIDE_PINNED = {
     # U2 2026-11-27, third session (pu.py RULES['em1_29_mrb']): CNDF 7
     # EM1 29 over contract reuse_kl1 alone.  Every value relation,
@@ -389,6 +404,21 @@ SIDE_PINNED = {
     # cond', pu.py's j1 rules) only mrb_on.
     ('reuse_kl1', 'cond_7_29', None): ['mrb_on', 'mrb_off'],
     ('reuse_kl1', 'cond_7_29', 'b0=0 ends if cond'): ['mrb_on'],
+    # U2 2026-11-27, fifth session (pu.py RULES['cjump_time'], FLAG_CONDS):
+    # execute's 4cc0-4cc1 over contract execute_fast alone, with the
+    # datapath values already decided fixed (EXEC_DECIDED: the thesis
+    # layout; AS1F 4 MDR1, AS2F 0 zero, ALF 1 sub, 6.3 item 2; SD1F 1 XR,
+    # SD2F 1 YR, ADF 0 none, mekbn / rassy; AS2F 1 YR, rassy; AS1F 2 YR,
+    # pu.py RULES['as1f2_yr']).  Left free, a selector finds a degenerate
+    # way out (ADF 0 = MDR1 makes 4cc1 compare R0d with itself).  With
+    # CNDF 3 a relation on the ALU result (lt, pu.py's sign), only ctime
+    # 'prev' survives; under 'same' CNDF 3 would have to be 'never'.
+    # Under 'prev' the condition 4cc0 forms (CNDF 7 EM1 19) must be
+    # 'never' for every register content: it does not depend on the ALU
+    # result (R15 := YR), as a hardware flag (slit_check) that is clear.
+    ('execute_fast', 'ctime', (('cond_3', 'lt'),) + EXEC_DECIDED): ['prev'],
+    ('execute_fast', 'cond_3', (('ctime', 'same'),) + EXEC_DECIDED): ['never'],
+    ('execute_fast', 'cond_7_19', (('ctime', 'prev'),) + EXEC_DECIDED): ['never'],
 }
 
 
@@ -399,10 +429,10 @@ def side_check():
     for (cn, sel, pol), want in SIDE_PINNED.items():
         cs = {cn: sc[cn]}
         HYP = hyp_space(words_of(sc[cn]))
-        fixed = {'endpol': pol} if pol else {}
+        fixed = dict(pol) if isinstance(pol, tuple) else {'endpol': pol} if pol else {}
         got = [m for m in HYP[sel] if cegis(cs, dict(fixed, **{sel: m}))[0]]
         if got != want:
-            fails.append('FAIL pu_smt %s over %s (endpol %s): got %r, pinned %r'
+            fails.append('FAIL pu_smt %s over %s (fixed %s): got %r, pinned %r'
                          % (sel, cn, pol, got, want))
     return fails
 
