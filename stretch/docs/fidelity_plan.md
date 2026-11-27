@@ -1052,7 +1052,22 @@ images instead of the disk.
   pp.5, 9). It types on channel 39 (`TYPE SYN,19.32`, PDF p.11), where
   the model has no unit, so its run reads the message it builds in core.
   Upper memories and one whole pass are clean on the model; the
-  100-pass O.K. is not reached. `ja_bb6b` is next.
+  100-pass O.K. is not reached. `ja_bb6b` is RUN (2026-11-26,
+  `decks/ja_bb6b_worst_pattern.strap`, bit-exact against
+  `verify_ja_bb6b_listing.py`, 574 checks, no row torn). It gives A11a
+  no timing either. It writes runs of all-ones and all-zeros words, 8
+  long in the upper memories and 4 in the lower, re-phased at 200000
+  and 40000 (PDF pp.5, 12-13, 20), checks them, inverts them and checks
+  again; a bad word makes it hang on `BRGZ,$`, and X14 counts passes
+  (writeup PDF pp.1-2). That the runs are two words per interleaved box
+  is an inference; the document states no interleaving. Its second
+  half drives the machine's ERROR INJECTION (bit 58 of location 3,
+  R23-9695 section 9, printed pp.114-115) for single ECC errors, and
+  the model has no ECC or injection, so that half runs as plain stores.
+  The checkerboards and one whole pass are clean on the model, and X14
+  steps. All three tests are now run; none states a memory timing, and
+  all three put the A boxes low, the reverse of `StretchMemory.bsv`'s
+  map.
 - I-Box 2 and 3 (`jb_ax2a`, `jb_ax3a`, surveyed only) gate A8.
 - BX-0 (`ka_ex1`) gates A11.
 
