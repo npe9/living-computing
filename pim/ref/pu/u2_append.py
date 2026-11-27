@@ -68,6 +68,10 @@ Injections (in-process, no file edited), observed:
   s_imm_row       every tag takes the TGT row (column TDPF, 4-word
                   rows): get_atom STOP at 3810 (CNDF a); append STOP at
                   3309 (MCF with EM1 06), 1 of 16 matched
+  s_no_mar1       S_ENTRY without MAR1 = the last cell: get_atom STOP
+                  at 3801 (MAR1 never set); append unchanged
+  s_cond_true     S_ENTRY's COND forced true: nothing changes (get_atom
+                  ok, 2 of 16): the COND part is NOT discriminated
   wide_em1em2     SC2F b read as EM bits 15..4: the boot reads memory
                   1e, never written: the contract FAILs on all 5
                   parameters, and the run STOPs in the boot
@@ -315,7 +319,25 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
     return fails
 
 
+def _no_mar1():
+    d = SU.deref
+    SU.deref = lambda pu, w: (d(pu, w)[0], None)
+
+
+def _cond_true():
+    s = SU.setup
+
+    def setup(pu, name):
+        start = s(pu, name)
+        if SU.FORMS.get(SU.base(name), (None,))[0] == 's_tag':
+            pu.cond = True
+        return start
+    SU.setup = setup
+
+
 INJECT = {
+    's_no_mar1': _no_mar1,      # S_ENTRY's MAR1 part not loaded
+    's_cond_true': _cond_true,  # S_ENTRY's COND part forced true
     's_imm_plus1': lambda: setattr(SU, 'S_ENTRY', 1),
     's_imm_row': lambda: setattr(SU, 'S_ENTRY', 'row'),
     'wide_em1em2': lambda: PU.RULES.update(sc2_wide='EM1:EM2'),

@@ -126,9 +126,12 @@ S_CONST = {'get_atom': 'a24'}
 #   ATOMo on the constant; entering at entry + 1 binds it untagged: the
 #   injection 's_imm_plus1' FAILs) and run at 3300-3301
 #   (switch_on_non_list on a list held directly in A0: COND true, the
-#   conditional jump to 3305 not taken, 3301 R02 <- MDR1, end, the
-#   thesis's one-step for_list; entry + 1 gives the same registers
-#   there).  Read, not run: through a REF (COND false) 3300 jumps to
+#   conditional jump to 3305 not taken, 3301 R02 <- MDR1, end: two
+#   words, where the thesis's Table 3-6 gives get_list one step, an open
+#   tension; entry + 1 gives one word and the same registers there).
+#   Discriminated: the start (s_imm_plus1) and MAR1 (s_no_mar1: STOP at
+#   3801).  The COND part fits but is NOT discriminated (s_cond_true
+#   changes nothing).  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
 #   3305-3309, which put the variable cell the list was reached through
 #   on the R19 list.
 #   Any other tag would take the multiway set-up (2) into a row of the

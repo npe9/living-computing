@@ -141,7 +141,7 @@ window rungs):
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
 | U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; reading not reached |
 | U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b |
-| U2c | one unification instruction | U2 | not reached: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
+| U2c | one unification instruction | U2 | one case EXECUTED standalone (`get_atom` on an unbound variable, `3800`-`3801`, matches `pimm.py`); not in a whole program; other tags raise: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
 | U2d | `proceed` / `execute` | U2 | not reached |
 | U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run; `read_variable` (stops at `34a0`, CNDF 7 EM1 28), the label branch (`2447`, JMPF 2) and `wait_*` not reached |
 | U3a | suspend | U3 | not reached |
@@ -298,8 +298,8 @@ Honest, and in sessions of the length that reached U1.
 
 - **U2 (after the second session, below):** three to five more
   sessions. Each instruction of append has cost one S-stage question
-  (the S stage's set-up is the main unknown: `read_variable`'s element
-  fetch and row, the S12 rows of `get_*`/`wait_*`, which disagree with
+  (the S stage's set-up is the main unknown: `read_variable`'s TGT
+  column for EM1 28 at `34a0`, JMPF 8 and its MAR1 source, the S12 rows of `get_*`/`wait_*`, which disagree with
   the simplest column reading) and the branch to a label needs the
   4-bit JMPF 2 (S10). Earlier estimate, for the record:
 - **U2 (first estimate):** two to four sessions. In order: the refill (AS1F 3 now
