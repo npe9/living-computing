@@ -44,6 +44,16 @@
 ! normalized gives +1024 and -1025, which is exactly what the
 ! listing's own "RESULT EXP" comments say.  All seven expected
 ! indicators were computed from the constants before transcription.
+!
+! HALT CLOCKS, fidelity_plan.md A4 step 3 (2026-11-26). No check here pins
+! a time.
+! The STRETCH_HALT_REPORT halt moved 834 -> 836 (+2).
+! The cause was measured by running this deck with StretchPAU.bsv's
+! switches.
+! With every step-3 switch off (pauChainMulAdd and pauMa*), the halt is 834
+! again.
+! With the chain on and the terms off, it is 836. So the cause is
+! pauChainMulAdd (as in F216B); the add terms move nothing.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

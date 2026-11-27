@@ -1,5 +1,5 @@
 ! VFL DIVIDE AT THE EDGES OF ITS DATAPATH -- the cases that matter once
-! the division is done by an ITERATIVE BOX (bsv/StretchDivBox.bsv,
+! the division is done by an ITERATIVE BOX (bsv/StretchPAU.bsv,
 ! mkDivBox) rather than by a combinational `/` and `%` inside
 ! execute().  decks/vfl_divide.strap is the deck about WHAT divide
 ! means (the offset, the two signs, the CE manual's zero rule); this
@@ -99,7 +99,7 @@
 ! E-box budget.  It does NOT check the I-box overlap the box can cost:
 ! every instruction after a divide here is look-ahead class, so
 ! nothing overlapped in the first place.  The FP decks that DID move
-! are tabled in bsv/StretchDivBox.bsv's header.
+! are tabled in bsv/StretchPAU.bsv's header.
 !
 ! TIMING RE-PINNED 2026-11-16, 1196 -> 2148 clocks, every value check unchanged.
 ! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's

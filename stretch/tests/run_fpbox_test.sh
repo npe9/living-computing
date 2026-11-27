@@ -1,6 +1,7 @@
 #!/bin/sh
-# Build and run mkFpBoxTb, the floating-point box's own testbench
-# (bsv/StretchFpBox.bsv).  The pattern and the private build
+# Build and run mkPauFpTb (was mkFpBoxTb, the floating-point box's own
+# testbench): the floating-point class of mkPAU, the parallel arithmetic
+# unit (bsv/StretchPAU.bsv; fidelity_plan.md A4, 2026-11-26).  The pattern and the private build
 # directories are run_divbox_test.sh's, for the reasons given there
 # (a box tested without instantiating storage; per-job -bdir).
 set -e
@@ -12,7 +13,7 @@ BSC=/opt/homebrew/Cellar/bsc/2026.01/bin/bsc
 cd "$BSV_DIR"
 mkdir -p build-fpbox simbuild-fpbox
 "$BSC" -sim -simdir simbuild-fpbox -bdir build-fpbox -info-dir build-fpbox \
-       -g mkFpBoxTb -u StretchFpBox.bsv +RTS -K512m -RTS
-"$BSC" -sim -simdir simbuild-fpbox -bdir build-fpbox -e mkFpBoxTb \
+       -g mkPauFpTb -u StretchPAU.bsv +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild-fpbox -bdir build-fpbox -e mkPauFpTb \
        -o fpbox_sim +RTS -K512m -RTS
 ./fpbox_sim
