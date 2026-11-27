@@ -775,7 +775,7 @@ module mkStretchCore(StretchCore);
                      && lftDeferredLaar(la.headLevel().di, la.headLevel().da)
                      && clk < laarFreeAt;
   Bool headReady   = la.count() != 0 && ebox.unitsTerminated() && !ebox.busy() && !intWait && !lftWait
-                     && la.headLevel().kind != LaStore    // rl_store_retire's
+                     && !la.headLevel().ibox              // rl_store_retire's
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemoveBase = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                        && !resumeReady && headReady;
@@ -1019,7 +1019,7 @@ module mkStretchCore(StretchCore);
   function Bool lveBehindStore(DecodedInstr d, Vector#(4, LaLevel) nl);
     Bool st_ = False;
     for (Integer k = 0; k < 4; k = k + 1)
-      if (nl[k].valid && nl[k].kind == LaStore) st_ = True;
+      if (nl[k].valid && nl[k].ibox) st_ = True;
     Bool lve = False;
     if (d matches tagged DirIndex .x &&& x.code == dixop_LVE) lve = True;
     return lve && st_;
@@ -1146,7 +1146,7 @@ module mkStretchCore(StretchCore);
   // level is pending (or in the interruption window after one completed,
   // or with a recovery owed) is still executed as before, but its write
   // is held (StretchStorage captureStore) in a STORE LEVEL loaded at the
-  // tail: kind LaStore, storeAddr = the word.  It is the look-ahead's
+  // tail: kind LaStore, ibox, storeAddr = the word.  It is the look-ahead's
   // like any level -- younger readers wait for it (levelHolds, waitFor,
   // the instruction-word compare), a drain waits for it, cancelAll
   // housecleans it (its store is then never made) -- and rl_store_retire makes the store
@@ -1166,13 +1166,13 @@ module mkStretchCore(StretchCore);
   // In the clock the I-box store completes: hold it in a store level.
   function Action holdStoreInLevel(HWordAddr pc, InstrLen len, DecodedInstr d, WordAddr w) =
     action
-      la.load(LaLevel{valid: True, kind: LaStore, di: d, pc: pc, len: len, da: tagged Invalid,
+      la.load(LaLevel{valid: True, kind: LaStore, ibox: True, di: d, pc: pc, len: len, da: tagged Invalid,
                       data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
                       branch: False, target: 0, storeAddr: tagged Valid w,
                       storeAddr2: tagged Invalid, carry: LaCarry{addr: 0, lbo: 0}});
       st.captureStore(la.tail(), w);
     endaction;
-  Bool headStore = la.count() != 0 && la.headLevel().kind == LaStore;
+  Bool headStore = la.count() != 0 && la.headLevel().ibox;
   Bool armStoreRetire = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                         && !resumeReady && headStore && !intWin && !intRecWanted
                         && st.writeReady();
@@ -2471,7 +2471,7 @@ module mkStretchCore(StretchCore);
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end
           end
-          la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: da,
+          la.load(LaLevel{valid: True, kind: Whole, ibox: False, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
                           branch: False, target: 0, storeAddr: prep.storeAddr,
                           storeAddr2: prep.storeAddr2, carry: carry});
@@ -2500,7 +2500,7 @@ module mkStretchCore(StretchCore);
       // index words and indicators, and carry on down the fall-
       // through path. One guess at a time.
       if (!guessPending && la.count() < 4 && !progressivePending) begin
-        la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: tagged Invalid,
+        la.load(LaLevel{valid: True, kind: Whole, ibox: False, di: di, pc: pc, len: len, da: tagged Invalid,
                         data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
                         branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
                         storeAddr: tagged Invalid, storeAddr2: tagged Invalid,

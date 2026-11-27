@@ -771,7 +771,15 @@ typedef struct {
 
 typedef struct {
   Bool             valid;
-  LaKind           kind;        // `Whole` everywhere today -- see LaKind
+  LaKind           kind;        // DESCRIPTIVE ONLY: Table A-2's name for the
+                                // level (see LaKind); no rule reads it
+  Bool             ibox;        // the I-BOX'S OWN level (an I-box store held
+                                // for the look-ahead, StretchCore's
+                                // holdStoreInLevel): its work is done and it
+                                // retires without the E-box (rl_store_retire).
+                                // Until 2026-11-27 this was `kind == LaStore`,
+                                // which would send an E-box store level (FP
+                                // ST, Table A-2 "store") there unexecuted.
   DecodedInstr     di;
   HWordAddr        pc;
   InstrLen         len;
