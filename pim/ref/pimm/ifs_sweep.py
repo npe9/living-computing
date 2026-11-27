@@ -771,16 +771,18 @@ def oracles(rows=None):
 def injections(results):
     """INJECTIONS: each a change to the rows or to a result, in this
     process only; each must make table() report exactly the rows named.
-    OBSERVED 2026-11-27 against the committed summary of the rerun
-    (docs/ifs_apps.md 8):
-      mgtp_n's stop removed                          -> mgtp_n
-      mgtp_n's stop made a float stop                -> mgtp_n, and
+    OBSERVED 2026-11-27 against the committed summary after the second
+    partial rerun (docs/ifs_apps.md 8; the first row with a model stop,
+    h907_nseq since mgtp_n runs to its budget):
+      h907_nseq's stop removed                       -> h907_nseq
+      h907_nseq's stop made a float stop             -> h907_nseq, and
         classified `float:` (the float branch's own case)
       mgtp's printed value made its own window line
         ('21497 reductions': the match path)         -> mgtp
       `needs simpos` dropped from aligndp            -> aligndp
-      ERROR_MARK made to match nothing               -> aya, gdcc,
-                                                        pmonitor, pmonitor+alt
+      ERROR_MARK made to match nothing               -> aya, gdcc, ldlib,
+                                                        ldlib+alt, pmonitor,
+                                                        pmonitor+alt
     and in check(): mgtp's printed value altered, the archive lookup
     (oracles())                                      -> mgtp.
     A source injection, applied by hand and reverted from a copy:
@@ -788,7 +790,9 @@ def injections(results):
     eight float rows of the first sweep (2026-11-26); against the
     rerun's summary, which has no float row, the same injection left
     --check PASS until the float case above checked the class, and with
-    it fails that one case (OBSERVED 2026-11-27)."""
+    it fails that one case (OBSERVED 2026-11-27); after the second
+    partial rerun mssd is a float stop again, and the injection fails
+    --check on mssd's pin alone (OBSERVED 2026-11-27)."""
     import copy
     got = []
     base, bad0 = table(results)

@@ -591,7 +591,17 @@ addressing rule on a layout known from elsewhere.*
   itself, dulcinea a goal failure inside a shoen, consort and desq the
   FEP pathname (221) on a written file, kappa_p its budget, h907_nseq
   `set_heap_alert`. Counts unchanged (STOPS 8, NEEDS-SIMPOS 23); first
-  stops now four tied at 2 (`ifs_apps.md` 4).*
+  stops now four tied at 2 (`ifs_apps.md` 4).
+  2026-11-27, later still: `wait_value` of a variable with itself
+  waits (VPIM `klb_equal`), `@node` on the one-PE reference makes the
+  goal here (PDSS, KLIC on one node; a declared difference from PIM/m's
+  range_overflow, kept on `pimm_pe.py`), and `set_heap_alert` (VPIM
+  `kblt_b_set_heap_alert`) built (`ref_node_alert.py`); the eleven rows
+  pinned there rerun and merged. Next: H9-07's four rows
+  `enqueue_goal_with_priority` of 12 arguments, mmi the guard `list`,
+  ldlib a syntax error on `misc.kl1`, mssd a float built-in waiting
+  with no stub; mgtp_n, multialign_run, aya+alt their budgets. STOPS 7,
+  BUDGET 5; first stops now two tied at 2, then one each.*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
