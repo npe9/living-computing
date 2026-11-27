@@ -1245,6 +1245,9 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
        store/C($FT) level frees at the store or with its op level, and
        when it is allocated, are not on any page read here (Table A-2
        gives occupancy, not timing). The MCP boot check was not run on it.
+     - Suite on 9433a22e (A, B and C together): GREEN, only the two
+       expected `UNREPRODUCED` p359 lines; 388 HALTREPORT lines identical,
+       in order, to batch59's.
   4. Unit benches for the termination. DONE 2026-11-27: mkSauStepTb and
      mkPauStepTb each end with a 24-clock script (terminate(n) with n = 3,
      0, 2, 5 then 1, 4; a hold after a terminate and one while idle; a
