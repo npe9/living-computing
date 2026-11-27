@@ -655,6 +655,21 @@ from `title(..)`; `label_flag(off)` suppresses it.
 
 These are VARIANTS of highlighting by version: boxed in 2.50 and A00, blackened in 1.0.
 
+**Stand-in (MENDELS, 2026-11-27).** `temporary_menu` is stood in by `psi/standin/temporary_menu.esp` on the
+coordinator's menu pop-up (`psi/standin/menu_pane.esp`, `coordinator.esp` `:temporary_menu/5`). Each method is
+labelled in the file:
+- RECONSTRUCTED-FROM-MANUAL (TM-125 pp14-18): c:`create/3` with `title` and `items_list` (4- and 5-field items,
+  `common` and `no_select`); `show/1`; `read/2`, which answers the item_id, or `abort` when the mouse leaves; `hide/1`,
+  `deactivate/1`, `kill/1`, `set_title/2`, `add_item/3` and `delete_item/2`.
+- INFERENCE: `activate/1`, `set_font/2`, `set_label_font/2`, `add_items/3`, `clear_items/1` and
+  `set_item_status/3`.
+- OURS: `beep/1` (counted) and the answer path `chosen/2`.
+
+`label_flag(off)` drops the title strip. A no_select line can't be chosen. `read/2` takes the menu off the screen.
+`read/3` and the documentation line are not stood in. Two other held users run it whole in `psi/test_mendels.py`
+`Menus`: disc's system_data init/1 (a show/read/hide loop with `label_flag(off)`) and euod's syntax_print goal/1
+(screen `docs/simpos/screens/temporary_menu.png`).
+
 ### 2.10 Choice windows (attribute sheets)
 
 A choice window is a sheet of labelled fields. Each field is a text field, a boolean or a one-of-N choice. The

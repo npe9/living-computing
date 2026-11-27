@@ -204,6 +204,34 @@ INSTALLED_DIRS = ['>sys>user>MENDEL', '>sys>user>MENDEL>ESP', '>sys>user>MENDEL>
 USER_LINES = ['>sys>user>MENDELuser', 'y']
 
 
+# The fonts MENDELS opens that no held file holds (OURS substitution):
+# `font:kanji_16.font` (mendel_win.esp create_kanji_font/1, title.esp,
+# lib_win.esp, ...) is not in psdpim's FONT.DIR, whose seven fonts have no
+# kanji (simpos_fs.py's `font:` placement); its name is entered in
+# >sys>font for test_11.font's file, as window M10's exshow test entered
+# kanji_28.font (psi/test_espc.py m10_start).  Without it font create/3
+# fails (font.esp, INFERENCE) and mendel_window's create_window/1 with it
+SUBSTITUTE_FONTS = [('kanji_16.font', 'test_11.font')]
+
+
+def _entries(m, d):
+    t, out = K.deref(m.get_slot(d, 'entries')), []
+    while isinstance(t, K.Cons):
+        e = K.deref(t.args[0])
+        out.append((K.deref(e.args[0]).text, K.deref(e.args[1])))
+        t = K.deref(t.args[1])
+    return out
+
+
+def substitute_font(m, name, held_font):
+    """NAME entered in >sys>font for HELD_FONT's file (OURS, above)."""
+    d = m.get_slot(K.ClassRef('simpos##directory'), 'root')
+    for part in FS.FONT.strip('>').split('>'):
+        d = dict(_entries(m, d))[part]
+    f = dict(_entries(m, d))[held_font]
+    m.set_slot(d, 'entries', K.Cons(K.Vec([K.Str(name), f]), m.get_slot(d, 'entries')))
+
+
 class PsiSide(FB.PsiSide):
     """fep_bridge's PSI side (the boot program, the held front end on two
     streams, the coordinator), no login typed, the package `mendel`
@@ -223,6 +251,8 @@ class PsiSide(FB.PsiSide):
             FS.mount(m)
         finally:
             FS.EMPTY_DIRS = saved
+        for name, held_font in SUBSTITUTE_FONTS:
+            substitute_font(m, name, held_font)
         m.reset()
         U = K.ClassRef('simpos##user')
         for _ in m.solve_send(U, 'register', [K.Str(FS.USER), K.Str(CHECKPOINT_PASSWORD),

@@ -279,6 +279,37 @@ attribute sheet := [];
         Class!menu_pane := M,
         Class!dialogue := [editor_menu, W];
 
+% :temporary_menu(#coordinator, M, Title, Label, Columns) -- MENDELS
+% (2026-11-27), selector and body OURS: a temporary_menu's pop-up
+% (temporary_menu.esp show/1) at the mouse, as the EDITOR MENU is; the
+% answer goes to M's chosen/2: a left click on an item that can be chosen
+% gives its item_id; the mouse leaving the pop-up gives abort (TM-125 p18,
+% PRINTED-INTERFACE: "if the menu is a temporary menu and the mouse exit
+% from the menu, the atom abort will be returned"), and so does a left
+% click outside it or another pop-up opened over it (INFERENCE: each takes
+% the mouse out of the menu); a click on the title or a no_select line
+% does nothing.  M shown again while up is redrawn, with no answer.
+% INTERPOLATED (selector and body OURS): see above.
+:temporary_menu(Class, M, Title, Label, Columns) :-
+        Class!dialogue = [temporary_menu, M0], M0 == M, !,
+        close_menu(Class),
+        Class!dialogue := [],
+        temporary_pane(Class, M, Title, Label, Columns);
+:temporary_menu(Class, M, Title, Label, Columns) :-
+        close_menu(Class),
+        cancel(Class),
+        temporary_pane(Class, M, Title, Label, Columns);
+
+% :take_down_menu(#coordinator, M) -- MENDELS (2026-11-27), selector and
+% body OURS: M's pop-up taken off the screen (its hide/1, deactivate/1,
+% kill/1), with no answer; nothing when it is not up.
+% INTERPOLATED (selector and body OURS): see above.
+:take_down_menu(Class, M) :-
+        Class!dialogue = [temporary_menu, M0], M0 == M, !,
+        close_menu(Class),
+        Class!dialogue := [];
+:take_down_menu(_, _);
+
 % :cursor_aside(#coordinator) -- window M6/M7 (selector and body OURS):
 % before a new pane is drawn, the selected window's cursor is taken off
 % (its deselect_window/1), as the panes are not clipped (window_pane.esp).
@@ -480,7 +511,40 @@ menu_click(Class, [editor_menu, W], X, Y) :-
         close_menu(Class),
         Class!dialogue := [],
         :menu_chosen(W, Value);
+% MENDELS: a temporary_menu's pop-up (temporary_menu/5 above): an item
+% answers its id, the title or a no_select line nothing, outside abort
+menu_click(Class, [temporary_menu, M], X, Y) :-
+        :item_at(Class!menu_pane, X, Y, _, V), !,
+        picked(Class, M, V);
+menu_click(Class, [temporary_menu, _], X, Y) :-
+        :inside(Class!menu_pane, X, Y), !;
+menu_click(Class, [temporary_menu, M], _, _) :- !,
+        close_menu(Class),
+        Class!dialogue := [],
+        :chosen(M, abort);
 menu_click(Class, _, _, _) :- close_menu(Class), Class!dialogue := [];
+
+picked(Class, M, {item, Id}) :- !,
+        close_menu(Class),
+        Class!dialogue := [],
+        :chosen(M, Id);
+picked(_, _, _);
+
+temporary_pane(Class, M, Title, Label, Columns) :-
+        :create(#menu_pane, Title, Columns, Class!mouse_x, Class!mouse_y, Label, P),
+        Class!menu_pane := P,
+        Class!dialogue := [temporary_menu, M];
+
+% MENDELS: the mouse over a temporary_menu's pop-up boxes an item that can
+% be chosen; off the pop-up it answers abort (temporary_menu/5 above)
+hover(Class, P, M, X, Y) :- :inside(P, X, Y), !, hover_box(P, X, Y);
+hover(Class, _, M, _, _) :-
+        close_menu(Class),
+        Class!dialogue := [],
+        :chosen(M, abort);
+
+hover_box(P, X, Y) :- :item_at(P, X, Y, _, {item, _}), !, :box_at(P, X, Y);
+hover_box(P, _, _) :- :unbox(P);
 
 chosen(Class, Label, Name, X, Y) :-
         running(Class!owners, Class!programs, Name, _), !,
@@ -515,6 +579,7 @@ corner(Class, [move, Win], X, Y) :-
         Class!dialogue := [],
         move(Class, Win, X, Y);
 
+moved(Class, P, [temporary_menu, M], X, Y) :- P \== 0, !, hover(Class, P, M, X, Y);
 moved(_, M, _, X, Y) :- M \== 0, !, :box_at(M, X, Y);
 % window M7: MOVE's outline, the window's size, its top-left at the mouse
 moved(Class, _, [move, Win], X, Y) :- !,
@@ -531,7 +596,12 @@ moved(Class, _, [reshape_corner, _, X1, Y1], X2, Y2) :- !,
         outline(Class, X, Y, W, H);
 moved(_, _, _, _, _);
 
-cancel(Class) :- unoutline(Class), Class!dialogue := [];
+cancel(Class) :- unoutline(Class), aborted(Class!dialogue), Class!dialogue := [];
+
+% MENDELS: a temporary_menu whose pop-up another one replaces answers abort
+% (temporary_menu/5 above)
+aborted([temporary_menu, M]) :- !, :chosen(M, abort);
+aborted(_);
 
 % the low end and the width of the dots from A to B, both included
 span(A, B, A, W) :- A =< B, !, value(B - A + 1, W);

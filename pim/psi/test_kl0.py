@@ -332,8 +332,10 @@ class Table(unittest.TestCase):
         # (relative_cut_and_fail, KNOWN-PLAINTEXT on kappa2 pb/hash.esp and
         # KP_MDMART.ESP, 2026-11-26), 159 before MENDELS's blt 3e freeze and
         # 3f melt (KNOWN-PLAINTEXT on paragraph p_vwin.esp:63 and
-        # p_MAIN.esp:407, 2026-11-27)
-        self.assertEqual(len(rows), 161)
+        # p_MAIN.esp:407, 2026-11-27), 161 before MENDELS's blt 6c
+        # integer_to_floating_point and 6d floating_point_to_integer
+        # (KNOWN-PLAINTEXT on paragraph c_bar_v.esp:249-253, 2026-11-27)
+        self.assertEqual(len(rows), 163)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run

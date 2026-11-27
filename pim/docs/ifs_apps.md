@@ -598,7 +598,7 @@ From the sweep, not from the documentation alone:
    install.e) asks no `package>>` at all. On that route, with the 601s
    and 620s carried to the PSI (`fep_bridge.BridgeFep`), the ESP half
    compiled by `espc.py` (the archive's 108 ESP files as the package
-   `mendel`; 18 items dropped by the parser, 689 predicates refused) and
+   `mendel`; 18 items dropped by the parser, 402 predicates refused) and
    run on kl0:
    - the loader's "WAIT !" window, the package load (library_utility),
      `mendel_esp_device` io(0, "start");
@@ -608,13 +608,27 @@ From the sweep, not from the documentation alone:
    - `load_library` to the KL1 half, which loads `mdllibrary.exe` from
      the path typed and answers `loaded_library(normal([mendel::example1,
      mendel::example2, mendel::example3]))`;
-   - the ESP half reads it and goes on into `mendel_main`'s create/1,
-     which stops at the first SIMPOS class not stood in:
-     `temporary_menu:create/3` (7,075,533 PIM/m instructions, 21
-     exchanges; tape `psi/mendels_tapes/doc.json`, replayed by
-     test_mendels). Next: temporary_menu, then MENDELS's own windows
-     (mendel_window, garnet_window, library_window, ...), which need the
-     graphics side of SIMPOS's window system.
+   - the ESP half reads it and goes on into `mendel_main`'s create/1.
+     It starts the `mendel_title` process. It makes its `Change phase ?`
+     menu with the `temporary_menu` stand-in (TM-125 pp14-18; the stand-in
+     also runs disc's and euod's menus, screen
+     `docs/simpos/screens/temporary_menu.png`). Then it goes into
+     `mendel_window`'s create_window/1, which opens `font:kanji_16.font`
+     (not held; test_11 substituted, OURS) and sizes its panes in floats
+     (espc and kl0 now have blt 6c/6d, float constants and X/Y);
+   - it stops at `:create(#base, ...)`, MENDELS's own class whose natures
+     `labeled_sash`, `as_input`, `as_superior`, `inferior_window` and
+     `with_shared_window` are SIMPOS mixins whose code is not held
+     (`simpos/subsystems/window.md` §1.2-§1.3 has what WINCS's prose and
+     the held programs' usage say of them). The
+     stop comes at 7,075,533 PIM/m instructions, 21 exchanges (the same
+     PIMOS side; tape `psi/mendels_tapes/doc.json`, replayed by
+     test_mendels). Next: a stand-in for these window mixins (a
+     sash-split window with inferior panes), which is what all of
+     MENDELS's own windows (mendel_window, garnet_window,
+     library_window, ...) are built from. After them come
+     `multi_column_menu_with_superior_input_buffer` and
+     `essential_scrolling_menu_with_superior_input_buffer`.
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the
@@ -771,4 +785,6 @@ rows cite.
   the runner, not `fep.py`, whose tapes pin 237 with `*.*` alone.
 - mendels: done 2026-11-27 (§6 item 1): the prompt asks the package
   name, and the two halves run linked as far as mendel_main's
-  temporary_menu. Next: stand in temporary_menu and MENDELS's windows.
+  temporary_menu; since the temporary_menu step (2026-11-27) as far as
+  mendel_window's `:create(#base, ...)` (lost window mixins). Next:
+  stand in those mixins.

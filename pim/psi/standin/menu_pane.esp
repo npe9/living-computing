@@ -41,25 +41,15 @@ class menu_pane has
 % INTERPOLATED (selector and body OURS): create; basis above and in
 % the head comment.
 :create(Class, Title, Columns, X, Y, Menu) :-
-        :new(Class, Menu),
-        :default_font(#bitmap_display, Id, Cw, Ch),
-        Menu!font := Id, Menu!cw := Cw, Menu!ch := Ch,
-        Menu!title := Title, Menu!columns := Columns,
-        widths(Columns, Cw, Ws0, 0, Iw0),
-        string(Title, Tn, _),
-        times(Tn + 2, Cw, 0, Tw),
-        widen(Ws0, Iw0, Tw, Ws, Iw),
-        Menu!widths := Ws,
-        most(Columns, 0, Rows),
-        times(Rows, Ch + 2, 0, Ih),
-        sizes(Menu, Iw + 4, Ih + Ch + 9),
-        :get_size(#bitmap_display, Sw, Sh),
-        clamp(X, Sw, Menu!w, Mx), clamp(Y, Sh, Menu!h, My),
-        Menu!x := Mx, Menu!y := My,
-        top(Menu, My + Ch + 7),
-        :save(#save_memory, Mx, My, Menu!w, Menu!h, Area),
-        Menu!under := Area,
-        draw(Menu);
+        made(Class, Title, Columns, X, Y, on, Menu);
+
+% :create(#menu_pane, Title, Columns, X, Y, Label, Menu) -- MENDELS
+% (2026-11-27), selector OURS: as create/6, with Label off no title strip
+% (a temporary_menu made with label_flag(off): temporary_menu.esp).  The
+% frame is then the 2-dot border round the items (OURS).
+% INTERPOLATED (selector and body OURS): create/7; basis above.
+:create(Class, Title, Columns, X, Y, Label, Menu) :-
+        made(Class, Title, Columns, X, Y, Label, Menu);
 
 instance
 
@@ -69,6 +59,8 @@ instance
 attribute x := 0, y := 0, w := 0, h := 0, font := 0, cw := 0, ch := 0,
           title := 0, columns := [], widths := [], items_top := 0,
           boxed := none;
+% MENDELS (2026-11-27), OURS: the title strip drawn (on) or not (off).
+attribute label := on;
 % window M7, OURS: the save area holding the dots under the menu.
 attribute under := 0;
 % window M7, OURS: while the pop-up is lifted off the screen so that a
@@ -123,7 +115,50 @@ attribute image := 0;
         :restore(#save_memory, Menu!under),
         Menu!under := 0;
 
+% :inside(Menu, X, Y) and :unbox(Menu) -- MENDELS (2026-11-27), selectors
+% and bodies OURS: (X, Y) on the pop-up (its border included); the boxed
+% item unboxed (coordinator.esp's temporary menu: a no_select line is not
+% boxed, the mouse leaving the pop-up is seen).
+% INTERPOLATED (selector and body OURS): inside; basis above.
+:inside(Menu, X, Y) :-
+        X >= Menu!x, Y >= Menu!y,
+        X < Menu!x + Menu!w, Y < Menu!y + Menu!h;
+% INTERPOLATED (selector and body OURS): unbox; basis above.
+:unbox(Menu) :- rebox(Menu, none);
+
 local
+
+% create/6 and create/7: the label strip Ch + 7 dots high (on) or none,
+% only the 2-dot border (off)
+made(Class, Title, Columns, X, Y, Label, Menu) :-
+        :new(Class, Menu),
+        :default_font(#bitmap_display, Id, Cw, Ch),
+        Menu!font := Id, Menu!cw := Cw, Menu!ch := Ch,
+        Menu!title := Title, Menu!columns := Columns,
+        Menu!label := Label,
+        widths(Columns, Cw, Ws0, 0, Iw0),
+        title_width(Label, Title, Cw, Tw),
+        widen(Ws0, Iw0, Tw, Ws, Iw),
+        Menu!widths := Ws,
+        most(Columns, 0, Rows),
+        times(Rows, Ch + 2, 0, Ih),
+        label_height(Label, Ch, Lh),
+        sizes(Menu, Iw + 4, Ih + Lh + 2),
+        :get_size(#bitmap_display, Sw, Sh),
+        clamp(X, Sw, Menu!w, Mx), clamp(Y, Sh, Menu!h, My),
+        Menu!x := Mx, Menu!y := My,
+        top(Menu, My + Lh),
+        :save(#save_memory, Mx, My, Menu!w, Menu!h, Area),
+        Menu!under := Area,
+        draw(Menu);
+
+title_width(off, _, _, 0) :- !;
+title_width(_, Title, Cw, Tw) :-
+        string(Title, Tn, _),
+        times(Tn + 2, Cw, 0, Tw);
+
+label_height(off, _, 2) :- !;
+label_height(_, Ch, Lh) :- value(Ch + 7, Lh);
 
 times(0, _, P, P) :- !;
 times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
@@ -171,10 +206,14 @@ draw(Menu) :-
         :fill(#bitmap_display, Menu!x, Menu!y, Menu!w, Menu!h, set),
         :fill(#bitmap_display, Menu!x + 2, Menu!y + 2, Menu!w - 4,
               Menu!h - 4, reset),
+        label(Menu, Menu!label),
+        columns(Menu, Menu!columns, Menu!widths, Menu!x + 2);
+
+label(_, off) :- !;
+label(Menu, _) :-
         :fill(#bitmap_display, Menu!x + 2, Menu!y + Menu!ch + 4,
               Menu!w - 4, 1, set),
-        centred(Menu, Menu!title, Menu!x + 2, Menu!w - 4, Menu!y + 3),
-        columns(Menu, Menu!columns, Menu!widths, Menu!x + 2);
+        centred(Menu, Menu!title, Menu!x + 2, Menu!w - 4, Menu!y + 3);
 
 columns(_, [], _, _);
 columns(Menu, [C | Cs], [W | Ws], X) :-

@@ -337,8 +337,11 @@ PINNED = {'header': (20480, 8286, 20480),
  'mnemonics': {'header': (1024, 65536),
                'nonblank': 824,
                # 153 rows, 124 named, before MENDELS's blt 3e freeze and 3f
-               # melt (2026-11-27): the table names them FREEZE and MELT
-               'kl0': (155, 126, 51, 63),
+               # melt (2026-11-27): the table names them FREEZE and MELT;
+               # 155, 126 before blt 6c integer_to_floating_point and 6d
+               # floating_point_to_integer (MENDELS temporary_menu step,
+               # 2026-11-27): the table names them NtoSFL and NtoINT
+               'kl0': (157, 128, 52, 64),
                'kl1': (205, 179, 57, 55),
                'anchors': ['ALLOC', 'PROC', 'GLIST', 'PLIST', 'ADD', 'SUB', 'AND', 'OR']},
  'pointers': {'5000-503f code': (110, 12, 1.3, 3, 0.7),

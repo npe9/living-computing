@@ -202,6 +202,34 @@ class Vec:
         return '{%s}' % ','.join(repr(deref(a)) for a in self.args)
 
 
+class Flt:
+    """A floating-point number (MENDELS, 2026-11-27).  A pool cell of tag
+    0a holds one in 32 bits (asm/ptfdump.py, MEASURED: paragraph
+    color_line_v @403 `float 11.0`, @406 `float 10.0`, c_line_v.esp:182);
+    put by pmi a8 with that cell after it (the same place, @402-403).
+    Single-precision IEEE 754: INFERENCE from the 32-bit cell, ptfdump's
+    decoding (11.0 and 10.0 read back exactly) and the held microcode's
+    name for blt 6c, NtoSFL (number to single float).  Each result is
+    rounded to single precision (OURS: the same inference)."""
+    __slots__ = ('bits',)
+
+    def __init__(self, bits):
+        self.bits = bits & 0xffffffff
+
+    @staticmethod
+    def of(x):
+        import struct
+        return Flt(struct.unpack('>I', struct.pack('>f', x))[0])
+
+    @property
+    def value(self):
+        import struct
+        return struct.unpack('>f', struct.pack('>I', self.bits))[0]
+
+    def __repr__(self):
+        return '%.7g' % self.value
+
+
 class Str:
     """A string.  TEXT is the elements as ptfdump.ch decodes their 16-bit
     JIS codes; TYPE the element type (16: OURS for every string here).
@@ -545,6 +573,10 @@ class Machine:
             return True
         if isinstance(a, int) and isinstance(b, int):
             return a == b and not isinstance(a, bool)
+        if isinstance(a, Flt) and isinstance(b, Flt):
+            # MENDELS (2026-11-27): two floats unify when their 32 bits are
+            # the same (INFERENCE, as two integers do)
+            return a.bits == b.bits
         if isinstance(a, (Cons, Vec)) and type(a) is type(b):
             if len(a.args) != len(b.args):
                 return False
@@ -2336,6 +2368,12 @@ class Machine:
         if b or c:
             raise Refusal('operand', 'put_integer_word with operand bytes %02x %02x: unwitnessed' % (b, c))
         w = self.operand(code, off)
+        if w[1] == 0x0a:
+            # MENDELS (2026-11-27): a float cell after it (paragraph
+            # color_line_v @402-403 `a8 01 00 00`, float 11.0; Flt above)
+            self.x[a] = Flt(w[3])
+            self.nxt(code, off, 2)
+            return
         if w[1] != 0x00 or w[3] >= 1 << 31:
             raise Refusal('operand', 'put_integer_word: next cell %r unwitnessed' % (w,))
         self.x[a] = w[3]
@@ -2418,21 +2456,53 @@ class Machine:
         self.x[c] = val
         self.nxt(code, off)
 
+    def _floats(self, a, b, what):
+        # MENDELS (2026-11-27): blt 40-43 on two floats (the ESP manual's
+        # add(N1,N2,R) "Integer, floating-point number operation",
+        # overview-e.tex 2751-2752, PRINTED; on floats witnessed:
+        # paragraph color_bar_v draw_element/6 @344-345 `42 00 01 00`,
+        # `43 00 02 00`, c_bar_v.esp:252).  -> the two values, or None when
+        # neither is a float; one float and one integer refuses (no
+        # witness of a mixed operation)
+        x, y = deref(self.x[a]), deref(self.x[b])
+        if not isinstance(x, Flt) and not isinstance(y, Flt):
+            return None
+        if not (isinstance(x, Flt) and isinstance(y, Flt)):
+            raise Refusal('built-in', '%s on %r and %r: a float with a non-float is unwitnessed' % (what, x, y))
+        return x.value, y.value
+
     def op_subtract(self, code, off, a, b, c, v):
         # step 3m: R != A is witnessed (h.esp:28, paragraph##h $or$2/2 @303
         # `41 02 00 00`)
+        f = self._floats(a, b, 'subtract')
+        if f is not None:
+            self.x[c] = Flt.of(f[0] - f[1])
+            self.nxt(code, off)
+            return
         self.x[c] = self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract')
         self.nxt(code, off)
 
     def op_multiply(self, code, off, a, b, c, v):
         # step 3m: blt 42 (paragraph h.esp:21, kl0_opcodes.tsv); R != A
-        # witnessed (h.esp:25 @8d, on floats); floats are not modelled
+        # witnessed (h.esp:25 @8d, on floats); floats since MENDELS
+        f = self._floats(a, b, 'multiply')
+        if f is not None:
+            self.x[c] = Flt.of(f[0] * f[1])
+            self.nxt(code, off)
+            return
         self.x[c] = self._int(self.x[a], 'multiply') * self._int(self.x[b], 'multiply')
         self.nxt(code, off)
 
     def op_divide(self, code, off, a, b, c, v):
         # step 3m: blt 43 (paragraph h.esp:25 @8e, on floats); on integers
         # INFERENCE (truncation of non-negative operands, as divide_constant)
+        f = self._floats(a, b, 'divide')
+        if f is not None:
+            if f[1] == 0:
+                raise Refusal('built-in', 'divide %r by a zero float: unwitnessed' % (f[0],))
+            self.x[c] = Flt.of(f[0] / f[1])
+            self.nxt(code, off)
+            return
         x, y = self._int(self.x[a], 'divide'), self._int(self.x[b], 'divide')
         if x < 0 or y <= 0:
             raise Refusal('operand', 'divide %d / %d: a negative or zero operand is unwitnessed' % (x, y))
@@ -2561,7 +2631,32 @@ class Machine:
     # string_tail, stack_vector (psi/kl0_opcodes.tsv)
     def op_add(self, code, off, a, b, c, v):
         # R != A is witnessed (p_wwin.esp:420-422 `40 00 01 01`, step 3e)
+        f = self._floats(a, b, 'add')
+        if f is not None:
+            self.x[c] = Flt.of(f[0] + f[1])
+            self.nxt(code, off)
+            return
         self.x[c] = self._int(self.x[a], 'add') + self._int(self.x[b], 'add')
+        self.nxt(code, off)
+
+    def op_integer_to_floating_point(self, code, off, a, b, c, v):
+        # MENDELS (2026-11-27): blt 6c (kl0_opcodes.tsv; c_bar_v.esp:250
+        # `6c 07 01 00`: A the integer, B the float)
+        if c:
+            raise Refusal('operand', 'integer_to_floating_point third byte %02x: unwitnessed' % c)
+        self.x[b] = Flt.of(float(self._int(self.x[a], 'integer_to_floating_point')))
+        self.nxt(code, off)
+
+    def op_floating_point_to_integer(self, code, off, a, b, c, v):
+        # MENDELS (2026-11-27): blt 6d (kl0_opcodes.tsv; h.esp:26 `6d 00 04
+        # 00`); toward zero (INFERENCE, the row)
+        if c:
+            raise Refusal('operand', 'floating_point_to_integer third byte %02x: unwitnessed' % c)
+        f = deref(self.x[a])
+        if not isinstance(f, Flt):
+            raise Refusal('unbound argument' if isinstance(f, Var) else 'built-in',
+                          'floating_point_to_integer on %r' % (f,))
+        self.x[b] = int(f.value)
         self.nxt(code, off)
 
     def op_stack_vector(self, code, off, a, b, c, v):
