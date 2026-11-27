@@ -29,7 +29,7 @@ shift
 
 mkdir -p build_shell/generated
 python3 ../asm/gen_pimm_bsv.py build_shell/generated
-"$BSC" -sim -p build_shell/generated:+ -bdir build_shell -simdir build_shell -info-dir build_shell \
+"$BSC" -sim -p build_shell/generated:vendor/flute:+ -bdir build_shell -simdir build_shell -info-dir build_shell \
   -g mkPimmShellTb -u PimmDriverTb.bsv > build_shell/compile.log 2>&1 \
   || { cat build_shell/compile.log; exit 1; }
 "$BSC" -sim -bdir build_shell -simdir build_shell -e mkPimmShellTb \

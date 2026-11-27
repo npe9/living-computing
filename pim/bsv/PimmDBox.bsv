@@ -166,7 +166,8 @@ module mkPimmDBox#(MemPort mem)(PimmDBox);
         r = bound(curCell);
       end
       else if ((a.tag | 1) != (b.tag | 1)) r = tagged UFail;
-      else if (isInt(a) || isAtom(a)) r = (a.val == b.val) ? tagged UOk : tagged UFail;
+      // a float by its bits (e-syntax.tex:247; pimm.py unify)
+      else if (isInt(a) || isAtom(a) || (a.tag & 8'hfe) == tag_FLTo) r = (a.val == b.val) ? tagged UOk : tagged UFail;
       // R7L (2026-11-25): the same string object, as pimm.py unify; two
       // string objects are refused (comparing contents is not modelled).
       // Met in the Listener, a unify_step of a vector with itself

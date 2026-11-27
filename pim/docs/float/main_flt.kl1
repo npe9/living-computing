@@ -1,0 +1,6 @@
+:- module main.
+
+main :- true |
+    flt:go(R),
+    flt:show(A),
+    io:outstream([print(R), nl, print(A), nl]).

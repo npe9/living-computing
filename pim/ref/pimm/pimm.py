@@ -40,7 +40,9 @@ makes those goals through the argument registers, as the core does).
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
 """
+import math
 import os
+import struct
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -61,7 +63,7 @@ PREDH = 0x24                # a predicate head: arity << 24 | offset from the mo
 VDESC = 0x0d                # kbnheap.kl1 tag(vdesc)
 LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
 NIL = (ATOM, 0)
-FLT = 0x30                  # a floating point number (kbn.TAGS FLTo): not modelled
+FLT = 0x30                  # a floating point number (kbn.TAGS FLTo): {FLT, IEEE single}, docs/float.md
 M32 = 0xffffffff
 EXFLT = 0x3f                # an extended floating point (kbn.TAGS, kbnheap.kl1): not modelled
 NEW_ATOM0 = 0x10000         # the first atom new_atom gives: ours
@@ -120,6 +122,73 @@ def sx16(v):
 
 def signed(v):
     return v - (1 << 32) if v >> 31 else v
+
+
+def f32(bits):
+    """The IEEE single in a float word's 32 bits (docs/float.md)."""
+    return struct.unpack('>f', struct.pack('>I', bits & M32))[0]
+
+
+def to_f32(v):
+    """A Python float rounded to IEEE single, to nearest even (the
+    C cast inside struct.pack); a finite value beyond the largest
+    single becomes the infinity of its sign, as IEEE's overflow does
+    in that mode ("If an overflow occurs, infinity is unified",
+    PIMOS manual e-builtin.tex:509).  The bits."""
+    try:
+        return struct.unpack('>I', struct.pack('>f', v))[0]
+    except OverflowError:
+        return 0xff800000 if v < 0 else 0x7f800000
+
+
+def int_to_f32(i):
+    """integer_to_floating_point: the 32-bit integer rounded to single."""
+    return to_f32(float(i))
+
+
+def f32_to_int(bits):
+    """floating_point_to_integer: "ignoring decimal" (e-builtin.tex:582),
+    towards zero; None on the overflow (an infinity, a NaN, or a value
+    outside the 32-bit integers)."""
+    v = f32(bits)
+    if v != v or v in (math.inf, -math.inf):
+        return None
+    t = int(v)
+    return t if -(1 << 31) <= t < 1 << 31 else None
+
+
+def f32_op(fn, a, b):
+    """floating_point_add/subtract/multiply/divide (function fn 0-3) of
+    two singles' bits: the bits of the result, or None for an invalid
+    operation, the cases the PIMOS manual lists as Fail, Exception
+    (e-builtin.tex:508-573: inf + -inf, inf - inf, 0 * inf, 0/0 and
+    inf/inf; a NaN operand too, OURS: none can be written or made).
+    Each is exact in double and then rounded once to single, which is
+    the correctly rounded single result for these four (double has
+    more than 2 * 24 + 2 bits).  x/0 for x not 0 is the infinity of
+    the signs (e-builtin.tex:561)."""
+    x, y = f32(a), f32(b)
+    inf = math.inf
+    if x != x or y != y:
+        return None
+    if fn == 0:
+        if math.isinf(x) and math.isinf(y) and (x > 0) != (y > 0):
+            return None
+        return to_f32(x + y)
+    if fn == 1:
+        if math.isinf(x) and math.isinf(y) and (x > 0) == (y > 0):
+            return None
+        return to_f32(x - y)
+    if fn == 2:
+        if (x == 0 and math.isinf(y)) or (math.isinf(x) and y == 0):
+            return None
+        return to_f32(x * y)
+    if (x == 0 and y == 0) or (math.isinf(x) and math.isinf(y)):
+        return None
+    if y == 0:
+        neg = (math.copysign(1, x) < 0) != (math.copysign(1, y) < 0)
+        return to_f32(-inf if neg else inf)
+    return to_f32(x / y)
 
 
 def marked(w):
@@ -343,7 +412,7 @@ class Machine:
             return
         if a[0] & ~1 != b[0] & ~1:
             raise Fail('unify %r %r' % (a, b))
-        if a[0] & ~1 in (INT, ATOM):
+        if a[0] & ~1 in (INT, ATOM, FLT):    # a float by its bits (atomic())
             if a[1] != b[1]:
                 raise Fail('unify %r %r' % (a, b))
             return
@@ -464,6 +533,8 @@ class Machine:
             return ('MOD', self.mem[w[1]][1] & 0xffffff)
         if w[0] == SHREC:
             return ('SHREC', w[1] - self.load)
+        if w[0] == FLT:
+            return ('FLT', w[1])
         if VECT0 <= t <= VECT0 + 14:
             n, a = self.vsize(w), self.vbase(w)
             return tuple(self.term(self.mem[a + i]) for i in range(n))
@@ -1288,7 +1359,10 @@ class Machine:
 
     @staticmethod
     def atomic(w):
-        return w[0] & ~1 in (INT, ATOM)
+        # a float too (2026-11-26): unified by its bits, "by comparing
+        # the bit patterns of the inner representation" (PIMOS manual,
+        # e-syntax.tex:247), so +0.0 and -0.0 are not equal here
+        return w[0] & ~1 in (INT, ATOM, FLT)
 
     def i_wait_value(self, pc, x, y, z, c16):
         # the guard X = Y on two arguments (TR-246 p. 5).  Modelled for
@@ -1379,7 +1453,7 @@ class Machine:
                     return False
             elif tx != ty:
                 return False
-            elif tx in (INT, ATOM):
+            elif tx in (INT, ATOM, FLT):              # a float by its bits (atomic())
                 if x[1] != y[1]:
                     return False
             elif tx == STRG:
@@ -1473,18 +1547,108 @@ class Machine:
         # e-builtin.tex line 206)
         return self.compare(x, y, lambda a, b: a != b)
 
-    def i_floating_point_not_less_than(self, pc, x, y, z, c16):
-        # guard floating_point_not_less_than(F1, F2), function 3 of
-        # opcode 23:FC, registers y and z.  "If both Float1 and Float2
-        # are floating points and the value of the former is larger
-        # than, or equal that of the latter, this predicate succeeds.
-        # Otherwise it fails" (PDSS manual).  The IPL's pool tries it
-        # on every key that is neither atom nor integer; there is no
-        # floating point here, so two floats are refused.
-        a, b = self.g_word(y), self.g_word(z)
-        if a is None or b is None or a[0] & ~1 != FLT or b[0] & ~1 != FLT:
+    # ---- floating point (docs/float.md) -------------------------------
+    # A float is the immediate word {FLT, IEEE single}; the operations
+    # are f32_op's.  The guards: 23:FC functions 0-5 (f_r_r: inputs y,
+    # z, or input y and output z) and 23:FD functions 0-3 (f_r_r_r:
+    # inputs y, z, the output the next cell's top byte, two cells).  An
+    # unbound input is noted; anything but floats (an integer for
+    # integer_to_floating_point), an invalid operation, or an integer
+    # overflow fails the guard ("Fail, Exception": PIMOS manual,
+    # e-builtin.tex:20, 423-610).
+    def g_float(self, r):
+        w = self.g_word(r)
+        if w is None or w[0] & ~1 != FLT:
+            return None
+        return w[1]
+
+    def float_compare(self, y, z, f):
+        a, b = self.g_float(y), self.g_float(z)
+        if a is None or b is None or not f(f32(a), f32(b)):
             return self.guard_fail()
-        raise Unimplemented('floating point comparison')
+
+    def i_floating_point_equal(self, pc, x, y, z, c16):
+        return self.float_compare(y, z, lambda a, b: a == b)
+
+    def i_floating_point_not_equal(self, pc, x, y, z, c16):
+        return self.float_compare(y, z, lambda a, b: a != b)
+
+    def i_floating_point_less_than(self, pc, x, y, z, c16):
+        return self.float_compare(y, z, lambda a, b: a < b)
+
+    def i_floating_point_not_less_than(self, pc, x, y, z, c16):
+        # (before 2026-11-26 two floats were refused here: the IPL's
+        # pool tries it on every key that is neither atom nor integer)
+        return self.float_compare(y, z, lambda a, b: a >= b)
+
+    def i_floating_point_to_integer(self, pc, x, y, z, c16):
+        a = self.g_float(y)
+        v = None if a is None else f32_to_int(a)
+        if v is None:
+            return self.guard_fail()
+        self.reg[z] = (INT, v & M32)
+
+    def i_integer_to_floating_point(self, pc, x, y, z, c16):
+        a = self.g_int(y)
+        if a is None:
+            return self.guard_fail()
+        self.reg[z] = (FLT, int_to_f32(a))
+
+    def float_arith(self, pc, x, y, z):
+        a, b = self.g_float(y), self.g_float(z)
+        r = None if a is None or b is None else f32_op(x, a, b)
+        if r is None:
+            return self.guard_fail()
+        self.reg[self.cells[pc + 1][1] >> 24] = (FLT, r)
+        return pc + 2
+
+    def i_floating_point_add(self, pc, x, y, z, c16):
+        return self.float_arith(pc, x, y, z)
+
+    i_floating_point_subtract = i_floating_point_add
+    i_floating_point_multiply = i_floating_point_add
+    i_floating_point_divide = i_floating_point_add
+
+    # The body forms, 22:CE functions 0-1 and 22:CF functions 0-3, the
+    # same operands.  What fails a guard is the built-in's exception
+    # in a body (invalid_floating_point_operation, e-shoen.tex:544,
+    # or illegal_input / integer_overflow): not modelled, refused, as
+    # b_divide's.  An unbound input should suspend the built-in
+    # (e-builtin.tex:18); these have no stub (asm/pimm_stubs.py takes
+    # no f_r_r forms, and a new stub would change the table that saved
+    # machines hold): refused.
+    def need_float(self, name, r):
+        w = self.deref(self.reg[r])
+        if self.unbound(w):
+            raise Unimplemented('%s waiting on an unbound input (no stub)' % name)
+        if w[0] & ~1 != FLT:
+            raise Unimplemented('built-in exception: %s of a non-float %r' % (name, w))
+        return w[1]
+
+    def i_b_floating_point_to_integer(self, pc, x, y, z, c16):
+        v = f32_to_int(self.need_float('b_floating_point_to_integer', y))
+        if v is None:
+            raise Unimplemented('built-in exception: floating_point_to_integer overflow')
+        self.reg[z] = (INT, v & M32)
+
+    def i_b_integer_to_floating_point(self, pc, x, y, z, c16):
+        w = self.deref(self.reg[y])
+        if self.unbound(w):
+            raise Unimplemented('b_integer_to_floating_point waiting on an unbound input (no stub)')
+        self.reg[z] = (FLT, int_to_f32(self.need_int(w)))
+
+    def i_b_floating_point_add(self, pc, x, y, z, c16):
+        name = ('b_floating_point_add', 'b_floating_point_subtract',
+                'b_floating_point_multiply', 'b_floating_point_divide')[x]
+        r = f32_op(x, self.need_float(name, y), self.need_float(name, z))
+        if r is None:
+            raise Unimplemented('built-in exception: invalid_floating_point_operation')
+        self.reg[self.cells[pc + 1][1] >> 24] = (FLT, r)
+        return pc + 2
+
+    i_b_floating_point_subtract = i_b_floating_point_add
+    i_b_floating_point_multiply = i_b_floating_point_add
+    i_b_floating_point_divide = i_b_floating_point_add
 
     def i_exclusive_or(self, pc, x, y, z, c16):  # guard arithmetic
         a, b = self.g_int(x), self.g_int(y)
@@ -2085,6 +2249,15 @@ class Machine:
 
     def i_set_integer(self, pc, x, y, z, c16):
         self.argv[x] = (INT, sx16(c16) & 0xffffffff)
+
+    def i_set_constant(self, pc, x, y, z, c16):
+        # set_constant(Gi, C), 23:10 c8_c40 (docs/kl1_encoding.md): goal
+        # argument x is the whole next cell.  The compiler writes it for
+        # a constant set_atom/set_integer cannot hold, a float among them
+        # (PDSS compiler/outp.kl1:429-432 maps set_constant to set_float
+        # there); met first on a float argument (docs/float.md)
+        self.argv[x] = self.cells[pc + 1]
+        return pc + 2
 
     def i_collect_vector(self, pc, x, y, z, c16):
         pass        # MRB reclamation of the vector r[x] of c16 cells: no GC here
@@ -3450,7 +3623,7 @@ class Machine:
         # machine's.  PDSS gives 0 for anything else: refused here.
         def f(w):
             t = w[0] & ~1
-            if t in (INT, ATOM):
+            if t in (INT, ATOM, FLT):   # a float by its bits (blt_system.c:410 case FLOAT)
                 h = w[1]
             elif t == LIST:
                 h = 0xffffffff

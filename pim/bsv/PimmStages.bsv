@@ -29,6 +29,7 @@ import PimmScsiBox::*;
 import PimmPBox::*;
 import PimmTBox::*;
 import PimmGcBox::*;
+import PimmFBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -96,7 +97,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep, XUL1, XUL2,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
-               XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1,
+               XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XFArith,
                XTq1, XTq2, XTq3, XTq4, XSTim, XTp0, XTp1, XTp2, XTpE,
                XSoW,
                XNode, XSan, XMvL, XMv1, XMv2, XMv3, XMv4,
@@ -110,6 +111,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmShBox shbox, PimmScsiBox scsi, PimmPBox pbox,
                    PimmTBox tbox, PimmGcBox gcbox)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
+  // the float box (PimmFBox.bsv): instantiated here, so that the
+  // stage's parameters, and PimmCore, stay as they are
+  PimmFBox           fbox    <- mkPimmFBox;
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
   RegFile#(Bit#(4), Addr) noted <- mkRegFileFull;
@@ -216,9 +220,21 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
   Bool isTagAndValue = op == 16'h2376 && x == 4;
-  // opcode FC likewise: 3 is the guard floating_point_not_less_than(F1,
-  // F2), registers y and z
-  Bool isFloatGE = op == 16'h23fc && x == 3;
+  // floating point (PimmFBox.bsv, docs/float.md).  Opcode FC likewise:
+  // 0-3 the guards floating_point_equal, _not_equal, _less_than,
+  // _not_less_than(F1, F2), registers y and z; 4, 5
+  // floating_point_to_integer and integer_to_floating_point(X, ^Y),
+  // input y, output z.  FD: 0-3 floating_point_add, _subtract,
+  // _multiply, _divide(F1, F2, ^F), inputs y, z, the output the next
+  // cell's top byte (klb_opr.kl1 f_r_r_r).  22:CE and 22:CF: the body
+  // forms b_*, the same operands; what fails a guard is their
+  // exception, and an unbound input should suspend them: both refused,
+  // as pimm.py does (no stub for an f_r_r form)
+  Bool isFCmp = op == 16'h23fc && x <= 3;
+  Bool isFConv = (op == 16'h23fc && (x == 4 || x == 5)) || (op == 16'h22ce && x <= 1);
+  Bool isFArith = (op == 16'h23fd || op == 16'h22cf) && x <= 3;
+  Bool fBody = op == 16'h22ce || op == 16'h22cf;
+  Bool fToInteger = op == 16'h23fc ? x == 4 : x == 0;
   // opcode 6E likewise: 8 is the guard extended_floating_point(X,
   // ^NewX), registers y and z
   Bool isExtFloat = op == 16'h236e && x == 8;
@@ -312,7 +328,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_not_equal || op == op_multiply || op == op_diff
                       || op == op_bignum_less_than || op == op_bignum_not_less_than
                       || op == op_string_less_than || op == op_string_not_less_than;
-  function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
+  function Bool isIntAtom(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
+  // a float is atomic too, unified by its bits (e-syntax.tex:247; pimm.py atomic)
+  function Bool isAtomic(Cell c) = isIntAtom(c) || (c.tag & 8'hfe) == tag_FLTo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
   // atom in the low 24 bits; get_atom's base is c0
@@ -406,7 +424,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
       st <= XDeref1;
     end
-    else if (isTagAndValue || isFloatGE || isExtFloat || isExtCmp) begin
+    else if (isTagAndValue || isFCmp || isFConv || isFArith || isExtFloat || isExtCmp) begin
       dbox.deref(regs.r(y));
       st <= XDeref1;
     end
@@ -610,6 +628,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wa(x, intCell(c16));
       next;
     end
+    else if (op == op_set_constant) begin
+      regs.wa(x, ins2);            // c8_c40: the whole next cell (a float)
+      finish(tagged Next (pc + 2));
+    end
     else if (op == op_set_nil) begin
       regs.wa(x, mkCell(tag_ATOMo, 0));
       next;
@@ -742,7 +764,24 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // ---- guards ----------------------------------------------------------
   rule deref1 (st == XDeref1);
     let a <- dbox.derefResult;
-    if (isExtFloat) begin
+    if (isFConv) begin
+      // a guard notes an unbound X and fails; a body form is refused
+      // on one, and on a wrong type or an overflow (its exception)
+      Bool ok = fToInteger ? (a.tag & 8'hfe) == tag_FLTo : isInt(a);
+      Maybe#(Bit#(32)) i = fToInt(a.val);
+      if (isRef(a) && !fBody) note(a);
+      if (isRef(a) && fBody) stop(EndUnimp);
+      else if (!ok || (fToInteger && !isValid(i))) begin
+        if (fBody) stop(EndUnimp);
+        else guardFail;
+      end
+      else begin
+        regs.wr(z, fToInteger ? intC(fromMaybe(?, i)) : mkCell(tag_FLTo, intToF(a.val)));
+        next;
+      end
+    end
+    else if (isFArith && fBody && isRef(a)) stop(EndUnimp);
+    else if (isExtFloat) begin
       // the type test (pimm.py i_extended_floating_point): tag 3Fh;
       // anything else fails, an unbound X noted; an extended float is
       // refused (none can be made here)
@@ -946,7 +985,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else begin
       opA <= a;
-      dbox.deref(regs.r(isFloatGE || isExtCmp ? z : y));
+      dbox.deref(regs.r(isFCmp || isFArith || isExtCmp ? z : y));
       st <= XDeref2;
     end
   endrule
@@ -976,6 +1015,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     Int#(32) ib = unpack(b.val);
     if (op == op_wait_value && isRef(a) && isRef(b) && a.val == b.val)
       stop(EndUnimp);              // one variable twice: not modelled
+    else if (fBody && (isRef(a) || isRef(b)))
+      stop(EndUnimp);              // a body float built-in waiting: no stub
     else if (isRef(a) && isRef(b)) begin
       note(a);
       opA <= b;
@@ -996,10 +1037,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBc1;
       end
     end
-    else if (isFloatGE) begin
-      // "If both are floating points and ... succeeds.  Otherwise it
-      // fails": no floating point here, so two floats are refused
-      if ((a.tag & 8'hfe) == tag_FLTo && (b.tag & 8'hfe) == tag_FLTo) stop(EndUnimp);
+    else if (isFCmp) begin
+      // anything but two floats fails (e-builtin.tex:423-496)
+      if ((a.tag & 8'hfe) == tag_FLTo && (b.tag & 8'hfe) == tag_FLTo && fCompare(x, a.val, b.val))
+        next;
+      else guardFail;
+    end
+    else if (isFArith) begin
+      // two floats to the float box; anything else fails the guard, or
+      // is the body form's exception (refused)
+      if ((a.tag & 8'hfe) == tag_FLTo && (b.tag & 8'hfe) == tag_FLTo) begin
+        fbox.arith(truncate(x), a.val, b.val);
+        st <= XFArith;
+      end
+      else if (fBody) stop(EndUnimp);
       else guardFail;
     end
     else if (isExtCmp) begin
@@ -1223,6 +1274,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule nodeTotal (st == XNode);
     regs.wr(y, intC(1));
     next;
+  endrule
+
+  // the float box's answer: an invalid operation fails the guard, or is
+  // the body form's exception (refused)
+  rule fArith (st == XFArith);
+    let r <- fbox.result;
+    if (r.invalid) begin
+      if (fBody) stop(EndUnimp);
+      else guardFail;
+    end
+    else begin
+      regs.wr(ins2.val[31:24], mkCell(tag_FLTo, r.value));
+      finish(tagged Next (pc + 2));
+    end
   endrule
 
   rule note2 (st == XNote2);
@@ -1700,6 +1765,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         sbox.hashStr(a);
         st <= XBHash;
       end
+      // a float's value too (PDSS blt_b_hash case FLOAT; pimm.py i_hash)
       else if (isAtomic(a) || (a.tag & 8'hfe) == tag_LISTo || (isVec(a) && !isLongVec(a))) begin
         regs.wr(y, intC(isAtomic(a) ? a.val : (isVec(a) ? sizeOf(a) : 32'hffffffff)));
         st <= XBHash2;

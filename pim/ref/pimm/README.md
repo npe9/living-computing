@@ -91,6 +91,8 @@ login and the shell's prompt (`unbound`, the four double-precision
 integer built-ins, the guards `module`, `extended_floating_point`,
 `bignum_less_than` and `bignum_not_less_than`, `apply` of seven or
 more, `enqueue_goal` of more than 16),
+`lockstep_float.py` the single-precision float built-ins, guard and
+body, against hand-written IEEE constants (`docs/float.md`),
 `lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
 against a small model of the front-end processor (`fep.py`), the
 device on the bench a tape the reference recorded (`driver.py` "The
