@@ -1007,6 +1007,10 @@ HALF (b), WHAT IS LEFT AFTER STEP 5 (2026-11-26). This supersedes the
         F219T-Y, Buchholz B.3, Problem 3.6) were run with and without
         the fix under STRETCH_HALT_REPORT=1. No halt moves (790, 400,
         836, 881, 986, 762 both ways), so no pin moves.
+      - Suite on 3d410ee3: GREEN (only the two expected `UNREPRODUCED`
+        p359 FAIL lines); 386 HALTREPORT lines identical to batch58's.
+        `mkPauStepTb` is in the suite ("PAU STEPPING"), so vector 10 is
+        under regression.
       - Atlas (PDF 42-101, 9,406 cells, its own build-atlas, run before and
         after on the same tree): 76.8% / 94.6% within 1 / 3 both ways
         (7,226 / 8,898 cells; the before run reproduces A4's step-3 figure
@@ -1136,15 +1140,29 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
       HALTREPORT programs. (The copy lacked bsv/'s non-.bsv files and
       docs/, so the MCP, host-tape, smoke and OCR sections failed to
       build there; they are covered by the real run below.)
-    - The tripwire is discriminating: with `rl_term_hold` disabled
-      (`False &&` in its guard), the four crossing-store decks print it
-      (vfl_crossing_store at clocks 123, 178, 219, 264, 309, 379,
-      `ebusy 1`; cm_crossing_field five clocks, and 92 more after the
-      halt with the core stopped; vfl_cross_tomemory seven or more;
-      vfl_cross_storewait none), and the halts move: vfl_crossing_store
-      401 -> 396, cm_crossing_field 329 -> 324 (one clock per crossing
-      store). So without the hold the step would not be
-      behaviour-preserving; it is the measured cause item 2 below names.
+    - The tripwire is discriminating: on the SHADOW build, with
+      `rl_term_hold` disabled (`False &&` in its guard), the crossing-store
+      decks printed it (vfl_crossing_store, cm_crossing_field,
+      vfl_cross_tomemory; the clock lists were cut by the probe's own
+      `head -8` and are not recorded). That build is gone.
+    - INJECTIONS ON THE SHIPPED TREE (1c140c22, in the worktree, each
+      reverted by the inverse edit, `git status` clean after), six decks
+      with their full run_tests.sh arguments:
+
+      | deck | base | hold off (`rl_term_hold (False && ...)`) | count n, not n + 1 |
+      |---|---|---|---|
+      | vfl_crossing_store | 401 | 396 | 388 |
+      | cm_crossing_field | 329 | 324 | 323 |
+      | vfl_cross_tomemory | 1193 | 1193 | 1190 |
+      | vfl_cross_storewait (`CYCLES=283+-0`) | 283 | 283 | 279, **FAIL** |
+      | Buchholz B.3 | 986 | 986 | 986 |
+      | Problem 3.6 | 762 | 762 | 729 |
+
+      - Hold off: NO suite check fails on these decks; only the
+        HALTREPORT comparison with the base sees it (-5 on two decks).
+        So the hold is guarded by the HALTREPORT diff, not by a pin.
+      - Off by one: the storewait CYCLES pin fails ("cycles = 279, want
+        283 +- 0") and every deck that retires a level moves.
     - The six `*+` decks: halts identical (790, 400, 836, 881, 986, 762).
     - Full suite on the committed tree (1c140c22): GREEN, only the two
       expected `UNREPRODUCED` p359 FAIL lines; all 386 HALTREPORT lines
@@ -1173,14 +1191,29 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
      it is not a behaviour-preserving step: Table A-2's levels are parts
      (`spec_lookahead.md` §5: a VFL ST takes 3 levels, M+ crossing with
      progressive indexing 6 in a ring of 4), so level occupancy and
-     every look-ahead pin move. The order `spec_lookahead.md` §5
-     settles: (a) the E-box consumes a sequence of parts, not one `di`
-     (`execute()`'s signature is the obstacle it names); (b) levels are
-     allocated one at a time with a residual count (shape 1 there; shape
-     2 deadlocks on six levels); (c) the FP case first (Table A-2: 1
-     level, op + opnd, so the split is behaviour-neutral for FP), then
-     the store levels of M+/LFT/D/ (2), then VFL (2-3, doubled on a
-     crossing); each a timing step with the pins it moves recorded.
+     look-ahead pins move. What §5 says: the E-box must consume a
+     sequence of parts, not one `di` (`execute()`'s signature is the
+     obstacle it names), and of its two allocation shapes it leaves the
+     choice "not settled", warning that shape 2 deadlocks on six levels.
+     PROPOSAL (this session's, not a source's): (a) the part sequence
+     first; (b) one-at-a-time allocation with a residual count (shape
+     1); (c) start with the one-level FP operations (Table A-2: one
+     level, op + opnd -- not `*+`, M+, LFT or D/, which take two), then
+     the two-level FP ones, then VFL (2-3, doubled on a crossing). Whether
+     the one-level FP step is time-neutral is unmeasured; each step
+     records the pins it moves.
+  4. Unit benches for the termination. `terminate` / `holdTerm` /
+     `terminated` have no vector in mkSauStepTb / mkPauStepTb (A3 and A4
+     gave every unit method one). They are covered only through the core
+     (the injections above).
+  5. Stale text, left as it was after the green run (decks and tests are
+     not edited after it): `tests/run_tests.sh` (the df_data_fetch_alarm
+     / interrupt notes, about line 12582-12615), `decks/int_timing_bracket.strap`
+     (header, lines 54-119) and `decks/df_data_fetch_alarm.strap` (line
+     176) describe `ebusy` and rl_interrupt's `ebusy <= eb;` as live;
+     `bsv/README.md` (lines 1399, 1882-1888) and `docs/NEXT.md` (229,
+     4896-4928, 6066) likewise. In the model that decrement is now the
+     arm's `eArm.send`, with the same effect.
 
 ## Phase 3: the store and fetch paths
 
