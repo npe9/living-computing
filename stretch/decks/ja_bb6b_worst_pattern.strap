@@ -1,0 +1,690 @@
+! ja_bb6b_worst_pattern.strap -- IBM 7030 "WORST PATTERN TEST",
+! File No. JA BB6B, August 15, 1961 (docs/ja_bb6b_worst_pat_test.pdf,
+! 20 PDF pages: writeup pp.1-2, the PRNID cards p.3, listing pp.4-20).
+! PRNID: "WORST PATTERN (6 BOX) A. BROWN".  The writeup's cover says it
+! makes "JA CB6 Worst Pattern Test" obsolete.
+!
+! TRANSCRIBED VERBATIM from the page images rendered at 100, 200 and
+! 400 dpi (no OCR), with this repo's print-chain conventions: "%"
+! prints "(", the box glyph prints ")".  THIS CHAIN PRINTS THE REMARK
+! MARK AS "-" (the 8-4 punch; mcp_bootstrap_p236.strap has the source),
+! the same glyph as a minus, and the machine-code column decides each
+! one: "M06AZ-START1" and "$-0.32" are minus signs (their code needs
+! them), every other "-" opens a remark.  Remarks follow "! @" here.
+!
+! GLYPHS AND DEPARTURES, each settled against the machine-code column:
+!   - THE SECOND "PH1E" AND "PH2E".  PDF p.9 prints the label of
+!     SX,$X8,0($X2) at 001134.00 as "PH1E" (read at 400 dpi: a clear
+!     bottom stroke), a second definition of PH1E, which is also the
+!     label at 001123.00.  The SWAPI rows that name the pair print
+!     "PH1E,PH1F" (PDF p.10, 400 dpi) and their code "001134.02 E0"
+!     puts PH1F at 001134.00.  So the card said PH1F; the deck writes
+!     PH1F, the printed label kept as a remark.  PDF p.17's label at
+!     100115.00 ("PH2E", against SWAPI,1,PH2E,PH2F's 100115.02) is the
+!     same case.
+!   - "T (SIX" word (PDF p.12): the source digits read at 400 dpi are
+!     53000025513D5B00; the code 0514000002252117255400 agrees.
+!   No printed code disagrees with its source line, and no row is torn
+!   or unreadable.
+!
+! LISTING-ORACLE RESULT (tests/verify_ja_bb6b_listing.py): every printed
+! row on PDF pp.4-20 is reproduced bit-for-bit by strap_asm.py: 574
+! checks, all PASS -- 485 printed rows, 87 symbol addresses (the SYNs
+! TYPE, M06AZ and M06AZ2 among them), ACC1's one-word DR, and END,100.'s
+! 144.00.  Unchecked: rows that print no code (PRNID, SEM, PUNFUL, SLC,
+! CNOP on a full word, the blank listing lines in the NOP runs).
+!
+! WHAT THE PROGRAM DOES (writeup PDF pp.1-2, read with the code).
+!   "The purpose of this test is to check for data pickup or dropout
+!   when a checkerboard or inverted checkerboard is present in memory.
+!   It is designed to run on a system having two 16K-A memories and
+!   four 16K-B memories." (p.1, 1.)  "The program alternately tests
+!   upper and lower memories" (p.1, 2.1).  "A checkerboard pattern is
+!   stored and checked, and inverted and checked." (p.2, 4.)
+!   Part I, START1 in low core, saves 500 words of Part II (100000) at
+!   START1+500. and tests 100000-277013 (CTLB1, CTLC1; upper limit
+!   CTLH1 = 97803, so the top 500 words, 277014-277777, are not
+!   tested); restores Part II and branches to it.  Part II, START2 at
+!   100000, saves 900 words from 100 (octal) at START2+500. and tests
+!   100-77777 (CTLB2, CTLC2); restores, adds one to the pass counter
+!   and branches back to PH1.  Forever.  Each half runs:
+!   1. "DOUBLE ERROR CHECKING": CM1111 / CM0000 with progressive
+!      indexing (V+ICR) write runs of 8 all-ones then 8 all-zeros words
+!      (Part I; runs of 4 in Part II, CTLA2), from the first address
+!      to a SPLIT -- 177777 in Part I, 37777 in Part II -- where X2's
+!      count runs out and BR1 SWAPIs the two stores, re-phasing the
+!      runs for the second region (200000-277013; 40000-77777).  The
+!      check reads each word with CT1100 / CT0011 and, if it is wrong,
+!      hangs on BRGZ,$; else it inverts the word in place four times
+!      with CM1100 ("WORK LOCATION ADJACENT TO LOCATION CHECKED").
+!      Then the whole is redone complemented (the SWAPIs at BR4), and
+!      every tested word is zeroed (CBR+ loop).
+!   2. "SINGLE ERROR INJECTION": the same runs are stored with SX,$X8
+!      (all ones) / Z, each store bracketed by SX,$X7,$UB ("TURN ON
+!      ERROR INJECTION") and Z,$UB, followed by ten NOPs; then BR11
+!      inverts each word 8 (4) times ("FOR PICK UP") and BR12 rewrites
+!      it unchanged ("RECHECK ALL LOCATIONS"), with interrupts ENABLED
+!      (BE,BR11) and the interrupt table INT1/INT2 all NOPs.  There is
+!      no program check in this part: it relies on the machine's ECC.
+!      Then complemented, then every tested word zeroed.
+!   PASS AND FAIL, IN THE PROGRAM'S OWN WORDS: "If an error is
+!   encountered, the program will stop.  Refer to the listing and neons
+!   to determine the nature of the failure.  No error print-out is
+!   provided." (p.1, 2.2).  The stop is the hang at one of the four
+!   "BRGZ,$ -IF HANG UP,ADDR. AT M6AZZ IS NOT 1- S" rows.  "Index Reg 14
+!   is used as a pass counter.  Stepping of Index 14 indicates success."
+!   (p.2, 3.3.)
+!
+! THE ERROR INJECTION IS REAL HARDWARE, NOT A BOUNDARY SETTING.  CE
+! Introduction to Programming Vol. 3, R23-9695 (docs/), section 9 "ERROR
+! INJECTION", printed pp.114-115 (PDF pp.114-115): in maintenance mode,
+! with the console's error injection switch on, "Bit 58 of location 3
+! (the error injection trigger)" makes bits 0-8 of location 3 (the
+! upper boundary register's bits) invert check bits at the output of
+! the I checker: bit 0 "Suppress ECC and I parity error indications",
+! bit 8 "Invert: P10 (60-63) and CT".  CTLE1 / CTLE2, XW,(8)401000.,0,
+! 000040, puts 401000 in bits 0-17 (bits 0 and 8) and decimal 40 in the
+! refill field (bits 58 and 60).  So each stored word gets one bad ECC
+! check bit: a single error, which the memory corrects on the read.
+! The same section explains the NOPs: "the instruction which is to
+! terminate error injection [must] be positioned in the program in
+! such a manner that it does not receive a parity error", since
+! instructions in the I unit and look-ahead when the trigger is set
+! are immune.  And the writeup's loading step 1.2.7 is "Disable two
+! levels of lookahead." (p.1).
+!
+! WHAT THE MODEL LACKS, AND WHAT THAT MEANS FOR THE RUN:
+!   - NO ECC AND NO ERROR INJECTION.  StretchStorage keeps only bits
+!     0-17, 32-49 and 57 of location 3 (boundary_width.strap), so bit
+!     58 is dropped and the stores are ordinary.  The single-error part
+!     runs and its stores are checked as data, but what it exists to
+!     test (correction of an injected single error, the error stop) is
+!     NOT exercised.  Bits 0-17 do land in the model's upper boundary:
+!     401000 with the lower boundary 0 and control bit 0 -- every
+!     address inside -- but the stores run with interrupts disabled
+!     (BD,CK1C; BD,CK2C), and the model protects only when enabled
+!     (Reference Manual printed p.45), so no store is suppressed.
+!   - NO MAINTENANCE MODE, NO CONSOLE SWITCHES (error injection, error
+!     stop) and no look-ahead disable.  The sense switches (word 4) are
+!     the model's 0: "Switch 36 Active bypasses Error Injecting tests.
+!     Switch 37 Active Loops on test of Upper Memory.  Switch 38 Active
+!     Loops on test of Lower Memory." (writeup p.2, 3.2) -- BB 4.36
+!     goes to BR13P (Part I) / BR13Q (Part II), past the injection;
+!     4.37 loops PH1, 4.38 loops START2 -- none is taken.  BB,4.32,PH1
+!     ("BYPASS PRINT IF ACTIVE") is not in the writeup; 0, not taken.
+!   - A TYPEWRITER ON CHANNEL 39.  TYPE is "SYN,19.32" (PDF p.12), as
+!     in ja_bm6a; the one W,TYPE,CWA1 (the title) is a reject on the
+!     model.  Nothing else is typed.
+!   - BEW's WAIT.  "BEW,$+0.32-START OF TEST" (PDF p.5) waits for an
+!     interruption on the machine; the model's BEW does not wait
+!     (StretchExecute.bsv), so the run goes straight on.
+!
+! MEMORY FACTS (for A11a).  No statement about unit busy, cycle or
+! recycle time.  What the document does state or show:
+!   - "two 16K-A memories and four 16K-B memories" (p.1); the lower
+!     test covers 100-77777 and the upper 100000-277777, as in ja_bp6a
+!     and ja_bm6a -- the reverse of StretchMemory.bsv's map (four-way
+!     over 0-177777).
+!   - THE RUN LENGTHS: 8 words in the upper memories (CTLA1, "6M"), 4
+!     in the lower (CTLA2), and the SPLITS at 200000 and 40000, where
+!     the pattern is re-phased.  INFERENCE, not stated anywhere: 8 = two
+!     words in each of four interleaved B boxes and 4 = two in each of
+!     two interleaved A boxes would make the runs a physical
+!     checkerboard; the splits would then be box-pair boundaries.  The
+!     document gives no interleaving.
+!
+! HOW IT IS RUN: see tests/run_ja_bb6b.sh and check_ja_bb6b_dump.py.
+!   WHAT IS STUBBED: the IPL (PUNFUL commented out, image preloaded, as
+!   ja_bp6a), and the ENTRY, an inference: END,100. names word 100
+!   (144), where this deck loads nothing, so the run starts at START1,
+!   which the load chain's CW at 777 loads from.
+!   RESULT (2026-11-26): stopped after Part I's checkerboards (CHECK,
+!   31,776,224 clocks), after Part I's injection part (INJECT,
+!   103,925,782) and after one whole pass (PASS, 149,241,141), the
+!   program has not hung, X14 has stepped once (1 << 29: the decimal
+!   one lands in bits 31-34 of the field at bits 17-34), and every word
+!   of core it has reached is as computed from the listing.  An injected
+!   stuck bit (IBM bit 20 stuck at 0 on stores to 150000-150777) makes
+!   the program hang on CK1A's BRGZ,$ with M6AZZ naming 150000;
+!   check_ja_bb6b_dump.py has the record.  THE MODEL'S halted() DOES NOT
+!   RISE ON THAT HANG: the run goes on to its step cap with the PC on
+!   the BRGZ, so the checker reads the PC rather than waiting for a
+!   halt.
+
+        PRNID,WORST PATTERN (6 BOX) A. BROWN
+        PRNID,AUG 15, 1961, JA BB6B
+        SEM,6,G
+!       PUNFUL,                    ! PRINTED (PDF p.4): COMMENTED OUT, see HOW IT IS RUN
+        SLC,511.
+        CW(CDSC),512.,M06AZ-START1,CW2Q
+START1  BD,$+0.32
+        Z,$MASK                    ! @RESET MASK
+        Z,$IND                     ! @RESET INDICATORS
+        Z,$UB                      ! @RESET BOUNDS
+        LVI,$X10,INT1
+        SV,$X10,$IA                ! @SET UP INTERRUPT ADDRESS
+        BMKZ,$+0.32
+        BIKZ,$+0.32
+        BIJZ,$+0.32
+        BEKZ,$+0.32
+        BTSZ,$+0.32
+        BCPUZ,$+0.32
+        BEKJZ,$+0.32
+        BUNRJZ,$+0.32
+        BCBJZ,$+0.32
+        BEPGKZ,$+0.32
+        BUKZ,$+0.32
+        BEEZ,$+0.32
+        BEOPZ,$+0.32
+        BCSZ,$+0.32
+        BOPZ,$+0.32
+        BADZ,$+0.32
+        BUSAZ,$+0.32
+        BEXEZ,$+0.32
+        BDSZ,$+0.32
+        NOP
+            NOP,                   ! @B,PH1 FOR NON PRINT
+        LCI,$X14,0                 ! @USED AS PASS COUNTER
+        BB,4.32,PH1                ! @BYPASS PRINT IF ACTIVE
+        W,TYPE,CWA1                ! @CONTROLS PATTERN
+        BEW,$+0.32                 ! @START OF TEST
+        BD,PH1
+! @DOUBLE ERROR CHECKING FOR UPPER MEMORY
+PH1     LCI,$X15,500
+        T,$X15,START2,START1+500.  ! @SAVE LOWER TEST
+        LX,$X1,CTLA1               ! @CKERBOARD PATTERN
+        LX,$X2,CTLB1               ! @SPLIT OR UPPER MEMORY
+        LX,$X4,CTLD1               ! @UPPER LIMIT
+        LX,$X6,CTLD1               ! @COMPLEMENTING
+        BE,PH1A
+PH1AR   LX,$X1,CTLA1
+                NOP,0.0            ! @TO REPEAT THIS PHASE
+! @CHECKERBOARD GENERATING ROUTINE
+        CNOP
+PH1A    CM1111(V+ICR)(BU,64,8),1.($X2)   ! @STORE ALL ONES WORD
+        BXCZ,BR1                   ! @CT 0 SPLIT OR UPPER MEM.
+        CBR,$X1,PH1A
+                CNOP               ! @CONTROLS PATTERN
+PH1B    CM0000(V+ICR)(BU,64,8),1.($X2)   ! @STORE ALL ZEROES WORD
+        BXCZ,BR1                   ! @CT 0 SPLIT OR UPPER MEM.
+        CBR,$X1,PH1B               ! @CONTROLS PATTERN
+        B,PH1A                     ! @NO LIMIT REACHED-REPEAT
+BR1     CBRZ,$X4,BR2               ! @IFCT 1 SPLIT-IF 0 UPPER MEM.
+        SWAPI,1,PH1B,PH1A          ! @SET UP FOR SPLIT
+        B,PH1A                     ! @RETURN TO GENERATE LOOP
+BR2     SWAPI,1,PH1A,PH1B          ! @RESTORE LOOP
+! @CHECKING ROUTINE
+CK1     LX,$X1,CTLA1               ! @CONTROLS CHECK PATTERN
+        LX,$X2,CTLB1
+                CNOP               ! @CONTROLS STEPPING
+CK1A    CT1100(V+ICR)(BU,64,8),1.($X2)   ! @CK ONES WORD
+        BXCZ,BR3
+                NOP                ! @CK FOR SPLIT OR UPPER LIMIT
+        SX,$X2,M6AZZ
+                    BRGZ,$         ! @IF HANG UP,ADDR. AT M6AZZ  IS NOT 1- S
+        V-I,$X2,1.
+        CM1100(BU,64,8),0($X2)     ! @WORK LOCATION ADJACENT
+        CM1100(BU,64,8),0($X2)     ! @TO LOCATION CHECKED
+        CM1100(BU,64,8),0($X2)
+        CM1100(BU,64,8),0($X2)
+        V+I,$X2,1.                 ! @RESTORE VALUE OF X2
+        CBR,$X1,CK1A
+                CNOP
+CK1B    CT0011(V+ICR)(BU,64,8),1.($X2)   ! @CK ZEROES WORD
+        BXCZ,BR3
+                NOP                ! @CK FOR SPLIT OR UPPER LIMIT
+        SX,$X2,M6AZZ
+                    BRGZ,$         ! @IF HANG UP,ADDR. AT M6AZZ  IS NOT 0- S
+        V-I,$X2,1.
+        CM1100(BU,64,8),0($X2)     ! @WORK LOCATION ADJACENT TO
+        CM1100(BU,64,8),0($X2)     ! @LOCATION CHECKED
+        CM1100(BU,64,8),0($X2)
+        CM1100(BU,64,8),0($X2)
+        V+I,$X2,1.                 ! @RESTORE VALUE OF X2
+        CBR,$X1,CK1B
+        B,CK1A                     ! @REPEAT LOOP
+BR3     CBRZ,$X4,BR4               ! @CT IS ONE SPLIT 0 UPPER LIMIT
+        SWAPI,3,CK1A,CK1B          ! @SET UP LOOP FOR SPLIT
+        B,CK1A                     ! @RETURN TO LOOP
+BR4     SWAPI,3,CK1A,CK1B          ! @RESTORE LOOP
+        CBRZ,$X6,BR5               ! @IF CT IS 1 SET UP PH1 AND CK1
+        SWAPI,1,PH1A,PH1B          ! @FOR COMPL. TEST
+        SWAPI,3,CK1A,CK1B
+        B,PH1AR                    ! @REPEAT PHASE
+BR5     SWAPI,1,PH1A,PH1B          ! @RESTORE ORIGINAL LOOP
+        SWAPI,3,CK1A,CK1B          ! @RESTORE ORIGINAL CONNECTIVES
+        LX,$X2,CTLI1               ! @RESET ALL LOCATIONS
+        Z,0($X2)
+        CBR+,$X2,$-0.32
+        NOP,0.0
+                NOP,0.0
+        BB,4.36,BR13P              ! @LOOP ON CHECKERBOARDS
+        BD,CK1C                    ! @TO SINGLE ERROR TEST
+! @SET UP FOR SINGLE ERROR INJECTION
+CK1C    LX,$X7,CTLE1               ! @FOR ERROR INJECTION
+        CM1111(BU,64,8),$X8        ! @FOR ONES WORD
+        LX,$X2,CTLB1               ! @FIRST ADDRESS
+        LX,$X1,CTLA1               ! @PATTERN
+BR6     SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH1C    SX,$X8,0($X2)
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLG1               ! @CHECK FOR SPLIT
+        BXEZ,BR8                   ! @TO NEW PATTERN
+        V+I,$X2,1.                 ! @INCREMENT ADDRESS FOR NEXT STORE
+        CBR,$X1,BR6                ! @LOOP
+BR7     SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH1D    Z,0($X2)
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLG1               ! @CHECK FOR SPLIT
+        BXEZ,BR8                   ! @TO NEW PATTERN
+        V+I,$X2,1.                 ! @INC. ADDRESS FOR NEXT STORE
+        CBR,$X1,BR7                ! @LOOP
+        B,BR6                      ! @REPEAT UNTIL SPLIT IS REACHED
+BR8     LX,$X2,CTLC1               ! @SET UP FOR REMAINDER OF MEM
+BR9     SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH1E    Z,0($X2)
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLH1               ! @CK FOR UPPER LIMIT
+        BXEZ,CK1D                  ! @TO CHECK PATTERN
+        V+I,$X2,1.                 ! @INCR ADDRESS
+        CBR,$X1,BR9                ! @LOOP
+BR10    SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH1F    SX,$X8,0($X2)              ! LABEL PRINTED "PH1E" (PDF p.9); see header
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLH1               ! @CK FOR UPPER LIMIT
+        BXEZ,CK1D                  ! @TO CHECK PATTERN
+        V+I,$X2,1.                 ! @INCR ADDRESS
+        CBR,$X1,BR10
+        B,BR9                      ! @REPEAT UNTIL UPPER LIMIT REACHED
+! @SINGLE ERROR CHECKING
+CK1D    LX,$X2,CTLI1               ! @CTL ADDRESS STEPPING
+        BE,BR11
+BR11    CM1100(BU,64,8),0($X2)     ! @INVERT DATA AND CHECK
+        CBR,$X1,BR11               ! @FOR PICK UP
+        CBR+,$X2,BR11              ! @REPEAT UNTIL UPPER LIMIT
+BR12    CM0011(BU,64,8),0($X2)     ! @RECHECK ALL LOCATIONS
+        CBR+,$X2,BR12
+! @COMPLEMENT TEST
+COMP1   CBRZ,$X6,BR13              ! @COMPL. TEST CTRL
+        SWAPI,1,PH1C,PH1D          ! @SET UP FOR COMPL (SINGLE)
+        SWAPI,1,PH1E,PH1F
+        BD,CK1C                    ! @START COMPL TEST
+BR13    SWAPI,1,PH1C,PH1D          ! @RESTORE
+        SWAPI,1,PH1E,PH1F
+BR13P   LX,$X2,CTLI1               ! @RESET ALL LOCATIONS
+        Z,0($X2)
+        CBR+,$X2,$-0.32
+BR14    LCI,$X15,500
+        T,$X15,START1+500.,START2  ! @RELOCATE LOWER TEST
+        BB,4.37,PH1                ! @LOOP ON UPPER MEMORY
+        BD,START2
+! @INTERRUPT TABLE UPPER TEST
+INT1    NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        CNOP
+TITLA1  DD(BU,64,8),0,0,0
+        (16)DD(BU,64,8),0000000000000000   ! @
+        (16)DD(BU,64,8),453545494F5D0059   ! @MEMORY W
+        (16)DD(BU,64,8),494F5153004B2D53   ! @ORST PAT
+        (16)DD(BU,64,8),53354F4700533551   ! @TERN TES
+        (16)DD(BU,64,8),53000025513D5B00   ! @T (SIX
+        (16)DD(BU,64,8),2F495B35512700FD   ! @BOXES) RET
+        DD(BU),0,0,0
+! @INDEX AND CONTROL WORDS FOR UPPER TEST 6 MEMORIES
+CWA1    CW(CR),TITLA1,9,CWA1       ! @TITLE
+CTLA1   XW,0.,8,CTLA1              ! @6M
+CTLB1   XW,32768.,32768.,CTLC1     ! @SPLIT CONTROL-6M
+CTLC1   XW,65536.,32268.,CTLB1     ! @REMAINING ADDRESSES
+CTLD1   XW,0.,2,CTLD1
+CTLE1   XW,(8)401000.,0,000040     ! @CT
+CTLG1   VF,65535.                  ! @6M
+CTLH1   VF,97803.                  ! @6M
+CTLI1   XW,32768.,65036.,CTLI1     ! @6M
+NOCOM   (16)DD(BU,64,8),60 62 64 66 68 6A 6C 6E   ! @01234567
+ACC1    DR(BU,64,8),(1)
+CW2Q    CW(CD),32768.,M06AZ2-START2,$
+        NOP
+        NOP
+M06AZ   SYN,M6AZZ+1.0
+M6AZZ   NOP,0.0
+                NOP,0.0
+TYPE    SYN,19.32
+        SLC,32768.
+! @DOUBLE ERROR CHECKING FOR LOWER MEMORY
+START2  LCI,$X15,900
+        T,$X15,64.0,START2+500.    ! @SAVE UPPER TEST
+        LX,$X1,CTLA2               ! @CHECKERBOARD PATTERN
+        LX,$X2,CTLB2               ! @SPLIT OR UPPER MEM
+        LX,$X4,CTLD2               ! @UPPER LIMIT
+        LX,$X6,CTLD2               ! @COMPLEMENTING
+        Z,$UB                      ! @RESET BOUNDS
+        LVI,$X10,INT2
+        SV,$X10,$IA                ! @SET INTRT ADDRESS
+        BE,PH2A
+! @CHECKERBOARD GENERATING ROUTINE
+PH2AR   LX,$X1,CTLA2
+                NOP,0.0            ! @TO REPEAT THIS PHASE
+        CNOP
+PH2A    CM1111(V+ICR)(BU,64,8),1.($X2)   ! @ST ALL ONES
+        BXCZ,BR1A                  ! @CT0 SPLIT OR UPPER MEM
+        CBR,$X1,PH2A
+                CNOP               ! @CTRL PATTERN
+PH2B    CM0000(V+ICR)(BU,64,8),1.($X2)   ! @ST ALL ZEROES
+        BXCZ,BR1A
+        CBR,$X1,PH2B
+        B,PH2A                     ! @NO LIMIT REACHED-REPEAT
+BR1A    CBRZ,$X4,BR2A              ! @IF 1 SPLIT-0 UPPER MEM
+        SWAPI,1,PH2B,PH2A          ! @SET UP FOR SPLIT
+        B,PH2A                     ! @RETURN TO GEN LOOP
+BR2A    SWAPI,1,PH2A,PH2B          ! @RESTORE LOOP
+! @CHECKING ROUTINE
+CK2     LX,$X1,CTLA2               ! @CTRL CHECK PATTERN
+        LX,$X2,CTLB2
+                CNOP               ! @CTRL STEPPING
+CK2A    CT1100(V+ICR)(BU,64,8),1.($X2)   ! @CK ONE WORD
+        BXCZ,BR3A
+                NOP                ! @CK SPLIT OR UPPER LIMIT
+        SX,$X2,M6AZZ2
+                    BRGZ,$         ! @IF HANG UP,ADDR. AT 100222 IS NOT 1- S
+        V-I,$X2,1.
+        CM1100(BU,64,8),0($X2)     ! @WORK LOCATION ADJACENT
+        CM1100(BU,64,8),0($X2)     ! @TO ONE CHECKED
+        CM1100(BU,64,8),0($X2)
+        CM1100(BU,64,8),0($X2)
+        V+I,$X2,1.                 ! @RESTORE VALUE OF X2
+        CBR,$X1,CK2A
+                CNOP
+CK2B    CT0011(V+ICR)(BU,64,8),1.($X2)   ! @CK ZERO WORD
+        BXCZ,BR3A
+                NOP                ! @CK FOR SPLIT OR UPPER MEM
+        SX,$X2,M6AZZ2
+                    BRGZ,$         ! @IF HANG UP,ADDR. AT 100222 IS NOT 0- S
+        V-I,$X2,1.
+        CM1100(BU,64,8),0($X2)     ! @WORK LOCATION TO
+        CM1100(BU,64,8),0($X2)     ! @ONE CHECKED
+        CM1100(BU,64,8),0($X2)
+        CM1100(BU,64,8),0($X2)
+        V+I,$X2,1.                 ! @RESTORE VALUE OF X2
+        CBR,$X1,CK2B
+        B,CK2A                     ! @REPEAT LOOP
+BR3A    CBRZ,$X4,BR4A              ! @CT 1 SPLIT 0 UPPER MEM
+        SWAPI,3,CK2A,CK2B          ! @SETUP FOR SPLIT
+        B,CK2A                     ! @RETURN TO LOOP
+BR4A    SWAPI,3,CK2A,CK2B          ! @RESTORE LOOP
+        CBRZ,$X6,BR5A              ! @IF CT 1 SETUP FOR COMPL
+        SWAPI,1,PH2A,PH2B
+        SWAPI,3,CK2A,CK2B
+        B,PH2AR                    ! @REPEAT PHASE
+BR5A    SWAPI,1,PH2A,PH2B          ! @RESTORE LOOP
+        SWAPI,3,CK2A,CK2B
+        LX,$X2,CTLI2               ! @RESET ALL LOCATIONS
+        Z,0($X2)
+        CBR+,$X2,$-0.32
+        NOP,0.0
+                NOP,0.0
+        BB,4.36,BR13Q              ! @LOOP ON CHECKERBOARDS
+        BD,CK2C                    ! @TO SINGLE ERROR TEST
+! @SET UP FOR SINGLE ERROR INJECTION
+CK2C    LX,$X7,CTLE2               ! @FOR ERROR INJ. INV. CO
+        CM1111(BU,64,8),$X8        ! @FOR ONES WORD
+        LX,$X2,CTLB2               ! @FIRST ADDRESS
+        LX,$X1,CTLA2               ! @PATTERN
+BR6A    SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH2C    SX,$X8,0($X2)
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLG2               ! @CK FOR SPLIT
+        BXEZ,BR8A                  ! @TO NEW PATTERN
+        V+I,$X2,1.                 ! @INCREMENT ADDRESS
+        CBR,$X1,BR6A               ! @LOOP
+BR7A    SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH2D    Z,0($X2)
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLG2               ! @CHK FOR SPLIT
+        BXEZ,BR8A                  ! @TO NEW PATTERN
+        V+I,$X2,1.                 ! @INCR. ADDRESS
+        CBR,$X1,BR7A               ! @LOOP
+        B,BR6A                     ! @REPEAT UNTIL SPLIT
+BR8A    LX,$X2,CTLC2               ! @SET UP FOR REMAINDER OF MEM
+BR9A    SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH2E    Z,0($X2)
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLH2               ! @UPPER MEM
+        BXEZ,CK2D                  ! @TO CK PATTERN
+        V+I,$X2,1.                 ! @INCR ADDRESS
+        CBR,$X1,BR9A               ! @LOOP
+BR10A   SX,$X7,$UB                 ! @TURN ON ERROR INJECTION
+        CNOP
+PH2F    SX,$X8,0($X2)              ! LABEL PRINTED "PH2E" (PDF p.17); see header
+        CNOP
+        Z,$UB
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        NOP
+            NOP
+                NOP
+                    NOP
+                        NOP
+!                                  [blank listing line]
+        KV,$X2,CTLH2               ! @MEM LIMIT
+        BXEZ,CK2D                  ! @TO CHECK PATTERN
+        V+I,$X2,1.                 ! @INCR ADDRESS
+        CBR,$X1,BR10A
+        B,BR9A                     ! @REPEAT UNTIL UPPER MEM
+! @SINGLE ERROR CHECKING
+CK2D    LX,$X2,CTLI2               ! @CTL ADDR STEPPING
+        BE,BR11A
+BR11A   CM1100(BU,64,8),0($X2)     ! @INVERT DATA AND CK
+        CBR,$X1,BR11A              ! @FOR ERROR
+        CBR+,$X2,BR11A             ! @REPEAT UNTIL UPPER LIMIT
+BR12A   CM0011(BU,64,8),0($X2)     ! @RECHECK ALL LOCATIONS
+        CBR+,$X2,BR12A
+! @COMPLEMENT TEST
+COMP2   CBRZ,$X6,BR13A             ! @CTRL COMPL
+        SWAPI,1,PH2C,PH2D          ! @SET UP FOR COMPL
+        SWAPI,1,PH2E,PH2F
+        BD,CK2C                    ! @START COMPL
+BR13A   SWAPI,1,PH2C,PH2D          ! @RESTORE
+        SWAPI,1,PH2E,PH2F
+BR13Q   LX,$X2,CTLI2               ! @RESET ALL LOCATIONS
+        Z,0($X2)
+        CBR+,$X2,$-0.32
+BR14A   M+1(DU,18,4),$X14+0.17     ! @UPDATE PASS COUNTER
+        LCI,$X15,900
+        T,$X15,START2+500,64.0     ! @RESTORE UPPER TEST
+        BB,4.38,START2             ! @LOOP ON LOWER MEMORY
+        BD,PH1                     ! @RESTART TEST
+! @INTERRUPT TABLE LOWER TEST
+INT2    NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        NOP,0.0
+                NOP,0.0
+        CNOP
+! @INDEX AND CONTROL WORDS FOR LOWER TEST 6 MEM.
+CTLA2   XW,0.,4,CTLA2              ! @PATTERN
+CTLB2   XW,64.,16320,CTLC2         ! @STARTING ADDRESS TO SPLIT
+CTLC2   XW,16384.,16384,CTLB2      ! @REMAINING ADDRESSES
+CTLD2   XW,0.,2,CTLD2              ! @COMPL AND SPLIT CTL
+CTLE2   XW,(8)401000.,0,000040     ! @CT
+CTLG2   VF,16383.                  ! @SPLIT
+CTLH2   VF,32767.                  ! @UPPER LIMIT
+CTLI2   XW,64.,32704,CTLI2         ! @ CTL STEPPING THRU LOC CKED
+M06AZ2  SYN,M6AZZ2+1.0
+M6AZZ2  NOP,0.0
+                NOP,0.0
+        END,100.

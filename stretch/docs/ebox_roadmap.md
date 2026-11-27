@@ -111,9 +111,9 @@ Every number below is a grep over `bsv/*.bsv`, not a recollection.
 | 2 typed `ExecRequest`/`ExecCompletion`, commit records | **WHOLE FP FAMILY LANDED** (2026-10-29) | `FpCommit` (7 fields) + `commitFp`.  **Both** `fpStoreClass` and `fpArithClass` are PURE functions with zero `st` references.  Direct-write count **88 -> 50**, of which six are `commitFp`'s, so **44** remain inside execution -- half the debt gone |
 | 3 one iterative op as a request/response box | **DONE** | `mkFpDivBox`, `bsv/StretchPAU.bsv (was StretchDivBox.bsv)`, 336 lines |
 | 4 generalise to `mkPAU`/`mkSAU` | **NOT STARTED** | `mkPAU` 0 hits, `mkSAU` 0 hits.  Divide is one box; multiply is the second (see fig 3.8.11 below) |
-| 5 `ebusy` -> real response readiness | **NOT STARTED** | `ebusy` 17 hits; `StretchCore.bsv:427` still gates `headReady` on `ebusy == 0` |
+| 5 `ebusy` -> real response readiness | **STEP 1 DONE** (2026-11-26, `fidelity_plan.md` A5) | `ebusy` 0 hits; `headReady` waits on `ebox.unitsTerminated()`, the termination of `mkSAU`/`mkPAU`; the part no unit steps yet is still a count, now in the unit |
 | 6 decode/prep as an I-box stage bundle | **NOT STARTED** | `PreparedExec` is a per-instruction record, not a stage output |
-| 7 split `Whole` look-ahead entries | **NOT STARTED** | `LaKind` 5 hits; every live entry is `Whole` |
+| 7 split `Whole` look-ahead entries | **NOT STARTED** | `LaKind` 5 hits; every live entry is `Whole`; the order is in `fidelity_plan.md` A5 "what is left" |
 | 8 forwarding, SAU/PAU overlap | **NOT STARTED** | needs 4 and 5 first |
 
 ### The one number that says "interpreter" best
