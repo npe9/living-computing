@@ -242,7 +242,7 @@ editing the file.
 matched (49 held words), then a stop at the sixteenth, `proceed`.** The
 eighth session (2026-11-27) read the datapath from rassy's own tables
 (the ALU sources, the constant, the EM immediates, `ext_ir`) and ran
-`proceed`'s routine whole in 11 side cases against `pimm.py`'s `pick`
+`proceed`'s routine whole in 15 side cases against `pimm.py`'s `pick`
 ("Next, for U2"): the next goal's code, arguments, record and queue
 match; append itself stays at 15 of 16, with the reason given there.
 The seventh session (2026-11-27) took it from 14 of 16: `get_value 1,2,0`
@@ -459,7 +459,7 @@ run, and raise.
 
 The append run still stops at `proceed` (`216c`, R1b never set), and
 U2 is still 15 of 16. What changed is that the routine itself now runs
-whole in **side cases**: `u2_append.proceed_cases`, 11 cases, all ok.
+whole in **side cases**: `u2_append.proceed_cases`, 15 cases, all ok.
 They give the firmware a ready queue built from `pimm.py`'s own
 (`Machine.record`), in the firmware's record layout, and compare the
 dispatch with `pimm.py`'s `pick`:
@@ -473,11 +473,12 @@ dispatch with `pimm.py`'s `pick`:
   `{VECT0x, old R1b}`).
 
 The cases are a queue of one goal (R14 left nil), and two goals whose
-newest has arity 0, 1, 2, 3, 4, 5, 6 or 11. Arities fall on both sides
-of `2218`'s lc := arity - 3. For an empty queue, with crr (R15) not
+newest has arity 0 to 11. Arities fall on both sides of `2218`'s lc :=
+arity - 3, and each of the loop's exits `2219`-`2222` is taken by some
+case. For an empty queue, with crr (R15) not
 exhausted (through `2170`'s call) and exhausted (through `216f` ->
-`217a` -> `217b`'s taken JMPF 9), the firmware enters the empty arm
-`21b2`. It dispatches nothing (R04 and the A registers as they were)
+`217a` -> `217b`'s taken JMPF 9; each route is checked in the trace),
+the firmware enters the empty arm `21b2`. It dispatches nothing (R04 and the A registers as they were)
 where `pick` returns 0, and stops at `21b3` (an ALF 3 shift, not
 modelled: pinned, `EMPTY_STOP`).
 
@@ -498,23 +499,24 @@ listing, `ptfdump.py pimmutil rassy --list`):
 
 | Rule | Status | Evidence | Injection (observed) |
 |---|---|---|---|
-| `pu.cndf_free`, `RULES['jmpf9_cndf']`: CNDF forms a condition in a JMPF 9 word (not in JMPF 1) | HELD-SOURCE | rassy's jmpf/9 arm 1 calls `special_jump/8` (@30ec), a 15-key switch on CNDF; arm 9 prints with `vlong/2` (@32da), which marks em1/em2_not_free only (`elong/5` @32df marks `cndf_used`). Static: the 10 JMPF 9 words with a CNDF all carry an ALU add or subtract | `jmpf9_cndf_off`: the 9 queued cases STOP at `2250` (`2215` tests `2213`'s interrupt flag instead and calls) |
-| `RULES['jmpf9_vlong']`: a taken JMPF 9 calls the absolute EM | HELD-SOURCE | arm 9 prints its target with `vlong` (the whole EM), as arm 5 (JMPF 5, the absolute call) does; arms 6, 7, a, b, e, f use `long/4` (@32cd, page-relative). `217b` EM `21b2` | `jmpf9_taken_raise`: the crr-exhausted empty case STOPs at `217b` |
-| `RULES['jmpf_f_call_ifnot']`: JMPF f is a page-relative call taken if NOT cond | HELD-SOURCE (the kind) | rassy jmpf/9 arm f: 'call', `long`, the 'if not cond' slot (arm b is 'if cond') | `jmpf_f_off`: the 9 queued cases STOP at `2215` |
-| `RULES['dstf_c_rfar']`: DSTF c (WRBF clear) writes A[RFAR] and steps RFAR (R06) | INFERRED (name HELD-SOURCE) | `dstf/5` key 12 prints pool slot 95 '++ rfar', after `@ r0` .. `@ r1b1` for keys 8-b; second bank 6 is `rfar` | `rfar_off`: the 8 cases with arity > 0 FAIL on every A register |
-| `RULES['lc_ops']` = 'old': MCF EM1 `10` is '-- lc' (R03 - 1); CNDF 6 lc_one, CNDF 7 EM1 `0d` lc_zero, on lc as it stood before the word | INFERRED (names HELD-SOURCE) | mc1's key 1 '-- lc' (slot `0116`); the short condition table's sixth `lc_one`; cndf_others key `0d` `lc_zero`; R03 is the second bank's `lc` | `lc_new` (the conditions see the decremented lc): arity 4 STOPs at `222b`; arities 5, 6, 11 FAIL (the last argument not loaded) |
-| `pu.alf_cond`, `ALF_LATCHED`: alf_zero, alf_sign and alf_equal are formed from the set_alf latch (result 0, result negative, inputs equal) | INFERRED (names HELD-SOURCE) | rassy positions 0, 1, 5; executed at `216f` on `216d`'s R15 - 1 | `alf_poison`: all 11 cases STOP at `216f` |
+| `pu.cndf_free`, `RULES['jmpf9_cndf']`: CNDF forms a condition in a JMPF 9 word (not in JMPF 1) | HELD-SOURCE | rassy's jmpf/9 arm 1 calls `special_jump/8` (@30ec), a 15-key switch on CNDF; arm 9 prints with `vlong/2` (@32da), which marks em1/em2_not_free only (`elong/5` @32df marks `cndf_used`). Static: the 10 JMPF 9 words with a CNDF all carry an ALU add or subtract | `jmpf9_cndf_off`: the 13 queued cases STOP at `2250` (`2215` tests `2213`'s interrupt flag instead and calls) |
+| `RULES['jmpf9_vlong']`: a taken JMPF 9 calls the absolute EM | HELD-SOURCE plus static; NOT discriminated by execution | arm 9 prints its target with `vlong` (the whole EM), as arm 5 (JMPF 5, the absolute call) does; arms 6, 7, a, b, e, f use `long/4` (@32cd, page-relative). Static: `21b8`'s EM is `6c21`, the trap, outside the page. Executed taken at `217b` (EM `21b2`), where the page-relative reading lands on the same word | `jmpf9_taken_raise`: the crr-exhausted empty case STOPs at `217b` (a guard: the arm is needed) |
+| `RULES['jmpf_f_call_ifnot']`: JMPF f is a page-relative call taken if NOT cond | HELD-SOURCE (the kind) | rassy jmpf/9 arm f: 'call', `long`, the 'if not cond' slot (arm b is 'if cond') | `jmpf_f_off`: the 13 queued cases STOP at `2215` |
+| `RULES['dstf_c_rfar']`: DSTF c (WRBF clear) writes A[RFAR] and steps RFAR (R06) | INFERRED (name HELD-SOURCE) | `dstf/5` key 12 prints pool slot 95 '++ rfar', after `@ r0` .. `@ r1b1` for keys 8-b; second bank 6 is `rfar` | `rfar_off`: the 12 cases with arity > 0 FAIL on every A register |
+| `RULES['lc_ops']` = 'old': MCF EM1 `10` is '-- lc' (R03 - 1); CNDF 6 lc_one, CNDF 7 EM1 `0d` lc_zero, on lc as it stood before the word | INFERRED (names HELD-SOURCE) | mc1's key 1 '-- lc' (slot `0116`); the short condition table's sixth `lc_one`; cndf_others key `0d` `lc_zero`; R03 is the second bank's `lc` | `lc_new` (the conditions see the decremented lc): arity 4 STOPs at `222b`; arities 5-11 FAIL (the last argument not loaded) |
+| `pu.alf_cond`, `ALF_LATCHED`: alf_zero is formed from the set_alf latch (the result was 0); alf_sign and alf_equal stay POISON (nothing run tests them) | INFERRED (names HELD-SOURCE) | rassy position 0; formed at `216e` on `216d`'s R15 - 1 and tested by `216f` | `alf_poison`: all 15 STOP at `216f`; `alf_zero_false` (always false): the crr-1 empty case FAILs (the empty arm not reached through `217b`) |
 | `MCF_NAMED` `0e` set_SUSPF; `MCF_SUB` (`0a`, 2) rf_lock, (`02`, 2) rf_unlock: recorded only | HELD-SOURCE | `set_up_mcf/3` (@cdd): mc2 keys 2 / a are reset / set switches on EM bits 8-4; key e set_SUSPF | none (nothing reads them) |
 
 The datapath rows of the same session are discriminated here, where
 append could not discriminate them:
 
-- `alu_old` and `em_imm_off`: all 11 cases STOP at `216d`.
-- `const_em3`: the 9 queued cases STOP at `217c` (R15 - 12 takes the
-  crr branch).
+- `alu_old` and `em_imm_off`: all 15 cases STOP at `216d`.
+- `const_em3`: the 13 queued cases STOP at `217c` (R15 - 12 takes the
+  crr branch), and the crr-8 empty case FAILs on its route.
 
-`as1f3_xr_off`, `ext_ir_off` and `execute_mdr1_carried` are still NOT
-discriminated (no word on the path uses them).
+`as1f3_xr_off` (0802's source), `ext_ir_off` and `execute_mdr1_carried`
+are still NOT discriminated (no word on the path uses them), and nor is
+the JMPF 9 target reading.
 
 The stand-in (`u2_append.seed_proceed`, OURS), each item:
 
@@ -524,13 +526,16 @@ The stand-in (`u2_append.seed_proceed`, OURS), each item:
   the decrements; the cases where they run out are not compared.
 - R12 and R13: the current priority and foster parent. Every queued
   goal carries R13 in cell 14 (one shoen). `parent_other` (another
-  parent): 9 STOPs at `2250`, the other-shoen path, not modelled.
+  parent): 13 STOPs at `2250`, the other-shoen path, not modelled.
 - W1f: 0 (start's `20a8` writes it 0).
 - R14: the head of `pimm.py`'s queue as `{HOOKo, record}`; the empty
   queue is nil (INFERRED: `216f` / `217a` test R14's tag against ATOMo,
   and `enqueue_goal`'s `4c06` puts the old R14 in cell 15).
   `empty_int0` (the end as `{INT, 0}`): the empty cases STOP (`2173`,
-  `217c`), and the one-goal case FAILs on R14.
+  `217c`), and the one-goal case FAILs on R14. `empty_fw_goal` (the
+  firmware given a goal while `pimm.py`'s queue is empty): the crr-8
+  empty case FAILs ("pimm.py picks no goal; the firmware dispatched
+  R04"), the crr-1 one STOPs at `217c`.
 
 The record layout is INFERRED from the firmware's own writers:
 
@@ -548,22 +553,24 @@ R12, R13, R14 in that order; suspend's `1c0d`-`1c10` the same.
 
 Injections on the layout:
 
-- `rec_code_13` (cells 12 and 13 swapped): the 9 queued cases FAIL on
+- `rec_code_13` (cells 12 and 13 swapped): the 13 queued cases FAIL on
   R04.
-- `args_from_2`: the cases with arity > 0 FAIL on the A registers.
+- `args_from_2`: the 12 cases with arity > 0 FAIL on the A registers.
 
 **One declared difference.** The loop loads at least two registers
 (`2219` and `2223` are unconditional). So a goal of arity 0 or 1 also
 gets A0 / A1 from its record's cells 1-2, which `pimm.py` leaves. The
 compare admits exactly that: the register equals the record's own cell.
-`free_undeclared` (the freed record's write not declared) FAILs all 11.
+`free_undeclared` (the freed record's write not declared) FAILs all 15.
 
-**Why append itself stays at 15 of 16.** At append's `proceed`,
+**Why append itself stays at 15 of 16 (a counting choice, not an
+impossibility).** At append's `proceed`,
 `pimm.py`'s queue is empty, so its `pick` returns 0 and the run ends.
 `i_proceed` writes no R or M line. Taking the sixteenth instruction as
 matched would compare the empty case above, but only by seeding the
 main run's R1b, R15, R16, R12 and R13 with values neither model holds
-(OURS). The side cases are where the comparison is made. The empty
+(OURS). The empty side case is exactly that comparison; counting it
+as the sixteenth instruction is left to the reviewer. The empty
 arm's own end (the shift at `21b3`, a return or `21b5`'s priority
 search over the Goal Stack Entry Table at fixed cells `b6` / `b7`,
 PIMM.PARAM's gsesh / gseb by place: INFERENCE) is not run.

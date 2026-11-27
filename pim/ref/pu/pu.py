@@ -192,10 +192,13 @@ FLAG_CONDS.update({0x10: 'sw00', 0x11: 'sw01', 0x12: 'sw02'})
 # COND := POISON (raises if tested), as COND_UNKNOWN.  Formed at 0841
 # (EM1 05, alf_equal, in a JMPF 3 word) on 0802's latch; 0864 forms a new
 # COND before anything tests it: NOT discriminated.
-# U2 eighth session: alf_zero, alf_sign and alf_equal are formed from the
-# latch (alf_cond below); executed at proceed's 216e (alf_zero on 216d's
-# R15 - 1).  Injection 'alf_poison' (every flag POISON again).
-ALF_LATCHED = ('alf_zero', 'alf_sign', 'alf_equal')
+# U2 eighth session: alf_zero is formed from the latch (alf_cond below):
+# the result was 0.  Executed at proceed's 216e (alf_zero on 216d's
+# R15 - 1), tested by 216f (crr exhausted: to 217a).  Injections
+# 'alf_poison' (POISON again), 'alf_zero_false'.  alf_sign and alf_equal
+# stay POISON: alf_cond has their readings, but nothing run tests them
+# (0841's alf_equal is overwritten at 0864).
+ALF_LATCHED = ('alf_zero',)
 ALF_CONDS = {0x00: 'alf_zero', 0x01: 'alf_sign', 0x02: 'alf_carry', 0x03: 'alf_overflow',
              0x04: 'alf_same_tag', 0x05: 'alf_equal', 0x06: 'alf_less', 0x07: 'alf_high',
              0x08: 'alf_less_zero'}
@@ -559,8 +562,10 @@ RULES = {
     # e, f use long/4 (@32cd: upc & fc00 | EM2 << 4 | EM3)).  Static: of
     # the JMPF 9 words around proceed, 21b8 carries EM 6c21 (the trap,
     # outside image 2), 217b / 220b 21b2 and 2210 21b5 (in-page either
-    # way).  Executed taken at 217b (the proceed probe with crr
-    # exhausted).  Injection 'jmpf9_taken_raise' restores the old raise.
+    # way).  Executed taken at 217b (proceed's empty arm with crr
+    # exhausted), where both readings land on 21b2: the target reading
+    # is HELD-SOURCE plus the static 21b8 -> 6c21, NOT discriminated by
+    # execution.  Injection 'jmpf9_taken_raise' restores the old raise.
     'jmpf9_vlong': True,
     'jmpf9_cndf': True,             # pu.cndf_free
     # JMPF f: a page-relative call taken if NOT cond (rassy jmpf/9 arm f,

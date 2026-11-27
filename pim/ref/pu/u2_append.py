@@ -347,29 +347,37 @@ fw_record: OURS mapping, layout INFERRED), compared with pimm.py's
 pick: R04 (the next goal's code), A0..An-1, R10, R14 (pimm.py's rq
 after the pick), and no cell written but the freed record (declared:
 R1b := it, its cell 0 := {VECT0x, old R1b}).  Cases: the queue empty
-with crr 8 and 1 (the empty arm 21b2 entered, nothing dispatched,
-pick 0; pinned stop EMPTY_STOP 21b3, an ALF 3 shift), one goal of arity
-2, two goals whose newest has arity 0, 1, 2, 3, 4, 5, 6, 11.  All 11 ok.
+with crr 8 and 1 (the empty arm 21b2 entered through 2170 / 217b,
+checked in the trace; nothing dispatched, pick 0; pinned stop
+EMPTY_STOP 21b3, an ALF 3 shift), one goal of arity 2, and two goals
+whose newest has arity 0 .. 11.  All 15 ok.
 Injections, observed (append itself unchanged at 15 of 16 in each):
-  rec_code_13     cells 12 / 13 swapped: the 9 queued cases FAIL on R04
-  args_from_2     arguments from cell 2: the 8 cases of arity > 0 FAIL
+  rec_code_13     cells 12 / 13 swapped: the 13 queued cases FAIL on R04
+  args_from_2     arguments from cell 2: the 12 cases of arity > 0 FAIL
                   on the A registers
+  empty_fw_goal   a goal given to the firmware while pimm.py's queue is
+                  empty: the crr-8 empty case FAILs (the firmware
+                  dispatched R04), the crr-1 one STOPs at 217c
   empty_int0      the empty queue as {INT, 0}: the empty cases STOP
                   (2173, 217c), the one-goal case FAILs on R14
-  parent_other    cell 14 not R13: the 9 queued cases STOP at 2250
-  free_undeclared the freed record's write not declared: all 11 FAIL
-  rfar_off        DSTF c a register again: the 8 cases of arity > 0 FAIL
+  parent_other    cell 14 not R13: the 13 queued cases STOP at 2250
+  free_undeclared the freed record's write not declared: all 15 FAIL
+  rfar_off        DSTF c a register again: the 12 cases of arity > 0 FAIL
   lc_new          lc conditions after the decrement: arity 4 STOPs at
-                  222b, arities 5, 6, 11 FAIL (the last A not loaded)
-  alf_poison      the alf flags POISON again: all 11 STOP at 216f
+                  222b, arities 5 .. 11 FAIL (the last A not loaded)
+  alf_poison      alf_zero POISON again: all 15 STOP at 216f
+  alf_zero_false  alf_zero always false: the crr-1 empty case FAILs (the
+                  empty arm not reached through 217b)
   jmpf9_taken_raise  JMPF 9 taken raises: the crr-1 empty case STOPs
-                  at 217b
-  jmpf9_cndf_off  no CNDF in a JMPF 9 word: the 9 queued cases STOP at
+                  at 217b (a guard: the target reading is NOT
+                  discriminated, both readings land on 21b2)
+  jmpf9_cndf_off  no CNDF in a JMPF 9 word: the 13 queued cases STOP at
                   2250 (2215 tests 2213's interrupt flag)
-  jmpf_f_off      JMPF f undecided: the 9 queued cases STOP at 2215
-  alu_old         all 11 STOP at 216d (AS1F 2 AS2F 1 read as YR)
-  em_imm_off      all 11 STOP at 216d (R0d never set)
-  const_em3       the 9 queued cases STOP at 217c (216d's R15 - 12)
+  jmpf_f_off      JMPF f undecided: the 13 queued cases STOP at 2215
+  alu_old         all 15 STOP at 216d (AS1F 2 AS2F 1 read as YR)
+  em_imm_off      all 15 STOP at 216d (R0d never set)
+  const_em3       the 13 queued cases STOP at 217c (216d's R15 - 12), the
+                  crr-8 empty case FAILs on its route
   as1f3_xr_off, ext_ir_off, execute_mdr1_carried: no change (NOT
                   discriminated)
 Every old injection was re-run (scratch maindiff.py against the run
@@ -378,11 +386,11 @@ three, which now run further: em1_29_off still STOPs at 31a1, now on
 its JMPF 2 (MCF 0a with sub-key 2 is rf_lock, recorded); interrupt_
 pending STOPs at 1c2f (1c2c's lc_zero is now formed), 10 of 16, 31
 words; s_imm_row's get_atom case STOPs at 0cd9 (3811's taken JMPF 9 now
-calls its EM).  These also FAIL proceed side cases (count of 11):
-a_on_false 9, as1f2_off 11, as1f3_open_raise 11, cjump_false 10,
-cjump_same 9, cnd2_nonzero 9, cnd3_off 11, cnd8_off 11, e_mdr2_col 1,
-e_on_true 1, interrupt_pending 9, jmpf9_off 10, mcf08_raise 11,
-mcf_unknown_raise 11, slit_pending 9.
+calls its EM).  These also fail proceed side cases (of 15):
+a_on_false 14, as1f2_off 15, as1f3_open_raise 15, cjump_false 14,
+cjump_same 14, cnd2_nonzero 13, cnd3_off 15, cnd8_off 15, e_mdr2_col 1,
+e_on_true 1, interrupt_pending 13, jmpf9_off 14, mcf08_raise 15,
+mcf_unknown_raise 15, slit_pending 13.
 """
 import os
 import sys
@@ -791,7 +799,7 @@ def seed_proceed(p, ready, crr=None):
     return recs
 
 
-def compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs):
+def compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs, route=None):
     """proceed's result against pimm.py's pick.  want: None (pick finds no
     goal) or (code address, args, next record index or None)."""
     bad = []
@@ -811,7 +819,12 @@ def compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs):
         if p.r.get(R_PC) != an0['R04']:
             bad.append('pimm.py picks no goal; the firmware dispatched R04 %s'
                        % check_pu.fmt(p.r.get(R_PC)))
-        if EMPTY_ARM not in [u for u, _ in p.trace[an0['n0']:]]:
+        ran = [u for u, _ in p.trace[an0['n0']:]]
+        # the route to the empty arm: crr exhausted, 216f's alf_zero
+        # branch and 217b's JMPF 9; not exhausted, 2170's call
+        if route is not None and route not in ran:
+            bad.append('the empty arm not reached through %04x' % route)
+        if EMPTY_ARM not in ran:
             bad.append('pimm.py picks no goal; the firmware did not take the empty arm (%04x)'
                        % EMPTY_ARM)
         if p.an != an0['an']:
@@ -842,10 +855,11 @@ def compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs):
 
 
 DECLARE_FREE = True
+EMPTY_FW_GOAL = False
 # The side case's goals: (arity, args).  Arities on both sides of 3 (the
 # lc loop's set-up, 2218 lc := arity - 3) up to 11 (the slots 2219-2223
 # load; pimm.py: "A goal has 11 argument slots").
-DISPATCH_ARITIES = (0, 1, 2, 3, 4, 5, 6, 11)
+DISPATCH_ARITIES = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
 
 def proceed_case(m, step, arities, crr=None):
@@ -882,7 +896,9 @@ def proceed_case(m, step, arities, crr=None):
     p.r[R_PC] = (COD, m.load + pc + 1)
     for i in range(16):
         p.an[i] = (pimm.INT, 0xa000 + i)      # the finished goal's registers (OURS)
-    recs = seed_proceed(p, rq, crr)
+    # injection 'empty_fw_goal': the firmware is given a goal while
+    # pimm.py's queue is empty (the empty arm's comparison must FAIL)
+    recs = seed_proceed(p, rq or ([(m.load + 1000, [])] if EMPTY_FW_GOAL else []), crr)
     p.ir, p.pc = cellv, m.load + pc
     rec0, r1b0 = p.r[SU.R_REC], p.r[0x1b]
     an0 = {'an': dict(p.an), 'R04': p.r.get(R_PC), 'n0': len(p.trace)}
@@ -897,7 +913,8 @@ def proceed_case(m, step, arities, crr=None):
         stop = None             # the empty arm's pinned stop (EMPTY_STOP)
     if stop:
         return [], stop
-    return compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs), None
+    route = None if want else (0x217b if crr is not None and crr <= 1 else 0x2170)
+    return compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs, route), None
 
 
 def proceed_cases(m, step):
@@ -1309,6 +1326,8 @@ INJECT = {
     'jmpf9_taken_raise': lambda: PU.RULES.update(jmpf9_vlong=False),
     'jmpf9_cndf_off': lambda: PU.RULES.update(jmpf9_cndf=False),
     'jmpf_f_off': lambda: PU.RULES.update(jmpf_f_call_ifnot=False),
+    'empty_fw_goal': lambda: globals().update(EMPTY_FW_GOAL=True),
+    'alf_zero_false': lambda: setattr(PU, 'alf_cond', lambda latch, name: False),
 }
 
 
