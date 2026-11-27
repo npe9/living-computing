@@ -51,6 +51,8 @@ Read AGENTS.md at the repo root first. Rules, all binding:
 - Never delete by glob in stretch/bsv/.
 - The repo is public: no third-party documents without redistribution
   terms in git.
+- Commit BEFORE starting a suite run, so the .status head= is the commit
+  being verified (a 2026-11-26 run recorded the commit before its change).
 - Commit on your worktree branch, one milestone per commit, message says
   what was verified and how, ending with
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
