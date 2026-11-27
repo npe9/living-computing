@@ -262,6 +262,56 @@ Also since these: where pimm.py leaves sp, R02 must not move (the
 check other_row_entry now also FAILs: R02 := 0 at 3305); MRP / COL are
 cleared at every instruction's set-up.  Re-run of every injection on
 the final tree: the results above stand.
+
+Observed 2026-11-27, seventh session: every side case ok; 15 of 16
+instructions executed and matched, 49 held microinstructions:
+get_value 1,2,0 (nil against the unbound Z1) runs the general unifier
+whole, 16 words (38b0-38b3; 0c0c, a JMPF b call taken to 0c15; 0e38,
+0e75, the dereference of A2 through its REFo to the UNDF cell, row 0e72
+returning; 0c0d, 0c0e, 0802, 0840, 0841, 0864, the binding [cell] :=
+nil; 09d0, the end with sw01 clear), and the cell pimm.py binds (its
+M line) is compared.  The first stop is proceed (6657), given a set-up
+form (setup.FORMS, OURS: no operand), at 216c: R1b (the goal-record
+list) never set.  proceed is left there with a reason (README "Next,
+for U2"): pimm.py's proceed writes no register or cell and is the last
+instruction (no next PC), and the routine is the goal scheduler (R1b,
+R14, R0d, R15), state neither model holds.
+New in the model (pu.py): CASE_TAG_SETUP (EM1 30-3f), RULES jmpf_b_call,
+case_wide, tdar_holds, as1f3_open_unknown, MCF_FLAG_OPS with FLAG_CONDS
+sw00-sw02, ALF_CONDS with MCF set_alf; setup.S_MAR1_DIRECT_STALE.  The
+old injections give the results listed above, except (all re-run):
+e_mdr2_col, s_cond_true, deref_tgt_col0, prs_operand_x, flags_swapped,
+cnd3_off, tdar_col6 and mdr2_own_off now leave append at 15 of 16 (49
+words; e_mdr2_col's tie stands through get_value); cnd8_off,
+sd1_pairs_off and jmpf9_off stop before 0c0c as before; MAR1 STALE for an operand held directly
+turns these FAILs into STOPs at the first use of MAR1: s_cond_false
+and s_imm_row STOP at 3309 (instruction 1, CCF: MAR1 STALE), other_row_
+entry STOPs append at 3309 (12 of 16) and the VECT0o case at 3309,
+e_on_true STOPs at 2445 (12 of 16), a_on_false at 3981 (13 of 16);
+cjump_false and slit_pending now call 4cc5 and STOP at 4cc6 (JMPF c
+polarity not decided), 10 of 16, 23 words; deref_tgt_col5's list case
+now FAILs (3498's EM1 34 is case_tag_setup mdr1 2: the rows run and
+write cells) where it stopped at 3498.  New injections, observed:
+  jmpf_b_jump     JMPF b a page jump (the old reading): STOP at 0e72
+                  (return with an empty micro stack), 14 of 16, 41 words
+  cts_as1         case_tag_setup on the AS1 input (the old 3a rule): 0c0c's
+                  AS1 is MAR1, STALE: no set-up formed, STOP at 0c15
+                  (case_branch without a set-up), 14 of 16
+  cts_col_k       column k, not 7 - k: STOP at 0c15 (column 7 gives the
+                  REFo 12, which overlaps base 0e38), 14 of 16
+  cts_mdr_swapped EM1 even = MDR2, odd = MDR1: 0c0c tests nil (MDR1):
+                  column 0 byte 4, 0e3c calls the trap: STOP at 6c21
+  case_4bit       a TGT byte over 15 raises: STOP at 0e75 (UNDF 18 in
+                  column 5), 14 of 16
+  tdar_one_word   the set-up must be the word just before: STOP at 0802
+                  (0c0d's set-up, 0c0e between), 14 of 16
+  sw01_set        MCF 04 sets sw01: 0864's COND true, 09d0 falls to 09d1,
+                  which binds the cell to {ATOMx, 0}: FAIL at 14 (heap
+                  e000800b firmware 03:00000000, pimm.py 02:00000000)
+  as1f3_open_raise AS1F 3 with AS2F 2 raises: STOP at 0802, 14 of 16
+  s_mar1_kept     MAR1 keeps the previous instruction's value: append
+                  PASSES (15 of 16): what MAR1 holds is NOT used on the
+                  path (0c0c W1d := MAR1, 0c0d XR := W1d, both dead)
 """
 import os
 import sys
@@ -281,7 +331,7 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
-PINNED = dict(steps=16, matched=14, words=37, stop=14)
+PINNED = dict(steps=16, matched=15, words=49, stop=15)
 
 
 def pimm_run():
@@ -926,6 +976,17 @@ INJECT = {
     'cnd8_off': lambda: PU.RULES.update(cnd8_s1=False),
     'sd1_pairs_off': lambda: PU.RULES.update(sd1_pairs=None),
     'jmpf9_off': lambda: PU.RULES.update(jmpf9_call_if=False),
+    # U2 get_value's general unifier (2026-11-27, seventh session)
+    'jmpf_b_jump': lambda: PU.RULES.update(jmpf_b_call=False),
+    'cts_as1': lambda: (setattr(PU, 'CASE_TAG_SETUP', False),
+                        PU.TGT_COLUMN.update({k: 7 - ((k - 0x30) >> 1) for k in range(0x30, 0x40)})),
+    'cts_col_k': lambda: setattr(PU, 'CTS_COLUMN', lambda k: k),
+    'cts_mdr_swapped': lambda: PU.CTS_MDR.update({0: PU.MDR2, 1: PU.MDR1}),
+    'case_4bit': lambda: PU.RULES.update(case_wide=False),
+    'tdar_one_word': lambda: PU.RULES.update(tdar_holds=False),
+    'sw01_set': lambda: PU.MCF_FLAG_OPS.update({0x04: ('sw01', True)}),
+    'as1f3_open_raise': lambda: PU.RULES.update(as1f3_open_unknown=False),
+    's_mar1_kept': lambda: setattr(SU, 'S_MAR1_DIRECT_STALE', False),
 }
 
 

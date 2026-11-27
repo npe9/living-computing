@@ -431,11 +431,12 @@ def main(argv):
     upc = SU.dispatch(p)[1]
     keys = {'cycle', 'micro_pc', 'microword', 'reg_reads', 'wr', 'reg_writes',
             'mem_reads', 'mem_writes', 'cond', 'cond_cycle', 'tdar', 'mcf', 'push', 'pop',
-            'next'}
+            'next', 'flags', 'alf'}
     ok = True
     try:
         while upc is not None:
-            state = lambda: repr((p.wr, p.r, p.w, p.an, p.mem, p.mstk, p.cond, len(p.cycles)))
+            state = lambda: repr((p.wr, p.r, p.w, p.an, p.mem, p.mstk, p.cond, p.flags, p.alf,
+                                  len(p.cycles)))
             snap = state()
             r1, r2 = p.evaluate(upc), p.evaluate(upc)
             ok = ok and r1 == r2 and set(r1) == keys and snap == state()

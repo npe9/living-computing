@@ -70,8 +70,8 @@ does. TR-733 fig. 4 is kept as the competing layout (section 6).
 | S4 | JMPF 1, EM bit 2 (no bit 3): return | VERIFIED; MSTK DOCUMENTED (thesis p.126) |
 | S5 | JMPF 1, EM bit 1: S2-S4 conditional; EM bit 0 the polarity | VERIFIED; polarity EXECUTED (section 6) |
 | S6 | JMPF 4: a + signed EM bits 3..0 | VERIFIED |
-| S7 | JMPF 5: call absolute; 7 / f: call page-relative; 6 / e / b: page jump; a: page branch | VERIFIED. **Open conflict (U2 sixth session):** rassy's `jmpf/9` names b 'call' (long, 'if cond'), as f, and a / e 'goto' long 'if cond' / 'if not cond'; the twin words `0c0c` (JMPF b) and `0c0f` (JMPF 5, call) to `0c15` support b = conditional call; the polarities a, b 'if cond' and e 'if not cond' are adopted (`pu.CJUMP_TAKEN_ON`; HELD-SOURCE, the arms' relative pool operands resolved to slots `00af`-`00b6`), b's call-or-jump is not met on a run path (a taken b still runs as a jump in `pu.py`) |
-| S8 | 4-bit JMPF 3: `case_branch`, base page \| EM 9..0, low 4 bits from the TGT byte a CNDF 7 set-up word selected | mechanism DOCUMENTED (thesis p.131); alignment MEASURED; one column VERIFIED |
+| S7 | JMPF 5: call absolute; 7 / f: call page-relative; 6 / e / b: page jump; a: page branch | VERIFIED. **Open conflict (U2 sixth session):** rassy's `jmpf/9` names b 'call' (long, 'if cond'), as f, and a / e 'goto' long 'if cond' / 'if not cond'; the twin words `0c0c` (JMPF b) and `0c0f` (JMPF 5, call) to `0c15` support b = conditional call; the polarities a, b 'if cond' and e 'if not cond' are adopted (`pu.CJUMP_TAKEN_ON`; HELD-SOURCE, the arms' relative pool operands resolved to slots `00af`-`00b6`). **Decided (U2 seventh session): b is a page-relative call taken if cond** (`pu.RULES['jmpf_b_call']`, INFERRED, kind HELD-SOURCE): taken at `0c0c` (`get_value`) it calls `0c15`, whose rows return to `0c0d`; the old jump reading stops at `0e72` on an empty micro stack. Census (image 2, words reachable from each target before a return or an end, calls taken as returning): 47 b targets, 38 reach only returns, 9 both, 0 only ends (JMPF 7: 144 / 42 / 4; JMPF 6: 338 / 185 / 510). `mekbn`'s `flow()` still reads b as a page jump (its pins are unchanged); `pu.py` overrides it |
+| S8 | 4-bit JMPF 3: `case_branch`, base page \| EM 9..0, low 4 bits from the TGT byte a CNDF 7 set-up word selected | mechanism DOCUMENTED (thesis p.131); alignment MEASURED; one column VERIFIED. U2 seventh session: the whole byte where the base's low bits are free (`0e75`, base `0e60`, column 5's 0..19 on 20 rows; `pu.RULES['case_wide']`), the set-up may stand two words before across a JMPF 1 word (`0802`; `pu.RULES['tdar_holds']`), and every CNDF 7 EM1 `30`-`3f` is rassy's `case_tag_setup mdrN k`, column 7 - k (`pu.CASE_TAG_SETUP`; columns 0, 5, 6, 7 executed) |
 | S9 | JMPF 1, EM = 7fff: computed / special form | INFERRED |
 | S10 | 4-bit JMPF 2: `case_branch` with a short base, (a + signed EM3) \| TDAR (U2 2026-11-27, sixth session; `ref/pu/README.md` "U2") | INFERRED: kind HELD-SOURCE (rassy `jmpf/9` arm 2 'base' 'case_branch' with `short/3`, as arm 4); 15 of 16 bases 16-aligned (MEASURED); EXECUTED at `2447` |
 | S11 | decode roots: KL1 from pimm.MEkbn classes 2/3, KL0 from sysidat classes 0/1 | MEASURED |
@@ -459,6 +459,10 @@ runs were done by a scratch script.
 3. **TGT.** Load sysinit 5280 / 52c0 / 5300 as three 64 x 8 tables;
    use 5300 for KL1. Column 2 is VERIFIED for set-up EM1 = 0x3a. Make
    every other EM1 → column choice a loud UNKNOWN until it is pinned.
+   (Adopted by the simulator, U2 seventh session: EM1 `30`-`3f` are
+   rassy's `case_tag_setup mdr1/mdr2 k`, column 7 - k of the named
+   MDR's tag, `ref/pu/pu.py` `CASE_TAG_SETUP`; 3a = mdr1 5 is the
+   VERIFIED column 2.)
 4. **Trap stub.** 6c21 is the illegal / unimplemented instruction
    trap: 244 image-2 call sites. Implement it as a trap.
 5. **Datapath.** The thesis layout, with mekbn's third-pass rules

@@ -63,7 +63,30 @@ class Trap(Unmodelled):
 TRAP_ILLEGAL = 0x6c21
 SPECIAL_EM = 0x7fff     # S9: JMPF 1 with EM = 7fff, a special form (INFERRED, open)
 TGT_KL1 = 0x5300        # sysinit's KL1 tag table, 64 tags x 8 columns
-TGT_COLUMN = {0x3a: 2}  # set-up EM1 -> column; only 3a -> 2 is VERIFIED
+# set-up EM1 -> column by the ALU's AS1 input (the old rule): since U2's
+# seventh session every EM1 30-3f is CASE_TAG_SETUP below (3a -> column 2,
+# VERIFIED at 2d3e, is one of them); this table is kept for injections.
+TGT_COLUMN = {}
+# U2, 2026-11-27, seventh session: CNDF 7 with EM1 30-3f is rassy's
+# 'case_tag_setup mdrN k' (HELD-SOURCE: cndf_others/5 keys 30-3f, pool
+# slots 0106-0115, in the order mdr1 0, mdr2 0, mdr1 1, .. mdr2 7: EM1 even
+# names MDR1, odd MDR2, k = (EM1 - 30) >> 1).  TDAR := the TGT byte (KL1
+# table 5300) of that MDR's tag, as it stood before the word, from column
+# 7 - k (INFERRED: 3a = mdr1 5 is column 2, VERIFIED at 2d3e, and
+# setup.S_TDAR's 7 - TDPF).  MEASURED (scratch census, image 2, 168
+# words): CCF bit 58 goes with mdr1 (69 of 103 mdr1 words, no mdr2 word)
+# and bit 59 with mdr2 (49 of 62, 4 mdr1 words).  Shapes the rule meets:
+# 0c0c (mdr2 7, column 0 on a REFo: 0e38; REFx 0e3b; LISTx, LISTo and
+# the others 0e39, 0e3a, 0e3c, all calls of the trap 6c21: the routine is
+# called only for a REF); 0e38 (mdr2 2, column 5: 20 rows 0e60-0e73 for
+# bytes 0..19, UNDF 18 -> 0e72); 0c0d (mdr1 1, column 6) and 0840 (mdr2
+# 0, column 7).  Admitted in any word whose EM1 is free of the jump
+# operand (JMPF 0, 3, 4, 6, 7, 8, a, b, e: all met in the census);
+# JMPF 1 / 5 / 9 / d words raise.  Injection 'cts_as1': the old rule,
+# the AS1 input's tag (0c0c's AS1 is MAR1).
+CASE_TAG_SETUP = True
+CTS_MDR = {0: MDR1, 1: MDR2}            # EM1 parity -> register (injection 'cts_mdr_swapped')
+CTS_COLUMN = lambda k: 7 - k            # noqa: E731 (injection 'cts_col_k')
 # The dereference multiway set-up (thesis printed p.133, section 3.3.4.1,
 # DOCUMENTED: "the tag of the AS1 bus is ref, equal to an immediate the
 # microinstruction gives, or other: a 2-bit code into TDAR bits 3-2"; for
@@ -149,6 +172,26 @@ FLAG_CONDS = {0x19: 'slit_check', 0x21: 'interrupt_all'}
 # Executed at 2440 (switch_on_non_list on nil: CNDF 7 EM1 1f, tested by
 # 2461's JMPF e).
 FLAG_CONDS.update({0x1e: 'MRP', 0x1f: 'COL'})
+# U2, 2026-11-27, seventh session: EM1 10-12 are 'cond sw00' .. 'sw02'
+# (positions 16-18 of the same list, HELD-SOURCE), software switches the
+# microprogram itself sets and resets with MCF (MCF_FLAG_OPS below).
+# Executed at 0864 (get_value: the unifier's binding of an unbound
+# variable to an atomic value forms sw01; 09d0 ends when it is clear and
+# otherwise 09d1 writes the value again with its MRB on).  sw01 is set by
+# the dereference rows that follow a REF with its MRB on (0e3b, 0e61,
+# 0e63: MCF 0c) and reset where the first pointer is a REFo (0e75: MCF
+# 04): the variable was reached through a shared pointer.  INFERRED (the
+# reading of what sw01 records); the names HELD-SOURCE.
+FLAG_CONDS.update({0x10: 'sw00', 0x11: 'sw01', 0x12: 'sw02'})
+# CNDF 7 EM1 00-08: 'cond alf_zero' .. 'alf_less_zero' (positions 0-8,
+# HELD-SOURCE), the ALU flags latched by MCF set_alf (MCF_NAMED 01).  The
+# meaning of each latched flag against the ALU's inputs is not decided:
+# COND := POISON (raises if tested), as COND_UNKNOWN.  Formed at 0841
+# (EM1 05, alf_equal, in a JMPF 3 word) on 0802's latch; 0864 forms a new
+# COND before anything tests it: NOT discriminated.
+ALF_CONDS = {0x00: 'alf_zero', 0x01: 'alf_sign', 0x02: 'alf_carry', 0x03: 'alf_overflow',
+             0x04: 'alf_same_tag', 0x05: 'alf_equal', 0x06: 'alf_less', 0x07: 'alf_high',
+             0x08: 'alf_less_zero'}
 # MCF (bit 18) with these EM1 values: an operation of UNKNOWN meaning on
 # state this simulator does not hold (a flag or counter: PSI-II's TYPF
 # "counter/flag control", thesis printed p.144).  Recorded in the cycle
@@ -181,6 +224,33 @@ MCF_UNKNOWN = {0x06, 0x07}
 # instruction from pimm.py's order and compares R04): recorded only, as
 # MCF_UNKNOWN.  Executed at 2461.  Injection 'mcf08_raise': raises.
 MCF_NAMED = {0x08: 'pipeline_cancel'}
+# U2, 2026-11-27, seventh session: rassy's MCF decoder, HELD-SOURCE
+# (asm/ptfdump.py pimmutil rassy --list: mcf/5 @2ce4 hands the field to
+# mc1/2 @355b, a 4-way switch whose key 0 calls mc2/3 @357b and whose keys
+# 1, 2, 3 take pool slots 0116, 0117, 0118, '-- lc', '++ gr', '++ sr'
+# (each arm's relative 'pmi 29' operand resolved as cndf_others' are,
+# key 3f's landing on 0115 = case_tag_setup mdr2 7); mc2/3 is a hash
+# switch on a 4-bit key: 0 nop, 1 set_alf, 2 (a sub-switch: set_cc_ovf,
+# set_cc_comps, rf_unlock, deref_lock, f_jump, unlock_CPR, reset_exsw00 ..
+# reset_COL), 3 / 4 / 5 reset_sw00 / 01 / 02, 6 reset_SUSPF, 7
+# reset_CGCF, 8 pipeline_cancel, 9 set_cc, a (the set_ sub-switch), b / c
+# / d set_sw00 / 01 / 02, e set_SUSPF, f set_CGCF).  Read as EM1 = mc1's
+# key << 4 | mc2's key: INFERRED, and two rules decided before fit it on
+# their own: MCF EM1 20 = '++ gr', R02 + 1 (RULES['mcf_20_sp'], decided
+# from pimm.py's write_integer; rassy's second register bank names 2
+# 'gr'), and EM1 10 = '-- lc' in the counted loops beside CNDF 6
+# ('cond lc_one'; R03 is rassy's lc, RULES['as1f3_em2']).  So 08 is
+# pipeline_cancel by this table too, and 06 / 07 (MCF_UNKNOWN) are
+# reset_SUSPF / reset_CGCF (kept recorded-only: nothing run reads them).
+# The sw flags are held (PU.flags) and read by FLAG_CONDS 10-12.
+# Executed: 0e75 (04, reset_sw01).  Injection 'sw01_set' (0e75 sets it):
+# 0864's COND true, 09d0 does not end.
+MCF_FLAG_OPS = {0x03: ('sw00', False), 0x04: ('sw01', False), 0x05: ('sw02', False),
+                0x0b: ('sw00', True), 0x0c: ('sw01', True), 0x0d: ('sw02', True)}
+# MCF 01, set_alf: the word's ALU flags are latched for 'cond alf_*'
+# (ALF_CONDS).  Executed at 0802 (an ALU input not modelled: the latch is
+# POISON).
+MCF_NAMED[0x01] = 'set_alf'
 
 
 class _Poison(object):
@@ -204,6 +274,12 @@ POISON = _Poison()
 # STALE value that reaches the end of a run is shown not to matter on
 # that path.  (Distinct from POISON, whose ALU use still raises at once.)
 STALE = _Poison('STALE')
+
+
+# An ALU result whose input source is not decided (RULES
+# ['as1f3_open_unknown']): it may only feed a condition or the alf latch,
+# which become POISON.
+UNKNOWN = _Poison('UNKNOWN')
 
 
 def is_poison(v):
@@ -477,6 +553,52 @@ RULES = {
     # same value to MAR1+MDR1 and MAR2+MDR2".  Executed at 38b2
     # (get_value: A[y] into MDR2 and MAR2).
     'sd1_pairs': {2: (MDR1, MAR1), 3: (MDR2, MAR2)},
+    # JMPF b: a page-relative CALL taken if cond (not mekbn's page jump;
+    # the open conflict of docs/pu_microcode_inference.md S7, decided).
+    # U2, 2026-11-27, seventh session; INFERRED, kind HELD-SOURCE.  (1)
+    # rassy's jmpf/9 arm b names 'call' with the long (page-relative)
+    # operand and 'if cond', as arm f ('call', 'if not cond') and arm 7
+    # (the unconditional call, S7 VERIFIED).  (2) The twins 0c0c (JMPF b)
+    # and 0c0f / 0c12 (JMPF 7) are the same word, W1d := MAR1 with the
+    # set-up EM1 3f, to the same 0c15, whose rows (0e38 -> 0e60-0e76)
+    # all end in returns.  (3) MEASURED (scratch census, image 2: from
+    # each target, the words reachable before a return or an end, calls
+    # taken as returning): of the 47 JMPF b targets, 38 reach only
+    # returns, 9 both, none only ends; JMPF 7 (calls) 144 / 42 / 4, JMPF f
+    # 24 / 6 / 0, but JMPF 6 (page jumps) 338 / 185 / 510 and JMPF e 130
+    # / 15 / 218.  (4) execute's 4cc1 (JMPF b to 4cc5, the slit-check
+    # path) is consistent: that path's conditional return 4cd2 would
+    # return into 4cc2, the fast path's next word.  Executed taken at
+    # 0c0c (get_value: A[y] a REF, 38b2's COND), returning to 0c0d;
+    # not taken at 4cc1.  Off (the injection 'jmpf_b_jump'): the old
+    # page jump; the return at 0e72 meets an empty micro stack.
+    'jmpf_b_call': True,
+    # A case_branch (JMPF 3) ORs the whole TGT byte into its base, not
+    # only 4 bits, when the base's low bits are free of it: 0e75's base
+    # 0e60 takes column 5's bytes 0..19 (rows 0e60-0e73; UNDF 18 ->
+    # 0e72, a return).  INFERRED (U2, seventh session; S8's "low 4 bits"
+    # was the 2d3f / 31a3 tables'); bytes over 15 elsewhere still need a
+    # base whose low bits clear them.  Off (the injection 'case_4bit'):
+    # a byte over 15 raises, as before.
+    'case_wide': True,
+    # TDAR holds from its set-up across words that form nothing (a JMPF 1
+    # word, whose CNDF bits are the jump's low address bits), so a
+    # case_branch may follow its set-up two words on.  INFERRED (U2,
+    # seventh session; rassy names 'tdar' among the registers): the
+    # three twins 0c0d -> 0c0e (JMPF 1) -> 0802, 0c10 -> 0c11 -> 0800,
+    # 0c13 -> 0c14 -> 0801 all put their set-up (EM1 32 / 33) two words
+    # before the JMPF 3.  Executed at 0802.  Off (the injection
+    # 'tdar_one_word'): the set-up must be the word just before (the old
+    # rule).
+    'tdar_holds': True,
+    # AS1F 3 with AS2F not 0 (0802: 'as1_3 - MDR1'; the EM bits there are
+    # the JMPF 3 base, not a constant, so RULES['as1f3_em2'] does not
+    # apply): the AS1 source is not decided.  The result is UNKNOWN: a
+    # word that writes it raises; a COND or an alf latch formed from it
+    # is POISON (raises when tested).  OURS (fail loud on use).  At 0802
+    # it feeds only CNDF 5 and set_alf, and 0864 forms a new COND before
+    # anything tests them: NOT discriminated.
+    'as1f3_open_unknown': True,
 }
 # The conditional page-relative / relative jumps JMPF a/b/c/e
 # (RULES['cjump_time'] above).  U2, 2026-11-27, fifth session: 'prev',
@@ -638,6 +760,7 @@ class PU:
         self.cond = None        # COND, set by the previous word (None = not formed)
         self.flags = {}         # FLAG_CONDS' hardware flags, set by a harness (OURS)
         self.mcf_log = []       # (upc, EM1) of each MCF_UNKNOWN operation executed
+        self.alf = None         # the set_alf latch (MCF_NAMED 01, ALF_CONDS)
         self.ir = None          # the KL1-B instruction (tag, value) in the E stage
         self.pc = None          # its address (the A stage's, OURS: set by a harness)
         self.ir_c8 = False      # the instruction's constant is c8 (setup.IR_C8)
@@ -714,6 +837,10 @@ class PU:
             a = (0, field(x, 'EM2'))
         if as1 == 2 and RULES['as1f2_yr']:
             a = old['YR']
+        if as1 == 3 and as2 != 0 and RULES['as1f3_open_unknown']:
+            self.as1_seen = UNKNOWN
+            self.alu_seen = (UNKNOWN, None, UNKNOWN)
+            return UNKNOWN
         if a == 'open':
             raise Unmodelled(upc, 'AS1F %d' % as1)
         b = {0: (0, 0), 1: old['YR'], 2: old[MDR1], 3: old[MDR2]}[as2]
@@ -783,6 +910,18 @@ class PU:
                              ' (read, not run)' % (field(x, 'EM1'), t, kind))
         return DEREF_CODE[kind]
 
+    def _tdar_reaches(self, tdar, cycle):
+        """Does the E-stage set-up tdar still stand for a case_branch at
+        cycle?  The word just before, or (RULES['tdar_holds']) an earlier
+        one with only JMPF 1 words (which form nothing) in between."""
+        if tdar[0] == 'S':
+            return False
+        if tdar[0] == cycle - 1:
+            return True
+        if not RULES['tdar_holds'] or tdar[0] >= cycle:
+            return False
+        return all(mekbn.jk(w) == 1 for _, w in self.trace[tdar[0] + 1:cycle])
+
     def step(self, upc):
         """One microcycle: evaluate every operation of the word at upc from
         the OLD state, then commit them together.  Returns the next upc,
@@ -843,6 +982,9 @@ class PU:
         self.alu_seen = None
         if dst or d or field(x, 'ALF') or field(x, 'AS1F') or field(x, 'AS2F'):
             res = self.alu(upc, x, old)
+            if res is UNKNOWN and (dst or d):
+                raise Unmodelled(upc, 'AS1F %d with AS2F %d: the result is written, its'
+                                 ' source not decided' % mekbn.alu_in(x))
             if dst:
                 if dst not in WNAME:
                     raise Unmodelled(upc, 'ADF %d' % dst)
@@ -853,8 +995,20 @@ class PU:
                 self.write_sel(x, d, res, regw)
         # MCF
         mcf = None
+        flagw = {}          # MCF_FLAG_OPS: flag -> value, committed with the word
+        alf = self.alf
         if bit(x, 18):
-            if field(x, 'EM1') == 0x20 and RULES['mcf_20_sp']:
+            if field(x, 'EM1') in MCF_FLAG_OPS:
+                name, val = MCF_FLAG_OPS[field(x, 'EM1')]
+                flagw[name] = val
+                mcf = field(x, 'EM1')
+            elif field(x, 'EM1') == 0x01 and 0x01 in MCF_NAMED:
+                # set_alf: latch this word's ALU flags (ALF_CONDS reads them)
+                if self.alu_seen is None:
+                    raise Unmodelled(upc, 'MCF set_alf with no ALU operation')
+                alf = POISON if self.alu_seen[2] is UNKNOWN else self.alu_seen
+                mcf = 0x01
+            elif field(x, 'EM1') == 0x20 and RULES['mcf_20_sp']:
                 sp = self.r.get(2)
                 if sp is None or is_stale(sp):
                     raise Unmodelled(upc, 'MCF 20 with R02 unset or not known')
@@ -915,7 +1069,24 @@ class PU:
         cond_new, cond_cycle = prev_cond, self.cond_cycle
         tdar = self.tdar
         cycle = len(self.trace)
-        if cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in TGT_COLUMN:
+        em1 = field(x, 'EM1')
+        if cnd == 7 and CASE_TAG_SETUP and 0x30 <= em1 <= 0x3f and mekbn.jk(x) != 1:
+            # case_tag_setup mdr1 / mdr2 k (CASE_TAG_SETUP): the TGT byte of
+            # the named MDR's tag (old value), column 7 - k
+            if mekbn.jk(x) == 5 or jf in (9, 0xd):
+                raise Unmodelled(upc, 'case_tag_setup in a JMPF %x word (EM1 not free)' % jf)
+            src = old[CTS_MDR[em1 & 1]]
+            if src is None or is_poison(src) or is_stale(src) or src is UNKNOWN:
+                raise Unmodelled(upc, 'case_tag_setup on %s: %r' % (
+                    WNAME[CTS_MDR[em1 & 1]], src))
+            tdar = (cycle, self.tgt[CTS_COLUMN((em1 - 0x30) >> 1)][src[0] & 63])
+        elif cnd == 7 and mekbn.jk(x) != 1 and em1 in ALF_CONDS:
+            # 'cond alf_*' on the set_alf latch (ALF_CONDS): POISON
+            if self.alf is None:
+                raise Unmodelled(upc, 'CNDF 7 EM1 %02x (%s): no set_alf latch'
+                                 % (em1, ALF_CONDS[em1]))
+            cond_new, cond_cycle = POISON, cycle
+        elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in TGT_COLUMN:
             # case_tag_setup (thesis p.131): the TGT byte of the tag of
             # the ALU's first input, column by EM1 (only 3a -> 2 VERIFIED)
             if self.as1_seen is None:
@@ -942,7 +1113,9 @@ class PU:
             rule = COND_RULES.get(cnd)
             if rule is None:
                 raise Unmodelled(upc, 'CNDF %x (condition not known)' % cnd)
-            if is_stale(self.as1_seen) or (self.alu_seen and is_stale(self.alu_seen[2])):
+            if self.alu_seen and self.alu_seen[2] is UNKNOWN:
+                cond_new, cond_cycle = POISON, cycle    # RULES['as1f3_open_unknown']
+            elif is_stale(self.as1_seen) or (self.alu_seen and is_stale(self.alu_seen[2])):
                 cond_new, cond_cycle = STALE, cycle     # formed from a value not known
             else:
                 cond_new, cond_cycle = rule(self, upc, x, self.as1_seen), cycle
@@ -999,14 +1172,16 @@ class PU:
         if jf == 3:
             # S8 case_branch: base | the TGT byte's low 4 bits, set up by
             # the word just before (a CNDF 7, JMPF 0 word)
-            if tdar is None or tdar[0] != cycle - 1:
+            if tdar is None or not self._tdar_reaches(tdar, cycle):
                 raise Unmodelled(upc, 'JMPF 3 case_branch without a set-up in the word before')
-            if target & 15 & tdar[1]:
+            if target & (63 if RULES['case_wide'] else 15) & tdar[1]:
                 raise Unmodelled(upc, 'JMPF 3 case_branch base %04x overlaps TDAR %02x'
                                  % (target, tdar[1]))
-            if tdar[1] > 15:
+            if tdar[1] > 15 and not RULES['case_wide']:
                 raise Unmodelled(upc, 'JMPF 3 TGT byte %02x over 15' % tdar[1])
             target |= tdar[1]
+        if jf == 0xb and RULES['jmpf_b_call'] and kind == 'jump':
+            kind = 'call'               # RULES['jmpf_b_call']: taken, it pushes upc + 1
         if mekbn.jk(x) in (3, 4, 6):
             if not RULES['bit26_cond']:
                 raise Unmodelled(upc, 'JMPF %x (bit 26 rule off)' % jf)
@@ -1063,6 +1238,7 @@ class PU:
                 'reg_reads': list(self._reads), 'wr': new, 'reg_writes': regw,
                 'mem_reads': memr, 'mem_writes': memw,
                 'cond': cond_new, 'cond_cycle': cond_cycle, 'tdar': tdar, 'mcf': mcf,
+                'flags': flagw, 'alf': alf,
                 'push': upc + 1 if push else None, 'pop': pop,
                 'next': nxt}
 
@@ -1075,6 +1251,9 @@ class PU:
             self.mem[a] = d
             self.writes.append((c['micro_pc'], a, d))
         self.cond, self.cond_cycle, self.tdar = c['cond'], c['cond_cycle'], c['tdar']
+        self.flags.update(c.get('flags') or {})
+        if 'alf' in c:
+            self.alf = c['alf']
         if c.get('mcf') is not None:
             self.mcf_log.append((c['micro_pc'], c['mcf']))
         if c['push'] is not None:

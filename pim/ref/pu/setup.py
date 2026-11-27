@@ -39,6 +39,7 @@ are decoded.  So:
   structure element R02 (the structure pointer).
 """
 import mekbn
+import pu as _pu
 
 R_REC, R_SP = 0x10, 0x02
 
@@ -139,6 +140,14 @@ FORMS = {
     # MDR2}, 4cd3 W10 := {COD, MDR2}.  Only ODSF 2 is run (raises
     # otherwise).  Injection 'execute_mdr1' (the label in MDR1).
     'execute': ('label_mdr2', None),
+    # proceed (entry 216c; nano-code ODPF 1, EMO1 0, ODSF 1): no operand
+    # (pimm.py's i_proceed takes none); NANO_ODPF1 puts R10, the finished
+    # goal's record, in MAR1, which 216c-216d push on the R1b list.  OURS
+    # (no operand set-up), U2 seventh session: it moves append's last stop
+    # from "no set-up form" into the held routine, at 216c's read of R1b
+    # (the goal-record free list, never set: scheduler state the harness
+    # does not hold; ref/pu/README.md "Next, for U2").
+    'proceed': (None, None),
 }
 LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)
 # Entries whose constant operand is the low 8 bits (format r_r_c8,
@@ -274,6 +283,16 @@ S_OTHER_ROW = 4         # the match bit's row offset; None (injection): the entr
 TDAR_COLUMN = lambda tdpf: 7 - tdpf     # noqa: E731 (an injection replaces it)
 S_MDR2_OWN = True
 S_REPORTS_DIRECT = {'COL': False}
+# U2, 2026-11-27, seventh session: for these entries, an operand held
+# directly (no pointer followed) leaves MAR1 with a value the harness
+# does not know: pu.STALE (OURS).  The S stage loads MAR1 with the last
+# cell the dereference read (S_ENTRY); with none read, what MAR1 holds is
+# not documented.  STALE may be copied (get_value's 0c0c W1d := MAR1,
+# 0c0d XR := W1d) but an address, a write or a test with it raises, so a
+# run that ends shows the value does not matter there.  Injection
+# 's_mar1_kept' (MAR1 keeps the previous instruction's value, the old
+# behaviour).
+S_MAR1_DIRECT_STALE = True
 
 
 class SStageUnknown(KeyError):
@@ -339,6 +358,8 @@ def setup(pu, name):
         pu.wr[mekbn.MDR1] = data
         if last is not None:
             pu.wr[mekbn.MAR1] = (0, last)
+        elif S_MAR1_DIRECT_STALE and nc['ODPF'] == 6:
+            pu.wr[mekbn.MAR1] = _pu.STALE
         if base(name) in S_CONST:
             src = S_CONST[base(name)]
             if src == 'a24':
