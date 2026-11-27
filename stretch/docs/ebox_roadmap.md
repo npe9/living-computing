@@ -104,25 +104,30 @@ opinion on stage structure is wanted.
    its load to its removal, in all four `la.count()` capacity tests) with
    a scratch-only trace of every level load, retirement, refused load
    (`FULL`, `LAARW`), head-not-ready clock (with which `headReady` term
-   is false) and look-ahead fetch issue / arrival. The trace changes no
-   halt (786, 2464, 790, 986, 762 with it, as without); D reproduces
-   781, 2464, 811, 1026, 763. Every refusal D adds is at the E-box load's
-   capacity test (`FULL`); the I-box-store and branch sites refuse
-   nothing new.
+   is false) and look-ahead fetch issue / arrival. With the trace the
+   halts are 786, 2464, 790, 986, 762, the pinned / batch59-recorded
+   values; D reproduces 781, 2464, 811, 1026, 763. D with ONLY its E-box
+   load capacity test (site 2 of 4) reproduces all five halts, so the
+   E-box load refusals (`FULL`) are the whole effect on these decks.
    - **The one mechanism behind the three slower decks.** A `*+` whose
      load would make the ring hold 5 (DL, DLN or D* at 1 + LFT at 2 + `*+`
      at 2) is refused until the oldest level is removed. Its operand
      fetch therefore starts that much later. The fetch takes about 18
      clocks, and the E-box reaches the `*+` before the word arrives, so
      the delay goes straight into execution.
-     - F216B (790 -> 811): from the group at half-word 16947 (DLN / LFT
-       / `*+` FPK80) on, the DLN waits about 10 clocks at the head for its
-       own operand. The `*+` (16949) is refused at 497-506 and loads at
-       508 instead of 498. Its word arrives at 527, not 516, and its
-       retirement moves +9 (522 -> 531). The later groups move it on
-       by +2, +4, +2, -1, +1 and +4 the same way, for +21. In the first six groups the DL's
-       wait is short: the `*+` loads 3-4 clocks late and the E-box does
-       not see it.
+     - F216B (790 -> 811): the deck is groups of DL or DLN / LFT / `*+`
+       (three half-word levels) / BZB or BB / SIC / B. In the first nine
+       groups the `*+` loads 2-4 clocks late and the E-box does not see
+       it (retirement deltas -1 and -2). The tenth group, half-word 16947
+       (DL(U),FPK62 / LFT / `*A+`(U),FPK86), is where it starts: OBSERVED
+       in the fetch trace, its DL sits in ring slot 3 and its read is
+       served after the younger LFT's (slot 0), the same slot-order
+       arbitration as fp_to_memory_laar below. So the DL waits at the
+       head about 10 clocks for its word, and D refuses the `*+` (16949)
+       for that long (497-506): it loads at 508, not 498, its word
+       arrives at 527, not 516, and it retires at 531, not 522 (+9).
+       Later retirement deltas step to +11, +15, +17, +16, +17 and +21,
+       not traced group by group.
      - Buchholz B.3 (986 -> 1026): the inner loop is DL (half-word 205,
        outer only) / LFT (206) / `*+` (207) / V+I / CBR+. The `*+` is
        refused at 138-147 until the DL retires at 148. The I-box is in
@@ -136,7 +141,9 @@ opinion on stage structure is wanted.
        the E-box is ready (84, not 83). That +1 survives to the halt.
        After that the loop is LAAR-bound (each LFT waits for
        `laarFreeAt`), so every later load delay, up to +45, is absorbed.
-   - **Why fp_to_memory_laar gets FASTER (786 -> 781).** It is not a
+   - **Why fp_to_memory_laar gets FASTER (786 -> 781).** (Observed in
+     the fetch trace plus a reading of memCtl; one intervention below.)
+     It is not a
      look-ahead effect. It is a model-only arbitration order in
      `StretchStorage.memCtl`, the channel scan `order = {0, 3, 4, 5, 6,
      1, 2}`: look-ahead channels are served by RING POSITION, slot 0
@@ -152,6 +159,10 @@ opinion on stage structure is wanted.
      - Under D only two LFTs are resident. The 2070 read meets no
        three-way contention, its word is there by 544, and it retires at
        558. The 15-clock rhythm never breaks, for -5.
+     - INTERVENTION: the same deck on the base with the four look-ahead
+       entries of `order` reversed (`{0, 6, 5, 4, 3, 1, 2}`, scratch copy
+       only) halts at 798 instead of 786, so the halt does depend on the
+       slot order.
      - So the base carries 5 clocks of slot starvation that D removes by
        accident. Bus priority among look-ahead levels is printed nowhere
        (`spec_lookahead.md` §4.3 has only exchange > look-ahead > I-box).

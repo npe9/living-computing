@@ -1266,6 +1266,11 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
          (i) age-ordered look-ahead fetch arbitration; (ii) store levels,
          ST's too, held until `laarFreeAt`, if a source for the hold is
          found.
+       - Suite on f446b0dd (docs only): GREEN, only the two expected
+         `UNREPRODUCED` p359 lines; 388 HALTREPORT lines identical, in
+         order, to batch60's GREEN run. An intervention: fp_to_memory_laar
+         with the look-ahead fetch order reversed (scratch only) halts at
+         798, against 786, so the slot order is load-bearing.
      - Suite on 9433a22e (A, B and C together): GREEN, only the two
        expected `UNREPRODUCED` p359 lines; 388 HALTREPORT lines identical,
        in order, to batch59's.

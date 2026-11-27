@@ -1727,8 +1727,9 @@ text layer; §2.1 above has its rendered reading); PDF 267 is quoted from
      CONDITIONS" (printed 2-1/2-2, PDF 92): every level load is LLP1, LLP2
      or LLP3 under its own "TYPE 1 & 2 LOAD ENABLE" or "TYPE 3 LOAD ENABLE";
      after the pulse the IAUC steps ("STEP IAUC TO NEW LEVEL") under the
-     "SCC AT NEXT LEVEL ?" interlock. Type 3 (the store level) is enabled
-     only when "BOTH LAARS BUSY ?" is NO or "STORE BEING DONE".
+     "SCC AT NEXT LEVEL ?" interlock. A type 3 load is enabled only when
+     "BOTH LAARS BUSY ?" is NO or "STORE BEING DONE" (type 3 is the LAAR
+     load; see the next bullet for why that is not "the store level").
    - Fig 3.2.2, "LOOKAHEAD LOAD PULSES" sheets 1-2 (printed 2-3, 2-4; PDF
      93-94): LLP1, LLP2 and LLP3 are separate pulses, each gating its own
      tag bits, op code, indicators and IC into ONE level; LLP3 carries "I
@@ -1778,13 +1779,19 @@ text layer; §2.1 above has its rendered reading); PDF 267 is quoted from
    - Reference Manual printed p.9 (PDF 12): "If the result of an arithmetic
      operation is to be returned to storage, it is first placed in
      look-ahead, from whence it returns to storage."
-   So for M±, M±MG, LFT, D/: BOTH levels are resident from their loads
+   DERIVED, not printed -- Fig 15.10 draws a ONE-level FP store, and
+   Buchholz printed p.246 calls the multi-level sequences "more complex
+   variations" without drawing any: so for M±, M±MG, LFT, D/, BOTH levels are resident from their loads
    until the ABC starts execution; the op + opnd level then frees; the
    store level stays until its word has gone to storage. For `*+` the
    C($FT) level is a fetch level ("fetch for LA: 2", Table A-2 sheet 3,
    printed A-12, PDF 71): no store, so both free with the ABC.
 
 **What the sources do NOT settle.**
+
+- **The counter sequence of a two-level FP instruction.** No page draws
+  M±, LFT, D/ or `*+` across two levels; the paragraph above applies the
+  one-level figure and the general SCC rule to them.
 
 - **The clock of the second load for FP.** The 0.6 us per extra level is
   printed for VFL only (p.3-18). For FP, the FPL3E/FPR3E phase follows the
