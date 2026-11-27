@@ -709,6 +709,13 @@ typedef struct {
 // operation, NOOP no-op (indicator transfer only), Op operation-code
 // level, opnd operand level".
 //
+// >>> 2026-11-27 (fidelity_plan.md A5 part 2): `kind` IS DESCRIPTIVE. <<<
+// No rule reads it: the I-box's own store levels are told apart by
+// LaLevel's `ibox`.  An instruction Table A-2 gives ONE level (FP op +
+// opnd, op + count, the FP store class; StretchLaParts) is loaded with
+// that level's kind; an I-box store level is LaStore; everything else is
+// still `Whole`, and the paragraph below is still true of it.
+//
 // >>> ONLY `Whole` IS USED TODAY, AND THAT IS THE POINT. <<<  This model
 // puts ONE ENTIRE INSTRUCTION in a level: StretchCore.bsv loads
 // `di: di` and the head arm runs execute() off `headLevel().di`.

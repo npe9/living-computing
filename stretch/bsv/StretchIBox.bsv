@@ -176,6 +176,9 @@ typedef struct {
   // reading the code, confirmed by that deck); both now ask StretchExecute's vflRef / connFetchType and
   // fieldDfSuppresses (see vflRef for printed p.32's definition).
   Bool completesWithoutFetch;
+  Bool crosses;                   // a VFL / connective field crosses a word
+                                  // boundary, store or not (Table A-2's note:
+                                  // StretchLaParts); False for every other class
 } PreparedExec deriving (Bits, Eq, FShow);
 
 function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
@@ -215,7 +218,8 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
         storeAddr:   stores       ? tagged Valid w : tagged Invalid,
         storeAddr2:  (stores && fieldCrosses(ea, len_)) ? tagged Valid (w + 1)
                                                         : tagged Invalid,
-        completesWithoutFetch: done };
+        completesWithoutFetch: done,
+        crosses: fieldCrosses(ea, len_) };
     end
     tagged Connective .c: begin
       Bool prog = (c.a.p != 0 && c.a.p != 4);
@@ -239,7 +243,8 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
         storeAddr: (c.suffix == conn_CM) ? tagged Valid w : tagged Invalid,
         storeAddr2: (c.suffix == conn_CM && fieldCrosses(ea, len_)) ? tagged Valid (w + 1)
                                                                     : tagged Invalid,
-        completesWithoutFetch: done };
+        completesWithoutFetch: done,
+        crosses: fieldCrosses(ea, len_) };
     end
     tagged Fp .f: begin
       // The FP format has no progressive indexing, which is why there
@@ -259,12 +264,14 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
         // then every FP code -- the stores included -- completed without
         // fetch when dfSuppresses held.
         completesWithoutFetch: (fpFetchType(f.code) && dfSuppresses(st, w))
-                            || !installed(w) };
+                            || !installed(w),
+        crosses: False };
     end
     default: return PreparedExec { operandAddr: tagged Invalid,
                                    storeAddr:   tagged Invalid,
                                    storeAddr2:  tagged Invalid,
-                                   completesWithoutFetch: False };
+                                   completesWithoutFetch: False,
+                                   crosses: False };
   endcase
 endfunction
 

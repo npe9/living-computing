@@ -26,6 +26,7 @@ import StretchDecode::*;
 import StretchExecute::*;
 import StretchIBox::*;       // mkInstrBuffers, classification, iboxHazard
 import StretchLookAhead::*;  // mkLookAhead
+import StretchLaParts::*;    // laParts: Table A-2's levels of an instruction
 import StretchTiming::*;     // iboxCycles/eboxClocks/budgetClocks
 
 interface StretchCore;
@@ -2471,7 +2472,17 @@ module mkStretchCore(StretchCore);
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end
           end
-          la.load(LaLevel{valid: True, kind: Whole, ibox: False, di: di, pc: pc, len: len, da: da,
+          // THE LEVEL'S KIND (fidelity_plan.md A5 part 2, 2026-11-27): an
+          // instruction Table A-2 gives ONE level (StretchLaParts: FP op +
+          // opnd, op + count, the FP store class) is loaded as that level,
+          // so the model's level and the table's are the same object for
+          // it.  Every other instruction is still one `Whole` level -- its
+          // parts are not split yet (laParts has them; nothing allocates by
+          // them).  DESCRIPTIVE: no rule reads `kind` (LaLevel's note).
+          Maybe#(LaParts) lparts = laParts(di, prep.crosses, hasProgressive(di));
+          LaKind lkind = Whole;
+          if (lparts matches tagged Valid .lp &&& lp.n == 1) lkind = lp.kinds[0];
+          la.load(LaLevel{valid: True, kind: lkind, ibox: False, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
                           branch: False, target: 0, storeAddr: prep.storeAddr,
                           storeAddr2: prep.storeAddr2, carry: carry});

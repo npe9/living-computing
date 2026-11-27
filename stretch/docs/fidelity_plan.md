@@ -1202,6 +1202,49 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
      the two-level FP ones, then VFL (2-3, doubled on a crossing). Whether
      the one-level FP step is time-neutral is unmeasured; each step
      records the pins it moves.
+     **STARTED 2026-11-27, three behaviour-preserving sub-steps, then a
+     measured stop:**
+     - (A) DISPATCH NO LONGER READS `kind`. The three readers of `kind ==
+       LaStore` (headReady, lveBehindStore, headStore) meant "the I-box's
+       own store level, retire without the E-box"; they read a new
+       LaLevel field `ibox` instead. Without this, labelling an FP ST
+       level "store" (Table A-2) would send it to rl_store_retire
+       unexecuted. `kind` is now descriptive only.
+     - (B) THE PART SEQUENCE AS DATA: `laParts(di, crosses, progressive)`
+       (bsv/StretchLaParts.bsv) gives an instruction's Table A-2 levels
+       from the E-box sheet (printed A-12, PDF 71, read from the page
+       image) with the sheet's crossing and progressive note, Invalid for
+       the I-box sheets and for codes the sheet has no row for (VFL binary
+       /). New kinds appended: LaOpOpnd, LaOpCount, LaCft, LaLaop.
+       mkLaPartsTb: 24 literal vectors, among them M+ crossing with
+       progressive indexing = 6 (Buchholz printed p.246, PDF 271). Six
+       injections, each failing only its predicted vectors (bench header).
+       Readings and inferences are labelled in the file (D* as `*`; VFL M+
+       in the three-level row by Buchholz; the order of doubled parts and
+       of the IX Rec. level).
+     - (C) ONE-LEVEL INSTRUCTIONS GET THEIR KIND. An instruction laParts
+       gives one level (FP op + opnd, op + count, the FP store class) is
+       loaded as that level (`kind` LaOpOpnd / LaOpCount / LaStore); the
+       rest stay `Whole`. PreparedExec gained `crosses` for the call.
+       Deck check (scratch copy, STRETCH_HALT_REPORT=1): ten FP, I-box
+       store and crossing decks, halts identical to the batch59 base.
+     - (D) STOP: TWO-LEVEL FP IS NOT BEHAVIOUR-PRESERVING. Measured in a
+       scratch copy only, never committed: a two-level FP instruction (M+,
+       M+MG, LFT, D/: op + opnd / store; `*+`: op + opnd / C($FT)) holding
+       a second ring slot while its level is resident (every `la.count()`
+       capacity test counting it). Of 20 decks, four move:
+       F216B 790 -> 811, Buchholz B.3 986 -> 1026, Problem 3.6 762 -> 763,
+       fp_to_memory_laar 786 -> 781 (its `CYCLES=786+-0` pin FAILS);
+       F204B, F206A, F215C, F216C/D, F217A, F219T-Y and the ten decks of
+       (C) do not. CAUSE: the second slot is a ring level the I-box can no
+       longer load into; the experiment changes only the capacity tests,
+       so every move is a level load (E-box, branch guess or I-box store
+       level) made later. Which load moves the three slower decks, and
+       why fp_to_memory_laar gets FASTER by 5, were not traced clock by
+       clock. Nothing re-pinned: whether the
+       store/C($FT) level frees at the store or with its op level, and
+       when it is allocated, are not on any page read here (Table A-2
+       gives occupancy, not timing). The MCP boot check was not run on it.
   4. Unit benches for the termination. DONE 2026-11-27: mkSauStepTb and
      mkPauStepTb each end with a 24-clock script (terminate(n) with n = 3,
      0, 2, 5 then 1, 4; a hold after a terminate and one while idle; a
@@ -1210,9 +1253,12 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
      n + 1; the hold ignored; terminate adding instead of replacing;
      responseReady waiting on the count) each fail only script lines
      (observed sets in the bench headers); the step vectors pass under all
-     four, so the script is the only bench guard.
-  5. Stale text, left as it was after the green run (decks and tests are
-     not edited after it): `tests/run_tests.sh` (the df_data_fetch_alarm
+     four, so the script is the only bench guard. Items 4 and 5 share one
+     full suite (26bbde43): GREEN, only the two expected `UNREPRODUCED`
+     p359 lines; 388 HALTREPORT lines identical, in order, to batch59's.
+  5. Stale text. DONE 2026-11-27 (comments and docs only, annotated rather
+     than rewritten, so the 2026-09-25 records stand; `ebusy` still
+     appears in them as history): `tests/run_tests.sh` (the df_data_fetch_alarm
      / interrupt notes, about line 12582-12615), `decks/int_timing_bracket.strap`
      (header, lines 54-119) and `decks/df_data_fetch_alarm.strap` (line
      176) describe `ebusy` and rl_interrupt's `ebusy <= eb;` as live;
