@@ -1705,3 +1705,110 @@ race with a new number.
 
 What survives in the tree is `LaKind` (`082858a`), which is a no-op and
 green, and this note.
+
+### >>> WHEN A TWO-LEVEL INSTRUCTION'S SECOND LEVEL IS TAKEN AND FREED <<< 2026-11-27
+
+Asked by A5 part 3 (`fidelity_plan.md` §A5 "what is left" item 3, sub-step
+D): Table A-2 gives M±, M±MG, LFT and D/ two levels (op + opnd / store) and
+`*+` two (op + opnd / C($FT)); WHEN is the second level allocated, and WHEN
+is each freed? Every page below was read as a rendered image except where
+marked "text layer". Rendered this session: CE PDF 92, 93, 94 and 117 at
+110 dpi, TR00.722 PDF 40 at 90 dpi, Reference Manual PDF 11-12 at 100
+dpi. Buchholz PDF 265, 270 and 271 and Perf. Char. PDF 35, 36, 40 and 62
+were read from the text layer this session (Fig 15.10's boxes from its
+text layer; §2.1 above has its rendered reading); PDF 267 is quoted from
+§2.1.
+
+**What the sources SAY.**
+
+1. **Levels are loaded one at a time, each by its own load pulse, in
+   successive I-box cycles.**
+   - CE manual R23-9732 Fig 3.2.1, "IAUC LOAD ENABLE AND ADVANCE
+     CONDITIONS" (printed 2-1/2-2, PDF 92): every level load is LLP1, LLP2
+     or LLP3 under its own "TYPE 1 & 2 LOAD ENABLE" or "TYPE 3 LOAD ENABLE";
+     after the pulse the IAUC steps ("STEP IAUC TO NEW LEVEL") under the
+     "SCC AT NEXT LEVEL ?" interlock. Type 3 (the store level) is enabled
+     only when "BOTH LAARS BUSY ?" is NO or "STORE BEING DONE".
+   - Fig 3.2.2, "LOOKAHEAD LOAD PULSES" sheets 1-2 (printed 2-3, 2-4; PDF
+     93-94): LLP1, LLP2 and LLP3 are separate pulses, each gating its own
+     tag bits, op code, indicators and IC into ONE level; LLP3 carries "I
+     BOX WILL LOAD LAAR 1 OR 2" and "FETCH ACCEPTED". LLP3 is NOT shown to
+     be "the store level": its LAAR load also serves a fetch (Perf. Char.
+     printed p.3-22, PDF 40: "the fetch address is gated into LAAR unless
+     the latter is busy").
+   - The FP preparation sequencers raise the loads as successive phases:
+     FPL2E (type 2), FPL3E ("Z0-17 TO MAB; GT ZLOC TO LAOC", "TYPE 3 LOAD
+     TO LA"), FPL4E ("BLOCK XFER OF ZLOC TO LAOC; SET LAOC 6, 8 & 9; SET
+     LAOP TAG", with "SET LA EXT / INT STORE TAG" and STORE WAIT on the same
+     phase) -- R23-9732 Figs 3.1.13 and 3.1.21 (PDF 75-77, 85), as
+     transcribed in `ibox_la_spec.md` (not re-rendered this session).
+     DERIVED, not printed: FPL4E is the M+ store level -- it inserts an LA
+     op code instead of the instruction's, which is Buchholz's "pseudo
+     operation code" at "each extra level", and it sets the store tag.
+     Which instructions take the FPL4E phase is not on those pages.
+   - TR00.722 Fig 10, "BRANCH ON INDICATOR EXECUTION" (printed p.38, PDF
+     40): the four levels of a Bind go in as OP->LA, F->LA, ST->LA, BR->LA
+     on four consecutive LA LD cycles.
+   - Perf. Char. Vol. 1 printed p.3-18 (PDF 36), text layer, of VFL: "The
+     minimum time is 3.6 us which includes the loading of two LA levels.
+     Each addition[al] level requires an additional 0.6 us ... there may be
+     further slow down ... if the LA levels are not available for loading".
+   - Buchholz printed p.246 (PDF 271), text layer: "At each extra level the
+     look-ahead unit inserts a pseudo operation code"; the six-level
+     VFL ADD TO MEMORY uses "two levels being used twice" -- so a level of
+     an instruction can be freed and re-loaded for the SAME instruction:
+     allocation is per level, shape 1 of the section above, not N at once.
+2. **A level is freed when the store-check counter leaves it.** R23-9732
+   Fig 3.2.25, "SCC ADVANCE" (printed 2-34, PDF 117): "ADV. SCC -> RESET LF
+   TAG". The IAUC may not load a level the SCC still occupies (Buchholz
+   printed p.242, PDF 267; Fig 3.2.1's "SCC AT NEXT LEVEL").
+3. **A non-store level is freed with the ABC; a store level after its
+   store.**
+   - Buchholz printed p.240 (PDF 265), text layer: the SCC "For non-store-
+     type operations ... generally advances with the arithmetic-bus
+     counter", and the ABC is where "signal is given to E-box for execution
+     of the instruction just loaded" (Perf. Char. printed A-3, PDF 62). Fig
+     3.2.25's LF-on path (SCC DEC ADV. COND. -> "ABC ADVANCING ?", "TBC
+     ADVANCING") is the same thing in the shipped logic.
+   - Buchholz Fig 15.10 (printed p.245, PDF 270, text layer), FP store-type: the ABC
+     waits "Is store information available?", gates the AU's data into the
+     level; the SCC then gates it to memory (or index memory) and only then
+     advances. Fig 3.2.25: an external store passes "STORE DATA TIMER M"
+     (LAOP 31, 33, 21, 13, 23, 17, X2) before the SCC advance.
+   - Reference Manual printed p.9 (PDF 12): "If the result of an arithmetic
+     operation is to be returned to storage, it is first placed in
+     look-ahead, from whence it returns to storage."
+   So for M±, M±MG, LFT, D/: BOTH levels are resident from their loads
+   until the ABC starts execution; the op + opnd level then frees; the
+   store level stays until its word has gone to storage. For `*+` the
+   C($FT) level is a fetch level ("fetch for LA: 2", Table A-2 sheet 3,
+   printed A-12, PDF 71): no store, so both free with the ABC.
+
+**What the sources do NOT settle.**
+
+- **The clock of the second load for FP.** The 0.6 us per extra level is
+  printed for VFL only (p.3-18). For FP, the FPL3E/FPR3E phase follows the
+  type 2 load, but no FP page gives the cycle, and the FP decode rate "one
+  instruction per 1.2 us" (p.3-17, PDF 35) is for "a sequence of floating
+  point instructions", not for M+. Whether M+ pays a third I-box cycle is
+  open.
+- **How long the store level is held.** "STORE DATA TIMER M" has no
+  duration on any page read (§3.7). The model's nearest instant is
+  `laarFreeAt` -- the LAAR's release, "accepted by the MBCU" (Perf. Char.
+  printed p.3-20, PDF 38) -- which is itself partly a fit
+  (`laarStorePost`).
+- **That the model's removal is the ABC.** `rl_au_remove` retires a level
+  when the E-box starts it: the ABC's "signal ... for execution". That
+  matches point 3 for a non-store level; it is the model's, not printed.
+- **The one-level store class (ST, SRD, SL0, SRT) is the same case.** By
+  point 3 its single store level is also held until its store; the model
+  frees it at removal today. A rule for the two-level store level that is
+  not also applied to ST would be inconsistent with the same sources.
+
+**THE DECISION THIS FORCES (A5 part 3).** Sub-step D (fidelity_plan §A5)
+held the second slot from load until removal and freed it WITH the op
+level. By point 3 that is not the sourced rule: the store level outlives the
+op level until the SCC sends its word, and the same holds for the one-level
+FP store class. The sourced rule needs two numbers no page gives -- the FP
+second load's clock and the store level's hold (STORE DATA TIMER M) -- so
+no timing pin moves on it. The trace of D is in `ebox_roadmap.md` step 7.
