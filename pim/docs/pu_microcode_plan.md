@@ -465,5 +465,8 @@ Honest, and in sessions of the length that reached U1.
   off/on, MCF 08 = pipeline_cancel, CNDF 8/a/c on the S1 bus, SD1F 2/3
   pairs, JMPF 9 a conditional call (all rassy tables); EM1 1e/1f the S
   stage's MRP/COL reports; R04 = pc + 1 in E (OURS, with support). The
-  stop is `0c0c` (CNDF 7 EM1 `3f`, a set-up of UNKNOWN kind, reached by
-  a JMPF b that rassy reads as a conditional call: an open conflict).
+  stop is `0c0c` (CNDF 7 EM1 `3f`, which rassy's `cndf_others` table
+  names `case_tag_setup mdr2 7`: TDAR from TGT column 0, not yet
+  modelled; reached by a JMPF b that rassy reads as a conditional call:
+  an open conflict). Rassy's EM1 keys also make the earlier flag names
+  (`19`, `21`, `1e`, `1f`) HELD-SOURCE rather than by position.

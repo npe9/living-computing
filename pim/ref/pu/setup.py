@@ -198,14 +198,14 @@ S_CONST = {'get_atom': 'a24', 'get_bound_value': 'y'}
 #   words, where the thesis's Table 3-6 gives get_list one step, an open
 #   tension; entry + 1 gives one word and the same registers there).
 #   Discriminated: the start (s_imm_plus1) and MAR1 (s_no_mar1: STOP at
-#   3801).  The COND part fits but is NOT discriminated (s_cond_true
-#   changes nothing).  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
+#   3801).  The COND part: s_cond_true changes nothing, but s_cond_false
+#   (sixth session) FAILs append at instruction 1 (3300's jump, a cell
+#   written at 1ea), so the COND is pinned by its false side.  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
 #   3305-3309, which put the variable cell the list was reached through
 #   on the R19 list.
-#   Any other tag would take the multiway set-up (2) into a row of the
-#   32-word entry; which TGT column and which row granularity is UNKNOWN
-#   here (column = TDPF with 4-word rows fits switch_on_non_list's rows
-#   1-4 when read, not run; get_atom's and wait_nil's do not): raises.
+#   Any other tag takes the multiway set-up (2): for ODPF 6 entries,
+#   S_OTHER_ROW below (sixth session); other chains and other ODPF still
+#   raise.
 S_ENTRY = 0             # the injections: 's_imm_plus1' 1; 's_imm_row' 'row'
 
 # U2, 2026-11-27, sixth session: the tag test's other side, for ODPF 6
@@ -299,6 +299,8 @@ def setup(pu, name):
     start microaddress."""
     fw = pu.fw
     pu.tdar = None          # a multiway set-up never outlives its instruction
+    for k in ('MRP', 'COL'):    # nor do the S stage's chain reports (S_REPORTS)
+        pu.flags.pop(k, None)
     idx, start, imm = fw.kl1_entries()[name]
     nc = nano(fw, idx)
     form = FORMS.get(base(name))
@@ -349,8 +351,6 @@ def setup(pu, name):
             pu.tdar = ('S', pu.tgt[TDAR_COLUMN(nc['TDPF'])][data[0] & 63])
             if S_MDR2_OWN and base(name) not in S_CONST:
                 pu.wr[mekbn.MDR2] = own
-            for k in ('MRP', 'COL'):
-                pu.flags.pop(k, None)
             if last is None:
                 pu.flags.update(S_REPORTS_DIRECT)
         if S_ENTRY == 'row':    # the injection: every tag takes a TGT row

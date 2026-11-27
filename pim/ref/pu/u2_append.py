@@ -225,7 +225,8 @@ New injections, observed:
                   only that case discriminates
   other_row_entry the other tags start at the entry: append FAILs at 12
                   (3300 treats nil as a list: 3305-3309 put a cell on the
-                  R19 list, no branch); the VECT0o case STOPs at 3309
+                  R19 list and R02 := 0, no branch); the VECT0o case STOPs
+                  at 3309
   e_on_true       JMPF e taken on COND: append FAILs at 12 (2441-2445
                   write [MAR1], a stale address); the VECT0o case STOPs at
                   2445 (MAR2 never set)
@@ -242,12 +243,25 @@ New injections, observed:
   mcf08_raise     MCF 08 raises: both STOP at 2461, 12 of 16
   mdr2_own_off    the S stage leaves MDR2 as it was: append PASSES (14 of
                   16: the old MDR2 is not a REFo either); the VECT0o case
-                  STOPs at 3310 (ALU input never set): only it discriminates
+                  STOPs at 3310 (ALU input never set): that MDR2 is loaded
+                  is discriminated, its value NOT
   cnd8_off        CNDF 8 / a / c unmodelled: STOP at 38b0, still 14 of 16
                   (33 words): the get_value rules are needed to reach 0c0c,
                   NOT discriminated (no comparison before the stop)
   sd1_pairs_off   SD1F 2 / 3 unmodelled: STOP at 38b2 (35 words), as above
   jmpf9_off       JMPF 9 raises: STOP at 38b1 (34 words), as above
+  s_cond_false    S_ENTRY's COND forced false (and S_OTHER_ROW's): append
+                  FAILs at instruction 1 (3300's jump taken: a cell
+                  written at 1ea): the COND's false side is pinned, so a's
+                  polarity at 3980 stands on its own
+  e_mdr2_col      e taken on COND, MDR2 a REFo (where S_MDR2_OWN applies)
+                  and COL true, together: append PASSES (14 of 16, the
+                  same 37 words) and so does the VECT0o case: the three
+                  are tied; rassy's pool (e 'if not cond') breaks it
+Also since these: where pimm.py leaves sp, R02 must not move (the
+check other_row_entry now also FAILs: R02 := 0 at 3305); MRP / COL are
+cleared at every instruction's set-up.  Re-run of every injection on
+the final tree: the results above stand.
 """
 import os
 import sys
@@ -531,11 +545,12 @@ def switch_label_case():
 #   - the hardware flags pu.FLAG_CONDS tests: no asynchronous event
 #     pending (slit_check) and no interrupt (interrupt_all), as on one PE
 #     with no GC request, message or signal (pimm.py has none either);
-#   - R0d, W1f and R04 as STALE (pu.STALE: values the harness does not
-#     know).  R0d is a scratch register (47 writers in image 2, none on
+#   - R0d, W1f (and, until the sixth session, R04: now A_STAGE_R04) as
+#     STALE (pu.STALE: values the harness does not know).  R0d is a scratch register (47 writers in image 2, none on
 #     the path run before execute); W1f is written at boot (20a8, W1f := 0,
 #     read not run) and by proceed's 21a1-21fe; R04, rassy's 'pc', is the
-#     A stage's program counter, which the harness does not model.  On
+#     A stage's program counter, given since the sixth session as
+#     {COD, pc + 1} (A_STAGE_R04, below) and so no longer STALE.  On
 #     the fast path (4cc0-4cc3) R0d and W1f feed only 4cc1's compare and
 #     XR, which no word tests or keeps (cjump_time 'prev'), and R04's old
 #     value goes to W14 (not compared): a STALE value reaching an
@@ -650,6 +665,7 @@ def run(verbose=False):
         # pimm.py's sp is compared only where pimm.py moves it (a branch
         # such as switch_on_non_list on nil leaves it as it was)
         after['sp_moved'] = after.get('sp') != (steps[k - 1][3] if k else s0).get('sp')
+        after['r02_0'] = p.r.get(SU.R_SP)   # where it does not, R02 must not move
         name = '?'
         n0 = len(p.trace)
         an0, mem0 = dict(p.an), dict(p.mem)
@@ -733,6 +749,10 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
         r02 = p.r.get(SU.R_SP)
         if r02 is None or rn.f2p.get(r02[1], r02[1]) != after['sp']:
             fails.append('sp: firmware R02 %s, pimm.py %x' % (check_pu.fmt(r02), after['sp']))
+    if after.get('sp') is not None and not after.get('sp_moved', True) \
+            and p.r.get(SU.R_SP) != after.get('r02_0'):
+        fails.append('sp: firmware R02 %s -> %s, pimm.py leaves sp at %x'
+                     % (check_pu.fmt(after.get('r02_0')), check_pu.fmt(p.r.get(SU.R_SP)), after['sp']))
     return fails
 
 
@@ -823,8 +843,37 @@ def _cond_true():
     SU.setup = setup
 
 
+def _cond_false():
+    s = SU.setup
+
+    def setup(pu, name):
+        start = s(pu, name)
+        if SU.FORMS.get(SU.base(name), (None,))[0] == 's_tag':
+            pu.cond = False
+        return start
+    SU.setup = setup
+
+
+def _e_mdr2_col():
+    # the joint alternative to the e polarity, S_MDR2_OWN and COL
+    # (advisor 2026-11-27): e taken on COND, MDR2 a REFo, COL true
+    PU.CJUMP_TAKEN_ON.update({0xe: True})
+    SU.S_REPORTS_DIRECT.update(COL=True)
+    s = SU.setup
+
+    def setup(pu, name):
+        start = s(pu, name)
+        if SU.FORMS.get(SU.base(name), (None,))[0] == 's_tag' \
+                and SU.base(name) not in SU.S_CONST:     # where S_MDR2_OWN applies
+            pu.wr[SU.mekbn.MDR2] = (pimm.REF, pu.wr.get(SU.mekbn.MDR2, (0, 0))[1])
+        return start
+    SU.setup = setup
+
+
 INJECT = {
-    's_no_mar1': _no_mar1,      # S_ENTRY's MAR1 part not loaded
+    's_no_mar1': _no_mar1,
+    's_cond_false': _cond_false,    # S_ENTRY's COND part forced false
+    'e_mdr2_col': _e_mdr2_col,      # e on COND, MDR2 a REFo, COL true, together      # S_ENTRY's MAR1 part not loaded
     's_cond_true': _cond_true,  # S_ENTRY's COND part forced true
     's_imm_plus1': lambda: setattr(SU, 'S_ENTRY', 1),
     's_imm_row': lambda: setattr(SU, 'S_ENTRY', 'row'),

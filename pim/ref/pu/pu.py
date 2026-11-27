@@ -120,6 +120,19 @@ COND_UNKNOWN = {0x28}
 # harness's (OURS, PU.flags; an unset flag raises): a single PE with no
 # event pending, so both are false.  Which flag is which is NOT
 # discriminated on the path run (both false).
+# rassy's own decoder confirms the numbering (sixth session, HELD-SOURCE,
+# no longer by position): cndf/7's arm 7 hands off to cndf_others/5
+# (@3321), a hash switch on EM1 (op cd00 mask 7f, 64 keys, 0..3f); key k's
+# arm takes the pool constant at slot 00dc + k for k = 00..27 (the 40
+# 'cond' names: 00 alf_zero, 09 over_flow, 0a less, 19 slit_check, 1e
+# MRP, 1f COL, 21 interrupt_all), keys 28 / 29 build 'cond tag0', 2c-2f
+# '3_way_set_up' / '4_way_set_up' (2e / 2f with '/'), 2a / 2b
+# case_gc_setup mdr1 / mdr2 (slots 0104 / 0105), and 30-3f slots
+# 0106-0115: case_tag_setup mdr1 0, mdr2 0, .. mdr1 7, mdr2 7 (so 3a is
+# case_tag_setup mdr1 5, the column-2 set-up VERIFIED at 2d3e: column
+# 7 - k, as setup.S_TDAR; and 3f is case_tag_setup mdr2 7).  Pool slots
+# are resolved from each arm's relative 'pmi 49' operand
+# (scratch cndo.py; asm/ptfdump.py pimmutil rassy --list).
 FLAG_CONDS = {0x19: 'slit_check', 0x21: 'interrupt_all'}
 # U2, 2026-11-27, sixth session: EM1 1e and 1f are positions 30 and 31 of
 # the same rassy list, 'cond MRP' and 'cond COL' (and rassy's flag
@@ -129,7 +142,7 @@ FLAG_CONDS = {0x19: 'slit_check', 0x21: 'interrupt_all'}
 # two such bits to the E stage: whether every MRB in the chain was off,
 # and whether the first two pointers' MRBs were off (the data can be
 # collected).  So 1e / 1f are the S stage's chain reports, formed into
-# COND like the other flags.  INFERRED (the name by position; that they
+# COND like the other flags.  INFERRED (the name HELD-SOURCE, rassy's key; that they
 # are the Fig. 3-23 reports).  Their values are the S stage's
 # (setup.py S_REPORTS, OURS): for an operand held directly, no pointer
 # followed, COL is false (nothing to collect); MRP is not given (raises).
@@ -485,8 +498,11 @@ RULES = {
 # carry one more constant than arms 0-7, and the class's constant pool
 # holds, in order, 'if cond' four times, 'if not cond' four times, then
 # the same again for jmpf/10 (HELD-SOURCE: ptfdump.py pimmutil rassy
-# --list, the pool before the 'cond alf_zero' list; the pool order is
-# the order of first use, INFERENCE).  So JMPF 8-b are taken "if cond"
+# --list; resolved: each arm's 'pmi 49' operand is a relative reference,
+# and arms 8-f of jmpf/9 land on pool slots 00af-00b6 (jmpf/10's on
+# 00b7-00be), 00af-00b2 'if cond' and 00b3-00b6 the vector [if, [not,
+# cond]], one slot each; sd1f/2's arms 2 / 3 land on 00ad / 00ae, ',
+# mdr1 mar1' / ', mdr2 mar2', just before).  So JMPF 8-b are taken "if cond"
 # and c-f "if not cond", arms 8-f repeating 4-7's kinds (goto short,
 # call, goto long, call long).  Executed: e at 2440 and 2461
 # (switch_on_non_list on nil: 2440 must jump to 2461 and 2461 to the
