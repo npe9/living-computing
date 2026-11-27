@@ -48,6 +48,12 @@ SRC = ['zero'] + LATCHES            # an ALU input
 DST = ['none'] + LATCHES            # a load destination (SD1F, SD2F, ADF)
 OPS = ['add', 'sub', 'pass1', 'pass2']
 CONDS = ['lt', 'le', 'eq', 'ne', 'gt', 'ge', 'never', 'always']
+# Conditions on a tag: the MRB (tag bit 0) of the ALU result's tag, which
+# for a word with an AS1 input and no operation is that input's tag.
+# Offered only to the condition keys listed in TAG_CONDS (in every
+# domain they cost --check about a minute): U2, 2026-11-27, contract
+# 'reuse_kl1', CNDF 7 EM1 29.
+TAG_CONDS = {'7_29': CONDS + ['mrb_on', 'mrb_off']}
 STAMP = ['none', 'S1', 'ALU']       # what a TGIF bit stamps with the EM1 tag
 BITS = [58, 59, 60, 61, 62]
 SEL = ['none', 58, 59, 60]          # a select bit: set picks the second register
@@ -64,7 +70,7 @@ GLOBAL = {
     'dstsrc': ['ALU', 'S1'],
 }
 LIMIT = 1 << 20                     # data range: no overflow inside it
-UNDF, REFO, INTO = 8, 6, 0          # kbn.TAGS
+UNDF, REFO, INTO, LISTO = 8, 6, 0, 4  # kbn.TAGS
 
 
 def tr(x, name):
@@ -91,7 +97,7 @@ def hyp_space(words):
         h['tr_as1_%d' % tr(x, 'AS1F')] = SRC
         h['tr_as2_%d' % tr(x, 'AS2F')] = SRC
         h['tr_alf_%d' % tr(x, 'ALF')] = OPS
-        h['cond_%s' % condkey(x)] = CONDS
+        h['cond_%s' % condkey(x)] = TAG_CONDS.get(condkey(x), CONDS)
     return h
 
 
@@ -217,11 +223,13 @@ class Inst:
         r = self.P(r)
         ck = 'cond_%s' % condkey(x)
         c = 'false'
-        for m in CONDS:
+        for m in HYP.get(ck, CONDS):
             if m in REL:
                 c = ite(is_(ck, m), REL[m] % r[1], c)
             elif m == 'always':
                 c = ite(is_(ck, m), 'true', c)
+            elif m in ('mrb_on', 'mrb_off'):
+                c = ite(is_(ck, m), '(= (mod %s 2) %d)' % (r[0], m == 'mrb_on'), c)
         self.cond.append(self.nm(c, 'Bool'))
         new = dict(p1)
         for n in LATCHES:
@@ -351,7 +359,52 @@ def contracts():
         out[name] = (img, path, [], compare(rel, j),
                      'succeeds (the second word ends; the first does not jump to the R04 := R11 '
                      'exit) iff a %s b' % rel, 'DOCUMENTED instruction; the exits read as failure INFERRED')
+
     return out
+
+
+def side_contracts():
+    """Contracts decided on their own, outside contracts() (in the joint
+    set each one costs --check about a minute): name -> as contracts()."""
+    out = {}
+
+    def reuse(e):
+        t = e.L0['MDR1'][0]
+        pre = ['(or (= %s %d) (= %s %d))' % (t, LISTO, t, LISTO + 1), eq(e.d('cprev'), 0)]
+        return pre, ['(= %s (= %s %d))' % (e.ended(), t, LISTO)]
+    out['reuse_kl1'] = ('img2', (0x31ec, 0x31ed), [], reuse,
+                        "put_reused_structure's other row with a list pointer in MDR1: the "
+                        'second word ends (the cell reused in place) iff the MRB is off '
+                        '(LISTo), and goes on to the allocating arm 31ee for LISTx',
+                        'INFERRED contract (TR-466 4.2: a single-referenced input cons cell is '
+                        'reused; thesis Fig. 3-23)')
+    return out
+
+
+SIDE_PINNED = {
+    # U2 2026-11-27, third session (pu.py RULES['em1_29_mrb']): CNDF 7
+    # EM1 29 over contract reuse_kl1 alone.  Every value relation,
+    # 'never' and 'always' are eliminated; the MRB test survives up to
+    # the global end polarity, and under the adopted one ('b0=0 ends if
+    # cond', pu.py's j1 rules) only mrb_on.
+    ('reuse_kl1', 'cond_7_29', None): ['mrb_on', 'mrb_off'],
+    ('reuse_kl1', 'cond_7_29', 'b0=0 ends if cond'): ['mrb_on'],
+}
+
+
+def side_check():
+    global HYP
+    sc = side_contracts()
+    fails = []
+    for (cn, sel, pol), want in SIDE_PINNED.items():
+        cs = {cn: sc[cn]}
+        HYP = hyp_space(words_of(sc[cn]))
+        fixed = {'endpol': pol} if pol else {}
+        got = [m for m in HYP[sel] if cegis(cs, dict(fixed, **{sel: m}))[0]]
+        if got != want:
+            fails.append('FAIL pu_smt %s over %s (endpol %s): got %r, pinned %r'
+                         % (sel, cn, pol, got, want))
+    return fails
 
 
 def words_of(c):
@@ -522,10 +575,11 @@ def check():
     got, _, _ = decide([k for k in PINNED if k != 'satisfiable'])
     fails = ['FAIL pu_smt %s: got %r, pinned %r' % (k, got.get(k), v)
              for k, v in PINNED.items() if got.get(k) != v]
+    fails += side_check()
     for f in fails:
         print(f)
     print('pu_smt --check: %s (%d decisions; %d counterexamples, %d z3 runs)'
-          % ('FAIL' if fails or not PINNED else 'PASS', len(PINNED),
+          % ('FAIL' if fails or not PINNED else 'PASS', len(PINNED) + len(SIDE_PINNED),
              sum(len(v) for v in POOL.values()), CALLS[0]))
     return 1 if fails or not PINNED else 0
 
@@ -551,7 +605,7 @@ def main(argv):
         for k in sorted(model or {}):
             print(k, model[k])
     elif argv[0] == '--contract':
-        print(cegis({argv[1]: contracts()[argv[1]]}))
+        print(cegis({argv[1]: dict(contracts(), **side_contracts())[argv[1]]}))
     return 0
 
 

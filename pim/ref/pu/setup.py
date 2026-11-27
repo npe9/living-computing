@@ -105,11 +105,55 @@ FORMS = {
     # below.  (form, the operand register's field)
     'switch_on_non_list': ('s_tag', 'x'),
     'get_atom': ('s_tag', 'op'),
+    # U2 (2026-11-27, third session): get_bound_value x, y (entry 3880,
+    # ODPF 4, tag immediate UNDF, like get_atom): the S-stage test on
+    # x, and MDR2 := r[y], the bound value (S_CONST).  OURS from pimm.py's
+    # i_get_bound_value (unify(reg[x], reg[y])); support: its OS1F is 3,
+    # and the thesis's list of set-up sources (printed p.128) numbers (3)
+    # the RF entry named by r0-r3 (not fitted: get_atom has OS1F 1).
+    # 3880 writes MDR2 into the variable cell (MAR1) and ends, as
+    # 3800-3801 do for get_atom with the stamp.
+    'get_bound_value': ('s_tag', 'x'),
+    # U2 (2026-11-27, third session): the ODPF 3 start (ODPF3_START
+    # below).  The operand is y, dereferenced (pimm.py's
+    # i_put_reused_structure: deref(reg[y]), the result to reg[x]): OURS;
+    # the side case put_reused_structure 3,0,2 in u2_append.py tells y
+    # from x (31ec writes opd9, the x field).
+    'put_reused_structure': ('s_odpf3', 'y'),
 }
+# Entries whose constant operand is the low 8 bits (format r_r_c8,
+# kl1_encoding.md): pu.RULES['sc2f1_ir'] raises where c8 and c16 differ.
+IR_C8 = ('put_reused_structure',)
+
+# The ODPF 3 start (INFERRED, U2 2026-11-27, third session).  Thesis
+# printed p.129: the nano-code field ODPF controls how the start address
+# is generated, its low bits modified by conditions, among them the tag
+# test of section 3.3.4; printed p.136 gives the combination for add:
+# "if (data.tag==int) start(for_int) else start(for_others)", data the
+# dereferenced operand; printed p.133 the 2-bit code of a dereference
+# set-up (equal to the immediate / other / ref, with the MRB for KL1) in
+# TDAR bits 3-2.  Read here as: for an ODPF 3 entry with a tag immediate
+# (EMO2), start = entry | code << 2, code 0 when the dereferenced
+# operand's tag equals the immediate (MRB ignored, as pu.DEREF_SETUP),
+# 1 otherwise; the dereference leaves no REF, so codes 2 and 3 do not
+# arise (raise).  Static evidence (scratch census of the decode table):
+# 25 entries have ODPF 3, 19 of them with a tag immediate.  Of those 19,
+# 18 have INTo, and 14 of them reach the failure exit (XR := R11, R04 :=
+# XR: try_me_else's alternative, the U2 rule for R11), p.136's
+# for_others, from entry + 4: the 9 compare / arithmetic entries
+# (less_than .. modulo) at entry + 4 itself, with entry + 8 the next
+# entry (no third row), and shift_left .. exclusive_or after further
+# tests (3b23); the 4 *_extended entries call 0d87 at entry + 4.  The
+# 19th, put_reused_structure (immediate 1e, the vector with
+# a descriptor): entry 31e8 reads [MAR1] and tests for VDESC (the
+# descriptor), 31ec is the other row.  EXECUTED at 31ec (append's list).
+# Injections: 'odpf3_entry' (start at the entry whatever the tag),
+# 'odpf3_bits10' (the code in bits 1-0).
+ODPF3_SHIFT = 2
 # get_atom's constant: the atom number, the instruction's low 24 bits, put
 # in MDR2 by the S stage with no tag (the routine stamps it: 3800 ATOMo,
 # 3804 ATOMx).  OURS: that the S stage leaves the constant in MDR2.
-S_CONST = {'get_atom': 'a24'}
+S_CONST = {'get_atom': 'a24', 'get_bound_value': 'y'}
 
 # The S stage's tag mechanisms (Nakashima's thesis pp.134-137, DOCUMENTED:
 # (1) the tag of an operand compared with the entry's tag immediate into
@@ -174,6 +218,19 @@ def setup(pu, name):
         raise KeyError('no set-up form for %s' % name)
     t, v = pu.ir
     mdr, mar = form
+    pu.ir_c8 = base(name) in IR_C8
+    if mdr == 's_odpf3':
+        if nc['ODPF'] != 3 or imm is None:
+            raise SStageUnknown('ODPF 3 start for %s: ODPF %d, immediate %s'
+                                % (name, nc['ODPF'], imm))
+        data, last = deref(pu, pu.an[pu.ir_field(mar)])
+        pu.wr[mekbn.MDR1] = data
+        if last is not None:
+            pu.wr[mekbn.MAR1] = (0, last)
+        code = 0 if data[0] & ~1 == imm & ~1 else 1
+        if ODPF3_SHIFT is None:         # injection: the entry whatever the tag
+            return start
+        return start | code << ODPF3_SHIFT
     if mdr == 'label':
         pu.wr[mekbn.MDR1] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
         return start
@@ -186,7 +243,11 @@ def setup(pu, name):
         if last is not None:
             pu.wr[mekbn.MAR1] = (0, last)
         if base(name) in S_CONST:
-            pu.wr[mekbn.MDR2] = (0, {'a24': v & 0xffffff}[S_CONST[base(name)]])
+            src = S_CONST[base(name)]
+            if src == 'a24':
+                pu.wr[mekbn.MDR2] = (0, v & 0xffffff)
+            else:
+                pu.wr[mekbn.MDR2] = pu.an[pu.ir_field(src)]
         if S_ENTRY == 'row':    # the injection: every tag takes a TGT row
             return start | pu.tgt[nc['TDPF']][data[0] & 63] << 2
         if data[0] == imm:
