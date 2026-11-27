@@ -139,7 +139,8 @@ RULES = {
     # A conditional JMPF 1 (EM bit 1) with EM bit 0 set is taken when
     # COND is false.  INFERRED, decided at 31fb/31d2/318f/31d8: the
     # pop's end must be taken when the link is not the end marker.  With
-    # EM bit 0 clear: not decided, raises.
+    # EM bit 0 clear: RULES['j1_bit0_clear_true'] below (U2, decided at
+    # the return 2050).
     'j1_bit0_false': True,
     # AS1F 3 with AS2F 0: the AS1 bus carries the constant EM2.  INFERRED
     # (thesis p.144: "AS1F modifies AS2F's meaning for constants"; open in
@@ -149,6 +150,31 @@ RULES = {
     # 337b): 16 / 1 - 3 and 16 / 2 - 3, the refill's loop count for a
     # 16-word chunk (README "First routine that would not run").
     'as1f3_em2': True,
+    # SC2F b, the "wide" immediate (704 words of image 2; layout open in
+    # mekbn): the 10 bits EM2:EM3, zero-extended.  INFERRED.  Static
+    # evidence: the 223 words whose wide value is 1a0 carry EM1 0 or a
+    # TGIF 1/2 stamp tag (2071 {REFo, 1a0}, 2077 {INTo, 1a0}), so EM1 is
+    # not part of the value where it is a tag.  Decided at 204b-204d
+    # (start's heap-top routine: 1a0 + 4a is the parameter cell read;
+    # the alternative EM1:EM2 reading, the injection 'wide_em1em2', reads
+    # 1a + 4 and stops on memory never written).  A wide word whose EM1 is
+    # non-zero and not a stamp raises (width UNKNOWN: 16 bits or 10).
+    'sc2_wide': 'EM2:EM3',
+    # A conditional JMPF 1 with EM bit 0 CLEAR is taken when COND holds:
+    # the static agent's INFERRED polarity (pu_microcode_inference.md 6.3
+    # item 4, "EM bit 0 = 0 ends if the condition holds"), now EXECUTED on
+    # a conditional return at 2050 (start's heap-top rounding, below).
+    'j1_bit0_clear_true': True,
+    # CNDF 2: COND := the ALU result (32 bits) is zero (rassy's alf_zero;
+    # CNDF 5 is the static agent's eq).  INFERRED, decided at 204f-2052:
+    # 204f MDR2 := hp & 15 forms COND, 2050 R1f := hp & ~15 and returns
+    # if COND, 2051-2052 add 16.  The contract: the heap top start
+    # leaves is the parameter rounded UP to 16 (never below it: the cells
+    # below are in use).  Under 'not zero' (the injection 'cnd2_nonzero')
+    # an unaligned top is rounded DOWN: FAIL.  Jointly with the polarity
+    # above (the pair (zero, taken if COND) and (not zero, taken if not
+    # COND) are the two that satisfy the contract).
+    'cnd2_zero': True,
 }
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
@@ -208,7 +234,15 @@ def _cnd7(pu, upc, x, a):
     raise Unmodelled(upc, 'CNDF 7 EM1 %02x (condition UNKNOWN)' % em1)
 
 
-COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7}
+def _cnd2(pu, upc, x, a):
+    """CNDF 2: the word's ALU result is zero (RULES['cnd2_zero'])."""
+    if pu.alu_seen is None or pu.alu_seen[2] is None:
+        raise Unmodelled(upc, 'CNDF 2 with no ALU operation')
+    z = pu.alu_seen[2] & M32 == 0
+    return z if RULES['cnd2_zero'] else not z
+
+
+COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7, 2: _cnd2}
 
 
 class PU:
@@ -230,6 +264,7 @@ class PU:
         self.mstk = []
         self.cond = None        # COND, set by the previous word (None = not formed)
         self.ir = None          # the KL1-B instruction (tag, value) in the E stage
+        self.pc = None          # its address (the A stage's, OURS: set by a harness)
         self.trace = []         # (upc, word)
         self.writes = []        # (upc, address, (tag, value))
         self.cycles = []        # one record per microcycle (README "Trace format")
@@ -275,6 +310,13 @@ class PU:
             return (0, field(x, 'EM1'))
         if sc2 == mekbn.SC2_EM2:
             return (0, field(x, 'EM2'))
+        if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM2:EM3':
+            if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2):
+                raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
+                                 % field(x, 'EM1'))
+            return (0, field(x, 'EM') & 0x3ff)
+        if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM1:EM2':
+            return (0, field(x, 'EM') >> 4)         # injection only
         raise Unmodelled(upc, 'SC2F %x immediate' % sc2)
 
     def alu(self, upc, x, old):
@@ -475,13 +517,15 @@ class PU:
                 # from a source not identified (INFERRED, inference doc 2.2)
                 raise Unmodelled(upc, 'JMPF 1 EM bit 2: multiway, low-bit source UNKNOWN')
             if conditional:
-                if not em & 1 or not RULES['j1_bit0_false']:
+                if em & 1 and not RULES['j1_bit0_false']:
+                    raise Unmodelled(upc, 'JMPF 1 conditional with EM bit 0 set (rule off)')
+                if not em & 1 and not RULES['j1_bit0_clear_true']:
                     raise Unmodelled(upc, 'JMPF 1 conditional with EM bit 0 clear')
                 if prev_cond is None:
                     raise Unmodelled(upc, 'JMPF 1 %s? with no condition formed' % kind)
                 if RULES['j1_cond_prev_strict'] and self.cond_cycle != cycle - 1:
                     raise Unmodelled(upc, 'JMPF 1 %s?: COND not formed by the previous word' % kind)
-                taken = not prev_cond
+                taken = not prev_cond if em & 1 else bool(prev_cond)
             elif em & 1:
                 raise Unmodelled(upc, 'JMPF 1 %s with EM bit 0' % kind)
         elif conditional:

@@ -35,6 +35,8 @@ python3 asm/pu_smt.py --check
 
 echo "=== held KL1 microprogram executed (ref/pu, rung U1 of docs/pu_microcode_plan.md) ==="
 python3 ref/pu/check_pu.py
+echo "=== held KL1 microprogram on a whole program (ref/pu/u2_append.py, rung U2: furthest point, not reached) ==="
+python3 ref/pu/u2_append.py
 
 echo "=== PSI side: the Librarian's loader, .ptf templates to class objects (TM-388 cases, known plaintext) ==="
 python3 -I psi/test_librarian.py
