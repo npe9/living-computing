@@ -73,18 +73,21 @@ TGT_COLUMN = {}
 # names MDR1, odd MDR2, k = (EM1 - 30) >> 1).  TDAR := the TGT byte (KL1
 # table 5300) of that MDR's tag, as it stood before the word, from column
 # 7 - k (INFERRED: 3a = mdr1 5 is column 2, VERIFIED at 2d3e, and
-# setup.S_TDAR's 7 - TDPF).  MEASURED (scratch census, image 2, 168
-# words): CCF bit 58 goes with mdr1 (69 of 103 mdr1 words, no mdr2 word)
-# and bit 59 with mdr2 (49 of 62, 4 mdr1 words).  Shapes the rule meets:
+# setup.S_TDAR's 7 - TDPF).  MEASURED (scratch census, image 2, 165
+# words; CCF bits 59..58 against the parity): mdr1 words 00 8, 01 69,
+# 10 4, 11 22; mdr2 words 00 7, 01 0, 10 49, 11 6 (a correlation, not
+# a proof of the parity: the rule does not lean on it).  Shapes met:
 # 0c0c (mdr2 7, column 0 on a REFo: 0e38; REFx 0e3b; LISTx, LISTo and
 # the others 0e39, 0e3a, 0e3c, all calls of the trap 6c21: the routine is
 # called only for a REF); 0e38 (mdr2 2, column 5: 20 rows 0e60-0e73 for
 # bytes 0..19, UNDF 18 -> 0e72); 0c0d (mdr1 1, column 6) and 0840 (mdr2
 # 0, column 7).  Admitted in any word whose EM1 is free of the jump
 # operand (JMPF 0, 3, 4, 6, 7, 8, a, b, e: all met in the census);
-# JMPF 1 / 5 / 9 / d words raise.  Injection 'cts_as1': the old rule,
-# the AS1 input's tag (0c0c's AS1 is MAR1).
+# JMPF 1 / 5 / 9 / d words raise.  Injection 'cts_as1' (CTS_SOURCE
+# 'as1'): the tag taken from the ALU's AS1 input, as the old 3a rule did
+# (0c0c's AS1 is MAR1).
 CASE_TAG_SETUP = True
+CTS_SOURCE = 'mdr'
 CTS_MDR = {0: MDR1, 1: MDR2}            # EM1 parity -> register (injection 'cts_mdr_swapped')
 CTS_COLUMN = lambda k: 7 - k            # noqa: E731 (injection 'cts_col_k')
 # The dereference multiway set-up (thesis printed p.133, section 3.3.4.1,
@@ -205,9 +208,10 @@ ALF_CONDS = {0x00: 'alf_zero', 0x01: 'alf_sign', 0x02: 'alf_carry', 0x03: 'alf_o
 # words, all at goal or reduction boundaries: proceed (2170, 217a, 2212
 # R04 := the next goal's pc), execute (4cc1), execute_external (4ce0,
 # 4ced, 4cf3), suspend (1c60), merge (4040, 4079) and the boot (20a8,
-# W1f := 0); rassy's reset table numbers 7 reset_CGCF.  A reduction
-# counter (pimm.py counts reductions at execute and proceed) or a
-# per-goal flag: not decided.  Executed at 4cc1.  (The EM bits 15-10 of
+# W1f := 0); rassy's reset table numbers 7 reset_CGCF.  Since U2's
+# seventh session the names are HELD-SOURCE by rassy's MCF decoder
+# (MCF_FLAG_OPS below: 06 reset_SUSPF, 07 reset_CGCF); what the flags
+# do is still not modelled, and nothing run here reads them.  Executed at 4cc1.  (The EM bits 15-10 of
 # a page-relative jump word are free of its 10-bit target, so 4cc1's
 # EM1 is 07.)  Injection 'mcf_unknown_raise': raises at 4cc1.
 MCF_UNKNOWN = {0x06, 0x07}
@@ -579,7 +583,9 @@ RULES = {
     # 0e72, a return).  INFERRED (U2, seventh session; S8's "low 4 bits"
     # was the 2d3f / 31a3 tables'); bytes over 15 elsewhere still need a
     # base whose low bits clear them.  Off (the injection 'case_4bit'):
-    # a byte over 15 raises, as before.
+    # a byte over 15 raises, as before (a guard only).  'low4' (the
+    # injection 'case_low4', S8 read literally, byte & 15): UNDF 18 lands
+    # on 0e62, the row that frees the cell: FAIL.
     'case_wide': True,
     # TDAR holds from its set-up across words that form nothing (a JMPF 1
     # word, whose CNDF bits are the jump's low address bits), so a
@@ -589,7 +595,8 @@ RULES = {
     # 0c13 -> 0c14 -> 0801 all put their set-up (EM1 32 / 33) two words
     # before the JMPF 3.  Executed at 0802.  Off (the injection
     # 'tdar_one_word'): the set-up must be the word just before (the old
-    # rule).
+    # rule): a guard fires, so the rule is needed, but NOT discriminated
+    # (no rival reading of the multiway runs and is compared).
     'tdar_holds': True,
     # AS1F 3 with AS2F not 0 (0802: 'as1_3 - MDR1'; the EM bits there are
     # the JMPF 3 base, not a constant, so RULES['as1f3_em2'] does not
@@ -1075,10 +1082,10 @@ class PU:
             # the named MDR's tag (old value), column 7 - k
             if mekbn.jk(x) == 5 or jf in (9, 0xd):
                 raise Unmodelled(upc, 'case_tag_setup in a JMPF %x word (EM1 not free)' % jf)
-            src = old[CTS_MDR[em1 & 1]]
+            src = old[CTS_MDR[em1 & 1]] if CTS_SOURCE == 'mdr' else self.as1_seen
             if src is None or is_poison(src) or is_stale(src) or src is UNKNOWN:
                 raise Unmodelled(upc, 'case_tag_setup on %s: %r' % (
-                    WNAME[CTS_MDR[em1 & 1]], src))
+                    WNAME[CTS_MDR[em1 & 1]] if CTS_SOURCE == 'mdr' else 'the AS1 input', src))
             tdar = (cycle, self.tgt[CTS_COLUMN((em1 - 0x30) >> 1)][src[0] & 63])
         elif cnd == 7 and mekbn.jk(x) != 1 and em1 in ALF_CONDS:
             # 'cond alf_*' on the set_alf latch (ALF_CONDS): POISON
@@ -1179,7 +1186,7 @@ class PU:
                                  % (target, tdar[1]))
             if tdar[1] > 15 and not RULES['case_wide']:
                 raise Unmodelled(upc, 'JMPF 3 TGT byte %02x over 15' % tdar[1])
-            target |= tdar[1]
+            target |= tdar[1] & 15 if RULES['case_wide'] == 'low4' else tdar[1]
         if jf == 0xb and RULES['jmpf_b_call'] and kind == 'jump':
             kind = 'call'               # RULES['jmpf_b_call']: taken, it pushes upc + 1
         if mekbn.jk(x) in (3, 4, 6):

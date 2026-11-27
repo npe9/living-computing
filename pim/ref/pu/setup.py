@@ -209,7 +209,10 @@ S_CONST = {'get_atom': 'a24', 'get_bound_value': 'y'}
 #   Discriminated: the start (s_imm_plus1) and MAR1 (s_no_mar1: STOP at
 #   3801).  The COND part: s_cond_true changes nothing, but s_cond_false
 #   (sixth session) FAILs append at instruction 1 (3300's jump, a cell
-#   written at 1ea), so the COND is pinned by its false side.  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
+#   written at 1ea), so the COND is pinned by its false side.  (Since
+#   the seventh session it STOPs at 3309 instead, the write through
+#   MAR1, which is STALE for an operand held directly: S_MAR1_DIRECT_
+#   STALE.  The old FAIL wrote through the previous instruction's MAR1.)  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
 #   3305-3309, which put the variable cell the list was reached through
 #   on the R19 list.
 #   Any other tag takes the multiway set-up (2): for ODPF 6 entries,
@@ -242,7 +245,8 @@ S_ENTRY = 0             # the injections: 's_imm_plus1' 1; 's_imm_row' 'row'
 #   from row 4 in CNDF only.  The rejected reading, TGT column TDPF by
 #   the dereferenced tag (the injection 's_imm_row'), sends LISTo to
 #   row 2.  Executed at 3310 (nil).  Injection 'other_row_entry' (the
-#   entry for every tag).
+#   entry for every tag: since the seventh session a STOP at 3309, MAR1
+#   STALE, where it FAILed at 12).
 #
 #   S_TDAR (INFERRED): the S stage's multiway set-up (thesis printed
 #   p.134 mechanism (2), "a multiway-branch set-up by the memory
