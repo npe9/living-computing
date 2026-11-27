@@ -12,6 +12,8 @@ stands in for the D/A/R/S stages the decode entry's nano-code drives.
     python3 ref/pu/check_pu.py -v         with every microinstruction executed
     python3 ref/pu/check_pu.py --inject NAME
     python3 ref/pu/measure.py             the counts behind the rules, pinned
+    python3 ref/pu/u2_append.py [-v]      the U2 harness: append/3 whole (in run_tests.sh, ~3 s)
+    python3 ref/pu/u2_append.py --inject NAME
 
 The microcode is third-party and stays out of git: it is read from
 `docs/nonlocal/psdpim.tar.Z` at run time, as `asm/psdpim.py` reads it.
@@ -20,7 +22,7 @@ terminal.
 
 ## State (2026-11-26)
 
-**U1 reached; U2 not reached.**
+**U1 reached; U2 not reached** (furthest point: section "U2" below).
 
 - 32 cases, all PASS (80 held microinstructions executed). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
@@ -226,12 +228,95 @@ The decoded rules are module dictionaries, `RULES` and `COND_RULES`, so
 a harness can change one (as `check_pu.py --inject` does) without
 editing the file.
 
+## U2: append/3 on the held microcode (2026-11-26, second session)
+
+**U2 not reached. Furthest point: 2 of 16 instructions executed and
+matched, then a stop at the third (`read_variable`).** Plus a held boot
+routine run (start's heap top, `204b`-`2052`, 6 or 8 words).
+
+`u2_append.py` runs the IPL image's own `append/3` (`scsi_fep_module`,
+cells 6644-6658) as `append([a], [], Z)`: two reductions, 16
+instructions on `pimm.py`. The PU executes the same instructions in
+`pimm.py`'s order with its state carried over (registers, R02, R11,
+free lists, memory); the D stage is the held decode table, the E stage
+the held routine. OURS: the A stage (cell and address from `pimm.py`'s
+trace), the goal switch before the first instruction (A0-A2 as
+`pimm.py` leaves them), the seeded free lists, memory as `pimm.py`'s
+cells. Per instruction, every R and M line of `pimm.py`'s trace is
+compared under `check_pu.Rename`; `sp` against R02; try_me_else's
+alternative against R11.
+
+| # | Instruction | Words | Result |
+|---|---|---|---|
+| boot | start's heap top `204b`-`2052` (called as from `2028`) | 6 (aligned) / 8 | R1f = the parameter cell `1a0 + 4a` rounded up to 16, on 5 parameters (contract) and on `pimm.py`'s heap pointer |
+| 0 | `try_me_else 0, @6658` (`216a`) | 1 | ok: R11 = `{REFo, load + 6658}`, `pimm.py`'s `alt` |
+| 1 | `switch_on_non_list 0,0,8` on a list (`3301`) | 1 | ok: R02 = the car's address, `pimm.py`'s `sp` |
+| 2 | `read_variable 3,0,0` (`34a0`) | 0 | STOP: its S-stage set-up is not modelled |
+
+**New rules** (in `pu.py` `RULES` / `COND_RULES`, `setup.py`):
+
+| Rule | Label | Decided at | Evidence; injection (observed) |
+|---|---|---|---|
+| `setup.S_FOR_IMM`: when the dereferenced operand's tag equals the entry's tag immediate EMO2, the S stage starts the routine at entry + 1 | INFERRED (mechanism DOCUMENTED) | `3301` (switch_on_non_list, A0 `LISTo`) | thesis pp.134-137: the S stage's "start address change by the comparison of the memory operand's tag with the immediate" (`start(for_list)` / `start(for_others)`), and `3301` is word for word its one-step `for_list` ("S = MDR1, eop()", Table 3-6 "list 1 step"): R02 := MDR1, end. Injection `s_for_imm_row` (every tag takes the TGT row, column TDPF 0, 4-word rows: `3308`): STOP at `3309` (MCF EM1 06), 1 of 16 matched |
+| `RULES['sc2_wide']`: SC2F b is EM2:EM3 (10 bits), zero-extended; EM1 non-zero and not a TGIF 1/2 stamp raises | INFERRED | `204b`-`204d` | static: words loading 1a0 carry EM1 0 or a stamp tag (`2071` `{REFo, 1a0}`, `2077` `{INTo, 1a0}`). Injection `wide_em1em2` (EM bits 15..4): the boot reads memory `1e`, never written: STOP, boot contract FAILs on all 5 parameters |
+| `COND_RULES[2]` / `RULES['cnd2_zero']`: CNDF 2 = the ALU result is zero (`rassy`'s `alf_zero`) | INFERRED | `204f`-`2052` | contract: start's heap top is its parameter rounded UP to 16 (never below: the cells below are in use). Injection `cnd2_nonzero`: all 5 parameters FAIL (aligned +16, unaligned rounded down) |
+| `RULES['j1_bit0_clear_true']`: a conditional JMPF 1 with EM bit 0 clear is taken when COND holds | INFERRED by the static agent (6.3 item 4); now EXECUTED on a return | `2050` | jointly with CNDF 2 above (the pairs (zero, taken if COND) and (not zero, taken if not) are the two that pass). Injection `bit0_clear_off`: STOP at `2050` on every parameter |
+| R11 holds try_me_else's alternative (`rassy`'s register-file 1, `ap`) | INFERRED projection | `216a` | `R11 <- {REFo, MDR1}`; the fail paths of `wait_*` (`3982`-`3983`, `39a6`-`39a7`) load XR from R11 and write R04 (`pc`). The label is the A stage's (OURS: MDR1 = pc + 2 + c16) |
+
+`check_pu.py` still passes unchanged with these rules (32 cases, 80
+words: the CNDF 2 rule and the bit-0-clear polarity meet no U1 word).
+
+**The boot.** `start` (`2028`, entry `37b`) is the KL1 firmware's
+initialisation, called from outside: `204b` (heap top into R1f), `2053`
+(calls the refill entries `3376`, `337b`, `3380`, `3382`-`3395` for every
+free list, and `2070`-`208d` builds lists from parameter pairs at
+`1a0 + aa`..`b2`), `209f` (with `20bc` R07 := 0: held evidence for the
+`zero_regs` rule's R07, read not run), `20c2`, `20e7`, then R0e and R10.
+`execute_first_predicate` (`2032`) loads R04 (`pc`) with
+`{REFo, [1a0 + 4b]}`, PIMM.PARAM's `bmadr` "Boot Module Address" by its
+place (INFERRED); it stops at `2035` on MCF with EM1 08. Only `204b` is
+run. The parameter cells are outside values (PIMM.PARAM, loaded by the
+KL0 side): OURS.
+
+**Never-set registers, a census** (image 2 below `6800`, reads / writes):
+R05 549 / 14, W0d 82 / 4 (`0d93`, `21e4`, `42ac`, `4c61`: save/restore-
+like sequences, not boot), R07 44 / 1 (`20bc`, in `start`), R06 118 / 12.
+R05 is read as a base (`1a0 + R05`, `{INTo, R05}` where 0 belongs) and
+no routine of `start` writes it: probably a constant or hardware source,
+like R06/R07; not settled.
+
+**The first stop, `read_variable` (`34a0`).** Nano-code ACF 0, DFF 2,
+OS1F 6, ODSF 3, TDPF 0, EMO1 9, EMO2 `0d`. The S stage must fetch the
+element at R02, dereference it and set up the multiway (thesis p.135);
+the entry is a 32-word table of 4-word rows. Under "column TDPF, 4-word
+rows" an atom element lands on row 4 (`34b0`), which writes `opda`
+(select a = y = 0), while `pimm.py` writes r[3] (x): so either the row
+or the select reading is wrong for this entry. `read_variable_without_
+deref` (`345a`-`345c`) writes `opd9` (x) from `[MAR1]` and branches
+(JMPF a, conditional: `cjump_time`) into the MRB-marking `case_branch`
+at `35c0`. Not run.
+
+**The S12 row entry** (a tag-test entry entered at a row by the tag):
+for `switch_on_non_list` (TDPF 0), TGT column 0 (REFo 0, LISTx 1, LISTo
+2, REFx 3, every other tag 4) with 4-word rows reads well: row 1
+`{LISTx}` then `3301`, row 2 frees the variable cell a single-reference
+list was reached through (`3305`-`3309`: [MAR1] := R19, R19 := MDR2),
+row 4 the branch to the label through `2447`, a 4-bit JMPF 2 (S10,
+UNKNOWN). `get_atom`'s rows (section 9 of `pseudo_pimm_microcode.md`)
+do not fit column 0, and `wait_nil` (TDPF 1) does not fit column 1 with
+4-word rows. Not adopted; any tag but the immediate raises.
+
 ## Next, for U2
 
-In order: the refill (makes the free lists the firmware's own and drops
-the seeding); `execute` (`4cc0`), `proceed` (`216c`), `try_me_else`
-(`216a`); the `get_*`/`wait_*` tables, which need the S-stage tag set-up
-(nano-code TDPF), the S12 row entry and TGT columns other than 2; CCF
-as a coded field; the conditional a/b/c/e timing (`RULES['cjump_time']`;
-the KL0 LESST path `1046`-`1049` is where the static agent suggests
-testing it). An append reduction needs all of these.
+In order, as the harness stops on them: the S-stage set-up of
+`read_variable` (element fetch, dereference, TGT row; and the select
+of its result); the S12 row entry (which column, which granularity:
+`get_atom` and `wait_nil` disagree with the simplest reading) and the
+4-bit JMPF 2 (`2447`, the branch to a label); `put_reused_structure`
+(`31e8`, calls `31a1`/`31a3`), `get_bound_value`, `execute` (`4cc0`),
+`wait_nil`, `get_value`, `proceed` (`216c`). Then the boot beyond
+`204b` (the refill and list builders: MCF EM1 10 and CNDF 6, the
+counted loop; CCF as a coded field) to drop the seeded lists; the
+conditional a/b/c/e timing (`RULES['cjump_time']`; the boot's fill
+loop `209b`-`209e` and the KL0 LESST path `1046`-`1049` are where it can
+be tested).

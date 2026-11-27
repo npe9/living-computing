@@ -88,7 +88,51 @@ FORMS = {
     'put_vector_0': (None, None), 'put_vector_1': (None, None), 'put_vector_2': (None, None),
     'write_value': ('x', 'sp'), 'write_integer': ('c24', 'sp'), 'write_atom': ('a24', 'sp'),
     'write_nil': (None, 'sp'), 'write_variable': (None, None),
+    # U2 (2026-11-26): try_me_else's label, an A-stage address
+    # calculation (nano-code DFF 1): MDR1 = the label's absolute address,
+    # pc + 2 + c16 as pimm.py's i_try_me_else.  OURS (the A stage).
+    'try_me_else': ('label', None),
+    # the tag-test entries: S_STAGE below
+    'switch_on_non_list': ('s_tag', None),
 }
+
+# The S stage's tag mechanisms (Nakashima's thesis pp.134-137, DOCUMENTED:
+# (1) the tag of an operand compared with the entry's tag immediate into
+# COND; (2) the multiway set-up by the memory operand's tag (TGT into
+# TDAR); (3) the start address changed by that comparison, "if
+# (data.tag==list) start(for_list) else start(for_others)", with the
+# operand dereferenced first, p.137 "repeats the fetch until the tag is
+# not ref").  How (3) changes the address is not documented:
+#
+#   S_FOR_IMM (INFERRED): when the dereferenced operand's tag equals the
+#   entry's immediate EMO2 (the whole tag, MRB included), the start is
+#   the entry's address + 1.  Decided at 3301 (switch_on_non_list, A0 a
+#   list with its MRB off, append/3's first reduction): 3301 is word for
+#   word the thesis's one-step for_list routine ("S = MDR1, eop()",
+#   Table 3-6 "list 1 step"): R02 <- MDR1, end.  pimm.py: sp := the car.
+#   Any other tag would take the multiway set-up (2) into a row of the
+#   32-word entry; which TGT column and which row granularity is UNKNOWN
+#   here (column = TDPF with 4-word rows fits switch_on_non_list's rows
+#   1-4 when read, not run): raises.
+S_FOR_IMM = True        # switch for the injection 's_for_imm_row'
+
+
+class SStageUnknown(KeyError):
+    """An S-stage set-up this stand-in does not model."""
+
+
+def deref(pu, w):
+    """The S stage's dereference (thesis p.137): follow REF cells until
+    the tag is not a REF.  Returns (data, address of the last cell read
+    or None).  OURS as a mechanism stand-in (DOCUMENTED that it is done
+    in the S stage, not how its result is laid out in the registers)."""
+    last = None
+    while w[0] & ~1 == 0x06:
+        last = w[1]
+        if last not in pu.mem:
+            raise SStageUnknown('S-stage dereference of %x, never written' % last)
+        w = pu.mem[last]
+    return w, last
 
 
 def setup(pu, name):
@@ -102,6 +146,18 @@ def setup(pu, name):
         raise KeyError('no set-up form for %s' % name)
     t, v = pu.ir
     mdr, mar = form
+    if mdr == 'label':
+        pu.wr[mekbn.MDR1] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
+        return start
+    if mdr == 's_tag':
+        data, _last = deref(pu, pu.an[pu.ir_field('x')])
+        pu.wr[mekbn.MDR1] = data
+        if S_FOR_IMM and data[0] == nc['EMO2']:
+            return start + 1
+        if not S_FOR_IMM:       # the injection: every tag takes a row
+            return start | pu.tgt[nc['TDPF']][data[0] & 63] << 2
+        raise SStageUnknown('S-stage multiway set-up: %s tag %02x, TDPF %d (row entry UNKNOWN)'
+                            % (name, data[0], nc['TDPF']))
     if mdr in ('x', 'y'):
         pu.wr[mekbn.MDR1] = pu.an[pu.ir_field(mdr)]
     elif mdr:
@@ -130,6 +186,13 @@ def dispatch(pu):
     opcode, and the held decode table's entry (class << 8 | opcode) the
     start address.  Returns (name, start) after the S-stage set-up.
     An empty entry or another tag raises."""
+    name = decode(pu)
+    return name, setup(pu, name)
+
+
+def decode(pu):
+    """The decode-table name of the instruction cell pu.ir (dispatch's
+    D-stage half)."""
     t, v = pu.ir
     cls = {0x22: 2, 0x23: 3}.get(t)
     if cls is None:
@@ -138,4 +201,4 @@ def dispatch(pu):
     names = [n for n, e in pu.fw.kl1_entries().items() if e[0] == idx]
     if not names:
         raise KeyError('decode entry %03x empty' % idx)
-    return names[0], setup(pu, names[0])
+    return names[0]

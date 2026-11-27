@@ -1372,3 +1372,11 @@ as the structure pointer when written (`put_list`, `put_vector_N`,
 `write_*`) but `set_constant`/`put_constant` read the instruction's
 constant through select 2 (`3180`, `31ca`); `rassy`'s second bank names
 2 `gr` and 1 `sr`.
+
+Since (2026-11-26, second session): `ref/pu/u2_append.py` runs a whole
+program (`append/3`) on the held words and stops at its third
+instruction; it adds SC2F b = EM2:EM3 (section 16's "wider immediate", layout not
+read), CNDF 2 = ALU result zero, and the S stage's start + 1 for
+the immediate's tag (thesis pp.134-137), each INFERRED with its
+address in `ref/pu/README.md` "U2", which also records the boot
+(`start` `2028`) and the S12 row-entry readings tried.
