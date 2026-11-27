@@ -93,9 +93,13 @@ FORMS = {
     # pc + 2 + c16 as pimm.py's i_try_me_else.  OURS (the A stage).
     'try_me_else': ('label', None),
     # read_variable: the structure element's address, R02 (sp), in MAR1,
-    # as write_value's; 34a0 reads [MAR1] itself.  OURS (nano-code DFF 2,
-    # OS1F 6, ODSF 3 are not decoded: whether the S stage also fetches is
-    # not known); run only to find the first word that does not run.
+    # as write_value's; 34a0 reads [MAR1] itself.  OURS, with support
+    # (ref/pu/README.md "U2"): OS1F 6 is source (6), the structure
+    # pointer, in the thesis's numbered list of S-stage set-up sources
+    # (printed p.128), whose (4) WR fits OS1F 4 in every ODPF 1 entry run;
+    # not fitted (read_atom has OS1F 5).  DFF 2's fetch is not used on
+    # the path run: 34a0 overwrites MDR1 before anything reads it.
+    # EXECUTED in append (read_variable 3 and 4 match pimm.py).
     'read_variable': (None, 'sp'),
     # the tag-test entries (entries with a tag immediate): the S stage
     # below.  (form, the operand register's field)

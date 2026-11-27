@@ -135,15 +135,15 @@ window rungs):
 | Sub-rung | Milestone | In rung | State (2026-11-26) |
 |---|---|---|---|
 | U1a | straight-line held code executes | U1 | EXECUTED (one-word and multi-word routines) |
-| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. JMPF 3 `case_branch` (S8) at `2d3f`. A CNDF-0 word leaves COND standing (EXECUTED at `put_variable` `31d6`-`31d8`). Raise: conditional a/b/c/e (timing UNKNOWN, a switch), JMPF 2 (S10), JMPF 1 EM `7fff` (S9), JMPF 1 multiway with EM bit 2 (S2b, low-bit source UNKNOWN), 8/9/d/f |
+| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. JMPF 3 `case_branch` (S8) at `2d3f`. A CNDF-0 word leaves COND standing (EXECUTED at `put_variable` `31d6`-`31d8`). Raise: conditional a/b/c/e (timing UNKNOWN, a switch), JMPF 2 (S10), JMPF 1 EM `7fff` (S9), JMPF 1 multiway with EM bit 2 (S2b, low-bit source UNKNOWN), 8/9/d/f (8 admitted since U2 only in a dereference set-up word, `34a1`) |
 | U1c | the free-list allocator `3320`-`3324` on memory | U1 | EXECUTED: called by a held call word (`scsi_init`'s `615e`) and returning to `615f`, W1c `{REF, cell}` as `pimm.py`'s `new_var`; its last-cell arm reads R05 (UNKNOWN) |
 | U1-dispatch | decode-table dispatch from the instruction cell | U1 | EXECUTED: `setup.dispatch` takes class from the tag, opcode from the top byte, the start from the held table; every compared case enters through it |
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
-| U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; reading not reached |
-| U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b |
+| U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; a structure's elements read EXECUTED (`read_variable`, `34a0`-`34a2`, `3494`: two atoms in append, a list pointer in a standalone case, x := the element and R02 + 1 as `pimm.py`); a REF or the immediate (VECTo) element read, not run |
+| U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b. The dereference multiway set-up (thesis printed p.133: a ref / immediate / other code in TDAR bits 3-2, a KL1 four-way splitting ref by MRB) INFERRED for CNDF 7 EM1 `2d` (`pu.DEREF_SETUP`), executed for the code 'other' only (`34a1` -> `3494`); EM1 `28` is a condition, meaning UNKNOWN (`pu.COND_UNKNOWN`, untested on the path run) |
 | U2c | one unification instruction | U2 | one case EXECUTED standalone (`get_atom` on an unbound variable, `3800`-`3801`, matches `pimm.py`); not in a whole program; other tags raise: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
 | U2d | `proceed` / `execute` | U2 | not reached |
-| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run; `read_variable` (stops at `34a0`, CNDF 7 EM1 28), the label branch (`2447`, JMPF 2) and `wait_*` not reached |
+| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run, then `read_variable` twice; the stop is `put_reused_structure` (`31e8`: the S stage's start for a tag that is not the immediate); the label branch (`2447`, JMPF 2) and `wait_*` not reached |
 | U3a | suspend | U3 | not reached |
 | U3b | bind and resume | U3 | not reached |
 | U3c | several goals (the ready structure, goal switch) | U3 | not reached |
@@ -296,12 +296,13 @@ differs from a PIM/m PE, and so what the simulator stands in:
 
 Honest, and in sessions of the length that reached U1.
 
-- **U2 (after the second session, below):** three to five more
-  sessions. Each instruction of append has cost one S-stage question
-  (the S stage's set-up is the main unknown: `read_variable`'s TGT
-  column for EM1 28 at `34a0`, JMPF 8 and its MAR1 source, the S12 rows of `get_*`/`wait_*`, which disagree with
-  the simplest column reading) and the branch to a label needs the
-  4-bit JMPF 2 (S10). Earlier estimate, for the record:
+- **U2 (after the third session, below):** three to five more
+  sessions. Each instruction of append has cost one S-stage or set-up
+  question (`read_variable`'s was the dereference set-up, settled
+  for 'other'; next `put_reused_structure`'s start for a tag that is
+  not the immediate, then the S12 rows of `get_*`/`wait_*`, which
+  disagree with the simplest column reading) and the branch to a label
+  needs the 4-bit JMPF 2 (S10). Earlier estimate, for the record:
 - **U2 (first estimate):** two to four sessions. In order: the refill (AS1F 3 now
   INFERRED; still the initial R1f and W0d, the counted loop, CCF as a
   coded field), the allocator for three cells
@@ -403,3 +404,25 @@ Honest, and in sessions of the length that reached U1.
   (`2050`). Not settled: the S12 row entry, JMPF 2, `cjump_time` (not
   attempted), R05 /
   W0d (a census: R05 549 reads, 14 writes, none in `start`).
+- 2026-11-27 (third session): **U2 not reached; furthest point 4 of 16
+  instructions** (was 2), 11 held words. `read_variable` runs
+  (`34a0`-`34a2`, `3494`) twice in append and once standalone on a
+  list element, matching `pimm.py` (x and sp; no memory write). Decided
+  (`ref/pu/README.md` "U2", each with observed injections): CNDF 7
+  EM1 `2d` is the dereference multiway set-up of thesis printed p.133
+  (TDAR := code << 2 from the AS1 tag; 'other' = 1 executed; = EM2,
+  REFo, REFx read from the rows of `3490`-`349f`, not run, raise),
+  INFERRED; JMPF 8 sequences as JMPF 0 in that word only, INFERRED;
+  EM1 `28` is a condition of UNKNOWN meaning (COND := POISON, not
+  tested on the path), NOT discriminated; a read of a cell never
+  written gives POISON (OURS; `34a2` reads through the element
+  itself); `read_variable`'s MAR1 = R02 stays OURS, supported by OS1F 6
+  = the thesis's source (6) S (printed p.128), not fitted. A TGT-column
+  reading of `2d` was eliminated by a scratch script (no column of
+  `5300` sends ATOMo to `3494` and every tag to a row's first word);
+  column 0 passes append itself, so the list-element case is what
+  discriminates. A harness bug was fixed: `pimm.py`'s R and M lines
+  bypass `event()`, so no instruction had any to compare. The stop is
+  `put_reused_structure` (`31e8`): no S-stage set-up form; its operand
+  is a list and its immediate VECTo, so it needs the S stage's start
+  for a tag that is not the immediate (S12).
