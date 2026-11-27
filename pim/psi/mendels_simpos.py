@@ -112,6 +112,25 @@ def read_one(K, text):
     return t, text[pos:]
 
 
+# The label of each model's behaviour (agent_rules.md; test_mendels
+# test_models_labelled checks every model installed has one):
+# RECONSTRUCTED-FROM-MANUAL: the ESP manual's Example 3 (module doc)
+LABELS = {
+    ('simpos##standard_io_buffer', 'instance', 'putl', 2): 'RECONSTRUCTED-FROM-MANUAL (the newline INFERENCE)',
+    ('simpos##standard_io_buffer', 'instance', 'putt', 2): 'RECONSTRUCTED-FROM-MANUAL (the writer OURS)',
+    ('simpos##standard_io_buffer', 'instance', 'gett', 2): 'RECONSTRUCTED-FROM-MANUAL (the end-of-text term INFERENCE; the reader OURS)',
+    ('simpos##standard_io_buffer', 'instance', 'getl', 2): 'RECONSTRUCTED-FROM-MANUAL',
+    ('simpos##standard_io_buffer', 'instance', 'reset', 1): 'INFERENCE',
+    ('simpos##standard_io_buffer', 'instance', 'reread', 1): 'INFERENCE',
+    ('simpos##symbolizer', 'class', 'is_object', 2): 'INFERENCE',
+    ('simpos##library_utility', 'instance', 'get_packages_with_wildcard', 3): 'INFERENCE',
+    ('simpos##library_utility', 'instance', 'get_classes', 4): 'INFERENCE',
+    ('simpos##library_utility', 'instance', 'get_classes_with_wildcard', 5): 'INFERENCE',
+    ('simpos##library_utility', 'class', 'loading_lines', 3): 'OURS (the line HELD-SOURCE)',
+    ('simpos##process', 'instance', 'refute_in', 5): 'INFERENCE (the catchers not installed: OURS)',
+}
+
+
 def install(models, K):
     """Add the buffer's text methods to kl0's SIMPOS_MODELS."""
     C = 'simpos##standard_io_buffer'

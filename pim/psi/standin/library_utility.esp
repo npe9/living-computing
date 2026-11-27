@@ -25,6 +25,7 @@ class library_utility has
 
 % :create(#library_utility, UT) -- INTERPOLATED from USAGE (loader.esp:63, and librarian.md
 % §3 create/2,3); the body OURS: no output yet.
+% LABEL: INFERENCE (the body OURS)
 :create(Class, UT) :-
         :new(Class, UT),
         UT!output := 0;
@@ -36,12 +37,14 @@ attribute output := 0;
 
 % :set_output(UT, W) -- HELD-SOURCE: ds_bep.esp:3189-3203 (text_window :=
 % Out, for an Out not a librarian_io); OURS: kept, flash not modelled.
+% LABEL: HELD-SOURCE (a COPY of the class)
 :set_output(UT, W) :- UT!output := W;
 
 % :load(UT, Ids) -- HELD-SOURCE: ds_bep.esp:1829-1831, 1989-2001: per class
 % `Loading <id>...` to the output (the template file found, as for a
 % catalogued and saved class, install.e Step 6-7); the rebuild itself not
 % made here (the class is already loaded: the head comment).
+% LABEL: HELD-SOURCE (the lines; no rebuild: OURS)
 :load(UT, Ids) :-
         :loading_lines(#library_utility, Ids, Lines),
         put_lines(UT!output, Lines);

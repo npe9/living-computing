@@ -310,7 +310,9 @@ plus the methods and selectors added for them.
 | `redisplay/4`, `split/2`, `view_rows/5`, `set_view_top/3` | pmacs_display | none | OURS |
 | `escape/3` | standard_editor (table) | none | OURS (§3.3) |
 
-Counts for the methods added on 2026-11-27, by the label of their body:
+Counts for the methods added by the Pmacs reconstruction (2026-11-27), by
+the label of their body (getl/2, added later the same day for MENDELS,
+INFERENCE, is counted with MENDELS's stand-ins in psi/README.md):
 - RECONSTRUCTED-FROM-MANUAL: 4 (view_next_screen/1 and
   view_previous_screen/1, on the window and on the editor);
 - INFERENCE: 22 (mark, exchange_point, next_term, push_to_yank, two

@@ -21,26 +21,41 @@ and sends loaded_library(normal([mendel::example1, ...])); the ESP side
 reads it and goes on into mendel_main's create/1, which stops at the
 first SIMPOS class not stood in: temporary_menu:create/3.
 
-Injections, OBSERVED 2026-11-27 (each in the working tree by a script,
-restored by copy, cmp and md5 clean; this whole file run on it; the
-failed set as observed):
+Injections, OBSERVED 2026-11-27 (24, each made in the working tree by a
+scratch script, restored by copy, cmp and md5 clean; this whole file run
+on each; the failed set as observed on the final file):
 
 | injection | failed |
 |---|---|
-| espc split_repeat: the repeat dropped (the goals after it kept, run once) | test_package, test_repeat |
+| espc split_repeat: the repeat dropped (the goals after it run once) | test_package, test_repeat |
 | kl0 op_melt: the frozen term itself, no fresh variables | test_freeze_melt |
+| kl0 op_freeze: the term itself, no copy | test_freeze_melt |
 | espc classify: a component named by its bare name (no `Class$`) | test_component, test_replay, test_path_dialog |
-| mendels_simpos read_one: no term without a `.` (end of text) | test_io_buffer_printed, test_reader_package_colon, test_replay, test_path_dialog |
-| mendels_simpos putt/2: a compound written as {F,A,..} | test_io_buffer_printed |
+| espc BUILTINS: object/3 dropped | test_package, test_replay, test_path_dialog |
+| espc BUILTINS: atom/1, heap_vector/2 or not_equal_string/2 dropped (one at a time) | test_package |
 | esp_reader: `::` not an operator | test_reader_package_colon, test_replay |
+| read_one: no term without a `.` (end of text) | test_io_buffer_printed, test_reader_package_colon, test_replay, test_path_dialog |
+| read_one: the layout after a `.` left unread | test_io_buffer_printed |
+| putl/2: no newline after the string | test_io_buffer_printed, test_library_utility |
+| putt/2: a compound written as {F,A,..} | test_io_buffer_printed |
+| library_utility get_classes/4: every package's classes | test_library_utility |
+| library_utility get_classes_with_wildcard/5: the pattern ignored | test_library_utility, test_replay, test_path_dialog |
+| library_utility load/2 prints nothing | test_library_utility |
+| symbolizer is_object/2 always true | test_io_window_title_and_object |
+| process refute_in/5: the object and the arguments swapped | test_replay, test_path_dialog |
+| as_event_handler get_instance/3 fails | test_replay, test_path_dialog |
+| standard_io_window deactivate/1 a no-op | test_path_dialog |
+| standard_io_window create/3: the title option ignored | test_io_window_title_and_object |
+| standard_io_window name/2 succeeds with no name set | test_path_dialog |
 | pmacs_window getl/2: the line from the point where getl began | test_getl |
 | pathname check_pathname/3 fails | test_check_pathname, test_replay, test_path_dialog |
-| standard_io_window name/2 succeeds with no name set | test_path_dialog |
 
-Weak spots: the replay does not reach repeat's retry, melt's fresh
-variables or putt's compound form (the run's terms are atoms and a
-list); getl's line start is caught only by test_getl, since the run's old
-answers are empty; the loader's name/2 test only through the screen.
+Weak spots: the replay does not reach repeat's retry, freeze/melt's
+copies or putt's compound form (the run's terms are atoms and a list):
+the unit tests carry them.  getl's line start is caught only by
+test_getl (the run's old answers are empty); is_object/2 and the title
+only by the direct test (the frames of the "WAIT !" window are not
+pinned; the one frame pinned is the path dialog's).
 """
 import json
 import os
@@ -121,11 +136,13 @@ class Run(unittest.TestCase):
 
 class Compile(unittest.TestCase):
     def test_package(self):
-        # the archive's ESP half as one package (install.e Step 5-6): 18
+        # the archive's ESP half, its 108 .esp/.es files, as one package
+        # (install.e Step 5-6): 18
         # items the parser drops (mdl_ckpred, mdl_cksyn, mdl_ckutil,
         # mendelmain :476 `****`, obj_editor, tsl_input), no class refused
         # whole, 689 predicates refused (1,122 before the built-ins,
         # repeat and components of 2026-11-27)
+        self.assertEqual(len(mendels.esp_sources()), 108)
         ts, rep = mendels.compile_package()
         self.assertEqual(len(rep['dropped']), 18)
         self.assertEqual(rep['failed'], {})
@@ -153,6 +170,7 @@ end.''')
         # term frozen
         t = compile_one('''class fz has
 :t(C, X, Y) :- freeze({f, A, A, B}, F), melt(F, X), melt(F, Y);
+:after(C, X) :- freeze({f, A}, F), A = 1, melt(F, X);
 end.''')
         self.assertEqual(t.refusals, [])
         m = K.Machine(espc.library([t]))
@@ -164,6 +182,10 @@ end.''')
         self.assertIsNot(xe[1], xe[3])
         self.assertIsNot(xe[1], ye[1])
         self.assertIsInstance(xe[1], K.Var)
+        # the frozen copy keeps no link to the term frozen: binding A after
+        # the freeze leaves the melted copy's variable unbound
+        (r,) = K.call_class_method(m, 'user##fz', 'after', [K.Var()])
+        self.assertIsInstance(K.deref(K.deref(r[0]).args[1]), K.Var)
 
     def test_component(self):
         # a component's slot is pkg##class$name (KNOWN-PLAINTEXT
@@ -252,6 +274,51 @@ class Simpos(unittest.TestCase):
             self.send(i, 'input', x)
         ((line,),) = self.send(w, 'getl', K.Var())
         self.assertEqual(K.deref(line).text, 'abcdf')
+
+    def test_library_utility(self):
+        # the loader's queries (loader.esp load_MENDEL/2) over kl0's library,
+        # and load/2's `Loading <id>...` lines (ds_bep.esp:1992) to the
+        # output set_output/2 gave
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##library_utility', 'create', [K.Var()])
+        ut = K.deref(r[0])
+        self.assertEqual(repr(K.resolve(self.send(ut, 'get_packages_with_wildcard',
+                                                  self.string('mend*'), K.Var())[0][1])), '[mendel]')
+        ((_, _, ids),) = self.send(ut, 'get_classes', self.string('mendel'), K.Atom('all'), K.Var())
+        names = repr(ids)
+        self.assertIn('mendel##mendel_main', names)
+        self.assertNotIn('simpos##', names)
+        ((_, _, _, ids),) = self.send(ut, 'get_classes_with_wildcard', self.string('mendel'),
+                                      self.string('mendel_er*'), K.Atom('all'), K.Var())
+        self.assertEqual(repr(ids), '[mendel##mendel_error]')
+        # the output here a standard_io_buffer (its putl/2 a line)
+        out = self.buffer()
+        self.send(ut, 'set_output', out)
+        self.assertEqual(len(self.send(ut, 'load', ids)), 1)
+        self.assertEqual(K.deref(m.get_slot(out, 'text')).text, 'Loading mendel##mendel_error...\n')
+
+    def test_io_window_title_and_object(self):
+        # loader.esp:12-15: create/3's option title("WAIT !") is the
+        # window's title; symbolizer is_object/2 on it and on the slot
+        # value 0 the loader tests (load_MENDEL/2)
+        m = self.m
+        m.reset()
+        opts = K.Cons(K.Vec([K.Atom('title'), self.string('WAIT !')]), K.NIL)
+        (r,) = K.call_class_method(m, 'simpos##standard_io_window', 'create', [opts, K.Var()])
+        w = K.deref(r[1])
+        self.assertEqual(K.deref(m.get_slot(w, 'title')).text, 'WAIT !')
+        sym = K.ClassRef('simpos##symbolizer')
+        self.assertEqual(len(list(m.solve_send(sym, 'is_object', [w, sym]))), 1)
+        self.assertEqual(list(m.solve_send(sym, 'is_object', [0, sym])), [])
+
+    def test_models_labelled(self):
+        # every kl0 model mendels_simpos installs has a label, and only those
+        import mendels_simpos
+        mine = {k for k, f in K.SIMPOS_MODELS.items() if getattr(f, '__module__', '') == 'mendels_simpos'}
+        self.assertEqual(mine, set(mendels_simpos.LABELS))
+        for k, v in mendels_simpos.LABELS.items():
+            self.assertRegex(v, r'^(RECONSTRUCTED-FROM-MANUAL|INFERENCE|OURS)', k)
 
     def test_check_pathname(self):
         self.m.reset()

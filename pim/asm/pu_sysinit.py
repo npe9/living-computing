@@ -336,7 +336,9 @@ PINNED = {'header': (20480, 8286, 20480),
              '3c61': ('000000000000001', (7, 7, 1, 7), ['5300/2'], 7)},
  'mnemonics': {'header': (1024, 65536),
                'nonblank': 824,
-               'kl0': (153, 124, 51, 63),
+               # 153 rows, 124 named, before MENDELS's blt 3e freeze and 3f
+               # melt (2026-11-27): the table names them FREEZE and MELT
+               'kl0': (155, 126, 51, 63),
                'kl1': (205, 179, 57, 55),
                'anchors': ['ALLOC', 'PROC', 'GLIST', 'PLIST', 'ADD', 'SUB', 'AND', 'OR']},
  'pointers': {'5000-503f code': (110, 12, 1.3, 3, 0.7),

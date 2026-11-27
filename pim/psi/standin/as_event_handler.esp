@@ -16,6 +16,7 @@ class as_event_handler has
 % (the handler given to refute_in/5); the third argument is not used by
 % the caller.  The body OURS: a new instance of the class each time
 % (whether SIMPOS keeps one per class is not known).
+% LABEL: INFERENCE (the body OURS)
 :get_instance(Class, H, _) :- :new(Class, H);
 
 end.

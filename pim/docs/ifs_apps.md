@@ -597,7 +597,7 @@ From the sweep, not from the documentation alone:
    `>sys>user>MENDEL>KL1>`, `mdllibrary.exe` in `>sys>user>MENDELuser>SYSTEM>`;
    install.e) asks no `package>>` at all. On that route, with the 601s
    and 620s carried to the PSI (`fep_bridge.BridgeFep`), the ESP half
-   compiled by `espc.py` (the archive's 41 ESP files as the package
+   compiled by `espc.py` (the archive's 108 ESP files as the package
    `mendel`; 18 items dropped by the parser, 689 predicates refused) and
    run on kl0:
    - the loader's "WAIT !" window, the package load (library_utility),

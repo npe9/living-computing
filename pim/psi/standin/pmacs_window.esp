@@ -438,6 +438,7 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % when RETURN is typed (so the old answer read_string/3 put there is part
 % of it, and a prompt putl/2 wrote is not: putl/2 ends its line).  OURS:
 % the newline put after it.
+% LABEL: INFERENCE (the newline after it OURS)
 :getl(Window, Line) :-
         :current_buffer(Window, B),
         :current_position(B, P0),

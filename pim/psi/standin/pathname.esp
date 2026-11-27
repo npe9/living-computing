@@ -73,6 +73,7 @@ class   pathname    has
 % failure is reported as "syntax error '<Path>'", and CPath goes to
 % directory retrieve/4).  The body OURS: a non-empty string is the path
 % as given (no logical name expanded, no syntax checked beyond that).
+% LABEL: INFERENCE (the body OURS)
 :check_pathname(Class, Path, CPath) :-
         string(Path, N, _), N > 0,
         CPath = Path ;

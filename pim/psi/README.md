@@ -5512,7 +5512,9 @@ the dialog's two lines, `>sys>user>MENDELuser` and `y` (`USER_LINES`).
   @d32, kappa2 kappaIVT_new_index `$or$0/1` @811; `split_repeat`).
 - the built-ins freeze/2 (blt 3e) and melt/2 (3f), new rows of
   `kl0_opcodes.tsv` witnessed in paragraph (p_vwin.esp:63,
-  p_MAIN.esp:407); atom/1, heap_vector/2, object/3 and
+  p_MAIN.esp:407), and named FREEZE and MELT at blt 3e and 3f by the
+  held KL0 microcode's mnemonic table (`asm/pu_sysinit.py`'s pin, 124 ->
+  126 rows named); atom/1, heap_vector/2, object/3 and
   not_equal_string/2, whose rows were already witnessed.
 - a component of the class being compiled is the slot `pkg##class$name`
   (qxt##name_table class new_expr/2 @4e).
@@ -5537,6 +5539,12 @@ the form OURS). **esp_reader.py**: the infix `::` (PIMOS writes
 | standard_io_window | `standin/standard_io_window.esp` | deactivate/1, set_name/2, name/2, the create option title(T) | INTERPOLATED (selector PRINTED-INTERFACE or USAGE, body OURS) |
 | pmacs_window | `standin/pmacs_window.esp` | getl/2 | INTERPOLATED (selector HELD, body INFERENCE; `../docs/simpos/subsystems/pmacs.md` §5) |
 | pathname | `standin/pathname.esp` | check_pathname/3 | INTERPOLATED (USAGE MENDELS init_path.esp; body OURS) |
+
+Labels, counted from the files (`% LABEL:` lines in the stand-ins,
+`mendels_simpos.LABELS` for the models; test_models_labelled): 23
+methods and models, 6 RECONSTRUCTED-FROM-MANUAL (4 of them the ESP
+manual's Example 3), 14 INFERENCE, 1 OURS, 2 HELD-SOURCE (library_utility
+set_output/2 and load/2, from cil's COPY of the class).
 
 The census grows by one row, pimos_window's inherited getl/2 (1,551 ->
 1,552; test_fep_census has the rows that change outcome). The injections

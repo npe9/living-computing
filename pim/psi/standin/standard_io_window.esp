@@ -152,6 +152,7 @@ attribute permission := out;
 % MENDELS (2026-11-27): deactivate/1, INTERPOLATED: the selector
 % PRINTED-INTERFACE TM-125 p16 (window.md §2.1); the body OURS, as pmacs_window's (off the screen,
 % kept; activate/1 draws it again): kill/1's without the kill
+% LABEL: RECONSTRUCTED-FROM-MANUAL (the selector, TM-125 p16; the body OURS)
 :deactivate(W) :- W!active := 0, erased(W), :remove_window(#coordinator, W);
 
 % MENDELS (2026-11-27): the window's name, distinct from its title
@@ -161,12 +162,14 @@ attribute name := 0;
 
 % INTERPOLATED: set_name/2 USAGE (euod RULED/ruled1.esp:623, the call
 % shape); the body OURS: kept.
+% LABEL: INFERENCE (the body OURS)
 :set_name(W, N) :- W!name := N;
 
 % INTERPOLATED: name/2 from MENDELS loader.esp load_MENDEL/2 (`:is_object(
 % #symbolizer, W), :name(W, _)`: a test that the loader has run, its
 % second clause loading the package otherwise).  The body OURS: the name
 % set_name/2 gave; it fails while none is set (0).
+% LABEL: INFERENCE
 :name(W, N) :- W!name \== 0, N = W!name;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
@@ -666,6 +669,7 @@ size(_, 40, 10);
 % MENDELS (2026-11-27): the create option title(T), USAGE (MENDELS
 % loader.esp:12-15, 74-77 `title("WAIT !")`; window.md's option table),
 % as set_title/2 would give it (OURS)
+% LABEL: INFERENCE
 title_option(Options, _) :- unbound(Options), !;
 title_option([{title, T} | _], W) :- !, W!title := T;
 title_option([_ | Os], W) :- !, title_option(Os, W);

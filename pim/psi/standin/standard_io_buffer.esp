@@ -15,6 +15,7 @@ class standard_io_buffer has
 
 % :create(#standard_io_buffer, B) -- PRINTED: program-e.tex 6736-6737 (`?-
 % :create(#standard_io_buffer,B).`); the body OURS: an empty buffer.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (the body OURS)
 :create(Class, B) :-
         :new(Class, B),
         B!text := "",
