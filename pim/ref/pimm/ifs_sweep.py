@@ -21,6 +21,9 @@ The table and the stop histogram are docs/ifs_apps.md.
         writes docs/ifs_sweep_results.json from a run (each row's stop,
         counts, !ERROR! lines and the window's end), refused if it would
         classify a row otherwise than the whole window does
+    python3 -I ref/pimm/ifs_sweep.py --summary --update DIR
+        the same for a partial rerun: the committed summary, the rows run
+        in DIR replaced
     python3 -I ref/pimm/ifs_sweep.py --check
         IN run_tests.sh, no checkpoint needed, a few seconds: every
         printed value found in the archive file it is cited from, the
@@ -927,11 +930,23 @@ def markdown(argv):
 
 def write_summary(argv):
     """--summary DIR [OUT]: the summary (default docs/ifs_sweep_results.json);
-    refused if it classifies any row otherwise than the full windows do"""
+    refused if it classifies any row otherwise than the full windows do.
+    --summary --update DIR [OUT]: the committed summary with the rows run
+    in DIR replaced (a partial rerun: the rows a model change can alter,
+    those pinned at the stop it removes; 2026-11-27), the same refusal
+    for the rows replaced"""
+    update = argv[:1] == ['--update']
+    if update:
+        argv = argv[1:]
     results = load_results(argv[0])
-    a, _b = table(results)
-    b, _b = table(load_results(argv[0], full=True))
+    full = load_results(argv[0], full=True)
+    a, _b = table(results, rows={n: r for n, r in ROWS.items() if n in results})
+    b, _b = table(full, rows={n: r for n, r in ROWS.items() if n in results})
     assert a == b, [(x, y) for x, y in zip(a, b) if x != y]
+    if update:
+        merged = load_results(SUMMARY)
+        merged.update(results)
+        results = merged
     with open(argv[1] if len(argv) > 1 else SUMMARY, 'w') as f:
         json.dump(results, f, indent=0, sort_keys=True)
         f.write('\n')

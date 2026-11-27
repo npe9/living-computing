@@ -1395,9 +1395,36 @@ class Machine:
                 return self.guard_fail()
             return
         if not (self.atomic(a) and self.atomic(b)):
-            raise Unimplemented('wait_value on a structure')
+            return self.equal_other(a, b)
         if (a[0] & ~1, a[1]) != (b[0] & ~1, b[1]):
             return self.guard_fail()
+
+    # the tags from 20h VPIM's f_EqualStruct compares by tag and value
+    # (a shoen's handle, a module, a code)
+    BY_VALUE = (SHREC, MOD, COD)
+
+    def equal_other(self, a, b):
+        """wait_value on two bound words, neither a list, a vector nor a
+        string, not both atomic (2026-11-27, the IFS sweep's top first
+        stop: ldlib, dulcinea, consort, desq, kappa_p).  VPIM's klb_equal
+        (interpreter/klb_compare.psl.c 91-97): an atomic X is compared
+        with Y by tag and value (b_IfTypeValueNotEq), so an atomic X and
+        a Y that is not are not equal; any other X goes to f_EqualStruct
+        (functions/f_reduce_passive_unify.psl.c 45-105): two types that
+        differ are not equal (p_IfTypeNE), and SHREC, MOD and COD are
+        equal when tag and value are (b_IfTypeValueNotEq).  Whole tags:
+        from 20h the low bit is part of the tag, not an MRB (MOD 27h and
+        COD 26h differ there).  Its default, any other type, is VPIM's
+        DEBUG "Illegal type": refused here, loud."""
+        if self.atomic(a) or self.atomic(b) or (a[0] in self.BY_VALUE) != (b[0] in self.BY_VALUE):
+            return self.guard_fail()                   # two types
+        if a[0] in self.BY_VALUE:
+            if a != b:
+                return self.guard_fail()
+            return None
+        if a[0] & ~1 != b[0] & ~1:
+            return self.guard_fail()
+        raise Unimplemented('wait_value on a %02x word' % a[0])
 
     def structure(self, w):
         return w[0] & ~1 == LIST or self.vsize(w) is not None
@@ -3812,6 +3839,29 @@ class Machine:
 
     def i_collect_garbage(self, pc, x, y, z, c16):
         self.gc_request = True
+
+    def i_get_heap_size(self, pc, x, y, z, c16):
+        # get_heap_size(^Size, ^Used), 22:FE r_r (inst_tab.kl1:370;
+        # blt.kl1:672: two outputs): "the memory usage state for the node
+        # on which the predicate is running ... in word units ... on
+        # Multi-PSI and PIM/m" (e-builtin.tex get_heap_size, PRINTED);
+        # Size "the size of one half of the copying collector's heap",
+        # the same once the system is up (VPIM klb_pimos.psl.c:157-158,
+        # kblt_b_get_heap_size).  Here: half of the cells from the
+        # heap's first cell to the end of memory, and the cells from the
+        # heap in use's first cell to the heap pointer (OURS).  The
+        # multi-PE model's since M2 (pimm_pe.py, which logs it); on one
+        # machine since 2026-11-27 (the IFS sweep's h907_nseq, H9-07's
+        # mgtp_gc:allocate(80)), the same values.  The sweep's heap
+        # limit (heap_limit, R7G) is not what Size reports: OURS
+        size, used = self.heap_size()
+        self.reg[x] = (INT, size)
+        self.reg[y] = (INT, used)
+
+    def heap_size(self):
+        """get_heap_size's (Size, Used), above."""
+        return ((self.size - HEAP) // 2,
+                self.hp - (getattr(self, 'heap_lo', None) or self.load + HEAP))
 
     def i_read_eagerly(self, pc, x, y, z, c16):
         # What the compiler writes for `alternatively.` (library/

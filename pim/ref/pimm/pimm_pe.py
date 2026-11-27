@@ -332,20 +332,10 @@ class PE(pimm.Machine):
         self.reg[y] = w
 
     def i_get_heap_size(self, pc, x, y, z, c16):
-        # get_heap_size(^Size, ^Used), 22:FE r_r (inst_tab.kl1:370;
-        # blt.kl1:672: two outputs): "the memory usage state for the node
-        # on which the predicate is running ... in word units ... on
-        # Multi-PSI and PIM/m" (e-builtin.tex get_heap_size, PRINTED);
-        # Size "the size of one half of the copying collector's heap"
-        # (VPIM klb_pimos.psl.c:157-158).  Here: half of the cells from
-        # the heap's first cell to the end of memory, and the cells from
-        # the heap in use's first cell to the heap pointer (OURS).  On
-        # the PEs only: not a one-machine instruction of this model.
-        size = (self.size - HEAP) // 2
-        used = self.hp - (getattr(self, 'heap_lo', None) or self.load + HEAP)
-        self.heap_log.append((size, used))
-        self.reg[x] = (INT, size)
-        self.reg[y] = (INT, used)
+        # get_heap_size(^Size, ^Used), 22:FE: pimm.Machine's (its values
+        # OURS, sources there), each answer logged for M2's check
+        self.heap_log.append(self.heap_size())
+        return pimm.Machine.i_get_heap_size(self, pc, x, y, z, c16)
 
     # ---- collect_garbage asks; the collection is at the goal switch --
     def i_collect_garbage(self, pc, x, y, z, c16):
