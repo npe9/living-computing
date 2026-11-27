@@ -1797,6 +1797,19 @@ class Machine:
         if w is None or w[0] & ~1 != ATOM:
             return self.guard_fail()
 
+    def i_list(self, pc, x, y, z, c16):          # guard type check
+        # list(X), 23:E3 r (PIMOS library/assembler/inst_tab.kl1 190):
+        # "Succeeds if X is a list.  Suspend: If X is uninstantiated.
+        # Fail: If X is anything other than a list" (PIMOS manual
+        # e-builtin.tex 62-68, PRINTED).  A list cell only: [] is the
+        # atom 0 here (NIL), not a list, as in PDSS (emulate.c 685
+        # KL1B_LIST: WAIT_AND_CHECK_TYPE1(LIST), 669-677; [] is the
+        # atom NIL, atom.h 8, its tag ATOM, cell.h 45, 48) and VPIM (interpreter/klb_index.psl.c 117-127
+        # klb_is_list, s_IfNotLIST).  2026-11-27, the IFS sweep's mmi
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != LIST:
+            return self.guard_fail()
+
     def i_integer(self, pc, x, y, z, c16):       # guard type check
         if self.g_int(x) is None:
             return self.guard_fail()
@@ -2278,10 +2291,21 @@ class Machine:
         # the next cell's top byte (assembler/klb_opr.kl1
         # p(r_c16_c8_exe)).  The priority must be an integer and is
         # then DROPPED: there is one ready queue here, where the
-        # machine has a goal stack per priority.
+        # machine has a goal stack per priority.  More than 11
+        # arguments (2026-11-27, the IFS sweep's H9-07: a goal of 12
+        # with @priority(3000)): the arguments from the 11th on are in
+        # a vector in the 11th, as for enqueue_goal, and spread the same
+        # way.  The compiler packs a goal with a pragma as it packs a
+        # plain one (PIMOS library/compiler/newnorm.kl1 907-909:
+        # normalize_body_goal(Goal@Pragma) calls pack_body_goal before
+        # normalize_with_pragma; the instruction's arity is the
+        # unpacked goal's, the Label F/A of pack.kl1 15-19, passed to
+        # normalize_with_priority_or_alloc as its fourth argument,
+        # newnorm.kl1 893-901)
         n = self.cells[pc + 1][1] >> 24
-        if self.reg[x][0] & ~1 != INT or n > 11:
+        if self.reg[x][0] & ~1 != INT:
             raise Unimplemented('enqueue_goal_with_priority %r, %d arguments' % (self.reg[x], n))
+        self.spread_args(n, 'enqueue_goal_with_priority')
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
         return pc + 2
 
