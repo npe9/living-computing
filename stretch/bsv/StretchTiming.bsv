@@ -462,14 +462,14 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // OwnerIbox arm).  A VFL instruction never takes that path: it is
       // E-box class and goes through a look-ahead level, where
       // rl_prepare charges `ibusy = 2 * iboxCycles` (12 clocks) at load
-      // and rl_au_remove charges `ebusy = eboxClocks` at removal, and
+      // and rl_au_remove charges the E-box countdown = eboxClocks (since A5, the units' termination) at removal, and
       // the two counters run CONCURRENTLY.  So a homogeneous sequence
       // runs at max(prep, E-box) and not prep + E-box.  Measured on the
       // atlas's own M+ page (PDF 117 ni_ext, 48 cases, 2026-11-16): every
       // row is max(14.02, 8 + 2 * bytes + 1) -- 14 = the 12-clock
-      // preparation plus 2, and +1 = the removal clock (`ebusy` reaches
+      // preparation plus 2, and +1 = the removal clock (the countdown reaches
       // 0 one clock after the charge runs out: rl_au_remove fires on
-      // `ebusy == 0`, so an E-box time of N occupies N + 1 clocks; the
+      // the countdown at zero, so an E-box time of N occupies N + 1 clocks; the
       // self-test's L(BU,64,8) measured 24.999 against a charge of 24
       // before this change, and 27.998 against 27 after it).  The
       // overlap itself is RIGHT, and the 7030's pages show it: on PDF

@@ -265,7 +265,18 @@ module mkStretchCore(StretchCore);
   Reg#(Bit#(8))              otherSeq     <- mkConfigReg(0);
   Reg#(Word64)               indPrev      <- mkReg(0);
   Reg#(Bit#(32))             iboxAt       <- mkReg('1);
-  Reg#(Bit#(16)) ebusy  <- mkReg(0);       // E-box time of the last removed instruction
+  // THE E-BOX'S TIME IS THE UNITS' (fidelity_plan.md A5 step 1,
+  // 2026-11-26).  What a completed look-ahead instruction still owes is
+  // handed to mkSAU or mkPAU as their termination (ebox.terminate) and
+  // headReady waits on ebox.unitsTerminated(); until A5 it was a
+  // countdown register here, decremented only in a clock in which one of
+  // the instruction-unit arms below fired.  That rule is kept exactly:
+  // each arm sends eArm, and in the clock after one with no arm the
+  // units' count is held (rl_term_hold).  The clocks with no arm are a
+  // crossing store's parked tail with nothing else pending (busyXfer by
+  // st.storeTailPending() alone) and the clocks the core is stopped.
+  PulseWire      eArm     <- mkPulseWire;
+  Reg#(Bool)     eArmPrev <- mkReg(True);
 
   // Stage 2b timing registers (the budgets: StretchTiming.bsv).
   Reg#(Bit#(32)) clk      <- mkReg(0);   // clocks since reset
@@ -281,7 +292,7 @@ module mkStretchCore(StretchCore);
   // pp.3-20/3-21).  A store level holds the LAAR while it is pending
   // (laarHeldByLevel); at its removal the model commits the store at
   // once and only CHARGES the E-box time, so the "proper operand is
-  // available" only `ebusy` clocks later, and is then "checked" -- the
+  // available" only the E-box countdown clocks later, and is then "checked" -- the
   // I-checker's 0.6 us "store operand error check and check code
   // conversion" (printed p.3-19, items 5 and 3) -- and "accepted by the
   // MBCU" (st.storesPending()).  laarFreeAt is the clock the first two
@@ -604,10 +615,9 @@ module mkStretchCore(StretchCore);
   //
   // Same-clock ordering, made explicit where the old single method had
   // it implicitly: the levels are mkCReg(2) so rl_la_fetch's arrivals
-  // (port 0) are visible to the arms (port 1); `ebusy` counts down in
-  // every arm that does not set it; every other register is read in its
+  // (port 0) are visible to the arms (port 1); the units' termination
+  // counts down in every arm's clock (eArm); every other register is read in its
   // pre-clock state by every rule, as before.
-  Bit#(16) eb = (ebusy != 0) ? ebusy - 1 : 0;   // E-box busy time, counting down
   // >>> THE I-BOX'S PREPARATION TIME RUNS WHILE THE E-BOX WORKS,
   // 2026-11-17. <<<  `ibusy` used to count down only in rl_prepare's own
   // `ibusy != 0` arm.  The arms are mutually exclusive, so every clock
@@ -621,7 +631,7 @@ module mkStretchCore(StretchCore);
   // where the immediate compares of PDF 177-182 print 12.  The I-box
   // and the E-box are separate units (Vol. 1 printed p.3-17: the I-box
   // decodes ahead "while" the E-box executes), so the preparation time
-  // now counts down in those three arms too, as `ebusy` counts down in
+  // now counts down in those three arms too, as the E-box countdown counts down in
   // every arm.
   //
   // NOT in rl_io, rl_xmit or rl_tail_write, deliberately.  A transfer or
@@ -764,7 +774,7 @@ module mkStretchCore(StretchCore);
   Bool lftWait     = la.count() != 0 && !la.headLevel().branch
                      && lftDeferredLaar(la.headLevel().di, la.headLevel().da)
                      && clk < laarFreeAt;
-  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait && !lftWait
+  Bool headReady   = la.count() != 0 && ebox.unitsTerminated() && !ebox.busy() && !intWait && !lftWait
                      && la.headLevel().kind != LaStore    // rl_store_retire's
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemoveBase = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
@@ -791,7 +801,7 @@ module mkStretchCore(StretchCore);
   // must precede the next one.
   //
   // THIS USED TO FIRE LATER, AND THE LATENESS WAS MEASURED.  The
-  // condition was the same list plus `ebusy == 0`.  That is the
+  // condition was the same list plus the E-box countdown at zero.  That is the
   // CHARGED TIME of the instruction just removed from a look-ahead
   // level -- the E-box's cycle budget, not a structural busy -- and
   // rl_prepare does NOT wait for it (it gates on `ibusy`, and a
@@ -809,13 +819,13 @@ module mkStretchCore(StretchCore);
   // with fewer, the BD disabled the system first and the pending
   // interruption evaporated (StretchStorage's intDueCalc returns
   // Invalid the moment irqEn goes false).  The halt addresses, and the
-  // injection that puts `ebusy == 0` back and returns the program to
+  // injection that puts the E-box countdown at zero back and returns the program to
   // 004110.40, are in that program's own header and in docs/NEXT.md
   // item 3.
   //
   // THE OTHER CANDIDATE WAS RULED OUT BY MEASUREMENT, not by argument.
   // interruptDue() is latched a clock behind the indicator write, and
-  // that looked like a second cause; with `ebusy` already dropped, the
+  // that looked like a second cause; with the E-box countdown already dropped, the
   // bracket program passes with the latch in place.  StretchStorage is
   // therefore untouched and its "no program can observe it" note on the
   // latch still stands.
@@ -1099,7 +1109,7 @@ module mkStretchCore(StretchCore);
   //                   which recovery undoes.  NO DECK REACHES THIS HOLD
   //                   (injected away, 2026-11-20: nothing in the three
   //                   recovery decks moves): a completing level charges
-  //                   `ebusy`, and headReady waits for it, so a younger
+  //                   the E-box countdown, and headReady waits for it, so a younger
   //                   level is removed in the window only after a level
   //                   charged 0 or 1 clock.  Kept for that case.
   //   intRecWanted -- an interruption became due inside that window (or
@@ -1181,6 +1191,14 @@ module mkStretchCore(StretchCore);
                      && !armInterrupt;
 
   (* fire_when_enabled *)
+  // THE CLOCKS THE E-BOX'S TIME DOES NOT COUNT (eArm's note).
+  rule rl_eclk;
+    eArmPrev <= eArm;
+  endrule
+  rule rl_term_hold (!eArmPrev);
+    ebox.holdTerm();
+  endrule
+
   rule rl_clock (running);
     clk <= clk + 1;
     // ---- THE OSCILLATOR PULSE ----
@@ -1334,7 +1352,7 @@ module mkStretchCore(StretchCore);
       $display("StretchCore: interruption recovery to half-word %0d (index %s, %0d younger level(s) cancelled)",
                nxt, advanced ? "restored" : "unchanged", la.count());
     end
-    ebusy <= eb;
+    eArm.send;
     ibusy <= ib;
     haltedReg <= False;
   endrule
@@ -1346,7 +1364,7 @@ module mkStretchCore(StretchCore);
   rule rl_store_retire (running && armStoreRetire);
     st.releaseCaptured(la.head());
     la.retireHead();
-    ebusy <= eb;
+    eArm.send;
     ibusy <= ib;
     haltedReg <= False;
   endrule
@@ -1365,7 +1383,7 @@ module mkStretchCore(StretchCore);
     ibusy <= 12;
     xholdPc <= tagged Invalid;    // the prepared instruction is discarded
     serialPc <= tagged Invalid;
-    ebusy <= eb;
+    eArm.send;
     haltedReg <= False;
   endrule
 
@@ -1816,7 +1834,7 @@ module mkStretchCore(StretchCore);
           untilMark: x.untilMark, zeroFill: x.zeroFill };
       end
     end
-    ebusy <= eb;
+    eArm.send;
     haltedReg <= False;
   endrule
 
@@ -1941,7 +1959,7 @@ module mkStretchCore(StretchCore);
       end
     end
     xmitSwapClocks <= swapClk;
-    ebusy <= eb;
+    eArm.send;
     haltedReg <= False;
   endrule
 
@@ -1953,7 +1971,7 @@ module mkStretchCore(StretchCore);
     let t = validValue(pendingTailWrite);
     st.writeWord(tpl_1(t), tpl_2(t));
     pendingTailWrite <= tagged Invalid;
-    ebusy <= eb;
+    eArm.send;
     haltedReg <= False;
   endrule
 
@@ -1963,7 +1981,7 @@ module mkStretchCore(StretchCore);
     let p = validValue(pendingIdxWrite);
     st.writeIndex(tpl_1(p), tpl_2(p));
     pendingIdxWrite <= tagged Invalid;
-    ebusy <= eb;
+    eArm.send;
     ibusy <= ib;   // the I-box's clock runs on (see `ib`)
     haltedReg <= False;
   endrule
@@ -1978,7 +1996,7 @@ module mkStretchCore(StretchCore);
     InstrLen len        = tpl_2(ep);
     DecodedInstr di     = tpl_3(ep);
     Bool fromLA = ebox.busyFor(OwnerLA);
-    Bit#(16) ebn = eb;
+    Bit#(16) ebn = 0;   // (was the countdown, always 0 here: see eArm's note)
     Bool done = False;
     // Clocks this instruction has spent in the divide box (0 for every
     // instruction that did not use it), read BEFORE resume() clears the
@@ -1991,6 +2009,8 @@ module mkStretchCore(StretchCore);
     // ... and, for a STEPPED add (fidelity_plan.md A3 (b), 2026-11-25),
     // the serial unit's own clocks: Valid only then.  See the charge.
     Maybe#(Bit#(16)) sauOwn = ebox.boxOwnClocks();
+    Bool charged = False;     // a look-ahead level completed: ebn is its charge
+    Bool chargeFp = False;
     resumeYielded <= False;
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
@@ -2061,6 +2081,8 @@ module mkStretchCore(StretchCore);
         laarRetire(la.headLevel(), ebn);
         noteRetired(la.headLevel(), o);
         la.retireHead();
+        charged = True;
+        chargeFp = isFpInstr(hdi);
       end else begin
         commitNext(pc, len, o.next);
         // An I-box store that read its word first (SV, SC, SR, SVA, SIC)
@@ -2080,7 +2102,8 @@ module mkStretchCore(StretchCore);
         done = isHalt(di, o.next, pc);
       end
     end
-    ebusy <= ebn;
+    if (charged) ebox.terminate(chargeFp, ebn);
+    eArm.send;
     if (fromLA) begin
       ibusy <= ib;   // a level's read: the I-box's clock runs on (see `ib`)
       eboxDoneAt <= clk + zeroExtend(ebn) + 1;
@@ -2092,7 +2115,8 @@ module mkStretchCore(StretchCore);
     // Remove the head level into the arithmetic unit: its operand
     // (if any) is present, so the E-box runs with it pre-supplied;
     // any further read it needs, the box holds it for (resume arm).
-    Bit#(16) ebn = eb;
+    Bit#(16) ebn = 0;   // (was the countdown, always 0 here: see eArm's note)
+    Bool charged = False;
     LaLevel h = la.headLevel();
     Vector#(NPrefetch, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
@@ -2125,6 +2149,7 @@ module mkStretchCore(StretchCore);
       end else
         la.retireHead();
       ebn = 2 * 6;   // Blosk fig.10: decode + five execution cycles
+      charged = True;
     end else if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
       pendingTailWrite <= o.tailWrite;
@@ -2133,12 +2158,14 @@ module mkStretchCore(StretchCore);
       if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
         $display("StretchCore: SWAP started at half-word %0d, %0d words", h.pc, xs.remaining);
       ebn = eboxClocks(h.di);
+      charged = True;
       laarRetire(h, ebn);
       noteRetired(h, o);
       la.retireHead();
     end
     // else: the E-box holds the level's instruction for its operand read.
-    ebusy <= ebn;
+    if (charged) ebox.terminate(!h.branch && isFpInstr(h.di), ebn);
+    eArm.send;
     eboxDoneAt <= clk + zeroExtend(ebn) + 1;
     ibusy <= ib;   // the I-box's clock runs on (see `ib`)
     haltedReg <= False;
@@ -2242,7 +2269,7 @@ module mkStretchCore(StretchCore);
     // keeps draining across this clock, exactly as it does in every
     // other arm: taking the interruption early (see armInterrupt above)
     // must not also stop the clock the E-box was charged.  Before that
-    // change this rule could not fire while `ebusy != 0`, so it never
+    // change this rule could not fire while the E-box countdown non-zero, so it never
     // had to decrement it.
     //
     // NOTHING IN THE SUITE TESTS THIS LINE, and that is said here
@@ -2250,7 +2277,7 @@ module mkStretchCore(StretchCore);
     // none could be caught: the three CYCLES<= benchmarks never enable
     // the interruption system, and every test that does interrupt
     // checks a halt address rather than a clock count.
-    ebusy <= eb;
+    eArm.send;
   endrule
 
   rule rl_prepare (running && armPrepare);
@@ -2518,7 +2545,7 @@ module mkStretchCore(StretchCore);
         end
       end
     end
-    ebusy <= eb;
+    eArm.send;
     haltedReg <= done;
   endrule
 

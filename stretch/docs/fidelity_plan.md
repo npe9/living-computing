@@ -1098,6 +1098,87 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
 - Exit: `ebusy` has 0 hits. The §1c-audit "expensive datapath" row
   matches.
 
+*A5 record, 2026-11-26.*
+
+- **Step 1, `ebusy` INTO THE UNITS (done, behaviour-preserving).**
+  - The census first. `ebusy` was charged in two places only:
+    - `rl_au_remove`: a branch level's Blosk fig.10 `2 * 6`, or the whole
+      `eboxClocks` row for a level that completes at removal (no unit
+      runs for it);
+    - `rl_exec_resume`, a look-ahead level completing after a read or a
+      unit: the row less the unit's clocks (`budget - boxK`), or for a
+      stepped SAU add the row's fixed part (`sauRowWithUnit - u`).
+    So the BOXED instructions already wait on `responseReady` for the
+    part a unit steps (the level is held in `mkEBox` and `headReady`
+    has `!ebox.busy()`); what `ebusy` counted after the answer is the
+    part no unit steps yet, and for the unboxed paths the whole row.
+  - Now: `mkSAU` and `mkPAU` each have a TERMINATION (`terminate(n)`,
+    `holdTerm()`, `terminated()`, StretchSAU.bsv / StretchPAU.bsv, the
+    interface note). `mkEBox.terminate(fp, n)` hands the clocks owed to
+    `mkPAU` for a floating-point instruction and to `mkSAU` for every
+    other one (CHOSEN: while the head waits on both units, which unit
+    holds the time moves no clock). `headReady` waits on
+    `ebox.unitsTerminated()`. `ebusy`, its `eb` decrement and its eleven
+    writes are gone: 0 hits in `bsv/` (the history comments name it
+    "the E-box countdown").
+  - THE ONE NON-OBVIOUS RULE KEPT: `ebusy` counted down only in a clock
+    in which an instruction-unit arm fired. With a crossing store's tail
+    parked (`st.storeTailPending()` alone in `busyXfer`) no arm fires, so
+    it stood still. The units' count is held the same way: each arm
+    sends `eArm`, and in the clock after one with no arm `rl_term_hold`
+    holds both units (the count is stored as n + 1 so that the read after
+    the units' own decrement sees what `ebusy` held).
+  - Verified:
+    - SHADOW RUN: the new readiness beside `ebusy`, with a rule printing
+      `FAIL A5 TRIPWIRE` on any clock where `ebusy == 0` and
+      `unitsTerminated()` differ. The suite, run in a scratch copy of
+      bsv/*.bsv, decks, strap and tests: 0 tripwire lines over 381
+      HALTREPORT programs. (The copy lacked bsv/'s non-.bsv files and
+      docs/, so the MCP, host-tape, smoke and OCR sections failed to
+      build there; they are covered by the real run below.)
+    - The tripwire is discriminating: with `rl_term_hold` disabled
+      (`False &&` in its guard), the four crossing-store decks print it
+      (vfl_crossing_store at clocks 123, 178, 219, 264, 309, 379,
+      `ebusy 1`; cm_crossing_field five clocks, and 92 more after the
+      halt with the core stopped; vfl_cross_tomemory seven or more;
+      vfl_cross_storewait none), and the halts move: vfl_crossing_store
+      401 -> 396, cm_crossing_field 329 -> 324 (one clock per crossing
+      store). So without the hold the step would not be
+      behaviour-preserving; it is the measured cause item 2 below names.
+    - The six `*+` decks: halts identical (790, 400, 836, 881, 986, 762).
+    - Full suite on the committed tree: SUITE_RESULT_PENDING
+- **Exit, measured honestly: `ebusy` has 0 hits; the "expensive datapath"
+  row does NOT yet fully match.** Piccolo's boxes own their whole
+  multi-cycle time. Here the units own it as two parts: the stepped part
+  (passes, reduction loops) and a termination count that is still the
+  timing table's remainder. The roadmap's own wording ("Countdowns
+  remain only where the machinery is not yet modelled", step 5) is what
+  this is; the count now lives in the unit that will step it. The
+  §1c-audit row is updated to say so.
+- **WHAT IS LEFT OF A5, in order:**
+  1. Unboxed paths into the units. Every instruction that completes at
+     removal (`eboxClocks` row, no unit) and the branch level's 12 are
+     pure termination counts. Each family moves when its unit steps it:
+     the connectives and VFL logic into mkSAU's passes, as A3 did the
+     adds; the plain FP add's terms are measured in A4 and held off
+     (`pauAddStep`).
+  2. The termination's rule-of-arms hold. Removing it is a TIMING change
+     (a crossing store's E-box time one clock shorter when nothing else
+     is pending: -5 on vfl_crossing_store and cm_crossing_field, above); measure it on the WB XOVR atlas columns (PDF 143-169)
+     with A6, not here.
+  3. Roadmap step 7, the `Whole` split. NOT STARTED in this session, and
+     it is not a behaviour-preserving step: Table A-2's levels are parts
+     (`spec_lookahead.md` §5: a VFL ST takes 3 levels, M+ crossing with
+     progressive indexing 6 in a ring of 4), so level occupancy and
+     every look-ahead pin move. The order `spec_lookahead.md` §5
+     settles: (a) the E-box consumes a sequence of parts, not one `di`
+     (`execute()`'s signature is the obstacle it names); (b) levels are
+     allocated one at a time with a residual count (shape 1 there; shape
+     2 deadlocks on six levels); (c) the FP case first (Table A-2: 1
+     level, op + opnd, so the split is behaviour-neutral for FP), then
+     the store levels of M+/LFT/D/ (2), then VFL (2-3, doubled on a
+     crossing); each a timing step with the pins it moves recorded.
+
 ## Phase 3: the store and fetch paths
 
 **A6. The store path.**
