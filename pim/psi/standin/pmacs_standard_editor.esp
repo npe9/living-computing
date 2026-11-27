@@ -18,10 +18,16 @@
 %     goto_beginning/1, exchange_point/1, next_term/1.
 % Model (INFERENCE): the Pmacs editor is standard_editor with Pmacs's own
 % commands; every method here is inherited from the standard_editor
-% stand-in (its default bindings and commands, OURS, gap G6).  Of the
-% selectors above, find_file/2, two_windows/1, mark/1, write_file/4,
-% push_to_yank/3, clear_input/1, cursor_with_mouse/1, exchange_point/1 and
-% next_term/1 are not stood in, so a send of one is refused loudly.
+% stand-in (its default bindings and commands, OURS, gap G6).  Since the
+% Pmacs reconstruction (2026-11-27, docs/simpos/subsystems/pmacs.md) every
+% selector above is stood in there: find_file/2, two_windows/1, mark/1,
+% write_file/4, push_to_yank/3, clear_input/1, cursor_with_mouse/1,
+% exchange_point/1 and next_term/1 were refused before.  Their bodies are
+% labelled RECONSTRUCTED-FROM-MANUAL, INFERENCE (Emacs analogy: the ESP
+% manual overview, PDF p25, "an editor based on Emacs") or OURS, each
+% with its pmacs.md section; they live in standard_editor because held
+% code sends them to editors that are not pmacs_standard_editors too
+% (kappa2's pb_type_editor_dummy, nature standard_editor: clear_input/1).
 
 class pmacs_standard_editor has
 

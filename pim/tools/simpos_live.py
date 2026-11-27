@@ -30,6 +30,10 @@ C-n C-p C-a C-e C-d C-k C-x C-c, and C-x C-s / C-x C-z); Return 13 (cr),
 keypad Enter key#enter, Backspace 8 (bs), Delete 127 (del), Tab 9, Esc 27,
 the arrows key#up/down/left/right, Insert key#help, Pause key#abort, F1-F12
 pf#0-pf#11 and Shift-F1..F7 pf#12-pf#18 (wininput.py's §3.1 table);
+Ctrl with a letter gives its ASCII control code; Ctrl-Space and Ctrl-2
+give 0 (control#"@", the Pmacs reconstruction's mark key; OURS, as
+Emacs's C-SPC and a terminal's Ctrl-2 NUL; docs/simpos/subsystems/
+pmacs.md §3.2).
 Alt is not passed on (meta# keys are not stood in): the code goes alone.
 OURS MOUSE ALTERNATES (for a Mac trackpad): Option (Alt) held with the
 left button is the middle button (the window manipulator).  The system
@@ -123,6 +127,8 @@ class LiveAdapter(WH.Adapter):
             code = a
             if flags & 1 and (0x2341 <= a <= 0x235a or 0x2361 <= a <= 0x237a):
                 code = (a - 0x2340) & 0x1f          # control#"c": its ASCII control code
+            elif flags & 1 and a in (0x2121, 0x2332):
+                code = 0                            # Ctrl-Space, Ctrl-2: control#"@", NUL (OURS)
             self.out.append((t, ['key', code]))
         elif kind == 2:
             n = W.NAMES[a]

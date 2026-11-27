@@ -109,6 +109,10 @@ attribute editor := 0, interpreter := 0, pane := 0, number := 0;
 % main_window.esp.1:32 passes `status_window(off)`, so a mode line is the
 % default, INFERENCE); the last echo-line message.
 attribute display := 0, visiting := 0, status := on, echo := "";
+% pmacs.md §4.6-4.7 (2026-11-27), OURS: the views shown (1, or 2 after
+% split/1), the other view's buffer, which view is active (upper or
+% lower), the last click's place.
+attribute views := 1, other := 0, active := upper, click_x := 0, click_y := 0;
 
 % INTERPOLATED (step 3e) from: pimos_window create_pimos_window/3, which
 % sets it to 1 after creating the window; meaning UNKNOWN.
@@ -183,7 +187,7 @@ attribute permission := out;
 % (the interpreter after every input; flash/1).
 % INTERPOLATED (selector and body OURS): see the head comment.
 :refresh(Window) :- D = Window!display, D \== 0, !,
-        :current_buffer(Window, B), :redisplay(D, B);
+        :current_buffer(Window, B), shown(Window, D, B);
 :refresh(Window) :- buffer(Window, B), :redisplay(B);
 % :echo(W, String) -- OURS selector: the echo line's message
 % (standard_editor message/2).
@@ -196,7 +200,119 @@ attribute permission := out;
 % on the window (coordinator.esp click/4): mouse#r joins the input
 % (bound to show_menu by default, standard_editor.esp).
 % INTERPOLATED (selector and body OURS): see the head comment.
-:right_click(Window, _, _) :- :input(Window!interpreter, mouse#r);
+:right_click(Window, X, Y) :-
+        Window!click_x := X, Window!click_y := Y,
+        :input(Window!interpreter, mouse#r);
+% :left_click(W, X, Y) -- pmacs.md §4.6 (2026-11-27), OURS selector: the
+% coordinator's left button on the window already selected (the first
+% click selects it, coordinator.esp clicked/4): the place kept, mouse#l
+% joins the input (bound to cursor_with_mouse by default,
+% standard_editor.esp; papyrus my_point.esp.1:14 binds it itself).  OURS.
+% INTERPOLATED (selector and body OURS): see the note above.
+:left_click(Window, X, Y) :-
+        Window!click_x := X, Window!click_y := Y,
+        :input(Window!interpreter, mouse#l);
+
+% PMACS RECONSTRUCTION (2026-11-27; docs/simpos/subsystems/pmacs.md, each
+% label citing its section).
+% :read_with_prompt(W, Parts, Answer) -- HELD selector (cil ds_edt.esp:
+% 767, `:read_with_prompt(Window, [Prompt,"(",Default,"):"], Answer)`,
+% then `equal_string(Answer,"")` takes the default: so Answer is the
+% typed line, a string, empty when nothing was typed): the parts joined
+% are the prompt, shown in the echo line with the line typed after it
+% (the screenshots' echo-line prompts `Find File:` and `Visit File(
+% move_win.esp):`, window.md §2.11, SCREENSHOT esp.wmv@108-149: the
+% default in round brackets, as ds_edt builds it); RETURN ends the line,
+% BS and DEL rub out, C-g gives up (Quit in the echo line, the send
+% fails).  The keys are read from the window's input inside the command
+% that sends it (OURS: Pmacs's minibuffer is lost; INFERENCE, Emacs
+% analogy, pmacs.md §4.5).
+% INTERPOLATED (selector HELD, body INFERENCE/OURS): see the note above.
+:read_with_prompt(Window, Parts, Answer) :-
+        :append(#string, Parts, Prompt),
+        prompted(Window, Prompt, [], Codes),
+        string_of(Codes, Answer);
+% :get_activate_window_count(W, N) -- HELD selector (cil ds_edt.esp:1035,
+% :1046: `AWC == 1` then two_windows/1, else exchange_window/1): the
+% number of views shown, 1 or 2 (INFERENCE from that use, pmacs.md §4.7).
+% INTERPOLATED (selector HELD, body INFERENCE): see the note above.
+:get_activate_window_count(Window, N) :- N = Window!views;
+% :exchange_window(W) -- HELD selector (cil ds_edt.esp:1038, :1049):
+% the other view becomes the active one, its buffer the one the editor
+% visits (INFERENCE: ds_edt sends it when two views are shown, then
+% edits a file "in other window", Emacs C-x o; pmacs.md §4.7).
+% INTERPOLATED (selector HELD, body INFERENCE): see the note above.
+:exchange_window(Window) :-
+        Window!views == 2,
+        :current_buffer(Window, B),
+        O = Window!other,
+        Window!other := B,
+        other_side(Window!active, A),
+        Window!active := A,
+        :set_buffer(Window!interpreter, O);
+% :split(W) -- OURS selector (the editor's two_windows/1): two views of
+% the buffer the editor visits, the upper one active; fails when the
+% window shows two already or is not on the screen (INFERENCE, Emacs
+% analogy C-x 2, pmacs.md §4.7).
+% INTERPOLATED (selector OURS, body INFERENCE): see the note above.
+:split(Window) :-
+        Window!views == 1, D = Window!display, D \== 0,
+        :split(D, on),
+        Window!views := 2,
+        :current_buffer(Window, B),
+        Window!other := B, Window!active := upper;
+% :unsplit(W) -- OURS selector (the editor's one_window/1): one view
+% again, the active one's (INFERENCE, Emacs analogy C-x 1, pmacs.md §4.7).
+% INTERPOLATED (selector OURS, body INFERENCE): see the note above.
+:unsplit(Window) :-
+        Window!views == 2, D = Window!display,
+        :view_rows(D, Window!active, _, _, Top),
+        :split(D, off),
+        :set_view_top(D, upper, Top),
+        Window!views := 1, Window!other := 0, Window!active := upper;
+% :view_next_screen(W), :view_previous_screen(W) -- HELD selectors
+% (pmacs_window, 1 use each, window.md §2.14; meaning "page" INFERENCE
+% there).  RECONSTRUCTED-FROM-MANUAL: the KWIC manual (kwic-esp doc/
+% kwod.tex:184, :211-238, index p38, "scrolling by the pmacs commands",
+% conforming to "SIMPOS-pmacs's cursor movement commands") gives ctrl-V
+% one page forward and meta-V one page back, ctrl-N and ctrl-P a line.
+% The page is the view's text rows (the manual: "the range shown"); the
+% first shown line moves by a page and the point goes to the first line
+% (forward) or the last (back) of the new page (INFERENCE, Emacs analogy,
+% pmacs.md §4.6); at the end (start) the send fails.
+% INTERPOLATED (selector HELD, behaviour RECONSTRUCTED-FROM-MANUAL, body
+% OURS): see the note above.
+:view_next_screen(Window) :-
+        D = Window!display, D \== 0,
+        :current_buffer(Window, B),
+        :view_rows(D, Window!active, _, H, Top),
+        :line_count(B, N),
+        Top + H < N,
+        value(Top + H, T),
+        :set_view_top(D, Window!active, T),
+        :move_to_cell(B, T, 0);
+% INTERPOLATED (selector HELD, behaviour RECONSTRUCTED-FROM-MANUAL, body
+% OURS): see view_next_screen/1 just above.
+:view_previous_screen(Window) :-
+        D = Window!display, D \== 0,
+        :current_buffer(Window, B),
+        :view_rows(D, Window!active, _, H, Top),
+        Top > 0,
+        back_page(Top, H, T),
+        :set_view_top(D, Window!active, T),
+        :move_to_cell(B, T + H - 1, 0);
+% :mouse_cell(W, Line, Col) -- OURS selector (the editor's
+% cursor_with_mouse/1): the buffer line and column under the last click,
+% in the active view; fails when the click was outside its text rows
+% (OURS, pmacs.md §4.6).
+% INTERPOLATED (selector and body OURS): see the note above.
+:mouse_cell(Window, Line, Col) :-
+        D = Window!display, D \== 0, P = Window!pane,
+        :view_rows(D, Window!active, R0, H, Top),
+        quotient(Window!click_x - P!left, P!cw, Col),
+        quotient(Window!click_y - P!top, P!ch, Row),
+        Row >= R0, Row < R0 + H,
+        value(Top + Row - R0, Line);
 % :menu_chosen(W, Value) -- OURS selector: an EDITOR MENU item's value
 % (coordinator.esp's editor_menu dialogue) joins the input.
 % INTERPOLATED (selector and body OURS): see the head comment.
@@ -426,12 +542,69 @@ pane(Window) :-
 screen(Window, P, Cols, Rows) :- Window!visiting == 1, !,
         :create(#pmacs_display, P, Cols, Rows, Window!status, D),
         Window!display := D,
+        split_again(Window, D),
         echoed(Window),
         :refresh(Window);
 screen(Window, P, _, _) :-
         buffer(Window, B),
         :set_pane(B, P),
         :redisplay(B);
+
+% pmacs.md §4.7: a window drawn again keeps its two views (one, if the
+% new size has too few rows)
+split_again(Window, D) :- Window!views == 2, :split(D, on), !;
+split_again(Window, _) :- Window!views == 2, !,
+        Window!views := 1, Window!other := 0, Window!active := upper;
+split_again(_, _);
+
+shown(Window, D, B) :- Window!views == 2, !, :redisplay(D, B, Window!other, Window!active);
+shown(_, D, B) :- :redisplay(D, B);
+
+other_side(upper, lower);
+other_side(lower, upper);
+
+back_page(Top, H, 0) :- Top =< H, !;
+back_page(Top, H, T) :- value(Top - H, T);
+
+% N / D for a D in a register, by subtraction, 0 for N < D (as
+% pmacs_display.esp's)
+quotient(N, D, 0) :- N < D, !;
+quotient(N, D, Q) :- quotient(N - D, D, Q0), value(Q0 + 1, Q);
+
+% the prompted line (read_with_prompt/3): Typed the codes so far, newest
+% first
+prompted(Window, Prompt, Typed, Codes) :-
+        reversed(Typed, [], Shown),
+        string_of(Shown, S),
+        :append(#string, [Prompt, S], Line),
+        :echo(Window, Line),
+        :refresh(Window),
+        :next_input(Window!interpreter, X),
+        answered(Window, Prompt, Typed, X, Codes);
+
+answered(_, _, Typed, 13, Codes) :- !, reversed(Typed, [], Codes);
+answered(Window, _, _, 7, _) :- !, :echo(Window, "Quit"), fail;
+answered(Window, P, [_ | T], X, Codes) :- rubout(X), !, prompted(Window, P, T, Codes);
+answered(Window, P, [], X, Codes) :- rubout(X), !, prompted(Window, P, [], Codes);
+answered(Window, P, T, X, Codes) :- typable(X), !, prompted(Window, P, [X | T], Codes);
+answered(Window, P, T, _, Codes) :- prompted(Window, P, T, Codes);
+
+rubout(8);
+rubout(127);
+
+typable(X) :- integer(X), X >= 32, X < 127, !;
+typable(X) :- integer(X), X >= 16#"2121", X =< 16#"7E7E";
+
+reversed([], L, L);
+reversed([X | R], L, M) :- reversed(R, [X | L], M);
+
+string_of(Codes, S) :- count(Codes, 0, N), new_string(S, N, 16), fill(Codes, S, 0);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+fill([], _, _);
+fill([C | R], S, I) :- set_string_element(S, I, C), fill(R, S, I + 1);
 
 text_size(Window, 40, 10) :- Window!columns == 0, !;
 text_size(Window, C, R) :- C = Window!columns, R = Window!rows;

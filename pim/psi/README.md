@@ -5443,6 +5443,43 @@ eight items have no stand-in class. The graphics demos have no menu
 entry. Double clicks are classified host-side, not in the handler
 process. There is no meta# (Alt), and no key repeat beyond SDL's own.
 
+### The Pmacs reconstruction (2026-11-27)
+
+The spec is `../docs/simpos/subsystems/pmacs.md`. Every selector held code
+sends to a Pmacs editor is now stood in. Before, mark/1, exchange_point/1,
+next_term/1, push_to_yank/3, clear_input/1, cursor_with_mouse/1,
+two_windows/1, find_file/2 and write_file/4 were refused. The behaviour
+comes from the held manuals and call sites. Each body is labelled
+RECONSTRUCTED-FROM-MANUAL, INFERENCE (Emacs analogy: the ESP manual calls
+Pmacs "based on Emacs") or OURS, with its pmacs.md section.
+
+What changed, by stand-in:
+- `standard_editor.esp`: the methods; a yank buffer shared by every
+  editor (a class slot); the bindings C-@, C-w, ESC w, C-y, C-v, ESC v,
+  C-x C-x, C-x C-f, C-x C-w, C-x 2/1/o, mouse#l; kill_line/1 now pushes
+  to the yank buffer.
+- `pmacs_window.esp`: read_with_prompt/3 (the echo-line prompt),
+  get_activate_window_count/2, exchange_window/1, two views,
+  view_next_screen/1 and view_previous_screen/1 (the KWIC manual's
+  ctrl-V and meta-V), mouse_cell/3 and left_click/3.
+- `pmacs_display.esp`: a two-view redisplay. The one-view output is
+  byte-identical, so every M10 pin holds.
+- `editor_text_buffer.esp`: a mark, and term_region/3, which scans for
+  ESP term ends past comments and quotes.
+- `editor_command_interpreter.esp`: an ESC prefix and clear_input/1.
+- `coordinator.esp`: a left click on the window already selected is
+  given to it (left_click/3; `standard_io_window` has a no-op).
+
+Three held papyrus editors (`held.py` MEMBERS my_syntax, my_delete,
+my_point) run in `test_win_pmacs_syntax`, `_delete` and `_point`, with
+OURS stubs for the papyrus classes not loaded. `test_win_pmacs_live` and
+`_page_and_input` drive exshow's window with the defaults. Its frame is
+pinned as `M10_PINS['pmacs_edit']` and replayed live by
+`live_sessions/pmacs_edit.script`. The census grows by 30 rows, from 1,521
+to 1,551, all of them inherited by pimos_window and pimos_window_editor;
+no row changes outcome (test_fep_census). The injections are in pmacs.md
+§6.
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window

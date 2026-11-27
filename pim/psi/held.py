@@ -157,6 +157,11 @@ MEMBERS = {
     'cal_pmacs': ('ifs/kbms-clp/simpos/cal-esp.tar.Z', 'cal2.12/cal_pmacs.esp', None),
     'dedit': ('ifs/kbms-clp/simpos/cal-esp.tar.Z', 'deb2.12/dedit.esp', None),
     'my_select': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_select.esp.1'),
+    # the Pmacs reconstruction (2026-11-27, docs/simpos/subsystems/pmacs.md
+    # §6): papyrus editors that send the reconstructed selectors
+    'my_syntax': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_syntax.esp.1'),
+    'my_delete': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_delete.esp.1'),
+    'my_point': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_point.esp.1'),
 }
 
 

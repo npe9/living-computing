@@ -1,0 +1,32 @@
+# psi/test_espc.py Window test_win_pmacs_live's sequence (the pin
+# M10_PINS['pmacs_edit'], docs/simpos/subsystems/pmacs.md §6): Login PIMOS
+# from the system menu; the HELD disc/exshow.esp started by the M10
+# harness (`start exshow`, OURS); a left click in its window selects it;
+# C-x C-f me:usercom.init RETURN (find_file), `Hi` (insert), Ctrl-2 (the
+# mark, control#"@": tools/simpos_live.py, OURS), C-e, C-w (the first
+# line's own text killed into the yank buffer), C-n, C-e, C-y (yanked),
+# C-x C-w me:new.esp RETURN (write_file), C-x 2 (two views).
+click r 640 560
+click r 640 560
+click l 978 605
+quiet
+start exshow
+click l 200 150
+ctrlkey x
+ctrlkey f
+type me:usercom.init
+key enter
+type Hi
+ctrlkey 2
+ctrlkey e
+ctrlkey w
+ctrlkey n
+ctrlkey e
+ctrlkey y
+ctrlkey x
+ctrlkey w
+type me:new.esp
+key enter
+ctrlkey x
+type 2
+quiet

@@ -220,6 +220,12 @@ attribute permission := out;
 % to it (a Pmacs window opens its EDITOR MENU, pmacs_window.esp).
 % INTERPOLATED (selector and body OURS): see above.
 :right_click(W, X, Y);
+% :left_click(W, X, Y) -- pmacs.md §4.6 (2026-11-27; selector and body
+% OURS): the coordinator's left button on the window already selected; a
+% plain window binds nothing to it (a Pmacs window moves its point there,
+% pmacs_window.esp).
+% INTERPOLATED (selector and body OURS): see above.
+:left_click(W, X, Y);
 
 % :reshape(W, X, Y, Width, Height) -- window M7, INTERPOLATED (body OURS)
 % from window.md §2.1 reshape/5 `(W,X,Y,Wd,Ht)`, "move and resize at
