@@ -68,6 +68,11 @@ the practices learned in pim sessions.
   OURS / INFERENCE / INTERPOLATED / KNOWN-PLAINTEXT / HELD-SOURCE /
   PRINTED. An inferred opcode row is marked inferred. Cite primary sources
   (ICOT TR/TM, listings, held code) by page or file.
+- Lost SIMPOS applications (PMACS, debugger, librarian, shell, spooler
+  manipulator, pattern editor, ...) may be reverse-engineered from the
+  manuals we hold (owner, 2026-11-27: "It's okay to reverse engineer the
+  apps from the manuals that we have"). Cite the manual page for each
+  behaviour and label it RECONSTRUCTED-FROM-MANUAL, apart from OURS.
 
 ## Reporting
 - Report once, at the end, through the hand-back. Do not stop to wait on
