@@ -111,6 +111,53 @@ Injections (in-process, no file edited), observed:
                   STOPs at 34a2 (memory 123, the atom), 2 of 16; the
                   list case is unchanged (its 34a2 reads a cell)
   jmpf8_off       JMPF 8 raises again: both STOP at 34a1, 2 of 16
+
+Also before the program (2026-11-27, third session): put_reused_structure
+off append's path (reuse_cases): 3,0,2 on a LISTo held in A0, on both
+models under the declared difference 'reuse' (tells the operand field y
+from x), and 0,0,2 on a LISTx, which must NOT be reused in place: the
+model goes on into the allocating arm and stops at 31ee (R04, pc, never
+set: REUSE_SHARED_STOP).  Declared differences, as U1's: 'reuse'
+(DECLARE_REUSE: the firmware reuses a single-referenced structure in
+place, pimm.py never reuses) and 'indirect' (DECLARE_INDIRECT:
+write_variable's element is a REF to a new cell).
+
+Observed 2026-11-27, third session: every case above ok; 10 of 16
+instructions executed and matched, 20 held microinstructions (+
+put_reused_structure 31ec-31ed, write_value 31c9, write_variable
+3195-3199, get_bound_value 3880, put_value 31da twice); the first stop
+is execute (6654): no set-up form.  The old injections, re-run with the
+new rules (the only changes from above): s_imm_plus1 now also STOPs
+append at 3881 (get_bound_value entered past its first word: a zero
+word), 7 of 16; s_no_mar1 FAILs append at get_bound_value (the binding
+written over the wrong cell), 7 of 16; s_cond_true, cnd2_nonzero and
+deref_tgt_col0 leave append at 10 of 16 (their other cases as above).
+New injections, observed:
+  odpf3_entry     the ODPF 3 start ignores the tag (always the entry):
+                  append STOPs at 31e9 (ALU input from a read never
+                  written: 31e8 read [MAR1] for a descriptor), 4 of 16;
+                  both reuse cases STOP at 31e8 (MAR1 never set)
+  odpf3_bits10    the code in bits 1-0 (start 31e9): append STOPs at
+                  31a3 (case_branch with no set-up), 4 of 16; both reuse
+                  cases STOP at 31e9
+  em1_29_off      COND = the MRB is OFF: append STOPs at 31ee (R04 never
+                  set, the allocating arm), 4 of 16; the LISTo case STOPs
+                  there too; the LISTx case FAILs (ended at 31ed after 2
+                  words: a shared list reused in place)
+  sc2f1_reg       SC2F 1 read as a register R01: append and both reuse
+                  cases STOP at 31ec (R01 never set), 4 of 16
+  prs_operand_x   the operand taken from x, not y: append PASSES (10 of
+                  16: x = y = 0); the 3,0,2 case FAILs (A3 and R02 =
+                  {INT, 9}, A3's old value): only that case discriminates
+  no_reuse_decl   the declaration 'reuse' off: append FAILs at
+                  put_reused_structure (A0 and R02 the reused cell, not
+                  pimm.py's new one), 4 of 16; the 3,0,2 case FAILs
+  no_indirect_decl the declaration 'indirect' off: append FAILs at
+                  write_variable (the new cell f2000000, the element a
+                  REF to it, A3 the REF), 6 of 16
+  gbv_mdr2_x      get_bound_value's MDR2 from x, not y: append FAILs at
+                  get_bound_value (the variable cell bound to a REF to
+                  itself), 7 of 16
 """
 import os
 import sys
@@ -130,7 +177,7 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
-PINNED = dict(steps=16, matched=4, words=11, stop=4)
+PINNED = dict(steps=16, matched=10, words=20, stop=10)
 
 
 def pimm_run():
@@ -295,8 +342,66 @@ def read_list_element_case():
     return bad
 
 
+def reuse_cases():
+    """put_reused_structure off append's path (the 31ec-31ed rules):
+    (1) 3,0,2 on a list held directly in A0 with its MRB off: on both
+    models, under the declared difference 'reuse' (A3 and R02 against
+    pimm.py's reg[3] and sp; A0 untouched) -- tells the operand field y
+    from x, which append (0,0,2) cannot;  (2) 0,0,2 on a list with its MRB
+    ON (LISTx, shared): the contract is that it is NOT reused in place,
+    so the routine must not end at 31ed; it goes on into the allocating
+    arm, where the model stops at 31ee (MCF with EM1 08, not modelled):
+    pinned as REUSE_SHARED_STOP.  Returns a list of failures."""
+    import mekbn
+    fw = mekbn.Firmware()
+    op = fw.kl1_entries()['put_reused_structure'][0] & 0xff
+    bad = []
+    cell = 0xe0040000
+    for tag, (x, y, z) in ((pimm.LIST, (3, 0, 2)), (pimm.LIST | 1, (0, 0, 2))):
+        ir = (0x23, op << 24 | x << 16 | y << 8 | z)
+        m = pimm.Machine()
+        m.mem[cell], m.mem[cell + 1] = (pimm.ATOM, 1), pimm.NIL
+        m.reg[0], m.reg[3] = (tag, cell), (pimm.INT, 9)
+        m.tr = []
+        m.i_put_reused_structure(0, x, y, z, ir[1] & 0xffff)
+        p = PU.PU(fw)
+        p.mem[cell], p.mem[cell + 1] = (pimm.ATOM, 1), pimm.NIL
+        p.an[0], p.an[3] = (tag, cell), (pimm.INT, 9)
+        check_pu.seed_lists(p, NFREE)
+        p.ir, p.pc = ir, 0
+        an0, mem0 = dict(p.an), dict(p.mem)
+        what = 'put_reused_structure %d,%d,%d on %s' % (x, y, z, check_pu.fmt((tag, cell)))
+        try:
+            name = SU.decode(p)
+            n = p.run(SU.setup(p, name))
+        except (PU.Unmodelled, KeyError) as e:
+            if tag & 1 and getattr(e, 'upc', None) == REUSE_SHARED_STOP:
+                continue            # the shared list went on into the allocating arm
+            bad.append('%s: STOP %s' % (what, e))
+            continue
+        if tag & 1:
+            bad.append('%s: ended after %d words (%04x), a shared list reused in place'
+                       % (what, n, p.trace[-1][0]))
+            continue
+        rn = check_pu.Rename()
+        for a in mem0:
+            rn.f2p[a] = rn.p2f[a] = a
+        lines = [ln for ln in m.tr if ln[:2] in ('R ', 'M ')]
+        after = {'sp': m.sp}
+        bad += ['%s: %s' % (what, f) for f in
+                compare(p, m, rn, lines, after, name, an0, mem0)]
+    return bad
+
+
+REUSE_SHARED_STOP = 0x31ee
+
+
 def run(verbose=False):
     m, s0, steps = pimm_run()
+    rbad = reuse_cases()
+    print('%s  put_reused_structure off the path: 3,0,2 on LISTo (reused), 0,0,2 on'
+          ' LISTx (not reused)%s' % ('FAIL' if rbad else 'ok  ',
+                                     ': ' + '; '.join(rbad) if rbad else ''))
     sbad = s_stage_case()
     print('%s  S stage: get_atom on an unbound variable (entry 3800)%s'
           % ('FAIL' if sbad else 'ok  ', ': ' + '; '.join(sbad) if sbad else ''))
@@ -324,7 +429,7 @@ def run(verbose=False):
     for a in s0['mem']:
         rn.f2p[a] = rn.p2f[a] = a          # cells present in both: the identity
     out = {'done': 0, 'matched': 0, 'words': 0, 'stop': None, 'fail': None,
-           'boot_words': nboot, 'boot_fail': bad + sbad + lbad}
+           'boot_words': nboot, 'boot_fail': bad + sbad + lbad + rbad}
     for k, (pc, cellv, lines, after) in enumerate(steps):
         p.ir, p.pc = cellv, m.load + pc
         name = '?'
@@ -361,6 +466,12 @@ def run(verbose=False):
 
 def compare(p, m, rn, lines, after, name, an0, mem0):
     fails, notes = [], []
+    base = SU.base(name)
+    covered = set()         # firmware cells a declared difference accounts for
+    if base == 'put_reused_structure' and DECLARE_REUSE:
+        fails += declare_reuse(p, rn, lines, an0, mem0)
+    if base in ('write_variable', 'write_marked_variable') and DECLARE_INDIRECT:
+        covered |= declare_indirect(p, m, rn, lines, mem0, notes)
     # what the firmware wrote that pimm.py did not: an argument register or
     # a cell changed by the routine with no R / M line for it
     rl = {int(ln.split()[1]) for ln in lines if ln.startswith('R ')}
@@ -370,7 +481,7 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
             fails.append('reg %d: firmware wrote %s, pimm.py no write'
                          % (i, check_pu.fmt(p.an.get(i))))
     for a in sorted(set(p.mem) | set(mem0)):
-        if p.mem.get(a) != mem0.get(a) and rn.f2p.get(a, a) not in ml:
+        if p.mem.get(a) != mem0.get(a) and rn.f2p.get(a, a) not in ml and a not in covered:
             fails.append('heap %x: firmware wrote %s, pimm.py no write'
                          % (a, check_pu.fmt(p.mem.get(a))))
     for line in lines:
@@ -389,7 +500,6 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
             if not rn.same(p.mem.get(fa), pv, False, notes, 'heap'):
                 fails.append('heap %x: firmware %s, pimm.py %s'
                              % (pa, check_pu.fmt(p.mem.get(fa)), check_pu.fmt(pv)))
-    base = SU.base(name)
     if base == 'try_me_else':
         # INFERRED projection: R11 (rassy's 'ap') holds the alternative
         # clause, pimm.py's alt (a cell index; the firmware an address)
@@ -397,11 +507,83 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
         want = m.load + after['alt']
         if r11 is None or r11 != (pimm.REF, want):
             fails.append('R11: firmware %s, pimm.py alt {REF, %x}' % (check_pu.fmt(r11), want))
-    if after.get('sp') is not None and base in ('switch_on_non_list', 'read_variable'):
+    if after.get('sp') is not None and base in ('switch_on_non_list', 'read_variable',
+                                                'put_reused_structure'):
         r02 = p.r.get(SU.R_SP)
         if r02 is None or rn.f2p.get(r02[1], r02[1]) != after['sp']:
             fails.append('sp: firmware R02 %s, pimm.py %x' % (check_pu.fmt(r02), after['sp']))
     return fails
+
+
+# The declared difference 'reuse' (as U1's 'indirect' and 'mrb' in
+# check_pu.py): the firmware reuses a single-referenced structure in
+# place (31ec-31ed: x and R02 := the dereferenced pointer, no cell
+# written, no free list popped), where pimm.py never reuses
+# (i_put_reused_structure: z new cells, "no reference counts here, so
+# nothing is ever reused"; pimm_semantics.md).  Declared only when the
+# firmware's x holds the source structure's own address; then pimm.py's
+# z new cells are paired with the z reused cells under the renaming, so
+# that what write_* put in them later is compared cell by cell.  A
+# firmware that allocated is compared with no declaration.
+DECLARE_REUSE = True
+
+
+def declare_reuse(p, rn, lines, an0, mem0):
+    x, y, z = p.ir_field('x'), p.ir_field('y'), p.ir_field('z')
+    w = an0.get(y)
+    while w is not None and w[0] & ~1 == pimm.REF:
+        w = mem0.get(w[1])
+    fv = p.an.get(x)
+    if w is None or fv is None or fv[1] != w[1]:
+        return []
+    got = [ln.split()[2] for ln in lines if ln.startswith('R %d ' % x)]
+    if len(got) != 1:
+        return ['reuse: pimm.py wrote reg %d %d times' % (x, len(got))]
+    a = int(got[0][2:], 16)
+    for i in range(z):
+        fa, pa = w[1] + i, a + i
+        for k in (rn.p2f.pop(pa, None),):
+            if k is not None:
+                rn.f2p.pop(k, None)
+        old = rn.f2p.pop(fa, None)
+        if old is not None:
+            rn.p2f.pop(old, None)
+        rn.f2p[fa], rn.p2f[pa] = pa, fa
+    return []
+
+
+# The declared difference 'indirect' (U1's, check_pu.py; README "What
+# the held words answered" item 1): write_variable (3195-3199) puts in
+# the structure element a {REF, c} to a NEW cell c, popped from the
+# one-cell list and made UNDF, and gives x {REF, c}; pimm.py makes the
+# element itself the variable.  The same term after dereference.
+# Declared per M line of pimm.py whose firmware cell holds a REF to a
+# cell the firmware wrote in this instruction (a free-list cell: the
+# seeded lists are in memory before) holding pimm.py's value:
+# that new cell is paired with pimm.py's cell, and the element written
+# with the REF is accounted for.
+DECLARE_INDIRECT = True
+
+
+def declare_indirect(p, m, rn, lines, mem0, notes):
+    covered = set()
+    for ln in lines:
+        f = ln.split()
+        if f[0] != 'M':
+            continue
+        pa = m.load + int(f[1])
+        pv = (int(f[2][:2], 16), int(f[2][2:], 16))
+        fa = rn.p2f.get(pa, pa)
+        fv = p.mem.get(fa)
+        if not fv or fv[0] & ~1 != pimm.REF or fv[1] in rn.f2p \
+                or p.mem.get(fv[1]) == mem0.get(fv[1]) or p.mem.get(fv[1]) != pv:
+            continue
+        notes.append('heap %x: firmware {REF, new cell %x}, pimm.py the cell itself' % (pa, fv[1]))
+        rn.f2p.pop(fa, None)
+        rn.p2f.pop(pa, None)
+        rn.pair(fv[1], pa)
+        covered.add(fa)
+    return covered
 
 
 def _no_mar1():
@@ -437,6 +619,15 @@ INJECT = {
     'em1_28_tgt0': lambda: (PU.COND_UNKNOWN.clear(), PU.TGT_COLUMN.update({0x28: 0})),
     'absent_read_raise': lambda: PU.RULES.update(absent_read_poison=False),
     'jmpf8_off': lambda: PU.RULES.update(jmpf8_setup=False),
+    # U2 put_reused_structure .. put_value (2026-11-27, third session)
+    'odpf3_entry': lambda: setattr(SU, 'ODPF3_SHIFT', None),
+    'odpf3_bits10': lambda: setattr(SU, 'ODPF3_SHIFT', 0),
+    'em1_29_off': lambda: PU.RULES.update(em1_29_mrb='off'),
+    'sc2f1_reg': lambda: PU.RULES.update(sc2f1_ir=None),
+    'prs_operand_x': lambda: SU.FORMS.update(put_reused_structure=('s_odpf3', 'x')),
+    'no_reuse_decl': lambda: globals().update(DECLARE_REUSE=False),
+    'no_indirect_decl': lambda: globals().update(DECLARE_INDIRECT=False),
+    'gbv_mdr2_x': lambda: SU.S_CONST.update(get_bound_value='x'),
 }
 
 

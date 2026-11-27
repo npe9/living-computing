@@ -141,9 +141,9 @@ window rungs):
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
 | U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; a structure's elements read EXECUTED (`read_variable`, `34a0`-`34a2`, `3494`: two atoms in append, a list pointer in a standalone case, x := the element and R02 + 1 as `pimm.py`); a REF or the immediate (VECTo) element read, not run |
 | U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b. The dereference multiway set-up (thesis printed p.133: a ref / immediate / other code in TDAR bits 3-2, a KL1 four-way splitting ref by MRB) INFERRED for CNDF 7 EM1 `2d` (`pu.DEREF_SETUP`), executed for the code 'other' only (`34a1` -> `3494`); EM1 `28` is a condition, meaning UNKNOWN (`pu.COND_UNKNOWN`, untested on the path run) |
-| U2c | one unification instruction | U2 | one case EXECUTED standalone (`get_atom` on an unbound variable, `3800`-`3801`, matches `pimm.py`); not in a whole program; other tags raise: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
-| U2d | `proceed` / `execute` | U2 | not reached |
-| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run, then `read_variable` twice; the stop is `put_reused_structure` (`31e8`: the S stage's start for a tag that is not the immediate); the label branch (`2447`, JMPF 2) and `wait_*` not reached |
+| U2c | one unification instruction | U2 | one case EXECUTED standalone (`get_atom` on an unbound variable, `3800`-`3801`, matches `pimm.py`); in a whole program since 2026-11-27 (fourth session) `get_bound_value` on an unbound variable (`3880`, append's eighth instruction: Z bound to the reused list); other tags raise: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
+| U2d | `proceed` / `execute` | U2 | `execute` reached (the stop, `4cc0`: no set-up form; CNDF 7 EM1 `19` and a conditional JMPF b next); `proceed` not reached |
+| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run, then the first clause's body to `execute`: 10 of 16 (the ODPF 3 start and EM1 `29` at `put_reused_structure`, `get_bound_value` `3880`); the label branch (`2447`, JMPF 2) and `wait_*` not reached |
 | U3a | suspend | U3 | not reached |
 | U3b | bind and resume | U3 | not reached |
 | U3c | several goals (the ready structure, goal switch) | U3 | not reached |
@@ -299,8 +299,10 @@ Honest, and in sessions of the length that reached U1.
 - **U2 (after the third session, below):** three to five more
   sessions. Each instruction of append has cost one S-stage or set-up
   question (`read_variable`'s was the dereference set-up, settled
-  for 'other'; next `put_reused_structure`'s start for a tag that is
-  not the immediate, then the S12 rows of `get_*`/`wait_*`, which
+  for 'other'; `put_reused_structure`'s start for a tag that is
+  not the immediate was the ODPF 3 start, fourth session; next
+  `execute`'s set-up, EM1 `19` and the conditional JMPF timing, then
+  the S12 rows of `get_*`/`wait_*`, which
   disagree with the simplest column reading) and the branch to a label
   needs the 4-bit JMPF 2 (S10). Earlier estimate, for the record:
 - **U2 (first estimate):** two to four sessions. In order: the refill (AS1F 3 now
@@ -426,3 +428,22 @@ Honest, and in sessions of the length that reached U1.
   `put_reused_structure` (`31e8`): no S-stage set-up form; its operand
   is a list and its immediate VECTo, so it needs the S stage's start
   for a tag that is not the immediate (S12).
+- 2026-11-27 (fourth session): **U2 not reached; furthest point 10 of
+  16 instructions** (was 4), 20 held words: `put_reused_structure`
+  (`31ec`-`31ed`), `write_value`, `write_variable`, `get_bound_value`
+  (`3880`), `put_value` twice match `pimm.py`. Decided (`ref/pu/README.md`
+  "U2", each with observed injections): the ODPF 3 start, entry | code
+  << 2 with code 0 = the operand's tag is the immediate, 1 = other
+  (thesis printed pp.129, 133, 136; 14 of the 19 ODPF 3 entries with an
+  immediate reach the R11 failure exit from entry + 4), INFERRED; CNDF 7
+  EM1 `29` = the MRB of the AS1 input is on (contract: a shared
+  structure is not reused in place, TR-466 4.2; `pu_smt` side contract
+  `reuse_kl1` keeps only the MRB test, mrb_on under the adopted
+  polarity), INFERRED; SC2F 1 = an IR field on the S2 bus, not a
+  register R01 (thesis printed p.129), INFERRED, width not
+  discriminated; `get_bound_value`'s set-up (MDR2 := r[y]) OURS. Two
+  declared differences in the harness: `reuse` (the firmware reuses a
+  single-referenced list in place, `pimm.py` never does) and U1's
+  `indirect`. The stop is `execute` (`4cc0`): no set-up form; its first
+  word forms COND with CNDF 7 EM1 `19` (UNKNOWN) and its second is a
+  conditional JMPF b (`cjump_time`).

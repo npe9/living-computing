@@ -239,6 +239,49 @@ RULES = {
     # JMPF 8 word still raises.  The JMPF 0 / 8 twins (0517 / 051c with
     # EM1 2b, 0563 / 06bf with 2a) are both followed by a case_branch.
     'jmpf8_setup': True,
+    # SC2F 1 with WRBF clear puts a field of the instruction register IR
+    # on the S2 bus, not a register R01: the instruction's low 16 bits,
+    # sign-extended, tag 0.  INFERRED (U2, 2026-11-27, third session).
+    # Thesis printed p.129 (section 3.3.3.5): the S1 bus reaches every
+    # register EXCEPT IR, the S2 bus reaches RF, WR and IR, and IR has
+    # field extraction (rassy lists the extractions ir/8, ir/16, ir/24
+    # and signed forms, binary_reverse_engineering.md section 3).  The
+    # image agrees: 46 words read select 1 through SC2F and none of the 26
+    # words that write select 1 (DSTF) is in a KL1 instruction routine
+    # that reads it; the 8 label words 32f0-32ff add it to R04 (pc) and
+    # jump to the label branch 2447 (pimm.py: pc + 2 + sx16(c16)), and
+    # wait_vector (3a03, 3a06, 3a0b) subtracts it from the vector's
+    # length (pimm.py: c16).  The width per instruction is NOT decided:
+    # put_reused_structure is r_r_c8 (n = z), so where its y field is not
+    # zero the c8 and c16 readings differ and the read raises
+    # (setup.IR_C8).  Executed at 31ec (append's y is 0); the value is not
+    # used on the path run (MDR2 is loaded and the routine ends): NOT
+    # discriminated.  Off (the injection 'sc2f1_reg'): the old reading,
+    # a register R01 never set, raises at 31ec.
+    'sc2f1_ir': 'c16s',
+    # CNDF 7 with EM1 29: COND := the MRB (tag bit 0) of the ALU's AS1
+    # input is ON.  INFERRED (U2, 2026-11-27, third session).  Decided at
+    # 31ec-31ed (put_reused_structure's 'other' row, MDR1 = the
+    # dereferenced structure pointer): 31ed ends (x and R02 := the
+    # pointer: the structure reused in place) when COND is false
+    # (j1_bit0_false), and falls to 31ee (the allocating arm: a call to
+    # 31a1, then 31f0 jumps to put_list) when it holds.  The contract: a
+    # structure whose pointer has its MRB on is shared and must not be
+    # reused in place; one with its MRB off is single-referenced and is
+    # reused (TR-466 4.2: "When the input cons cell is single-referenced,
+    # it can be reused as the new output cons cell"; thesis printed p.138,
+    # Fig. 3-23: the S stage tells the E stage whether the data reached
+    # is collectable).  pu_smt (contract 'reuse_kl1') eliminates every
+    # value relation, 'never' and 'always' and keeps the MRB test up to
+    # the global end polarity, as for CNDF 5.  Static support for an
+    # MRB test on the AS1 input: 0ac9-0acb and 0ace-0ad0 form it from
+    # MDR2 alone and then stamp EHOOKo or EHOOKx (EUNDFo or EUNDFx) by
+    # it.  Not decided: whether the S stage's chain report (SRP: every
+    # MRB in the chain off) takes part; append's operand is held directly
+    # (no REF), where the two agree.  Injection 'em1_29_off' (COND = MRB
+    # off): append's instruction 4 STOPs at 31ee (MCF with EM1 08), the
+    # LISTx side case ends at 31ed (a shared list reused: FAIL).
+    'em1_29_mrb': 'on',
 }
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
@@ -280,7 +323,8 @@ def _cnd5(pu, upc, x, a):
 
 def _cnd7(pu, upc, x, a):
     """CNDF 7, by EM1: 0a lt (EXECUTED up to the polarity, inference doc
-    6.3 item 4), 09 overflow of the add/subtract (INFERRED, item 5), 3a
+    6.3 item 4), 09 overflow of the add/subtract (INFERRED, item 5), 29
+    the MRB of the AS1 input (RULES['em1_29_mrb'], INFERRED), 3a
     the case_tag_setup of a JMPF 3 multiway, 2d the dereference set-up
     (DEREF_SETUP), 28 a condition of UNKNOWN meaning (COND_UNKNOWN: COND
     becomes POISON); the last three are handled in evaluate.  Any other
@@ -293,6 +337,11 @@ def _cnd7(pu, upc, x, a):
         if field(x, 'ALF') != 1:
             raise Unmodelled(upc, 'CNDF 7 EM1 0a (lt) without a subtract')
         return _signed(a1[1]) < _signed(b1[1])
+    if em1 == 0x29 and RULES['em1_29_mrb']:
+        if is_poison(a1) or a1 is None:
+            raise Unmodelled(upc, 'CNDF 7 EM1 29 with no ALU input')
+        on = bool(a1[0] & 1)
+        return on if RULES['em1_29_mrb'] == 'on' else not on
     if em1 == 0x09:
         if field(x, 'ALF') not in (0, 1):
             raise Unmodelled(upc, 'CNDF 7 EM1 09 (overflow) without an add/subtract')
@@ -331,6 +380,7 @@ class PU:
         self.cond = None        # COND, set by the previous word (None = not formed)
         self.ir = None          # the KL1-B instruction (tag, value) in the E stage
         self.pc = None          # its address (the A stage's, OURS: set by a harness)
+        self.ir_c8 = False      # the instruction's constant is c8 (setup.IR_C8)
         self.trace = []         # (upc, word)
         self.writes = []        # (upc, address, (tag, value))
         self.cycles = []        # one record per microcycle (README "Trace format")
@@ -361,6 +411,17 @@ class PU:
             raise Unmodelled(upc, 'read of %s%02x, never set' % (f, n))
         self._reads.append(('%s%02x' % (f, n), store[n]))
         return store[n]
+
+    def ir_s2(self, upc):
+        """The IR field SC2F 1 puts on the S2 bus (RULES['sc2f1_ir'])."""
+        if self.ir is None:
+            raise Unmodelled(upc, 'SC2F 1: no instruction in IR')
+        v = self.ir[1] & 0xffff
+        if self.ir_c8 and (v >> 8) & 255:
+            raise Unmodelled(upc, 'SC2F 1: IR field width UNKNOWN (c8 %d, c16 %d differ)'
+                             % (v & 255, v))
+        self._reads.append(('IR', (0, v)))
+        return (0, (v - 0x10000 if v & 0x8000 else v) & M32)
 
     def write_sel(self, x, sel, v, out):
         out.append((self.sel_name(x, sel), v))
@@ -483,6 +544,8 @@ class PU:
         if sd2:
             if sc2 in (mekbn.SC2_EM1, mekbn.SC2_EM2, mekbn.SC2_WIDE):
                 v = self.imm2(upc, x, sc2)
+            elif sc2 == 1 and not bit(x, mekbn.WRB_BIT) and RULES['sc2f1_ir']:
+                v = self.ir_s2(upc)
             else:
                 v = self.read_sel(upc, x, sc2)
             d = {1: 'YR', 2: MDR1, 3: MDR2}[sd2]
@@ -570,7 +633,7 @@ class PU:
             tdar = (cycle, self.deref_code(upc, x) << DEREF_SHIFT)
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in COND_UNKNOWN:
             cond_new, cond_cycle = POISON, cycle
-        elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') not in (0x09, 0x0a):
+        elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') not in (0x09, 0x0a, 0x29):
             raise Unmodelled(upc, 'CNDF 7 EM1 %02x: TGT column or condition UNKNOWN'
                              % field(x, 'EM1'))
         elif cnd and mekbn.jk(x) != 1:
