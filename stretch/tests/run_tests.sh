@@ -12622,6 +12622,11 @@ run "Interruption timing: the deck's BE / one instruction / BD bracket" ./run_pr
 # rl_interrupt has no injection that could catch it, because the three
 # CYCLES benchmarks never enable interrupts and every interrupting test
 # checks a halt address rather than a clock count.
+# (2026-11-27: `ebusy` -- the E-box countdown -- is gone since
+# fidelity_plan.md A5 step 1, 2026-11-26; the E-box time is the units'
+# termination count, and that line is now rl_interrupt's `eArm.send`,
+# with the same effect: the count is not held in the next clock.  The
+# "ebusy == 0" and "ebusy already dropped" notes above are 2026-09-25's.)
 #
 # AND THE HARDER HALF IS UNTOUCHED.  An I-box-class instruction that the
 # I-box has already run AHEAD of a pending level is committed and cannot
