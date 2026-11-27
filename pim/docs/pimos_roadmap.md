@@ -569,9 +569,20 @@ addressing rule on a layout known from elsewhere.*
   5 in all; a second PE (`enqueue_goal_to_processor`) 3; `wait_value` of
   a variable with itself 3. All 16 held objects no other row loads
   load; mendels' KL1 half runs to its prompt, the first SIMPOS
-  demonstration candidate. The sweep ran before the floating-point
-  merge, which added `set_constant` (23:10) and the float built-ins, so
-  its two largest stops may already be gone on master; rerun it.*
+  demonstration candidate. That sweep ran before the floating-point
+  merge, which added `set_constant` (23:10) and the float built-ins.
+  2026-11-27, the rerun on master bc9a6dd3: both stops are gone (no row
+  stops at set_constant or float). 8 stop, 0 at float, 4 spend their
+  budget (laputa, ppss, colodex, rodin), 2 run with no oracle (objects;
+  multialign, whose take now loads `pia_s2.exe`), 2 differ (MGTP/G, as
+  before), 23 NEEDS-SIMPOS (16 still compiling), 7 another host; 20
+  undetermined in all, from 11. First stops now: `wait_value on a
+  structure` 5 (ldlib, dulcinea, consort, desq, kappa_p), a second PE 2
+  first and 4 in all (mmi joins mgtp_n, H9-07, multialign), then one
+  each, among them `get_heap_size` on the one-PE reference (H9-07),
+  the runner's 50M-cell heap limit (rodin's take typed out), a
+  Listener syntax error on GDCC's documented query, editalign's FEP
+  socket. Not yet built.*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
