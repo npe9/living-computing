@@ -100,7 +100,8 @@ def pins():
             'pmacs_editor': W.M10_PINS['pmacs'],
             'manipulator_reshape': W.SHOT_PINS['reshaped'],
             'manipulator_hide': W.SHOT_PINS['hidden'],
-            'editor_menu': W.M10_PINS['editor_menu']}
+            'editor_menu': W.M10_PINS['editor_menu'],
+            'pmacs_edit': W.M10_PINS['pmacs_edit']}
 
 
 def compiled(name, path):
@@ -170,6 +171,10 @@ class Live(unittest.TestCase):
         self.assertEqual(self.keys(['ctrlkey x', 'ctrlkey s', 'ctrlkey n', 'ctrlkey a', 'ctrlkey j',
                                     'ctrlkey g', 'ctrlkey 1', 'altkey q']),
                          [['key', c] for c in (24, 19, 14, 1, 10, 7, J('1'), J('q'))])
+        # Ctrl-Space and Ctrl-2: control#"@", 0 (the Pmacs
+        # reconstruction's mark key, OURS); Ctrl with another digit is the digit
+        self.assertEqual(self.keys(['ctrlkey 2', 'down ctrl', 'type x y', 'up ctrl', 'ctrlkey 3']),
+                         [['key', c] for c in (0, 24, 0, 25, J('3'))])
         self.assertEqual(self.keys(['click r 640 560', 'click r 640 560', 'click l 10 20', 'wait 500',
                                     'click l 30 40', 'down alt', 'click l 50 60', 'up alt', 'wait 500', 'click m 1 2',
                                     'click m 1 2', 'moveto 7 8']),

@@ -32,7 +32,12 @@
 %     editor's binding tables, `:command(Editor, Input, Method)` and,
 %     after a prefix (control_x, control_c), `:control_x(..)` or
 %     `:control_c(..)` (the form HELD: standard_editor.esp's head
-%     comment), first answer; the method is sent to the editor with no
+%     comment; RECONSTRUCTED-FROM-MANUAL, the KWIC class manual
+%     classSpec.IO2:2840-2870: command/3 "assigns a command to a key"
+%     and "is called from the editor object", A a key or mouse code, B
+%     an atom; control_c/3 "the same as command/3"; pmacs.md §3), and
+%     (2026-11-27, OURS) after ESC the table `:escape(..)`, Emacs's
+%     meta prefix (pmacs.md §3.3), first answer; the method is sent to the editor with no
 %     other argument, `:refute(Editor, Method, {})` (class `class`'s
 %     dynamic call, TM-388 p46, kl0); a failing command is the editor's
 %     command_failed/2 (a beep); an unbound printing character is inserted
@@ -93,6 +98,19 @@ attribute buffer := 0, prefix := none, done := 0;
 % INTERPOLATED (selector and body OURS): see the head comment.
 :set_buffer(I, B) :- I!buffer := B;
 
+% :next_input(I, X) -- pmacs.md §4.5 (2026-11-27), OURS selector: the
+% next input, waited for (the window's read_with_prompt/3 reads its line
+% this way, inside the command that sent it); a window's datum is X's
+% {data, D} heap vector as it came.  OURS.
+% INTERPOLATED (selector and body OURS): see the note above.
+:next_input(I, X) :- :get(I!input, X);
+
+% :clear_input(I) -- pmacs.md §4.9 (2026-11-27), OURS selector (the
+% editor's clear_input/1): every input not yet read is dropped, and a
+% prefix typed is forgotten (INFERENCE, pmacs.md §4.9).
+% INTERPOLATED (selector OURS, body INFERENCE): see the note above.
+:clear_input(I) :- drained(I!input), I!prefix := none;
+
 local
 
 % window M10: one input, then (unless it was exit) the window redisplayed
@@ -117,14 +135,17 @@ input(I, X) :- :undefined_key(I!editor, X);
 
 prefixed(I, control_x, X) :- control_x_of(I!editor, X, M), !, do(I, M);
 prefixed(I, control_c, X) :- control_c_of(I!editor, X, M), !, do(I, M);
+prefixed(I, escape, X) :- escape_of(I!editor, X, M), !, do(I, M);
 prefixed(I, P, X) :- :undefined_key(I!editor, {P, X});
 
 command_of(E, X, M) :- :command(E, X, M), !;
 control_x_of(E, X, M) :- :control_x(E, X, M), !;
 control_c_of(E, X, M) :- :control_c(E, X, M), !;
+escape_of(E, X, M) :- :escape(E, X, M), !;
 
 do(I, control_x) :- !, I!prefix := control_x;
 do(I, control_c) :- !, I!prefix := control_c;
+do(I, escape) :- !, I!prefix := escape;
 do(I, exit) :- !, :refute(I!editor, exit, {}), I!done := 1;
 do(I, M) :- :refute(I!editor, M, {}), !;
 do(I, M) :- :command_failed(I!editor, M);
@@ -134,6 +155,10 @@ do(I, M) :- :command_failed(I!editor, M);
 % key (psi/espc.py KEY_CODES, 16#8001..)
 printable(X) :- integer(X), X >= 32, X < 127, !;
 printable(X) :- integer(X), X >= 16#"2121", X =< 16#"7E7E";
+
+% pmacs.md §4.9: the inputs not yet read dropped
+drained(S) :- :try_to_get(S, _), !, drained(S);
+drained(_);
 
 % the one request the route makes (pmacs_request.esp); any other is sent
 % to the window under a selector no class has, so kl0 refuses it aloud

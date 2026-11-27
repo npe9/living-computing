@@ -698,6 +698,13 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
   the whole clause (`../../psi/README.md` "Nested disjunctions and the cut in a `$or$`").
 - Found and fixed: a term vector put on a stream lost its elements to the sender's backtracking
   (the console replay diverged); the datum is now a heap vector.
+
+**Status (2026-11-27, the Pmacs reconstruction)** (`subsystems/pmacs.md`; tests `test_win_pmacs_*`,
+`test_pmacs_methods_labelled`; live session `pmacs_edit`): every selector held code sends to a Pmacs editor
+is stood in. That covers mark, exchange_point, next_term, push_to_yank, clear_input, cursor_with_mouse,
+two_windows, find_file/2 and write_file/4, plus the window's read_with_prompt, get_activate_window_count,
+exchange_window and page commands. Papyrus's held my_syntax_checker, my_proof_deleter and my_goal_pointer run on
+the stand-ins. Two views of a window, a shared yank buffer, a `Find File:` prompt.
 - Not done: Pmacs's other ~100 commands (search, yank, regions, windows, modes), a prompt for C-x
   b, the five other menu items, Pmacs's own mode names, scrolling by command, the M9 leftovers, not
   attempted (a second ATTRIBUTE while a sheet is up; editing a choice window's text field).

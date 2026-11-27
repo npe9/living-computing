@@ -43,7 +43,11 @@ Each screen is a live kl0 run, the same run test_espc.py Window pins:
     me:boot.init after `Hi`, C-n, `x`, C-x C-s: the edited text, the
     reversed mode line, the echo line `Written! ...` (test_win_m10_exshow);
   - editor_menu (window M10): the EDITOR MENU opened on that window by the
-    right button (test_win_m10_menu).
+    right button (test_win_m10_menu);
+  - pmacs_edit (the Pmacs reconstruction, 2026-11-27): that window after
+    C-x C-f me:usercom.init, `Hi`, C-@, C-e, C-w, C-n, C-e, C-y,
+    C-x C-w me:new.esp and C-x 2
+    (two views; test_win_pmacs_live, docs/simpos/subsystems/pmacs.md).
 The PNG is the whole device frame, 1,280 x 1,024 dots, one bit a dot
 (psi/windev.py png_bytes, stdlib zlib only); the frame's PBM sha256 is
 printed beside it and must equal the test's pin.
@@ -51,7 +55,7 @@ printed beside it and must equal the test's pin.
 Use:  python3 -I psi/winshot.py OUTDIR [STAGE ...]   (stages: name,
       password, login, bridged, console, menu, over, popup, sweep, manip,
       hidden, reshaped, expand, windows, notify, graphics, graphics_rest,
-      choice, attribute, pmacs, editor_menu; all when none
+      choice, attribute, pmacs, editor_menu, pmacs_edit; all when none
       is given)
 """
 import os
@@ -66,7 +70,7 @@ NAMES = {'console': 'pimos_console', 'menu': 'system_menu', 'over': 'menu_over_w
          'expand': 'manipulator_expand', 'windows': 'manipulator_menu', 'notify': 'notify_window',
          'graphics': 'window_graphics', 'graphics_rest': 'window_graphics_rest',
          'choice': 'choice_window', 'attribute': 'manipulator_attribute',
-         'pmacs': 'pmacs_editor', 'editor_menu': 'editor_menu'}
+         'pmacs': 'pmacs_editor', 'editor_menu': 'editor_menu', 'pmacs_edit': 'pmacs_edit'}
 
 
 def main(argv):
@@ -84,7 +88,7 @@ def main(argv):
     stages = argv[1:] or list(T.Window.SCREENS) + ['bridged', 'console', 'menu', 'over', 'popup', 'sweep',
                                                    'manip', 'hidden', 'reshaped', 'expand', 'windows',
                                                    'notify', 'graphics', 'graphics_rest', 'choice',
-                                                   'attribute', 'pmacs', 'editor_menu']
+                                                   'attribute', 'pmacs', 'editor_menu', 'pmacs_edit']
     bad = 0
     for stage in stages:
         if stage == 'bridged':

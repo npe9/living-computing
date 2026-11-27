@@ -628,6 +628,10 @@ are TR/TM pages read by eye, the IPSJ papers, the IFS sources, the
 `.ptf` packages run under `../../psi/kl0.py`, and the ICOT museum video.
 Also in `subsystems/`:
 - `gaps.md`: what is still unknown, ranked;
+- `pmacs.md`: the Pmacs editor reconstructed from the held manuals
+  (ESP overview, PIMOS man15, the KWIC manual) and call sites, each
+  behaviour labelled RECONSTRUCTED-FROM-MANUAL, INFERENCE or OURS
+  (2026-11-27);
 - `finds.md`: possible SIMPOS code. `cil/src/ds_bep.esp` carries a
   patched copy of three SIMPOS 6.1 Librarian classes, and `cal-esp`
   has a debugger derived from SIMPOS's;

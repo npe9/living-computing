@@ -60,22 +60,61 @@ instance
 % not drawn), the message to show.
 attribute pane := 0, cols := 0, rows := 0, status := on, top := 0, shown := none,
           mode := none, echoed := none, message := [];
+% pmacs.md §4.7 (2026-11-27), OURS: the views (1, or 2 after
+% two_windows/1), the lower view's first shown line, its rows' codes and
+% the upper view's mode line (none: not drawn).
+attribute views := 1, top2 := 0, shown2 := none, mode2 := none;
 
 % :redisplay(D, Buffer) -- OURS selector: the screen made to show Buffer.
 % INTERPOLATED (selector and body OURS): see REDISPLAY in the head comment.
 :redisplay(D, B) :-
-        Text = B!text,
-        line_of(Text, B!point, Ln, Col),
-        scrolled(D, Ln),
-        drop_lines(Text, D!top, Rest),
-        taken(Rest, D!rows, D!cols, Rows),
-        drawn_rows(D, Rows, D!shown, 0, Shown),
-        D!shown := Shown,
-        mode_line(D, B, D!status, Next),
-        cut(D!message, D!cols, Echo),
-        drawn_line(D, Next, Echo, D!echoed, copy),
-        D!echoed := Echo,
-        :set_cursor(D!pane, Col, Ln - D!top);
+        view(D, B, 0, D!rows, D!top, Top, D!shown, Shown, Ln, Col),
+        D!top := Top, D!shown := Shown,
+        mode_line(D, B, D!status, D!rows, Top, D!rows, mode, Next),
+        echo_line(D, Next),
+        :set_cursor(D!pane, Col, Ln - Top);
+
+% :redisplay(D, B, Other, Active) -- pmacs.md §4.7 (2026-11-27), OURS
+% selector: the screen split in two views (split/2), B in the active one
+% (upper or lower), Other in the other; each view its text rows and a
+% mode line, the upper's above the lower's text, then the echo line;
+% the cursor in the active view.  INFERENCE (Emacs analogy, C-x 2: the
+% held selector two_windows/1, cil ds_edt.esp:1037; pmacs.md §4.7).
+% INTERPOLATED (selector and body OURS): see the note above.
+:redisplay(D, B, Other, Active) :-
+        halves(D!rows, H1, H2),
+        which(Active, B, Other, Up, Low),
+        view(D, Up, 0, H1, D!top, Top1, D!shown, Shown1, Ln1, Col1),
+        D!top := Top1, D!shown := Shown1,
+        mode_line(D, Up, on, H1, Top1, H1, mode2, _),
+        value(H1 + 1, R2),
+        view(D, Low, R2, H2, D!top2, Top2, D!shown2, Shown2, Ln2, Col2),
+        D!top2 := Top2, D!shown2 := Shown2,
+        mode_line(D, Low, D!status, D!rows, Top2, H2, mode, Next),
+        echo_line(D, Next),
+        cursor(D, Active, Col1, Ln1 - Top1, Col2, Ln2 - Top2 + R2);
+
+% :split(D, On) -- pmacs.md §4.7, OURS selector: two views (On `on`),
+% or one (`off`); fails for `on` when the text has fewer than 3 rows.
+% Every row is drawn again at the next redisplay.  OURS.
+% INTERPOLATED (selector and body OURS): see the note above.
+:split(D, on) :- D!rows >= 3, !, D!views := 2, D!top2 := D!top, :forget(D);
+:split(D, off) :- D!views := 1, :forget(D);
+
+% :view_rows(D, Active, R0, H, Top) -- pmacs.md §4.6, OURS selector: the
+% active view's first pane row, text rows and first shown line (for
+% cursor_with_mouse/1 and the page commands).  OURS.
+% INTERPOLATED (selector and body OURS): see the note above.
+:view_rows(D, _, 0, H, Top) :- D!views == 1, !, H = D!rows, Top = D!top;
+:view_rows(D, upper, 0, H1, Top) :- !, halves(D!rows, H1, _), Top = D!top;
+:view_rows(D, lower, R0, H2, Top) :- halves(D!rows, H1, H2), value(H1 + 1, R0), Top = D!top2;
+
+% :set_view_top(D, Active, Top) -- pmacs.md §4.6, OURS selector: the
+% active view's first shown line (the page commands), every row of the
+% view drawn again.  OURS.
+% INTERPOLATED (selector and body OURS): see the note above.
+:set_view_top(D, lower, Top) :- D!views == 2, !, D!top2 := Top, D!shown2 := none;
+:set_view_top(D, _, Top) :- D!top := Top, D!shown := none;
 
 % :message(D, String) -- OURS selector: the echo line's text from now on
 % (drawn at the next redisplay).
@@ -85,7 +124,8 @@ attribute pane := 0, cols := 0, rows := 0, status := on, top := 0, shown := none
 % :forget(D) -- OURS selector: nothing is on the screen any more (the
 % pane was drawn again): every row is drawn at the next redisplay.
 % INTERPOLATED (selector and body OURS): see REDISPLAY.
-:forget(D) :- D!shown := none, D!mode := none, D!echoed := none;
+:forget(D) :- D!shown := none, D!mode := none, D!echoed := none,
+        D!shown2 := none, D!mode2 := none;
 
 local
 
@@ -94,14 +134,52 @@ text_rows(off, R, T) :- !, value(R - 1, T);
 text_rows(_, R, 1) :- R < 3, !;
 text_rows(_, R, T) :- value(R - 2, T);
 
-% the mode line (none with status off); Next, the echo line's row
-mode_line(D, _, off, R) :- !, R = D!rows;
-mode_line(D, B, _, R) :-
+% the mode line (none with status off) at row R, for a view of H rows
+% whose first shown line is Top, its codes cached in the slot Cache;
+% Next, the row after it
+mode_line(_, _, off, R, _, _, _, R) :- !;
+mode_line(D, B, _, R, Top, H, Cache, Next) :-
         count_lines(B!text, 1, Lines),
-        mode_codes(D, B, Lines, Mode),
-        drawn_line(D, D!rows, Mode, D!mode, reverse),
-        D!mode := Mode,
-        value(D!rows + 1, R);
+        mode_codes(D, B, Lines, Top, H, Mode),
+        cached(D, Cache, Was),
+        drawn_line(D, R, Mode, Was, reverse),
+        cache(D, Cache, Mode),
+        value(R + 1, Next);
+
+cached(D, mode, X) :- X = D!mode;
+cached(D, mode2, X) :- X = D!mode2;
+
+cache(D, mode, X) :- D!mode := X;
+cache(D, mode2, X) :- D!mode2 := X;
+
+% the echo line at row R
+echo_line(D, R) :-
+        cut(D!message, D!cols, Echo),
+        drawn_line(D, R, Echo, D!echoed, copy),
+        D!echoed := Echo;
+
+% one view: B's lines from its first shown line Top0 (moved to keep the
+% point's line Ln in its H rows: Top) drawn from pane row R0 where they
+% differ from Shown0 (none: all); Col the point's column
+view(D, B, R0, H, Top0, Top, Shown0, Shown, Ln, Col) :-
+        Text = B!text,
+        line_of(Text, B!point, Ln, Col),
+        scrolled(Ln, Top0, H, Top),
+        kept(Top, Top0, Shown0, Old),
+        drop_lines(Text, Top, Rest),
+        taken(Rest, H, D!cols, Rows),
+        drawn_rows(D, Rows, Old, R0, Shown);
+
+kept(T, T0, Old, Old) :- T == T0, !;
+kept(_, _, _, none);
+
+halves(T, H1, H2) :- value((T - 1) / 2, H1), value(T - 1 - H1, H2);
+
+which(upper, B, O, B, O);
+which(lower, B, O, O, B);
+
+cursor(D, upper, C, R, _, _) :- :set_cursor(D!pane, C, R);
+cursor(D, lower, _, _, C, R) :- :set_cursor(D!pane, C, R);
 
 value(V, V);
 
@@ -112,10 +190,10 @@ walk(_, 0, L, C, L, C) :- !;
 walk([10 | R], P, L, _, Ln, Col) :- !, walk(R, P - 1, L + 1, 0, Ln, Col);
 walk([_ | R], P, L, C, Ln, Col) :- walk(R, P - 1, L, C + 1, Ln, Col);
 
-% the first shown line keeps line Ln on the screen
-scrolled(D, Ln) :- Ln < D!top, !, D!top := Ln, D!shown := none;
-scrolled(D, Ln) :- Ln >= D!top + D!rows, !, value(Ln - D!rows + 1, T), D!top := T, D!shown := none;
-scrolled(_, _);
+% the first shown line keeps line Ln in the H rows from Top0
+scrolled(Ln, Top0, _, Ln) :- Ln < Top0, !;
+scrolled(Ln, Top0, H, T) :- Ln >= Top0 + H, !, value(Ln - H + 1, T);
+scrolled(_, Top0, _, Top0);
 
 drop_lines(Text, 0, Text) :- !;
 drop_lines([], _, []) :- !;
@@ -158,11 +236,11 @@ same([], []);
 same([X | A], [Y | B]) :- X == Y, same(A, B);
 
 % the mode line's codes (see THE MODE LINE)
-mode_codes(D, B, Lines, Codes) :-
-        number_codes(D!cols, Cs), number_codes(D!rows, Rs),
+mode_codes(D, B, Lines, Top, H, Codes) :-
+        number_codes(D!cols, Cs), number_codes(H, Rs),
         number_codes(B!number, Ns),
         name_codes(B, Name), path_codes(B, Path),
-        place(D, Lines, Place),
+        place(Top, H, Lines, Place),
         string_codes("PMACS(fundamental)(", P1),
         string_codes(",", P2), string_codes(") *-", P3), string_codes("* ", P4),
         string_codes(" ", P5),
@@ -177,10 +255,10 @@ name_codes(B, Codes) :- string_codes(B!name, Codes);
 path_codes(B, []) :- B!file == 0, !;
 path_codes(B, Codes) :- F = B!file, string_codes(F!full_name, Codes);
 
-place(D, _, Codes) :- D!top == 0, !, string_codes(" --Top--", Codes);
-place(D, Lines, Codes) :- D!top + D!rows >= Lines, !, string_codes(" --Bot--", Codes);
-place(D, Lines, Codes) :-
-        quotient(D!top * 100, Lines, Q), number_codes(Q, Ds),
+place(0, _, _, Codes) :- !, string_codes(" --Top--", Codes);
+place(Top, H, Lines, Codes) :- Top + H >= Lines, !, string_codes(" --Bot--", Codes);
+place(Top, _, Lines, Codes) :-
+        quotient(Top * 100, Lines, Q), number_codes(Q, Ds),
         string_codes(" --", A), string_codes("%--", B),
         append(A, Ds, A1), append(A1, B, Codes);
 

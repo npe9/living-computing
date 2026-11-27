@@ -1134,6 +1134,37 @@ class Standins(unittest.TestCase):
                                     or re.search(r'HELD-SOURCE: \w+\.esp:\d+', x) for x in block),
                                 (t.id, p.name))
 
+    def test_pmacs_methods_labelled(self):
+        # the Pmacs reconstruction (2026-11-27; owner's rule of 2026-11-27,
+        # pim/tools/agent_rules.md): each stand-in method whose comment
+        # block cites docs/simpos/subsystems/pmacs.md names where its
+        # behaviour comes from: RECONSTRUCTED-FROM-MANUAL, INFERENCE or
+        # OURS; and pmacs.md's selector table names each of them
+        with open(os.path.join(HERE, '..', 'docs', 'simpos', 'subsystems', 'pmacs.md')) as f:
+            doc = f.read()
+        n = 0
+        for t in self.ts:
+            with open(os.path.join(espc.STANDIN, t.name + '.esp')) as f:
+                lines = f.read().splitlines()
+            for p in t.preds():
+                if p is None or p.kind in (0x11, 0x12, 0x22, 0x32):
+                    continue
+                (i,) = [k for k, x in enumerate(lines) if x.strip().startswith(':%s(' % p.name)
+                        and len(x) - len(x.lstrip()) <= 4][:1]
+                j = i - 1
+                block = []
+                while j >= 0 and lines[j].strip().startswith('%'):
+                    block.append(lines[j])
+                    j -= 1
+                text = ' '.join(x.strip('% ') for x in reversed(block))
+                if 'pmacs.md' not in text:
+                    continue
+                n += 1
+                with self.subTest(cls=t.id, method=p.name):
+                    self.assertTrue(re.search(r'RECONSTRUCTED-\s*FROM-\s*MANUAL|INFERENCE|OURS', text))
+                    self.assertIn('`%s/' % p.name, doc)
+        self.assertEqual(n, 38)     # the methods whose block cites pmacs.md
+
     def test_source_check_labels(self):
         # docs/simpos/source_check_2026-11-24.md §5, applied 2026-11-25:
         # each corrected statement is pinned, and each stale one is absent.
@@ -1839,7 +1870,20 @@ end.''', 'simpos')
         # set_input_buffer/2 on that unset window.  832 / 239 / 432.
         # Then set_input_position/1 (cal_pmacs run/4) inherited by
         # pimos_window, success: 1,521 rows, 833 / 239 / 432
-        self.assertEqual((len(rows), out), (1521, {'success': 833, 'failure': 239, 'refused': 432, 'exception': 16,
+        # The Pmacs reconstruction (2026-11-27, docs/simpos/subsystems/
+        # pmacs.md; row by row against 07eb6448's stand-ins): 1,521 ->
+        # 1,551 rows, all 30 new rows inherited, no row removed, no row
+        # changes outcome.  pimos_window gets 9 of pmacs_window's new
+        # methods: get_activate_window_count/2 success; exchange_window/1,
+        # mouse_cell/3, split/1, unsplit/1, view_next_screen/1,
+        # view_previous_screen/1 failure (one view, no display); left_click/3
+        # and read_with_prompt/3 refused at the unset interpreter (slot
+        # constant).  pimos_window_editor gets 21 of standard_editor's:
+        # escape/3, push_to_yank/3, push_yank/2 success; top_yank/2, yank/1
+        # failure (nothing killed); find_file/2, write_file/4 refused
+        # (unbound pathname); the other 14 refused at the unset window
+        # (slot constant).  837 / 247 / 450
+        self.assertEqual((len(rows), out), (1551, {'success': 837, 'failure': 247, 'refused': 450, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1854,8 +1898,9 @@ end.''', 'simpos')
         # putl/2 (new rows) and the editor's carriage_return/1 (was
         # 'simpos', now get_interpreter/2 to the census window's unset
         # editor slot) stop at the census's slot constants; 158 -> 185 in
-        # window M10: the 26 new rows above and select_buffer/4
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 185)
+        # window M10: the 26 new rows above and select_buffer/4; 185 -> 201
+        # in the Pmacs reconstruction: the 16 slot-constant rows above
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 201)
         self.assertEqual(sorted(r[2] for r in rows if r[0] == 'pimfep##pimos_login_requester'
                                 and 'no file system is mounted' in r[5]),
                          ['goal/1', 'initiate/1', 'invoke/1'])
@@ -1981,8 +2026,15 @@ end.''', 'simpos')
         # stop from get_buffer_instance/3 to put/2 on the window's unset
         # output stream (the step 3g artifact).  No held row changes
         # outcome.  880 / 250 / 373; set_input_position/1 (as in
-        # test_fep_census) success: 1,521 rows, 881 / 250 / 373
-        self.assertEqual((len(rows), out), (1521, {'success': 881, 'failure': 250, 'refused': 373,
+        # test_fep_census) success: 1,521 rows, 881 / 250 / 373.
+        # The Pmacs reconstruction (2026-11-27, row by row): the same 30
+        # new rows as test_fep_census, no other row changes: 7 success
+        # (clear_input/1, escape/3, get_activate_window_count/2,
+        # left_click/3, mark/1, push_to_yank/3, push_yank/2), 18 failure
+        # (an empty buffer, one view, nothing killed), 5 refused (the three
+        # prompts at the census process's suspend, find_file/2 and
+        # write_file/4 at the unbound pathname): 888 / 268 / 378
+        self.assertEqual((len(rows), out), (1551, {'success': 888, 'failure': 268, 'refused': 378,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -2017,8 +2069,11 @@ end.''', 'simpos')
         # in, then the census's missing ready queue); window M4: 21,
         # pimos_window_process goal/1 and invoke/1 (were 'simpos' at
         # get_interpreter/2), now waiting in the command interpreter's
-        # get on its input stream, the console's own wait
-        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 21)
+        # get on its input stream, the console's own wait; the Pmacs
+        # reconstruction (2026-11-27): 24, read_with_prompt/3, find_file/1
+        # and write_file/1 (the prompts' read, the census process's
+        # suspend; test_step3f's 5 refused rows above)
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 24)
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
@@ -2212,7 +2267,9 @@ end.''', 'simpos')
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
             # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
             # M4/M6: 15 (test_fep_census)
-            self.assertEqual(len(fwd), 1521)    # window M10: 36 inherited methods (test_fep_census)
+            # window M10: 36 inherited methods; the Pmacs reconstruction
+            # (2026-11-27): 30 (test_fep_census)
+            self.assertEqual(len(fwd), 1551)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
@@ -3965,7 +4022,8 @@ class Window(unittest.TestCase):
                           ('choice_window', self.CHOICE_PIN),
                           ('manipulator_attribute', self.SHOT_PINS['attribute']),
                           ('pmacs_editor', self.M10_PINS['pmacs']),
-                          ('editor_menu', self.M10_PINS['editor_menu'])):
+                          ('editor_menu', self.M10_PINS['editor_menu']),
+                          ('pmacs_edit', self.M10_PINS['pmacs_edit'])):
             with open(os.path.join(shots, '%s.png' % name), 'rb') as f:
                 g = winfb.Frame()
                 g.rows = windev.png_rows(f.read())
@@ -7099,6 +7157,8 @@ end."""),
     M10_PINS = {
         'pmacs': ('38ff75a3312808cd9c28ca38de9d94ca5a20ecc8f36aa9a0fd7bd2993f91b204', 131806),
         'editor_menu': ('a1ec90b6d649a416b562ca341112d4ef7c5d24b25b55e181d2669e050acc6374', 136585),
+        # the Pmacs reconstruction (2026-11-27): test_win_pmacs_live's sequence
+        'pmacs_edit': ('c8187fb179c6c089421ab730c38af98cb670e85d4478aae36c2c4ec326812dd9', 176760),
     }
 
     @classmethod
@@ -7109,7 +7169,8 @@ end."""),
         import fep_bridge as FB
         k = cls.m10_key
         return dict(pmacs=(cls.m10_keys('Hi') + [k(14)] + cls.m10_keys('x') + [k(cls.C_X), k(cls.C_S)],),
-                    editor_menu=(cls.m10_keys('Hi'), [FB.mouse('r', 300, 200)]))
+                    editor_menu=(cls.m10_keys('Hi'), [FB.mouse('r', 300, 200)]),
+                    pmacs_edit=cls.pm_live())
 
     def test_win_m10_exshow(self):
         # M10: the HELD disc/exshow.esp (IFS source) runs whole on the
@@ -7377,6 +7438,360 @@ end."""),
         ts, failed = espc.compile_text(held.member_text('dedit'), 'simpos')
         self.assertEqual(failed, {})
         self.assertEqual([t.refusals for t in ts], [[]])
+
+    # -- the Pmacs reconstruction (2026-11-27) --------------------------------
+    # docs/simpos/subsystems/pmacs.md: the selectors held code sends to a
+    # Pmacs editor, reconstructed from the held manuals (ESP manual
+    # overview PDF p25; PIMOS manual man15 PDF p72-76, p91; the KWIC
+    # manual, an ICOT IFS application's) and the held call sites, the
+    # gaps filled by Emacs analogy (INFERENCE) and labelled.  The held
+    # papyrus editors (demo/EDITOR/my_syntax.esp.1, my_delete.esp.1,
+    # my_point.esp.1, IFS source) run on the stand-ins through the M10
+    # harness, their papyrus collaborators (not loaded) as OURS stubs in
+    # the harness text, named here; cal_pmacs (test_win_m10_cal) sends no
+    # selector this work added, so it is not driven again.
+    PM_TEXT = ['a :- b.', 'c :- d.', 'e.', '']      # the proof text the harnesses insert
+    M10_HARNESS = dict(M10_HARNESS, **{
+        # my_syntax_checker (HELD) on an editor that is also a
+        # pmacs_standard_editor; OURS: the checker papyrus's
+        # syntax_checker would be, answering error(N) for the N in the
+        # harness class's slot, and pf#1 .. pf#4 bindings that set N and
+        # run the check
+        'syntax': ('my_syntax', """class syntax_checker has
+:check(Class, _, error(N)) :- N = #m10_syntax!num;
+end.
+class m10_syntax_editor has
+nature my_syntax_checker, pmacs_standard_editor;
+instance
+:command(Editor, pf#1, check1);
+:command(Editor, pf#2, check2);
+:command(Editor, pf#3, check3);
+:command(Editor, pf#4, check4);
+:check1(Editor) :- :set_num(#m10_syntax, 1), :syntax_check_goal(Editor, []);
+:check2(Editor) :- :set_num(#m10_syntax, 2), :syntax_check_goal(Editor, []);
+:check3(Editor) :- :set_num(#m10_syntax, 3), :syntax_check_goal(Editor, []);
+:check4(Editor) :- :set_num(#m10_syntax, 4), :syntax_check_goal(Editor, []);
+end.
+class m10_syntax has
+nature as_program;
+attribute num := 2;
+:set_num(Class, N) :- Class!num := N;
+instance
+:goal(P) :-
+    :create(#pmacs_window, [editor(#m10_syntax_editor), title("papyrus"),
+                            size(500, 250), position(100, 100)], W),
+    :create(#editor_text_buffer, B, "proof", 0),
+    :insert_string(B, "a :- b."), :insert_code(B, key#lf),
+    :insert_string(B, "c :- d."), :insert_code(B, key#lf),
+    :insert_string(B, "e."), :insert_code(B, key#lf),
+    :set_input_buffer(W, B), :activate(W),
+    :get_interpreter(W, I), :command_interpret(I);
+end."""),
+        # my_proof_deleter (HELD, bound to C-c d) on a stub proof: OURS
+        # stubs for papyrus's my_papyrus_press (empty), proof buffer,
+        # goal and since block (the second line, `c :- d.`, chosen and
+        # reversed), goal_operation and the main window's
+        # ok_delete_since_block/1
+        'delete': ('my_delete', """class my_papyrus_press has
+end.
+class goal_operation has
+:remove_region_macro_since(Class, _, _);
+end.
+class m10_proof_buffer has
+nature editor_text_buffer;
+instance
+attribute goal := 0;
+:is_structure_mode(B);
+:current_goal(B, G) :- G = B!goal;
+:reset_read_only_mode(B);
+:set_read_only_mode(B);
+:reset_down_data(B);
+end.
+class m10_goal has
+instance
+attribute since := 0;
+:is_reverse(G);
+:get_since_block(G, S) :- S = G!since;
+end.
+class m10_since has
+instance
+attribute buffer := 0, nil := 0;
+:nil(S) :- S!nil == 1;
+:is_press(S) :- fail;
+:position(S, 8, 15);
+:size(S, 7);
+:delete_text(S) :- :delete(S!buffer, 8, 15);
+:set_nil(S) :- S!nil := 1;
+end.
+class m10_pmacs_proof_window has
+nature pmacs_window;
+instance
+:ok_delete_since_block(W);
+end.
+class m10_delete has
+nature as_program;
+instance
+:goal(P) :-
+    :create(#m10_pmacs_proof_window, [editor(#my_proof_deleter), title("papyrus"),
+                                size(500, 250), position(100, 100)], W),
+    :create(#m10_proof_buffer, B, "proof", 0),
+    :insert_string(B, "a :- b."), :insert_code(B, key#lf),
+    :insert_string(B, "c :- d."), :insert_code(B, key#lf),
+    :new(#m10_since, S), S!buffer := B,
+    :new(#m10_goal, G), G!since := S, B!goal := G,
+    :set_input_buffer(W, B), :activate(W),
+    :get_interpreter(W, I), :command_interpret(I);
+end."""),
+        # my_goal_pointer (HELD, mouse#l bound to goal_with_mouse) with
+        # OURS stubs: papyrus's my_proof_editor and my_assumption_menu
+        # (empty) and a proof buffer not in structure mode, so the held
+        # goal_with_mouse/1 fails after cursor_with_mouse/1 (a beep)
+        'point': ('my_point', """class my_proof_editor has
+end.
+class my_assumption_menu has
+end.
+class m10_text_buffer has
+nature editor_text_buffer;
+instance
+:is_structure_mode(B) :- fail;
+end.
+class m10_point has
+nature as_program;
+instance
+:goal(P) :-
+    :create(#pmacs_window, [editor(#my_goal_pointer), title("papyrus"),
+                            size(500, 250), position(100, 100)], W),
+    :create(#m10_text_buffer, B, "proof", 0),
+    :insert_string(B, "a :- b."), :insert_code(B, key#lf),
+    :insert_string(B, "c :- d."), :insert_code(B, key#lf),
+    :insert_string(B, "e."), :insert_code(B, key#lf),
+    :set_input_buffer(W, B), :activate(W),
+    :get_interpreter(W, I), :command_interpret(I);
+end."""),
+    })
+
+    def pm_state(self, m):
+        # (the text, the point, the mark) of the buffer the run's window visits
+        w = self.m10_window(m)
+        B = m.get_slot(m.get_slot(w, 'interpreter'), 'buffer')
+        mark = K.deref(m.get_slot(B, 'mark'))
+        return (self.m10_text(m, B), K.deref(m.get_slot(B, 'point')),
+                mark.name if isinstance(mark, K.Atom) else mark)
+
+    def pm_echo(self, m, fr):
+        rows, _rev = self.m10_rows(m, fr)
+        return rows[-1]
+
+    def test_win_pmacs_syntax(self):
+        # pmacs.md §4.2, §4.4: papyrus's HELD my_syntax_checker moves to
+        # term N of the buffer (goto_beginning/1, mark/1, then N times
+        # exchange_point/1, backward_character/1 twice, next_term/1),
+        # shows `illegal syntax` (exception/2) and fails.  On the text
+        # `a :- b.` / `c :- d.` / `e.` the reconstruction (next_term/1
+        # makes the next term the region, point at its start, mark at its
+        # end: INFERENCE) leaves, for N = 1, 2, 3, the point at the start
+        # of term N and the mark at the start of term N + 1 (the end for
+        # term 3); for N = 4 next_term/1 finds no term, move_to_term
+        # fails, and the held syntax_check_result/2's second clause
+        # succeeds: no message; the point is left where the fourth pass's
+        # exchange_point/1 and backward_character/1 put it (17, after
+        # `e`), the mark at term 3's start (16).
+        # Injections, OBSERVED 2026-11-27 (each in a private copy of psi/,
+        # the 11 Pmacs and M10 Window tests run; table in pmacs.md §6):
+        # next_term/1's mark at the term's start: this test n=1..4 only;
+        # exchange_point/1 keeping the mark: this test n=4 only;
+        # term_region/3 scanning from inside a comment: this test n=1..3
+        # only.  The other eight injections leave this test passing.
+        k = self.m10_key
+        for n, point, mark, echo in ((1, 0, 8, 'illegal syntax'), (2, 8, 16, 'illegal syntax'),
+                                     (3, 16, 19, 'illegal syntax'), (4, 17, 16, 'Mark set')):
+            with self.subTest(n=n):
+                m, fr, stop = self.pmacs_run('syntax', [k(0x8100 + n)])
+                self.assertEqual(stop.cause, 'would suspend')
+                self.assertEqual(self.pm_state(m), ('\n'.join(self.PM_TEXT), point, mark))
+                self.assertEqual(self.pm_echo(m, fr), echo)
+
+    def test_win_pmacs_delete(self):
+        # pmacs.md §4.3: papyrus's HELD my_proof_deleter, C-c d (its own
+        # binding): the chosen since block's text (`c :- d.`, read by
+        # see_position/4) is pushed to the yank buffer (push_to_yank/3,
+        # forward) and the block deleted by the stubs; then C-p and C-y
+        # (the stand-in's yank/1) insert it at the start of line 1: the
+        # text deleted from one place is yanked at another, the mark
+        # before it, the point after it.
+        k = self.m10_key
+        m, fr, stop = self.pmacs_run('delete', [k(3)] + self.m10_keys('d'))
+        self.assertEqual(stop.cause, 'would suspend')
+        self.assertEqual(self.pm_state(m), ('a :- b.\n\n', 8, 'none'))
+        Y = m.get_slot(K.ClassRef('simpos##standard_editor'), 'yanks')
+        self.assertEqual([K.deref(y).text for y in self._walk(Y)], ['c :- d.'])
+        m, fr, stop = self.pmacs_run('delete', [k(3)] + self.m10_keys('d') + [k(16), k(25)])
+        self.assertEqual(self.pm_state(m), ('c :- d.a :- b.\n\n', 7, 0))
+
+    def test_win_pmacs_point(self):
+        # pmacs.md §4.6: papyrus's HELD my_goal_pointer binds mouse#l to
+        # goal_with_mouse/1, whose first send is cursor_with_mouse/1.  A
+        # second left click on the selected window (the first selects it)
+        # gives the window mouse#l; the point goes to the cell clicked
+        # (line 1, column 3 here: position 11), then the held method fails
+        # at the stub buffer's is_structure_mode/1 (a beep) and the point
+        # stays.  A click below the last line puts the point on the last
+        # line (column 3, past its end: its end, 19).
+        # Injection OBSERVED 2026-11-27 (pmacs.md §6): mouse_cell/3
+        # ignoring the pane's top fails row=0 and row=1 of this test only.
+        import fep_bridge as FB
+        m, fr, stop = self.pmacs_run('point', [])
+        P = m.get_slot(self.m10_window(m), 'pane')
+        left, top, cw, ch = (K.deref(m.get_slot(P, s)) for s in ('left', 'top', 'cw', 'ch'))
+        self.assertEqual(self.pm_state(m)[1], 19)
+        for row, col, point in ((1, 3, 11), (0, 5, 5), (9, 3, 19)):
+            with self.subTest(row=row):
+                m, fr, stop = self.pmacs_run('point', [FB.mouse('l', left + col * cw + 1, top + row * ch + 1)])
+                self.assertEqual(stop.cause, 'would suspend')
+                self.assertEqual(self.pm_state(m)[1], point)
+
+    PM_LIVE = None
+
+    @classmethod
+    def pm_live(cls):
+        # the batch of psi/live_sessions/pmacs_edit.script (the pin
+        # M10_PINS['pmacs_edit']): on exshow's window, C-x C-f
+        # `me:usercom.init` RETURN (found), `Hi` (inserted at the start),
+        # C-@ (the mark; Ctrl-2 or Ctrl-Space live, tools/simpos_live.py),
+        # C-e, C-w (the first line's own text killed), C-n, C-e, C-y
+        # (yanked at the second line's end), C-x C-w `me:new.esp` RETURN
+        # (written), C-x 2 (two views)
+        k = cls.m10_key
+        ks = cls.m10_keys
+        return ([k(cls.C_X), k(6)] + ks('me:usercom.init') + [k(13)]
+                + ks('Hi') + [k(0), k(5), k(23), k(14), k(5), k(25)]
+                + [k(cls.C_X), k(23)] + ks('me:new.esp') + [k(13)]
+                + [k(cls.C_X)] + ks('2'),)
+
+    def test_win_pmacs_live(self):
+        # pmacs.md §4.2-4.8 on the HELD exshow's window with the default
+        # bindings (standard_editor.esp):
+        #   - mark, kill, yank: `Hi` typed at the start, C-@ (mark/1,
+        #     `Mark set`), C-a, C-w (kill_region/1: `Hi` gone, the newest
+        #     in the yank buffer), C-e, C-y: `Hi` at the first line's end;
+        #   - find_file: C-x C-f, the prompt `Find File:` in the echo line
+        #     with the path as typed, RETURN: buffer `usercom` (the file's
+        #     identifier) made in the pool and visited, the file's text,
+        #     `Read! >sys>user>pmpsi>usercom.init.1`; C-x C-f again on
+        #     me:boot.init selects the buffer `boot` already visiting it;
+        #   - write_file: C-x C-w `me:new.esp`: a new file new.esp.1 in
+        #     >sys>user>pmpsi with the buffer's text, the buffer now that
+        #     file's, `Written! >sys>user>pmpsi>new.esp.1`; the mode line
+        #     names it; C-x C-w on me:usercom.init writes version 2;
+        #   - two views (C-x 2): the 46 text rows split 22 + mode line +
+        #     23, both mode lines reversed, the same buffer in both; C-x o
+        #     moves the cursor to the lower view; C-x 1 one view again;
+        #   - the frame after pm_live's sequence (find, insert, mark,
+        #     kill, yank, write, C-x 2) pinned (M10_PINS['pmacs_edit'],
+        #     psi/live_sessions/pmacs_edit.script): `Hi` typed, the first
+        #     line's own text killed and yanked at the second line's end,
+        #     in new.esp.1.
+        # Injections, OBSERVED 2026-11-27 (each in a private copy of psi/,
+        # the 11 Pmacs and M10 Window tests run; table in pmacs.md §6):
+        # push_to_yank/3 pushing nothing and yank/1 setting no mark: this
+        # test and test_win_pmacs_delete; find_file/2 naming the buffer by
+        # the whole pathname, write_file/4 without saved/2, the upper view
+        # T/2 rows: this test only.  None fails an M10 test.
+        import windev
+        k = self.m10_key
+        ks = self.m10_keys
+        X = self.C_X
+        lines = None
+        m, fr, stop = self.pmacs_run('exshow', ks('Hi') + [k(0)])
+        self.assertEqual(self.pm_echo(m, fr), 'Mark set')
+        m, fr, stop = self.pmacs_run('exshow', ks('Hi') + [k(0), k(1), k(23), k(5), k(25)])
+        text, point, mark = self.pm_state(m)
+        lines = self.m10_versions(m)[1][1].split('\n')
+        self.assertEqual(text.split('\n'), [lines[0] + 'Hi'] + lines[1:])
+        self.assertEqual((point, mark), (len(lines[0]) + 2, len(lines[0])))
+        # the prompt, typed and shown, not yet ended
+        m, fr, stop = self.pmacs_run('exshow', [k(X), k(6)] + ks('me:use'))
+        self.assertEqual(self.pm_echo(m, fr), 'Find File:me:use')
+        m, fr, stop = self.pmacs_run('exshow', [k(X), k(6)] + ks('me:usercom.init') + [k(13)])
+        w = self.m10_window(m)
+        B = m.get_slot(m.get_slot(w, 'interpreter'), 'buffer')
+        self.assertEqual(m.get_slot(B, 'name').text, 'usercom')
+        self.assertEqual(self.pm_echo(m, fr), 'Read! >sys>user>pmpsi>usercom.init.1')
+        F = self.m10_entry(m, self.m10_node(m, '>sys>user>pmpsi'), 'usercom.init')
+        import simpos_fs
+        self.assertEqual(self.m10_text(m, B), simpos_fs.text_of(m.get_slot(F, 'contents').codes()))
+        m, fr, stop = self.pmacs_run('exshow', [k(X), k(6)] + ks('me:boot.init') + [k(13)])
+        B = m.get_slot(m.get_slot(self.m10_window(m), 'interpreter'), 'buffer')
+        self.assertEqual(m.get_slot(B, 'name').text, 'boot')
+        self.assertEqual(len(self._walk(m.get_slot(K.ClassRef('simpos##editor_text_buffer'), 'pool'))), 1)
+        m, fr, stop = self.pmacs_run('exshow', *self.pm_live())
+        self.assertEqual(stop.cause, 'would suspend')
+        rows, rev = self.m10_rows(m, fr)
+        self.assertEqual(rows[-1], 'Written! >sys>user>pmpsi>new.esp.1')
+        new = self.m10_entry(m, self.m10_node(m, '>sys>user>pmpsi'), 'new.esp')
+        self.assertEqual((m.get_slot(new, 'version'), m.get_slot(new, 'full_name').text),
+                         (1, '>sys>user>pmpsi>new.esp.1'))
+        B = m.get_slot(m.get_slot(self.m10_window(m), 'interpreter'), 'buffer')
+        self.assertEqual(simpos_fs.text_of(m.get_slot(new, 'contents').codes()), self.m10_text(m, B))
+        first = simpos_fs.text_of(m.get_slot(F, 'contents').codes()).split('\n')
+        self.assertEqual(self.m10_text(m, B).split('\n')[:2], ['Hi', first[1] + first[0]])
+        self.assertEqual(rows[22][:28], 'PMACS(fundamental)(99,22) *-')
+        self.assertTrue(rows[46].startswith('PMACS(fundamental)(99,23) *-2* usercom >sys>user>pmpsi>new.esp.1'))
+        self.assertEqual({c for r, c in rev if r == 22}, set(range(99)))
+        self.assertEqual(rows[:22], rows[23:45])
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.M10_PINS['pmacs_edit'])
+        m, fr, stop = self.pmacs_run('exshow', self.pm_live()[0] + [k(X)] + ks('o'))
+        w = self.m10_window(m)
+        self.assertEqual(K.deref(m.get_slot(w, 'active')).name, 'lower')
+        self.assertEqual(K.deref(m.get_slot(m.get_slot(w, 'pane'), 'row')), 24)    # the point on line 1, the lower view from row 23
+        m, fr, stop = self.pmacs_run('exshow', self.pm_live()[0] + [k(X)] + ks('1'))
+        rows, _rev = self.m10_rows(m, fr)
+        self.assertTrue(rows[46].startswith('PMACS(fundamental)(99,46) *-2* usercom'))
+        m, fr, stop = self.pmacs_run('exshow', [k(X), k(6)] + ks('me:usercom.init') + [k(13)]
+                                     + ks('Z') + [k(X), k(23)] + ks('me:usercom.init') + [k(13)])
+        self.assertEqual(self.pm_echo(m, fr), 'Written! >sys>user>pmpsi>usercom.init.2')
+
+    def test_win_pmacs_page_and_input(self):
+        # pmacs.md §4.6, §4.9: C-v and ESC v (RECONSTRUCTED-FROM-MANUAL,
+        # the KWIC manual: ctrl-V a page on, meta-V a page back) on
+        # exshow's buffer made 62 lines by 50 RETURNs at its start (the
+        # point on line 50, the first shown line 5, as test_win_m10_scroll):
+        # C-v, the first shown line 5 + 46 = 51 and the point at its
+        # start; C-v again: 51 + 46 is past the end, the send fails (a
+        # beep), nothing moves; ESC v: back a page to line 5, the point at
+        # the start of the page's last line, 50.  Then clear_input/1
+        # (HELD selector, kappa2): inputs put in the window's interpreter
+        # and not yet read are gone after it.
+        # Injections OBSERVED 2026-11-27 (pmacs.md §6): view_previous_screen
+        # going back one line fails the ESC v subtest only; the
+        # interpreter's clear_input/1 dropping nothing fails this test only.
+        k = self.m10_key
+        R = [k(13)] * 50
+
+        def state(m):
+            w = self.m10_window(m)
+            B = m.get_slot(m.get_slot(w, 'interpreter'), 'buffer')
+            return (w, self.m10_text(m, B).split('\n'), K.deref(m.get_slot(m.get_slot(w, 'display'), 'top')),
+                    K.deref(m.get_slot(B, 'point')))
+
+        def start(lines, n):
+            return len('\n'.join(lines[:n])) + 1
+
+        for seq, top, line in ((R + [k(22)], 51, 51), (R + [k(22), k(22)], 51, 51),
+                               (R + [k(22), k(27)] + self.m10_keys('v'), 5, 50)):
+            with self.subTest(top=top, line=line, n=len(seq)):
+                m, fr, stop = self.pmacs_run('exshow', seq)
+                w, lines, t, point = state(m)
+                self.assertEqual(len(lines), 62)
+                self.assertEqual((t, point), (top, start(lines, line)))
+        I = m.get_slot(w, 'interpreter')
+        E = K.deref(m.get_slot(w, 'editor'))
+        for x in (65, 66):
+            self.assertTrue(self.send(m, I, 'input', x))
+        S = m.get_slot(I, 'input')
+        self.assertTrue(self.send(m, S, 'try_to_see', K.Var()))
+        self.assertTrue(self.send(m, E, 'clear_input'))
+        self.assertFalse(self.send(m, S, 'try_to_see', K.Var()))
 
 if __name__ == '__main__':
     unittest.main()

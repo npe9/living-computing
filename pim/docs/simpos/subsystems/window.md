@@ -738,6 +738,12 @@ of `Set Echo Font` and an illegible 7th item. VARIANT.
 
 Pmacs's own default bindings are not held (gap G6).
 
+**The reconstruction (2026-11-27): `pmacs.md`.** The selectors in the table above are specified there and stood in,
+from the held manuals and these call sites. The manuals are the ESP manual overview (PDF p25), PIMOS man15 (PDF p72-76,
+p91) and the KWIC manual (kwod.tex: C-v and meta-V page, C-n and C-p move a line; classSpec.IO2: the `:command`
+protocol; classSpec.doc: Pmacs's mark). Each behaviour is labelled RECONSTRUCTED-FROM-MANUAL, INFERENCE or OURS. The
+pmacs_standard_editor row's "meanings INFERENCE from the name" is refined there, selector by selector.
+
 ### 2.12 Notifiers and the demons that prove SIMPOS primaries
 
 Rule (TM-388 §3.4): a held class that has a `before:` or `after:` demon on a selector, with no held primary anywhere
@@ -1305,7 +1311,10 @@ PRINTED TR-046 p28; TR-061 p13. The table is `default_translation_table`, looked
 
 Pmacs binds keys by `:command` clauses (§2.11). The default table is not held (gap G6); window M10 (2026-11-26)
 stands in a small Emacs subset, OURS, in `psi/standin/standard_editor.esp` (C-f/b/n/p/a/e/d/k, DEL, the arrows,
-C-x C-s/C-z/C-b, C-x b, mouse#r for the EDITOR MENU), which a held subclass's own clauses come before. User
+C-x C-s/C-z/C-b, C-x b, mouse#r for the EDITOR MENU), which a held subclass's own clauses come before. The Pmacs
+reconstruction (2026-11-27, `pmacs.md` §3) adds C-v and ESC v (RECONSTRUCTED-FROM-MANUAL: the KWIC manual's ctrl-V
+and meta-V), and C-@, C-w, ESC w, C-y, C-x C-x, C-x C-f, C-x C-w, C-x 2/1/o and mouse#l (INFERENCE, Emacs analogy).
+User
 extensions bind (USAGE):
 - `control#` letters;
 - the `control_c` and `control_x` prefix tables (cal-esp/deb2.12/dedit.esp:105, :120);

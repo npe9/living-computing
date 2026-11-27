@@ -919,6 +919,15 @@ attribute_set(W, [{permission, P}]) :- :set_permission(W, P);
 % window M9: a click on a choice window is its choice (OURS), on any other
 % window a selection
 clicked(Class, W, X, Y) :- member(W, Class!choices), !, :choose(W, X, Y);
+% pmacs.md §4.6 (2026-11-27, OURS): a click on the window already
+% selected goes to it (a Pmacs window's mouse#l), then is a selection
+% again as before (raise, selected/1, the waiters woken); the first one
+% only selects.  Every window the coordinator selects answers left_click/3
+% (pmacs_window, standard_io_window: the only stand-ins with selected/1)
+clicked(Class, W, X, Y) :-
+        S = Class!selected, S == W, !,
+        :left_click(W, X, Y),
+        :select_window(Class, W);
 clicked(Class, W, _, _) :- :select_window(Class, W);
 
 key(0, Code, Class) :- !, :put(Class!keyboard, Code);

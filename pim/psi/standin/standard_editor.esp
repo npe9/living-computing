@@ -78,6 +78,29 @@
 
 class standard_editor has
 
+% PMACS RECONSTRUCTION (2026-11-27): THE YANK BUFFER (pmacs.md §4.3).
+% INFERENCE that the killed texts are one store for every editor: the
+% ESP manual overview (PDF p25) says "the system manages the text buffer
+% of each Pmacs window consistently. Therefore, character strings can be
+% operated in the same way by programs, and text data can be exchanged
+% between windows or programs in the same way as Pmacs" -- an exchange
+% between windows, not a kill store, which it does not mention; Emacs's
+% one kill ring is the other half of the inference.  Here a class slot,
+% newest first (the place OURS).  The held
+% named yank buffers (`#editor_yank_buffer`, cil ds_bep.esp:2312, :3515)
+% are another store, not stood in.
+% INTERPOLATED (representation OURS): see the note above.
+attribute yanks := [];
+
+% :push_yank(#standard_editor, String) -- OURS selector: String the
+% newest killed text (pmacs.md §4.3).
+% INTERPOLATED (selector and body OURS): see THE YANK BUFFER above.
+:push_yank(Class, S) :- Class!yanks := [S | Class!yanks];
+% :top_yank(#standard_editor, String) -- OURS selector: the newest
+% killed text; fails when nothing was killed (pmacs.md §4.3).
+% INTERPOLATED (selector and body OURS): see THE YANK BUFFER above.
+:top_yank(Class, S) :- [S | _] = Class!yanks;
+
 instance
 
 % INTERPOLATED: the representation (OURS; see above).
@@ -124,6 +147,18 @@ attribute window := 0;
 :command(Editor, control#"x", control_x);
 :command(Editor, control#"c", control_c);
 :command(Editor, mouse#r, show_menu);
+% PMACS RECONSTRUCTION (2026-11-27, pmacs.md §3.2): C-v and ESC v
+% RECONSTRUCTED-FROM-MANUAL (KWIC manual kwod.tex:229-238: ctrl-V, meta-V,
+% "conforming to SIMPOS-pmacs's cursor movement commands"; ESC as Emacs's
+% meta is OURS), the others INFERENCE (Emacs analogy: ESP manual overview
+% PDF p25), mouse#l OURS (the first click selects the window).
+% INTERPOLATED (bodies OURS): see pmacs.md §3.2.
+:command(Editor, control#"@", mark);
+:command(Editor, control#"w", kill_region);
+:command(Editor, control#"y", yank);
+:command(Editor, control#"v", view_next_screen);
+:command(Editor, key#esc, escape);
+:command(Editor, mouse#l, cursor_with_mouse);
 % the EDITOR MENU's items (show_menu/1)
 :command(Editor, abort, abort);
 :command(Editor, list_buffers, list_buffers);
@@ -139,6 +174,20 @@ attribute window := 0;
 :control_x(Editor, control#"c", exit);
 :control_x(Editor, control#"b", list_buffers);
 :control_x(Editor, #"b", select_buffer);
+% PMACS RECONSTRUCTION (2026-11-27, pmacs.md §3.2), INFERENCE (Emacs
+% analogy; C-x C-f's prompt `Find File:` SCREENSHOT esp.wmv, window.md
+% §2.11).
+% INTERPOLATED (bodies OURS): see pmacs.md §3.2.
+:control_x(Editor, control#"x", exchange_point);
+:control_x(Editor, control#"f", find_file);
+:control_x(Editor, control#"w", write_file);
+:control_x(Editor, #"2", two_windows);
+:control_x(Editor, #"1", one_window);
+:control_x(Editor, #"o", other_window);
+% INTERPOLATED (bodies OURS): ESC, Emacs's meta (OURS); v from the KWIC
+% manual (RECONSTRUCTED-FROM-MANUAL, see above), w INFERENCE.
+:escape(Editor, #"v", view_previous_screen);
+:escape(Editor, #"w", copy_region);
 
 % WINDOW M10: THE COMMANDS (bodies OURS; see the head comment).
 % INTERPOLATED (selector OURS, body OURS): see THE COMMANDS.
@@ -164,11 +213,13 @@ attribute window := 0;
         buffer(Editor, B), :current_position(B, P),
         P > 0, :delete(B, P - 1, P);
 % INTERPOLATED (selector OURS, body OURS): Emacs's C-k, the rest of the
-% line, or its newline at its end.
+% line, or its newline at its end.  2026-11-27: the text killed is the
+% newest in the yank buffer (INFERENCE, Emacs analogy, pmacs.md §4.3).
 :kill_line(Editor) :-
         buffer(Editor, B), :current_position(B, P), :end_of_line(B),
         :current_position(B, E), :move_to(B, P),
-        killed(B, P, E);
+        killed(B, P, E, To),
+        cut_to_yank(Editor, B, P, To);
 % INTERPOLATED (selector HELD, body OURS): a string or one code at the
 % point (`:insert(B, key#lf)` on a buffer, MENDELS, window.md §2.11).
 :insert(Editor, X) :- buffer(Editor, B), inserted(B, X);
@@ -205,6 +256,172 @@ attribute window := 0;
 :save_all_files(Editor) :-
         :get_buffer_instance_list(#editor_text_buffer, L),
         all_saved(Editor, L);
+% PMACS RECONSTRUCTION (2026-11-27): the selectors held code sends to a
+% Pmacs editor, and the commands bound to them (docs/simpos/subsystems/
+% pmacs.md, each label citing its section).
+% :mark(Editor) -- HELD selector (papyrus my_syntax.esp.1:29, after
+% goto_beginning/1; my_changer.esp.1:110, after move_to/2; kappa2
+% user_if/pb/inwin.esp:298): the mark at the point.  RECONSTRUCTED-FROM-
+% MANUAL that Pmacs has a mark (KWIC manual classSpec.doc:1317-1318);
+% its being set at the point INFERENCE (Emacs analogy, C-@; pmacs.md
+% §4.2); `Mark set` in the echo line INFERENCE (Emacs's words).
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.2.
+:mark(Editor) :- buffer(Editor, B), :set_mark(B), :message(Editor, "Mark set");
+% :exchange_point(Editor) -- HELD selector (my_syntax.esp.1:34): the
+% point and the mark change places; fails with no mark.  INFERENCE
+% (Emacs analogy, C-x C-x), pmacs.md §4.2, §4.4.
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.2.
+:exchange_point(Editor) :-
+        buffer(Editor, B), :get_mark(B, M), :current_position(B, P),
+        :move_to(B, M), :set_mark_at(B, P);
+% :next_term(Editor) -- HELD selector (my_syntax.esp.1:36, after
+% exchange_point/1 and two backward_character/1): the next ESP term made
+% the region, the point at its start and the mark at its end (editor_
+% text_buffer term_region/3); fails when no term follows.  INFERENCE
+% (Emacs analogy, mark-defun; the only model found under which the held
+% loop advances one term each pass, pmacs.md §4.4).
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.4.
+:next_term(Editor) :-
+        buffer(Editor, B), :term_region(B, S, E),
+        :move_to(B, S), :set_mark_at(B, E);
+% :kill_region(Editor) -- OURS selector (C-w): the text between the
+% point and the mark killed into the yank buffer.  INFERENCE (Emacs
+% analogy), pmacs.md §4.3.
+% INTERPOLATED (selector OURS, body INFERENCE): pmacs.md §4.3.
+:kill_region(Editor) :-
+        buffer(Editor, B), :get_mark(B, M), :current_position(B, P),
+        ordered(P, M, From, To),
+        cut_to_yank(Editor, B, From, To);
+% :copy_region(Editor) -- OURS selector (ESC w): the region's text the
+% newest in the yank buffer, the text kept.  INFERENCE (Emacs analogy),
+% pmacs.md §4.3.
+% INTERPOLATED (selector OURS, body INFERENCE): pmacs.md §4.3.
+:copy_region(Editor) :-
+        buffer(Editor, B), :get_mark(B, M), :current_position(B, P),
+        ordered(P, M, From, To),
+        :see_position(B, From, To - From, S),
+        :push_to_yank(Editor, S, forward);
+% :push_to_yank(Editor, String, Direction) -- HELD selector (papyrus
+% my_delete.esp.1:48, `:push_to_yank(Editor,String,forward)`, String the
+% text of a proof part read by see_position/4 just before the part is
+% deleted): String the newest text in the yank buffer, one store for
+% every editor (INFERENCE, THE YANK BUFFER above);
+% Direction is `forward` or `backward` (INFERENCE: Emacs's kill-append
+% direction, text taken after or before the point; it changes nothing
+% here, pmacs.md §4.3).
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.3.
+:push_to_yank(Editor, S, D) :- direction(D), :push_yank(#standard_editor, S);
+% :yank(Editor) -- OURS selector (C-y): the newest killed text at the
+% point, the mark before it and the point after it; fails when nothing
+% was killed.  INFERENCE (Emacs analogy), pmacs.md §4.3.
+% INTERPOLATED (selector OURS, body INFERENCE): pmacs.md §4.3.
+:yank(Editor) :-
+        :top_yank(#standard_editor, S),
+        buffer(Editor, B), :current_position(B, P),
+        :insert_string(B, S), :set_mark_at(B, P);
+% :clear_input(Editor) -- HELD selector (kappa2 user_if/pb/typewin.esp:
+% 325, before clear_buffer/1 and move_to_first/1; utility/rep/REPINDEX.
+% ESP:392, :443, :495, REPDB.ESP:107, :132, REPRECORD.ESP:103, before a
+% dump is written into the buffer): what was typed and not yet read is
+% dropped (the window's interpreter clear_input/1).  INFERENCE (the name
+% and those uses: the buffer is cleared by other sends; Emacs's
+% discard-input; pmacs.md §4.9).
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.9.
+:clear_input(Editor) :- :get_interpreter(Editor!window, I), :clear_input(I);
+% :cursor_with_mouse(Editor) -- HELD selector (papyrus my_point.esp.1:23,
+% bound with `:command(Editor,mouse#l,goal_with_mouse)` and followed by
+% current_buffer/2 and current_position/2): the point to the character
+% under the last click in the window (its line and column; the line's
+% end if it is shorter).  INFERENCE (that use; pmacs.md §4.6).
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.6.
+:cursor_with_mouse(Editor) :-
+        :mouse_cell(Editor!window, Line, Col),
+        buffer(Editor, B), :move_to_cell(B, Line, Col);
+% :view_next_screen(Editor), :view_previous_screen(Editor) -- OURS
+% selectors on the editor (C-v, ESC v): the window's page commands
+% (pmacs_window, HELD selectors; RECONSTRUCTED-FROM-MANUAL, the KWIC
+% manual kwod.tex:229-238, pmacs.md §4.6).
+% INTERPOLATED (selector OURS, behaviour RECONSTRUCTED-FROM-MANUAL): above.
+:view_next_screen(Editor) :- :view_next_screen(Editor!window);
+% INTERPOLATED (selector OURS, behaviour RECONSTRUCTED-FROM-MANUAL): above.
+:view_previous_screen(Editor) :- :view_previous_screen(Editor!window);
+% :two_windows(Editor) -- HELD selector (cil ds_edt.esp:1037, :1048, when
+% get_activate_window_count/2 answers 1, before editing a file "in other
+% window"; papyrus rule_editor.esp.1:30 overrides it with an empty
+% primary): the window shows two views of the buffer, the upper one
+% active.  INFERENCE (those uses; Emacs analogy C-x 2; pmacs.md §4.7).
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.7.
+:two_windows(Editor) :- :split(Editor!window);
+% :other_window(Editor) -- HELD selector (window.md §2.11; 8 uses): the
+% other view active (the window's exchange_window/1).  INFERENCE (Emacs
+% analogy C-x o), pmacs.md §4.7.
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.7.
+:other_window(Editor) :- :exchange_window(Editor!window);
+% :one_window(Editor) -- OURS selector (C-x 1): one view again.
+% INFERENCE (Emacs analogy), pmacs.md §4.7.
+% INTERPOLATED (selector OURS, body INFERENCE): pmacs.md §4.7.
+:one_window(Editor) :- :unsplit(Editor!window);
+% :find_file(Editor, Pathname) -- HELD selector (cil ds_edt.esp:915, a
+% file chosen in a directory listing, "If it finds a file, it enter into
+% an edit mode"; papyrus my_load.esp.1:243, :262): the editor visits the
+% file: a buffer already visiting it, else a new pooled buffer named
+% after the file's identifier with the file read into it (`Read! <full
+% pathname>` in the echo line, as read_file/4); a pathname no file has
+% gives an empty buffer that a save writes there (`New File`, OURS
+% words).  RECONSTRUCTED-FROM-MANUAL that a Pmacs buffer has a name of
+% its own (PIMOS manual man15 PDF p72, p75 select_buffer: a window's
+% text buffer by name, made when missing; p91: a window's title "but not
+% the text buffer name of the PMACS"); the name the file's identifier
+% SCREENSHOT (IPSJ 36239 p5: buffer `demo`, file demo.esp); the rest
+% INFERENCE (Emacs analogy, C-x C-f), pmacs.md §4.8.
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.8.
+:find_file(Editor, Path) :-
+        :retrieve(#directory, F, Path, Full), :not_directory(F), !,
+        :get_buffer_instance_list(#editor_text_buffer, L),
+        found(Editor, L, F, Full);
+:find_file(Editor, Path) :-
+        new_buffer(Path, B),
+        B!path := Path,
+        :select_buffer(Editor, B),
+        :message(Editor, "New File");
+% :find_file(Editor) -- OURS selector (C-x C-f): the pathname read in
+% the echo line after `Find File:` (SCREENSHOT esp.wmv, window.md §2.11;
+% the window's read_with_prompt/3), then find_file/2.  INFERENCE,
+% pmacs.md §4.8.
+% INTERPOLATED (selector OURS, body INFERENCE): pmacs.md §4.8.
+:find_file(Editor) :-
+        :read_with_prompt(Editor!window, ["Find File:"], Path),
+        :find_file(Editor, Path);
+% :write_file(Editor, Buffer, Name, Pathname) -- HELD selector (cil
+% ds_edt.esp:760: a buffer with no file name written to the name read
+% after a prompt with a default, then `:set_file_name(Buffer, Pathname)`,
+% so Pathname is the full pathname written): Buffer's text written as a
+% new version of Name (its latest version + 1, or version 1 of a new
+% file in Name's directory), the buffer now that file's, unmodified,
+% `Written! <full pathname>` in the echo line.  RECONSTRUCTED-FROM-
+% MANUAL by analogy only: PIMOS manual man15 PDF p73 (a write-mode open
+% of an existing file "the file with the same name is created and opened
+% in higher version"), TR-524 PDF p9 (versions); the rest INFERENCE
+% (Emacs analogy, C-x C-w), pmacs.md §4.8.
+% INTERPOLATED (selector HELD, body INFERENCE): pmacs.md §4.8.
+:write_file(Editor, B, Name, Full) :-
+        target(Name, F),
+        :contents(B, Text),
+        :new_version(F, Text, New),
+        :saved(B, New),
+        B!path := 0,
+        :full_name(New, Full),
+        :append(#string, ["Written! ", Full], S),
+        :message(Editor, S);
+% :write_file(Editor) -- OURS selector (C-x C-w): the pathname read
+% after `Write File:` (OURS words, as find_file/1's), then write_file/4
+% on the buffer the editor visits.  INFERENCE, pmacs.md §4.8.
+% INTERPOLATED (selector OURS, body INFERENCE): pmacs.md §4.8.
+:write_file(Editor) :-
+        :read_with_prompt(Editor!window, ["Write File:"], Name),
+        buffer(Editor, B),
+        :write_file(Editor, B, Name, _);
+
 % INTERPOLATED (selector HELD, exshow :27; body OURS): see FILES.
 :read_file(Editor, B, File, Full) :-
         :retrieve(#directory, F, File, Full),
@@ -253,8 +470,116 @@ local
 
 buffer(Editor, B) :- :current_buffer(Editor, B);
 
-killed(B, P, E) :- E > P, !, :delete(B, P, E);
-killed(B, P, _) :- :end_of_buffer(B, L), P < L, :delete(B, P, P + 1);
+killed(_, P, E, E) :- E > P, !;
+killed(B, P, _, To) :- :end_of_buffer(B, L), P < L, value(P + 1, To);
+
+% the text From .. To killed: deleted, and the newest in the yank buffer
+cut_to_yank(Editor, B, From, To) :-
+        :see_position(B, From, To - From, S),
+        :delete(B, From, To),
+        :push_to_yank(Editor, S, forward);
+
+value(V, V);
+
+% the region's ends, the first not after the second
+ordered(P, M, P, M) :- P =< M, !;
+ordered(P, M, M, P);
+
+% find_file/2's file F (full pathname Full) in the pool L: a buffer
+% already visiting it, else a new one (pmacs.md §4.8)
+found(Editor, L, _, Full) :- visiting(L, Full, B), !, :select_buffer(Editor, B);
+found(Editor, _, F, Full) :-
+        new_buffer(F!name, B),
+        :load_file(B, F),
+        :select_buffer(Editor, B),
+        :append(#string, ["Read! ", Full], S),
+        :message(Editor, S);
+
+visiting([B | _], Full, B) :- F = B!file, F \== 0, N = F!full_name, equal_string(N, Full), !;
+visiting([_ | Bs], Full, B) :- visiting(Bs, Full, B);
+
+% a new pooled buffer named after the pathname's identifier, or after
+% the whole pathname when that name is taken (OURS)
+new_buffer(Path, B) :- ident(Path, Name), :create(#editor_text_buffer, B, Name, 0), !;
+new_buffer(Path, B) :- :create(#editor_text_buffer, B, Path, 0);
+
+% the identifier of a pathname: its last name, up to the first `.`
+% (`demo` for demo.esp, SCREENSHOT IPSJ 36239 p5, pmacs.md §4.8)
+ident(Path, Name) :-
+        string(Path, N, _), codes(Path, 0, N, Codes),
+        last_name(Codes, Codes, Last),
+        up_to_period(Last, Id),
+        Id \== [],
+        string_of(Id, Name);
+
+% the codes after the last `>` or `:`
+last_name([], Last, Last);
+last_name([C | R], _, Last) :- separator(C), !, last_name(R, R, Last);
+last_name([_ | R], L, Last) :- last_name(R, L, Last);
+
+% the codes before the last `>` or `:`, with it when it is `:` (a
+% logical name's directory), without it when it is `>`; none: []
+dir_part(Codes, Dir) :- last_sep(Codes, 0, none, I), I \== none, !, keep_dir(Codes, I, Dir);
+dir_part(_, []);
+
+last_sep([], _, I, I);
+last_sep([C | R], K, _, I) :- separator(C), !, last_sep(R, K + 1, K, I);
+last_sep([_ | R], K, I0, I) :- last_sep(R, K + 1, I0, I);
+
+keep_dir(Codes, I, Dir) :- take(Codes, I, Before), nth(Codes, I, C), with_sep(C, Before, Dir);
+
+with_sep(C, Before, Dir) :- colon(C), !, append(Before, [C], Dir);
+with_sep(_, Before, Before);
+
+take(_, 0, []) :- !;
+take([C | R], N, [C | T]) :- take(R, N - 1, T);
+
+nth([C | _], 0, C) :- !;
+nth([_ | R], N, C) :- nth(R, N - 1, C);
+
+append([], L, L);
+append([X | R], L, [X | T]) :- append(R, L, T);
+
+up_to_period([], []);
+up_to_period([C | _], []) :- dot(C), !;
+up_to_period([C | R], [C | T]) :- up_to_period(R, T);
+
+% `>` and `:`, ASCII or JIS (OURS codes)
+separator(62);
+separator(16#"2164");
+separator(C) :- colon(C);
+
+colon(58);
+colon(16#"2127");
+
+dot(46);
+dot(16#"2125");
+
+codes(_, I, N, []) :- I >= N, !;
+codes(S, I, N, [C | Cs]) :- string_element(S, I, C), codes(S, I + 1, N, Cs);
+
+string_of(Codes, S) :- count(Codes, 0, N), new_string(S, N, 16), fill(Codes, S, 0);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+fill([], _, _);
+fill([C | R], S, I) :- set_string_element(S, I, C), fill(R, S, I + 1);
+
+% write_file/4: the file a buffer is written to: the pathname's file if
+% it has one, else a new file (no version yet) in its directory, which
+% new_version/3 gives version 1 (pmacs.md §4.8)
+target(Name, F) :- :retrieve(#directory, F, Name, _), :not_directory(F), !;
+target(Name, F) :-
+        string(Name, N, _), codes(Name, 0, N, Codes),
+        dir_part(Codes, DirCodes), string_of(DirCodes, DirName),
+        last_name(Codes, Codes, Last), Last \== [], string_of(Last, File),
+        :retrieve(#directory, D, DirName, _), :is_directory(D),
+        :new(#binary_file, F),
+        F!name := File, F!directory := D;
+
+direction(forward);
+direction(backward);
 
 inserted(B, X) :- integer(X), !, :insert_code(B, X);
 inserted(B, X) :- :insert_string(B, X);
@@ -274,6 +599,7 @@ saved(Editor, B) :- F = B!file, F \== 0, !,
         :full_name(New, Full),
         :append(#string, ["Written! ", Full], S),
         :message(Editor, S);
+saved(Editor, B) :- P = B!path, P \== 0, !, :write_file(Editor, B, P, _);
 saved(Editor, _) :- :message(Editor, "No file");
 
 all_saved(_, []);

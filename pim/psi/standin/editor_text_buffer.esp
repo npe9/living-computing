@@ -275,6 +275,65 @@ attribute file := 0, modified := 0, number := 0;
 % INTERPOLATED (selector and body OURS): see THE EDITOR'S BUFFER above.
 :saved(B, File) :- B!file := File, B!modified := 0;
 
+% PMACS RECONSTRUCTION (2026-11-27; docs/simpos/subsystems/pmacs.md, the
+% spec every label below cites by its section).  The buffer keeps the
+% editor's MARK (pmacs.md §4.2): `none`, or a position.  That Pmacs has a
+% mark it shows on the screen is RECONSTRUCTED-FROM-MANUAL (KWIC manual
+% classSpec.doc:1317-1318, a marker drawn "like Pmacs's mark", and one
+% "like Pmacs's input start point"); that the mark is a position kept per
+% buffer is INFERENCE (Emacs analogy: ESP manual overview PDF p25, "Pmacs
+% is based on Emacs"); `path`, the pathname a buffer made by find_file/2
+% for a file that does not exist yet is saved to (0: none), is OURS.
+% INTERPOLATED (representation OURS): see the note above.
+attribute mark := none, path := 0;
+
+% :set_mark(B) -- OURS selector: the mark at the point.  INFERENCE (Emacs
+% analogy), pmacs.md §4.2.
+% INTERPOLATED (selector and body OURS): the note above.
+:set_mark(B) :- B!mark := B!point;
+% :set_mark_at(B, P) -- OURS selector: the mark at P.  INFERENCE, §4.2.
+% INTERPOLATED (selector and body OURS): the note above.
+:set_mark_at(B, P) :- B!mark := P;
+% :get_mark(B, M) -- OURS selector: the mark, kept inside the text; fails
+% when no mark was set (INFERENCE: Emacs's "No mark set"), §4.2.
+% INTERPOLATED (selector and body OURS): the note above.
+:get_mark(B, M) :- M0 = B!mark, M0 \== none, !, inside(M0, B!length, M);
+
+% :move_to_cell(B, Line, Col) -- OURS selector: the point to column Col
+% of line Line (from 0), or the line's end if it is shorter; the last
+% line if there are fewer lines (pmacs.md §4.6, cursor_with_mouse/1 and
+% the page commands).  OURS.
+% INTERPOLATED (selector and body OURS): the note above.
+:move_to_cell(B, Line, Col) :-
+        line_at(B!text, 0, Line, S0),
+        line_start(B!text, S0, S),
+        line_end(B!text, S, E),
+        at_column(S, E, Col, P), B!point := P;
+
+% :line_count(B, N) -- OURS selector: the number of lines (1 more than
+% the newlines), for the page commands (pmacs.md §4.6).  OURS.
+% INTERPOLATED (selector and body OURS): the note above.
+:line_count(B, N) :- lines(B!text, 1, N);
+
+% :term_region(B, S, E) -- OURS selector: the ESP term after the point,
+% for the editor's next_term/1 (pmacs.md §4.4): the first term-ending
+% period strictly after the point (a `.` followed by layout, a `%` or the
+% end, not inside a quote or a `%` comment), the term it ends starting
+% after the layout and comments that follow the period before it (or
+% the text's start), and ending after the layout and comments that
+% follow it.  Fails when no period ends a term after the point.  The
+% model is INFERENCE (Emacs analogy, mark-defun: point at the start,
+% mark at the end; and the held papyrus my_syntax.esp.1:31-41 loop, which
+% steps back two codes before each next_term/1), the codes OURS: `.` is
+% 46 or the JIS 16#"2125", layout 32, 9, 10, 13 or the JIS space
+% 16#"2121", `%` 37 or 16#"2173", quotes 39, 34, 16#"2147", 16#"2149".
+% INTERPOLATED (selector and body OURS): the note above.
+:term_region(B, S, E) :-
+        scan(B!text, 0, normal, Ds),
+        after(Ds, B!point, none, Prev, D),
+        start_after(B!text, Prev, S),
+        skipped(B!text, D + 1, E);
+
 local
 
 % window M10: the pool (OURS, see THE BUFFER POOL)
@@ -288,6 +347,77 @@ pool_in(Class, B) :-
         Class!pool := [B | Class!pool];
 
 value(V, V);
+
+% pmacs.md (2026-11-27): the lines of a text
+lines([], N, N);
+lines([10 | R], N0, N) :- !, lines(R, N0 + 1, N);
+lines([_ | R], N0, N) :- lines(R, N0, N);
+
+% pmacs.md (2026-11-27): a position kept inside 0 .. N
+inside(P, N, N) :- P > N, !;
+inside(P, _, P);
+
+% the start of line L (from 0); past the last line, the text's end (in
+% the last line: move_to_cell/3 takes that line's start)
+line_at(_, I, 0, I) :- !;
+line_at([], I, _, I) :- !;
+line_at([10 | R], I, L, S) :- !, line_at(R, I + 1, L - 1, S);
+line_at([_ | R], I, L, S) :- line_at(R, I + 1, L, S);
+
+% the term-ending periods' positions (see term_region/3)
+scan([], _, _, []) :- !;
+scan([C | R], I, comment, Ds) :- !, after_comment(C, St), scan(R, I + 1, St, Ds);
+scan([C | R], I, single, Ds) :- !, after_quote(C, single, St), scan(R, I + 1, St, Ds);
+scan([C | R], I, double, Ds) :- !, after_quote(C, double, St), scan(R, I + 1, St, Ds);
+scan([C | R], I, normal, Ds) :- percent(C), !, scan(R, I + 1, comment, Ds);
+scan([C | R], I, normal, Ds) :- quote(C, K), !, scan(R, I + 1, K, Ds);
+scan([C | R], I, normal, [I | Ds]) :- period(C), ended(R), !, scan(R, I + 1, normal, Ds);
+scan([_ | R], I, normal, Ds) :- scan(R, I + 1, normal, Ds);
+
+after_comment(10, normal) :- !;
+after_comment(_, comment);
+
+after_quote(C, K, normal) :- quote(C, K), !;
+after_quote(_, K, K);
+
+ended([]) :- !;
+ended([C | _]) :- layout(C), !;
+ended([C | _]) :- percent(C);
+
+period(46);
+period(16#"2125");
+
+layout(32);
+layout(9);
+layout(10);
+layout(13);
+layout(16#"2121");
+
+percent(37);
+percent(16#"2173");
+
+quote(39, single);
+quote(16#"2147", single);
+quote(34, double);
+quote(16#"2149", double);
+
+% the first period D after P, and the one before it (none: the first)
+after([D | _], P, Prev, Prev, D) :- D > P, !;
+after([D | Ds], P, _, Prev, Dn) :- after(Ds, P, D, Prev, Dn);
+
+start_after(Text, none, S) :- !, skipped(Text, 0, S);
+start_after(Text, Prev, S) :- skipped(Text, Prev + 1, S);
+
+% the position after the layout and comments from I
+skipped(Text, I, S) :- drop(Text, I, R), skip(R, I, S);
+
+skip([C | R], I, S) :- layout(C), !, skip(R, I + 1, S);
+skip([C | R], I, S) :- percent(C), !, comment_rest(R, I + 1, S);
+skip(_, I, I);
+
+comment_rest([], I, I) :- !;
+comment_rest([10 | R], I, S) :- !, skip(R, I + 1, S);
+comment_rest([_ | R], I, S) :- comment_rest(R, I + 1, S);
 
 % window M10: the line around a position (OURS, see THE EDITOR'S BUFFER):
 % its first position, and the position of its ending 10 (or the length)
