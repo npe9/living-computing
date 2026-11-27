@@ -64,6 +64,54 @@ TRAP_ILLEGAL = 0x6c21
 SPECIAL_EM = 0x7fff     # S9: JMPF 1 with EM = 7fff, a special form (INFERRED, open)
 TGT_KL1 = 0x5300        # sysinit's KL1 tag table, 64 tags x 8 columns
 TGT_COLUMN = {0x3a: 2}  # set-up EM1 -> column; only 3a -> 2 is VERIFIED
+# The dereference multiway set-up (thesis printed p.133, section 3.3.4.1,
+# DOCUMENTED: "the tag of the AS1 bus is ref, equal to an immediate the
+# microinstruction gives, or other: a 2-bit code into TDAR bits 3-2"; for
+# KL1 a four-way form that also tells the MRB of a ref).  CNDF 7 with
+# these EM1 values sets TDAR := code << 2 from the AS1 input's tag;
+# 'case_branch' then ORs it into the base.  INFERRED (U2, 2026-11-27),
+# decided at 34a1 (read_variable; the oracle wants row 3494, x := the
+# element, for an atom).  Evidence that 2d is not a TGT column: the two
+# bases 3490 (34a2, after 2d) and 3492 (343a, after 2f) interleave 2-word
+# rows in 3490-349f, and no column of 5300 sends ATOMo to 3494 without
+# sending some tag to a zero word or a row's second word (column 0:
+# LISTx -> 3491, REFx -> 3493); the other 2d site (41b6 -> 41b0) has
+# 4-word rows at 41b0/41b4/41b8/41bc.  The codes, read from the rows of
+# 3490-349f (EXECUTED: only 'other'):
+#   1 other           3494: x := the element (MAR1), R02 + 1 (MCF 20)
+#   0 tag == EM2      3490 (EM2 1e at 34a1: VECTo; 3490 stamps VECTx and
+#                     tests for VDESC) -- read, not run: raises
+#   2 REFo (MRB off)  3498: the cell pointed to goes on the R19 list,
+#                     then the 3440 table -- read, not run: raises
+#   3 REFx (MRB on)   349c: follow without freeing, the 3460 table --
+#                     read, not run: raises
+DEREF_SETUP = {0x2d: 4}         # EM1 -> ways; 2f (343a, read_atom..), 2a, 2b read, not run
+DEREF_CODE = {'imm': 0, 'other': 1, 'refo': 2, 'refx': 3}   # an injection swaps these
+DEREF_SHIFT = 2                 # TDAR bits 3-2 (thesis p.133); an injection moves it
+DEREF_TGT_COLUMN = None         # injection only: read the set-up as this TGT column
+# CNDF 7 EM1 values that are conditions whose meaning is UNKNOWN: COND
+# becomes POISON, which raises if a later word tests it.  28: 24 of its
+# 54 words carry a conditional JMPF a/e (a condition, not a set-up); the
+# only other word with a branch two words on (572c -> 572e) has a JMPF b
+# there, not a case_branch; at 34a0 nothing tests it before read_variable
+# ends.  Contributes nothing on the executed path: NOT discriminated.
+COND_UNKNOWN = {0x28}
+
+
+class _Poison(object):
+    """A value with no meaning yet: COND formed by an unknown condition,
+    or a memory read of a cell never written (absent_read_poison).  Any
+    use raises Unmodelled (the caller checks with is_poison)."""
+
+    def __repr__(self):
+        return 'POISON'
+
+
+POISON = _Poison()
+
+
+def is_poison(v):
+    return v is POISON
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +223,22 @@ RULES = {
     # above (the pair (zero, taken if COND) and (not zero, taken if not
     # COND) are the two that satisfy the contract).
     'cnd2_zero': True,
+    # A read of a cell never written gives MDR the value POISON instead
+    # of raising at once; any use of it (an ALU input, write data) raises.
+    # OURS (the hardware reads whatever is there).  Needed at 34a2: the
+    # word that reads [MAR1] where MAR1 holds the element itself, an atom
+    # for append, not an address (the next words of a REF row read it;
+    # row 3494 does not).  Off (the injection 'absent_read_raise'): the
+    # old rule, a read of a cell never written raises at the read.
+    'absent_read_poison': True,
+    # JMPF 8 (bit 26 with kind 0) sequences as JMPF 0 (falls through) in a
+    # word whose CNDF 7 is a dereference set-up (DEREF_SETUP): INFERRED,
+    # admitted only in that combination (34a1); thesis printed p.144 (7)
+    # says part of condition generation moved from CNDF to JMPF, so bit 26
+    # may change what the set-up forms -- not decided, and every other
+    # JMPF 8 word still raises.  The JMPF 0 / 8 twins (0517 / 051c with
+    # EM1 2b, 0563 / 06bf with 2a) are both followed by a case_branch.
+    'jmpf8_setup': True,
 }
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
@@ -217,8 +281,10 @@ def _cnd5(pu, upc, x, a):
 def _cnd7(pu, upc, x, a):
     """CNDF 7, by EM1: 0a lt (EXECUTED up to the polarity, inference doc
     6.3 item 4), 09 overflow of the add/subtract (INFERRED, item 5), 3a
-    the case_tag_setup of a JMPF 3 multiway (handled in evaluate).  Any
-    other EM1 is UNKNOWN and raises."""
+    the case_tag_setup of a JMPF 3 multiway, 2d the dereference set-up
+    (DEREF_SETUP), 28 a condition of UNKNOWN meaning (COND_UNKNOWN: COND
+    becomes POISON); the last three are handled in evaluate.  Any other
+    EM1 is UNKNOWN and raises."""
     em1 = field(x, 'EM1')
     if pu.alu_seen is None:
         raise Unmodelled(upc, 'CNDF 7 EM1 %02x with no ALU operation' % em1)
@@ -328,6 +394,9 @@ class PU:
         if a == 'open':
             raise Unmodelled(upc, 'AS1F %d' % as1)
         b = {0: (0, 0), 1: old['YR'], 2: old[MDR1], 3: old[MDR2]}[as2]
+        if is_poison(a) or is_poison(b):
+            raise Unmodelled(upc, 'ALU input from a read of memory never written'
+                             ' (AS1F %d, AS2F %d)' % (as1, as2))
         if a is None or b is None:
             raise Unmodelled(upc, 'ALU input never set (AS1F %d, AS2F %d)' % (as1, as2))
         self.as1_seen = a
@@ -354,6 +423,26 @@ class PU:
         if field(x, 'TGIF') & 2:
             tag = self.stamp_tag(x)
         return (tag, v & M32)
+
+    def deref_code(self, upc, x):
+        """The dereference multiway code (DEREF_SETUP, thesis p.133) of
+        the AS1 input's tag.  Only 'other' is executed; the others raise."""
+        if self.as1_seen is None:
+            raise Unmodelled(upc, 'dereference set-up with no ALU input')
+        t = self.as1_seen[0] & 63
+        if DEREF_TGT_COLUMN is not None:       # injection only: a TGT column instead
+            return self.tgt[DEREF_TGT_COLUMN][t]
+        imm = field(x, 'EM2')
+        if t & ~1 == REF:
+            kind = 'refo' if t == REF else 'refx'
+        elif t & ~1 == imm & ~1:
+            kind = 'imm'
+        else:
+            kind = 'other'
+        if kind != 'other' and DEREF_CODE == {'imm': 0, 'other': 1, 'refo': 2, 'refx': 3}:
+            raise Unmodelled(upc, 'dereference set-up EM1 %02x: tag %02x takes the %s row'
+                             ' (read, not run)' % (field(x, 'EM1'), t, kind))
+        return DEREF_CODE[kind]
 
     def step(self, upc):
         """One microcycle: evaluate every operation of the word at upc from
@@ -442,14 +531,17 @@ class PU:
                 data = old[mdr] if RULES['write_old_mdr'] else {**old, **new}[mdr]
                 if data is None:
                     raise Unmodelled(upc, 'CCF: write of %s, never set' % WNAME[mdr])
+                if is_poison(data):
+                    raise Unmodelled(upc, 'CCF: write of %s, read from memory never written'
+                                     % WNAME[mdr])
                 memw.append((addr, data))
             if rd:
-                if addr not in self.mem:
+                if addr not in self.mem and not RULES['absent_read_poison']:
                     raise Unmodelled(upc, 'CCF: read of memory %x, never written' % addr)
                 if mdr in new:
                     raise Unmodelled(upc, 'CCF: read data and a load meet in %s' % WNAME[mdr])
-                new[mdr] = self.mem[addr]
-                memr.append((addr, self.mem[addr]))
+                new[mdr] = self.mem.get(addr, POISON)
+                memr.append((addr, new[mdr]))
             if bit(x, mekbn.INC_BIT):
                 if mar in new:
                     raise Unmodelled(upc, 'CCF: step and a load meet in %s' % WNAME[mar])
@@ -474,6 +566,10 @@ class PU:
                 raise Unmodelled(upc, 'case_tag_setup with no ALU input')
             col = TGT_COLUMN[field(x, 'EM1')]
             tdar = (cycle, self.tgt[col][self.as1_seen[0] & 63])
+        elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in DEREF_SETUP:
+            tdar = (cycle, self.deref_code(upc, x) << DEREF_SHIFT)
+        elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in COND_UNKNOWN:
+            cond_new, cond_cycle = POISON, cycle
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') not in (0x09, 0x0a):
             raise Unmodelled(upc, 'CNDF 7 EM1 %02x: TGT column or condition UNKNOWN'
                              % field(x, 'EM1'))
@@ -485,7 +581,9 @@ class PU:
         # sequencing
         if kind == 'jmpf2':
             raise Unmodelled(upc, 'JMPF 2 (4-bit; kind not known)')
-        if jf in (8, 9, 0xd, 0xf):
+        if jf == 8 and RULES['jmpf8_setup'] and cnd == 7 and field(x, 'EM1') in DEREF_SETUP:
+            pass                        # sequences as JMPF 0 (RULES['jmpf8_setup'])
+        elif jf in (8, 9, 0xd, 0xf):
             raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
         if mekbn.jk(x) == 1 and em == SPECIAL_EM:
             raise Unmodelled(upc, 'JMPF 1 EM 7fff (S9, special form UNKNOWN)')
@@ -499,8 +597,9 @@ class PU:
             # the word just before (a CNDF 7, JMPF 0 word)
             if tdar is None or tdar[0] != cycle - 1:
                 raise Unmodelled(upc, 'JMPF 3 case_branch without a set-up in the word before')
-            if target & 15:
-                raise Unmodelled(upc, 'JMPF 3 case_branch base %04x not 16-aligned' % target)
+            if target & 15 & tdar[1]:
+                raise Unmodelled(upc, 'JMPF 3 case_branch base %04x overlaps TDAR %02x'
+                                 % (target, tdar[1]))
             if tdar[1] > 15:
                 raise Unmodelled(upc, 'JMPF 3 TGT byte %02x over 15' % tdar[1])
             target |= tdar[1]
@@ -523,6 +622,9 @@ class PU:
                     raise Unmodelled(upc, 'JMPF 1 conditional with EM bit 0 clear')
                 if prev_cond is None:
                     raise Unmodelled(upc, 'JMPF 1 %s? with no condition formed' % kind)
+                if is_poison(prev_cond):
+                    raise Unmodelled(upc, 'JMPF 1 %s? tests a condition of UNKNOWN meaning'
+                                     ' (COND_UNKNOWN)' % kind)
                 if RULES['j1_cond_prev_strict'] and self.cond_cycle != cycle - 1:
                     raise Unmodelled(upc, 'JMPF 1 %s?: COND not formed by the previous word' % kind)
                 taken = not prev_cond if em & 1 else bool(prev_cond)

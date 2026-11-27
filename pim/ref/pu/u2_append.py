@@ -56,11 +56,19 @@ get_atom (entry 3800) on an unbound variable, on both models.  Every
 write of the firmware to an argument register or a cell with no
 pimm.py R / M line is a FAIL.
 
-Observed 2026-11-26 (ref/pu/README.md "U2"): get_atom ok (3800-3801);
-the boot contract ok on 5 parameters; 2 of 16 instructions executed
-and matched (try_me_else 216a, switch_on_non_list on a list 3300-3301),
-3 held microinstructions; the first stop is read_variable (6646) at
-34a0, CNDF 7 with EM1 28 (its MAR1 = R02 is OURS).
+Also before the program: read_variable on a structure whose element is
+a list pointer (LISTo, reached with every MRB off: pimm.py sp_single),
+on both models (x, R02 and every memory write compared).  It is the
+case that tells the dereference set-up at 34a1 (pu.DEREF_SETUP) from a
+TGT column.
+
+Observed 2026-11-27 (ref/pu/README.md "U2"): get_atom ok (3800-3801);
+the list-element case ok (34a0-34a2, 3494); the boot contract ok on 5
+parameters; 4 of 16 instructions executed and matched (try_me_else
+216a, switch_on_non_list on a list 3300-3301, read_variable 3 and 4,
+34a0-34a2 and 3494 each), 11 held microinstructions; the first stop is
+put_reused_structure (6648): no S-stage set-up form.  (2026-11-26: 2 of
+16, a stop at read_variable 34a0, CNDF 7 EM1 28.)
 Injections (in-process, no file edited), observed:
   s_imm_plus1     S_ENTRY entry + 1: get_atom FAILs (the cell bound
                   untagged, 00:00000456); append unchanged, 2 of 16,
@@ -69,17 +77,40 @@ Injections (in-process, no file edited), observed:
                   rows): get_atom STOP at 3810 (CNDF a); append STOP at
                   3309 (MCF with EM1 06), 1 of 16 matched
   s_no_mar1       S_ENTRY without MAR1 = the last cell: get_atom STOP
-                  at 3801 (MAR1 never set); append unchanged
+                  at 3801 (MAR1 never set); append unchanged (4 of 16)
   s_cond_true     S_ENTRY's COND forced true: nothing changes (get_atom
-                  ok, 2 of 16): the COND part is NOT discriminated
+                  ok, 4 of 16): the COND part is NOT discriminated
   wide_em1em2     SC2F b read as EM bits 15..4: the boot reads memory
-                  1e, never written: the contract FAILs on all 5
+                  1e, never written (POISON since 2026-11-27): the
+                  contract STOPs at 204f (the ALU input) on all 5
                   parameters, and the run STOPs in the boot
   cnd2_nonzero    CNDF 2 read as "not zero": the contract FAILs on all
                   5 (aligned +16, unaligned rounded down); the program
                   part is unchanged (2 of 16)
   bit0_clear_off  the bit-0-clear polarity unmodelled: STOP at 2050 on
                   all 5 parameters and in the boot
+  (2026-11-27; s_imm_plus1 now also 4 of 16, 10 words, append's
+  switch_on_non_list taking one word fewer; cnd2_nonzero 4 of 16)
+  deref_imm_other the set-up's codes 0 (= EM2) and 1 (other) swapped:
+                  the list-element case FAILs (3490/348f write
+                  {VECTx, element} over the element); append STOPs at
+                  3490 (ALU input from the POISON read at 34a2), 2 of 16
+  deref_bits10    the code in TDAR bits 1-0: both STOP at 3491 (zero
+                  word), 2 of 16
+  deref_tgt_col0  the set-up read as TGT column 0: append PASSES, 4 of
+                  16 (column 0 sends ATOMo to 3494 too); the list-element
+                  case STOPs at 3492 (R11 never set): only that case
+                  discriminates
+  deref_tgt_col5  column EM1 & 7 = 5: the list case STOPs at 3498 (CNDF 7
+                  EM1 34), append at 3492 (MCF with EM1 02), 2 of 16
+  deref_tgt_col7  column 7: the list case STOPs at 3492, append at 3490,
+                  2 of 16
+  em1_28_tgt0     EM1 28 read as a case_tag_setup (column 0): both STOP
+                  at 34a0 (no ALU input), 2 of 16
+  absent_read_raise  a read of memory never written raises: append
+                  STOPs at 34a2 (memory 123, the atom), 2 of 16; the
+                  list case is unchanged (its 34a2 reads a cell)
+  jmpf8_off       JMPF 8 raises again: both STOP at 34a1, 2 of 16
 """
 import os
 import sys
@@ -99,7 +130,7 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
-PINNED = dict(steps=16, matched=2, words=3, stop=2)
+PINNED = dict(steps=16, matched=4, words=11, stop=4)
 
 
 def pimm_run():
@@ -130,16 +161,24 @@ def pimm_run():
                 snap['mem'] = dict(m.mem)
             f = text.split()
             steps.append((int(f[1]), (int(f[2][:2], 16), int(f[2][2:], 16)), [], {}))
+            marks.append(len(m.tr) + 1)
         elif steps:
             if text.startswith('E') or text == 'Q':
                 steps[-1][3].update(state()) if not steps[-1][3] else None
-            else:
-                steps[-1][2].append(text)
         orig(text)
+    marks = []
     m.event = event
     m.run(APPEND, [(pimm.LIST, c), pimm.NIL, z])
     if not steps[-1][3]:
         steps[-1][3].update(state())
+    # The R and M lines go to m.tr directly (pimm._Regs / _Mem), not
+    # through event(): each instruction's lines are the slice of m.tr
+    # from its I line to the next.  (Before 2026-11-27 they were taken
+    # from event() alone, which never sees them: every instruction had
+    # no R / M lines, and a firmware write was reported as a stray.)
+    for k, st in enumerate(steps):
+        end = marks[k + 1] - 1 if k + 1 < len(marks) else len(m.tr)
+        st[2].extend(ln for ln in m.tr[marks[k]:end] if ln[:2] in ('R ', 'M '))
     return m, snap, steps
 
 
@@ -214,11 +253,57 @@ def s_stage_case():
     return bad
 
 
+def read_list_element_case():
+    """The case that discriminates the dereference set-up at 34a1
+    (pu.DEREF_SETUP) from a TGT column: read_variable on a structure whose
+    element is a list pointer (LISTo), the structure reached with every
+    MRB off (pimm.py sp_single: the element is taken unmarked).  The
+    4-way code 'other' runs row 3494 (x := the element, R02 + 1); TGT
+    column 0, which sends an atom to 3494 too (and so passes append),
+    sends LISTo to 3492.  Returns a list of failures."""
+    import mekbn
+    fw = mekbn.Firmware()
+    x, sp, cell = 3, 0xe0020000, 0xe0030000
+    op = fw.kl1_entries()['read_variable'][0] & 0xff
+    ir = (0x23, op << 24 | x << 16)
+    m = pimm.Machine()
+    elem = (pimm.LIST, cell)
+    m.mem[sp] = elem
+    m.mem[cell] = (pimm.ATOM, 0x77)
+    m._sp, m.sp_single = sp, True
+    m.i_read_variable(0, x, 0, 0, 0)
+    p = PU.PU(fw)
+    p.mem[sp] = elem
+    p.mem[cell] = (pimm.ATOM, 0x77)
+    p.r[SU.R_SP] = (0, sp)
+    check_pu.seed_lists(p, NFREE)
+    p.ir, p.pc = ir, 0
+    mem0 = dict(p.mem)
+    try:
+        name = SU.decode(p)
+        n = p.run(SU.setup(p, name))
+    except (PU.Unmodelled, KeyError) as e:
+        return ['read_variable on a list element: STOP %s' % e]
+    bad = ['read_variable on a list element: firmware wrote %x := %s, pimm.py no write'
+           % (a, check_pu.fmt(p.mem[a])) for a in sorted(p.mem) if p.mem[a] != mem0.get(a)]
+    if p.an.get(x) != m.reg[x]:
+        bad.append('read_variable on a list element (%d words): A%d %s, pimm.py %s'
+                   % (n, x, check_pu.fmt(p.an.get(x)), check_pu.fmt(m.reg[x])))
+    if p.r[SU.R_SP][1] != m._sp:
+        bad.append('read_variable on a list element: R02 %s, pimm.py sp %x'
+                   % (check_pu.fmt(p.r[SU.R_SP]), m._sp))
+    return bad
+
+
 def run(verbose=False):
     m, s0, steps = pimm_run()
     sbad = s_stage_case()
     print('%s  S stage: get_atom on an unbound variable (entry 3800)%s'
           % ('FAIL' if sbad else 'ok  ', ': ' + '; '.join(sbad) if sbad else ''))
+    lbad = read_list_element_case()
+    print('%s  read_variable on a list element (the 34a1 set-up)%s'
+          % ('FAIL' if lbad else 'ok  ', ': ' + '; '.join(lbad) if lbad else ''))
+    bad = boot_contract()
     bad = boot_contract()
     print('%s  start 204b (heap top) on 5 parameters%s'
           % ('FAIL' if bad else 'ok  ', ': ' + '; '.join(bad) if bad else ''))
@@ -239,7 +324,7 @@ def run(verbose=False):
     for a in s0['mem']:
         rn.f2p[a] = rn.p2f[a] = a          # cells present in both: the identity
     out = {'done': 0, 'matched': 0, 'words': 0, 'stop': None, 'fail': None,
-           'boot_words': nboot, 'boot_fail': bad}
+           'boot_words': nboot, 'boot_fail': bad + sbad + lbad}
     for k, (pc, cellv, lines, after) in enumerate(steps):
         p.ir, p.pc = cellv, m.load + pc
         name = '?'
@@ -312,7 +397,7 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
         want = m.load + after['alt']
         if r11 is None or r11 != (pimm.REF, want):
             fails.append('R11: firmware %s, pimm.py alt {REF, %x}' % (check_pu.fmt(r11), want))
-    if after.get('sp') is not None and base in ('switch_on_non_list',):
+    if after.get('sp') is not None and base in ('switch_on_non_list', 'read_variable'):
         r02 = p.r.get(SU.R_SP)
         if r02 is None or rn.f2p.get(r02[1], r02[1]) != after['sp']:
             fails.append('sp: firmware R02 %s, pimm.py %x' % (check_pu.fmt(r02), after['sp']))
@@ -343,6 +428,15 @@ INJECT = {
     'wide_em1em2': lambda: PU.RULES.update(sc2_wide='EM1:EM2'),
     'cnd2_nonzero': lambda: PU.RULES.update(cnd2_zero=False),
     'bit0_clear_off': lambda: PU.RULES.update(j1_bit0_clear_true=False),
+    # U2 read_variable (2026-11-27): the dereference multiway set-up at 34a1
+    'deref_imm_other': lambda: PU.DEREF_CODE.update(imm=1, other=0),
+    'deref_bits10': lambda: setattr(PU, 'DEREF_SHIFT', 0),
+    'deref_tgt_col0': lambda: (setattr(PU, 'DEREF_TGT_COLUMN', 0), setattr(PU, 'DEREF_SHIFT', 0)),
+    'deref_tgt_col5': lambda: (setattr(PU, 'DEREF_TGT_COLUMN', 5), setattr(PU, 'DEREF_SHIFT', 0)),
+    'deref_tgt_col7': lambda: (setattr(PU, 'DEREF_TGT_COLUMN', 7), setattr(PU, 'DEREF_SHIFT', 0)),
+    'em1_28_tgt0': lambda: (PU.COND_UNKNOWN.clear(), PU.TGT_COLUMN.update({0x28: 0})),
+    'absent_read_raise': lambda: PU.RULES.update(absent_read_poison=False),
+    'jmpf8_off': lambda: PU.RULES.update(jmpf8_setup=False),
 }
 
 
