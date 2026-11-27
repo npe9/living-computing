@@ -728,6 +728,29 @@ viewer's mouse Y unnegated (the viewer case's event check).
 The owner's interactive run is `bsv/run_win_live.sh live` (the real-monitor check stays deferred
 with H7).
 
+**The first interactive run was garbled (owner, 2026-11-26), and is fixed.** It had been checked
+headless only. The `flood` case (`bsv/win_live/flood.play`, played by `tools/winview --play` in
+mode 3) reproduces it on the old code: 728 bytes dropped by the receivers, 121 "code 5"
+error records, 12 phantom right clicks, and the real clicks misplaced. The owner's run showed 324 error
+records, 21 middle clicks from a Mac mouse, and Y up to 1,023 where the viewer's clicks could
+reach only 958. Four
+causes, each now fixed in `WinHostDev.c`, `winview.c` or `win_kl0_host.py`:
+- every host motion event was a PS/2 packet sent at once, faster than the scaled link carries
+  records up. Now a stream-mode PS/2 mouse is modelled: 100 samples a second, motion
+  coalesced, one button change a packet;
+- free-running Bluesim passes ~4 receiver seconds a wall second, so a person's double click
+  missed the adapter's 400 ms. Now the viewer stamps events (`W`), and the bench keeps their gaps
+  and is held to the wall clock while the person is active;
+- mode 3 shows the frame from row 24 (its pan), and the viewer's dots were mapped without it.
+  The mode line now carries the pan;
+- kl0 on the probe route replays the whole session each time, so its fixed 600,000 steps ran out
+  after about 200 typed keys. `--live` scales the limit with the events, and a failure drops the
+  new events instead of ending the session.
+After the fix: 0 bytes dropped, 0 input errors, no step limit, and the viewer's frame equals the
+monitor's and the software frame's mode 3 view (`screens/live_bluesim_flood_mode3.png`, the
+viewer's dump). No frame of the owner's garbled screen was kept; the viewer now saves one on
+Cmd-S and on exit.
+
 ---
 
 ## 5. FPGA

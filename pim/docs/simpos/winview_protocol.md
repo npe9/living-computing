@@ -48,23 +48,40 @@ buses (`window_hardware_plan.md` §1.1).
 | `M` | X (2), Y (2) | the mouse is at (X, Y), in screen dots (the window's pixels divided by `--scale`) |
 | `B` | BUTTON (1: 0 left, 1 middle, 2 right), DOWN (1), X (2), Y (2) | a button |
 | `Q` | none | the window was closed |
+| `W` | T (4) | the time of the next `K`, `M` or `B`: SDL's event timestamp, ms (added 2026-11-26) |
+| `E` | none | a `--play` file has ended (added 2026-11-26) |
 
 - Events are raw: no click classification and no key translation. A client maps them:
   - `WinHostDev.c` turns keys into PS/2 set 2 bytes (its HOST table, checked against
     `../../tools/wininput.py`) and the mouse into PS/2 packets, so the RTL receivers do the rest;
   - a software client would apply `wininput.py`'s two tables itself.
-- With the 2:1 view of mode 3 (640×480), `WinHostDev.c` doubles X and Y into frame coordinates.
+- With the 2:1 view of mode 3 (640×480), `WinHostDev.c` doubles X and Y into frame coordinates
+  and adds the scan configuration's pan (mode 3 shows the frame from row 24).
+- X and Y are clamped to the screen. SDL reports positions outside the window while a button is
+  held; before 2026-11-26 a negative one went out as about 65,000.
+- `W` and `E` were added for the live view's real-time PS/2 model: `WinHostDev.c` keeps the gaps
+  between a person's events, whatever the simulation's speed. A client that does not know them
+  skips them by their length, as the rule above says; `winview_client.py` does.
 
 ## Running it
 
 ```
 tools/winview/build.sh OUT                    # cc + pkg-config sdl2 (Homebrew 2.32.10)
-OUT SOCKET [--scale N] [--dump F.pbm] [--fake-events] [--frames N]
+OUT SOCKET [--scale N] [--dump F.pbm] [--fake-events] [--frames N] [--play F]
 python3 -I tools/winview_client.py SOCKET FRAME.pbm [SECONDS]
 bsv/run_win_live.sh live [MODE]               # the Bluesim hardware on it (the owner's run)
 ```
 
-Headless check, used by `bsv/run_win_live.sh` (its `viewer` case):
+Keys with Cmd (SDL's GUI modifier) are the viewer's own and are not sent. Cmd-S writes the frame
+shown as `winview_N.pbm` next to the socket. On exit, the frame shown is written there as
+`winview_last.pbm`.
+
+`--play FILE` pushes a scripted user's input into SDL's own queue at its wall-clock times, after
+the first frame. The format is in `winview.c`'s header: `wait`, `move`, `glide`, `drift`,
+`down`/`up`, `click`, `key`, `type` and `end`. `end` sends `E`. `bsv/run_win_live.sh` `flood`
+plays `bsv/win_live/flood.play` this way.
+
+Headless check, used by `bsv/run_win_live.sh` (its `viewer` and `flood` cases):
 - `SDL_VIDEODRIVER=dummy` with `--fake-events`. After the first frame, the viewer pushes a key A
   press and release, a move to (10, 20) and a left click into SDL's own queue, so they leave by
   the same code as a user's.

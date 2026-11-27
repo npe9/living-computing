@@ -45,12 +45,58 @@
          (docs/simpos/winview_protocol.md): each changed frame is sent to
          the viewer, its key and mouse events come back.  Quiet input for
          WIN_QUIET_MS (default 500, longer than the kl0 host's double-click
-         time) receiver ms sends "Q" to the host.
+         time) receiver ms sends "Q" to the host.  With WIN_HOSTDEV_PBM
+         set, the viewer's E (a --play file's end) ends the run like the
+         script's end: once its input is all sent, the devices idle, the
+         link quiet and the kl0 host's last answer drawn, the next whole
+         frame is written there and the run finishes.
+       THE REAL-TIME DEVICES (interactive only; fixed 2026-11-26 after the
+       owner's live run dropped hundreds of mouse bytes: every host motion
+       event had become a packet sent back to back, up to ~230 a receiver
+       second (a packet is 3 x 11 bits of 12 cycles plus gaps, ~430
+       cycles), where the scaled bench's link carries ~150 event records
+       up a second (16 bytes of 40 cycles each), so the receivers' 8-byte
+       queue overflowed into broken packets):
+         - THE CLOCK.  Free-running, mode 3's bench passes ~4,000 receiver
+           ms a wall second (run_win_live.sh `speed`: 1.08 M pixel clocks
+           a second, 10/27 sys cycles each, 100 a ms), so a person's
+           double click (~150 ms) reached the kl0 host's adapter as ~600 ms,
+           past its DCLICK_MS.  So each host event gets a receiver time:
+           its gap from the one before (the viewer's W timestamps, wall
+           ms; capped at ACTIVE_MS) after the one before's, never in the
+           past; and while the person is active (within ACTIVE_MS wall of
+           the last event, or events are waiting) the bench may not run
+           ahead of the wall clock from the last event's time: it sleeps.
+           Otherwise (kl0 drawing, idle) it runs free.  Events that came
+           in while kl0 blocked the bench keep their gaps.  OURS.
+         - THE MOUSE (a PS/2 mouse in stream mode, SECONDARY, as commonly
+           published, e.g. A. Chapweske's PS/2 mouse protocol notes;
+           CHECK: from memory, not fetched this session, and IBM's PS/2
+           Technical Reference is not held; the wire frame and the
+           10-16.7 kHz clock are WinInput.bsv's header's, the same grade):
+           default sample rate 100 a second, a 3-byte movement packet sent
+           at a sample when the mouse moved or a button changed, the
+           motion between samples accumulated, 9-bit deltas).  So motion
+           is coalesced to one packet a sample (WIN_MOUSE_RATE, default
+           100), a delta of at most 255 a packet (the rest at the next
+           samples: no overflow bits), and each button change gets its
+           own packet once the mouse has reached the button event's
+           place, so no click is lost or moved.  The packet's bytes go at
+           the wire's speed (mkWinPs2Dev).  Positions are clamped to the
+           decoder's 1,280 x 1,024 (WinInput.bsv mkWinMouseDec), so this
+           model and the decoder never disagree.
+         - THE KEYBOARD: a key's bytes at its receiver time, back to back
+           at the wire's speed (a keyboard sends a code's bytes so).
    WIN_HOSTDEV_MODE=FILE: the monitor's mode, one line "ha hf hs hb va vf
-   vs vb hpos vpos x0 y0 fw fh half" (half: the 2:1 view, whose viewer
-   coordinates are doubled into the frame's).  WIN_HOSTDEV_MAXMS=N: fail after N
+   vs vb hpos vpos x0 y0 fw fh half [px py]" (half: the 2:1 view, whose
+   viewer coordinates are doubled into the frame's; px py: the scan
+   configuration's pan in frame dots, added to them, mode 3's (0, 24):
+   without it, 2026-11-26, the person's clicks landed 24 frame rows above
+   the dot pointed at).  WIN_HOSTDEV_MAXMS=N: fail after N
    receiver ms (a guard).  WIN_HOSTDEV_RUNFRAMES=N: finish after N whole
-   frames (bsv/run_win_live.sh `speed`).
+   frames (bsv/run_win_live.sh `speed`).  WIN_MOUSE_RATE=N: the mouse's
+   samples a second (interactive; default 100).  WHD_TRACE=1: each host
+   event's receiver time and each mouse sample on stderr (interactive).
 
    Prints one summary line at the end: "WinHostDev: ..." with the timing
    errors counted, which bsv/run_win_live.sh requires to be 0.
@@ -67,6 +113,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 /* ------------------------------------------------------------ HOST table */
@@ -221,7 +268,7 @@ static void up_byte(uint8_t b)
 }
 
 /* ------------------------------------------------------------ the monitor */
-typedef struct { int ha, hf, hs, hb, va, vf, vs, vb, hpos, vpos, x0, y0, fw, fh, half; } Mode;
+typedef struct { int ha, hf, hs, hb, va, vf, vs, vb, hpos, vpos, x0, y0, fw, fh, half, px, py; } Mode;
 static Mode M;
 static int have_mode;
 static uint8_t *img, *last_sent;       /* fw x fh, 1 byte a dot */
@@ -327,7 +374,6 @@ static void pixel(uint32_t v)
 /* ------------------------------------------------------------ the viewer */
 static int vfd = -1;
 static int mouse_x = 640, mouse_y = 472, mouse_b;
-static int vmouse_x = -1, vmouse_y = -1;
 
 static int write_all(int fd, const void *p, size_t n)
 {
@@ -389,22 +435,110 @@ static void viewer_frame(void)
     free(p);
 }
 
-static void mouse_to(int x, int y, int btns)
+/* --- the real-time devices (the header's THE REAL-TIME DEVICES) --- */
+#define ACTIVE_MS 1000
+#define HN (1 << 16)
+typedef struct { char typ; int a, b, x, y; uint32_t r; } HEv;   /* a host event, its receiver ms */
+static HEv hev[HN];
+static int hh, ht;                       /* the host events not yet due */
+typedef struct { int edge, bit, down, x, y; } MItem;
+static MItem mit[HN];
+static int mh, mt;                       /* the mouse's motion and button changes, due */
+static int tgt_x = 640, tgt_y = 472;     /* where the mouse is to go */
+static uint32_t stamp, prev_stamp, prev_r, next_sample;
+static int have_stamp, have_prev, viewer_done;
+static double anchor_wall, prev_wall;
+static uint32_t anchor_r;
+static long host_events, mouse_packets, throttle_sleeps;
+
+static double wall_ms(void)
 {
-    if (M.half) { x *= 2; y *= 2; }     /* the viewer shows the 2:1 view (mode 3) */
-    /* absolute (the viewer's) to relative packets, 255 at most each */
-    do {
-        int dx = x - mouse_x, dy = y - mouse_y;
-        dx = dx > 255 ? 255 : dx < -255 ? -255 : dx;
-        dy = dy > 255 ? 255 : dy < -255 ? -255 : dy;
-        mouse_x += dx; mouse_y += dy;
-        mouse_packet(dx, -dy, btns);
-    } while (mouse_x != x || mouse_y != y);
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1e3 + ts.tv_nsec / 1e6;
+}
+
+static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+static int tracing(void)
+{
+    static int t = -1;
+    if (t < 0) t = getenv("WHD_TRACE") != 0;
+    return t;
+}
+
+/* a host event from the viewer: its receiver time, then the queue */
+static void host_event(char typ, int a, int b, int x, int y)
+{
+    uint32_t now_ms = (uint32_t)(now / msdiv);
+    double w = wall_ms();
+    uint32_t gap = have_stamp ? stamp - prev_stamp : (uint32_t)(w - prev_wall);
+    if (gap > ACTIVE_MS) gap = ACTIVE_MS;
+    uint32_t r = have_prev ? prev_r + gap : now_ms;
+    if ((int32_t)(r - now_ms) < 0) r = now_ms;
+    if (have_stamp) prev_stamp = stamp;
+    prev_r = r; prev_wall = w; have_prev = 1; have_stamp = 0;
+    anchor_r = r; anchor_wall = w;
+    if (((ht + 1) & (HN - 1)) == hh) { fprintf(stderr, "WinHostDev: the host event queue overflowed\n"); return; }
+    if (typ != 'K') {
+        if (M.half) { x *= 2; y *= 2; }                 /* the viewer shows the 2:1 view (mode 3) */
+        x += M.px; y += M.py;                           /* and the frame from the pan on */
+    }
+    hev[ht] = (HEv){typ, a, b, clampi(x, 0, 1279), clampi(y, 0, 1023), r};
+    if (tracing()) fprintf(stderr, "TR ev %c now %u r %u stamp %u gap %u\n", typ, now_ms, r, stamp, gap);
+    ht = (ht + 1) & (HN - 1);
+    host_events++;
+}
+
+static void mitem(int edge, int bit, int down, int x, int y)
+{
+    if (((mt + 1) & (HN - 1)) == mh) { fprintf(stderr, "WinHostDev: the mouse queue overflowed\n"); return; }
+    mit[mt] = (MItem){edge, bit, down, x, y};
+    mt = (mt + 1) & (HN - 1);
+}
+
+/* the host events now due: keys to the keyboard's bytes, mouse events to
+   the mouse's items */
+static void release_due(uint32_t now_ms)
+{
+    while (hh != ht && (int32_t)(hev[hh].r - now_ms) <= 0) {
+        HEv *e = &hev[hh];
+        if (e->typ == 'K') key_bytes(e->b, e->a);
+        else if (e->typ == 'M') mitem(0, 0, 0, e->x, e->y);
+        else mitem(1, e->a, e->b, e->x, e->y);
+        hh = (hh + 1) & (HN - 1);
+    }
+}
+
+/* one sample of the mouse: at most one packet, at most one button change */
+static void mouse_sample(void)
+{
+    while (mh != mt && !mit[mh].edge) { tgt_x = mit[mh].x; tgt_y = mit[mh].y; mh = (mh + 1) & (HN - 1); }
+    int edge = mh != mt;
+    if (edge) { tgt_x = mit[mh].x; tgt_y = mit[mh].y; }
+    int dx = clampi(tgt_x - mouse_x, -255, 255), dy = clampi(tgt_y - mouse_y, -255, 255);
+    mouse_x += dx; mouse_y += dy;
+    int changed = 0;
+    if (edge && mouse_x == tgt_x && mouse_y == tgt_y) {
+        int bit = 1 << mit[mh].bit;
+        mouse_b = mit[mh].down ? mouse_b | bit : mouse_b & ~bit;
+        mh = (mh + 1) & (HN - 1);
+        changed = 1;
+    }
+    if (dx || dy || changed) { mouse_packet(dx, -dy, mouse_b); mouse_packets++; }
+    if (tracing())
+        fprintf(stderr, "TR sample ms %u d %d %d b %d at %d %d\n", (uint32_t)(now / msdiv), dx, dy, mouse_b,
+                mouse_x, mouse_y);
+}
+
+static int input_pending(void)
+{
+    return hh != ht || mh != mt || mouse_x != tgt_x || mouse_y != tgt_y;
 }
 
 static void viewer_poll(void)
 {
-    static uint8_t buf[64];
+    static uint8_t buf[256];
     static int bn;
     if (vfd < 0) return;
     for (;;) {
@@ -414,22 +548,36 @@ static void viewer_poll(void)
         bn += (int)k;
         while (bn >= 5) {
             uint32_t len = (uint32_t)buf[1] << 24 | buf[2] << 16 | buf[3] << 8 | buf[4];
+            if (len > sizeof buf - 5) { fail("a viewer message too long"); return; }
             if (bn < 5 + (int)len) break;
             uint8_t *p = buf + 5;
             switch (buf[0]) {
-            case 'K': key_bytes(p[1] << 8 | p[2], p[0]); break;
-            case 'M': mouse_to(p[0] << 8 | p[1], p[2] << 8 | p[3], mouse_b); break;
-            case 'B': {
-                int bit = 1 << p[0];
-                mouse_to(p[2] << 8 | p[3], p[4] << 8 | p[5], mouse_b);
-                mouse_b = p[1] ? mouse_b | bit : mouse_b & ~bit;
-                mouse_packet(0, 0, mouse_b);
-                break; }
+            case 'W':
+                if (len == 4) { stamp = (uint32_t)p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3]; have_stamp = 1; }
+                break;
+            case 'K': if (len == 3) host_event('K', p[0], p[1] << 8 | p[2], 0, 0); break;
+            case 'M': if (len == 4) host_event('M', 0, 0, p[0] << 8 | p[1], p[2] << 8 | p[3]); break;
+            case 'B': if (len == 6) host_event('B', p[0], p[1], p[2] << 8 | p[3], p[4] << 8 | p[5]); break;
+            case 'E': viewer_done = 1; break;
             case 'Q': finished = 1; break;
             }
             memmove(buf, buf + 5 + len, bn - 5 - len);
             bn -= 5 + (int)len;
         }
+    }
+}
+
+/* while the person is active, the bench may not run ahead of the wall
+   clock from the last host event's time */
+static void throttle(uint32_t now_ms)
+{
+    if (!have_prev) return;
+    double w = wall_ms();
+    if (w - anchor_wall >= ACTIVE_MS && hh == ht) return;
+    double ahead = ((double)(int32_t)(now_ms - anchor_r)) - (w - anchor_wall);
+    if (ahead > 0.5) {
+        usleep((useconds_t)((ahead > 20 ? 20 : ahead) * 1000));
+        throttle_sleeps++;
     }
 }
 
@@ -470,6 +618,7 @@ static void init(void)
     if (f && fscanf(f, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &M.ha, &M.hf, &M.hs, &M.hb,
                     &M.va, &M.vf, &M.vs, &M.vb, &M.hpos, &M.vpos, &M.x0, &M.y0, &M.fw, &M.fh,
                     &M.half) == 15) {
+        if (fscanf(f, "%d %d", &M.px, &M.py) != 2) M.px = M.py = 0;
         have_mode = 1;
         img = calloc((size_t)M.fw * M.fh, 1);
     }
@@ -517,16 +666,33 @@ uint32_t whd_tick(uint32_t cyc_lo, uint32_t cyc_hi, uint32_t idle)
         else if (final_sent && link_idle && !capture && !getenv("WIN_HOSTDEV_RUNFRAMES")) capture = 1;
     }
     else {
-        static uint32_t polled;
-        if (cyc_lo - polled > 4096) { polled = cyc_lo; viewer_poll(); }
+        static uint32_t polled, period, last_input_ms;
+        if (!period) {
+            const char *r = getenv("WIN_MOUSE_RATE");
+            int rate = r ? atoi(r) : 100;
+            period = rate > 0 && rate <= 1000 ? 1000 / (uint32_t)rate : 10;
+        }
+        if (cyc_lo - polled > 256) { polled = cyc_lo; viewer_poll(); }
+        if (hh != ht && (int32_t)(hev[hh].r - ms) <= 0) { release_due(ms); last_input_ms = ms; }
+        if ((idle & 2) && !qn(&mq) && (int32_t)(ms - next_sample) >= 0 &&
+            (mh != mt || mouse_x != tgt_x || mouse_y != tgt_y)) {
+            mouse_sample();
+            next_sample = ms + period;
+            last_input_ms = ms;
+        }
+        throttle(ms);
         const char *q = getenv("WIN_QUIET_MS");
         uint32_t quiet = q ? (uint32_t)atoi(q) : 500;
-        if (!quiet_sent && dev_idle && ms > last_event_ms + quiet) {
+        if (!quiet_sent && dev_idle && !input_pending() && ms > last_event_ms + quiet) {
             char l[32];
             snprintf(l, sizeof l, "Q %x", ms);
             host_ask(l);
             quiet_sent = 1;
         }
+        /* a --play file's end (E): finish as the script's end does */
+        if (viewer_done && !capture && getenv("WIN_HOSTDEV_PBM") && quiet_sent && dev_idle && link_idle &&
+            !input_pending() && ms > last_input_ms + quiet && ms > last_event_ms + quiet)
+            capture = 1;
     }
     static long maxms = -1;
     if (maxms < 0) { const char *x = getenv("WIN_HOSTDEV_MAXMS"); maxms = x ? atol(x) : 0; }
@@ -561,9 +727,13 @@ void whd_report(void)
 {
     if (hin) { fprintf(hin, "X\n"); fflush(hin); fclose(hin); hin = 0; }
     if (hpid > 0) { int st; waitpid(hpid, &st, 0); hpid = 0; }
+    char extra[128] = "";
+    if (!scripted)
+        snprintf(extra, sizeof extra, "; %ld host events, %ld mouse packets, %ld throttle sleeps",
+                 host_events, mouse_packets, throttle_sleeps);
     printf("WinHostDev: %s; %ld frames seen, %ld timing errors, %ld input events up, %ld link errors, "
-           "%d frames down, %d answers%s%s\n", failed ? "FAILED" : "done", frames, timing_errs, nevents,
-           nlinkerr, frames_sent, answers, failed ? ": " : "", failed ? why : "");
+           "%d frames down, %d answers%s%s%s\n", failed ? "FAILED" : "done", frames, timing_errs, nevents,
+           nlinkerr, frames_sent, answers, extra, failed ? ": " : "", failed ? why : "");
     fflush(stdout);
 }
 #endif
