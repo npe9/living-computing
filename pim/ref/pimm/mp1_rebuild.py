@@ -21,19 +21,24 @@ was; see "Findings").  `report` checks part (a) against PINNED.
 
 Findings, part (a) (OBSERVED 2026-11-26, PINNED below):
   - 3 modules identical but for the header (scsi_conf, DAMC, comp);
-  - 17 the same but for two orders and the header (same-but-order):
+  - 17 the same but for two orders and the header (same-but-order;
+    18 with bufutil, below):
     the GC area's order and the key order in hash_on_constant slots
     and predicate-table chains (compare(); INFERENCE that the cause is
     the hash function and atom numbers, which are ours);
-  - 2 not compiled: bufutil and token, refused by the model at
-    integer_to_floating_point (floating point is not modelled);
-  - 3 differ: hash, because the loaded hasher is the patch file's
+  - bufutil and token were refused at integer_to_floating_point
+    until floating point was modelled (docs/float.md, 2026-11-26);
+    re-run then, one file each: bufutil is the same but for the order
+    (2396 cells against 2396), token differs (3180 cells against 3180,
+    first difference the target of enqueue_goal at [1414], 59 lines,
+    as mklib's and variable's);
+  - 4 differ: token (above), hash, because the loaded hasher is the patch file's
     (pimm_patch_hash360E.sav), which lacks the extended_floating_point
     clause of hash0/4 that pimm's pimos.h switches on; the probe's mpsi
     build of hash.kl1 (extended_floating_point no) was identical to the
     patch but for the header, so the patch was built with that switch
     off; the base file's hasher (pimm_utility360E.sav, 405 cells)
-    differs from both and was not explained.  mklib and variable: same
+    differs from both and was not explained.  mklib, variable and token: same
     size, first difference a branch target (enqueue_goal, execute):
     INFERENCE, predicates placed in another order, not checked.
   - The header: MagicNum (element 4) is [] in every held module, the
@@ -168,9 +173,9 @@ PINNED = {
     'cmd_insp': 'same-but-order', 'cmd_mon': 'same-but-order', 'inspvar': 'same-but-order',
     'unify': 'same-but-order', 'rsc_init': 'same-but-order', 'decoder': 'same-but-order',
     'encoder': 'same-but-order', 'scsiRserver': 'same-but-order',
-    'bufutil': 'none',          # refused: integer_to_floating_point (no floats in the model)
+    'bufutil': 'same-but-order',    # compiled since floats (2026-11-26, docs/float.md)
     'mklib': 'differs',         # first difference a branch target: not explained
-    'token': 'none',            # refused: integer_to_floating_point
+    'token': 'differs',         # since floats: a branch target first, as mklib's
     'uparse': 'same-but-order',
     'variable': 'differs',      # first difference a branch target: not explained
     'comp': 'identical-but-header',

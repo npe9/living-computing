@@ -108,7 +108,8 @@ compiler and run through the Listener in lockstep on both models
 (`bsv/README.md`, "R8" and "R8's second half"; 2026-11-26), and R9:
 MGTP/G (IFS No.22) by its manual's procedure, 6- and 8-Queens, in
 lockstep on both models (`bsv/README.md`, "R9"; 2026-11-26), after
-`mark_element` on a list cell was added to both. The paragraph below is the bench model's
+`mark_element` on a list cell was added to both. Floating point, IEEE
+single, is on both PIM/m models since 2026-11-26 (`docs/float.md`). The paragraph below is the bench model's
 state and is unchanged.
 
 The model can execute a hand-assembled KL1-B program that builds heap

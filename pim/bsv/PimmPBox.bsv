@@ -125,7 +125,7 @@ module mkPimmPBox#(MemPort mem, PimmDBox dbox)(PimmPBox);
       else answer(PNotEqual, ?);
     end
     else if (ty(x) != ty(y)) answer(PNotEqual, ?);
-    else if (isInt(x) || isAtom(x)) begin
+    else if (isInt(x) || isAtom(x) || ty(x) == tag_FLTo) begin   // a float by its bits
       if (x.val == y.val) advance;
       else answer(PNotEqual, ?);
     end
