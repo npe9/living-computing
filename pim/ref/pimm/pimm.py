@@ -113,7 +113,22 @@ class Suspend(Exception):
 
 
 class Fail(Exception):
-    """No clause applies (a reduction failure), or a body unification fails."""
+    """No clause applies (a reduction failure), or a body unification
+    fails; then `terms` is the pair that would not unify."""
+    terms = None
+
+
+def unify_fail(text, a, b):
+    e = Fail(text)
+    e.terms = (a, b)
+    return e
+
+
+# unification_failure, exception number 10, Info {Pe, DataX, DataY}
+# "without Caller" (PIMOS kernel/builtin/excpt_tbl.kl1 "FIRMWARE FORMAT"
+# 56, translate 209-215; VPIM functions/f_reduce_exception_handler.psl.c
+# 79-96 and the number, 2257, its tag bit 0x04000000, 2283)
+EXC_UNIFICATION_FAILURE = 10
 
 
 def sx24(v):
@@ -416,10 +431,10 @@ class Machine:
             self.bind(b, a)
             return
         if a[0] & ~1 != b[0] & ~1:
-            raise Fail('unify %r %r' % (a, b))
+            raise unify_fail('unify %r %r' % (a, b), a, b)
         if a[0] & ~1 in (INT, ATOM, FLT):    # a float by its bits (atomic())
             if a[1] != b[1]:
-                raise Fail('unify %r %r' % (a, b))
+                raise unify_fail('unify %r %r' % (a, b), a, b)
             return
         if a[0] & ~1 == STRG:
             # Only the same string object: comparing contents is not
@@ -957,13 +972,29 @@ class Machine:
                 if nxt == 'done':
                     return
                 pc = pc + 1 if nxt is None else nxt
-        except Fail:
+        except Fail as e:
             if self.shoen:
                 # inside a shoen a failure is reported to the shoen (the
-                # exception path).  A reduction failure is (i_suspend);
-                # a failed body unification, unification_failure, is
-                # not modelled: refused
-                raise Unimplemented('a goal failed inside a shoen')
+                # exception path).  A reduction failure is (i_suspend).
+                # A failed body unification (2026-11-27): the exception
+                # unification_failure, Info {Pe, DataX, DataY}, the pair
+                # that would not unify, by the path a reduction failure
+                # takes (Machine.exception, VPIM's order); the goal ends
+                # there, what its body did before stays done, as a
+                # reduction failure's goal ends (OURS: when the firmware
+                # stops the body is not held).  Which pair, for a
+                # structure unified element by element (unify_step), the
+                # elements: INFERENCE (VPIM passes its A_Term1, A_Term2,
+                # f_reduce_exception_handler.psl.c 83).  Met by the IFS
+                # sweep's cohlex and dulcinea before the runner served
+                # the root directory (docs/ifs_apps.md 4)
+                if e.terms is None:
+                    raise Unimplemented('a goal failed inside a shoen')
+                self.exception(EXC_UNIFICATION_FAILURE, 1 << 16 + EXC_UNIFICATION_FAILURE,
+                               e.terms[0], e.terms[1])
+                self.chain += 1
+                self.event('E fail')
+                return
             self.event('E fail')
             raise
 
@@ -3090,7 +3121,7 @@ class Machine:
             # step, and the elements from the descriptors
             n = self.vsize(a)
             if self.vsize(b) != n:
-                raise Fail('unify of vectors of %d and %d' % (n, self.vsize(b)))
+                raise unify_fail('unify of vectors of %d and %d' % (n, self.vsize(b)), a, b)
             ba, bb = self.vbase(a), self.vbase(b)
         else:
             n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1

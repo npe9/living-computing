@@ -55,8 +55,10 @@ flat in HOME, as a tree below it (HOME>prog>compile>X) or in an absolute
 directory it names (serve(), install_listing()); text in 7-bit JIS is
 served as EUC (jis_to_euc).  What the runner adds, each OURS and in
 docs/ifs_apps.md 1: the package work typed first (WORK), R7G's collector
-with a 50M-cell limit (run_row), three FEP services fep.py lacks
-(install_write_files), and for a Listener take the file's commands typed
+with a 50M-cell limit (run_row), FEP services fep.py lacks
+(install_write_files; since 2026-11-27 also the root and the
+directories on the way, 237 with any wildcard, versioned opens, "..",
+221 on a written file: install_listing, checked by services_check), and for a Listener take the file's commands typed
 one by one (expand_take, the +alt rows).  Downloads are untrusted: nothing in
 them is executed on the host; they are data given to the model.
 
@@ -966,6 +968,86 @@ def injections(results):
     return ok, got
 
 
+SERVICES = [
+    # (what, the request, the answer wanted as text: a status, then the
+    # reply's strings unjis'd); one device per directory or file opened
+    ('the root', (60, [fepm.DIRECTORY, b'', b'pmpsi', b'', '>']), [1]),
+    ('the root, listing("sys")', (60, [fepm.LISTING_ALL, 'sys']), [1, 'sys\n']),
+    ('>sys>user', (61, [fepm.DIRECTORY, b'', b'pmpsi', b'', '>sys>user']), [1]),
+    ('>sys>user, "*"', (61, [fepm.LISTING_ALL, '*']), [1, 'cgs\npmpsi\n']),
+    ('HOME, listing("cohlex")', (62, [fepm.DIRECTORY, b'', b'pmpsi', b'', L.HOME]), [1]),
+    ('HOME, "cohlex"', (62, [fepm.LISTING_ALL, 'cohlex']), [1, 'cohlex\n']),
+    ('HOME, "*.*" (fep.py\'s own: every entry, the directory too)',
+     (62, [fepm.LISTING_ALL, '*.*']), [1, 'cohlex\ntop.kl1.1\n']),
+    ('HOME>cohlex, "*.mac"', (63, [fepm.DIRECTORY, b'', b'pmpsi', b'', L.HOME + '>cohlex']), [1]),
+    ('HOME>cohlex, "*.mac" listed', (63, [fepm.LISTING_ALL, '*.mac']), [1, 'a.mac.1\n']),
+    ('HOME>cohlex>a.mac.1 opened', (64, [fepm.READ_OPEN, b'', b'pmpsi', b'', L.HOME + '>cohlex>a.mac.1']),
+     [1]),
+    ('HOME>cohlex>a.mac.2 not', (65, [fepm.READ_OPEN, b'', b'pmpsi', b'', L.HOME + '>cohlex>a.mac.2']),
+     [5]),
+    ('HOME>cohlex>.. opened', (66, [fepm.DIRECTORY, b'', b'pmpsi', b'', L.HOME + '>cohlex>..']), [1]),
+    ('HOME>cohlex>.., its pathname', (66, [fepm.PATHNAME]), [1, 'PSI::' + L.HOME]),
+    ('>sys>other not', (67, [fepm.DIRECTORY, b'', b'pmpsi', b'', '>sys>other']), [5]),
+    ('a written file', (68, [WRITE_OPEN, b'', b'pmpsi', b'', L.HOME + '>kl1>m.sav']), [1]),
+    ('a written file, its pathname', (68, [fepm.PATHNAME]), [1, 'PSI::' + L.HOME + '>kl1>m.sav.1']),
+]
+
+
+def services_check():
+    """the runner's directory and written-file services (install_listing,
+    install_write_files) on a bare fep.Fep, no checkpoint: SERVICES'
+    requests and answers.  The longrun_ipl state they wrap is restored
+    after.  Returns the parts that differ.
+
+    Observed injections (each into a private copy of ref/pimm, --check
+    run on it, 2026-11-27; the services lines listed are all of them):
+      the root and the way not served     the root and >sys>user: 204
+        (served_dirs: HOME's only)        answered 5, then 237 FepError
+                                          (4 lines)
+      no wildcard listing (fep.py's       237 FepError for "sys", "*",
+        "*.*" only)                       "cohlex", "*.mac" (4 lines)
+      the wildcard matched against the    "*.mac" lists nothing (1 line)
+        whole entry, version and all
+      directories not listed              "sys", "*", "cohlex" list
+                                          nothing, "*.*" lacks cohlex
+                                          (4 lines)
+      no versioned open                   a.mac.1 answered 5 (1 line)
+      ".." not resolved                   HOME>cohlex>.. answered 5, its
+                                          221 FepError (2 lines)
+      no 221 on a written file            FepError (1 line)"""
+    saved = (dict(L.HOME_FILES), dict(L._home), L.home_listing, L.kernel_file, dict(_abs))
+    try:
+        L.add_home_file('top.kl1', b'x.\n')
+        L.add_home_file('cohlex>a.mac', b'x.\n')
+        L.add_home_file('cohlex>b.kl1', b'x.\n')
+        serve_abs('>sys>user>cgs>c.kl1', b'x.\n')
+        # HOME with only these (the default home files set apart)
+        for n in [n for n in L.HOME_FILES if n not in ('top.kl1', 'cohlex>a.mac', 'cohlex>b.kl1')]:
+            del L.HOME_FILES[n]
+        install_listing()
+        f = fepm.Fep(lambda p: L.kernel_file(p), getb_unit=2, list_dir=lambda p: L.home_listing(p))
+        install_write_files(f)
+        bad = []
+        for what, (dev, msg), want in SERVICES:
+            msg = [fepm.jis(x) if isinstance(x, str) else x for x in msg]
+            try:
+                got = f.request(dev, msg)
+            except fepm.FepError as e:
+                got = ['FepError %s' % e]
+            got = [fepm.unjis(x) if isinstance(x, bytes) else x for x in got]
+            if got != want:
+                bad.append('services: %s: %r, not %r' % (what, got, want))
+        return bad
+    finally:
+        L.HOME_FILES.clear()
+        L.HOME_FILES.update(saved[0])
+        L._home.clear()
+        L._home.update(saved[1])
+        L.home_listing, L.kernel_file = saved[2], saved[3]
+        _abs.clear()
+        _abs.update(saved[4])
+
+
 def check(argv):
     """the checkpoint-free check (run_tests.sh): the oracles against the
     archives, the committed summary against PINNED, the injections"""
@@ -973,6 +1055,7 @@ def check(argv):
     results = load_results(src)
     miss = oracles()
     _out, bad = table(results)
+    bad += services_check()
     ok, got = injections(results) if not bad else (False, [])
     # the oracle lookup itself: a printed value altered (a digit added to
     # its archive form) must be reported missing for that row alone
@@ -995,7 +1078,8 @@ def check(argv):
     if miss or bad or not ok:
         print('ifs sweep check: FAIL')
         return 1
-    print('ifs sweep check: PASS (%d rows)' % len(ROWS))
+    print('ifs sweep check: PASS (%d rows; the runner\'s FEP services, %d requests)'
+          % (len(ROWS), len(SERVICES)))
     return 0
 
 

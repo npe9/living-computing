@@ -468,7 +468,14 @@ Weaker than the source allows, or to check:
   later requests on other devices are answered.
 - The device kinds are kept in separate tables (`files`, `appending`,
   `timers`); 111/112/221/222 on a file opened by 202 or 203 are not
-  served, though the syslog can send 111 at any time.
+  served, though the syslog can send 111 at any time. (2026-11-27:
+  `fep.py` is unchanged; the IFS sweep's runner, which serves 202
+  itself, answers 221 on its written files, and 204 on the root and
+  the directories on the way to a served one, 237 with any wildcard,
+  an open of a listed name with its `.1`, and a `..` in a 204 path,
+  each OURS, `ref/pimm/ifs_sweep.py` `install_listing`,
+  `install_write_files`, checked by its `--check`; `docs/ifs_apps.md`
+  section 1.)
 - `MAX_BUFFER` 16,000 where the kernel's link uses 16,384 from
   `scsi_manager` (§1.4 item 2): not the FEP's affair, noted there.
 - (2026-11-24, the commands past the shell.) The text code: `fep.py`

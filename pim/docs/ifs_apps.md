@@ -2,8 +2,8 @@
 
 *2026-11-26; rerun 2026-11-27 on master bc9a6dd3, after the KL1
 floating-point merge (which added `set_constant` and the float
-built-ins, the first sweep's two largest stops); two partial reruns
-the same day, after model changes (section 2).* Every application in the held ICOT Free Software tree
+built-ins, the first sweep's two largest stops); three partial reruns
+the same day, after model and runner changes (section 2).* Every application in the held ICOT Free Software tree
 (`nonlocal/ifs`, `nonlocal/IFS_MANIFEST.md`) that was written for PIMOS,
 run on the PIM/m reference model the way its own documentation says, and
 sorted by what happened. This is triage: no model feature was added for
@@ -61,6 +61,28 @@ the code where it is done:
   file's, INFERENCE). `ref/pimm/fep.py` is unchanged. These were
   FepError stops in the first sweep, so each was a FEP stand-in gap,
   not the application's.
+- **The directories on the way, wildcards, versions, `..` and 221 on a
+  written file (2026-11-27), in the runner only**: 204 on the root `>`
+  and on each directory on the way to a served one (`>sys`,
+  `>sys>user`), each directory listing the directories in it (by name,
+  no version: no period, a directory to `shell/utils/pathname.kl1`
+  `is_directory_or_file/4`); 237 with any wildcard, the listing's
+  entries that match it (`*` and `?`, a file matched without its
+  version, INFERENCE; fep.py serves `*.*` only, as the FEP tapes pin);
+  a served file opened by its listed name with `.1`; a `..` node in a
+  204 path resolved (INFERENCE that the FEP resolves it); and 221 on a
+  file the runner's 202 opened, `PSI::` + the path + `.1` (the request
+  as on a read file, `bios/fep_module/file_dvc.kl1` device_io1 318-321,
+  which every open's device reaches; the new file's version 1,
+  INFERENCE). The shell expands a wildcard from the root: for
+  `compile(["*.mac"])` in `>sys>user>pmpsi>cohlex` it opens
+  `directory(">", normal(Dir,_,_))` and asks `listing("sys", S)`, then
+  each directory down the path (`pathname.kl1` 183-189, `checkNode`
+  254-283), so a root the FEP refuses fails that unification inside
+  the shell's task (cohlex and dulcinea, OBSERVED: their `a goal failed
+  inside a shoen`, section 4). Each OURS (`install_listing`,
+  `install_write_files`), checked without a checkpoint by `--check`
+  (`services_check`, section 8).
 - **The Listener's take, typed out.** In the first sweep every `take`
   typed at the Listener stopped at `set_constant` (OBSERVED 2026-11-26;
   the instruction is on master since the float merge, and in the rerun
@@ -113,10 +135,10 @@ first sweep's counts:
 | RUNS-MATCHES | 0 | 0 |
 | RUNS-DIFFERS | 2 (`mgtp` and its second archive `mgtp_tarZ`) | 2 |
 | RUNS-NO-ORACLE | 2 (`objects`: all 16 held objects load; `multialign`: `load.pia` takes, `Load Succeeded`) | 1 |
-| STOPS | 7 | 10 |
+| STOPS | 5 | 10 |
 | STOPS(float) | 0 | 2 |
-| BUDGET | 5 (`laputa`, `ppss`, `colodex`, `rodin`, `mgtp_n`) | 1 |
-| NEEDS-SIMPOS | 23 (17 of them undetermined: budget spent while compiling) | 23 (10 undetermined) |
+| BUDGET | 7 (`laputa`, `ppss`, `colodex`, `rodin`, `mgtp_n`, `h907_nseq`, `dulcinea`) | 1 |
+| NEEDS-SIMPOS | 23 (20 of them undetermined: budget spent while compiling) | 23 (10 undetermined) |
 | NEEDS-OTHER | 7 | 7 |
 
 No row stops at `set_constant` or at a float built-in any more: of
@@ -170,6 +192,38 @@ stays NEEDS-OTHER); mgtp_n, multialign_run and aya+alt their budgets
 (150M, 60M, 400M; aya+alt past `ayagen.kl1` into `cllib.kl1`). Counts:
 STOPS 7, BUDGET 5 (mgtp_n), the rest unchanged; the undetermined are 22.
 
+**Third partial rerun, 2026-11-27, after `enqueue_goal_with_priority`
+of more than 11 arguments, the guard `list`, the model's
+`unification_failure` and the runner's directory and written-file
+services** (`ref_prio_list.py`; `--check`'s `services_check`; sections
+1 and 4). The twelve rows pinned at the four stops were rerun from the
+same prompt checkpoint (`--run ... h907_nogc h907_shell h907_nseq
+h907_nseq+alt dulcinea dulcinea+alt cohlex consort consort+alt desq
+desq+alt mmi`, twelve at once, 1,256 s, the two 400M rows the
+last) and merged with `--summary --update`. The runner's changes reach
+every row, so the rows that could meet them were looked for in the
+lines each row types and the command files it takes (no model run): a
+wildcard, a `..`, a `cd` or an absolute path; beyond these twelve only
+gdcc (a `*` in its query, not a path) and gog_kl1 (absolute file names,
+no wildcard: the shell expands only a wildcard from the root, and
+gog_kl1 never asked 204 of the root before) have one, so no other row
+was rerun. (`unification_failure` came after the rerun began; a model
+stop ends a run, and the only rows that met it are cohlex and
+dulcinea, which no longer do.) Their next stops: h907_nseq, h907_nogc
+and h907_shell run the query `main:main(50,ns,A)` to their budgets
+(150M, 400M, 400M), past the 12-argument goal; h907_nseq+alt too, its
+stop now the window's first error, the shell's `*** Syntax Error ***`
+on the `take("Nseq")` typed before the Listener (there since the first
+sweep, behind the model stop); dulcinea and dulcinea+alt compile past
+`rosi>meta>Copy`, `Share` and `Common`, unload `metalib` and are in
+`Bel>belief.kl1` at 150M; cohlex compiles `layout1.mac` and is in its
+86 `.kl1` files at 60M; consort, desq and their +alt rows unload
+`bignum_macro` and `long_macro` and compile on, in `c_util.kl1` at 60M;
+mmi, past `list` after `" Now intializing DIS?? "`, meets
+`enqueue_goal_to_processor` of 13 arguments with the node unbound
+(section 4). Counts: STOPS 5, BUDGET 7 (h907_nseq, dulcinea),
+NEEDS-SIMPOS 23 (20 undetermined); the undetermined are 27.
+
 **No application matches its printed result.** MGTP/G (No.22) runs to
 the end and prints the four 6-Queens models, all of them and each
 correct, with 21,497 reductions where the manual prints 18,759; R9
@@ -199,9 +253,9 @@ from the committed results.
 | mgtp | 22 | `solver-prover/pimos/MGTP/mgtp.tgz` | RUNS-DIFFERS | - |  | `compile; !package work; preotter; otter; !attach clause clause_trans_o; q6.clause; !exit; relink(hyper_o); relink(work::hyper_o); listener; default_package(w...` | `18759 reductions` (manualE.tex:235 (MGTP/G/MERC, N=6)) | 26,598,077 instr.; [6] ; doc mgtp/manualE.tex:86-128, 214-240 |
 | mgtp_tarZ | 22 (unlinked copy) | `solver-prover/pimos/mgtp.tar.Z` | RUNS-DIFFERS | - (code identical to mgtp.tgz: row mgtp) |  | (not run) | none |  |
 | mgtp_n | 91 | `solver-prover/pimos/MGTP-N/MGTP-N-KL1.tgz` | BUDGET | budget |  | `setenv task:package=work; listener; compile(["mgtpv0","util"]).; statistics.; print_length(100).; print_depth(20).; mgtpv0: main(1,5,3,[((0,0,0),p(i({4},i(n(...` | `Result = unsat` (INSTALL.j:106); `Ncalc = 18` (INSTALL.j:107) | 150,000,001 instr.; [5] ; doc INSTALL.j:25-130 |
-| h907_nseq | 97/H9-07 | `contract-research/97/DH9-07/H9-07.tgz` | STOPS | model: enqueue_goal_with_priority (0, 3000), 12 arguments | model: enqueue_goal_with_priority (0, 3000), 12 arguments | `listener; take("Nseq").; compile("SYN002-1-020dom_merc.kl1").; load("mgtpNS7").; ns(50).` | `Number of Failed Branches = 43782` (aitec19980402.log:26); `unsat` (aitec19980402.log:29) | 9,789,157 instr.; [28] ; doc nseq/pim/Nseq.com; documents/manual.tex:834; aitec19980402.log:1-33 |
-| h907_nogc | 97/H9-07 | `contract-research/97/DH9-07/H9-07.tgz` | STOPS | model: enqueue_goal_with_priority (0, 3000), 12 arguments |  | `listener; compile("SYN002-1-020dom_merc.kl1").; load("mgtpNS7").; main:main(50,ns,A).` | `Number of Failed Branches = 43782` (aitec19980402.log:26); `Number of Models = 0` (aitec19980402.log:27); `unsat` (aitec19980402.log:29) | 7,379,352 instr.; [3] ; doc aitec19980402.log:1-33 (the session as logged, Nseq.com's gc step left out) |
-| h907_shell | 97/H9-07 | `contract-research/97/DH9-07/H9-07.tgz` | STOPS | model: enqueue_goal_with_priority (0, 3000), 12 arguments |  | `package:define(mgtp,pimos); setenv task:package=mgtp; load("SYN002-1-020dom_merc"); load("mgtpNS7"); relink(main,problem); listener; default_package(mgtp).; ...` | `Number of Failed Branches = 43782` (aitec19980402.log:26); `Number of Models = 0` (aitec19980402.log:27); `unsat` (aitec19980402.log:29) | 3,406,870 instr.; [2] ; doc aitec19980402.log:1-33 with the held objects: the problem's compile stops at the shell as at the Listener (wait_value of a variable with itself, OBSERVED 2026-11-26), so the held SYN002-1-020dom_merc.sav is loaded instead (aliases.com l_syn2), then mgtpNS7.sav, relink(main,problem) (aliases.com r), and the query at the Listener |
+| h907_nseq | 97/H9-07 | `contract-research/97/DH9-07/H9-07.tgz` | BUDGET | budget | compile: Shell>> *** Syntax Error *** | `listener; take("Nseq").; compile("SYN002-1-020dom_merc.kl1").; load("mgtpNS7").; ns(50).` | `Number of Failed Branches = 43782` (aitec19980402.log:26); `unsat` (aitec19980402.log:29) | 150,000,001 instr.; [28] ; doc nseq/pim/Nseq.com; documents/manual.tex:834; aitec19980402.log:1-33 |
+| h907_nogc | 97/H9-07 | `contract-research/97/DH9-07/H9-07.tgz` | BUDGET | budget |  | `listener; compile("SYN002-1-020dom_merc.kl1").; load("mgtpNS7").; main:main(50,ns,A).` | `Number of Failed Branches = 43782` (aitec19980402.log:26); `Number of Models = 0` (aitec19980402.log:27); `unsat` (aitec19980402.log:29) | 400,000,001 instr.; [3] ; doc aitec19980402.log:1-33 (the session as logged, Nseq.com's gc step left out) |
+| h907_shell | 97/H9-07 | `contract-research/97/DH9-07/H9-07.tgz` | BUDGET | budget |  | `package:define(mgtp,pimos); setenv task:package=mgtp; load("SYN002-1-020dom_merc"); load("mgtpNS7"); relink(main,problem); listener; default_package(mgtp).; ...` | `Number of Failed Branches = 43782` (aitec19980402.log:26); `Number of Models = 0` (aitec19980402.log:27); `unsat` (aitec19980402.log:29) | 400,000,001 instr.; [2] ; doc aitec19980402.log:1-33 with the held objects: the problem's compile stops at the shell as at the Listener (wait_value of a variable with itself, OBSERVED 2026-11-26), so the held SYN002-1-020dom_merc.sav is loaded instead (aliases.com l_syn2), then mgtpNS7.sav, relink(main,problem) (aliases.com r), and the query at the Listener |
 | aya | 73 | `symbolic-proc/pimos/aya.tar.Z` | STOPS | missing: !ERROR! unable to open file : ayaparse | budget | `take("ayainst.com"); compile; prime.aya; !exit; listener; prime:top(20).` | `2 3 5 7 11 13 17 19` (doc/INSTALL:55-63) | 150,000,001 instr.; =>  :- module sceneCl .; doc doc/INSTALL:18-63 |
 | gdcc | 18 | `kbms-clp/pimos/gdcc.tar.gz` | STOPS | compile: [12] *** Syntax Error *** |  | `take("gdcc.init"); alloc(0,X,Y), alg#X**2 + Y**2 = 1, alg#(X-1)**2 + (Y-1)**2 = 1.` | `Y = -X + 1` (README:55); `X**2 = X` (README:56) | 44,162,140 instr.; Shell>> ; doc README:37-56 |
 | laputa | 51 | `natural-lang/pimos/laputa.tar.Z` | BUDGET | budget |  | `compile([{KL1}])` | none | 200,000,001 instr.; Shell>> ; doc INSTALL:23; jikken.data:5-60 |
@@ -211,16 +265,16 @@ from the committed results.
 | ldlib | 74 | `symbolic-proc/pimos/ldlib.tar.Z` | STOPS | compile: !ERROR![misc.kl1@0] *** Syntax Error *** | compile: !ERROR![misc.kl1@0] *** Syntax Error *** | `listener; take("Make.com").; compile_all.` | none | 80,000,001 instr.; !ERROR! This module can't be accessed :pimosx; doc INSTALL:11-24 |
 | ppss | 30 | `solver-prover/pimos/ppss.tar.Z` | BUDGET | budget |  | `compile(["a_builtin","andTran2","andor_io","apool","atpimos","ioutil","mode_analyzer","orTran","ppri","rand1024","spcc","tandor","top","utandor"]); listener;...` | none | 80,000,001 instr.; =>  :- module andor_top .; doc INSTALL:45-47; README:53-66 |
 | colodex | 66 | `exper-apps/pimos/colodex.tar.Z` | BUDGET | budget | budget | `listener; take("s.com").; test_ex:t.` | none | 80,000,001 instr.; Compile File : PSI::>sys>user>pmpsi>process2.kl1.1; doc install:23-25; Par-Par/test_ex.kl1:14 |
-| mmi | 71 | `exper-apps/pimos/mmi.tar.Z` | STOPS | model: list at 93210832 |  | `setenv task:package=work; listener; load("system.sav").; main:go.; 0.; 10.` | none | 31,059,119 instr.; [2] " Now intializing DIS?? "; doc README:120-176 |
+| mmi | 71 | `exper-apps/pimos/mmi.tar.Z` | STOPS | model: enqueue_goal_to_processor (7, 3860442298), 13 arguments |  | `setenv task:package=work; listener; load("system.sav").; main:go.; 0.; 10.` | none | 33,908,393 instr.; [2] " Now intializing DIS?? "; doc README:120-176 |
 | rodin | 70 | `exper-apps/pimos/rodin.tar.Z` | BUDGET | budget | memory: RuntimeError: heap full: past the heap limit | `listener; take("prog>compile>rodin").` | none | 150,000,001 instr.; [7] ProgFile =["prog>move>from_conf","prog>move>from_exp","prog>move>find_util","prog>move; doc INSTALL:122-135; USAGE:31-64 |
-| dulcinea | 42 | `natural-lang/pimos/dulcinea.tar.Z` | STOPS | model: a goal failed inside a shoen | model: a goal failed inside a shoen | `listener; take "install.com".` | none | 18,630,536 instr.; meta:[25]% compile["rosi>meta>Copy>*.kl1","rosi>meta>Share>*.kl1","rosi>meta>Common>*.kl1"; doc INSTALL:6-9; install.com:1-23; doc/manual-e:11-37 |
+| dulcinea | 42 | `natural-lang/pimos/dulcinea.tar.Z` | BUDGET | budget | budget | `listener; take "install.com".` | none | 150,000,001 instr.; =>  :- module belief .; doc INSTALL:6-9; install.com:1-23; doc/manual-e:11-37 |
 | aligndp | 55 | `exper-apps/pimos/aligndp.tar.Z` | NEEDS-SIMPOS | budget |  | `compile([{KL1}])` | none | 60,000,001 instr.; =>  :- module input .; doc INSTALL:21-25; dp_color.kl1:57 string_io |
 | alignsa | 56 | `exper-apps/pimos/alignsa.tar.Z` | NEEDS-SIMPOS | budget |  | `compile([{KL1}])` | none | 60,000,001 instr.; =>  :- module sa .; doc INSTALL:22-27; io3.kl1:31-34 string_io |
 | cbcdss | 69 | `exper-apps/pimos/cbcdss.tar.Z` | NEEDS-SIMPOS | budget |  | `compile([{KL1}])` | none | 60,000,001 instr.; Shell>> ; doc INSTALL:48-50; car.kl1:20-65 string_io car##car_top |
 | celplace | 57 | `exper-apps/pimos/celplace.tar.Z` | NEEDS-SIMPOS | budget |  | `compile(["top","main","an1mat1","an_module1","init","util","overlap","rn"])` | none | 60,000,001 instr.; Compile File : PSI::>sys>user>pmpsi>util.kl1.1; doc INSTALL:128-137; top.kl1:43 string_io |
-| cohlex | 65 | `exper-apps/pimos/cohlex.tar.Z` | NEEDS-SIMPOS | model: a goal failed inside a shoen |  | `take("cohlex>Makefile")` | none | 479,022 instr.;  The value of compile: distribution is [1] . ; doc INSTALL:17-27; alien3.kl1:14 string_io |
-| consort | 63 | `exper-apps/pimos/consort.tar.Z` | NEEDS-SIMPOS | fep: FepError: device 54: request [221] | fep: FepError: device 52: request [221] | `listener; take("kl1_source>comp_4p.com").` | none | 22,857,168 instr.; [5] unload([bignum_macro],"kl1>bignum_macro") .; doc INSTALL:12-20; main.kl1:23,44 string_io user##esp_io_kl1 (desq's ESP) |
-| desq | 64 | `exper-apps/pimos/desq.tar.Z` | NEEDS-SIMPOS | fep: FepError: device 54: request [221] | fep: FepError: device 52: request [221] | `listener; take("kl1_source>comp_4p.com").` | none | 22,857,168 instr.; [5] unload([bignum_macro],"kl1>bignum_macro") .; doc INSTALL:13-49 |
+| cohlex | 65 | `exper-apps/pimos/cohlex.tar.Z` | NEEDS-SIMPOS | budget |  | `take("cohlex>Makefile")` | none | 60,000,001 instr.;  The value of compile: distribution is [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] . ; doc INSTALL:17-27; alien3.kl1:14 string_io |
+| consort | 63 | `exper-apps/pimos/consort.tar.Z` | NEEDS-SIMPOS | budget | budget | `listener; take("kl1_source>comp_4p.com").` | none | 60,000,001 instr.; =>  :- module c_util .; doc INSTALL:12-20; main.kl1:23,44 string_io user##esp_io_kl1 (desq's ESP) |
+| desq | 64 | `exper-apps/pimos/desq.tar.Z` | NEEDS-SIMPOS | budget | budget | `listener; take("kl1_source>comp_4p.com").` | none | 60,000,001 instr.; =>  :- module c_util .; doc INSTALL:13-49 |
 | examds | 67 | `exper-apps/pimos/examds.tar.Z` | NEEDS-SIMPOS | budget |  | `take("mdl_demo>cmpMDL5gc.inf")` | none | 60,000,001 instr.; Shell>> ; doc INSTALL:481-535; mdl_demo/ReadMe.doc:10-30 (model_main:run, the KL1-alone learning part) |
 | gog_kl1 | 53 | `exper-apps/pimos/gog-kl1.tar.Z` | NEEDS-SIMPOS | budget | budget | `listener; take("make.com").` | none | 60,000,001 instr.; [4] compile[">sys>user>cgs>capcd",">sys>user>cgs>capture",">sys>user>cgs>client",">sys>use; doc INSTALL.e:104-107; commu.kl1:34-35 string_io |
 | gpsstap | 60 | `exper-apps/pimos/gpsstap.tar.Z` | NEEDS-SIMPOS | budget |  | `take("async.com")` | none | 60,000,001 instr.; =>  :- module planUtil .; doc INSTALL:207-223; planTop.kl1:183 string_io |
@@ -284,29 +338,25 @@ of applications each stands in front of. Generated by `--markdown`
 
 | Rank | First stop | Applications | Each, with its next stop (second try) |
 |---|---|---|---|
-| 1 | `fep: FepError: device N: request [221]` | 2 | consort (next: fep: FepError: device N: request [221]), desq (next: fep: FepError: device N: request [221]) |
-| 2 | `model: a goal failed inside a shoen` | 2 | dulcinea (next: model: a goal failed inside a shoen), cohlex |
-| 3 | `compile: !ERROR![misc.kl1@0] *** Syntax Error ***` | 1 | ldlib (next: compile: !ERROR![misc.kl1@0] *** Syntax Error ***) |
-| 4 | `compile: [12] *** Syntax Error ***` | 1 | gdcc |
-| 5 | `damaged: about 390 of the 590 files README lists are missing ` | 1 | helic2 |
-| 6 | `fep: FepError: device N: request [801]` | 1 | editalign (next: fep: FepError: device N: request [801]) |
-| 7 | `float: b_floating_point_multiply waiting on an unbound input ` | 1 | mssd |
-| 8 | `missing: !ERROR! unable to open file : ayaparse` | 1 | aya (next: budget) |
-| 9 | `missing: !ERROR! unable to open file : chart_ctl` | 1 | pmonitor (next: missing: !ERROR! unable to open file : chart_ctl) |
-| 10 | `model: clause_info at N` | 1 | dpool |
-| 11 | `model: enqueue_goal_with_priority ` | 1 | h907_nseq (next: model: enqueue_goal_with_priority ) |
-| 12 | `model: list at N` | 1 | mmi |
-| 13 | `other: GDCC source only ` | 1 | robot |
-| 14 | `other: GDCC v2.5 programs ` | 1 | p_chal |
-| 15 | `other: Quixote Ver.III ` | 1 | qxt_motif |
-| 16 | `other: a UNIX client ` | 1 | quixote |
-| 17 | `simpos: the DCG-to-KL1 translator is ESP ` | 1 | pax |
+| 1 | `compile: !ERROR![misc.kl1@0] *** Syntax Error ***` | 1 | ldlib (next: compile: !ERROR![misc.kl1@0] *** Syntax Error ***) |
+| 2 | `compile: [12] *** Syntax Error ***` | 1 | gdcc |
+| 3 | `damaged: about 390 of the 590 files README lists are missing ` | 1 | helic2 |
+| 4 | `fep: FepError: device N: request [801]` | 1 | editalign (next: fep: FepError: device N: request [801]) |
+| 5 | `float: b_floating_point_multiply waiting on an unbound input ` | 1 | mssd |
+| 6 | `missing: !ERROR! unable to open file : ayaparse` | 1 | aya (next: budget) |
+| 7 | `missing: !ERROR! unable to open file : chart_ctl` | 1 | pmonitor (next: missing: !ERROR! unable to open file : chart_ctl) |
+| 8 | `model: clause_info at N` | 1 | dpool |
+| 9 | `model: enqueue_goal_to_processor ` | 1 | mmi |
+| 10 | `other: GDCC source only ` | 1 | robot |
+| 11 | `other: GDCC v2.5 programs ` | 1 | p_chal |
+| 12 | `other: Quixote Ver.III ` | 1 | qxt_motif |
+| 13 | `other: a UNIX client ` | 1 | quixote |
+| 14 | `simpos: the DCG-to-KL1 translator is ESP ` | 1 | pax |
 
-undetermined, the budget spent with no stop (22): mgtp_n, laputa, ppss, colodex (next: budget), rodin (next: memory: the heap full), aligndp, alignsa, cbcdss, celplace, examds, gog_kl1 (next: budget), gpsstap, logisim (next: budget), lsirout, seqanal (next: budget), sme, exreps, kl1graph, strtgysh, argus_v, voronoi, kappa_p
+undetermined, the budget spent with no stop (27): mgtp_n, h907_nseq (next: compile: Shell>> *** Syntax Error ***; budget), laputa, ppss, colodex (next: budget), rodin (next: memory: the heap full), dulcinea (next: budget), aligndp, alignsa, cbcdss, celplace, cohlex, consort (next: budget), desq (next: budget), examds, gog_kl1 (next: budget), gpsstap, logisim (next: budget), lsirout, seqanal (next: budget), sme, exreps, kl1graph, strtgysh, argus_v, voronoi, kappa_p
 
 every stop met, first or next (applications it stands in front of):
-- `fep: FepError: device N: request [221]`: 2 (consort, desq)
-- `model: a goal failed inside a shoen`: 2 (dulcinea, cohlex)
+- `compile: Shell>> *** Syntax Error ***`: 1 (h907_nseq)
 - `memory: the heap full`: 1 (rodin)
 
 What each is:
@@ -405,11 +455,30 @@ What each is:
   runner's own collection comes first at 50M and the alert does not
   fire within it: a gap of the runner's heap (OURS), recorded, not
   changed. Next: all four H9-07 rows (h907_nseq, +alt, h907_nogc,
-  h907_shell) now reach `enqueue_goal_with_priority (0, 3000), 12
-  arguments` in the query: a goal of 12 arguments with a priority,
-  where the model takes at most 11 (`pimm.py`
-  `i_enqueue_goal_with_priority`, the spread of the arguments from the
-  11th on not done for it).
+  h907_shell) reached `enqueue_goal_with_priority (0, 3000), 12
+  arguments` in the query (below).
+- **`enqueue_goal_with_priority` of 12 arguments** (the four H9-07
+  rows; done 2026-11-27 on both models, `ref_prio_list.py`). A goal of
+  12 with `@priority(3000)`: the compiler packs a goal with a pragma as
+  it packs a plain one, the arguments from the 11th on in a vector in
+  the 11th (PIMOS `library/compiler/newnorm.kl1` 907-909,
+  `normalize_body_goal(Goal@Pragma)` calls `pack_body_goal` first;
+  `pack.kl1` 13-29), and the instruction's arity is the unpacked
+  goal's (newnorm.kl1 893-901), so the vector is spread as
+  `enqueue_goal` spreads it; the priority is still dropped. Next: the
+  query runs to the budget on h907_nseq, h907_nogc and h907_shell
+  (undetermined); h907_nseq+alt's stop is now its window's first error
+  (section 2's third rerun).
+- **The guard `list`** (mmi; done 2026-11-27 on both models,
+  `ref_prio_list.py`): 23:E3, "Succeeds if X is a list", suspends on an
+  unbound X, fails on anything else (PIMOS manual `e-builtin.tex`
+  62-68, PRINTED); `[]` is not a list (PDSS `emulate.c` 685, VPIM
+  `klb_index.psl.c` 117-127). Next: **`enqueue_goal_to_processor` of
+  13 arguments with the node unbound** (mmi, now first): `Goal@node(P)`
+  with P not yet bound waits on P through the stub `to_processor N`,
+  which `asm/pimm_stubs.py` has for N up to 11 (`TO_PROCESSOR_MAX`);
+  a packed goal of 13 does not fit it. Not built here (the stubs are
+  shared with the Bluespec core's layout).
 - **A syntax error on GDCC's documented query** (gdcc, new): after the
   take, GDCC's window is a KL1 Listener with `change_macro(gdcc::
   gdcc_expander)` and the rest of `gdcc.com` (OBSERVED: `End of take`);
@@ -421,17 +490,35 @@ What each is:
 - **`clause_info`** (dpool): an instruction the model lacks, met at
   `dp_bench:test_pool` after Distributed Pool's objects and benchmark
   have loaded and compiled.
-- **`a goal failed inside a shoen`** (cohlex; dulcinea since 2026-11-27,
-  on its `Copy`, `Share` and `Common` compile, not examined): a goal failure the model
-  refuses to pass on, right after `setenv compile:distribution=[1]`, on
-  the wildcard compile `compile(["*.mac"])` in the subdirectory. It
-  comes directly after two services of the runner (the directory's
-  pathname, INFERENCE, and the subdirectory's listing, OURS), so it may
-  be theirs rather than the model's: not separated.
-- **FEP `fep#pathname` (221) on a written file** (consort, desq; new
-  2026-11-27): `unload([bignum_macro],"kl1>bignum_macro")` after the
-  macro files load asks the FEP stand-in for a pathname it does not
-  give on that device (`fep.py` PATHNAME, R7: on a read only).
+- **`a goal failed inside a shoen`** (cohlex, dulcinea; separated and
+  gone 2026-11-27). OBSERVED from a private copy logging the failure:
+  a body unification of the 4-vector `normal(Dir,_,_)` with the atom
+  `abnormal` in the file request filter's `-directory$$$enu$1/4`
+  (`server/fep/file/fileRfil.kl1` 117-126), right after the FEP
+  stand-in answered 204 on the root `>` with 5. The shell's wildcard
+  expansion walks an absolute path from the root and writes
+  `directory(">", normal(Dir,_,_))` (`shell/utils/pathname.kl1`
+  183-189): it takes the root for granted, so PIMOS on a FEP that
+  refuses it would report a `unification_failure` there, correctly.
+  The cause was the stand-in's (the runner's directory service had no
+  root); both rows now get the root and the directories on the way,
+  237 with a wildcard, the listed `name.1` opened and `..` resolved
+  (section 1). The model's half: a failed body unification inside a
+  shoen was refused; it is now reported as the exception
+  `unification_failure` (10, Info `{Pe, DataX, DataY}`, `kernel/
+  builtin/excpt_tbl.kl1` 56, 209-215; VPIM
+  `f_reduce_exception_handler.psl.c` 79-96) on both reference models
+  (`ref_prio_list.py`; the Bluespec core has no such path). Next:
+  their compiles run to the budget (undetermined).
+- **FEP `fep#pathname` (221) on a written file** (consort, desq; done
+  2026-11-27, in the runner, where the written files are): the same
+  request as on a read file (`bios/fep_module/file_dvc.kl1`
+  device_io1 318-321, reached from every open of device_create/5,
+  21-44); answered `PSI::` + the path + `.1` (the new file's version,
+  INFERENCE). `fep.py` serves no write-open, so the answer lives beside
+  the runner's 202, not in the stand-in (a DECLARED placement; its
+  tapes are unchanged). Next: both unload both macro files and compile
+  on to the budget.
 - **FEP `fep#create_socket` (801)** (editalign, now first; its take
   loads and `dp_new:go` asks for the socket): the X/Motif front end
   over TCP; NEEDS-OTHER anyway.
@@ -447,11 +534,13 @@ What each is:
   plain rodin row (the take at the Listener) is still compiling at its
   150M budget. A limit of the runner's heap, not of the model's
   instruction set: not separated whether a larger limit would fit.
-- **Undetermined (the budget spent, no stop): 22 applications** (11 in
+- **Undetermined (the budget spent, no stop): 27 applications** (11 in
   the first sweep; new: ppss, colodex, rodin, aligndp, celplace,
   examds, gog_kl1, logisim, seqanal, each past its old set_constant or
   float stop; kappa_p past `wait_value` on a module; mgtp_n, running
-  its query, past `@node`). Most were still compiling: the PIMOS compiler on the
+  its query, past `@node`; h907_nseq past the 12-argument goal;
+  dulcinea and cohlex past the root directory; consort and desq past
+  221). Most were still compiling: the PIMOS compiler on the
   model costs about 50,000 instructions a source line (mgtp_n: 1,871
   lines compiled and its query begun in 104,283,213; aya's 14,441 lines
   took 371M to its stop, OBSERVED), and laputa has 60,483 lines,
@@ -551,17 +640,18 @@ checkpoint.
 
 `--check` (in `run_tests.sh`) makes these, in its own process, against
 the committed summary; each must be reported for exactly the rows
-named. OBSERVED 2026-11-27, against the summary after the second
+named. OBSERVED 2026-11-27, against the summary after the third
 partial rerun (the stop rows are the first row with a model stop, now
-h907_nseq: mgtp_n has none since its query runs to its budget):
+dpool: mgtp_n and the H9-07 rows have none since their queries run to
+their budgets):
 
 | Injection | Reported |
 |---|---|
-| h907_nseq's stop removed (`nothing left to run`) | h907_nseq |
-| h907_nseq's stop made a float stop (and classified `float:`) | h907_nseq |
+| dpool's stop removed (`nothing left to run`) | dpool |
+| dpool's stop made a float stop (and classified `float:`) | dpool |
 | mgtp's printed value made its own window line, `21497 reductions` (the match path) | mgtp |
 | `needs simpos` dropped from aligndp | aligndp |
-| ERROR_MARK made to match nothing (the window's error lines unseen) | aya, gdcc, ldlib, ldlib+alt, pmonitor, pmonitor+alt |
+| ERROR_MARK made to match nothing (the window's error lines unseen) | aya, gdcc, h907_nseq+alt, ldlib, ldlib+alt, pmonitor, pmonitor+alt |
 | mgtp's printed value altered (the archive lookup, `oracles`) | mgtp |
 
 And one in the source (applied, run, reverted from a copy, `--check`
@@ -575,7 +665,23 @@ also checks that the injected stop is classified `float:`, and with
 the branch removed `--check` FAILs on that case alone (OBSERVED).
 After the second partial rerun the summary has a float stop again
 (mssd), and the same injection makes `--check` FAIL on mssd's pin
-alone (OBSERVED 2026-11-27, a private copy). The oracle check finds all 19 printed values in the archive files their
+alone (OBSERVED 2026-11-27, a private copy; again after the third
+partial rerun).
+
+`--check` also runs `services_check`: the runner's directory and
+written-file services (section 1) on a bare `fep.Fep`, no checkpoint,
+16 requests and their answers (the root and `>sys>user` opened and
+listed, `listing("sys")`, `"*"`, `"cohlex"`, `"*.*"` with the
+directory in it, `"*.mac"`, `a.mac.1` opened and `a.mac.2` not,
+`HOME>cohlex>..` opened and its pathname, `>sys>other` refused, 221 on
+a written file). Injections into a private copy, OBSERVED 2026-11-27,
+the services lines reported all of them: the root and the way not
+served (4: the root and `>sys>user` answered 5, their 237 FepError);
+no wildcard listing (4: 237 FepError for each wildcard but `*.*`); the
+wildcard matched against the whole entry, version and all (1:
+`*.mac` empty); directories not listed (4); no versioned open (1);
+`..` not resolved (2: 5, and 221 FepError); no 221 on a written file
+(1). Each is written in `services_check`'s docstring. The oracle check finds all 19 printed values in the archive files their
 rows cite.
 
 ## 9. Open
@@ -592,18 +698,26 @@ rows cite.
   (`PimmStages.bsv` 1016-1017: one variable twice `E unimp`; rule
   `toProcessor`, 1502-1513: a node other than 0 `E unimp`; no
   set_heap_alert at all): no lockstep reaches them.
+- `enqueue_goal_with_priority` of more than 11 arguments, the guard
+  `list`, `unification_failure` inside a shoen, and the runner's root
+  directory, wildcard listing, versioned opens, `..` and 221 on a
+  written file: done 2026-11-27 (third partial rerun, section 2). The
+  Bluespec core still refuses more than 11 arguments with a priority
+  (`PimmStages.bsv`, `E unimp`), has no `list` guard and no
+  unification failure path: no lockstep reaches them.
 - The heap alert and the runner's limit: get_heap_size's Size (67.1M)
   is not the sweep's 50M heap limit, so H9-07's 80% alert cannot fire
   before the runner collects; whether Size should report the limit
   when one is set is open (OURS either way).
-- The first stops now, ranked (section 4), not built here: two tied
-  at 2 (the FEP pathname on a written file, a goal failure inside a
-  shoen), then one each, among them `enqueue_goal_with_priority` of 12
-  arguments (h907_nseq, standing in front of all four H9-07 rows), the
-  guard `list` (mmi), a float built-in waiting with no stub (mssd),
+- The first stops now, ranked (section 4), not built here: one each,
+  among them `enqueue_goal_to_processor` of 13 arguments with the node
+  unbound (mmi: the stub `to_processor N` goes to 11, `asm/pimm_stubs.py`
+  `TO_PROCESSOR_MAX`; the packed goal would need its arity carried
+  through the wait), a float built-in waiting with no stub (mssd),
   ldlib's syntax error on `misc.kl1`, `clause_info` (dpool), the heap
-  limit (rodin+alt), GDCC's query syntax.
-- The undetermined twenty-one: a longer run each (`--budget`), hours apiece
+  limit (rodin+alt), GDCC's query syntax, h907_nseq+alt's shell syntax
+  error on `take("Nseq")` (behind the model stop until now).
+- The undetermined twenty-seven: a longer run each (`--budget`), hours apiece
   at the measured rate; or the Bluesim core, if faster.
 - The multi-PE four (mgtp_n, mmi, H9-07, multialign) run on one PE now
   (their `@node` goals made here); on the multi-PE model (`pimm_pe.py`),
@@ -613,7 +727,12 @@ rows cite.
   expander) and the query typed there is a syntax error; whether the
   Listener's reader lacks GDCC's operators or the runner types the
   query into the wrong reader is not separated.
-- cohlex: whether its goal failure is the runner's directory services or
-  the model's.
+- cohlex: separated (section 4): the runner's directory service had no
+  root; the model's own refusal of the failure is gone too.
+- The runner's directory services are INFERENCE in form: what a PSI's
+  FEP lists in `>` and `>sys>user` (here only the directories on the
+  way to a served one), how its 237 matches a wildcard (here fnmatch's,
+  a file without its version), that it resolves `..`; and they stay in
+  the runner, not `fep.py`, whose tapes pin 237 with `*.*` alone.
 - mendels: type the user directory at its prompt and see how far the
   KL1 half goes without the ESP package.
