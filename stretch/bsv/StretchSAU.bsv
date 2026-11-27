@@ -552,6 +552,24 @@ interface SAU;
   // which responseReady() has waited for.  The E-box charges it in place
   // of the row's byte term (StretchCore's rl_exec_resume).  Invalid for
   // every request that was not stepped.
+  // THE TERMINATION (fidelity_plan.md A5 step 1, 2026-11-26).  The part
+  // of an instruction's E-box time that the unit does not yet step -- what
+  // is left of the timing row once the unit's own clocks are taken off,
+  // or the whole row for an instruction the unit does not step at all --
+  // runs here, from the answer, as the row's fixed part does on the
+  // machine ("END OPN").  It was StretchCore's E-box countdown register.  The
+  // look-ahead's head waits on terminated() of BOTH units (the E-box is
+  // one unit to Perf. Char. Vol. 1 printed pp.3-17/3-18); it is
+  // independent of the datapath state, so a request (an I-box
+  // instruction's, beside) may run during it.
+  //   terminate(n) -- the instruction just completed owes n more clocks;
+  //   holdTerm()   -- this clock does not count (StretchCore calls it in
+  //                   the clock after one in which no instruction-unit arm
+  //                   fired, which is when that register did not count down);
+  //   terminated() -- nothing is owed.
+  method Action terminate(Bit#(16) n);
+  method Action holdTerm();
+  method Bool terminated();
   method Maybe#(Bit#(16)) ownClocks();
 endinterface
 
@@ -560,6 +578,17 @@ typedef enum { SauIdle, SauAddPass, SauRecomp, SauMulPass, SauToDec, SauToBin, S
 
 (* synthesize *)
 module mkSAU(SAU);
+
+  // THE TERMINATION (the interface note).  rg_term holds the clocks owed
+  // PLUS ONE: terminate() writes port 1 after this clock's reads, and
+  // rl_term takes one off at the start of every following clock that is
+  // not held, so terminated() -- read on port 1, after rl_term -- sees in
+  // clock c+k exactly what that register held in clock c+k (n, n-1, ... 0).
+  Reg#(Bit#(16)) rg_term[2] <- mkCReg(2, 0);
+  PulseWire      pw_termHold <- mkPulseWire;
+  rule rl_term (rg_term[0] != 0 && !pw_termHold);
+    rg_term[0] <= rg_term[0] - 1;
+  endrule
   // CREGS WITH THE PORT ASSIGNMENT AS THE SCHEDULE, for the reason
   // mkDivBox gives (StretchPAU.bsv, now mkPAU): the rules use port 0 and every
   // method port 1, so the rules come before the methods and a caller
@@ -852,6 +881,14 @@ module mkSAU(SAU);
 
   method Maybe#(Bit#(16)) ownClocks() =
     (rg_steps[1].passes != 0 || rg_cst[1].fixed != 0) ? tagged Valid rg_own[1] : tagged Invalid;
+  method Action terminate(Bit#(16) n);
+    rg_term[1] <= n + 1;
+  endmethod
+  method Action holdTerm();
+    pw_termHold.send;
+  endmethod
+  method Bool terminated() = (rg_term[1] == 0);
+
 endmodule
 
 // =====================================================================

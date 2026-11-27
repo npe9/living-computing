@@ -16598,11 +16598,27 @@ run "JA BM6A unique address listing bit-exact comparison" python3 verify_ja_bm6a
 run "JA BM6A unique address: the upper memories (UPPER)" ./run_ja_bm6a.sh UPPER
 run "JA BM6A unique address: one whole pass (PASS)" ./run_ja_bm6a.sh PASS
 
+# IBM's JA BB6B "WORST PATTERN TEST" (August 15, 1961), the third of the
+# three memory diagnostics.  The listing oracle checks PDF pp.4-20 (574
+# checks; no row torn).  The program's verdict is a hang on BRGZ,$ when
+# a checkerboard word reads back wrong, and its success sign is the pass
+# counter in X14 (writeup PDF pp.1-2), so check_ja_bb6b_dump.py reads
+# the stop PC, X14, and every word of core against the image computed
+# from the program's own steps.  Stages: CHECK (Part I's checkerboard
+# and inverted checkerboard through 100000-277013, both checked) and
+# PASS (one whole pass, both halves).  A third stage, INJECT (Part I's
+# single-error-injection part; ~11 min), passes and is run by hand.
+# INJECTION RECORD: see check_ja_bb6b_dump.py's header.
+run "JA BB6B worst pattern listing bit-exact comparison" python3 verify_ja_bb6b_listing.py
+run "JA BB6B worst pattern: the upper checkerboards (CHECK)" ./run_ja_bb6b.sh CHECK
+run "JA BB6B worst pattern: one whole pass (PASS)" ./run_ja_bb6b.sh PASS
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
 rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv "$BSV_DIR"/StretchLoaderOctalTb.bsv
 rm -f "$BSV_DIR"/StretchJaBp6a*Tb.bsv
 rm -f "$BSV_DIR"/StretchJaBm6a*Tb.bsv
+rm -f "$BSV_DIR"/StretchJaBb6b*Tb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 
