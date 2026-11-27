@@ -42,8 +42,9 @@ whole, 16 words; the stop is `proceed`, the last instruction: section
   where they stop, as they should); and the one-cell allocator `3320`
   called as a microsubroutine (EXECUTED, 4 words: W1c = `{REF, cell}`,
   the cell `UNDF 0` as `pimm.py`'s `new_var` makes it, R19 left holding
-  the link, one memory write; its last-cell arm stops at `3324` on R05,
-  as it should). `measure.py`'s pins (the counts behind the rules) are
+  the link, one memory write; its last-cell arm runs into the refill and
+  stops at `3365` on W0d, as it should; R05 there is the EM1 immediate,
+  `pu.S1_IMM`). `measure.py`'s pins (the counts behind the rules) are
   checked in the same run.
 - Multi-word routines that run as held: `set_nil`, `write_nil` (2
   words: a stamp, then a write and a structure-pointer step),
@@ -239,7 +240,12 @@ editing the file.
 
 **U2 not reached. Furthest point: 15 of 16 instructions executed and
 matched (49 held words), then a stop at the sixteenth, `proceed`.** The
-seventh session (2026-11-27) took it from 14 of 16: `get_value 1,2,0`
+eighth session (2026-11-27) read the datapath from rassy's own tables
+(the ALU sources, the constant, the EM immediates, `ext_ir`) and ran
+`proceed`'s routine whole in 15 side cases against `pimm.py`'s `pick`
+("Next, for U2"): the next goal's code, arguments, record and queue
+match; append itself stays at 15 of 16, with the reason given there.
+The seventh session (2026-11-27) took it from 14 of 16: `get_value 1,2,0`
 (nil against the unbound Z1) runs the general unifier whole (16 words,
 row 14 below): `case_tag_setup` in general (EM1 `30`-`3f`), JMPF b
 decided as a conditional call, the dereference subroutine `0c15` /
@@ -341,13 +347,17 @@ write both FAIL at instruction 0).
 | `RULES['absent_read_poison']`: a read of a cell never written gives the MDR the value POISON; using it (ALU input, write data) raises | OURS | `34a2` | `34a2` reads [MAR1] where MAR1 holds the element itself (an atom, not an address); only the REF rows use what it reads. Injection `absent_read_raise` (the old rule): STOP at `34a2`. `check_pu.py`'s injections give the same results as before |
 | `read_variable`'s MAR1 = R02 (`setup.FORMS`) | OURS, with support | `34a0` | the entry's OS1F is 6 and the thesis's list of S-stage set-up sources (printed p.128) numbers (6) the structure pointer S, as it numbers (4) WR, which fits OS1F 4 in every ODPF 1 entry run (R(10 \| EMO1)); but `read_atom`/`read_integer` have OS1F 5, so the numbering is not fitted. DFF 2 (printed p.127: the R stage's three fetch kinds) is not used on this path: `34a0` reads [MAR1] itself and nothing reads what an S-stage fetch would leave in MDR1 before `34a0` overwrites it |
 | `setup.ODPF3_SHIFT`: an entry with nano-code ODPF 3 and a tag immediate starts at entry \| code << 2: code 0 when the dereferenced operand's tag equals the immediate (MRB ignored), 1 otherwise | INFERRED (mechanism DOCUMENTED: thesis printed p.129, ODPF generates the start address, its low bits modified by the tag test; p.136, `add`: "if (data.tag==int) start(for_int) else start(for_others)"; p.133, the code in TDAR bits 3-2) | `31ec` | static (scratch census of the decode table): 25 entries have ODPF 3, 19 with a tag immediate; 14 of those 19 (all INTo) reach the failure exit XR := R11, R04 := XR from entry + 4, `less_than`..`modulo` at entry + 4 itself (entry + 8 is the next entry: no third row), `shift_left`..`exclusive_or` after further tests (`3b23`); the 4 `*_extended` call `0d87` there. `put_reused_structure` (immediate `1e`, the vector with a descriptor): `31e8` reads `[MAR1]` and tests VDESC, `31ec` is the other row. ODPF 4 and 6 (`get_atom`, `switch_on_non_list`) keep `S_ENTRY`; since the sixth session ODPF 6 takes `S_OTHER_ROW` for another tag held directly, and other cases raise. Injections (observed): `odpf3_entry` (always the entry): append STOPs at `31e9` (ALU input from a read never written), 4 of 16, both reuse cases at `31e8`; `odpf3_bits10`: append STOPs at `31a3` (case_branch with no set-up), both reuse cases at `31e9` |
-| `RULES['em1_29_mrb']`: CNDF 7 with EM1 `29` forms COND := the MRB (tag bit 0) of the AS1 input is ON | INFERRED | `31ec`-`31ed` | the contract: a structure whose pointer has its MRB on is shared and must not be reused in place; MRB off, it is reused (TR-466 4.2, printed p.7; thesis printed p.138, Fig. 3-23: the S stage tells E whether the data is collectable). `31ed` ends when COND is false (`j1_bit0_false`); else `31ee` calls `31a1` and `31f0` jumps to `put_list` (allocation). `pu_smt` side contract `reuse_kl1` (31ec-31ed, MDR1 LISTo or LISTx; `docs/pu_microcode_inference.md` 6): every value relation, never and always eliminated; mrb_on and mrb_off survive, coupled to the end polarity; under the adopted one mrb_on only. Static: `0ac9`-`0acb`, `0ace`-`0ad0` form it from MDR2 alone and stamp EHOOKo/x or EUNDFo/x by it. Not decided: whether the S stage's chain report (SRP) takes part (append's list is held directly, no REF: the two agree). Side cases in `u2_append.py`: 3,0,2 on LISTo reused (ok), 0,0,2 on LISTx goes on to `31ee` (pinned `REUSE_SHARED_STOP`: R04, pc, never set). Injection `em1_29_off`: append STOPs at `31ee`, 4 of 16; the LISTx case FAILs (ended at `31ed`: a shared list reused) |
-| `RULES['sc2f1_ir']`: SC2F 1 (WRBF clear) puts an IR field on S2, the low 16 bits sign-extended, tag 0; not a register R01 | INFERRED; width NOT discriminated | `31ec` | thesis printed p.129: the S1 bus reaches every register except IR, the S2 bus RF, WR and IR, and IR has field extraction (rassy: `ir/8`, `ir/16`, `ir/24`, signed forms). Static: 46 words read select 1 through SC2F; the 8 label words `32f0`-`32ff` add it to R04 (pc) and jump to the label branch `2447` (`pimm.py`: pc + 2 + sx16(c16)); `wait_vector` (`3a03`, `3a06`, `3a0b`) subtracts it from the vector's length (`pimm.py`: c16). (rassy's second bank, 1 `sr` ... 5 `ir`, names SC1F-side registers; its numbering of S2 sources is not recovered.) `put_reused_structure` is `r_r_c8`: where y is not 0 the c8 and c16 readings differ and the read raises (`setup.IR_C8`). On the path run the value is loaded into MDR2 and not used. Injection `sc2f1_reg` (read as R01): STOP at `31ec` (R01 never set) |
+| `RULES['em1_29_mrb']`: CNDF 7 with EM1 `29` forms COND := the MRB (tag bit 0) of the AS1 input is ON | INFERRED | `31ec`-`31ed` | the contract: a structure whose pointer has its MRB on is shared and must not be reused in place; MRB off, it is reused (TR-466 4.2, printed p.7; thesis printed p.138, Fig. 3-23: the S stage tells E whether the data is collectable). `31ed` ends when COND is false (`j1_bit0_false`); else `31ee` calls `31a1` and `31f0` jumps to `put_list` (allocation). `pu_smt` side contract `reuse_kl1` (31ec-31ed, MDR1 LISTo or LISTx; `docs/pu_microcode_inference.md` 6): every value relation, never and always eliminated; mrb_on and mrb_off survive, coupled to the end polarity; under the adopted one mrb_on only. Static: `0ac9`-`0acb`, `0ace`-`0ad0` form it from MDR2 alone and stamp EHOOKo/x or EUNDFo/x by it. Not decided: whether the S stage's chain report (SRP) takes part (append's list is held directly, no REF: the two agree). Side cases in `u2_append.py`: 3,0,2 on LISTo reused (ok), 0,0,2 on LISTx goes on to `31ee` (pinned `REUSE_SHARED_STOP`: R04, pc, never set). Injection `em1_29_off`: append STOPs at `31a1` (called by `31ee`; since the eighth session on its JMPF 2), 4 of 16; the LISTx case FAILs (ended at `31ed`: a shared list reused) |
+| `RULES['alu_sources']` = 'rassy': the ALU's input pair by AS1F and AS2F as rassy names it (supersedes `as1f2_yr`, `as1f3_em2`, `as1f3_open_unknown`) | HELD-SOURCE (the table); INFERRED that the hardware does what rassy prints | `216d`, `4cc0`, `0802`, `3378` | `ptfdump.py pimmutil rassy --list`: `as1f_and_as2f/6` (@29b1) is a switch on AS1F. 0 `0` and 1 `xr`, and 4-7 `mdr1`, `mdr2`, `mar1`, `mar2`, each paired with `as2f/2` (@2efc: 0 `0`, 1 `yr`, 2 `mdr1`, 3 `mdr2`). 2 calls `with_constant/2` (@2f1c): AS1 is `[mdr1, mdr2, mar1, mar2][AS2F]`, AS2 the constant. 3 calls `special_case/5` (@800): AS2F 0 `0` and 1 `xr` with the constant, 2 `mar1` and 3 `mar2` against `xr`. Held-out check: `220f` (AS1F 3 AS2F 1, EM2 12) is MAR1 := R14 + 12, the cell 12 that `enqueue_goal`'s `4c03` (AS1F 2 AS2F 2, EM2 12) writes. So the "word that loads YR and uses it" (`216d`, `4cc0`) does not read YR at all: `4cc0` is R15 := MDR1 - EM2 2, and `216d` R15 := R15 - 1. `0802` is MAR1 against XR. NOT discriminated on a pinned run (append 15 of 16, `check_pu` unchanged): nothing compared reads the words it changes. Injection `alu_old` (the three old rules): append unchanged |
+| `RULES['alu_const']` = 'EM2': the ALU constant is EM2, or EM1 when EM2 is used by another field (`em2_busy`), else it raises | HELD-SOURCE | `216d`, `3378` | rassy's `alf/7` prints the constant through `$or$70` / `$or$71` (@3d09 / @3d1a): EM2, or EM1 when the slot `em2_not_free` is set. Census (image 2) of AS1F 2 words with ALF 0/1: EM2 is 1 in 68 of 155 (AS2F 0, add), 52 of 97 (sub), ... 156 of 402 (AS1F 3 AS2F 1, add): an increment. With ALF 2/3, EM2 is the operation and EM1 the constant. `pu.em1_busy` / `em2_busy` follow rassy's `em1_not_free` / `em2_not_free` setters (jumps, CNDF a/b/d, TGIF 3, SC2F 9/a/b/c ...). Injection `const_em3`: append and `check_pu` unchanged (NOT discriminated there) |
+| `pu.S1_IMM`, `S2_IMM` (`EM_IMM`): S1 selects 5/6/7 are the immediates EM1/EM2/EM3, S2 select `d` is EM3 (WRBF clear); supersedes `zero_regs` | HELD-SOURCE (the listing); INFERRED that the hardware reads the field rassy prints | `3324`, `216d` | rassy `sc1f/7` (@21bf; `set_up_sc1f/3` @c68 passes SC1F, WRBF, EM1, EM2, EM3): 0-4 `dr`, `sr`, `gr`, `lc`, `pc`, and 5/6/7 print hex EM1/EM2/EM3; `sc2f/8` (@24b7) prints EM3 for `d`. Fits the never-set census (R05, R06, R07: 549 reads, 14 DSTF writes): `{ATOMo, R06}` where nil stands is EM2 0, `{UNDF, R07}` at `31d6` EM3 0, `1a0 + R05` a parameter cell `1a0` + EM1. The allocator's last-cell arm now runs past `3324` (R05 is EM1) into the refill and stops at `3365` (W0d), as the refill case does; `check_pu` 81 words (was 80). Injection `em_imm_off` (the old `zero_regs`): `check_pu` PASS at 80 words (both stops are in the refill set): NOT discriminated |
+| `RULES['sc2f1_ir']` = 'ext_ir': SC2F 1 puts the IR field that EM2 & 15 names on S2 (`pu.EXT_IR`), with or without WRBF | HELD-SOURCE | `31ec`, `4c00` | rassy `ext_ir/2` (@2e72), a switch on EM2 & 15: 0 and 8 `ir`; 1 `ir/16`, 2 `ir/24`, 3 `(ir>>16)/16`, 4 `ir/8`, 5 `(ir>>8)/8`, 6 `(ir>>16)/8`, 7 `(ir>>24)/8`; 9-f the signed forms. `sc2f/8`'s arm 1 sets `em2_not_free` and does not test WRBF. Census of SC2F 1 loads, EM2 & 15: 1 in 4, 4 in 3, 5 in 1, 6 in 18, 7 in 5, 9 in 22. `31ec` (`put_reused_structure`, `r_r_c8`) has 4 = c8; the label words `32f0`-`32ff` 9 = s16 (`pimm.py` sx16(c16)); `wait_vector` `3a03` / `3a06` 1 = c16; `enqueue_goal` `4c00` 6 = the x field (the arity; it was read as W01). Decides the width the old row left open. Injections: `ext_ir_off` (the old c16s reading) append unchanged; `sc2f1_reg` (read as R01) STOP at `31ec` |
+| `setup.EXECUTE_MDR1_STALE`: at `execute`'s entry MDR1 is STALE | OURS | `4cc0` | `4cc0` is now R15 := MDR1 - 2 (above); the execute nano entry has EMO1 5 (`crr`), an S-stage source not decided, so MDR1 is not given and R15 stays STALE. Injection `execute_mdr1_carried` (MDR1 as the previous instruction left it): append unchanged |
 | `get_bound_value`'s set-up (`setup.FORMS`, `S_CONST`): the S-stage test on A[x] (immediate UNDF, `S_ENTRY`), MDR2 := A[y] | OURS, with support | `3880` | `pimm.py` `i_get_bound_value` unifies reg[x] with reg[y]; OS1F 3 is the thesis's (3) "the RF entry named by r0-r3" (printed p.128; not fitted: `get_atom` has OS1F 1). `3880` = `3800`-`3801` without the stamp. Injections: `gbv_mdr2_x` (MDR2 := A[x]): FAIL at instruction 7 (the cell bound to a REF to itself); `s_no_mar1` now FAILs append there too, `s_imm_plus1` STOPs append at `3881` (zero word): append now discriminates `S_ENTRY`'s start and MAR1 |
 | `put_reused_structure`'s operand y (`setup.FORMS`) | OURS (`pimm.py`'s reading) | `31ec` | append's 0,0,2 cannot tell y from x; the side case 3,0,2 does: injection `prs_operand_x` FAILs it (A3 and R02 = A3's old `{INT, 9}`), append passes |
-| `pu.FLAG_CONDS`: CNDF 7 with EM1 `19` is COND := the slit-check flag, EM1 `21` the interrupt_all flag | INFERRED (DOCUMENTED that CNDF 7's EM1 selects a rare condition: thesis printed p.144) | `4cc0`, `4cc2` | the numbering is `rassy`'s 40 condition constants in the order the class holds them (`ptfdump.py pimmutil rassy`: `cond alf_zero` .. `cond ovf_trap`), EM1 = the position; since the sixth session HELD-SOURCE: `cndf/7`'s arm 7 calls `cndf_others/5` (@3321), a hash switch on EM1 whose key k takes pool slot `00dc` + k (k = `00`..`27`). Three checks fit it: position 9 is `over_flow` and 10 `less`, where EM1 `09` (overflow) and `0a` (lt) were found apart from rassy (pu_smt); positions 21-31 (`exsw00` .. `COL`) carry the numbers rassy's own flag set/reset tables give those flags (`--pairs`: `set_slit_check` 25, ... `set_COL` 31). So `19` = 25 = `slit_check`, `21` = 33 = `interrupt_all` (rassy's keys). Slit check: events (GC request, packet arrival, other PEs' signals) latched in flags and polled once per reduction (`docs/literature_gaps.md` [P1] s.5.4; TR-715 3.3 for PIM/m, `docs/multi_pe.md`). Static: 37 EM1-`19` words, many with no ALU operation (a flag, not an ALU relation). The flags' values are OURS (`u2_append.EXECUTE_FLAGS`, both clear; an unset flag raises). pu_smt `execute_fast`: under 'prev', the condition `4cc0` forms must be `never` for every register content (data-independent). Injections: `slit_pending` STOPs at `4cc5` (since the seventh session, JMPF b a call, at `4cc6`: JMPF c polarity), `interrupt_pending` at `1c2c` (via `4cc4`, `4cd3`); `flags_swapped` changes nothing: which flag is which is NOT discriminated |
+| `pu.FLAG_CONDS`: CNDF 7 with EM1 `19` is COND := the slit-check flag, EM1 `21` the interrupt_all flag | INFERRED (DOCUMENTED that CNDF 7's EM1 selects a rare condition: thesis printed p.144) | `4cc0`, `4cc2` | the numbering is `rassy`'s 40 condition constants in the order the class holds them (`ptfdump.py pimmutil rassy`: `cond alf_zero` .. `cond ovf_trap`), EM1 = the position; since the sixth session HELD-SOURCE: `cndf/7`'s arm 7 calls `cndf_others/5` (@3321), a hash switch on EM1 whose key k takes pool slot `00dc` + k (k = `00`..`27`). Three checks fit it: position 9 is `over_flow` and 10 `less`, where EM1 `09` (overflow) and `0a` (lt) were found apart from rassy (pu_smt); positions 21-31 (`exsw00` .. `COL`) carry the numbers rassy's own flag set/reset tables give those flags (`--pairs`: `set_slit_check` 25, ... `set_COL` 31). So `19` = 25 = `slit_check`, `21` = 33 = `interrupt_all` (rassy's keys). Slit check: events (GC request, packet arrival, other PEs' signals) latched in flags and polled once per reduction (`docs/literature_gaps.md` [P1] s.5.4; TR-715 3.3 for PIM/m, `docs/multi_pe.md`). Static: 37 EM1-`19` words, many with no ALU operation (a flag, not an ALU relation). The flags' values are OURS (`u2_append.EXECUTE_FLAGS`, both clear; an unset flag raises). pu_smt `execute_fast`: under 'prev', the condition `4cc0` forms must be `never` for every register content (data-independent). Injections: `slit_pending` STOPs at `4cc5` (since the seventh session, JMPF b a call, at `4cc6`: JMPF c polarity), `interrupt_pending` at `1c2f` (via `4cc4`, `4cd3`; `1c2c` until the eighth session, whose lc_zero runs it); `flags_swapped` changes nothing: which flag is which is NOT discriminated |
 | `RULES['cjump_time']` = 'prev' with `pu.CJUMP_TAKEN_ON` {b: taken on COND} | INFERRED | `4cc1` | a conditional JMPF a/b/c/e tests the COND the previous executed word formed: thesis printed p.130 (condition into COND one step, branch the next, DOCUMENTED); the ends' 'prev' (EXECUTED, pu_smt); at `4cc1` (which forms CNDF 3 itself) 'same' would leave `4cc0`'s slit check untested on every path; static census of non-self conditional jumps, own CNDF / only the word before has one: b 4 / 27, a 51 / 97, c 23 / 123, e 45 / 94. pu_smt side contract `execute_fast` (no event: `4cc1` not taken for any register content), with the decided datapath fixed: with CNDF 3 = lt only ctime 'prev' survives (pinned). Polarity: b only (taken on COND: the fast path `4cc2`-`4cc3` sets R04 := the label); a, c, e raise. Injections: `cjump_same` STOPs at `4cc1` (its own COND is STALE), `cjump_false` STOPs at `4cc5` (since the seventh session at `4cc6`, JMPF c polarity: `4cc5` is called and its AS1F 3 / AS2F 1 result is UNKNOWN) |
-| `RULES['as1f2_yr']`: AS1F 2 is YR (as it stood before the word) | INFERRED | `4cc0` | AS1F is in SD1F's numbering (MEASURED), whose 2 is `yr` in rassy's adder-source table; thesis printed p.126: XR, YR, MDR1/2 reach AS1. Static: 446 words AS1F 2 / AS2F 0, 157 of them ALF 3 operations on it alone. R15 := YR is not compared. Injection `as1f2_off`: STOP at `4cc0` |
+| `RULES['as1f2_yr']`: AS1F 2 is YR | RETRACTED (eighth session) | `4cc0` | superseded by `alu_sources` above: rassy's AS1F 2 is `with_constant`, MDR1 / MDR2 / MAR1 / MAR2 against the constant, not YR (the old reading took SD1F's numbering for AS1F's). Kept as the injection `as1f2_off` / `alu_old` |
 | `RULES['cnd3_sign']`: CNDF 3 = the ALU result is negative | INFERRED, NOT discriminated | `4cc1` | rassy's short condition table in the class's order `carry, zero, sign, same_tag, equal, lc_one` read as CNDF 1-6: 2 (zero, decided at `204f`), 5 (eq, pu_smt) and 6 (the lc loops) fit. At `4cc1` its input is STALE and nothing tests it; `cnd3_off` changes nothing |
 | `RULES['jmpf8_flag']`: JMPF 8 sequences as JMPF 0 in a word whose CNDF 7 is a flag condition | INFERRED, admitted only there | `4cc2` | as `jmpf8_setup`; what bit 26 adds is not decided. Injection `jmpf8_flag_off`: STOP at `4cc2` |
 | `pu.MCF_UNKNOWN` {06, 07}: MCF with these EM1 is an operation of UNKNOWN meaning on state not held here; recorded in the cycle record (`mcf`), no register or memory changed | INFERRED (that nothing run here reads it) | `4cc1` (07), `4cc3` (06) | thesis printed p.144: MCF is counter/flag control. 06: 75 words, 59 in words that put a freed cell on R19 (wait_*, switch_on_*, `3309`), 4 at execute's ends; 07: 11 words, all at goal or reduction boundaries (proceed `2170`/`217a`/`2212`, execute, execute_external, suspend, merge, the boot `20a8`); rassy's reset table numbers 6 reset_SUSPF and 7 reset_CGCF: since the seventh session HELD-SOURCE by rassy's MCF decoder (`MCF_FLAG_OPS` row below); what they do is still not modelled. Injection `mcf_unknown_raise`: STOP at `4cc1` |
@@ -364,14 +374,14 @@ write both FAIL at instruction 0).
 | `MCF_NAMED` 08 = pipeline_cancel, recorded only | INFERRED (rassy's flag-control table, position 8, between reset_CGCF 7 and set_cc 9) | `2461` | the MCF 08 words load R04 (`2453`, `245d`, `2461`, `31ee`, `2035`): a branch discards the prefetched instructions; this simulator has no pipeline. Injection `mcf08_raise`: STOP at `2461` |
 | `RULES['cnd8_s1']`: CNDF 8 / a: the S1-bus value's tag == EM1 / EM2; CNDF c: the same with the MRB ignored | INFERRED (HELD-SOURCE arms, MEASURED source) | `38b0` (8), `38b2` (c) | rassy's `cndf/7`: arms 8, 9 'tag =' EM1, a, b 'tag =' EM2, c, d 'tag / 5 =' EM1, 8/a/c on one operand and 9/b/d on the other. Census: all 217 CNDF 8 and 20 CNDF a words read an S1 source (114 / 9 for the condition alone), every CNDF 9 / b / d word has an ALU input; CNDF c's 100 EM1 are all 'o' tags. Needed to reach `0c0c`, NOT discriminated (no comparison before the stop): `cnd8_off` STOPs at `38b0` |
 | `RULES['sd1_pairs']`: SD1F 2 = MDR1 and MAR1, 3 = MDR2 and MAR2 | INFERRED (HELD-SOURCE; DOCUMENTED that such codes exist) | `38b2` | rassy's `sd1f/2` (@2959): 2 ', mdr1 mar1', 3 ', mdr2 mar2'; thesis printed p.144: "codes include writing the same value to MAR1+MDR1 and MAR2+MDR2". Not discriminated: `sd1_pairs_off` STOPs at `38b2` |
-| `RULES['jmpf9_call_if']`: JMPF 9 is a call taken if cond; only the arm not taken is modelled | INFERRED (HELD-SOURCE) | `38b1` | rassy `jmpf/9` arm 9 'call' with em1_not_free and em2_not_free and 'if cond'. The target (EM absolute or mekbn's JMPF 1 reading) is not decided: taken, it raises (`s_imm_row`'s get_atom now stops there, `3811`). `jmpf9_off` STOPs at `38b1` |
+| `RULES['jmpf9_call_if']`: JMPF 9 is a call taken if cond; only the arm not taken is modelled | INFERRED (HELD-SOURCE) | `38b1` | rassy `jmpf/9` arm 9 'call' with em1_not_free and em2_not_free and 'if cond'. Since the eighth session the taken arm calls the absolute EM (`jmpf9_vlong`, "Next, for U2"; `s_imm_row`'s get_atom now runs past `3811` and stops at `0cd9`). `jmpf9_off` STOPs at `38b1` |
 | `wait_nil`, `get_value` set-up (`setup.FORMS`): the S-stage test on x | OURS (`pimm.py`'s operand readings) | `3980`, `38b0` | `get_value`'s row 0 (x unbound) loads A[y] into MDR2 and MAR2 (`38a0`, SD1F 3) to bind it with |
 | `pu.CASE_TAG_SETUP`: CNDF 7 with EM1 `30`-`3f` is `case_tag_setup mdrN k` (EM1 even MDR1, odd MDR2, k = (EM1 - `30`) >> 1): TDAR := the TGT byte of that MDR's tag (old value), column 7 - k | INFERRED (names HELD-SOURCE: rassy `cndf_others/5` keys `30`-`3f`, slots `0106`-`0115`; column: `3a` = mdr1 5 is column 2, VERIFIED at `2d3e`) | `0c0c`, `0e38`, `0c0d`, `0840` | MEASURED (165 words), CCF bits 59..58 by parity: mdr1 00 8, 01 69, 10 4, 11 22; mdr2 00 7, 01 0, 10 49, 11 6 (a correlation; the rule does not rest on it). Shapes met: `0c0c` column 0 (REFo `0e38`, REFx `0e3b`, the rest call the trap `6c21`: the routine is called for a REF only); `0e38` column 5 (20 rows `0e60`-`0e73`, UNDF 18 -> `0e72`, a return; bound atomic values free the cell, `0e62`); `0c0d` column 6, `0840` column 7. The old rule (the AS1 input's tag, `TGT_COLUMN`) gives the same at `2d3e` (`check_pu.py` unchanged). Injections: `cts_as1` (the tag from the AS1 input, the old rule's source) STOPs at `0c0c` (AS1 is MAR1, STALE), `cts_col_k` at `0c15` (REFo 12 overlaps `0e38`), `cts_mdr_swapped` at `6c21` (the trap) |
 | `RULES['jmpf_b_call']`: JMPF b is a page-relative call taken if cond | INFERRED (kind HELD-SOURCE: rassy `jmpf/9` arm b 'call' long 'if cond'); decides `docs/pu_microcode_inference.md` S7's conflict | `0c0c` (taken), `4cc1` (not taken) | the twins `0c0f`, `0c12` (JMPF 7, the same word otherwise) call `0c15`; every row behind it returns. MEASURED (scratch census of image 2, the words reachable from each target before a return or an end, calls taken as returning): JMPF b 47 targets, 38 only returns, 9 both, 0 only ends; JMPF 7 144 / 42 / 4, f 24 / 6 / 0; page jumps JMPF 6 338 / 185 / 510, e 130 / 15 / 218. `4cc1`'s slit path has a conditional return at `4cd2` into `4cc2`. Injection `jmpf_b_jump` (mekbn's page jump): STOP at `0e72` (return with an empty micro stack); `cjump_false` / `slit_pending` now call `4cc5` and STOP at `4cc6` (JMPF c polarity) |
 | `RULES['case_wide']`: a JMPF 3 case_branch ORs the whole TGT byte when the base's low bits are free of it | INFERRED | `0e75` | base `0e60`, column 5's 0..19 on 20 rows `0e60`-`0e73` (S8's "low 4 bits" was the `2d3f` / `31a3` tables'). Injections: `case_low4` (S8 literally, byte & 15) FAILs at 14 (UNDF 18 -> `0e62`, the row that frees a cell bound to an atomic value: the cell gets the free-list link, nil is written at 0); `case_4bit` (a byte over 15 raises) STOPs at `0e75`, a guard |
 | `RULES['tdar_holds']`: TDAR stands from its set-up across JMPF 1 words to a later case_branch | INFERRED (rassy names `tdar` among the registers) | `0802` | the twins `0c0d` -> `0c0e` -> `0802`, `0c10` -> `0c11` -> `0800`, `0c13` -> `0c14` -> `0801` all set up two words before the JMPF 3, a JMPF 1 jump between. Injection `tdar_one_word`: STOP at `0802` (a guard: needed, NOT discriminated) |
 | `pu.MCF_FLAG_OPS`, `FLAG_CONDS` `10`-`12`: MCF EM1 `03`/`04`/`05` reset sw00/sw01/sw02, `0b`/`0c`/`0d` set them; CNDF 7 EM1 `10`-`12` reads them | INFERRED (names HELD-SOURCE: rassy `mc1/2` @355b, `mc2/3` @357b; EM1 = mc1 key << 4 \| mc2 key) | `0e75` (04), `0864` (`11`) | rassy's mc1 keys 1/2/3 are '-- lc', '++ gr', '++ sr' (slots `0116`-`0118`), and two rules decided apart fit EM1 = key << 4: MCF `20` = R02 + 1 (`mcf_20_sp`; rassy's bank names 2 `gr`) and `10` beside CNDF 6 in the counted loops (lc). So `08` = pipeline_cancel, `06` reset_SUSPF, `07` reset_CGCF (kept recorded-only). Static: sw01 is set by the dereference rows that follow a REF with its MRB on (`0e3b`, `0e61`, `0e63`, MCF `0c`) and reset at the REFo start (`0e75`); `09d0` ends when it is clear, else `09d1` rewrites the binding with the MRB on: the variable reached through a shared pointer. Injection `sw01_set`: FAIL at 14 (the cell `{ATOMx, 0}`, `pimm.py` `{ATOMo, 0}`) |
-| `pu.ALF_CONDS`, `MCF_NAMED` `01` set_alf; `RULES['as1f3_open_unknown']`: AS1F 3 with AS2F not 0 gives an UNKNOWN result (raises if written); a COND or latch from it is POISON | names HELD-SOURCE (rassy positions 0-8 `alf_zero` .. `alf_less_zero`; mc2 key 1); the rest OURS | `0802`, `0841` | `0802`'s EM bits are the JMPF 3 base, so `as1f3_em2` does not apply; its CNDF 5 and set_alf feed only `0841`'s alf_equal, and `0864` forms a new COND before any test: NOT discriminated. Injection `as1f3_open_raise`: STOP at `0802` |
+| `pu.ALF_CONDS`, `MCF_NAMED` `01` set_alf; (superseded since the eighth session by `alu_sources`: `0802` is MAR1 against XR) a COND from the latch is POISON | names HELD-SOURCE (rassy positions 0-8 `alf_zero` .. `alf_less_zero`; mc2 key 1); the rest OURS | `0802`, `0841` | `0802`'s EM bits are the JMPF 3 base (AS1F 3 AS2F 2 takes no constant); its CNDF 5 and set_alf feed only `0841`'s alf_equal, and `0864` forms a new COND before any test: NOT discriminated. Injection `as1f3_open_raise`: STOP at `0802` |
 | `setup.S_MAR1_DIRECT_STALE`: for an ODPF 6 entry whose operand is held directly, MAR1 is STALE | OURS | `0c0c` | W1d := MAR1 and XR := W1d copy it and nothing reads them on the path. It turns old injections' writes through MAR1 into STOPs (`u2_append.py` header). Injection `s_mar1_kept` (the old carried value): append passes, 15 of 16: not used, as claimed |
 
 `check_pu.py` still passes unchanged with these rules (32 cases, 80
@@ -389,8 +399,8 @@ record's `mcf` key).
 initialisation, called from outside: `204b` (heap top into R1f), `2053`
 (calls the refill entries `3376`, `337b`, `3380`, `3382`-`3395` for every
 free list, and `2070`-`208d`, read not run, reads parameter pairs at
-`1a0 + aa`..`b2`: unexplained), `209f` (with `20bc` R07 := 0: held evidence for the
-`zero_regs` rule's R07, read not run), `20c2`, `20e7`, then R0e and R10.
+`1a0 + aa`..`b2`: unexplained), `209f` (with `20bc` R07 := 0, read not run; since the eighth
+session R07 as an S1 source is the EM3 immediate, `pu.S1_IMM`), `20c2`, `20e7`, then R0e and R10.
 `execute_first_predicate` (`2032`) loads R04 (`pc`) with
 `{REFo, [1a0 + 4b]}`, PIMM.PARAM's `bmadr` "Boot Module Address" by its
 place (INFERRED); it stops at `2035` on MCF with EM1 08. Only `204b` is
@@ -445,76 +455,161 @@ run, and raise.
 
 ## Next, for U2
 
-`proceed` (instruction 15, the last) is where append stops, at `216c`
-(read of R1b, never set). It is left there for both reasons: state
-the harness does not hold, and rules not yet decided. Its routine is the
-goal scheduler. Read from the words (`mekbn --dis`, COND tested by the
-next word, 'prev'):
+### `proceed`, the goal scheduler (eighth session, 2026-11-27)
 
-- `216c`-`216d` push the finished goal's record (MAR1 = R10,
-  NANO_ODPF1) on R1b's list (rassy's `fgp`, the goal-record free list).
-- `216d` takes XR := R14 (the ready queue's head) and forms R15 :=
-  `as1_2 - YR` (CNDF 3, sign) with MCF set_alf, in the word that also
-  loads YR := R0d.
-- `216e` R10 := XR (the next goal), branches to `217a` on `216d`'s
-  sign, and forms alf_zero (CNDF 7 EM1 `00`).
-- `216f` XR := R14, COND := R14's tag is ATOMo (CNDF 8), and branches
-  to `217a` on `216e`'s alf_zero.
-- `2170` (JMPF b, MCF 07 reset_CGCF) calls `21b2` if R14 is ATOMo;
-  `217a` forms the same test with CNDF a, and `217b` (JMPF 9, EM
-  `21b2`) calls on it. The two are twins, like `0c0c` / `0c0f`, and
-  they are a lead that JMPF 9's target is EM absolute (`21b2` both
-  ways); recorded, not adopted (`jmpf9_call_if` models only the arm not
-  taken). An empty queue is then nil (INFERRED from these tests), and
-  `21b2` (XR := W1f, a shift by YR, a return) and `217c` (CNDF 7 EM1
-  `1a`, PMPF) lead into the idle path.
+The append run still stops at `proceed` (`216c`, R1b never set), and
+U2 is still 15 of 16. What changed is that the routine itself now runs
+whole in **side cases**: `u2_append.proceed_cases`, 15 cases, all ok.
+They give the firmware a ready queue built from `pimm.py`'s own
+(`Machine.record`), in the firmware's record layout, and compare the
+dispatch with `pimm.py`'s `pick`:
 
-What blocks it:
+- the next goal's code address (R04 = `{COD, code}`);
+- every argument register A0..An-1;
+- R10 (the dispatched record) and R14 (the queue after the pick,
+  `pimm.py`'s `rq`);
+- that no cell is written but the finished record, which is pushed on
+  R1b's list (declared, like `reuse`: R1b := the record, its cell 0 :=
+  `{VECT0x, old R1b}`).
 
-1. **State.** R1b, R14, R0d and R15 (priorities, by their use at
-   `4cc0`-`4cc5` and here: INFERENCE). `pimm.py` holds goal records and
-   a ready queue of its own (`Machine.rq`, a LIFO through `G_LINK`;
-   `goal_switch`, `pick`), but not in the firmware's registers or
-   record layout, and the harness's goal switch is OURS. Mapping
-   `rq` = 0 (empty) to R14 = nil would be one more stand-in.
-2. **No observable.** `i_proceed` is `chain += 1` and the event `E done`,
-   with no R or M line. `end_reduction` and the empty `pick` write
-   nothing traced, and the run then ends with `Q`. As the last
-   instruction, proceed has no next PC either. The one thing a
-   comparison could check is that the firmware takes its empty-queue
-   path, which runs on into the idle loop and never ends.
-3. **Rules.** The probe `--inject proceed_seeded` gives R1b and an empty
-   R14 (OURS). `216c`-`216e` run and it stops at `216f`, whose branch
-   tests alf_zero: POISON (what the latched flags mean is not decided).
-   And that alf_zero, like `216e`'s sign, comes from `as1_2 - YR` in a
-   word that loads YR itself. Under the adopted ALU timing (`as1f2_yr`:
-   YR as it stood before the word, on both inputs) the difference is 0
-   for every input, so `216e` could never branch on the sign and `216f`
-   always would on alf_zero. `4cc0` (`YR := R0d; R15 := as1_2 - 0`) has
-   the same shape: R15 := the old YR there, or R0d if the ALU sees the
-   S2-bus load of its own word. Instruction 10's R15 is not compared, so
-   nothing run so far decides it. Either the AS2 (or AS1F 2) input sees
-   the same word's load, or AS1F 2 is not YR in these words. That is a
-   datapath question, not proceed's.
+The cases are a queue of one goal (R14 left nil), and two goals whose
+newest has arity 0 to 11. Arities fall on both sides of `2218`'s lc :=
+arity - 3, and each of the loop's exits `2219`-`2222` is taken by some
+case. For an empty queue, with crr (R15) not
+exhausted (through `2170`'s call) and exhausted (through `216f` ->
+`217a` -> `217b`'s taken JMPF 9; each route is checked in the trace),
+the firmware enters the empty arm `21b2`. It dispatches nothing (R04 and the A registers as they were)
+where `pick` returns 0, and stops at `21b3` (an ALF 3 shift, not
+modelled: pinned, `EMPTY_STOP`).
 
-A 16 of 16 needs that timing decided, the alf latch's flags, and a
-scheduler stand-in that maps `pimm.py`'s ready queue onto R14 / R10 / R1b,
-with an injection that FAILs on the empty-queue arm.
+The words, read with this session's rules (each row below):
+
+| words | what they do |
+|---|---|
+| `216c`-`216d` | push the finished record (MAR1 = R10) on R1b; R15 := R15 - 1 (with_constant, EM2 1), set_alf; YR := 12 (EM3 immediate) |
+| `216e`-`216f` | R10 := R14; to `217a` if R15 - 1 is negative (`216e`) or zero (`216f`, alf_zero); COND := R14 is nil |
+| `2170` | MAR1 := R14 + 12 (AS1F 3 AS2F 1, constant 12); call `21b2` if nil |
+| `2171`-`2173` | R16 := R16 - 1; R04 := cell 12; MDR1 := cell 13; past `2213` while R16 - 1 is not 0 |
+| `2213`-`2216` | R12 := cell 13 (priority); cell 14 against R13 (CNDF 5 in the JMPF 9 word `2214`; `2215`'s JMPF f calls `2250` unless they are equal); R14 := cell 15; RFAR := 0; MCF set_SUSPF, rf_lock |
+| `2218`-`2223` | lc := cell 0 - 3; A[rfar++] := cells 1, 2, ... (DSTF c), the loop leaving on sign, lc_zero or lc_one with '-- lc' |
+| `2224` | end (MCF rf_unlock) |
+
+The rows decided for it, all in `pu.py` (HELD-SOURCE: from rassy's
+listing, `ptfdump.py pimmutil rassy --list`):
+
+| Rule | Status | Evidence | Injection (observed) |
+|---|---|---|---|
+| `pu.cndf_free`, `RULES['jmpf9_cndf']`: CNDF forms a condition in a JMPF 9 word (not in JMPF 1) | HELD-SOURCE | rassy's jmpf/9 arm 1 calls `special_jump/8` (@30ec), a 15-key switch on CNDF; arm 9 prints with `vlong/2` (@32da), which marks em1/em2_not_free only (`elong/5` @32df marks `cndf_used`). Static: the 10 JMPF 9 words with a CNDF all carry an ALU add or subtract | `jmpf9_cndf_off`: the 13 queued cases STOP at `2250` (`2215` tests `2213`'s interrupt flag instead and calls) |
+| `RULES['jmpf9_vlong']`: a taken JMPF 9 calls the absolute EM | HELD-SOURCE plus static; NOT discriminated by execution | arm 9 prints its target with `vlong` (the whole EM), as arm 5 (JMPF 5, the absolute call) does; arms 6, 7, a, b, e, f use `long/4` (@32cd, page-relative). Static: `21b8`'s EM is `6c21`, the trap, outside the page. Executed taken at `217b` (EM `21b2`), where the page-relative reading lands on the same word | `jmpf9_taken_raise`: the crr-exhausted empty case STOPs at `217b` (a guard: the arm is needed) |
+| `RULES['jmpf_f_call_ifnot']`: JMPF f is a page-relative call taken if NOT cond | HELD-SOURCE (the kind) | rassy jmpf/9 arm f: 'call', `long`, the 'if not cond' slot (arm b is 'if cond') | `jmpf_f_off`: the 13 queued cases STOP at `2215` |
+| `RULES['dstf_c_rfar']`: DSTF c (WRBF clear) writes A[RFAR] and steps RFAR (R06) | INFERRED (name HELD-SOURCE) | `dstf/5` key 12 prints pool slot 95 '++ rfar', after `@ r0` .. `@ r1b1` for keys 8-b; second bank 6 is `rfar` | `rfar_off`: the 12 cases with arity > 0 FAIL on every A register |
+| `RULES['lc_ops']` = 'old': MCF EM1 `10` is '-- lc' (R03 - 1); CNDF 6 lc_one, CNDF 7 EM1 `0d` lc_zero, on lc as it stood before the word | INFERRED (names HELD-SOURCE) | mc1's key 1 '-- lc' (slot `0116`); the short condition table's sixth `lc_one`; cndf_others key `0d` `lc_zero`; R03 is the second bank's `lc` | `lc_new` (the conditions see the decremented lc): arity 4 STOPs at `222b`; arities 5-11 FAIL (the last argument not loaded) |
+| `pu.alf_cond`, `ALF_LATCHED`: alf_zero is formed from the set_alf latch (the result was 0); alf_sign and alf_equal stay POISON (nothing run tests them) | INFERRED (names HELD-SOURCE) | rassy position 0; formed at `216e` on `216d`'s R15 - 1 and tested by `216f` | `alf_poison`: all 15 STOP at `216f`; `alf_zero_false` (always false): the crr-1 empty case FAILs (the empty arm not reached through `217b`) |
+| `MCF_NAMED` `0e` set_SUSPF; `MCF_SUB` (`0a`, 2) rf_lock, (`02`, 2) rf_unlock: recorded only | HELD-SOURCE | `set_up_mcf/3` (@cdd): mc2 keys 2 / a are reset / set switches on EM bits 8-4; key e set_SUSPF | none (nothing reads them) |
+
+The datapath rows of the same session are discriminated here, where
+append could not discriminate them:
+
+- `alu_old` and `em_imm_off`: all 15 cases STOP at `216d`.
+- `const_em3`: the 13 queued cases STOP at `217c` (R15 - 12 takes the
+  crr branch), and the crr-8 empty case FAILs on its route.
+
+`as1f3_xr_off` (0802's source), `ext_ir_off` and `execute_mdr1_carried`
+are still NOT discriminated (no word on the path uses them), and nor is
+the JMPF 9 target reading.
+
+The stand-in (`u2_append.seed_proceed`, OURS), each item:
+
+- R1b: one free record.
+- R15 (crr) and R16 (ccc): 8, so the budget branches fall to the
+  dispatch. That they are reduction / switch budgets is INFERENCE from
+  the decrements; the cases where they run out are not compared.
+- R12 and R13: the current priority and foster parent. Every queued
+  goal carries R13 in cell 14 (one shoen). `parent_other` (another
+  parent): 13 STOPs at `2250`, the other-shoen path, not modelled.
+- W1f: 0 (start's `20a8` writes it 0).
+- R14: the head of `pimm.py`'s queue as `{HOOKo, record}`; the empty
+  queue is nil (INFERRED: `216f` / `217a` test R14's tag against ATOMo,
+  and `enqueue_goal`'s `4c06` puts the old R14 in cell 15).
+  `empty_int0` (the end as `{INT, 0}`): the empty cases STOP (`2173`,
+  `217c`), and the one-goal case FAILs on R14. `empty_fw_goal` (the
+  firmware given a goal while `pimm.py`'s queue is empty): the crr-8
+  empty case FAILs ("pimm.py picks no goal; the firmware dispatched
+  R04"), the crr-1 one STOPs at `217c`.
+
+The record layout is INFERRED from the firmware's own writers:
+
+| cell | holds | evidence |
+|---|---|---|
+| 0 | `{GOAL, arity}` | `enqueue_goal` `4c00` YR := the IR's x field (`ext_ir` 6); `4c01` stamps it GOAL (TGIF 3, EM2 `3c`); `4c03` writes it at R10 |
+| 1..n | the arguments | `set_*` write R10 + x, with x from 1; `pimm.py`'s enqueue takes argv[1:x+1] |
+| 12 | `{COD, code}` | |
+| 13 | priority (R12) | |
+| 14 | foster parent (R13) | |
+| 15 | link | |
+
+Cells 12-15: `4c03` MAR2 := R10 + 12, then four writes of `{COD, W10}`,
+R12, R13, R14 in that order; suspend's `1c0d`-`1c10` the same.
+
+Injections on the layout:
+
+- `rec_code_13` (cells 12 and 13 swapped): the 13 queued cases FAIL on
+  R04.
+- `args_from_2`: the 12 cases with arity > 0 FAIL on the A registers.
+
+**One declared difference.** The loop loads at least two registers
+(`2219` and `2223` are unconditional). So a goal of arity 0 or 1 also
+gets A0 / A1 from its record's cells 1-2, which `pimm.py` leaves. The
+compare admits exactly that: the register equals the record's own cell.
+`free_undeclared` (the freed record's write not declared) FAILs all 15.
+
+**Why append itself stays at 15 of 16 (a counting choice, not an
+impossibility).** At append's `proceed`,
+`pimm.py`'s queue is empty, so its `pick` returns 0 and the run ends.
+`i_proceed` writes no R or M line. Taking the sixteenth instruction as
+matched would compare the empty case above, but only by seeding the
+main run's R1b, R15, R16, R12 and R13 with values neither model holds
+(OURS). The empty side case is exactly that comparison; counting it
+as the sixteenth instruction is left to the reviewer. The empty
+arm's own end (the shift at `21b3`, a return or `21b5`'s priority
+search over the Goal Stack Entry Table at fixed cells `b6` / `b7`,
+PIMM.PARAM's gsesh / gseb by place: INFERENCE) is not run.
+
+What is left open on proceed's paths:
+
+- The crr-exhausted dispatch (`217a` -> `217c`, CNDF 7 EM1 `1a`,
+  PMPF).
+- The other-parent call `2250` (CNDF d).
+- The interrupt call `2214` -> `22a5`.
+- R16 exhausted (`2173` falling to `2174`).
+- Arities over 11 (`2222`).
+- The shift operations (ALF 3 by EM2).
+
+**What would close it** (and what U3 should be) is a multi-goal program on the held microcode, in which
+`proceed` and `execute` hand over between goals through the scheduler
+above. For example, a clause that enqueues a body goal
+(`enqueue_goal` `4c00`-`4c07`, whose writes are the layout's evidence)
+and then proceeds into it. That needs the main run's scheduler state
+carried from the firmware's own writes (R14 and R1b set by
+`enqueue_goal` and `proceed`, not seeded), and `pimm.py`'s trace
+compared at each goal switch.
 
 So U2 stands at 15 of 16 with every KL1-B instruction of the clause
 bodies matched. What was left open on the path run:
 
-- `0802`: AS1F 3 with AS2F 2 (`as1_3 - MDR1`), source UNKNOWN; its
-  CNDF 5 and set_alf feed only `0841`'s alf_equal (POISON, overwritten at
-  `0864`). The atomic-against-atomic rows (`0860`, end if alf_equal)
-  would test it.
+- `0802`: AS1F 3 with AS2F 2 is MAR1 against XR since the eighth
+  session (rassy `special_case`, `alu_sources`); its CNDF 5 and set_alf
+  feed only `0841`'s alf_equal (now formed, `alf_cond`), which `0864`
+  overwrites before any test: NOT discriminated. The atomic-against-
+  atomic rows (`0860`, end if alf_equal) would test it.
 - `0c0c`'s W1d := MAR1 and `0c0d`'s XR := W1d (MAR1 STALE for an operand
   held directly): dead on this path. The twins `0c10` / `0c13` restore
   MAR1 from W1d, which is where it matters (`38ae` / `38af` callers).
 - MCF `06` / `07` are now named by rassy's `mc2` (reset_SUSPF /
   reset_CGCF), still recorded only.
-- The candidate EM1 values met earlier: `0d` = 13 `lc_zero` (at `1c2c`,
-  on the interrupt path).
+- EM1 `0d` = 13 `lc_zero` is decided in the eighth session (`lc_ops`,
+  run in proceed's argument loop); `1c2c` on the interrupt path is not
+  run.
 
 `execute`'s other paths, read, not run: the slit-check path `4cc5`-`4cd2`
 (needs AS1F 3 with AS2F 1, `as1_3 shift_left YR`; EM3 is 1 at `4cc5`:
