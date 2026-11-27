@@ -1,0 +1,17 @@
+# psi/test_espc.py Window test_win_m10_exshow's edit (the pin
+# M10_PINS['pmacs'], docs/simpos/screens/pmacs_editor.png): Login PIMOS
+# from the system menu; the HELD disc/exshow.esp started by the M10
+# harness (`start exshow`, OURS); a left click in its window selects it;
+# `Hi`, C-n, `x`, C-x C-s (the stand-in's bindings, standard_editor.esp)
+click r 640 560
+click r 640 560
+click l 978 605
+quiet
+start exshow
+click l 200 150
+type Hi
+ctrlkey n
+type x
+ctrlkey x
+ctrlkey s
+quiet

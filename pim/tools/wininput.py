@@ -328,49 +328,55 @@ def device_bytes(prims):
 
 
 # ---- the receivers' model --------------------------------------------------
+class KbdReceiver:
+    """The keyboard receiver's model, a byte at a time (OURS; tools/
+    simpos_live.py feeds it a viewer's keys as they come).  feed(BYTE,
+    FAULT) -> the records [(kind, a, b, c, flags)] that byte completes."""
+
+    def __init__(self):
+        self.e0 = self.brk = False
+        self.e1 = 0
+        self.shift, self.ctrl, self.alt = set(), set(), set()
+
+    def feed(self, b, f=0):
+        if f and f != GLITCH:
+            self.e0 = self.brk = False
+            return [(6, f, 0, 0, 0)]
+        if self.e1:
+            # Pause: E1 14 77 E1 F0 14 F0 77; the 77 of its first three is the make
+            self.e1 -= 1
+            return [(2, NAMES.index('abort'), 0, 0, 0)] if self.e1 == 5 else []
+        if b == 0xe1:
+            self.e1 = 7
+            return []
+        if b == 0xe0:
+            self.e0 = True
+            return []
+        if b == 0xf0:
+            self.brk = True
+            return []
+        ent = KEYS.get((1 if self.e0 else 0, b))
+        key = (self.e0, b)
+        e0f, brkf = self.e0, self.brk
+        self.e0 = self.brk = False
+        if ent is None:
+            return [(6, 4, b, 0, 1 if e0f else 0)]
+        if ent[0] == 'mod':
+            s = {'shift': self.shift, 'ctrl': self.ctrl, 'alt': self.alt}[ent[1]]
+            (s.discard if brkf else s.add)(key)
+            return []
+        if brkf or ent[0] == 'nop':
+            return []
+        k, a, fl = key_event(ent, bool(self.shift), bool(self.ctrl), bool(self.alt))
+        return [(k, a, 0, 0, fl)]
+
+
 def receive_kbd(stream):
     """Records [(kind, a, b, c, flags)] the keyboard receiver emits."""
+    r = KbdReceiver()
     out = []
-    e0 = brk = False
-    e1 = 0
-    shift = set()
-    ctrl = set()
-    alt = set()
     for b, f in stream:
-        if f and f != GLITCH:
-            out.append((6, f, 0, 0, 0))
-            e0 = brk = False
-            continue
-        if e1:
-            # Pause: E1 14 77 E1 F0 14 F0 77; the 77 of its first three is the make
-            e1 -= 1
-            if e1 == 5:
-                out.append((2, NAMES.index('abort'), 0, 0, 0))
-            continue
-        if b == 0xe1:
-            e1 = 7
-            continue
-        if b == 0xe0:
-            e0 = True
-            continue
-        if b == 0xf0:
-            brk = True
-            continue
-        ent = KEYS.get((1 if e0 else 0, b))
-        key = (e0, b)
-        e0f, brkf = e0, brk
-        e0 = brk = False
-        if ent is None:
-            out.append((6, 4, b, 0, 1 if e0f else 0))
-            continue
-        if ent[0] == 'mod':
-            s = {'shift': shift, 'ctrl': ctrl, 'alt': alt}[ent[1]]
-            (s.discard if brkf else s.add)(key)
-            continue
-        if brkf or ent[0] == 'nop':
-            continue
-        k, a, fl = key_event(ent, bool(shift), bool(ctrl), bool(alt))
-        out.append((k, a, 0, 0, fl))
+        out += r.feed(b, f)
     return out
 
 

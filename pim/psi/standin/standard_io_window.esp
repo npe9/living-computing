@@ -51,7 +51,12 @@
 %   - getl/2 reads codes to 13 and answers the string of the codes before
 %     it, 16-bit (INFERENCE: the line is compared with equal_string to
 %     16-bit pool strings; that 13 ends a line as it ends the password is
-%     INFERENCE; line editing is not modelled, OURS);
+%     INFERENCE); window M11 (2026-11-26, OURS, for the live view): a
+%     typed BS (key#bs, 8) or DEL (key#del, 127) takes the line's last
+%     code back and, with echo on, rubs its character out (window_pane
+%     rub_out/1), and is not echoed itself; with no code typed yet it does
+%     nothing (INFERENCE that the PSI's line read had a rubout: no getl
+%     body is held; no other line editing is modelled, OURS);
 %   - echo: a code taken from the keyboard is echoed unless echo is
 %     inhibited (INFERENCE from inhibit_echo/1 and permit_echo/1 bracketing
 %     the password's reads); codes from `pending` are not echoed again
@@ -857,12 +862,24 @@ drawn_line(W, Line) :- W!pane \== 0, !, :put_string(W!pane, Line), :new_line(W!p
 drawn_line(_, _);
 
 drawn_code(W, 13) :- W!pane \== 0, !, :new_line(W!pane);
+drawn_code(_, C) :- rubout(C), !;
 drawn_code(W, C) :- W!pane \== 0, !, :put_code(W!pane, C);
 drawn_code(_, _);
 
-line(W, Codes) :- next_code(W, C), rest(W, C, Codes);
-rest(_, 13, []) :- !;
-rest(W, C, [C | Codes]) :- line(W, Codes);
+% a typed line, kept newest first while it is read (window M11: BS and DEL
+% take the last code back, the head comment)
+line(W, Codes) :- line(W, [], R), reverse(R, [], Codes);
+line(W, R, Codes) :- next_code(W, C), rest(W, C, R, Codes);
+rest(_, 13, R, R) :- !;
+rest(W, C, [_ | R], Codes) :- rubout(C), !, rubbed(W), line(W, R, Codes);
+rest(W, C, [], Codes) :- rubout(C), !, line(W, [], Codes);
+rest(W, C, R, Codes) :- line(W, [C | R], Codes);
+
+rubout(8);
+rubout(127);
+
+rubbed(W) :- W!echo == on, W!pane \== 0, !, :rub_out(W!pane);
+rubbed(_);
 
 count([], N, N);
 count([_ | R], N0, N) :- count(R, N0 + 1, N);

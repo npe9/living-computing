@@ -1,0 +1,42 @@
+# debugger_dialogue.script with typing mistakes taken back by Backspace
+# and Delete (standard_io_window getl/2's rubout, window M11, OURS): the
+# dots must come out as the dialogue's (test_boot_route.SCREEN_SHA).
+#  - the first goal wraps after `Re` (44 columns): four Backspaces rub out
+#    `q).` and, from column 0, the `e` at the end of the row above, which
+#    is typed again;
+#  - `pimos` typed as `pimps`, Delete twice;
+#  - the password (echo off) gets a wrong letter taken back unseen.
+click r 640 560
+click r 640 560
+click l 700 589
+quiet
+type :create(#pimfep##pimos_login_requester,Req).
+key bs
+key bs
+key bs
+key bs
+type eq).
+key enter
+quiet
+type :create(#process,Prox
+key bs
+type c).
+key enter
+quiet
+type :activate(Proc,Req).
+key enter
+quiet
+type local
+key enter
+quiet
+type pimps
+key del
+key del
+type os
+key enter
+quiet
+type secrex
+key bs
+type t
+key enter
+quiet

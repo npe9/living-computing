@@ -61,6 +61,8 @@ So every window class we run is a labelled stand-in, built from W§2-§4.
    - then PNGs at the real resolution;
    - then a live view in a browser canvas.
    This needs only the standard library, so no SDL.
+   (2026-11-26: the live view is the SDL2 viewer `../../tools/winview` instead, made for the
+   window hardware; see M11's status.)
 4. Input is a scripted, replayable event list. An event is injected only when every process is
    waiting. It enters at the Coordinator's printed translation table (TR-046 p28).
 
@@ -475,7 +477,7 @@ Sizes are rough, counted in lines of ESP stand-in plus Python, and include the t
 | M8 | **Graphics and markers** (W§2.5-2.6): `draw_line/5-8`, rectangles, filled shapes, `draw_string/4-6`, `transfer/8`, `copy/9`, markers, `get_mouse_position/3` | `test_win_m8_graphics`: the held paragraph `p_icon`/`g_window` draw paths (the `execute_graphics_command/2` batch, W§2.5) give pinned dot counts; XOR twice erases | make `exclusive_or` act as `set`: the erase check fails | ~500 |
 | M9 | **Choice windows and the remaining menu kinds** (W§2.9-2.10, §3.3-3.4) | `test_win_m9_choice`: a held `choice_list` create (pimfep `standard_choice_window`) reads back `[{Key,Value}]` | return the default for an edited field: fails | ~350 |
 | M10 | **Pmacs proper**: buffers, mode line, echo line, the EDITOR MENU, a minimal default key set (OURS, gap G6), the papyrus/cal editor subclasses | `test_win_m10_exshow` (planned as `test_win_m10_pmacs`): the held `disc/exshow.esp` sequence (create, get_editor, read_file, command_interpret) edits and saves a file in `simpos_fs` | a save overwrites the file's version (S1): the exshow and menu tests fail | ~1200 |
-| M11 | **Live view and IFS applications.** The browser canvas; then IFS programs one at a time (W§7's order) once their non-window needs are met | per program, a pinned screen and transcript | — | open |
+| M11 | **Live view and IFS applications.** The live view (planned as a browser canvas; since 2026-11-26 the SDL2 viewer `tools/winview`, below); then IFS programs one at a time (W§7's order) once their non-window needs are met | `../../psi/test_live.py`: recorded sessions through the live path give the scripted pins; then per program, a pinned screen and transcript | a dropped tee command, a wrong key mapping (I1-I5, the test's header) | live view done; IFS open |
 
 **Status (2026-11-25):** M5's device layer exists as `../../psi/winfb.py` (framebuffer, the §4.1
 primitives as a frozen command stream, PBM P4, test_11 glyphs; tests `../../psi/test_winfb.py`),
@@ -700,6 +702,25 @@ markers; the rest below)** (`../../psi/README.md` "Window M8"; tests `test_win_m
   b, the five other menu items, Pmacs's own mode names, scrolling by command, the M9 leftovers, not
   attempted (a second ATTRIBUTE while a sheet is up; editing a choice window's text field).
 - Screens: `screens/pmacs_editor.png`, `screens/editor_menu.png`.
+
+**Status (2026-11-26, window M11's first half: the live view)** (`../../psi/README.md` "Window
+M11: the live view"; test `../../psi/test_live.py`):
+- **The canvas changed.** M11 planned a browser canvas. The SDL2 viewer `../../tools/winview`
+  (`winview_protocol.md`), made for the window hardware's H7s, is used instead: it already speaks
+  1-bit frames and raw keys and mouse, and both the Bluesim board and the software stack can
+  drive it. So the "no SDL" of §3 holds for the tests only (the viewer leg skips without SDL2).
+- `../../tools/simpos_live.py live` boots the stand-in SIMPOS (no PIMOS) to the debugger dialogue
+  and keeps the viewer showing the frame: the device layer's commands are teed (`windev.Device
+  .tees`) to the launcher's frame, whose changed rows go to the viewer as `R` bands. The viewer's
+  keys and mouse are PSI events by `../../tools/wininput.py`'s two tables and the H7s adapter's
+  click classification, given at quiet moments on the scripted tests' path.
+- **Recorded mode**: an event file in, the viewer's frame out. Five sessions give the scripted
+  pins exactly (`debugger_dialogue` twice, once typed with rubouts; `system_menu`;
+  `pmacs_editor`; `manipulator_reshape`), and the real viewer, headless, gives the debugger's.
+- Added on the way: getl/2's rubout (BS, DEL; OURS), the viewer's event time stamps and
+  `--events`, and a refused batch taken back by replaying the session without it.
+- Not done: the IFS-application half (each program's non-window needs); double clicks are still
+  classified host-side, not in the handler process (§3.2).
 
 Also pinned (2026-11-26): the coordinator's own process is never held back (P13), by
 `test_win_m7_coordinator_writes`.

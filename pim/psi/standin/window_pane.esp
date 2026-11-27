@@ -286,6 +286,22 @@ attribute surface := 0, pitch := 0;
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
 
+% :rub_out(Pane) -- window M11 (2026-11-26), INTERPOLATED (selector and
+% body OURS) from getl/2's rubout (standard_io_window.esp's head): the
+% character before the cursor erased and the cursor back on its cell (a
+% typed line's BS or DEL, standard_io_window.esp getl/2); at column 0 the
+% last cell of the row above (a line wraps only when its row is full);
+% nothing at the pane's first cell.
+:rub_out(Pane) :-
+        back(Pane), !,
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        moved_back(Pane),
+        :fill(#bitmap_display, Pane!cx, Pane!cy, Pane!cw, Pane!ch, reset),
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+:rub_out(_);
+
 % :put_codes(Pane, Codes) -- window M4, INTERPOLATED (selector and body
 % OURS) from window.md §2.3 write/2: a list of codes at the cursor, as
 % put_string/2 (the Pmacs buffer's text, editor_text_buffer.esp).
@@ -1212,6 +1228,15 @@ put_char(Pane, C) :-
 put_char(Pane, C) :-
         :glyph(#bitmap_display, Pane!font, C, Pane!cx, Pane!cy, copy),
         Pane!col := Pane!col + 1, Pane!cx := Pane!cx + Pane!cw;
+
+% rub_out/1's cell: the one before the cursor
+back(Pane) :- Pane!col > 0, !;
+back(Pane) :- Pane!row > 0;
+moved_back(Pane) :- Pane!col > 0, !,
+        Pane!col := Pane!col - 1, Pane!cx := Pane!cx - Pane!cw;
+moved_back(Pane) :-
+        Pane!row := Pane!row - 1, Pane!cy := Pane!cy - Pane!ch,
+        Pane!col := Pane!cols - 1, Pane!cx := Pane!left + (Pane!cols - 1) * Pane!cw;
 
 % the next row, or (on the last) the text up one row and the last cleared
 newline(Pane) :-
