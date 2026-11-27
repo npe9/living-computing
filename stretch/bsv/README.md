@@ -1396,7 +1396,10 @@ two causes, both in `StretchCore.bsv`:
   the level (or `rl_exec_resume` finished a level's read, or
   `rl_idx_write` wrote a progressive level's index) stopped the I-box's
   clock as well. Now `ib` counts it down in those arms too, as `eb`
-  counts `ebusy` down in every arm. Not in `rl_io`, `rl_xmit` or
+  counts `ebusy` down in every arm (`ebusy` is gone since
+  `docs/fidelity_plan.md` A5 step 1, 2026-11-26: each arm now sends
+  `eArm`, and the units' termination count is held only in a clock
+  after one with no arm, the same rule). Not in `rl_io`, `rl_xmit` or
   `rl_tail_write`: a transfer or a transmit is the instruction still in
   progress, and T is already short.
 - The level-load clock came on top of the decode. `rl_prepare` now loads
@@ -1887,7 +1890,9 @@ term is gone; `la.count() == 0 && !ebox.busy()` is the structural
 condition and stays. `interruptDue()`'s own one clock of latching delay
 is NOT the cause and was measured not to be: with `ebusy` dropped the
 bracket program passes with the latch in place, so `StretchStorage` is
-untouched. Still not modelled: an I-box-class instruction the I-box has
+untouched. (`ebusy` itself, the E-box countdown, is gone since
+`docs/fidelity_plan.md` A5 step 1, 2026-11-26; the time it held is the
+units' termination count.) Still not modelled: an I-box-class instruction the I-box has
 already run AHEAD of a pending level is committed and cannot be taken
 back, so an indicator set by a level is still not reported before an
 I-box instruction that overtook it -- `iboxHazard` keeps that narrow

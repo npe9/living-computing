@@ -709,6 +709,13 @@ typedef struct {
 // operation, NOOP no-op (indicator transfer only), Op operation-code
 // level, opnd operand level".
 //
+// >>> 2026-11-27 (fidelity_plan.md A5 part 2): `kind` IS DESCRIPTIVE. <<<
+// No rule reads it: the I-box's own store levels are told apart by
+// LaLevel's `ibox`.  An instruction Table A-2 gives ONE level (FP op +
+// opnd, op + count, the FP store class; StretchLaParts) is loaded with
+// that level's kind; an I-box store level is LaStore; everything else is
+// still `Whole`, and the paragraph below is still true of it.
+//
 // >>> ONLY `Whole` IS USED TODAY, AND THAT IS THE POINT. <<<  This model
 // puts ONE ENTIRE INSTRUCTION in a level: StretchCore.bsv loads
 // `di: di` and the head arm runs execute() off `headLevel().di`.
@@ -732,7 +739,14 @@ typedef enum {
   LaTest,    // Table A-2 "test"
   LaIxRec,   // Table A-2 "IX Rec."   -- index recovery, a pseudo-store
   LaBRec,    // Table A-2 "B Rec."    -- branch recovery
-  LaNoop     // Table A-2 "NOOP"      -- indicator transfer only
+  LaNoop,    // Table A-2 "NOOP"      -- indicator transfer only
+  // Appended 2026-11-27 (StretchLaParts, Table A-2's E-box sheet, printed
+  // A-12, PDF 71); appended, not inserted, so `Whole` stays the reset
+  // encoding:
+  LaOpOpnd,  // Table A-2 "op + opnd" -- op code plus operand, one level (FP)
+  LaOpCount, // Table A-2 "op + count" -- FP SHF
+  LaCft,     // Table A-2 "C($FT)"   -- *+'s factor level
+  LaLaop     // Table A-2 "LAOP"     -- LA operation (I/O)
 } LaKind deriving (Bits, Eq, FShow);
 
 // >>> WHAT A LEVEL CARRIES OF THE I-BOX'S INDEXING, 2026-11-15. <<<
@@ -771,7 +785,15 @@ typedef struct {
 
 typedef struct {
   Bool             valid;
-  LaKind           kind;        // `Whole` everywhere today -- see LaKind
+  LaKind           kind;        // DESCRIPTIVE ONLY: Table A-2's name for the
+                                // level (see LaKind); no rule reads it
+  Bool             ibox;        // the I-BOX'S OWN level (an I-box store held
+                                // for the look-ahead, StretchCore's
+                                // holdStoreInLevel): its work is done and it
+                                // retires without the E-box (rl_store_retire).
+                                // Until 2026-11-27 this was `kind == LaStore`,
+                                // which would send an E-box store level (FP
+                                // ST, Table A-2 "store") there unexecuted.
   DecodedInstr     di;
   HWordAddr        pc;
   InstrLen         len;

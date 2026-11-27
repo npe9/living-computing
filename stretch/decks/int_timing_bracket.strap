@@ -51,8 +51,11 @@
 ! latch and the interruption lands at the instruction boundary anyway.
 ! Such a bracket would pass under both timings and measure NOTHING.
 ! A VFL ST retires out of a look-ahead level instead: rl_au_remove
-! charges `ebusy`, which rl_prepare does NOT check, so the next
-! instruction commits while the interruption is still being decided.
+! charges the E-box's time (`ebusy` when this was written; since
+! fidelity_plan.md A5 step 1, 2026-11-26, the units' termination count,
+! ebox.terminate / unitsTerminated), which rl_prepare does NOT check, so
+! the next instruction commits while the interruption is still being
+! decided.
 ! The provocation and the DS plumbing are the ones
 ! programs/df_data_fetch_alarm.strap already uses -- the boundary
 ! registers with control bit zero ("signal INSIDE") and a VFL ST to a
@@ -113,6 +116,12 @@
 ! test could see it if it were wrong: the CYCLES<= benchmarks never
 ! enable the interruption system, and the interrupting tests check halt
 ! addresses, not clock counts.
+! (2026-11-27: `ebusy` and its `eb` are gone since A5 step 1, 2026-11-26.
+! That line is now rl_interrupt's `eArm.send`: an arm fired, so the
+! units' termination count is not held in the next clock (StretchCore's
+! eArm note) -- the same effect, and still untested by this program.
+! The `ebusy == 0` term the injections above put back is the E-box
+! countdown's, a register that no longer exists; they record 2026-09-25.)
 !
 ! THE THIRD ROW IS WHY StretchStorage IS UNTOUCHED.  interruptDue() is
 ! latched a clock behind the indicator write, and that looked like a
