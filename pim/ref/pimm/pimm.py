@@ -857,6 +857,8 @@ class Machine:
             self.gc_request = False
             import pimm_gc
             pimm_gc.collect(self)
+        if self.heap_alert_var is not None and self.heap_alert_due():
+            self.fire_heap_alert()  # set_heap_alert's, after the collection
         if self.alarm_var is not None and self.alarm_due():
             self.fire_alarm()       # R7L: before the next goal is taken
         g = self.pick()
@@ -1369,11 +1371,18 @@ class Machine:
         # atomic values and strings: two strings are equal when their
         # descriptors and all their words are (PDSS emulator/passive.c
         # passive_unify, case STRING), a string and an atomic value
-        # are not.  Lists and vectors as below; one variable twice is
-        # refused
+        # are not.  Lists and vectors as below.  One unbound variable
+        # twice (2026-11-27, the IFS sweep's: ldlib, mssd, aya, H9-07)
+        # waits on it, as an unbound X always does: VPIM klb_equal,
+        # "when undefined, it suspends even if both point to the same
+        # variable" (interpreter/klb_compare.psl.c 36-43, REF -> UNDF
+        # <- REF "===> suspend"), and PDSS passive_unify case REF
+        # (PushToSuspensionStack2(x)).  PIM/m's microcode is not held:
+        # INFERENCE that it does the same.  The variable is noted once
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
-            raise Unimplemented('wait_value of a variable with itself')
+            self.waiting.append(a[1])
+            return self.guard_fail()
         a, b = self.g_word(x), self.g_word(y)
         if a is None or b is None:
             return self.guard_fail()
@@ -3787,8 +3796,25 @@ class Machine:
         # register, the label; the arity in the next cell's top byte.
         # TM-1044's enqueue_to_processor(.., Rprocessor, ARITY) (as
         # listed in docs/literature_gaps.md, line 2441).  There
-        # is ONE processor here, number 0 (ours): for 0 the goal is
-        # made as enqueue_goal makes it; another number is refused.
+        # is ONE processor here, number 0 (ours).  Any integer N makes
+        # the goal here, as enqueue_goal makes it (2026-11-27, the IFS
+        # sweep's mgtp_n, mmi, H9-07, multialign: Goal@node(1); before,
+        # a number other than 0 was refused).  The single-processor
+        # systems do so: PDSS compiles enqueue_to_node and
+        # enqueue_to_processor to a plain enqueue_goal (compiler/
+        # outp.kl1 360-363; "Because PDSS is a single processor system,
+        # there is no processor pointing function", doc.e/pdss.tex
+        # 71-72), and KLIC built for one node (neither DIST nor SHM)
+        # enqueues a goal for any other node number here (runtime/
+        # sched.c enqueue_throw_goal 277-289).  DECLARED DIFFERENCE,
+        # OURS: on PIM/m a node outside the shoen's range is the
+        # exception range_overflow (PIMOS manual e-shoen.tex 491-514,
+        # enqueue_goal_to_node; VPIM klb_fork.psl.c 1068-1070
+        # s_IfNodeOutOfBounds), which the multi-PE model keeps
+        # (pimm_pe.py node_number, refused there).  This model stands
+        # for a machine whose every node is this one.  A number that
+        # is not an integer is refused (illegal_input, not modelled;
+        # KLIC "inter cluster pragma error", sched.c 291).
         # An unbound number is waited for (carried over from VPIM,
         # agreeing with KLIC; the PIM/m firmware's behaviour is not
         # held: asm/pimm_stubs.py TO_PROCESSOR): P and the code address
@@ -3803,7 +3829,7 @@ class Machine:
             self.nsusp += 1
             self.hook(g, w[1])
             return pc + 2
-        if w[0] & ~1 != INT or w[1] != 0 or n > 11:
+        if w[0] & ~1 != INT or n > 11:
             raise Unimplemented('enqueue_goal_to_processor %r, %d arguments' % (w, n))
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
         return pc + 2
@@ -3811,9 +3837,11 @@ class Machine:
     def i_to_processor(self, pc, x, y, z, c16):
         """Ours, only at its stub: the waiting goal of Goal@processor(P),
         r0.. the goal's z arguments, r[x] = P, r[y] = the goal's code
-        address.  P still unbound: the goal waits again.  P = 0: the
-        goal is made ready (VPIM's dcode_apply(Code,Argv)@processor(P)).
-        Another number is refused."""
+        address.  P still unbound: the goal waits again.  P an integer:
+        the goal is made ready here (VPIM's
+        dcode_apply(Code,Argv)@processor(P); any number, as
+        i_enqueue_goal_to_processor above, since 2026-11-27).  Not an
+        integer: refused."""
         if pc != self.stubs.get('$to_processor%d' % z, {}).get('addr'):
             raise Unimplemented('to_processor at %d' % pc)
         w = self.deref(self.reg[x])
@@ -3822,7 +3850,7 @@ class Machine:
             self.nsusp += 1
             self.hook(g, w[1])
             return None
-        if w[0] & ~1 != INT or w[1] != 0:
+        if w[0] & ~1 != INT:
             raise Unimplemented('enqueue_goal_to_processor %r' % (w,))
         self.record(READY, self.reg[y][1] - self.load, self.reg[:z])
         return None
@@ -3857,6 +3885,75 @@ class Machine:
         size, used = self.heap_size()
         self.reg[x] = (INT, size)
         self.reg[y] = (INT, used)
+
+    # set_heap_alert's request still to come, one for the processor
+    # (VPIM's HeapAlertVar and HeapAlertSize, basics/bsc_heap_page.psl.c
+    # 368-388).  Class attributes, so that a machine pickled before
+    # 2026-11-27 has none
+    heap_alert_var = None   # the Alarm variable it binds
+    heap_alert_size = None  # the use it waits to be passed
+
+    def i_set_heap_alert(self, pc, x, y, z, c16):
+        # set_heap_alert(Size, ^Alarm), 22:FD r_r (inst_tab.kl1:367;
+        # blt.kl1:669-670: input X1, output X2; body, system).  VPIM
+        # (interpreter/klb_pimos.psl.c 163-181, kblt_b_set_heap_alert
+        # 209-351): "when the use passes / has passed Size, Alarm is
+        # bound to the use then"; "if a request is already waiting for
+        # its binding, [] is given to the earlier one"; Size at or above
+        # the heap's Size is an exception (range_overflow), as is a Size
+        # not an integer (illegal_input): both refused here, loud.  An
+        # unbound Size waits (the stub, as VPIM's f_DcodeEnqueue2Ope_IO).
+        # The use already past Size (Used > Size, strictly): Alarm = Used
+        # at once.  Else the alert is armed with a fresh variable as
+        # Alarm (VPIM's own variable and a unifier goal with Alarm: one
+        # variable here, OURS), bound when the use passes Size
+        # (heap_alert_due, at the goal switch).  Size and Used are
+        # get_heap_size's (heap_size, OURS values: the sweep's heap
+        # limit is not what Size reports)
+        def f(s):
+            if s[0] & ~1 != INT:
+                raise Unimplemented('set_heap_alert of %r: illegal_input, not modelled' % (s,))
+            s = signed(s[1])
+            size, used = self.heap_size()
+            if s >= size:
+                raise Unimplemented('set_heap_alert(%d) of a heap of %d: range_overflow, '
+                                    'not modelled' % (s, size))
+            if self.heap_alert_var is not None:
+                self.heap_alert_bind(NIL)
+            if used > s:
+                return [(INT, used)]
+            self.heap_alert_var = self.new_var()
+            self.heap_alert_size = s
+            return [self.heap_alert_var]
+        self.builtin('set_heap_alert', [x, y], f)
+
+    def heap_alert_due(self):
+        return self.heap_alert_var is not None and self.heap_size()[1] > self.heap_alert_size
+
+    def heap_alert_bind(self, value):
+        """The armed heap alert's Alarm bound to value, waking its goals,
+        and the alert cleared.  An Alarm the program has bound itself is
+        refused (VPIM: a unification failure reported to the shoen,
+        klb_pimos.psl.c 177-179; not modelled)."""
+        v = self.deref(self.heap_alert_var)
+        self.heap_alert_var = self.heap_alert_size = None
+        if not self.unbound(v):
+            raise Unimplemented('the Alarm of set_heap_alert is bound to %r' % (v,))
+        self.unify(v, value)
+
+    def fire_heap_alert(self):
+        """The use has passed the alert's Size: Alarm = the use now
+        (VPIM functions/f_event_self_int.psl.c f_CheckHeapAlert_Sub
+        67-116: under the lock, Used > HeapAlertSize, the unify with
+        resume, the reset).  VPIM tests at each growth of the heap top
+        (bsc_heap_page.psl.c 99, 209, b_CheckHeapAlert 394-402) and
+        binds in the event handler between reductions, after the
+        collection's request (f_event_handler_main.psl.c 276-290);
+        here at the goal switch, after the collection (INFERENCE: the
+        use only grows between collections, so the first goal switch
+        after it passes Size is where VPIM's next event check is, to
+        within a reduction)."""
+        self.heap_alert_bind((INT, self.heap_size()[1]))
 
     def heap_size(self):
         """get_heap_size's (Size, Used), above."""

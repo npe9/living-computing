@@ -27,7 +27,9 @@ labelled there.  In brief:
   another PE it sends %throw_goal (VPIM's cluster branch, klb_fork.psl.c
   1069-1075, docs/multi_pe.md 1.3).  An atom or a number out of range is
   an exception on PIM/m (illegal_input, range_overflow, e-shoen.tex
-  486-514), not modelled: refused.  A node that is a variable waits for
+  486-514), not modelled: refused (the one-PE pimm.py makes any
+  integer's goal here, as PDSS and KLIC on one node do: its
+  i_enqueue_goal_to_processor).  A node that is a variable waits for
   it (to_processor, the stub), then the goal goes there.
 - The arguments of a thrown goal are copied at level 0 (TM-1044 9.2;
   VPIM f_int_cl_msg_type.psl.c section 4): an integer, an atom or the
@@ -278,8 +280,9 @@ class PE(pimm.Machine):
         is local and bound): the goal suspends on it, which sends
         %read, as PDSS suspends X = Y on an unbound X even when Y is
         the same variable (emulator/passive.c passive_unify, case REF:
-        PushToSuspensionStack2(x), NO).  One plain variable twice is
-        still refused, as on one machine."""
+        PushToSuspensionStack2(x), NO).  One plain variable twice waits
+        on it too, pimm.Machine's (since 2026-11-27, VPIM klb_equal,
+        interpreter/klb_compare.psl.c 36-43)."""
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.is_ex(a) and self.is_ex(b) and a[1] == b[1]:
             self.ran('wait_value of an external cell with itself')
