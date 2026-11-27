@@ -282,6 +282,41 @@ def if_then(t):
     return t
 
 
+def split_repeat(t):
+    """`G1, ..., repeat, Rest` -> `G1, ..., '$repeat'(Rest)`: the goals
+    after a `repeat` become a $or$ of one clause whose code begins with the
+    repeat, `c5 n 00 00` (try, its target the next cell but one) and `c2 00
+    ff fe` (retry_me_else to itself), then Rest.  KNOWN-PLAINTEXT
+    (MENDELS, 2026-11-27): paragraph##view_selector :read/2 (p_MAIN.esp
+    403-414 `:get_at(..), repeat, :get(..), melt(..), ...`) is held as a
+    call of $or$4/3, whose @d32 is `c5 03 00 00`, @d33 `c2 00 ff fe`, then
+    the allocate and the goals after repeat; kappa##kappaIVT_new_index
+    $or$0/1 @811 the same (kl0_opcodes.tsv rows c5, c2).  Inside a
+    disjunction's alternatives too."""
+    if t[0] == 'cmp' and t[1] == ';' and len(t[2]) == 2:
+        return ['cmp', ';', [split_repeat(t[2][0]), split_repeat(t[2][1])]]
+    if t[0] == 'cmp' and t[1] == '->' and len(t[2]) == 2:
+        return ['cmp', '->', [split_repeat(t[2][0]), split_repeat(t[2][1])]]
+    gs = flat(t)
+    for i, g in enumerate(gs):
+        if g[0] == 'atom' and g[1] == 'repeat':
+            rest = gs[i + 1:] or [['atom', 'true']]
+            r = rest[-1]
+            for x in reversed(rest[:-1]):
+                r = ['cmp', ',', [x, r]]
+            r = ['cmp', '$repeat', [split_repeat(r)]]
+            out = gs[:i] + [r]
+            break
+    else:
+        if len(gs) == 1:
+            return t
+        out = [split_repeat(g) if g[0] == 'cmp' and g[1] in (';', '->') else g for g in gs]
+    r = out[-1]
+    for x in reversed(out[:-1]):
+        r = ['cmp', ',', [x, r]]
+    return r
+
+
 # the tests the held compiler compiles as a test-and-branch (blt f0/f2 ==,
 # f4 <, f5 >=, e0 atom/1, e1 integer/1, e6 unbound/1, and their mirrors)
 BRANCH_TESTS = {'==', '\\==', '<', '>', '=<', '>=', 'atom', 'integer', 'unbound'}
@@ -591,6 +626,14 @@ def classify(t, unit):
             nm = atom_name(args[1])
             if nm is None:
                 raise CompileRefusal('dynamic slot name', 'Obj!X with X not an atom')
+            # a component of the class being compiled is named by its
+            # renamed slot, pkg##class$slot (KNOWN-PLAINTEXT: qxt##name_table
+            # class new_expr/2 @4e `put r0, qxt##name_table$name_pref`
+            # for nametbl.esp:29 `Class!name_pref`, a component declared at
+            # :15-16; MENDELS path_name.esp, 2026-11-27, met it first)
+            owner = getattr(unit, 'components', {}).get(nm)
+            if owner is not None:
+                nm = '%s$%s' % (owner, nm)
             return ('slot', classify(args[0], unit), nm)
         if f in ARITH and len(args) == 2:
             return ('arith', f, classify(args[0], unit), classify(args[1], unit))
@@ -690,6 +733,18 @@ BUILTINS = {
     # step 3d (2026-11-24); set_subvector is two cells, as substring
     ('vector_to_list', 3): ('6e', ('in', 'in', 'out')),
     ('set_subvector', 4): ('34', ('in', 'in', 'in', 'in')),
+    # MENDELS (2026-11-27), KNOWN-PLAINTEXT (kl0_opcodes.tsv rows 3e, 3f):
+    # freeze(Data, Frozen) and melt(Frozen, Data), ESP manual program-e.tex
+    # 1895-1939, 6599-6660 (PRINTED meaning)
+    ('freeze', 2): ('3e', ('in', 'out')),
+    ('melt', 2): ('3f', ('in', 'out')),
+    # MENDELS (2026-11-27): type tests and a string test whose blt rows
+    # were already witnessed (kl0_opcodes.tsv 00, 05, 0d, 69), not emitted
+    # by espc before
+    ('atom', 1): ('00', ('in',)),
+    ('heap_vector', 2): ('05', ('in', 'out')),
+    ('object', 3): ('0d', ('in', 'out', 'out')),
+    ('not_equal_string', 2): ('69', ('in', 'in')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -872,6 +927,13 @@ class PredCompiler:
         cl = self.pred.clauses
         n = len(cl)
         labels = [self.asm.label() for _ in cl]
+        if getattr(self.pred, 'repeat', False):
+            # split_repeat: c5 n (try, to the cell after the c2), c2 to itself
+            body, again = self.asm.label(), self.asm.label()
+            self.asm.choice(0xc5, self.pred.arity, body)
+            self.asm.place(again)
+            self.asm.choice(0xc2, 0, again)
+            self.asm.place(body)
         for i, c in enumerate(cl):
             if n > 1:
                 self.asm.place(labels[i])
@@ -1924,6 +1986,8 @@ class ClassCompiler:
         f, args = t[1], t[2]
         if f == ';' and len(args) == 2:
             return [self.disjunction(t, outside, body)]
+        if f == '$repeat' and len(args) == 1:
+            return [self.disjunction(t, outside, body, repeat=True)]
         if f in ('->',):
             raise CompileRefusal('if-then-else ->', 'not modelled')
         if f in ('not', '\\+') and len(args) == 1:
@@ -1959,6 +2023,9 @@ class ClassCompiler:
                 nm = atom_name(lhs[2][1])
                 if nm is None:
                     raise CompileRefusal('dynamic slot name', 'Obj!X := V with X not an atom')
+                owner = getattr(u, 'components', {}).get(nm)
+                if owner is not None:
+                    nm = '%s$%s' % (owner, nm)     # a component (classify's `!`)
                 val = classify(args[1], u)
                 return [Goal('slotset', obj=obj, slot=nm, value=val, vars=self.vcount([obj, val]))]
             raise CompileRefusal(':=', 'not a slot assignment')
@@ -1999,18 +2066,29 @@ class ClassCompiler:
                 self.peeled.add(parent)
             for alt in alternatives(t):
                 self.number_ors(alt, path)
+        elif t[0] == 'cmp' and t[1] == '$repeat' and len(t[2]) == 1:
+            # a repeat's $or$ (split_repeat), numbered with the others
+            name = '$or$%d' % self.nor
+            self.or_names[id(t)] = name
+            self.nor += 1
+            self.or_count[parent] += 1
+            path = self.or_path[name] = '%s#%d' % (parent, self.or_count[parent])
+            self.number_ors(t[2][0], path, last)
         elif t[0] == 'cmp' and t[1] in (',', '->') and len(t[2]) == 2:
             self.number_ors(t[2][0], parent, False)
             self.number_ors(t[2][1], parent, last)
 
-    def disjunction(self, t, outside, body):
+    def disjunction(self, t, outside, body, repeat=False):
         """(A ; B ; ...) -> a call of a new local $or$N (kind 0x12) whose
-        arguments are the variables shared with the rest of the clause."""
-        alts = alternatives(t)
+        arguments are the variables shared with the rest of the clause.
+        REPEAT: T is split_repeat's '$repeat'(Rest), a $or$ of one clause
+        begun by the repeat."""
+        alts = [t[2][0]] if repeat else alternatives(t)
         inner = vars_of(t)
         shared = [v for v in outside if v in inner]
         name = self.or_names[id(t)]
         pred = PredDef(name, len(shared), 0x12)
+        pred.repeat = repeat
         self.locals_.add((name, len(shared)))
         self.preds[pred.key] = pred
         head = [('var', v) for v in shared]
@@ -2060,6 +2138,7 @@ class ClassCompiler:
             unlifted = vals
             vals = [lift(v) for v in vals]
             if body is not None:
+                body = split_repeat(body)
                 self.number_ors(body, '%s/%d.%02x' % (name, len(head_terms), kind))
             # the variables of a lifted head expression are used by its
             # unification after the body, so a disjunction shares them:
@@ -2084,6 +2163,13 @@ class ClassCompiler:
         cd = self.cdef
         if cd.get('macro_bank'):
             cd = self.cdef = self.expand_macros(cd, self.unit.bank(cd['macro_bank'][1]))
+        # the class's components (not also an attribute): `X!c` in its own
+        # code names the renamed slot (classify, the slot access)
+        attrs = {s['name'] for sec in ('class', 'instance') for s in cd['slots'][sec]
+                 if s['attribute']}
+        self.unit.components = {s['name']: self.cid for sec in ('class', 'instance')
+                                for s in cd['slots'][sec]
+                                if not s['attribute'] and s['name'] not in attrs}
         # locals first, so calls can tell them from built-ins
         for it in cd['clauses']:
             if it['section'] == 'local':

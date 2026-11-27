@@ -2971,6 +2971,18 @@ class Machine:
             raise Refusal('unbound argument' if isinstance(t, Var) else 'built-in', '%s on %r' % (what, t))
         return t
 
+    def op_freeze(self, code, off, a, b, c, v):
+        """blt 3e (kl0_opcodes.tsv): a copy with new variables, its
+        vectors heap vectors (OURS form of PRINTED freeze/2)"""
+        self.x[b] = copy_fresh(self.x[a], {}, True)
+        self.nxt(code, off)
+
+    def op_melt(self, code, off, a, b, c, v):
+        """blt 3f (kl0_opcodes.tsv): a copy with new variables (OURS form
+        of PRINTED melt/2)"""
+        self.x[b] = copy_fresh(self.x[a], {}, False)
+        self.nxt(code, off)
+
     def op_first(self, code, off, a, b, c, v):
         self.x[b] = self._vec(self.x[a], 'first').args[0]
         self.nxt(code, off)
@@ -3015,6 +3027,22 @@ def call_class_method(m, cid, name, args, limit=50):
         if len(out) >= limit:
             break
     return out
+
+
+def copy_fresh(t, seen, heap):
+    """T copied, each variable a new one (one per variable of T): blt 3e
+    freeze and 3f melt.  Strings, objects, atoms and integers are kept."""
+    t = deref(t)
+    if isinstance(t, Var):
+        v = seen.get(id(t))
+        if v is None:
+            v = seen[id(t)] = (t, Var())
+        return v[1]
+    if isinstance(t, Cons):
+        return Cons(copy_fresh(t.args[0], seen, heap), copy_fresh(t.args[1], seen, heap))
+    if isinstance(t, Vec):
+        return Vec([copy_fresh(e, seen, heap) for e in t.args], heap=heap or t.heap)
+    return t
 
 
 def resolve(t):
@@ -3216,6 +3244,10 @@ SIMPOS_MODELS = {
 # selectors (psi/windev.py; the window stand-ins draw through them)
 import windev  # noqa: E402
 windev.install(SIMPOS_MODELS, sys.modules[__name__])
+# MENDELS (psi/mendels.py, 2026-11-27): the SIMPOS methods its ESP half needs
+# (standin/standard_io_buffer.esp)
+import mendels_simpos  # noqa: E402
+mendels_simpos.install(SIMPOS_MODELS, sys.modules[__name__])
 
 
 # -- census recipes (step 3f) ----------------------------------------------

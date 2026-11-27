@@ -585,6 +585,37 @@ From the sweep, not from the documentation alone:
    and the prompt `package>>` (mendels' `package.kl1`:60-77
    read_window), whose answer goes to `ckcreate_esp_device`, the ESP
    class package on the PSI. The rest is MENDELS's ESP half. The strongest demonstration candidate.
+
+   **The two halves linked (2026-11-27, `psi/mendels.py`,
+   `psi/test_mendels.py`).** `package>>` asks the ESP *package* name
+   (package.kl1:60-77 reads it from `mendel.pac` when that file is in the
+   task directory, readme.e:18-28), not the user directory: answering
+   `mendel` goes on to 601 `mendel##mendel_esp_device`, where `fep.py`
+   alone stops (FepError, 6,160,384 instructions). The user directory
+   (readme.e:37-39) is asked later, by the ESP half's own dialog
+   (init_path.esp). The documented installation (`mendel.pac` served in
+   `>sys>user>MENDEL>KL1>`, `mdllibrary.exe` in `>sys>user>MENDELuser>SYSTEM>`;
+   install.e) asks no `package>>` at all. On that route, with the 601s
+   and 620s carried to the PSI (`fep_bridge.BridgeFep`), the ESP half
+   compiled by `espc.py` (the archive's 108 ESP files as the package
+   `mendel`; 18 items dropped by the parser, 689 predicates refused) and
+   run on kl0:
+   - the loader's "WAIT !" window, the package load (library_utility),
+     `mendel_esp_device` io(0, "start");
+   - the path dialog, "Input User Path Name>" in a pmacs_window, answered
+     `>sys>user>MENDELuser`, then `y` (screen
+     `docs/simpos/screens/mendels_path.png`);
+   - `load_library` to the KL1 half, which loads `mdllibrary.exe` from
+     the path typed and answers `loaded_library(normal([mendel::example1,
+     mendel::example2, mendel::example3]))`;
+   - the ESP half reads it and goes on into `mendel_main`'s create/1,
+     which stops at the first SIMPOS class not stood in:
+     `temporary_menu:create/3` (7,075,533 PIM/m instructions, 21
+     exchanges; tape `psi/mendels_tapes/doc.json`, replayed by
+     test_mendels). Next: temporary_menu, then MENDELS's own windows
+     (mendel_window, garnet_window, library_window, ...), which need the
+     graphics side of SIMPOS's window system.
+   The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the
    KL1 half through `pimfep##as_pimos_string_io_device`, the FEP string
@@ -738,5 +769,6 @@ rows cite.
   way to a served one), how its 237 matches a wildcard (here fnmatch's,
   a file without its version), that it resolves `..`; and they stay in
   the runner, not `fep.py`, whose tapes pin 237 with `*.*` alone.
-- mendels: type the user directory at its prompt and see how far the
-  KL1 half goes without the ESP package.
+- mendels: done 2026-11-27 (§6 item 1): the prompt asks the package
+  name, and the two halves run linked as far as mendel_main's
+  temporary_menu. Next: stand in temporary_menu and MENDELS's windows.

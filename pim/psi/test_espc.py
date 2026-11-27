@@ -529,8 +529,16 @@ class Structure(unittest.TestCase):
         # (#1#1#1#1#1-3) are compared ('other', like the rest of read/2),
         # #1#1#1#1 and #1#1#1#2 pair at the held arity 3 (2 before), the
         # two compiled-only rows are gone, and #1#1 other -> moves and
-        # environment.  Both invariants are back to 0
-        self.assertEqual((c['pred compared'], c['pred exact']), (1289, 258))
+        # environment.  Both invariants are back to 0.
+        # MENDELS (2026-11-27; row by row against 83a23c04's espc.py): the
+        # built-ins atom/1, heap_vector/2, freeze/2, melt/2, object/3,
+        # not_equal_string/2 and repeat/0, and a component named
+        # `Class$name` (as qxt##name_table new_expr/2 @4e): 1,289 -> 1,432
+        # compared, 258 -> 263 exact.  No row lost: 54 predicates refused
+        # before are compiled (23 moves and environment, 15 indexing and
+        # other, 9 other, 4 exact, 3 clause order) and 89 of their $or$s
+        # are compared (one exact)
+        self.assertEqual((c['pred compared'], c['pred exact']), (1432, 263))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -948,9 +956,27 @@ end.'''
         # only, 22 other and 4 more compared (mispaired) before.  A lifted
         # head expression's variables now count as the clause's (espc.py
         # add_clause): get_used_lpn/5 refused ('unbound input') -> moves
-        # and environment, count_element/5.11#1 at the held arity 3
-        self.assertEqual((c['pred compared'], c['pred exact']), (13133, 1530))
-        self.assertEqual(c['pred under an inlined ->'], 116)
+        # and environment, count_element/5.11#1 at the held arity 3.
+        # MENDELS (2026-11-27; row by row against 83a23c04's espc.py):
+        # 14,406 compared, 1,777 exact.  A component is named `Class$name`
+        # (KNOWN-PLAINTEXT qxt##name_table new_expr/2 @4e): 129 rows
+        # 'other' -> exact, 244 'other' -> moves and environment.  The
+        # built-ins atom/1 (193 refusals before), heap_vector/2 (131),
+        # melt/2 (149), freeze/2 (69), object/3 (38), not_equal_string/2
+        # (7) and repeat/0 (74): 318 refused -> moves and environment, 87
+        # -> exact, 149 -> other, 90 -> indexing and other, 44 -> clause
+        # order; 17 + 7 + 3 + 2 'held uses an unwitnessed opcode' rows are
+        # compared now (blt 3e/3f are rows of kl0_opcodes.tsv).  23 $or$
+        # rows compared as 'other' before become '$or$ of a refused
+        # predicate': their predicate gets further and stops at a refused
+        # construct (vector_tail/3, new_stack_vector/2, ...).  No exact
+        # row lost.  One new row: check_search_index_value/11.11#3, under
+        # an inlined ->
+        self.assertEqual((c['pred compared'], c['pred exact']), (14406, 1777))
+        # 116 -> 119 with MENDELS's built-ins: check_index_conditions/9.11#1
+        # and check_search_index_value/11.11#2 ($or$ of a refused predicate
+        # before) and the new #3
+        self.assertEqual(c['pred under an inlined ->'], 119)
         self.assertEqual(c['pred compiled only'], 89)
         # 21 before the nesting fix; the three gone are copy_table/1.11#2#1
         # (held arity 2, ours 3) and the two search_enzan_code #...#2#2#1
@@ -1071,6 +1097,7 @@ class Standins(unittest.TestCase):
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##abort_handler', 'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
+            'simpos##as_event_handler',     # MENDELS (2026-11-27)
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
             'simpos##binary_file', 'simpos##bitmap', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##buffer_region', 'simpos##channel',
@@ -1078,7 +1105,9 @@ class Standins(unittest.TestCase):
             'simpos##coordinator_program', 'simpos##date_time', 'simpos##debugger',
             'simpos##debugger_window', 'simpos##directory',
             'simpos##e_string', 'simpos##editor_command_interpreter', 'simpos##editor_text_buffer',
-            'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##font', 'simpos##hash_index',
+            'simpos##library_utility',      # MENDELS (2026-11-27)
+            'simpos##list', 'simpos##list_index',
             'simpos##marker',       # window M8's markers (2026-11-26)
             'simpos##menu_pane',
             'simpos##message', 'simpos##monogyny_list_index', 'simpos##name', 'simpos##network_listener_buffer',
@@ -1093,7 +1122,9 @@ class Standins(unittest.TestCase):
             'simpos##save_memory', 'simpos##semaphore',
             'simpos##standard_choice_window',       # window M9 (2026-11-26)
             'simpos##standard_editor',
-            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##status_band',
+            'simpos##standard_input_file',
+            'simpos##standard_io_buffer',   # MENDELS (2026-11-27)
+            'simpos##standard_io_window', 'simpos##status_band',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##tcpip_network_subsystem', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
@@ -1163,7 +1194,8 @@ class Standins(unittest.TestCase):
                 with self.subTest(cls=t.id, method=p.name):
                     self.assertTrue(re.search(r'RECONSTRUCTED-\s*FROM-\s*MANUAL|INFERENCE|OURS', text))
                     self.assertIn('`%s/' % p.name, doc)
-        self.assertEqual(n, 38)     # the methods whose block cites pmacs.md
+        # 39 since MENDELS's getl/2 (2026-11-27)
+        self.assertEqual(n, 39)     # the methods whose block cites pmacs.md
 
     def test_source_check_labels(self):
         # docs/simpos/source_check_2026-11-24.md §5, applied 2026-11-25:
@@ -1567,8 +1599,10 @@ end.''', 'simpos')
         cause, detail = self.refusal(m, 'pimfep##pimfep_message_log', 'class', 'dump_log/1')
         # step 3f: activate/1 is stood in; the text output (window.md
         # §2.4, putl/2) was not.  Window M4 stood in putl/2; its input,
-        # getl/2, is not
-        self.assertIn('simpos##pmacs_window:getl/2', detail)
+        # getl/2, was not.  MENDELS (2026-11-27) stood in getl/2: dump_log/1
+        # now waits in it for a key, on the window's input stream, and the
+        # census process cannot be resumed
+        self.assertIn('process suspend/2 on {stream,<simpos##stream>}', detail)
         # trace and network_listener_buffer: the pimfep callers run to a
         # solution (no tracer: OURS).  common_network's callers are
         # covered by test_fep_census only
@@ -1882,8 +1916,15 @@ end.''', 'simpos')
         # escape/3, push_to_yank/3, push_yank/2 success; top_yank/2, yank/1
         # failure (nothing killed); find_file/2, write_file/4 refused
         # (unbound pathname); the other 14 refused at the unset window
-        # (slot constant).  837 / 247 / 450
-        self.assertEqual((len(rows), out), (1551, {'success': 837, 'failure': 247, 'refused': 450, 'exception': 16,
+        # (slot constant).  837 / 247 / 450.
+        # MENDELS (2026-11-27; row by row against 83a23c04): pmacs_window
+        # getl/2 is stood in, so pimos_window inherits one row, refused at
+        # its unset interpreter (slot constant): 1,552 rows, 837 / 247 /
+        # 451.  pimfep_message_log dump_log/1, sorted_log/1 and
+        # sorted_log_string/1 now wait in getl/2 (refused 'would suspend',
+        # 'simpos' before); scsi reset/1-3 reach a slot constant (refused
+        # 'opcode' before: blt 3e freeze and 3f melt are rows now)
+        self.assertEqual((len(rows), out), (1552, {'success': 837, 'failure': 247, 'refused': 451, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1899,8 +1940,9 @@ end.''', 'simpos')
         # 'simpos', now get_interpreter/2 to the census window's unset
         # editor slot) stop at the census's slot constants; 158 -> 185 in
         # window M10: the 26 new rows above and select_buffer/4; 185 -> 201
-        # in the Pmacs reconstruction: the 16 slot-constant rows above
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 201)
+        # in the Pmacs reconstruction: the 16 slot-constant rows above;
+        # 201 -> 205 for MENDELS: pimos_window getl/2 and scsi reset/1-3
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 205)
         self.assertEqual(sorted(r[2] for r in rows if r[0] == 'pimfep##pimos_login_requester'
                                 and 'no file system is mounted' in r[5]),
                          ['goal/1', 'initiate/1', 'invoke/1'])
@@ -2033,8 +2075,11 @@ end.''', 'simpos')
         # left_click/3, mark/1, push_to_yank/3, push_yank/2), 18 failure
         # (an empty buffer, one view, nothing killed), 5 refused (the three
         # prompts at the census process's suspend, find_file/2 and
-        # write_file/4 at the unbound pathname): 888 / 268 / 378
-        self.assertEqual((len(rows), out), (1551, {'success': 888, 'failure': 268, 'refused': 378,
+        # write_file/4 at the unbound pathname): 888 / 268 / 378.
+        # MENDELS (2026-11-27, row by row): the rows of test_fep_census;
+        # pimos_window getl/2 is refused at the census process's suspend:
+        # 1,552 rows, 888 / 268 / 379
+        self.assertEqual((len(rows), out), (1552, {'success': 888, 'failure': 268, 'refused': 379,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -2044,8 +2089,9 @@ end.''', 'simpos')
         # set_inside_size/5, set_size/3 go from 'simpos' (an unstood
         # pmacs_window or editor method) to put/2 on the window's unset
         # output stream (the step 3g artifact, as get_title/3); window M10:
-        # 114 -> 115, select_buffer/4 (above)
-        self.assertEqual(slot_const, 115)
+        # 114 -> 115, select_buffer/4 (above); MENDELS: 115 -> 118, scsi
+        # reset/1-3 (as in test_fep_census)
+        self.assertEqual(slot_const, 118)
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -2072,8 +2118,10 @@ end.''', 'simpos')
         # get on its input stream, the console's own wait; the Pmacs
         # reconstruction (2026-11-27): 24, read_with_prompt/3, find_file/1
         # and write_file/1 (the prompts' read, the census process's
-        # suspend; test_step3f's 5 refused rows above)
-        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 24)
+        # suspend; test_step3f's 5 refused rows above); MENDELS's getl/2
+        # (2026-11-27): 28, pimos_window getl/2 and pimfep_message_log
+        # dump_log/1, sorted_log/1, sorted_log_string/1 (waiting for a key)
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 28)
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
@@ -2268,18 +2316,18 @@ end.''', 'simpos')
             # step 3j: 46 stand-in rows; 3m: 2 (message create/2); window
             # M4/M6: 15 (test_fep_census)
             # window M10: 36 inherited methods; the Pmacs reconstruction
-            # (2026-11-27): 30 (test_fep_census)
-            self.assertEqual(len(fwd), 1551)
+            # (2026-11-27): 30 (test_fep_census); MENDELS's getl/2: 1
+            self.assertEqual(len(fwd), 1552)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
         # argument no longer reaches dump_log/1, which goes on to the
         # message window (pmacs_window putl/2, not stood in; window M4
-        # stood it in, and the row goes on to getl/2, not stood in)
+        # stood it in, and the row goes on to getl/2, not stood in; MENDELS
+        # stood getl/2 in, and the row waits in it for a key)
         by = norm(K.census_fep(K.fep_machine()))
         self.assertEqual(by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][:2],
-                         ('refused', 'simpos'))
-        self.assertIn('pmacs_window:getl/2', by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][2])
+                         ('refused', 'would suspend'))
 
     def test_step3i_boot(self):
         # step 3i, docs/simpos/boot_route.md B2: the boot process (TM-100

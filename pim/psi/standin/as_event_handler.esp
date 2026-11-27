@@ -1,0 +1,22 @@
+% SCAFFOLDING stand-in for SIMPOS's class `as_event_handler`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no body of it
+% is printed or held.  MENDELS (IFS No.61, psi/mendels.py, 2026-11-27).
+% MINIMAL: the handler MENDELS's ESP device names in its catcher list
+% (esp_device.esp io/4: `:get_instance(#mendel_error, H, _)`, then
+% `:refute_in(Process, [{#error, H, ""}], ...)`; error.esp's mendel_error
+% has this nature and defines invoke/5).
+%
+% USAGE: docs/simpos/subsystems/shell.md §2.10 (as_event_handler: a
+% handler class defines `:invoke(H, Event, Info, _, _)`; kappa2
+% HLCMNG.ESP:29, 412-416 make one with new/2).
+
+class as_event_handler has
+
+% :get_instance(#C, H, _) -- INTERPOLATED from MENDELS esp_device.esp:19
+% (the handler given to refute_in/5); the third argument is not used by
+% the caller.  The body OURS: a new instance of the class each time
+% (whether SIMPOS keeps one per class is not known).
+% LABEL: INFERENCE (the body OURS)
+:get_instance(Class, H, _) :- :new(Class, H);
+
+end.

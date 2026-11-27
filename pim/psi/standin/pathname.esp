@@ -31,7 +31,9 @@
 % Not carried by the port, and so not here: remote_or_local/6 (the
 % spelling of its held callers: cal-esp deb2.12/init.esp:314, cil
 % src/ds_fep.esp:909),
-% check_pathname/3, last/4, straighten_up/5 (sweep §2.1).
+% check_pathname/3, last/4, straighten_up/5 (sweep §2.1).  check_pathname/3
+% is stood in since 2026-11-27 for MENDELS, INTERPOLATED and marked as such
+% (no HELD-SOURCE line).
 % Each method's first clause has a label line `% HELD-SOURCE:
 % pathname.esp:N` above it.  The methods espc.py refuses are pinned in
 % psi/test_espc.py.
@@ -64,6 +66,17 @@ class   pathname    has
         get_last(Class,Pathname,Parent_path0,Name) ;
 
    %   THIS METHOD ASSUMES Pathname SYNTAX IS RIGHT.
+
+% :check_pathname/3 -- MENDELS (2026-11-27), not in the held copy (see
+% the head comment).  INTERPOLATED: the USAGE is MENDELS init_path.esp
+% check_pathname1/3 (`:check_pathname(#pathname, Path, CPath)`; its
+% failure is reported as "syntax error '<Path>'", and CPath goes to
+% directory retrieve/4).  The body OURS: a non-empty string is the path
+% as given (no logical name expanded, no syntax checked beyond that).
+% LABEL: INFERENCE (the body OURS)
+:check_pathname(Class, Path, CPath) :-
+        string(Path, N, _), N > 0,
+        CPath = Path ;
 
 % :append/4
 % HELD-SOURCE: pathname.esp:29

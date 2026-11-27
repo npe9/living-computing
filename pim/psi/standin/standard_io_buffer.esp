@@ -1,0 +1,29 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_io_buffer`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no body of it
+% is printed or held.  MENDELS (IFS No.61, psi/mendels.py, 2026-11-27).
+% MINIMAL: a text buffer that terms and strings are written to and read
+% from, for MENDELS's conversions between a string and a term
+% (esp_device.esp to_string/3, to_term/3; esp_util.esp put_message/2).
+%
+% PRINTED: the 1990 ESP manual, program-e.tex 6733-6745 (Example 3:
+% create/2, putl/2, gett/2, putt/2, getl/2 and what they give).  The text
+% methods (reset/1, reread/1, putl/2, putt/2, gett/2, getl/2) are kl0
+% models, psi/mendels_simpos.py, whose docstring has each one's grade
+% (PRINTED, INFERENCE from MENDELS's use, OURS).
+
+class standard_io_buffer has
+
+% :create(#standard_io_buffer, B) -- PRINTED: program-e.tex 6736-6737 (`?-
+% :create(#standard_io_buffer,B).`); the body OURS: an empty buffer.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (the body OURS)
+:create(Class, B) :-
+        :new(Class, B),
+        B!text := "",
+        B!position := 0;
+
+instance
+
+% OURS representation: the text written and the read position in it.
+attribute text := 0, position := 0;
+
+end.
