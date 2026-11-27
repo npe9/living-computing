@@ -354,7 +354,9 @@ asynchronous event pending, `4cc1` (a conditional JMPF b to `4cc5`,
 taken when the COND it tests holds) is not taken, whatever the
 registers hold. It is decided with the datapath values already decided
 held fixed (`EXEC_DECIDED`: thesis layout, AS1F 4 MDR1, AS2F 0 zero,
-ALF 1 sub, SD1F 1 XR, SD2F 1 YR, ADF 0 none, AS2F 1 YR, AS1F 2 YR);
+ALF 1 sub, SD1F 1 XR, SD2F 1 YR, ADF 0 none, AS2F 1 YR, AS1F 2 YR;
+since the eighth session AS1F 2 MDR1, rassy's `with_constant`, section 7
+item 5, with the result unchanged);
 left free, ADF 0 = MDR1 lets `4cc1` compare R0d with itself and
 `same` survives. Results (pinned): with CNDF 3 a relation on the ALU
 result (lt), only **ctime prev** survives; under `same`, CNDF 3 must be
@@ -470,6 +472,21 @@ runs were done by a scratch script.
    strobe, 58 selects MAR2, 59 selects MDR2 on a read. A write stores
    the old MDR. TGIF 1 stamps the SD1 load and 2 the ALU result. ALF 0
    is add and 1 is sub.
+   *Corrected 2026-11-27 (U2, eighth session), from rassy's own ALU
+   source table (`ptfdump.py pimmutil rassy --list`,
+   `as1f_and_as2f/6` @29b1, HELD-SOURCE):* AS1F is not in SD1F's
+   numbering. AS1F 0/1 are `0`/`xr` and 4-7 `mdr1`, `mdr2`, `mar1`,
+   `mar2`, each against AS2F (`0`, `yr`, `mdr1`, `mdr2`). AS1F 2 is
+   `with_constant`: AS1 = MDR1 / MDR2 / MAR1 / MAR2 by AS2F, and AS2 is
+   the constant. AS1F 3 is `special_case`: AS2F 0/1 `0`/`xr` with the
+   constant, 2/3 MAR1/MAR2 against XR. The constant is EM2, or EM1 when
+   EM2 is taken (`$or$70` / `$or$71`). S1 selects 5/6/7 and S2 `d` are
+   EM immediates (`sc1f/7`, `sc2f/8`), and SC2F 1 is the IR field
+   `ext_ir/2` names by EM2 & 15. So the earlier "AS1F 2 = YR" (the
+   `execute_fast` contract's `EXEC_DECIDED`) is retracted: `pu_smt`
+   now fixes AS1F 2 as MDR1, and R15 is unobserved there, so the
+   contract does not decide it either way. `ref/pu/README.md` has the
+   rows.
 6. **Condition timing.** A conditional END tests the condition the
    PREVIOUS word formed. For conditional jumps, branches and returns
    the timing is UNKNOWN (6.3 item 3), so make it a switch. The

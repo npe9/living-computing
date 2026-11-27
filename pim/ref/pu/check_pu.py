@@ -284,7 +284,12 @@ INJECT = {
     'cnd_em_swapped': lambda: PU.COND_RULES.update({9: PU._cnd_tag_eq('EM2'),
                                                     0xb: PU._cnd_tag_eq('EM1')}),
     'odsf_swapped': lambda: setattr(SU, 'ODSF_MAR', {0: 'MAR1', 1: 'MAR2'}),
-    'as1f3_off': lambda: PU.RULES.update(as1f3_em2=False),
+    # eighth session: under alu_sources 'rassy' AS1F 3 is rassy's table;
+    # this injection now turns both off (observed results unchanged)
+    'as1f3_off': lambda: PU.RULES.update(alu_sources='old', as1f3_em2=False),
+    # U2 eighth session: rassy's ALU pair and EM immediates
+    'const_em3': lambda: PU.RULES.update(alu_const='EM3'),
+    'em_imm_off': lambda: setattr(PU, 'EM_IMM', False),
     'cond_prev_strict': lambda: PU.RULES.update(j1_cond_prev_strict=True),
 }
 

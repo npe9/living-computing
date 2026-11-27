@@ -395,7 +395,7 @@ def side_contracts():
 
 EXEC_DECIDED = (('layout', 'thesis'), ('th_as1_4', 'MDR1'), ('th_as2_0', 'zero'),
                 ('th_alf_1', 'sub'), ('sd1_1', 'XR'), ('sd2_1', 'YR'), ('th_adf_0', 'none'),
-                ('th_as2_1', 'YR'), ('th_as1_2', 'YR'))
+                ('th_as2_1', 'YR'), ('th_as1_2', 'MDR1'))
 SIDE_PINNED = {
     # U2 2026-11-27, third session (pu.py RULES['em1_29_mrb']): CNDF 7
     # EM1 29 over contract reuse_kl1 alone.  Every value relation,

@@ -150,6 +150,10 @@ FORMS = {
     'proceed': (None, None),
 }
 LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)
+# execute's MDR1 after the S stage: STALE (OURS; U2 eighth session, in
+# setup()).  The injection 'execute_mdr1_carried' keeps the previous
+# instruction's MDR1 instead.
+EXECUTE_MDR1_STALE = True
 # Entries whose constant operand is the low 8 bits (format r_r_c8,
 # kl1_encoding.md): pu.RULES['sc2f1_ir'] raises where c8 and c16 differ.
 IR_C8 = ('put_reused_structure',)
@@ -353,6 +357,11 @@ def setup(pu, name):
             raise SStageUnknown('label set-up for %s with ODSF %d: not run here'
                                 % (name, nc['ODSF']))
         pu.wr[reg] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
+        if EXECUTE_MDR1_STALE and reg == mekbn.MDR2:
+            # what the S stage leaves in MDR1 is not decided (the entry's
+            # EMO1 is 5, rassy's crr = R15; not run): STALE, so 4cc0's
+            # R15 := MDR1 - EM2 (RULES['alu_sources']) is STALE too.  OURS.
+            pu.wr[mekbn.MDR1] = _pu.STALE
         return start
     if mdr == 's_tag':
         if imm is None:

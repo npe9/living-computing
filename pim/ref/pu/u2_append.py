@@ -277,7 +277,8 @@ for U2"): pimm.py's proceed writes no register or cell and is the last
 instruction (no next PC), and the routine is the goal scheduler (R1b,
 R14, R0d, R15), state neither model holds.
 New in the model (pu.py): CASE_TAG_SETUP (EM1 30-3f), RULES jmpf_b_call,
-case_wide, tdar_holds, as1f3_open_unknown, MCF_FLAG_OPS with FLAG_CONDS
+case_wide, tdar_holds, as1f3_open_unknown (superseded in the eighth
+session by alu_sources), MCF_FLAG_OPS with FLAG_CONDS
 sw00-sw02, ALF_CONDS with MCF set_alf; setup.S_MAR1_DIRECT_STALE.  The
 old injections give the results listed above, except (all re-run):
 e_mdr2_col, s_cond_true, deref_tgt_col0, prs_operand_x, flags_swapped,
@@ -306,10 +307,10 @@ write cells) where it stopped at 3498.  New injections, observed:
                   to an atomic value: FAIL at 14 (17 words: heap 0
                   written with nil, the cell e000800b given the free-list
                   link 11:f2000001 where pimm.py binds it to nil)
-  proceed_seeded  a probe: R1b and R14 (nil) given: 216c-216e run (216d
-                  pushes the record, R15 := as1_2 - YR = 0, the old YR
-                  on both inputs), STOP at 216f (JMPF a tests 216e's
-                  alf_zero: POISON), 15 of 16
+  proceed_seeded  a probe: R1b and R14 (nil) given: 216c-216d run (216d
+                  pushes the record; since the eighth session R15 :=
+                  R15 - 1, and R15 is STALE: EXECUTE_MDR1_STALE), STOP
+                  at 216e (JMPF a tests a STALE COND), 15 of 16, 51 words
   cts_col_k       column k, not 7 - k: STOP at 0c15 (column 7 gives the
                   REFo 12, which overlaps base 0e38), 14 of 16
   cts_mdr_swapped EM1 even = MDR2, odd = MDR1: 0c0c tests nil (MDR1):
@@ -326,6 +327,21 @@ write cells) where it stopped at 3498.  New injections, observed:
   s_mar1_kept     MAR1 keeps the previous instruction's value: append
                   PASSES (15 of 16): what MAR1 holds is NOT used on the
                   path (0c0c W1d := MAR1, 0c0d XR := W1d, both dead)
+Eighth session, the datapath read from rassy (pu.py RULES alu_sources,
+alu_const, as1f3_mar_xr; S1_IMM / S2_IMM; sc2f1_ir 'ext_ir'; setup.
+EXECUTE_MDR1_STALE).  On append these change no compared value (4cc0's
+R15 := MDR1 - 2 is not compared), so each injection below leaves append
+at 15 of 16, 49 words, stop 216c: NOT discriminated here.  as1f2_off and
+as1f3_open_raise now also set alu_sources 'old' and give their old
+results (STOP at 4cc0, 10 of 16; STOP at 0802, 14 of 16).
+  alu_old         the three old ALU rules: 15 of 16 (unchanged)
+  const_em3       EM3 as the ALU constant: 15 of 16 (unchanged)
+  em_imm_off      S1 5/6/7 registers again (zero_regs): 15 of 16
+  as1f3_xr_off    AS1F 3 AS2F 2/3 UNKNOWN: 15 of 16 (0802's result feeds
+                  only 0841's POISON alf_equal)
+  execute_mdr1_carried  MDR1 as left: 15 of 16
+  ext_ir_off      SC2F 1 the old c16s reading: 15 of 16 (31ec's value is
+                  loaded into MDR2 and not used)
 """
 import os
 import sys
@@ -980,7 +996,7 @@ INJECT = {
     'slit_pending': lambda: EXECUTE_FLAGS.update(slit_check=True),
     'interrupt_pending': lambda: EXECUTE_FLAGS.update(interrupt_all=True),
     'flags_swapped': lambda: PU.FLAG_CONDS.update({0x19: 'interrupt_all', 0x21: 'slit_check'}),
-    'as1f2_off': lambda: PU.RULES.update(as1f2_yr=False),
+    'as1f2_off': lambda: PU.RULES.update(alu_sources='old', as1f2_yr=False),
     'mcf_unknown_raise': lambda: PU.MCF_UNKNOWN.clear(),
     'jmpf8_flag_off': lambda: PU.RULES.update(jmpf8_flag=False),
     'cnd3_off': lambda: PU.RULES.update(cnd3_sign=False),
@@ -1012,7 +1028,14 @@ INJECT = {
     'case_4bit': lambda: PU.RULES.update(case_wide=False),
     'tdar_one_word': lambda: PU.RULES.update(tdar_holds=False),
     'sw01_set': lambda: PU.MCF_FLAG_OPS.update({0x04: ('sw01', True)}),
-    'as1f3_open_raise': lambda: PU.RULES.update(as1f3_open_unknown=False),
+    'as1f3_open_raise': lambda: PU.RULES.update(alu_sources='old', as1f3_open_unknown=False),
+    # U2 eighth session: rassy's ALU pair, EM immediates, execute's MDR1
+    'alu_old': lambda: PU.RULES.update(alu_sources='old'),
+    'const_em3': lambda: PU.RULES.update(alu_const='EM3'),
+    'em_imm_off': lambda: setattr(PU, 'EM_IMM', False),
+    'as1f3_xr_off': lambda: PU.RULES.update(as1f3_mar_xr=False),
+    'execute_mdr1_carried': lambda: setattr(SU, 'EXECUTE_MDR1_STALE', False),
+    'ext_ir_off': lambda: PU.RULES.update(sc2f1_ir='c16s'),
     's_mar1_kept': lambda: setattr(SU, 'S_MAR1_DIRECT_STALE', False),
 }
 
