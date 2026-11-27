@@ -537,8 +537,13 @@ class Viewer:
 
 
 def live(argv):
-    start = argv[argv.index('--start') + 1] if '--start' in argv else 'debugger'
     programs = [argv[i + 1] for i, a in enumerate(argv) if a == '--program']
+    # a program's window over the debugger's two does not fit the save
+    # memory (winfb BADSAVE): with --program the start is Login PIMOS
+    start = argv[argv.index('--start') + 1] if '--start' in argv else ('login' if programs else 'debugger')
+    if programs and start == 'debugger':
+        raise SystemExit('simpos_live: --program with --start debugger does not fit the save memory '
+                         '(winfb BADSAVE): use --start login or none')
     record = argv[argv.index('--record') + 1] if '--record' in argv else None
     scale = argv[argv.index('--scale') + 1] if '--scale' in argv else '1'
     viewer = os.environ.get('WINVIEW', WINVIEW)
@@ -629,6 +634,16 @@ def live_run(v, taken, programs):
         while True:
             for ev in v.poll(POLL_S):
                 if ev[1] == 'X':
+                    # the viewer closed: what the adapter holds goes in
+                    # first (a click not yet decided, a held move)
+                    inp.ad.quiet(final=True)
+                    out = [e for _t, e in inp.ad.out]
+                    inp.ad.out = []
+                    if out:
+                        st['last'] = st['start']
+                        taken.append((ev[0], 'Q', []))
+                        st['start'] = len(taken)
+                        return out
                     return None
                 taken.append(ev)
                 inp.take(ev)
@@ -676,7 +691,7 @@ def shots(script, out):
             cmd = [sys.executable, '-I', os.path.abspath(__file__), 'live', '--pre', pre]
             for prog in programs:
                 cmd += ['--program', prog]
-            for a in ('--events', evf, '--dump', dump, '--linger', '2000'):
+            for a in ('--events', evf, '--dump', dump, '--linger', '10000'):
                 cmd += ['--viewer-arg', a]
             r = subprocess.run(cmd, env=dict(os.environ, SDL_VIDEODRIVER='dummy'),
                                capture_output=True, text=True)

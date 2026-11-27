@@ -5329,20 +5329,29 @@ Close the window to stop. Things to try:
   `Login PIMOS` work. The other items' classes are not stood in. A
   refusal is shown in the title bar, and the click is taken back: the
   session runs again without it, so you can go on.
+- **Clicks are the PSI's.** Two clicks of one button within 400 ms
+  are a double (mouse#ll, mm, rr), and the coordinator ignores ll and
+  mm. So leave a moment between two left clicks. The classification is
+  done in the launcher (OURS), not in the handler process as plan §3.2
+  has it.
 - **The window manipulator**: the middle button on a window, or
   Option + the left button (OURS, for a trackpad). It has SHOW, HIDE,
   RESHAPE (click two corners), MOVE (click the new place) and the rest
   of TM-125 p8's items. A left click on a window selects it, and the
   keyboard goes to the selected window.
-- **The Pmacs editor**: `python3 -I tools/simpos_live.py live --start
-  login --program exshow` runs the held `disc/exshow.esp` on
+- **The Pmacs editor**: `python3 -I tools/simpos_live.py live
+  --program exshow` (the start is then Login PIMOS) runs the held `disc/exshow.esp` on
   `me:boot.init`, by the M10 harness (an extra system-menu item `M10`,
   started at once). Click in its window, then type. The stand-in's keys
   are C-f C-b C-n C-p C-a C-e, C-d, C-k, Backspace or Delete, RETURN,
   the arrows, C-x C-s to save a new version, and C-x C-z to exit. The
-  right button gives the EDITOR MENU.
-- **Graphics**: the paragraph and graphics demos (window M8) are not on
-  any menu, so they cannot be reached live.
+  right button gives the EDITOR MENU. After C-x C-z the session goes
+  on (checked headless). `--program cal` and `--program select` run
+  the held cal and papyrus programs the same way. Headless, each started
+  and took typing; neither was examined further.
+- **Graphics**: not attempted live. The window M8 tests send the draw
+  calls to a window from Python (`test_espc.py` `graphics_window`);
+  there is no program to start from a menu.
 - `--record F.events` writes the session's events. `python3 -I
   tools/simpos_live.py replay F.events OUT.pbm` runs them again
   headless and gives the same frame.
@@ -5374,6 +5383,8 @@ from the H, F and R messages the viewer was sent (`simpos_live.Peer`):
 | `system_menu` | `Window.MENU_PINS['boxed']` | a held move, flushed at the quiet moment |
 | `pmacs_editor` | `Window.M10_PINS['pmacs']` | Ctrl letters as control codes (C-n, C-x C-s); the M10 harness's `start` |
 | `manipulator_reshape` | `Window.SHOT_PINS['reshaped']` | the middle button; left clicks 500 ms apart; other batch boundaries than the pin's |
+| `manipulator_hide` | `Window.SHOT_PINS['hidden']` | HIDE, the save area restored |
+| `editor_menu` | `Window.M10_PINS['editor_menu']` | one right click: mouse#r once the double-click time has passed, not rr |
 
 Each also checks that the viewer's frame equals the device's.
 `test_live_keys` pins the translation table. `test_live_takeback` runs
@@ -5392,13 +5403,14 @@ the launcher's `--record` of it replays to the same frame.
 | | injection | fails |
 |---|---|---|
 | I1 | `wininput.key_event`: Shift lost on digits and punctuation (a wrong key mapping) | `_keys`, `_pins` (debugger_dialogue, debugger_rubout), `_winview` |
-| I2 | `windev.Device.run`: the tee skips `glyph` (a dropped tee command) | `_pins` (all five: the viewer's frame is not the pin), `_winview` |
+| I2 | `windev.Device.run`: the tee skips `glyph` (a dropped tee command) | `_pins` (all five sessions then: the viewer's frame is not the pin), `_winview` |
 | I3 | `LiveAdapter`: Ctrl+letter sends the JIS code (the H7s adapter's way) | `_keys`, `_pins` (pmacs_editor) |
 | I4 | `standard_io_window.esp`: BS and DEL kept in the line | `_pins` (debugger_rubout) |
-| I5 | `Screen.flush`: the changed band sent one row short | `_pins` (all five), `_winview` |
+| I5 | `Screen.flush`: the changed band sent one row short | `_pins` (all five sessions then), `_winview` |
 | I6 | `sessions`: the take-back drops one event more | `_takeback` only |
 
-I1-I5 were run before `test_live_takeback` existed, I6 after it.
+I1-I5 were run before `test_live_takeback` existed, I6 after it, and
+all six before `manipulator_hide` and `editor_menu` joined the pins.
 
 **Screens** (`../docs/simpos/screens/live_*.png`): the stages of
 `live_sessions/tour.script` (`live_system_menu`, `live_debugger`,
@@ -5414,10 +5426,15 @@ refused (winfb BADSAVE), so the Pmacs session starts from Login PIMOS,
 as `--start login --program exshow` does.
 
 **What was tested only headless.** Everything above ran with SDL's dummy
-video driver, and no one has watched or typed into the window: a real
-display, a real keyboard (HID usages as SDL reports them on macOS), the
-trackpad's buttons, the window fitted or resized, and typing speed
-against kl0's speed. The protocol, the viewer's event code and the
+video driver, and no one has watched or typed into the window. Not
+tested: a real display; a real keyboard (HID usages as SDL reports them
+on macOS); the trackpad's buttons; and typing speed against kl0's.
+The fitted or resized window is not tested either. When the window is
+shrunk, SDL scales the 1-bit raster with its default (nearest)
+sampling, so thin strokes of the 11 x 14 glyphs may drop out. A display
+with 1,024 free rows, or an external monitor, shows every dot. Many
+mouse moves are cheap to replay: 2,000 move-only batches added 0.4 s
+to a take-back's replay. The protocol, the viewer's event code and the
 launcher are the same code in both cases. The first interactive run is
 the owner's.
 

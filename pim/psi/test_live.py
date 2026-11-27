@@ -26,6 +26,10 @@ them), and it must equal the scripted tests' pins:
                          codes: C-n, C-x C-s; the M10 harness's `start`)
       manipulator_reshape  Window SHOT_PINS['reshaped'] (the middle button,
                          left clicks 500 ms apart, a move between batches)
+      manipulator_hide   Window SHOT_PINS['hidden'] (HIDE: the save area
+                         restored)
+      editor_menu        Window M10_PINS['editor_menu'] (one right click,
+                         mouse#r after the double-click time, not rr)
     and the frame the viewer was sent = the device's frame.
   - test_live_keys: the viewer's raw events -> the coordinator's events, by
     the tables: the named keys (espc.KEY_CODES), pf#, Ctrl, Shift,
@@ -64,7 +68,8 @@ cp and checked with cmp; this file run; the subtests named by session):
   I6 tools/simpos_live.py sessions: the take-back drops one event more
      (the quiet mark before the refused batch): test_live_takeback FAIL
      only.
-(I1-I5 were run before test_live_takeback existed; I6 after it.)
+(I1-I5 were run before test_live_takeback existed, I6 after it; all six
+before manipulator_hide and editor_menu joined test_live_pins.)
 """
 import hashlib
 import os
@@ -93,7 +98,9 @@ def pins():
             'debugger_rubout': (BR.SCREEN_SHA, None),
             'system_menu': W.MENU_PINS['boxed'],
             'pmacs_editor': W.M10_PINS['pmacs'],
-            'manipulator_reshape': W.SHOT_PINS['reshaped']}
+            'manipulator_reshape': W.SHOT_PINS['reshaped'],
+            'manipulator_hide': W.SHOT_PINS['hidden'],
+            'editor_menu': W.M10_PINS['editor_menu']}
 
 
 def compiled(name, path):
@@ -226,7 +233,7 @@ class Live(unittest.TestCase):
         r = subprocess.run([sys.executable, '-I', os.path.join(TOOLS, 'simpos_live.py'), 'live',
                             '--start', 'none', '--viewer-arg', '--events', '--viewer-arg', events,
                             '--viewer-arg', '--dump', '--viewer-arg', dump, '--viewer-arg', '--linger',
-                            '--viewer-arg', '2000', '--record', rec],
+                            '--viewer-arg', '10000', '--record', rec],
                            env=env, capture_output=True, text=True, timeout=300)
         self.assertEqual(r.returncode, 0, r.stderr[-2000:])
         self.assertNotIn('refused', r.stderr)

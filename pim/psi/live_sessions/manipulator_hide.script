@@ -1,0 +1,21 @@
+# psi/test_espc.py Window's manipulator screens (SHOT_PINS['hidden'],
+# docs/simpos/screens/manipulator_hide.png): manipulator_reshape.script's
+# two windows, then the middle button on window 2 and HIDE (item 1):
+# window 2 hidden, window 1's dots under it restored.
+click r 640 560
+click r 640 560
+click l 978 605
+quiet
+click r 200 150
+click r 200 150
+click l 500 195
+wait 500
+click l 540 220
+wait 500
+click l 600 500
+wait 500
+click l 1000 640
+quiet
+click m 620 560
+click l 700 604
+quiet

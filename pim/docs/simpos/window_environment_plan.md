@@ -714,9 +714,9 @@ M11: the live view"; test `../../psi/test_live.py`):
   .tees`) to the launcher's frame, whose changed rows go to the viewer as `R` bands. The viewer's
   keys and mouse are PSI events by `../../tools/wininput.py`'s two tables and the H7s adapter's
   click classification, given at quiet moments on the scripted tests' path.
-- **Recorded mode**: an event file in, the viewer's frame out. Five sessions give the scripted
-  pins exactly (`debugger_dialogue` twice, once typed with rubouts; `system_menu`;
-  `pmacs_editor`; `manipulator_reshape`), and the real viewer, headless, gives the debugger's.
+- **Recorded mode**: an event file in, the viewer's frame out. Seven sessions give the scripted
+  pins exactly (`debugger_dialogue`, and again typed with rubouts; `system_menu`;
+  `pmacs_editor`; `editor_menu`; `manipulator_reshape`; `manipulator_hide`), and the real viewer, headless, gives the debugger's.
 - Added on the way: getl/2's rubout (BS, DEL; OURS), the viewer's event time stamps and
   `--events`, and a refused batch taken back by replaying the session without it.
 - Not done: the IFS-application half (each program's non-window needs); double clicks are still
