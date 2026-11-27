@@ -18,8 +18,14 @@ asks the user's path in its pmacs_window dialog (init_path.esp; the keys
 >sys>user>MENDELuser RETURN y RETURN), answers PIMOS load_library, PIMOS
 loads mdllibrary.exe from >sys>user>MENDELuser>SYSTEM (the path typed)
 and sends loaded_library(normal([mendel::example1, ...])); the ESP side
-reads it and goes on into mendel_main's create/1, which stops at the
-first SIMPOS class not stood in: temporary_menu:create/3.
+reads it and goes on into mendel_main's create/1: the mendel_title
+process, its `Change phase ?` temporary_menu (stood in since 2026-11-27),
+mendel_window's create_window/1 (font:kanji_16.font substituted, its
+float sizes), and stops at `:create(#base, ...)`, MENDELS's class whose
+natures are SIMPOS window mixins not held (labeled_sash, as_input,
+as_superior, inferior_window, with_shared_window).  Re-recorded live
+2026-11-27 from a copy of PROMPT.pkl: the exchanges and strings as
+before, the stop and `where` new.
 
 Injections, OBSERVED 2026-11-27 (24, each made in the working tree by a
 scratch script, restored by copy, cmp and md5 clean; this whole file run
@@ -49,6 +55,29 @@ on each; the failed set as observed on the final file):
 | standard_io_window name/2 succeeds with no name set | test_path_dialog |
 | pmacs_window getl/2: the line from the point where getl began | test_getl |
 | pathname check_pathname/3 fails | test_check_pathname, test_replay, test_path_dialog |
+
+The temporary_menu step, OBSERVED 2026-11-27 (12 more, made and restored
+the same way by a scratch script, cmp clean; this whole file run on each):
+
+| injection | failed |
+|---|---|
+| read/2 answers the item_string, not the item_id | test_disc_loop, test_euod_pick |
+| a no_select line can be chosen | test_disc_loop |
+| the mouse leaving: the menu closed, no abort answered | test_disc_loop |
+| label_flag(off) ignored (the title strip drawn) | test_disc_loop |
+| the pop-up not at the mouse (at 0,0) | test_disc_loop, test_euod_pick, test_euod_shown |
+| delete_item/2 deletes nothing | test_methods |
+| add_item/3 appends (the position ignored) | test_methods |
+| espc build: put_vector_n with n-1 | test_vector_puts |
+| espc X/Y: the quotient over the second operand | test_floats |
+| espc float constant: the cell holds the integer part | test_floats |
+| kl0 floating_point_to_integer rounds up | test_floats |
+| kl0 a float mixed with an integer: the integer taken as a float | test_floats |
+
+Weak spots of this step: the replay catches none of the float or vector
+injections (mendel_window's sizes are not drawn before the stop at
+`#base`), and test_euod_leave none (an unanswered read leaves the same
+calls and no pane): the unit tests and test_disc_loop carry them.
 
 Weak spots: the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
@@ -93,7 +122,8 @@ STRINGS_IO = [
     ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
     ('<', 56, 1, '>sys>user>MENDELuser>SYSTEM>'),
 ]
-STOP = 'simpos: send simpos##temporary_menu:create/3 (class class not loaded)'
+STOP = ('simpos: send mendel##base:create/3 (not in the held classes; ancestors simpos##labeled_sash '
+        'simpos##as_input simpos##as_superior simpos##inferior_window simpos##with_shared_window)')
 
 
 def load_tape():
@@ -115,7 +145,10 @@ class Run(unittest.TestCase):
         stop, psi, left = mendels.replay(TAPE)
         self.assertEqual('%s: %s' % (stop.cause, stop.detail), STOP)
         self.assertEqual(left, [])
-        self.assertEqual(psi.where(2), ['mendel##mendel_main @b4', 'mendel##mendel_main @b6'])
+        self.assertEqual(psi.where(7), ['mendel##mendel_window @2be', 'mendel##mendel_window @2c0',
+                                        'mendel##mendel_window @29c', 'mendel##mendel_window @1d9',
+                                        'mendel##mendel_window @19b', 'mendel##mendel_window @58',
+                                        'mendel##mendel_main @c7'])
 
     def test_path_dialog(self):
         # init_path.esp's dialog after the path is typed, before y: the
@@ -140,13 +173,14 @@ class Compile(unittest.TestCase):
         # (install.e Step 5-6): 18
         # items the parser drops (mdl_ckpred, mdl_cksyn, mdl_ckutil,
         # mendelmain :476 `****`, obj_editor, tsl_input), no class refused
-        # whole, 689 predicates refused (1,122 before the built-ins,
-        # repeat and components of 2026-11-27)
+        # whole, 402 predicates refused (1,122 before the built-ins,
+        # repeat and components of 2026-11-27, 689 before vectors of up to
+        # 255 elements and floats, the temporary_menu step)
         self.assertEqual(len(mendels.esp_sources()), 108)
         ts, rep = mendels.compile_package()
         self.assertEqual(len(rep['dropped']), 18)
         self.assertEqual(rep['failed'], {})
-        self.assertEqual(len(rep['refused']), 689)
+        self.assertEqual(len(rep['refused']), 402)
         ids = {t.id for t in ts}
         for c in ('mendel##mendel_esp_device', 'mendel##mendel_loader', 'mendel##esp_utility',
                   'mendel##mendel_path', 'mendel##mendel_main'):
@@ -201,6 +235,69 @@ end.''')
         (r,) = K.call_class_method(m, 'user##cm', 'get', [K.Var()])
         self.assertEqual(K.resolve(r[0]), 7)
         self.assertIn('user##cm$buf', t.symbols)
+
+    def test_vector_puts(self):
+        # vectors of 1, 5, 6 and 8 elements built in a body: put_vector_1
+        # .. put_vector_6 (b1-b6) and put_vector_n (b7 A 00 n), each row
+        # KNOWN-PLAINTEXT (kl0_opcodes.tsv); MENDELS's items
+        # {Label, common, Id, Doc, off} (lib_win.esp) are 5-vectors
+        t = compile_one('''class vp has
+:v(C, X, A, B, D, E) :- id({X}, A), id({X, common, X, _, off}, B), id({X, 2, 3, 4, 5, X}, D),
+        id({X, 2, 3, 4, 5, 6, 7, X}, E);
+local
+id(V, V);
+end.''')
+        self.assertEqual(t.refusals, [])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##vp', 'v', [K.Atom('x')] + [K.Var() for _ in range(4)])
+        got = [repr(K.resolve(a)) for a in r[1:]]
+        self.assertEqual(got[0], '{x}')
+        self.assertEqual(got[1].split(',')[:3], ['{x', 'common', 'x'])
+        self.assertTrue(got[1].endswith(',off}'))
+        self.assertEqual(got[2], '{x,2,3,4,5,x}')
+        self.assertEqual(got[3], '{x,2,3,4,5,6,7,x}')
+        text = espc.listing(t)
+        for op in ('b1', 'b5', 'b6', 'b7'):
+            self.assertRegex(text, r'\bpmi %s\b' % op, op)
+
+    def test_floats(self):
+        # floats (kl0.Flt; kl0_opcodes.tsv rows 6c, 6d, a8 with a float
+        # cell): MENDELS's create_all_window/1 sizes (mendel_win.esp:
+        # `Gh_f is BH_f * 0.8 - (Title_hf * 3.0)`) on the screen's 944
+        # and a 21-dot title; X/Y on two registers (blt 43); the integer
+        # back toward zero
+        t = compile_one('''class fl has
+:gh(C, BH, Title_h, Graph_h) :-
+        integer_to_floating_point(BH, BH_f),
+        integer_to_floating_point(Title_h, Title_hf),
+        Gh_f is BH_f * 0.8 - (Title_hf * 3.0),
+        floating_point_to_integer(Gh_f, Graph_h);
+:quot(C, X, Y, Q) :- Q = X / Y;
+:fq(C, X, Y, Q) :- integer_to_floating_point(X, F), integer_to_floating_point(Y, G),
+        H = F / G + 0.5, floating_point_to_integer(H, Q);
+end.''')
+        self.assertEqual(t.refusals, [])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##fl', 'gh', [944, 21, K.Var()])
+        # single precision: 944 * 0.8 = 755.2, - 63 = 692.2, toward zero
+        self.assertEqual(K.resolve(r[2]), 692)
+        (r,) = K.call_class_method(m, 'user##fl', 'quot', [17, 5, K.Var()])
+        self.assertEqual(K.resolve(r[2]), 3)
+        (r,) = K.call_class_method(m, 'user##fl', 'fq', [7, 2, K.Var()])
+        self.assertEqual(K.resolve(r[2]), 4)        # 3.5 + 0.5
+        text = espc.listing(t)
+        self.assertRegex(text, r'\bblt 6c\b')
+        self.assertRegex(text, r'\bblt 6d\b')
+        self.assertRegex(text, r'\bblt 43\b')
+        self.assertRegex(text, r'pmi a8 .*\n.*float 0\.8')
+        # a float with an integer is refused when run (no witness of a
+        # mixed operation)
+        t2 = compile_one('''class fm has
+:m(C, X, R) :- integer_to_floating_point(X, F), R = F * X;
+end.''')
+        m2 = K.Machine(espc.library([t2]))
+        with self.assertRaises(K.Refusal):
+            K.call_class_method(m2, 'user##fm', 'm', [3, K.Var()])
 
 
 def compile_one(text):
@@ -327,6 +424,233 @@ class Simpos(unittest.TestCase):
         self.assertEqual(K.deref(r[1]).text, '>sys>user>MENDELuser')
         self.assertEqual(K.call_class_method(self.m, 'simpos##pathname', 'check_pathname',
                                              [self.string(''), K.Var()]), [])
+
+
+class Menus(unittest.TestCase):
+    """The temporary_menu stand-in (standin/temporary_menu.esp) through
+    two other held users, run whole on the coordinator with the mouse:
+    disc's system_data init/1 (the HELD files system_data.esp and
+    util.esp, IFS natural-lang disc) and euod's syntax_print goal/1 (the
+    HELD clause def.esp:821-835, verbatim, in an OURS harness class).
+    Each program is started from the system menu after the login, as
+    window M10's are (psi/test_espc.py pmacs_run), with the mouse at AT,
+    so the menu's top-left is there."""
+    AT = (300, 250)
+    # OURS harness: disc's program calls :init(#system_data); the two
+    # classes its select/2 sends to when `init` is chosen record the call
+    DISC = """class tm_disc has
+nature as_program;
+attribute calls := [];
+:note(Class, X) :- Class!calls := [X | Class!calls];
+instance
+:goal(P) :- :init(#system_data), :note(#tm_disc, done);
+end.
+class io_file has
+:init(Class) :- :note(#tm_disc, init);
+end.
+class new_data_pool has
+:create_chapter(Class);
+end."""
+    # OURS harness round the HELD goal/1 of euod's syntax_print: its
+    # editor and theory database answer with atoms, print_file/2 and
+    # print_buffer/3 (held ones print on a hardcopy window) record
+    EUOD = """class tm_euod has
+nature as_program;
+attribute calls := [];
+:note(Class, X) :- Class!calls := [X | Class!calls];
+:create(Class, Obj) :- :new(Class, Obj), Obj!editor := Class, Obj!theory_db := Class;
+:current_buffer(Class, buffer);
+:get_font(Class, font);
+:get_theory_name(Class, theory);
+instance
+attribute editor, theory_db;
+%s
+    :print_file(Obj,Theory_name):- :note(#tm_euod, {print_file, Theory_name});
+    :print_buffer(Obj,Buffer,Font):- :note(#tm_euod, {print_buffer, Buffer, Font});
+end.
+class messenger has
+:show(Class, S) :- :note(#tm_euod, shown);
+end."""
+    # frames: (sha256 of the PBM, set dots); the euod menu's committed as
+    # docs/simpos/screens/temporary_menu.png
+    SCREEN = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'temporary_menu.png')
+
+    @staticmethod
+    def euod_goal():
+        import held
+        lines = held.member_text('euod_def').splitlines()
+        g = lines[820:835]
+        assert g[0].strip() == ':goal(Obj):-' and g[-1].strip().startswith(':show(#messenger,'), g
+        return '\n'.join(g)
+
+    def run_menu(self, prog, *batches):
+        import fep_bridge as FB
+        import held
+        psi = FB.PsiSide()
+        m = psi.m
+        if prog == 'disc':
+            srcs = [espc.esplex.decode(held.member_text(n).encode('latin-1'))[0]
+                    for n in ('disc_system_data', 'disc_util')] + [self.DISC]
+        else:
+            srcs = [self.EUOD % self.euod_goal()]
+        for src in srcs:
+            ts, failed = espc.compile_text(src, 'simpos')
+            self.assertEqual(failed, {})
+            for t in ts:
+                m.lib.add(t)
+        psi.user = [FB.mouse('rr', *FB.MENU_AT), FB.mouse('l', *FB.LOGIN_ITEM_AT)]
+
+        def start(mm):
+            # disc's class slot opens font:kanji_16.font (system_data.esp:
+            # 11-12): the substitute entry MENDELS's run has
+            mendels.substitute_font(mm, 'kanji_16.font', 'test_11.font')
+            C = K.ClassRef('simpos##coordinator')
+            item = K.Vec([FB.jstr('TM'), K.Atom('tm_' + prog)])
+            mm.set_slot(C, 'menu', K.Cons(K.Cons(item, K.NIL), mm.get_slot(C, 'menu')))
+            return [self.move(*self.AT), K.Atom('invoke_system_menu'),
+                    K.Vec([K.Atom('select'), FB.jstr('TM')])]
+        rest = [start] + [list(b) for b in batches]
+
+        def exchange(out):
+            if rest and not psi.shell:
+                b = rest.pop(0)
+                psi.shell, psi.getl = list(b(m) if callable(b) else b), True
+            return []
+        stop = psi.run(exchange)
+        self.assertEqual((rest, psi.shell), ([], []))
+        self.assertEqual(stop.cause, 'would suspend')
+        return m
+
+    @staticmethod
+    def move(x, y):
+        return K.Vec([K.Atom('move'), x, y])
+
+    @staticmethod
+    def left(x, y):
+        import fep_bridge as FB
+        return FB.mouse('l', x, y)
+
+    @staticmethod
+    def calls(m, cls):
+        out, t = [], K.deref(m.get_slot(K.ClassRef('simpos##' + cls), 'calls'))
+        while isinstance(t, K.Cons):
+            out.append(repr(K.resolve(t.args[0])))
+            t = K.deref(t.args[1])
+        return out
+
+    def pane(self, m):
+        C = K.ClassRef('simpos##coordinator')
+        P = K.deref(m.get_slot(C, 'menu_pane'))
+        if P == 0:
+            return None
+        return tuple(K.resolve(m.get_slot(P, k)) for k in ('x', 'y', 'w', 'h', 'items_top', 'label'))
+
+    def test_euod_shown(self):
+        # euod's `WHICH?` menu (create/3 with items_list of 5-field items
+        # and title, then show/1, read/2): at the mouse, titled, two items
+        # (the frame committed); nothing chosen yet
+        import windev
+        m = self.run_menu('euod')
+        self.assertEqual(self.pane(m), (300, 250, 180, 55, 271, K.Atom('on')))
+        fr = windev.device(m).frame
+        self.assertEqual(windev.read_cells(fr, 302, 253, 16, 1), ['     WHICH?'])
+        with open(self.SCREEN, 'rb') as f:
+            self.assertEqual(windev.png_bytes(fr), f.read())
+        self.assertEqual(self.calls(m, 'tm_euod'), [])
+
+    def test_euod_pick(self):
+        # a left click on the second item: read/2 gives its item_id
+        # saved_syntax (TM-125 p18), the held goal takes that branch:
+        # get_theory_name/2, print_file/2, the messenger; the menu is off
+        # the screen (read/2 takes it down: euod hides nothing)
+        m = self.run_menu('euod', [self.move(390, 295), self.left(390, 295)])
+        self.assertEqual(self.calls(m, 'tm_euod'), ['shown', '{print_file,theory}'])
+        self.assertIsNone(self.pane(m))
+
+    def test_euod_leave(self):
+        # the mouse leaves the menu: read/2 gives abort (TM-125 p18), which
+        # neither branch of the held goal takes: nothing printed
+        m = self.run_menu('euod', [self.move(390, 295), self.move(100, 100)])
+        self.assertEqual(self.calls(m, 'tm_euod'), [])
+        self.assertIsNone(self.pane(m))
+
+    def test_disc_loop(self):
+        # disc's initialisation menu (label_flag(off), label_font, set_font,
+        # the show/read/hide loop of system_data init/1): no title strip;
+        # a click on the no_select first line does nothing; `init` (the
+        # third item) is answered and select/2 runs (:init(#io_file)),
+        # fails as held (`!, fail`) and the menu is shown again; the mouse
+        # leaving answers abort and init/1 returns
+        import windev
+        m = self.run_menu('disc')
+        self.assertEqual(self.pane(m), (300, 250, 246, 84, 252, K.Atom('off')))
+        self.assertEqual((windev.pbm_sha256(windev.device(m).frame), windev.device(m).frame.count()),
+                         self.DISC_FRAME)
+        m = self.run_menu('disc', [self.left(400, 260)])
+        self.assertEqual(self.pane(m), (300, 250, 246, 84, 252, K.Atom('off')))
+        self.assertEqual(self.calls(m, 'tm_disc'), [])
+        m = self.run_menu('disc', [self.left(400, 260)], [self.left(400, 292)])
+        self.assertEqual(self.calls(m, 'tm_disc'), ['init'])
+        # shown again at the mouse, where the click was (TM-125 p7)
+        self.assertEqual(self.pane(m), (400, 292, 246, 84, 294, K.Atom('off')))
+        m = self.run_menu('disc', [self.left(400, 292)], [self.move(100, 100)])
+        self.assertEqual(self.calls(m, 'tm_disc'), ['done', 'init'])
+        self.assertIsNone(self.pane(m))
+
+    DISC_FRAME = ('7dd50c95d2f7a0e8cea089df0aab41fcdbbc58d97a473462f7eae07b000d77ad', 103510)
+
+    def test_methods(self):
+        # the methods no run above reaches, on MENDELS's own `Change phase
+        # ?` menu (mendelmain.esp:69-72): add_item/3 at a position and
+        # add_items/3 (TM-125 p15), delete_item/2 by label, set_title/2,
+        # set_item_status/3 kept, beep/1 counted, kill/1 (`alive` no, disc
+        # util.esp:148), clear_items/1
+        psi = mendels.PsiSide()
+        m = psi.m
+        m.reset()
+
+        def s(text):
+            x = K.Str('')
+            x.text = text
+            return x
+
+        def item(label, value):
+            return K.Vec([s(label), K.Atom('common'), K.Atom(value), K.Var()])
+
+        def send(obj, name, *args):
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(obj, name, list(args) + [obj])]
+
+        opts = K.Cons(K.Vec([K.Atom('title'), s('Change phase ?')]),
+                      K.Cons(K.Vec([K.Atom('items_list'),
+                                    K.Cons(item('    Yes    ', 'yes'), K.Cons(item('    No     ', 'no'), K.NIL))]),
+                             K.NIL))
+        (r,) = K.call_class_method(m, 'simpos##temporary_menu', 'create', [opts, K.Var()])
+        M = K.deref(r[1])
+
+        def labels():
+            out, t = [], K.deref(m.get_slot(M, 'items'))
+            while isinstance(t, K.Cons):
+                out.append(K.deref(K.deref(t.args[0]).args[0]).text.strip())
+                t = K.deref(t.args[1])
+            return out
+        self.assertEqual(labels(), ['Yes', 'No'])
+        self.assertEqual(K.deref(m.get_slot(M, 'title')).text, 'Change phase ?')
+        send(M, 'add_item', item('Maybe', 'maybe'), 1)
+        self.assertEqual(labels(), ['Yes', 'Maybe', 'No'])
+        send(M, 'add_items', K.Cons(item('A', 'a'), K.Cons(item('B', 'b'), K.NIL)), 3)
+        self.assertEqual(labels(), ['Yes', 'Maybe', 'No', 'A', 'B'])
+        send(M, 'delete_item', s('Maybe'))
+        self.assertEqual(labels(), ['Yes', 'No', 'A', 'B'])
+        send(M, 'set_title', s('T'))
+        self.assertEqual(K.deref(m.get_slot(M, 'title')).text, 'T')
+        send(M, 'set_item_status', K.Atom('yes'), K.Atom('on'))
+        self.assertEqual(repr(K.resolve(m.get_slot(M, 'status'))), '[[yes,on]]')
+        send(M, 'beep')
+        self.assertEqual(K.resolve(m.get_slot(M, 'beeps')), 1)
+        send(M, 'kill')
+        self.assertEqual(K.resolve(m.get_slot(M, 'alive')), K.Atom('no'))
+        send(M, 'clear_items')
+        self.assertEqual(labels(), [])
 
 
 def read(text):

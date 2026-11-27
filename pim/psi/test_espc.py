@@ -359,9 +359,11 @@ end.''')
         t = compile_one(self.T)
         got = {r[0][0]: r[1] for r in t.refusals}
         # X+Y compiles since step 3c (blt 40, 2026-11-24), X*Y since
-        # 2026-11-25 (blt 42); X/Y is still refused
-        self.assertEqual(got, {'quo': 'arithmetic X/Y', 'ne': 'comparison =\\=',
-                               'foo': 'built-in frob/1'})
+        # 2026-11-25 (blt 42), X/Y since MENDELS's temporary_menu step
+        # (2026-11-27; blt 43 with the quotient over the first operand,
+        # KNOWN-PLAINTEXT paragraph color_line_v @3f6)
+        self.assertEqual(got, {'ne': 'comparison =\\=', 'foo': 'built-in frob/1'})
+        self.assertEqual(code(t, 'quo')[0], (0x21, 0x43, 0, 1))
 
     def test_add_and_shared_operand(self):
         t = compile_one(self.T)
@@ -538,10 +540,29 @@ class Structure(unittest.TestCase):
         # before are compiled (23 moves and environment, 15 indexing and
         # other, 9 other, 4 exact, 3 clause order) and 89 of their $or$s
         # are compared (one exact)
-        self.assertEqual((c['pred compared'], c['pred exact']), (1432, 263))
+        # MENDELS's temporary_menu step (2026-11-27; row by row against
+        # ad5d7eae's espc.py and kl0_opcodes.tsv): vectors of 7 to 255
+        # elements (b7), float constants (pmi a8 and a float cell), X/Y
+        # on two registers (blt 43) and blt 6c/6d: 1,432 -> 1,710
+        # compared, 263 -> 281 exact.  No exact row lost: 149 refused
+        # rows compile (48 clause order, 41 moves and environment, 29
+        # other, 16 indexing and other, 15 exact) and 131 of their $or$s
+        # are compared (3 exact); 6 'held uses an unwitnessed opcode'
+        # rows (6c) change class (4 compared, 2 '$or$ of a refused
+        # predicate'); one new compiled-only row (below)
+        self.assertEqual((c['pred compared'], c['pred exact']), (1710, 281))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
-        self.assertEqual(c['pred compiled only'], 0)
+        # 0 -> 1 with the temporary_menu step: receiver send/3 compiles
+        # whole now (its 5-element vectors), and espc makes 26 $or$s in it
+        # where the held cells have 25.  #1-#25 pair with the same nesting
+        # (#2#1, #3#1, #25#1#1-2: read_code's repeat and its disjunction
+        # are #25); ours #26 is, by source order, the last disjunction in
+        # send/3, set_what_items/5's `(Mode = pe, !, ... ; PredList1 =
+        # PredList)` (receiver.esp:606; INFERENCE).  NOT RESOLVED: held
+        # inlines it, merges it, or its source differs (the source is
+        # version 3200, the .ptf 3500; test_aspect_differences)
+        self.assertEqual(c['pred compiled only'], 1)
 
     def test_aspect_differences(self):
         # paragraph_version: the version slot, "3200" in the source and
@@ -972,11 +993,22 @@ end.'''
         # construct (vector_tail/3, new_stack_vector/2, ...).  No exact
         # row lost.  One new row: check_search_index_value/11.11#3, under
         # an inlined ->
-        self.assertEqual((c['pred compared'], c['pred exact']), (14406, 1777))
+        # MENDELS's temporary_menu step (2026-11-27; row by row against
+        # ad5d7eae): 14,406 -> 15,113 compared, 1,777 -> 1,782 exact (5
+        # refused -> exact); no exact row lost.  551 refused rows and 158
+        # $or$s get further: 101 of them now stop at 'held uses an
+        # unwitnessed opcode' (float comparisons and the rest, still not
+        # rows), and one such row is compared (other); one 'other' ->
+        # clause order; two new rows under an
+        # inlined ->
+        self.assertEqual((c['pred compared'], c['pred exact']), (15113, 1782))
         # 116 -> 119 with MENDELS's built-ins: check_index_conditions/9.11#1
         # and check_search_index_value/11.11#2 ($or$ of a refused predicate
-        # before) and the new #3
-        self.assertEqual(c['pred under an inlined ->'], 119)
+        # before) and the new #3; 119 -> 123 with the temporary_menu step:
+        # kappaIXM_insert_rsr_data maintenance_STR/12.11#1 and #2 ($or$ of
+        # a refused predicate before), kappaIXM_RSR_string_search
+        # binary_search_RID_ele/8.11#2 and .35#2 (new rows)
+        self.assertEqual(c['pred under an inlined ->'], 123)
         self.assertEqual(c['pred compiled only'], 89)
         # 21 before the nesting fix; the three gone are copy_table/1.11#2#1
         # (held arity 2, ours 3) and the two search_enzan_code #...#2#2#1
@@ -1126,7 +1158,7 @@ class Standins(unittest.TestCase):
             'simpos##standard_io_buffer',   # MENDELS (2026-11-27)
             'simpos##standard_io_window', 'simpos##status_band',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
-            'simpos##tcpip_network_subsystem', 'simpos##time',
+            'simpos##tcpip_network_subsystem', 'simpos##temporary_menu', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
             'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the

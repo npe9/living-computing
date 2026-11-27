@@ -1,0 +1,247 @@
+% SCAFFOLDING stand-in for SIMPOS's class `temporary_menu`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3).  MENDELS (IFS No.61),
+% 2026-11-27: the first SIMPOS class its mendel_main create/1 sends to
+% (mendelmain.esp:69-72, the `Change phase ?` Yes/No menu), and a class
+% ten other held programs use (window.md §2.14, the row temporary_menu:
+% cal-esp, disc, euod, fuzclust, icotext, kappa2, knov, kwic-esp, papyrus,
+% sum).
+%
+% THE MANUAL (TM-125, "SIMPOS window system", 1985; read as page images,
+% docs/simpos/printed/listings/tm0125_p13.esp, subsystems/listings/
+% tm0125_p05-07_concepts.txt, subsystems/notes/trtm_window.md W5-W7, W13):
+%   - p8 (class list, W4): temporary_menu = a single-select, single-column,
+%     temporary menu;
+%   - p7, "2.7 Menu Window": a menu takes only mouse input (pointing and a
+%     click), no keyboard input and no output request; it is sized by its
+%     item count and longest item, and appears at the mouse (TR-046 p14);
+%   - p6-7, "2.6 Temporary Window": it appears at the mouse cursor and
+%     disappears when the cursor goes out of it; it is taken off the screen,
+%     not hidden, when no longer needed; it saves the image it covers;
+%   - p14 (Table 1 and the menu addition): create/3 `(Class, Initiation,
+%     ^W)`, the initiation a list holding items_list(Items), each item
+%     `{item_string, item_type, item_id, documentation}`; title(String),
+%     the label's title, blank by default;
+%   - p15: add_item/3 `(Menu, Item, Position)`, Position 0..n, Item a
+%     vector of the same form; delete_item/2 `(Menu, Item_string)`;
+%   - p16: set_title/2; p16-17: activate/1, show/1, deactivate/1, hide/1;
+%   - p18, 5.6 Input: read/2 `(W, ^Code)` waits for input; on a menu the
+%     code is the selected item's item_id, and on a temporary menu "the
+%     atom abort will be returned" when the mouse exits;
+%   - p18, 5.7: kill/1 deletes the window.
+% Each method below carries `% LABEL:` RECONSTRUCTED-FROM-MANUAL where
+% TM-125 gives its behaviour, INFERENCE where the held call sites do, OURS
+% for the look and the representation.
+%
+% THE HELD CALL SITES that settle what the manual leaves open (USAGE):
+%   - read/2 does not show the menu: every held read of a temporary_menu
+%     follows a show/1 or activate/1 (mendelmain.esp:354-356, lib_win.esp
+%     240-242, 259-261, graph_sel.esp:341-342; euod DEF/def.esp:824-826,
+%     cal-esp deb2.12/create.esp:1055-1058, disc system_data.esp:63-66);
+%   - read/2 takes the menu off the screen when it answers (INFERENCE):
+%     MENDELS and euod show, read and never hide, and TM-125 p6-7 takes a
+%     temporary window off when no longer needed; cal's deactivate/1 and
+%     disc's hide/1 after the read then find it off already;
+%   - items come with four fields (TM-125 p14) or five, the fifth on/off
+%     (MENDELS lib_win.esp:6-60, euod def.esp:824, knov ap.esp:75-83;
+%     window.md §3.3); a `no_select` item is a line that cannot be chosen
+%     (disc system_data.esp:80-84, window.md §3.3);
+%   - label_flag(off) leaves the label out (disc system_data.esp:86;
+%     window.md §2.9); label_font(F) and set_font/2 take a font object
+%     (disc :86-87, MENDELS lib_win.esp);
+%   - the slot `alive` (disc util.esp:145-148 check_window/1: `:get_slot(
+%     Obj, alive, no)` tells a killed window from a live one): yes until
+%     kill/1.
+%
+% THE LOOK, OURS: the coordinator's pop-up (menu_pane.esp, as the system
+% and EDITOR menus): at the mouse, a title strip unless label_flag(off),
+% the items centred in one column, the item under the mouse boxed (a
+% no_select line is not); the device's default font (test_11), whatever
+% font is given (the fonts MENDELS and disc name, kanji_16, are not held:
+% psdpim FONT.DIR has seven, none of them kanji).  The coordinator routes
+% the mouse (coordinator.esp temporary_menu/5): a left click on an item
+% answers its item_id; the mouse leaving the menu, a click outside it, or
+% another pop-up opened answers abort; a click on the title or a no_select
+% line does nothing.  The answer waits on the menu's own stream until
+% read/2 takes it (a click before read/2 is kept: OURS).
+% NOT STOOD IN (fail loud): read/3 (2 held uses, euod's superior input),
+% the documentation field on the status line (TM-125 p14), the on/off
+% status drawn.
+
+class temporary_menu has
+
+% :create(#temporary_menu, Initiation, ^M) -- INTERPOLATED (selector and
+% arguments PRINTED-INTERFACE TM-125 p14; body OURS): the options kept,
+% the menu not shown.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p14: items_list, title; the
+% options label_flag, label_font, font USAGE; the body OURS)
+:create(Class, Options, M) :-
+        :new(Class, M),
+        :create(#stream, S),
+        M!answers := S,
+        options(M, Options);
+
+instance
+
+% OURS representation: the title (0 blank, TM-125 p14), the items as
+% given (a list), label on/off, the fonts given, the answer stream,
+% whether the pop-up is up, the on/off status set by set_item_status/3
+% ([[Id, Status], ...]), the beeps asked for (no sound device).
+attribute title := 0, items := [], label_flag := on, font := 0,
+          label_font := 0, answers := 0, shown := no, status := [],
+          beeps := 0;
+% USAGE disc util.esp:145-148 (see the head): yes until kill/1.
+attribute alive := yes;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16-17;
+% body OURS): show, the menu at the mouse (TM-125 p6-7, p7).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p6-7: at the mouse; p7: sized by
+% the items; the look OURS)
+:show(M) :- M!alive == yes, !, shown(M);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16-17;
+% body OURS): activate, as show (cal deb2.12/create.esp:1057 activates
+% then reads).
+% LABEL: INFERENCE (activate as show for a temporary menu; the body OURS)
+:activate(M) :- :show(M);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p18; body
+% OURS): read, the item_id chosen, or abort (see the head).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p18: the item_id, abort when the
+% mouse exits; off the screen after it INFERENCE; the body OURS)
+:read(M, Code) :- :get(M!answers, Code);
+
+% INTERPOLATED (selector and body OURS): chosen, the coordinator's answer
+% (coordinator.esp temporary_menu/5): the pop-up is down, the answer
+% kept for read/2.
+% LABEL: OURS (the coordinator's hand-over)
+:chosen(M, Code) :- M!shown := no, :put(M!answers, Code);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16-17;
+% body OURS): hide, the pop-up taken off the screen (TM-125 p6-7: a
+% temporary window is taken off, not hidden).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p6-7; the body OURS)
+:hide(M) :- taken_down(M);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16-17;
+% body OURS): deactivate, as hide.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p6-7; the body OURS)
+:deactivate(M) :- taken_down(M);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p18; body
+% OURS): kill, off the screen and no longer alive (disc util.esp:148).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p18 5.7; `alive` USAGE; the body
+% OURS)
+:kill(M) :- taken_down(M), M!alive := no;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): set_title, the label's title from the next show.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; the body OURS)
+:set_title(M, Title) :- M!title := Title;
+
+% INTERPOLATED (selector USAGE, window.md §2.14; body OURS): set_font,
+% the font kept (not drawn with: see the head).
+% LABEL: INFERENCE (a font object, disc system_data.esp:87; drawing with it
+% OURS-omitted)
+:set_font(M, Font) :- M!font := Font;
+
+% INTERPOLATED (selector USAGE, window.md §2.14; body OURS): set_label_font.
+% LABEL: INFERENCE (as set_font/2, for the label; kept only)
+:set_label_font(M, Font) :- M!label_font := Font;
+
+% INTERPOLATED (selector USAGE, window.md §2.14; body OURS): beep, counted
+% (OURS: no sound device).
+% LABEL: OURS (counted, no sound)
+:beep(M) :- M!beeps := M!beeps + 1;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): add_item, Item at Position 0..n.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15; the body OURS)
+:add_item(M, Item, Position) :-
+        inserted(M!items, [Item], Position, Is),
+        M!items := Is;
+
+% INTERPOLATED (selector USAGE, window.md §2.9 `:add_items(M,L,0)`; body
+% OURS): add_items, the items of a list at Position, in their order.
+% LABEL: INFERENCE (add_item/3 for a list: MENDELS graph_sel.esp:455; the
+% body OURS)
+:add_items(M, Items, Position) :-
+        inserted(M!items, Items, Position, Is),
+        M!items := Is;
+
+% INTERPOLATED (selector USAGE, window.md §2.9; body OURS): clear_items.
+% LABEL: INFERENCE (remove all items, cal-esp deb2.12/create.esp:544,
+% MENDELS graph_sel.esp:454; the body OURS)
+:clear_items(M) :- M!items := [], M!status := [];
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): delete_item, the first item whose item_string is the string.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15; the body OURS)
+:delete_item(M, String) :- without_label(M!items, String, Is), M!items := Is;
+
+% INTERPOLATED (selector USAGE, window.md §2.9 `(M,Id,on|off)`; body
+% OURS): set_item_status, kept (not drawn: see the head).
+% LABEL: INFERENCE (on/off of an item by its id, knov ap.esp:199, MENDELS
+% graph_sel.esp:338; kept only, OURS)
+:set_item_status(M, Id, Status) :-
+        without_key(M!status, Id, Ss),
+        M!status := [[Id, Status] | Ss];
+
+local
+
+% the initiation list (TM-125 p14: a list of option terms; title,
+% items_list PRINTED; label_flag, label_font, font USAGE; any other option,
+% e.g. euod's nature([as_menu_input]), is not used here: OURS)
+options(_, []) :- !;
+options(M, [{title, T} | Os]) :- !, M!title := T, options(M, Os);
+options(M, [{items_list, L} | Os]) :- !, M!items := L, options(M, Os);
+options(M, [{label_flag, F} | Os]) :- !, M!label_flag := F, options(M, Os);
+options(M, [{label_font, F} | Os]) :- !, M!label_font := F, options(M, Os);
+options(M, [{font, F} | Os]) :- !, M!font := F, options(M, Os);
+options(M, [_ | Os]) :- options(M, Os);
+
+% the pop-up, through the coordinator (it owns the mouse)
+shown(M) :-
+        title(M!title, T),
+        column(M!items, C),
+        M!shown := yes,
+        :temporary_menu(#coordinator, M, T, M!label_flag, [C]);
+
+title(0, "") :- !;
+title(T, T);
+
+% menu_pane's column: {Label, {item, Id}} for an item that can be chosen,
+% {Label, no_select} for a line that cannot
+column([], []);
+column([I | Is], [{L, V} | Cs]) :-
+        vector_element(I, 0, L),
+        vector_element(I, 1, K),
+        vector_element(I, 2, Id),
+        value_of(K, Id, V),
+        column(Is, Cs);
+
+value_of(no_select, _, no_select) :- !;
+value_of(_, Id, {item, Id});
+
+taken_down(M) :- M!shown == yes, !,
+        M!shown := no,
+        :take_down_menu(#coordinator, M);
+taken_down(_);
+
+% the list Xs inserted before the element at Position (0..n)
+inserted(L, Xs, 0, R) :- !, appended(Xs, L, R);
+inserted([X | L], Xs, N, [X | R]) :- N > 0, inserted(L, Xs, N - 1, R);
+inserted([], Xs, _, Xs);
+
+appended([], L, L);
+appended([X | R], L, [X | S]) :- appended(R, L, S);
+
+without_label([], _, []);
+without_label([I | Is], S, Is) :- vector_element(I, 0, L), equal_string(L, S), !;
+without_label([I | Is], S, [I | R]) :- without_label(Is, S, R);
+
+without_key([], _, []);
+without_key([[K, _] | R], K, R) :- !;
+without_key([X | R], K, [X | S]) :- without_key(R, K, S);
+
+end.

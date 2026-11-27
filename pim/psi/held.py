@@ -162,6 +162,11 @@ MEMBERS = {
     'my_syntax': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_syntax.esp.1'),
     'my_delete': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_delete.esp.1'),
     'my_point': ('ifs/solver-prover/simpos/papyrus.tar.Z', 'source.tar', './demo/EDITOR/my_point.esp.1'),
+    # MENDELS's temporary_menu stand-in (2026-11-27, psi/test_mendels.py
+    # Menus): two other held users of the class
+    'disc_system_data': ('ifs/natural-lang/simpos/disc.tar.Z', 'system_data.esp', None),
+    'disc_util': ('ifs/natural-lang/simpos/disc.tar.Z', 'util.esp', None),
+    'euod_def': ('ifs/solver-prover/simpos/euod.tar.Z', 'DEF/def.esp', None),
 }
 
 

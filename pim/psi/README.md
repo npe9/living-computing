@@ -5550,6 +5550,54 @@ The census grows by one row, pimos_window's inherited getl/2 (1,551 ->
 1,552; test_fep_census has the rows that change outcome). The injections
 are in `test_mendels.py`'s header.
 
+**The temporary_menu step (2026-11-27).** The run now goes past
+`temporary_menu:create/3`. The new stop is mendel_window's
+`:create(#base, ...)`. `base` is MENDELS's own class, and its natures
+(`labeled_sash`, `as_input`, `as_superior`, `inferior_window`,
+`with_shared_window`) are SIMPOS window mixins whose code is not held.
+The tape is re-recorded live from a copy of the prompt checkpoint: the
+exchanges and strings are unchanged, only the stop and `where` move. What
+was added:
+- `standin/temporary_menu.esp`. Of its 17 methods, 9 are
+  RECONSTRUCTED-FROM-MANUAL from TM-125 pp14-18 (create/3 with `title`
+  and `items_list`, show, read: the item_id or `abort` when the mouse
+  leaves, hide, deactivate, kill, set_title, add_item, delete_item), 6 are
+  INFERENCE (activate, set_font, set_label_font, add_items, clear_items,
+  set_item_status) and 2 are OURS (beep, chosen). It runs on the
+  coordinator's pop-up:
+  - `coordinator.esp` gains `:temporary_menu/5`, `:take_down_menu/2`, the
+    hover box, and abort on leaving or on another pop-up;
+  - `menu_pane.esp` gains create/7 with `label_flag`, `inside/3` and
+    `unbox/1`.
+  `test_mendels.py` `Menus` runs it through two other held users (disc's
+  system_data init/1 and euod's syntax_print goal/1). Screen:
+  `../docs/simpos/screens/temporary_menu.png`.
+- **espc.py**:
+  - vectors of 7 to 255 elements (`b7 A 00 n`, KNOWN-PLAINTEXT);
+  - float constants `I.D` (`pmi a8` and a tag-0a float cell, paragraph
+    color_line_v @402);
+  - X/Y on two registers (blt 43, the quotient over the first operand,
+    color_line_v @3f6);
+  - integer_to_floating_point/2 (blt 6c) and floating_point_to_integer/2
+    (blt 6d), new rows of `kl0_opcodes.tsv` witnessed in paragraph
+    c_bar_v.esp:249-253 (180 and 81 held uses). The held microcode's
+    mnemonic table names them NtoSFL and NtoINT, so `asm/pu_sysinit.py`'s
+    pin goes from 126 to 128 rows named.
+  Float comparisons stay refused: blt 61 is FLTcmp in the table, and no
+  comparison on floats is witnessed. Paragraph goes from 1,432 to 1,710
+  predicates compared (263 -> 281 exact), kappa2 from 14,406 to 15,113
+  (1,777 -> 1,782). No exact row is lost (test_counts and test_kappa2
+  have the breakdown). MENDELS's refusals go from 689 to 402.
+- **kl0.py**: `Flt`, a single-precision float. Its precision is an
+  INFERENCE: the cell holds 32 bits. Floats get add, subtract, multiply
+  and divide, and blt 6c/6d (the integer back toward zero). A float mixed
+  with an integer refuses.
+- **mendels.py**: `font:kanji_16.font`, which is not held, is entered in
+  `>sys>font` for test_11's file (OURS, `SUBSTITUTE_FONTS`).
+
+Labels after this step: 40 methods and models. 15 are
+RECONSTRUCTED-FROM-MANUAL, 20 INFERENCE, 3 OURS and 2 HELD-SOURCE.
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window

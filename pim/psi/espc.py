@@ -166,6 +166,19 @@ def num_value(t):
     raise CompileRefusal('float constant', s)
 
 
+def num_term(t):
+    """('int', v), or ('flt', x) for a decimal float `I.D` (MENDELS,
+    2026-11-27: the ESP manual's form integer.decimal, program-e.tex
+    255-258, PRINTED; the exponent form refuses, as before).  A float is
+    put by pmi a8 with a float cell after it (Body.to_reg)."""
+    s = t[1]
+    if isinstance(s, str) and '.' in s:
+        i, _, d = s.partition('.')
+        if i.isdigit() and d.isdigit():
+            return ('flt', float(s))
+    return ('int', num_value(t))
+
+
 _PUNCT_INV = {v: k for k, v in P.PUNCT.items()}
 
 
@@ -591,7 +604,7 @@ def classify(t, unit):
     if k in ('atom', 'qatom'):
         return ('atom', t[1])
     if k == 'num':
-        return ('int', num_value(t))
+        return num_term(t)
     if k == 'str':
         return ('str', jis_text(t[1]))
     if k == 'list':
@@ -641,6 +654,8 @@ def classify(t, unit):
             v = classify(args[0], unit)
             if v[0] == 'int':
                 return ('int', -v[1])
+            if v[0] == 'flt':
+                return ('flt', -v[1])
             raise CompileRefusal('arithmetic -X', 'unary minus on a non-constant (no witnessed opcode)')
         # a compound term f(a,...) is the vector {f,a,...} (TM-388 p.26)
         return ('vec', [('atom', f)] + [classify(x, unit) for x in args])
@@ -745,6 +760,10 @@ BUILTINS = {
     ('heap_vector', 2): ('05', ('in', 'out')),
     ('object', 3): ('0d', ('in', 'out', 'out')),
     ('not_equal_string', 2): ('69', ('in', 'in')),
+    # MENDELS (2026-11-27), KNOWN-PLAINTEXT (kl0_opcodes.tsv rows 6c, 6d):
+    # the ESP manual's conversions (overview-e.tex 2833-2838, PRINTED)
+    ('integer_to_floating_point', 2): ('6c', ('in', 'out')),
+    ('floating_point_to_integer', 2): ('6d', ('in', 'out')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -1323,6 +1342,17 @@ class ClauseCompiler:
             a.pmi16(0xa7, r, v[1])
             R.set(r, ('val', id(v)))
             return r
+        if k == 'flt':
+            # MENDELS (2026-11-27): pmi a8 and a float cell (tag 0a) after
+            # it, as paragraph color_line_v @402-403 puts 11.0 (`a8 01 00
+            # 00`, float 11.0; c_line_v.esp:182); single precision
+            # (kl0.Flt's INFERENCE)
+            import struct
+            r = pick()
+            a.pmi(0xa8, r)
+            a.items.append(('cell', 0x0a, 0, struct.unpack('>I', struct.pack('>f', v[1]))[0]))
+            R.set(r, ('val', id(v)))
+            return r
         if k == 'class':
             r = pick()
             a.pool(0xa9, r, pool_term(v))
@@ -1418,9 +1448,22 @@ class ClauseCompiler:
             self.asm.blt({'-': 0x41, '+': 0x40, '*': 0x42}[op], r, yr, r)
             self.consume(y, yr)
             return r
-        # X/Y: blt 43 divide is witnessed only with the quotient over the
-        # SECOND operand (`43 01 00 00`, `43 00 01 01`), not emitted here
-        raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (blt 43 not emitted)')
+        if op == '/':
+            # X/Y: blt 43 with the quotient over the first operand, as
+            # paragraph color_line_v @3f6 and @401 `43 00 01 00` and
+            # color_bar_v draw_element/6 @345 `43 00 02 00` (c_bar_v.esp:252
+            # `HF = UnitHF*CountF/YUnitF`), emitted since MENDELS
+            # (2026-11-27); h.esp's `43 01 00 00` puts it over the second
+            yr = self.to_reg(y, scratch=False)
+            held = self.R.holder.get(yr)
+            if not (y[0] == 'var' and held in (('var', y[1]), ('pvar', y[1]))):
+                self.R.set(yr, ('val', 'rhs'))
+            r = self.dest(x, prefer, avoid)
+            self.R.set(yr, held)
+            self.asm.blt(0x43, r, yr, r)
+            self.consume(y, yr)
+            return r
+        raise CompileRefusal('arithmetic X%sY' % op, 'on two registers')
 
     def dest(self, x, prefer, avoid):
         """A register holding X's value that may be overwritten (the
@@ -1458,7 +1501,14 @@ class ClauseCompiler:
             items, tail = v[1], v[2]
         else:
             n = len(v[1])
-            if n not in (2, 3, 4):
+            # put_vector_1..6 (b1-b6) and put_vector_n (b7 A 00 n): each
+            # row KNOWN-PLAINTEXT in kl0_opcodes.tsv, the element cells
+            # after it the unify cells b2's are (b5: paragraph##receiver
+            # send/3, receiver.esp:680-681; b6: view_selector make_table/3,
+            # p_MAIN.esp:443-444; b7: type_switch_rs_icon draw_box/5,
+            # p_icon.esp:226-229, seven elements).  MENDELS, 2026-11-27:
+            # until then only 2-4 were emitted
+            if not 1 <= n <= 255:
                 raise CompileRefusal('vector of %d elements built in a body' % n,
                                      'no witnessed put_vector_n')
         # nested structures (not the list's cdr chain) first, into temporaries
@@ -1484,7 +1534,10 @@ class ClauseCompiler:
         if k == 'list':
             self.asm.pmi(0xaa, r)
         else:
-            self.asm.pmi({2: 0xb2, 3: 0xb3, 4: 0xb4}[len(els)], r)
+            if len(els) <= 6:
+                self.asm.pmi(0xb0 + len(els), r)
+            else:
+                self.asm.pmi(0xb7, r, 0, len(els))
         R.set(r, ('val', id(v)))
         a = self.asm
         for idx, e in enumerate(els):
