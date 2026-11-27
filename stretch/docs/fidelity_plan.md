@@ -1202,10 +1202,15 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
      the two-level FP ones, then VFL (2-3, doubled on a crossing). Whether
      the one-level FP step is time-neutral is unmeasured; each step
      records the pins it moves.
-  4. Unit benches for the termination. `terminate` / `holdTerm` /
-     `terminated` have no vector in mkSauStepTb / mkPauStepTb (A3 and A4
-     gave every unit method one). They are covered only through the core
-     (the injections above).
+  4. Unit benches for the termination. DONE 2026-11-27: mkSauStepTb and
+     mkPauStepTb each end with a 24-clock script (terminate(n) with n = 3,
+     0, 2, 5 then 1, 4; a hold after a terminate and one while idle; a
+     request beside the count) checking terminated() in every clock
+     against a literal table. Four injections in each unit (n stored for
+     n + 1; the hold ignored; terminate adding instead of replacing;
+     responseReady waiting on the count) each fail only script lines
+     (observed sets in the bench headers); the step vectors pass under all
+     four, so the script is the only bench guard.
   5. Stale text, left as it was after the green run (decks and tests are
      not edited after it): `tests/run_tests.sh` (the df_data_fetch_alarm
      / interrupt notes, about line 12582-12615), `decks/int_timing_bracket.strap`
