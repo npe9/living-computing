@@ -1146,7 +1146,10 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
       store). So without the hold the step would not be
       behaviour-preserving; it is the measured cause item 2 below names.
     - The six `*+` decks: halts identical (790, 400, 836, 881, 986, 762).
-    - Full suite on the committed tree: SUITE_RESULT_PENDING
+    - Full suite on the committed tree (1c140c22): GREEN, only the two
+      expected `UNREPRODUCED` p359 FAIL lines; all 386 HALTREPORT lines
+      identical, in order, to batch58's GREEN run (the base of this
+      branch, the same stretch/ tree as the Step 0 run, also identical).
 - **Exit, measured honestly: `ebusy` has 0 hits; the "expensive datapath"
   row does NOT yet fully match.** Piccolo's boxes own their whole
   multi-cycle time. Here the units own it as two parts: the stepped part
