@@ -39,7 +39,8 @@ with an HP and the step contract (15); as1f3_off STOPs both allocator
 runs, the held call and the refill with an HP (4: the rule is needed
 there; its value, EM2 = 13, is not compared with an oracle). An impure
 evaluate (COND set early, a scratch monkeypatch) FAILs the step
-contract only.
+contract only; cond_prev_strict STOPs put_variable (twice) and
+put_marked_variable at 31d8 (3).  Since the case_branch case: 32 cases.
 
 The firmware is read from docs/nonlocal/psdpim.tar.Z (not in git).
 """
@@ -284,6 +285,7 @@ INJECT = {
                                                     0xb: PU._cnd_tag_eq('EM1')}),
     'odsf_swapped': lambda: setattr(SU, 'ODSF_MAR', {0: 'MAR1', 1: 'MAR2'}),
     'as1f3_off': lambda: PU.RULES.update(as1f3_em2=False),
+    'cond_prev_strict': lambda: PU.RULES.update(j1_cond_prev_strict=True),
 }
 
 
@@ -395,6 +397,27 @@ def main(argv):
         words += e.words
         print('%s refill with hp     %d words, stops at %s'
               % ('ok  ' if good else 'FAIL', e.words, e))
+    # S8 case_branch at a held site: the CNDF 7 / EM1 3a set-up 2d3e
+    # selects sysinit 5300 column 2 by the tag of its ALU input (MDR1),
+    # and the JMPF 3 at 2d3f lands on base 2d40 | the byte.  Checks the
+    # sequencer (set-up in the word before, base | byte), not the table,
+    # which is the static agent's VERIFIED column.
+    total += 1
+    land = {}
+    try:
+        for tag in (0x08, 0x0a, 0x04):
+            p = PU.PU(CTX['fw'])
+            p.wr[PU.MDR1] = (tag, 0x100)
+            p.commit(p.evaluate(0x2d3e))
+            land[tag] = p.evaluate(0x2d3f)['next']
+        want = {t: 0x2d40 | p.tgt[2][t] for t in land}
+        good = land == want and land[0x08] == 0x2d40
+        bad += not good
+        print('%s case_branch 2d3f     tags 08/0a/04 -> %s' % ('ok  ' if good else 'FAIL',
+              '/'.join('%04x' % land[t] for t in (0x08, 0x0a, 0x04))))
+    except PU.Unmodelled as e:
+        bad += 1
+        print('STOP case_branch 2d3f   at %s' % e)
     # The step contract: evaluate reads the old state and changes nothing;
     # commit applies the record and returns its next.
     total += 1
@@ -407,7 +430,7 @@ def main(argv):
     seed_lists(p, NFREE)
     upc = SU.dispatch(p)[1]
     keys = {'cycle', 'micro_pc', 'microword', 'reg_reads', 'wr', 'reg_writes',
-            'mem_reads', 'mem_writes', 'cond', 'push', 'pop', 'next'}
+            'mem_reads', 'mem_writes', 'cond', 'cond_cycle', 'tdar', 'push', 'pop', 'next'}
     ok = True
     try:
         while upc is not None:

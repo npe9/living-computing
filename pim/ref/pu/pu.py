@@ -32,6 +32,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import mekbn  # noqa: E402
 from mekbn import field, bit, flow  # noqa: E402
+import pu_store  # noqa: E402
+import pu_sysinit  # noqa: E402
 
 M32 = 0xffffffff
 # kbn.TAGS values used by name below (asm/kbn.py, from the PIMOS inspector)
@@ -49,6 +51,19 @@ class Unmodelled(Exception):
     def __init__(self, upc, what):
         Exception.__init__(self, '%04x: %s' % (upc, what))
         self.upc, self.what = upc, what
+
+
+class Trap(Unmodelled):
+    """Control reached the illegal / unimplemented-instruction trap 6c21
+    (upper syspsi, resident under the KL1 image; 244 image-2 call sites;
+    CORROBORATED, docs/pu_microcode_inference.md section 7 item 4).  A
+    trap is an outcome, not a gap in the model."""
+
+
+TRAP_ILLEGAL = 0x6c21
+SPECIAL_EM = 0x7fff     # S9: JMPF 1 with EM = 7fff, a special form (INFERRED, open)
+TGT_KL1 = 0x5300        # sysinit's KL1 tag table, 64 tags x 8 columns
+TGT_COLUMN = {0x3a: 2}  # set-up EM1 -> column; only 3a -> 2 is VERIFIED
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +122,20 @@ RULES = {
     # 'mekbn_under_bit26': the call/return separation improves).  Which
     # way a conditional b/c/e jump goes on COND is not decided: raises.
     'bit26_cond': True,
+    # The timing of a conditional JMPF b/c/e/a (does it test the COND
+    # its own word forms, 'same', or the previous word's, 'prev'?) is
+    # UNKNOWN (inference doc 6.3 item 3): None raises; 'prev'/'same' are
+    # the switch positions for an experiment.  A conditional JMPF 1
+    # (end, return, jump) tests the COND the PREVIOUS executed word
+    # formed: EXECUTED for ends by pu_smt (less_than / not_less_than
+    # share a first word).  A word with CNDF 0 leaves COND as it was:
+    # EXECUTED at put_variable 31d6-31d8 (31d6 forms COND with CNDF b,
+    # 31d7 has CNDF 0, the conditional end 31d8 tests 31d6's COND and
+    # matches pimm.py in both arms, the last-cell case included).  With
+    # j1_cond_prev_strict (the injection 'cond_prev_strict') a COND not
+    # formed by the very previous word raises, and put_variable stops.
+    'cjump_time': None,
+    'j1_cond_prev_strict': False,
     # A conditional JMPF 1 (EM bit 1) with EM bit 0 set is taken when
     # COND is false.  INFERRED, decided at 31fb/31d2/318f/31d8: the
     # pop's end must be taken when the link is not the end marker.  With
@@ -145,13 +174,54 @@ def _cnd_tag_eq(which):
 # tags (ATOMo 15, INTo 14, VDESC 4, ...).  Decided at 31fa and 31d1 (EM1
 # ATOMo: the refill's last link is {ATOMo, 0}, 3368) and 318c, 3196, 31d6
 # (EM2 ATOMo), each tested by the conditional end that follows.
-COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2')}
+def _signed(v):
+    v &= M32
+    return v - (1 << 32) if v >> 31 else v
+
+
+def _cnd5(pu, upc, x, a):
+    """CNDF 5: the word's ALU result is zero (eq).  EXECUTED up to one
+    global polarity by pu_smt (inference doc 6.3 item 4); eq chosen
+    INFERRED, with 'EM bit 0 = 0: end if the condition holds'."""
+    if pu.alu_seen is None:
+        raise Unmodelled(upc, 'CNDF 5 with no ALU operation')
+    return pu.alu_seen[2] & M32 == 0
+
+
+def _cnd7(pu, upc, x, a):
+    """CNDF 7, by EM1: 0a lt (EXECUTED up to the polarity, inference doc
+    6.3 item 4), 09 overflow of the add/subtract (INFERRED, item 5), 3a
+    the case_tag_setup of a JMPF 3 multiway (handled in evaluate).  Any
+    other EM1 is UNKNOWN and raises."""
+    em1 = field(x, 'EM1')
+    if pu.alu_seen is None:
+        raise Unmodelled(upc, 'CNDF 7 EM1 %02x with no ALU operation' % em1)
+    a1, b1, v = pu.alu_seen
+    if em1 == 0x0a:
+        if field(x, 'ALF') != 1:
+            raise Unmodelled(upc, 'CNDF 7 EM1 0a (lt) without a subtract')
+        return _signed(a1[1]) < _signed(b1[1])
+    if em1 == 0x09:
+        if field(x, 'ALF') not in (0, 1):
+            raise Unmodelled(upc, 'CNDF 7 EM1 09 (overflow) without an add/subtract')
+        return not -(1 << 31) <= _signed(a1[1]) + (1 if field(x, 'ALF') == 0 else -1) * _signed(b1[1]) < (1 << 31)
+    raise Unmodelled(upc, 'CNDF 7 EM1 %02x (condition UNKNOWN)' % em1)
+
+
+COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7}
 
 
 class PU:
     def __init__(self, fw=None):
         self.fw = fw or mekbn.Firmware()
-        self.img = self.fw.img2
+        st = pu_store.stores()
+        # the KL1 control store: image 2, then syspsi from 6800 up,
+        # resident (CORROBORATED, inference doc sections 4 and 7 item 1)
+        self.img = st.kl1_wcs
+        # the tag-dispatch RAM: sysinit's KL1 table at 5300, [column][tag]
+        self.tgt = pu_sysinit.tgt(st, TGT_KL1)
+        self.tdar = None        # (cycle, byte) the last case_tag_setup selected
+        self.cond_cycle = None  # the cycle whose word formed COND
         self.an = {}            # the An/Xn register file (RF, 32 words): pimm.py reg[]
         self.r = {}             # WRBF clear, selects 01-07, 0c-1f: R01 .. R1f
         self.w = {}             # WRBF set: W00 .. W1f
@@ -163,7 +233,6 @@ class PU:
         self.trace = []         # (upc, word)
         self.writes = []        # (upc, address, (tag, value))
         self.cycles = []        # one record per microcycle (README "Trace format")
-        self.tgt = None         # the tag-dispatch RAM (TGT): not held
         self._reads = []
         for z in RULES['zero_regs']:
             self.r[z] = (0, 0)
@@ -220,6 +289,7 @@ class PU:
         if a is None or b is None:
             raise Unmodelled(upc, 'ALU input never set (AS1F %d, AS2F %d)' % (as1, as2))
         self.as1_seen = a
+        self.alu_seen = (a, b, None)
         alf = field(x, 'ALF')
         if alf == 0:
             v = a[1] + b[1]
@@ -237,6 +307,7 @@ class PU:
                 v = a[1] ^ b[1]
             else:
                 raise Unmodelled(upc, 'ALU operation %s' % op)
+        self.alu_seen = (a, b, v)
         tag = a[0] if as1 and as1 != 3 else b[0]
         if field(x, 'TGIF') & 2:
             tag = self.stamp_tag(x)
@@ -255,7 +326,9 @@ class PU:
         nothing in the machine state changes here.  Any field value the
         simulator does not model raises Unmodelled(upc, field)."""
         if upc >= len(self.img):
-            raise Unmodelled(upc, 'micro_pc outside image 2 (syspsi upper control store)')
+            raise Unmodelled(upc, 'micro_pc outside the control store')
+        if upc == TRAP_ILLEGAL:
+            raise Trap(upc, 'illegal-instruction trap')
         x = self.img[upc]
         if not x:
             raise Unmodelled(upc, 'zero microinstruction')
@@ -289,6 +362,7 @@ class PU:
         dst, d = field(x, 'ADF'), field(x, 'DSTF')
         res = None
         self.as1_seen = None
+        self.alu_seen = None
         if dst or d or field(x, 'ALF') or field(x, 'AS1F') or field(x, 'AS2F'):
             res = self.alu(upc, x, old)
             if dst:
@@ -348,19 +422,46 @@ class PU:
         conditional = falls if kind in ('jump', 'end', 'return') else kind == 'branch'
         jf, cnd, em = field(x, 'JMPF'), field(x, 'CNDF'), field(x, 'EM')
         prev_cond = self.cond
-        cond_new = prev_cond
-        if cnd and mekbn.jk(x) != 1:
+        cond_new, cond_cycle = prev_cond, self.cond_cycle
+        tdar = self.tdar
+        cycle = len(self.trace)
+        if cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in TGT_COLUMN:
+            # case_tag_setup (thesis p.131): the TGT byte of the tag of
+            # the ALU's first input, column by EM1 (only 3a -> 2 VERIFIED)
+            if self.as1_seen is None:
+                raise Unmodelled(upc, 'case_tag_setup with no ALU input')
+            col = TGT_COLUMN[field(x, 'EM1')]
+            tdar = (cycle, self.tgt[col][self.as1_seen[0] & 63])
+        elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') not in (0x09, 0x0a):
+            raise Unmodelled(upc, 'CNDF 7 EM1 %02x: TGT column or condition UNKNOWN'
+                             % field(x, 'EM1'))
+        elif cnd and mekbn.jk(x) != 1:
             rule = COND_RULES.get(cnd)
             if rule is None:
                 raise Unmodelled(upc, 'CNDF %x (condition not known)' % cnd)
-            cond_new = rule(self, upc, x, self.as1_seen)
+            cond_new, cond_cycle = rule(self, upc, x, self.as1_seen), cycle
         # sequencing
         if kind == 'jmpf2':
             raise Unmodelled(upc, 'JMPF 2 (4-bit; kind not known)')
         if jf in (8, 9, 0xd, 0xf):
             raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
-        if kind == 'branch':
-            raise Unmodelled(upc, 'JMPF %x conditional branch (polarity not decided)' % jf)
+        if mekbn.jk(x) == 1 and em == SPECIAL_EM:
+            raise Unmodelled(upc, 'JMPF 1 EM 7fff (S9, special form UNKNOWN)')
+        if kind == 'branch' or (jf & 8 and mekbn.jk(x) in (3, 4, 6)):
+            # conditional JMPF a / b / c / e: timing UNKNOWN (a switch)
+            if RULES['cjump_time'] is None:
+                raise Unmodelled(upc, 'JMPF %x conditional: timing UNKNOWN' % jf)
+            raise Unmodelled(upc, 'JMPF %x conditional: polarity not decided' % jf)
+        if jf == 3:
+            # S8 case_branch: base | the TGT byte's low 4 bits, set up by
+            # the word just before (a CNDF 7, JMPF 0 word)
+            if tdar is None or tdar[0] != cycle - 1:
+                raise Unmodelled(upc, 'JMPF 3 case_branch without a set-up in the word before')
+            if target & 15:
+                raise Unmodelled(upc, 'JMPF 3 case_branch base %04x not 16-aligned' % target)
+            if tdar[1] > 15:
+                raise Unmodelled(upc, 'JMPF 3 TGT byte %02x over 15' % tdar[1])
+            target |= tdar[1]
         if mekbn.jk(x) in (3, 4, 6):
             if not RULES['bit26_cond']:
                 raise Unmodelled(upc, 'JMPF %x (bit 26 rule off)' % jf)
@@ -370,16 +471,16 @@ class PU:
         taken = True
         if mekbn.jk(x) == 1 and kind in ('jump', 'end', 'return'):
             if kind == 'jump' and em & 4:
-                # the tag multiway branch (case_tag_setup / TGT, thesis
-                # p.131): the table is not in pimm.MEkbn
-                if self.tgt is None:
-                    raise Unmodelled(upc, 'JMPF 1 EM bit 2: tag dispatch, TGT contents not held')
-                raise Unmodelled(upc, 'JMPF 1 EM bit 2: tag dispatch not modelled')
+                # S2b: a multiway, low target bits ORed in at run time
+                # from a source not identified (INFERRED, inference doc 2.2)
+                raise Unmodelled(upc, 'JMPF 1 EM bit 2: multiway, low-bit source UNKNOWN')
             if conditional:
                 if not em & 1 or not RULES['j1_bit0_false']:
                     raise Unmodelled(upc, 'JMPF 1 conditional with EM bit 0 clear')
                 if prev_cond is None:
                     raise Unmodelled(upc, 'JMPF 1 %s? with no condition formed' % kind)
+                if RULES['j1_cond_prev_strict'] and self.cond_cycle != cycle - 1:
+                    raise Unmodelled(upc, 'JMPF 1 %s?: COND not formed by the previous word' % kind)
                 taken = not prev_cond
             elif em & 1:
                 raise Unmodelled(upc, 'JMPF 1 %s with EM bit 0' % kind)
@@ -405,7 +506,8 @@ class PU:
         return {'cycle': len(self.trace), 'micro_pc': upc, 'microword': x,
                 'reg_reads': list(self._reads), 'wr': new, 'reg_writes': regw,
                 'mem_reads': memr, 'mem_writes': memw,
-                'cond': cond_new, 'push': upc + 1 if push else None, 'pop': pop,
+                'cond': cond_new, 'cond_cycle': cond_cycle, 'tdar': tdar,
+                'push': upc + 1 if push else None, 'pop': pop,
                 'next': nxt}
 
     def commit(self, c):
@@ -416,7 +518,7 @@ class PU:
         for a, d in c['mem_writes']:
             self.mem[a] = d
             self.writes.append((c['micro_pc'], a, d))
-        self.cond = c['cond']
+        self.cond, self.cond_cycle, self.tdar = c['cond'], c['cond_cycle'], c['tdar']
         if c['push'] is not None:
             self.mstk.append(c['push'])
         if c['pop']:

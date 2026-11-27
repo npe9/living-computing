@@ -22,7 +22,9 @@ terminal.
 
 **U1 reached; U2 not reached.**
 
-- 31 cases, all PASS (80 held microinstructions executed). Since the
+- 32 cases, all PASS (80 held microinstructions executed). The 32nd
+  is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
+  land on `2d40`/`2d43`/`2d4e`, base | the `5300` column-2 byte). Since the
   first 28: a held call word (`scsi_init`'s `615e` calls `3320`; the
   return lands on `615f`), the refill with an HP given (stops at `3365`
   on W0d), and the step contract (evaluate twice gives equal records and
@@ -71,6 +73,19 @@ firmware is the authority; `pimm.py` was not changed in this task):
    `pimm_semantics.md` put_vector_N). Declared as `mrb`.
 
 ## The rules, each with its evidence
+
+**Adopted from the static agent** (`docs/pu_microcode_inference.md`
+section 7, labels as there): the control store `kl1_wcs`
+(CORROBORATED); sequencer S1-S8, with S8 `case_branch` (INFERRED,
+mechanism DOCUMENTED); S9 (JMPF 1 EM `7fff`) and S10 (JMPF 2) raise; the
+`5300` TGT, column 2 for EM1 `3a` (VERIFIED), other columns raise; the
+`6c21` trap; CNDF 5 = eq, CNDF 7 EM1 `0a` = lt, `09` = overflow (up to
+one global polarity; not yet met on an executed path here); the timing
+of conditional a/b/c/e a switch, `cjump_time`, None by default (raises).
+Its datapath confirmations (bit 62 write, 58 MAR2, 59 MDR2 on reads,
+TGIF 1/2, old-MDR write, ALF 0/1, the SD1F/AS1F/AS2F/ADF values) are the
+rules this simulator already ran; TR-733's elimination rests jointly on
+the allocator contract, which `check_pu`'s allocator case executes.
 
 MEASURED rules are `asm/mekbn.py`'s and pinned by `mekbn.py --check`
 (field positions; JMPF kinds; the strobes 61/62/60; 58/59 as MAR2/MDR2;
@@ -137,7 +152,14 @@ condition, not run.
   refill-with-hp cases: the allocator reads it at `3322`, the refill at
   `3378`. No case checks what is done with it beyond that.
 - The Pseudo PIM/m environment is not needed for these routines: no
-  routine run here touches I/O, the TLB or `syspsi`'s upper store.
+  routine run here touches I/O or the TLB. The control store is
+  `pu_store.Stores.kl1_wcs` (image 2, then `syspsi` from `6800`,
+  resident: CORROBORATED by the static agent), so `scsi_init`'s `615e`
+  is held code; `6c21` raises `Trap` (the illegal-instruction trap).
+- The tag-dispatch RAM is not a stand-in: `sysinit`'s table at `5300`
+  (`asm/pu_sysinit.py`), column 2 for set-up EM1 `3a` only. The tag
+  a set-up dispatches on is taken from its ALU input (INFERRED; a
+  set-up with no ALU input, `1d3f`, raises).
 
 ## Fault injections (observed, `--inject`, in-process, no file edited)
 
@@ -151,6 +173,7 @@ condition, not run.
 | `odsf_swapped` (ODSF 0 = MAR1, 1 = MAR2) | 15 cases STOP (MAR2 / MAR1 never set): every pop, the refill with an HP, the step contract |
 | `as1f3_off` (AS1F 3 unmodelled) | both allocator runs, the held call and the refill with an HP STOP (4); the last-cell cases without an HP stop on R1f before reaching AS1F 3 and still pass |
 | impure `evaluate` (COND set before commit; a scratch monkeypatch, not an `--inject`) | the step contract FAILs; nothing else |
+| `cond_prev_strict` (a conditional JMPF 1 must test a COND formed by the very previous word) | `put_variable` (twice, with the last-cell case) and `put_marked_variable` STOP at `31d8`: `31d7` (CNDF 0) stands between the forming word `31d6` and the end, so COND survives a CNDF-0 word (EXECUTED) |
 
 ## First routine that would not run
 
@@ -193,9 +216,11 @@ read) and the `pass_as2` addressing at `3343`.
 
 Each record (`rec`, also appended to `p.cycles`) has `cycle`, `micro_pc`,
 `microword`, `reg_reads`, `reg_writes`, `wr`, `mem_reads`, `mem_writes`,
-`cond`, `push`, `pop`, `next` (`None` at an end, `-1` a return to a
-`call`); the format is in `docs/pu_microcode_plan.md` "The trace". Any
-field value not modelled raises `Unmodelled(upc, what)`, with
+`cond`, `cond_cycle` (the cycle whose word formed COND), `tdar`
+(`(cycle, byte)` of the last case_tag_setup), `push`, `pop`, `next`
+(`None` at an end, `-1` a return to a `call`); the format is in `docs/pu_microcode_plan.md` "The trace". Any
+field value not modelled raises `Unmodelled(upc, what)` (reaching
+`6c21` raises its subclass `Trap`), with
 `.words` the words executed before it when raised from `run`/`call`.
 The decoded rules are module dictionaries, `RULES` and `COND_RULES`, so
 a harness can change one (as `check_pu.py --inject` does) without
@@ -205,7 +230,8 @@ editing the file.
 
 In order: the refill (makes the free lists the firmware's own and drops
 the seeding); `execute` (`4cc0`), `proceed` (`216c`), `try_me_else`
-(`216a`); the `get_*`/`wait_*` tables, which need the tag-dispatch RAM
-(TGT, not in `pimm.MEkbn`; `sysinit` `5800`-`59ff` is the first place
-to look) and the S-stage tag set-up (nano-code TDPF); CCF as a coded
-field. An append reduction needs all of these.
+(`216a`); the `get_*`/`wait_*` tables, which need the S-stage tag set-up
+(nano-code TDPF), the S12 row entry and TGT columns other than 2; CCF
+as a coded field; the conditional a/b/c/e timing (`RULES['cjump_time']`;
+the KL0 LESST path `1046`-`1049` is where the static agent suggests
+testing it). An append reduction needs all of these.

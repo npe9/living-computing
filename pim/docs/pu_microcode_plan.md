@@ -68,6 +68,12 @@ unnamed). `ref/pu/` runs Fig. 3-25's layout, the one under which
 `ref/pu/` uses it as the jumps' conditional bit (INFERRED, the
 successor counts pinned by `ref/pu/measure.py`), which fits Fig. 3-25.
 A held routine that only TR-733's layout makes run would reopen it.
+Since then `asm/pu_smt.py` (Z3, `pu_microcode_inference.md` 6.3 item
+1) eliminates TR-733's layout, but only jointly with the INFERRED
+allocator contract (`{alloc_1cell, write_variable}` is a minimal
+killing set; without alloc_1cell TR-733 survives). The thesis layout is
+therefore the working one, with that dependency stated, not a settled
+fact.
 
 ## The rule that holds for every rung
 
@@ -78,8 +84,9 @@ A held routine that only TR-733's layout makes run would reopen it.
   stand-ins are the parts of the PU that are not microcoded: the D/A/R/S
   stages that the decode entry's nano-code drives (`pim_architecture.md`
   section 2; nano-code fields, Nakashima Fig. 3-22,
-  `psi_microword.md` 3a), the tag-dispatch RAM (TGT, 512 entries, not
-  in `pimm.MEkbn`), the condition multiplexer behind CNDF, and the
+  `psi_microword.md` 3a), the tag-dispatch RAM (TGT, 512 entries;
+  its contents are held after all, in `sysinit` at `5300`,
+  `pu_microcode_inference.md` section 5), the condition multiplexer behind CNDF, and the
   memory and I/O of the board. Each stand-in is a small table, labelled.
 - **Fail loud.** A field value whose meaning is not modelled, met on an
   executed path, raises with the microaddress. That is how "the first
@@ -128,13 +135,13 @@ window rungs):
 | Sub-rung | Milestone | In rung | State (2026-11-26) |
 |---|---|---|---|
 | U1a | straight-line held code executes | U1 | EXECUTED (one-word and multi-word routines) |
-| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. Never executed: JMPF 3. Raise: conditional b/c/e (polarity), JMPF 2/a, 8/9/d/f, JMPF 1 with EM bit 0 clear when conditional |
+| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. JMPF 3 `case_branch` (S8) at `2d3f`. A CNDF-0 word leaves COND standing (EXECUTED at `put_variable` `31d6`-`31d8`). Raise: conditional a/b/c/e (timing UNKNOWN, a switch), JMPF 2 (S10), JMPF 1 EM `7fff` (S9), JMPF 1 multiway with EM bit 2 (S2b, low-bit source UNKNOWN), 8/9/d/f |
 | U1c | the free-list allocator `3320`-`3324` on memory | U1 | EXECUTED: called by a held call word (`scsi_init`'s `615e`) and returning to `615f`, W1c `{REF, cell}` as `pimm.py`'s `new_var`; its last-cell arm reads R05 (UNKNOWN) |
 | U1-dispatch | decode-table dispatch from the instruction cell | U1 | EXECUTED: `setup.dispatch` takes class from the tag, opcode from the top byte, the start from the held table; every compared case enters through it |
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
 | U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; reading not reached |
-| U2b | tag dispatch | U2 | UNKNOWN: the TGT RAM is not held; JMPF 1 with EM bit 2 raises |
-| U2c | one unification instruction | U2 | blocked on U2b |
+| U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b |
+| U2c | one unification instruction | U2 | not reached: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry |
 | U2d | `proceed` / `execute` | U2 | not reached |
 | U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | not reached |
 | U3a | suspend | U3 | not reached |
@@ -161,6 +168,8 @@ lockstep comparison (U4a) will read:
 | `wr` | work-register writes (MAR1/2, MDR1/2, XR, YR) |
 | `mem_reads`, `mem_writes` | `[(address, (tag, value))]` |
 | `cond` | COND after the word |
+| `cond_cycle` | the cycle whose word formed COND |
+| `tdar` | `(cycle, byte)`: the TGT byte the last case_tag_setup selected |
 | `push`, `pop` | micro-stack activity |
 | `next` | the next micro_pc (`None` at an end, `-1` a return to the caller) |
 
@@ -278,7 +287,7 @@ differs from a PIM/m PE, and so what the simulator stands in:
 
 | Area | Pseudo PIM/m (PSI-III board) | PIM/m PE | In `ref/pu/` |
 |---|---|---|---|
-| Control store | KL0 firmware (image 1 = `syspsi` `0..57ff`) and KL1 (image 2) in one 32 Kw WCS; the decode table caches KL0/KL1 entries with a flag (thesis p.125) | KL1 only | image 2 at `0..67ff`; a branch to `6800`+ (`syspsi`'s upper store) fails loud |
+| Control store | KL0 firmware (image 1 = `syspsi` `0..57ff`) and KL1 (image 2) in one 32 Kw WCS; the decode table caches KL0/KL1 entries with a flag (thesis p.125) | KL1 only | image 2 at `0..67ff`, then `syspsi` from `6800` up, resident (`pu_store.Stores.kl1_wcs`, CORROBORATED); `6c21` is the illegal-instruction trap, raised as `Trap` |
 | Memory | up to 64 Mw, TLB, process IDs (thesis pp.123, 141) | 16 Mw local memory, no TLB stated (`M92` p.426) | flat dict of 40-bit cells: OURS |
 | I/O | PSI-III I/O bus and timer outside the PU (thesis p.130) | NU to the mesh, SCSI to the FEP (`M92` p.427) | none; a routine that reaches I/O fails loud |
 | Parameters | `SYSTEM.DIR/PIMM.PARAM` (Goal Stack Entry Table, stacks), "FOR PSEUDO MULTI-PSI" | set by PIMOS boot | the registers a run needs are set by the harness: OURS, listed per case |
@@ -348,3 +357,21 @@ Honest, and in sessions of the length that reached U1.
   into `3320`, return to `615f`), and a step-contract check (evaluate
   twice gives equal records and leaves the state unchanged; commit
   returns `next`). PASS, 31 cases, 80 held microinstructions.
+- 2026-11-26: adopted the static agent's results
+  (`pu_microcode_inference.md` section 7, merged from master): the KL1
+  control store `image 2 ++ syspsi[6800:]`; S8 `case_branch` with the
+  TGT from `sysinit` `5300` (only set-up EM1 `3a` -> column 2; any
+  other column raises); `6c21` as the trap; S9 and S10 raise; CNDF 5 =
+  eq and CNDF 7 EM1 `0a` = lt, `09` = overflow (INFERRED polarity, not
+  yet executed here); the timing of a conditional a/b/c/e jump is the
+  switch `RULES['cjump_time']` (None raises). One point the execution
+  settles: the static agent's "a conditional end tests the previous
+  word's condition" cannot mean the very previous word. At
+  `put_variable` `31d6`-`31d8`, the COND that `31d6` (CNDF b) forms is
+  tested by the conditional end `31d8` after `31d7` (CNDF 0), so a
+  CNDF-0 word leaves COND standing (EXECUTED; the injection
+  `cond_prev_strict` stops `put_variable` and its marked form). The
+  layout result (TR-733 eliminated) rests jointly on the allocator
+  contract (inference doc 6.3 item 1); `ref/pu`'s allocator `3320` run
+  is that contract executed, so it is not independent evidence for the
+  layout. PASS, 32 cases, 80 held microinstructions.
