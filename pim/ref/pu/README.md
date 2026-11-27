@@ -22,9 +22,9 @@ terminal.
 
 ## State (2026-11-27)
 
-**U1 reached; U2 not reached** (furthest point 12 of 16 instructions of
-append, the stop at the second reduction's `switch_on_non_list` on nil:
-section "U2" below).
+**U1 reached; U2 not reached** (furthest point 14 of 16 instructions of
+append, the stop inside the second reduction's `get_value` at `0c0c`,
+the general unifier: section "U2" below).
 
 - 32 cases, all PASS (80 held microinstructions executed). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
@@ -232,12 +232,17 @@ The decoded rules are module dictionaries, `RULES` and `COND_RULES`, so
 a harness can change one (as `check_pu.py --inject` does) without
 editing the file.
 
-## U2: append/3 on the held microcode (2026-11-26, second session; 2026-11-27, third to fifth)
+## U2: append/3 on the held microcode (2026-11-26, second session; 2026-11-27, third to sixth)
 
-**U2 not reached. Furthest point: 12 of 16 instructions executed and
-matched (25 held words), then a stop at the thirteenth
-(`switch_on_non_list` on nil, the second reduction: the S-stage
-multiway set-up for a tag other than the immediate).** The fifth
+**U2 not reached. Furthest point: 14 of 16 instructions executed and
+matched (37 held words), then a stop in the fifteenth (`get_value 1,2,0`,
+nil against the unbound Z1: the general unifier, `0c0c` CNDF 7 EM1 `3f`,
+a set-up of UNKNOWN kind before `0c15`'s case_branch, reached through a
+JMPF b whose call-or-jump reading is an open conflict).** The sixth
+session (2026-11-27) took it from 12 of 16: `switch_on_non_list` on nil
+branches to the label (`3310`-`3311`, `2447` JMPF 2, `2440`, `2461`,
+`241d`), then the alternative clause's `wait_nil` (`3980`, `3985`), and
+`get_value` runs `38b0`-`38b3`. The fifth
 session (2026-11-27) took it from 10 of 16 (stop `execute`, no set-up
 form): `execute`'s fast path `4cc0`-`4cc3` runs and the second
 reduction's `try_me_else` after it. The fourth took it from 4 of 16
@@ -298,7 +303,9 @@ with an injection that turns it off and FAILs):
 | 9 | `put_value 2,3,0` (`31da`) | 1 | ok: A2 := A3 |
 | 10 | `execute 3, append/3` (`4cc0`-`4cc3`) | 4 | ok: the fast path. Set-up MDR2 := the label (OURS); `4cc0` YR := R0d, R15 := YR (AS1F 2), COND := slit_check (clear); `4cc1` XR := W1f, MDR1 - YR (CNDF 3, STALE, untested), JMPF b to `4cc5` tests `4cc0`'s COND: not taken; `4cc2` XR := `{COD, R04}`, R04 := `{COD, MDR2}` (TGIF 3, EM2 = COD), COND := interrupt_all (clear); `4cc3` W14 := XR, MCF EM1 06, end (COND false). R04 = `{COD, load + 6644}`, `pimm.py`'s next instruction |
 | 11 | `try_me_else 0, @6658` (`216a`) | 1 | ok: R11 = the alternative, as instruction 0 |
-| 12 | `switch_on_non_list 0,0,8` on nil (`3300` entry) | 0 | STOP: A0 is `{ATOMo, 0}`, not the immediate LISTo: the S-stage multiway set-up (row entry UNKNOWN, "The S12 row entry" below) |
+| 12 | `switch_on_non_list 0,0,8` on nil (`3300` entry; `3310`-`3311`, `2447`, `2440`, `2461`, `241d`) | 6 | ok: the label branch. The S stage: row 4 (`setup.S_OTHER_ROW`), TDAR := column 7's byte for ATOMo, 0 (`setup.S_TDAR`), MDR2 := A0 (OURS); `3310` XR := R04, YR := c16, COND := MDR2 is REFo (false); `3311` XR + YR; `2447` YR := 1, MDR2 := mrb_off(MDR1), JMPF 2 to `2440` \| 0; `2440` x := MDR2 (nil, unchanged), JMPF e to `2461` (taken: COND false), COND := COL (false); `2461` R04 := XR + YR = `{COD, pc + 2 + 8}`, MCF 08 (pipeline_cancel), JMPF e to the end `241d`. R04 = `pimm.py`'s next instruction (6655), with the A stage's R04 = pc + 1 (OURS) |
+| 13 | `wait_nil 0,0,0` (`3980`, `3985`) | 2 | ok: the S-stage COND (own tag ATOMo == the immediate) takes `3980`'s JMPF a (if cond) to `3985`; `3980` forms CNDF 2 on x's value (zero: nil), `3985` ends on it |
+| 14 | `get_value 1,2,0` (`38b0`-`38b3`, `0c0c`) | 4 | STOP at `0c0c` (CNDF 7 EM1 `3f`, UNKNOWN). x (nil, not UNDF) takes row 4: `38b0` MAR2 := A1, COND := its tag is REFo (CNDF 8, false); `38b1` a conditional call (JMPF 9) not taken; `38b2` MDR2 and MAR2 := A2 (SD1F 3), COND := its tag is a REF, MRB ignored (CNDF c, true); `38b3` W1c := MAR2, jump `0c0c`; `0c0c` W1d := MAR1, JMPF b to `0c15` with CNDF 7 EM1 `3f` |
 
 Before the program, `read_variable` on a structure whose element is a
 list pointer (`LISTo`, the structure reached with every MRB off,
@@ -339,13 +346,29 @@ write both FAIL at instruction 0).
 | `RULES['jmpf8_flag']`: JMPF 8 sequences as JMPF 0 in a word whose CNDF 7 is a flag condition | INFERRED, admitted only there | `4cc2` | as `jmpf8_setup`; what bit 26 adds is not decided. Injection `jmpf8_flag_off`: STOP at `4cc2` |
 | `pu.MCF_UNKNOWN` {06, 07}: MCF with these EM1 is an operation of UNKNOWN meaning on state not held here; recorded in the cycle record (`mcf`), no register or memory changed | INFERRED (that nothing run here reads it) | `4cc1` (07), `4cc3` (06) | thesis printed p.144: MCF is counter/flag control. 06: 75 words, 59 in words that put a freed cell on R19 (wait_*, switch_on_*, `3309`), 4 at execute's ends; 07: 11 words, all at goal or reduction boundaries (proceed `2170`/`217a`/`2212`, execute, execute_external, suspend, merge, the boot `20a8`); rassy's reset table numbers 6 reset_SUSPF and 7 reset_CGCF: not decided. Injection `mcf_unknown_raise`: STOP at `4cc1` |
 | `execute`'s set-up (`setup.FORMS` 'label_mdr2'): MDR2 := pc + 2 + c16, no tag | OURS, with support | `4cc2` | `pimm.py`'s `i_execute`; nano-code OS1F 2 (the thesis's (2) "an operand field", printed p.128) and ODSF 2 (MDR2, as for collect_list); the held words use MDR2 as the code address (`4cc2`, `4ccf`, `4cd3`). Injection `execute_mdr1`: FAIL at execute (R04 = MDR2's old value) |
-| `pu.STALE` and `u2_append.seed_execute`: R0d, W1f, R04 hold values the harness does not know (STALE) before execute; a STALE value may be copied and pass the ALU (result and COND STALE), but a test, a memory write, an address or a comparison with `pimm.py` STOPs or FAILs | OURS | `4cc0`-`4cc3` | R0d is a scratch register (47 writers, none run before), W1f is written at boot (`20a8` W1f := 0) and by proceed, R04 (rassy's `pc`) is the A stage's. That the run reaches its end with them STALE shows their values do not matter on the fast path; `tgif3_em1` FAILs execute (R04 tag `21`) |
+| `pu.STALE` and `u2_append.seed_execute`: R0d, W1f (and, until the sixth session, R04) hold values the harness does not know (STALE) before execute; a STALE value may be copied and pass the ALU (result and COND STALE), but a test, a memory write, an address or a comparison with `pimm.py` STOPs or FAILs | OURS | `4cc0`-`4cc3` | R0d is a scratch register (47 writers, none run before), W1f is written at boot (`20a8` W1f := 0) and by proceed, R04 (rassy's `pc`) is the A stage's. That the run reaches its end with them STALE shows their values do not matter on the fast path; `tgif3_em1` FAILs execute (R04 tag `21`) |
+| `u2_append.A_STAGE_R04`: while an instruction is in E, R04 (rassy's `pc`) is `{COD, pc + 1}`, given by the harness before each instruction; `compare_next_pc`: a firmware that changed R04 branched there (must be `pimm.py`'s next instruction), else it falls through to pc + 1 | OURS, with support | `3310`, `2461` | the label branch adds c16 to R04 and then 1 (`2447` YR := #1, `2461` R04 := XR + YR) where `pimm.py`'s target is pc + 2 + c16; `switch_on_constant`'s rows `2420`, `242c`, `243c` read the instruction's second cell at [R04] (`pimm.py` `cells[pc + 1]`). Injection `r04_pc` (R04 = pc): FAIL at 12 (the label - 1), and the VECT0o case |
+| `RULES['jmpf2_case']`: JMPF 2 is a case_branch, target (upc + EM3, signed as JMPF 4) \| TDAR | INFERRED (kind HELD-SOURCE) | `2447` | rassy's jmpf table (`ptfdump.py pimmutil rassy --list`, `jmpf/9` @2a5c, a switch on the JMPF value): arm 2 'base' 'case_branch' formatted by `short/3`, as arm 4 (goto, JMPF 4); arm 3 'base' 'case_branch' by `long/4` (S8). MEASURED: 15 of the 16 JMPF 2 words of image 2 put upc + EM3 on a 16-word boundary (all but `0207`): `2447` -> `2440`, `2455` -> `2450`, `31a1` -> `31a0` (also `31a3`'s base), `2401`, `2425`, `2437`, `323c`, `327c`, `32bd`, `34bf`, `4192`, `0d9c`, `0105`, `0107`, `0205`. Unsigned gives the same count, but `2450`'s rows do not write R04: injection `jmpf2_unsigned` FAILs (no branch); `jmpf2_off` STOPs at `2447` |
+| `setup.S_OTHER_ROW`: an ODPF 6 entry whose dereferenced operand's tag is not the immediate's (MRB ignored), held directly with its MRB off, starts at entry \| 4 << 2 (chain code 0); other chains raise | INFERRED (mechanism DOCUMENTED, thesis pp.134-138) | `3310` | the 32 words behind `switch_on_non_list` (`3300`) are 8 rows of 4, rows 4-7 all the label computation; `switch_on_non_integer` / `_atom` (`32e0` / `32e2`) interleave the same rows (`32f0`-`32fe` the label). Row 0 for a directly held operand is the entry (`S_ENTRY`), so chain code 0 is that operand; rows 1-3 (a marked list, a freed variable cell, both) read, not run. TGT column TDPF by the tag (`s_imm_row`) sends LISTo to row 2. Injection `other_row_entry` (every tag at the entry): FAIL at 12 (nil taken for a list, a cell freed) |
+| `setup.S_TDAR`: the S stage loads TDAR with the TGT byte of the dereferenced operand's tag from column 7 - TDPF | INFERRED (mechanism DOCUMENTED, thesis printed p.134 (2) and Fig. 3-22's TDPF) | `2447` | table shapes (image 2): TDPF 4 (`switch_on_non_vector`, `2400`) column 3, VECT1..6 = 8..18 on the six rows `2408`-`2412` that differ only in EM1 1..6; TDPF 2 (`write_marked_value` `3240`, `put_marked_value` `3280`) column 5 byte for byte (INTx 4 .. VECT0x 7 re-stamped o at `3244`-`3247`); TDPF 0 (`switch_on_constant` `2420`, `hash_on_constant` `2430`, the label branch `2440`) column 7: constants 0, structures 2, UNDF 4, hooks 6, EXREF 8, MGHOK/EXMRF 10 (those four to `24b1`), REF and the rest 12. Injections: `tdar_col_tdpf` STOPs at `2444` (MRP); `tdar_col6` passes append (ATOMo 0 in both) and only the side case `switch_label_case` ({VECT0o, 0}: 6 in column 6) STOPs at `2446` |
+| `setup.S_MDR2_OWN`: the S stage leaves the operand as it was before the dereference in MDR2 (ODSF 2) | OURS, with support | `3310` | the free-a-cell rows put MDR2 on the R19 list (`3309` R19 := MDR2, [MAR1] := the old head): the REF the dereference went through; `3310` tests it for REFo. Injection `mdr2_own_off`: append passes (the old MDR2 is not a REFo either); the VECT0o case STOPs at `3310`: only it discriminates |
+| `CJUMP_TAKEN_ON` a: on COND, e: on not COND (b: on COND, as before) | INFERRED (HELD-SOURCE pool order) | `2440`, `2461` (e), `3980` (a) | rassy's `jmpf/9` arms 8-f each take one more pool constant; the pool holds 'if cond' x4, 'if not cond' x4, then the same for `jmpf/10`, so 8-b are taken if cond and c-f if not (pool order = order of use: INFERENCE). Injections `e_on_true`: FAIL at 12 (`2441`-`2445` write [MAR1]); `a_on_false`: FAIL at 13 (`3981` writes [MAR1]). The same table makes b "call long if cond" (open conflict with `mekbn`'s page jump, `docs/pu_microcode_inference.md` S7; `0c0c` b / `0c0f` 5 twins call `0c15`) |
+| `RULES['em2_mrb']`: ALF 2/3 with EM2 20 = MRB off, 30 = MRB on (the AS1 input with tag bit 0 cleared / set) | INFERRED (names HELD-SOURCE) | `2447` | rassy's `special_operation/4` (@3030, a switch on EM2): 0 '+' .. 15 shift_right_arithmetic, 32 'mrb_off', 48 'mrb_on'. The rows agree: `32e4`/`32ec` (an integer or atom marked) clear the MRB where the list rows `3304`/`330c` stamp LISTx. Injection `mrb_swapped`: FAIL at 12 (A0 := `{ATOMx, 0}`) |
+| `FLAG_CONDS` 1e MRP, 1f COL; `setup.S_REPORTS_DIRECT` COL false for an operand held directly | INFERRED (names by rassy position 30, 31; the flag tables' set_/reset_MRP 30, _COL 31); the value OURS | `2440`, `2461` | thesis printed p.138 Fig. 3-23: the S stage's dereference reports two chain bits (every MRB off; the first two pointers' MRBs off) to E. With no pointer followed there is nothing to collect. Injection `col_true`: FAIL at 12 (`2462`, `247b`-`2480` put a cell on the R19 list) |
+| `MCF_NAMED` 08 = pipeline_cancel, recorded only | INFERRED (rassy's flag-control table, position 8, between reset_CGCF 7 and set_cc 9) | `2461` | the MCF 08 words load R04 (`2453`, `245d`, `2461`, `31ee`, `2035`): a branch discards the prefetched instructions; this simulator has no pipeline. Injection `mcf08_raise`: STOP at `2461` |
+| `RULES['cnd8_s1']`: CNDF 8 / a: the S1-bus value's tag == EM1 / EM2; CNDF c: the same with the MRB ignored | INFERRED (HELD-SOURCE arms, MEASURED source) | `38b0` (8), `38b2` (c) | rassy's `cndf/7`: arms 8, 9 'tag =' EM1, a, b 'tag =' EM2, c, d 'tag / 5 =' EM1, 8/a/c on one operand and 9/b/d on the other. Census: all 217 CNDF 8 and 20 CNDF a words read an S1 source (114 / 9 for the condition alone), every CNDF 9 / b / d word has an ALU input; CNDF c's 100 EM1 are all 'o' tags. Needed to reach `0c0c`, NOT discriminated (no comparison before the stop): `cnd8_off` STOPs at `38b0` |
+| `RULES['sd1_pairs']`: SD1F 2 = MDR1 and MAR1, 3 = MDR2 and MAR2 | INFERRED (HELD-SOURCE; DOCUMENTED that such codes exist) | `38b2` | rassy's `sd1f/2` (@2959): 2 ', mdr1 mar1', 3 ', mdr2 mar2'; thesis printed p.144: "codes include writing the same value to MAR1+MDR1 and MAR2+MDR2". Not discriminated: `sd1_pairs_off` STOPs at `38b2` |
+| `RULES['jmpf9_call_if']`: JMPF 9 is a call taken if cond; only the arm not taken is modelled | INFERRED (HELD-SOURCE) | `38b1` | rassy `jmpf/9` arm 9 'call' with em1_not_free and em2_not_free and 'if cond'. The target (EM absolute or mekbn's JMPF 1 reading) is not decided: taken, it raises (`s_imm_row`'s get_atom now stops there, `3811`). `jmpf9_off` STOPs at `38b1` |
+| `wait_nil`, `get_value` set-up (`setup.FORMS`): the S-stage test on x | OURS (`pimm.py`'s operand readings) | `3980`, `38b0` | `get_value`'s row 0 (x unbound) loads A[y] into MDR2 and MAR2 (`38a0`, SD1F 3) to bind it with |
 
 `check_pu.py` still passes unchanged with these rules (32 cases, 80
 words: the CNDF 2 rule, the bit-0-clear polarity and the 2026-11-27
 rules meet no U1 word; nor do the fourth session's ODPF 3 start, EM1
 `29` and SC2F 1 rules, nor the fifth session's flag conditions, timing,
-AS1F 2, CNDF 3 and MCF rules, and `check_pu.py`'s 8 injections give the
+AS1F 2, CNDF 3 and MCF rules, nor the sixth session's JMPF 2 / 9, a / e
+polarity, CNDF 8 / a / c, SD1F 2 / 3, MRB, MRP / COL and MCF 08 rules
+(re-run 2026-11-27 sixth session: same output for every case and every
+injection), and `check_pu.py`'s 8 injections give the
 same counts as in "Fault injections"; its step contract now expects the
 record's `mcf` key).
 
@@ -387,44 +410,49 @@ candidate: a condition formed and, on this path, not tested).
 MRB-marking `case_branch` at `35c0`. Not run.
 
 **`cjump_time`** (the timing of conditional a/b/c/e): 'prev' since the
-fifth session, decided at `4cc1` (the rules table above); only JMPF b's
-polarity is executed. Untested: a, c, e (their polarity raises), and
+fifth session, decided at `4cc1` (the rules table above). Polarity
+executed for b (`4cc1`, not taken), e (`2440`, `2461`, taken on a false
+COND) and a (`3980`, taken on a true one), rassy's 'if cond' / 'if not
+cond' (sixth session); c raises. Untested: c, and
 the boot's fill loop `209b`-`209e` (a counted loop: which count it
 fills under 'prev' needs the loop counter's MCF EM1 10 and CNDF 6).
 
-**The S12 row entry** (a tag-test entry entered at a row by the tag):
-for `switch_on_non_list` (TDPF 0), TGT column 0 (REFo 0, LISTx 1, LISTo
-2, REFx 3, every other tag 4) with 4-word rows reads well: row 1
-`{LISTx}` then `3301`, row 2 frees the variable cell a single-reference
-list was reached through (`3305`-`3309`: [MAR1] := R19, R19 := MDR2),
-row 4 the branch to the label through `2447`, a 4-bit JMPF 2 (S10,
-UNKNOWN). `get_atom`'s rows (section 9 of `pseudo_pimm_microcode.md`)
-do not fit column 0, and `wait_nil` (TDPF 1) does not fit column 1 with
-4-word rows. Not adopted; any tag but the immediate raises.
+**The S12 row entry**, decided in the sixth session (the rules table
+above, `setup.S_OTHER_ROW`, `S_TDAR`): the fifth session's lead (TGT
+column 0 picks the row) is not adopted. Two mechanisms are at work, as
+the thesis's (2) and (3) (printed p.134): the start row is the match
+bit and a 2-bit chain code (rows 4-7 the other tags, row 4 an operand
+held directly), and the TGT byte goes to TDAR for a later case_branch,
+from column 7 - TDPF (column 7 for TDPF 0, not column 0). Column 0
+(REFo 0, LISTx 1, LISTo 2, REFx 3, other 4) is not met. Rows 1-3 of
+the immediate's side (a marked list `3304`, a freed variable cell
+`3308`-`3309`, both and `247b` at `330c`) and rows 5-7 are read, not
+run, and raise.
 
 ## Next, for U2
 
-In order, as the harness stops on them: `switch_on_non_list 0,0,8` on
-nil (instruction 12, entry `3300`, TDPF 0, immediate LISTo): the
-S-stage multiway set-up for a tag other than the immediate. Under the
-TGT column 0 reading ("The S12 row entry" below: every other tag ->
-row 4) nil enters `3310`: XR := R04, YR := the IR field (SC2F 1, c16),
-`3311` XR := XR + YR, jump `2447`: YR := 1, MDR2 := MDR1 under EM2 op
-`20`, then a 4-bit JMPF 2 (S10, UNKNOWN; also at `31a1`). Three things
-are needed there: the row entry itself (column and row size: adopt
-only with a case that tells column 0 from the others, as the
-list-element case did for `34a1`); R04 as the A stage keeps it (after
-`execute` it holds `{COD, 6644}`, the label, but the switch is at
-`6645`: the label arithmetic `R04 + c16` needs the A stage's pc for the
-instruction in E, OURS and to be argued from `pimm.py`'s pc + 2 +
-c16); and JMPF 2. Then the alternative clause's `wait_nil` (TDPF 1),
-`get_value`, `proceed` (`216c`). The CNDF 7 condition list gives
+In order, as the harness stops on them: `get_value 1,2,0` (instruction
+14) at `0c0c`: W1d := MAR1, a JMPF b to `0c15` with CNDF 7 EM1 `3f`.
+Three things are needed there. (1) EM1 `3f`: `0c15` is a JMPF 3
+case_branch on `0e38`, so `3f` is a set-up (TDAR) in the word before,
+of a kind not decided; the rassy list positions past 39 are not in a
+numeric order that reaches `3f` (`case_gc_setup mdr1/2`, then
+`case_tag_setup mdrN k` 0..7: `34` = `case_tag_setup mdr1 5` fits the
+column-5 tables `3240`/`3280` behind `323d`, but `3a` (column 2,
+VERIFIED) does not), and rassy's `3_way_set_up` / `4_way_set_up` atoms
+are candidates. (2) JMPF b's kind: rassy says call long if cond;
+`0c0f`, the same word with JMPF 5 (call), calls `0c15` too, so `0c0c`
+would call `0c15` and return to `0c0d` (`XR := W1d`, `MAR1 := W1c`,
+jump `0802`), but `mekbn` (and `pu.py`) read b as a page jump
+(`docs/pu_microcode_inference.md` S7, open conflict). (3) MAR1 at
+`0c0c`: no word of this get_value sets it (x is held directly, no
+dereference), so W1d := MAR1 saves a stale value; the S stage's MAR1
+for a direct operand is not modelled. After `0c15`: the unifier's
+dereference of A2 (`0e38`, a case_branch), the binding with a trail
+check (`0800`: MAR1 - YR, a boundary compare), then `proceed` (`216c`:
+R1b, R14, R0d, R15, records). The CNDF 7 condition list gives
 candidates for the other EM1 values met: `0d` = 13 `lc_zero` (at
-`1c2c`, on the interrupt path), and the KL1 specials past 39 (`28` and
-up) are not in numeric order in rassy's list (`case_gc_setup mdr1/2`,
-then `case_tag_setup mdrN k`): `28` = `case_gc_setup mdr1`, `29` =
-`case_gc_setup mdr2` if numbered on, which `3a` (column 2, VERIFIED)
-does not follow; not adopted.
+`1c2c`, on the interrupt path).
 
 `execute`'s other paths, read, not run: the slit-check path `4cc5`-`4cd2`
 (needs AS1F 3 with AS2F 1, `as1_3 shift_left YR`; EM3 is 1 at `4cc5`:

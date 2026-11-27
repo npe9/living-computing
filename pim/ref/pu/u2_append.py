@@ -192,6 +192,62 @@ prs_operand_x).  New injections, observed:
                   {COD, e0008000}, MDR2's old value, for {COD, e00019f4})
   tgif3_em1       TGIF 3's tag from EM1: append FAILs at execute (R04
                   tag 21 BLT for COD)
+
+Observed 2026-11-27, sixth session: every case above ok, and a new side
+case, switch_on_non_list 0,0,8 on {VECT0o, 0} (switch_label_case: the
+S-stage TDAR column), ok; 14 of 16 instructions executed and matched, 37
+held microinstructions (+ switch_on_non_list on nil 3310-3311, 2447,
+2440, 2461, 241d, the label branch; wait_nil 3980, 3985; get_value runs
+38b0-38b3 to 0c0c); the first stop is get_value (6656) at 0c0c, CNDF 7
+EM1 3f, inside the general unifier.  New in the comparison: every
+instruction's next PC (compare_next_pc: R04 if the firmware wrote it,
+else pc + 1, against pimm.py's next I line), with the A stage's R04 =
+{COD, pc + 1} (A_STAGE_R04, OURS) given before each instruction; pimm.py's
+sp compared only where pimm.py moves it.  The old injections give the
+same results as listed above, except: s_cond_true, deref_tgt_col0,
+prs_operand_x, flags_swapped, cnd3_off now leave append at 14 of 16 (37
+words); s_imm_row's get_atom now STOPs at 3811 (the JMPF 9 call taken)
+instead of 3810 (CNDF a, now modelled); cnd2_nonzero now STOPs append at
+wait_nil 3986 (MCF with EM1 02: 3985's end not taken), 13 of 16;
+em1_29_off now STOPs at 31a1 (MCF with EM1 0a: 31ee's MCF 08 and R04
+are modelled now), 4 of 16.  check_pu.py's injections are unchanged.
+New injections, observed:
+  jmpf2_off       JMPF 2 raises again: append and the VECT0o case STOP at
+                  2447, 12 of 16
+  jmpf2_unsigned  EM3 unsigned (2447 -> 2450 | 0): append FAILs at
+                  instruction 12 (5 words, no branch: 2450 jumps to 245e,
+                  which ends, R04 not written), the VECT0o case FAILs (R04
+                  still pc + 1)
+  tdar_col_tdpf   the TDAR column = TDPF (0): ATOMo is 4 there, 2444's
+                  jump to 24b1 forms MRP: both STOP at 2444, 12 of 16
+  tdar_col6       column 6: append PASSES (14 of 16; ATOMo is 0 in both
+                  columns); the VECT0o case STOPs at 2446 (VECT0 is 6):
+                  only that case discriminates
+  other_row_entry the other tags start at the entry: append FAILs at 12
+                  (3300 treats nil as a list: 3305-3309 put a cell on the
+                  R19 list, no branch); the VECT0o case STOPs at 3309
+  e_on_true       JMPF e taken on COND: append FAILs at 12 (2441-2445
+                  write [MAR1], a stale address); the VECT0o case STOPs at
+                  2445 (MAR2 never set)
+  a_on_false      JMPF a taken on false: append FAILs at wait_nil (3981
+                  writes [MAR1]), 13 of 16
+  col_true        COL true for a directly held operand: append FAILs at
+                  12 (10 words: 2461 falls to 2462, which reads [MAR2],
+                  then 247b-2480 put a cell on the R19 list: a cell
+                  written); the VECT0o case STOPs at 2462 (MAR2 never set)
+  r04_pc          the A stage's R04 = pc: append FAILs at 12 (R04 =
+                  the label - 1); the VECT0o case FAILs the same way
+  mrb_swapped     EM2 20 = MRB on: append FAILs at 12 (A0 := {ATOMx, 0}),
+                  the VECT0o case FAILs (A0 VECT0x)
+  mcf08_raise     MCF 08 raises: both STOP at 2461, 12 of 16
+  mdr2_own_off    the S stage leaves MDR2 as it was: append PASSES (14 of
+                  16: the old MDR2 is not a REFo either); the VECT0o case
+                  STOPs at 3310 (ALU input never set): only it discriminates
+  cnd8_off        CNDF 8 / a / c unmodelled: STOP at 38b0, still 14 of 16
+                  (33 words): the get_value rules are needed to reach 0c0c,
+                  NOT discriminated (no comparison before the stop)
+  sd1_pairs_off   SD1F 2 / 3 unmodelled: STOP at 38b2 (35 words), as above
+  jmpf9_off       JMPF 9 raises: STOP at 38b1 (34 words), as above
 """
 import os
 import sys
@@ -211,7 +267,7 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
-PINNED = dict(steps=16, matched=12, words=25, stop=12)
+PINNED = dict(steps=16, matched=14, words=37, stop=14)
 
 
 def pimm_run():
@@ -429,6 +485,47 @@ def reuse_cases():
 
 REUSE_SHARED_STOP = 0x31ee
 
+
+def switch_label_case():
+    """switch_on_non_list 0,0,8 on an empty vector {VECT0o, 0} held in A0
+    (U2, 2026-11-27, sixth session): the case that tells setup.S_TDAR's
+    column 7 (TDPF 0) from column 6, which append's nil cannot (ATOMo is
+    0 in both).  On column 7 VECT0o is 0 too, the constants' row 2440, and
+    the routine branches to the label as for nil (3310-3311, 2447, 2440,
+    2461, 241d); on column 6 it is 6, 2446's jump to 24b1.  pimm.py
+    (i_switch_on_non_list): not a list, so pc + 2 + c16; A0 unchanged, no
+    cell written.  Returns a list of failures."""
+    import mekbn
+    fw = mekbn.Firmware()
+    op = fw.kl1_entries()['switch_on_non_list'][0] & 0xff
+    c16, pc = 8, 0x500
+    ir = (0x23, op << 24 | c16)
+    w = (pimm.VECT0, 0)
+    m = pimm.Machine()
+    m.reg[0] = w
+    want = m.i_switch_on_non_list(pc, 0, 0, 0, c16)
+    p = PU.PU(fw)
+    p.an[0] = w
+    check_pu.seed_lists(p, NFREE)
+    p.ir, p.pc = ir, pc
+    p.r[R_PC] = (COD, pc + A_STAGE_R04) if A_STAGE_R04 is not None else PU.STALE
+    mem0 = dict(p.mem)
+    what = 'switch_on_non_list 0,0,8 on {VECT0o, 0}'
+    try:
+        name = SU.decode(p)
+        n = p.run(SU.setup(p, name))
+    except (PU.Unmodelled, KeyError) as e:
+        return ['%s: STOP %s' % (what, e)]
+    bad = ['%s: firmware wrote %x := %s, pimm.py no write' % (what, a, check_pu.fmt(p.mem[a]))
+           for a in sorted(p.mem) if p.mem[a] != mem0.get(a)]
+    if p.an.get(0) != m.reg[0]:
+        bad.append('%s: A0 %s, pimm.py %s' % (what, check_pu.fmt(p.an.get(0)),
+                                              check_pu.fmt(m.reg[0])))
+    if p.r.get(R_PC) != (COD, want):
+        bad.append('%s (%d words): R04 %s, pimm.py next instruction {COD, %x}'
+                   % (what, n, check_pu.fmt(p.r.get(R_PC)), want))
+    return bad
+
 # execute (6654, entry 4cc0; U2 2026-11-27, fifth session).  What the
 # harness gives it, OURS:
 #   - the hardware flags pu.FLAG_CONDS tests: no asynchronous event
@@ -445,7 +542,7 @@ REUSE_SHARED_STOP = 0x31ee
 #     argument register, a cell, an address or a tested COND would STOP
 #     or FAIL the run, so their values are shown not to matter here.
 EXECUTE_FLAGS = {'slit_check': False, 'interrupt_all': False}
-EXECUTE_STALE = (('R', 0x0d), ('W', 0x1f), ('R', 0x04))
+EXECUTE_STALE = (('R', 0x0d), ('W', 0x1f))
 R_PC = 0x04             # rassy's second bank 4, 'pc'
 COD = 0x26              # kbn tag COD (the code-address tag 4cc2 stamps from EM2)
 
@@ -474,6 +571,38 @@ def compare_execute(p, m, after):
     return []
 
 
+# The A stage's R04 (U2, 2026-11-27, sixth session; OURS, with support):
+# while an instruction is in E, R04 (rassy's 'pc') holds the address of
+# the cell after it, pc + 1, tag COD.  Support: the label branch adds the
+# IR field to R04 (3310-3311) and 1 more (2447 YR := #1; 2461 R04 := XR +
+# YR), where pimm.py's target is pc + 2 + c16; and switch_on_constant's
+# rows (2420, 242c, 243c) put R04 in MAR1 and read the instruction's
+# second cell there, pimm.py's cells[pc + 1].  Before 2026-11-27 (sixth
+# session) R04 was STALE until execute wrote it.  Injection 'r04_pc'
+# (R04 = pc): FAIL at instruction 12 (the label off by one).
+A_STAGE_R04 = 1
+
+
+def compare_next_pc(p, m, pc, after, name, r04_0):
+    """Every instruction: the firmware's next PC against pimm.py's next
+    instruction.  A firmware that wrote R04 (changed it from the A stage's
+    value) branched there, with tag COD; one that did not falls through
+    to pc + 1."""
+    want = after.get('next_pc')
+    if want is None or SU.base(name) == 'execute':
+        return []           # the last instruction; execute: compare_execute
+    r04 = p.r.get(R_PC)
+    if r04 is not r04_0 and r04 != r04_0:
+        if PU.is_stale(r04) or r04 != (COD, m.load + want):
+            return ['R04 (pc): firmware %s, pimm.py next instruction {COD, %x}'
+                    % (r04 if PU.is_stale(r04) else check_pu.fmt(r04), m.load + want)]
+        return []
+    if want != pc + 1:
+        return ['no branch: firmware falls through to %d, pimm.py next instruction %d'
+                % (pc + 1, want)]
+    return []
+
+
 def run(verbose=False):
     m, s0, steps = pimm_run()
     rbad = reuse_cases()
@@ -483,6 +612,9 @@ def run(verbose=False):
     sbad = s_stage_case()
     print('%s  S stage: get_atom on an unbound variable (entry 3800)%s'
           % ('FAIL' if sbad else 'ok  ', ': ' + '; '.join(sbad) if sbad else ''))
+    wbad = switch_label_case()
+    print('%s  switch_on_non_list on {VECT0o, 0} (the S-stage TDAR column)%s'
+          % ('FAIL' if wbad else 'ok  ', ': ' + '; '.join(wbad) if wbad else ''))
     lbad = read_list_element_case()
     print('%s  read_variable on a list element (the 34a1 set-up)%s'
           % ('FAIL' if lbad else 'ok  ', ': ' + '; '.join(lbad) if lbad else ''))
@@ -508,10 +640,16 @@ def run(verbose=False):
     for a in s0['mem']:
         rn.f2p[a] = rn.p2f[a] = a          # cells present in both: the identity
     out = {'done': 0, 'matched': 0, 'words': 0, 'stop': None, 'fail': None,
-           'boot_words': nboot, 'boot_fail': bad + sbad + lbad + rbad}
+           'boot_words': nboot, 'boot_fail': bad + sbad + lbad + rbad + wbad}
     for k, (pc, cellv, lines, after) in enumerate(steps):
         p.ir, p.pc = cellv, m.load + pc
+        if A_STAGE_R04 is not None:
+            p.r[R_PC] = (COD, (m.load + pc + A_STAGE_R04) & 0xffffffff)
+        r04_0 = p.r.get(R_PC)
         after['next_pc'] = steps[k + 1][0] if k + 1 < len(steps) else None
+        # pimm.py's sp is compared only where pimm.py moves it (a branch
+        # such as switch_on_non_list on nil leaves it as it was)
+        after['sp_moved'] = after.get('sp') != (steps[k - 1][3] if k else s0).get('sp')
         name = '?'
         n0 = len(p.trace)
         an0, mem0 = dict(p.an), dict(p.mem)
@@ -528,6 +666,7 @@ def run(verbose=False):
         out['words'] += nw
         out['done'] += 1
         fails = compare(p, m, rn, lines, after, name, an0, mem0)
+        fails += compare_next_pc(p, m, pc, after, name, r04_0)
         if fails:
             out['fail'] = (k, pc, name, fails)
             print('FAIL %2d %5d %-22s %d words: %s' % (k, pc, name, nw, '; '.join(fails)))
@@ -589,8 +728,8 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
         want = m.load + after['alt']
         if r11 is None or r11 != (pimm.REF, want):
             fails.append('R11: firmware %s, pimm.py alt {REF, %x}' % (check_pu.fmt(r11), want))
-    if after.get('sp') is not None and base in ('switch_on_non_list', 'read_variable',
-                                                'put_reused_structure'):
+    if after.get('sp') is not None and after.get('sp_moved', True) \
+            and base in ('switch_on_non_list', 'read_variable', 'put_reused_structure'):
         r02 = p.r.get(SU.R_SP)
         if r02 is None or rn.f2p.get(r02[1], r02[1]) != after['sp']:
             fails.append('sp: firmware R02 %s, pimm.py %x' % (check_pu.fmt(r02), after['sp']))
@@ -722,6 +861,22 @@ INJECT = {
     'cnd3_off': lambda: PU.RULES.update(cnd3_sign=False),
     'execute_mdr1': lambda: SU.LABEL_ODSF.update({2: 'MDR1'}),
     'tgif3_em1': lambda: PU.RULES.update(tgif3_tag='EM1'),
+    # U2 switch_on_non_list on nil, wait_nil, get_value (2026-11-27, sixth session)
+    'jmpf2_off': lambda: PU.RULES.update(jmpf2_case=None),
+    'jmpf2_unsigned': lambda: PU.RULES.update(jmpf2_case='unsigned'),
+    'tdar_col_tdpf': lambda: setattr(SU, 'TDAR_COLUMN', lambda t: t),
+    'tdar_col6': lambda: setattr(SU, 'TDAR_COLUMN', lambda t: 6),
+    'other_row_entry': lambda: setattr(SU, 'S_OTHER_ROW', None),
+    'e_on_true': lambda: PU.CJUMP_TAKEN_ON.update({0xe: True}),
+    'a_on_false': lambda: PU.CJUMP_TAKEN_ON.update({0xa: False}),
+    'col_true': lambda: SU.S_REPORTS_DIRECT.update(COL=True),
+    'r04_pc': lambda: globals().update(A_STAGE_R04=0),
+    'mrb_swapped': lambda: PU.RULES.update(em2_mrb={0x20: 'on', 0x30: 'off'}),
+    'mcf08_raise': lambda: PU.MCF_NAMED.clear(),
+    'mdr2_own_off': lambda: setattr(SU, 'S_MDR2_OWN', False),
+    'cnd8_off': lambda: PU.RULES.update(cnd8_s1=False),
+    'sd1_pairs_off': lambda: PU.RULES.update(sd1_pairs=None),
+    'jmpf9_off': lambda: PU.RULES.update(jmpf9_call_if=False),
 }
 
 
