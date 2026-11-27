@@ -384,7 +384,9 @@ What is modelled, and from where:
   the owner: refused. **`get_heap_size(^Size, ^Used)`** (22:FE): Size
   half of the cells from the heap's start to the end of memory (VPIM:
   "one half of the copying collector's heap"), Used the cells in use;
-  the values OURS, logged for the check.
+  the values OURS, logged for the check. Since 2026-11-27 the
+  instruction is `pimm.Machine`'s (one PE too, the IFS sweep's
+  h907_nseq; `ref_wait_value.py`), which the PE calls and logs.
 
 The oracle programs are PIMOS's: `h_monitor` and `x_h_monitor` of
 `pimm_debugger360E.sav` (HELD-SOURCE `debugger/paragraph/processor/

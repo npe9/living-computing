@@ -150,24 +150,26 @@
 },
 "consort": {
 "errors": [],
-"instructions": 4338703,
+"instructions": 22857168,
 "loads": [],
 "name": "consort",
-"stop": "refused: wait_value on a structure",
+"stop": "FepError: device 54: request [221]",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"kl1_source>comp_4p.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] cd\">sys>user>desq\" .\n >sys>user>desq not found !!\n\n[3] compile[\"kl1_source>consort>bignum_macro.mac\"] .\n",
-"written": {}
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] cd\">sys>user>desq\" .\n >sys>user>desq not found !!\n\n[3] compile[\"kl1_source>consort>bignum_macro.mac\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>bignum_macro.mac.1\n[bignum_macro.mac@0] Compile Module : bignum_macro\n=>  :- macro_module(bignum_macro) .\nCompile Succeeded : bignum_macro\n\n\"work:: bignum_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 2230 [MSEC]\n\n[4] compile[\"kl1_source>consort>long_macro.mac\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>long_macro.mac.1\n[long_macro.mac@0] Compile Module : long_macro\n=>  :- macro_module(long_macro) .\nCompile Succeeded : long_macro\n\n\"work:: long_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 926 [MSEC]\n\n[5] unload([bignum_macro],\"kl1>bignum_macro\") .\n",
+"written": {
+">sys>user>pmpsi>kl1>bignum_macro.sav": ""
+}
 },
 "consort+alt": {
 "errors": [],
-"instructions": 3794086,
+"instructions": 22326132,
 "loads": [],
 "name": "consort+alt",
-"stop": "refused: wait_value on a structure",
+"stop": "FepError: device 52: request [221]",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -186,29 +188,33 @@
 "compile[\"kl1_source>consort>dummy_debug_w\" , \"kl1_source>consort>dummy_err_disp\" , \"kl1_source>consort>debug_copy\" , \"kl1_source>consort>grouping\" , \"kl1_source>consort>calc_all\" , \"kl1_source>consort>call_to_smplx\" , \"kl1_source>consort>smp_sec\" , \"kl1_source>consort>eval\" , \"kl1_source>consort>msg_check\" , \"kl1_source>consort>conv\" , \"kl1_source>consort>interv_sec\" , \"kl1_source>consort>gb_sec\" , \"kl1_source>consort>gb_part\" , \"kl1_source>consort>freeze_ineq\" , \"kl1_source>consort>freeze_proc\" , \"kl1_source>consort>freeze_remove\" , \"kl1_source>consort>remove_div\" , \"kl1_source>consort>sel_solv\" , \"kl1_source>consort>data_proc\" , \"kl1_source>consort>enter_rel\" , \"kl1_source>consort>freeze_sec\" , \"kl1_source>consort>consort_4pe\" , \"kl1_source>consort>main\"].",
 "unload([kl1_start , consort , smplx_section , call_to_smplx , calc_all , grouping , interv_sec , gb_sec , gb_part , freeze_sec , freeze_remove , freeze_ineq , freeze_proc , enter_rel , data_proc , select_solv , eval , remove_divide , error_disp , debug_window , debug_copy , message_checker , consort_break , consort_data_convert ],\"kl1>consort2_4p\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
-"written": {}
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>bignum_macro.mac.1\n[bignum_macro.mac@0] Compile Module : bignum_macro\n=>  :- macro_module(bignum_macro) .\nCompile Succeeded : bignum_macro\n\n\"work:: bignum_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 2231 [MSEC]\n\n[2] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>long_macro.mac.1\n[long_macro.mac@0] Compile Module : long_macro\n=>  :- macro_module(long_macro) .\nCompile Succeeded : long_macro\n\n\"work:: long_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 927 [MSEC]\n\n[3] ",
+"written": {
+">sys>user>pmpsi>kl1>bignum_macro.sav": ""
+}
 },
 "desq": {
 "errors": [],
-"instructions": 4338703,
+"instructions": 22857168,
 "loads": [],
 "name": "desq",
-"stop": "refused: wait_value on a structure",
+"stop": "FepError: device 54: request [221]",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"kl1_source>comp_4p.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] cd\">sys>user>desq\" .\n >sys>user>desq not found !!\n\n[3] compile[\"kl1_source>consort>bignum_macro.mac\"] .\n",
-"written": {}
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] cd\">sys>user>desq\" .\n >sys>user>desq not found !!\n\n[3] compile[\"kl1_source>consort>bignum_macro.mac\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>bignum_macro.mac.1\n[bignum_macro.mac@0] Compile Module : bignum_macro\n=>  :- macro_module(bignum_macro) .\nCompile Succeeded : bignum_macro\n\n\"work:: bignum_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 2230 [MSEC]\n\n[4] compile[\"kl1_source>consort>long_macro.mac\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>long_macro.mac.1\n[long_macro.mac@0] Compile Module : long_macro\n=>  :- macro_module(long_macro) .\nCompile Succeeded : long_macro\n\n\"work:: long_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 926 [MSEC]\n\n[5] unload([bignum_macro],\"kl1>bignum_macro\") .\n",
+"written": {
+">sys>user>pmpsi>kl1>bignum_macro.sav": ""
+}
 },
 "desq+alt": {
 "errors": [],
-"instructions": 3794086,
+"instructions": 22326132,
 "loads": [],
 "name": "desq+alt",
-"stop": "refused: wait_value on a structure",
+"stop": "FepError: device 52: request [221]",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -227,8 +233,10 @@
 "compile[\"kl1_source>consort>dummy_debug_w\" , \"kl1_source>consort>dummy_err_disp\" , \"kl1_source>consort>debug_copy\" , \"kl1_source>consort>grouping\" , \"kl1_source>consort>calc_all\" , \"kl1_source>consort>call_to_smplx\" , \"kl1_source>consort>smp_sec\" , \"kl1_source>consort>eval\" , \"kl1_source>consort>msg_check\" , \"kl1_source>consort>conv\" , \"kl1_source>consort>interv_sec\" , \"kl1_source>consort>gb_sec\" , \"kl1_source>consort>gb_part\" , \"kl1_source>consort>freeze_ineq\" , \"kl1_source>consort>freeze_proc\" , \"kl1_source>consort>freeze_remove\" , \"kl1_source>consort>remove_div\" , \"kl1_source>consort>sel_solv\" , \"kl1_source>consort>data_proc\" , \"kl1_source>consort>enter_rel\" , \"kl1_source>consort>freeze_sec\" , \"kl1_source>consort>consort_4pe\" , \"kl1_source>consort>main\"].",
 "unload([kl1_start , consort , smplx_section , call_to_smplx , calc_all , grouping , interv_sec , gb_sec , gb_part , freeze_sec , freeze_remove , freeze_ineq , freeze_proc , enter_rel , data_proc , select_solv , eval , remove_divide , error_disp , debug_window , debug_copy , message_checker , consort_break , consort_data_convert ],\"kl1>consort2_4p\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
-"written": {}
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>bignum_macro.mac.1\n[bignum_macro.mac@0] Compile Module : bignum_macro\n=>  :- macro_module(bignum_macro) .\nCompile Succeeded : bignum_macro\n\n\"work:: bignum_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 2231 [MSEC]\n\n[2] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>kl1_source>consort>long_macro.mac.1\n[long_macro.mac@0] Compile Module : long_macro\n=>  :- macro_module(long_macro) .\nCompile Succeeded : long_macro\n\n\"work:: long_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 927 [MSEC]\n\n[3] ",
+"written": {
+">sys>user>pmpsi>kl1>bignum_macro.sav": ""
+}
 },
 "dpool": {
 "errors": [],
@@ -253,24 +261,24 @@
 },
 "dulcinea": {
 "errors": [],
-"instructions": 6503359,
+"instructions": 18630536,
 "loads": [],
 "name": "dulcinea",
-"stop": "refused: wait_value on a structure",
+"stop": "refused: a goal failed inside a shoen",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take \"install.com\"."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] prompt(\"\\p:[\\!]% \") .\n\nwork:[3]% package: define(meta,pimos,8#\"777\",St) .\n St = normal\n\nwork:[4]% package: define(bel,user)';' package: define(dul,user) .\n\nwork:[5]% package: define(rosi,user)';' package: define(soc1,user) .\n\nwork:[6]% package: define(soc2,user)';' package: define(sancho,user) .\n\nwork:[7]% take\"aliases\" .\n\nwork:[8]% alias(sv_bel,unload: package(bel,\"Bel>bel\")) .\n alias: sv_bel => unload: package(bel,\"Bel>bel\")\n\nwork:[9]% alias(sv_dul,unload: package(dul,\"save>dul\")) .\n alias: sv_dul => unload: package(dul,\"save>dul\")\n\nwork:[10]% alias(sv_rosi,unload: package(rosi,\"save>rosi\")) .\n alias: sv_rosi => unload: package(rosi,\"save>rosi\")\n\nwork:[11]% alias(sv_soc1,unload: package(soc1,\"save>soc1\")) .\n alias: sv_soc1 => unload: package(soc1,\"save>soc1\")\n\nwork:[12]% alias(sv_soc2,unload: package(soc2,\"save>soc2\")) .\n alias: sv_soc2 => unload: package(soc2,\"save>soc2\")\n\nwork:[13]% alias(sv_sancho,unload: package(sancho,\"save>sancho\")) .\n alias: sv_sancho => unload: package(sancho,\"save>sancho\")\n\nwork:[14]% alias(compile(A,B),(dfp A ';' compile B ';' dfp dul)) .\n alias: compile(A,B) => dfp(A)';' compile(B)';' dfp(dul)\n\nwork:[15]% alias(bcomp(A),rosi:: bcomp: compile A ) .\n alias: bcomp(A) => rosi:: bcomp: compile(A)\n\nwork:[16]% alias(bcompall(A),(rosi:: bcomp: compile A ';' compile(bel,A)';' rp(bel)';' rp(rosi)';' rp(dul))) .\n alias: bcompall(A) => rosi:: bcomp: compile(A)';' compile(bel,A)';' rp(bel)';' &  ';' & \n\nwork:[17]% alias(rp(A),(dfp A ';' relink: package';' dfp dul)) .\n alias: rp(A) => dfp(A)';' relink: package';' dfp(dul)\n\nwork:[18]% alias(dul,dul:: dul: main) .\n alias: dul => dul:: dul: main\n\nwork:[19]% alias(demo,dul:: dul: demo) .\n alias: demo => dul:: dul: demo\n\nwork:[20]% alias(xdemo(A,B),dul:: dul: xdemo(A,B)) .\n alias: xdemo(A,B) => dul:: dul: xdemo(A,B)\n\n % End of take ( PSI::>sys>user>pmpsi>aliases.1 ) %\n\nwork:[21]% dfp meta';' take\"rosi>meta>install.com\" .\n\nmeta:[22]% package: define(meta,pimos,8#\"777\",St) .\n St = abnormal\n\nmeta:[23]% setenv(task: package,meta,St1) .\n St1 = normal\n\nmeta:[24]% compile[\"rosi>meta>Macro>meta.mac\"] .\n",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] prompt(\"\\p:[\\!]% \") .\n\nwork:[3]% package: define(meta,pimos,8#\"777\",St) .\n St = normal\n\nwork:[4]% package: define(bel,user)';' package: define(dul,user) .\n\nwork:[5]% package: define(rosi,user)';' package: define(soc1,user) .\n\nwork:[6]% package: define(soc2,user)';' package: define(sancho,user) .\n\nwork:[7]% take\"aliases\" .\n\nwork:[8]% alias(sv_bel,unload: package(bel,\"Bel>bel\")) .\n alias: sv_bel => unload: package(bel,\"Bel>bel\")\n\nwork:[9]% alias(sv_dul,unload: package(dul,\"save>dul\")) .\n alias: sv_dul => unload: package(dul,\"save>dul\")\n\nwork:[10]% alias(sv_rosi,unload: package(rosi,\"save>rosi\")) .\n alias: sv_rosi => unload: package(rosi,\"save>rosi\")\n\nwork:[11]% alias(sv_soc1,unload: package(soc1,\"save>soc1\")) .\n alias: sv_soc1 => unload: package(soc1,\"save>soc1\")\n\nwork:[12]% alias(sv_soc2,unload: package(soc2,\"save>soc2\")) .\n alias: sv_soc2 => unload: package(soc2,\"save>soc2\")\n\nwork:[13]% alias(sv_sancho,unload: package(sancho,\"save>sancho\")) .\n alias: sv_sancho => unload: package(sancho,\"save>sancho\")\n\nwork:[14]% alias(compile(A,B),(dfp A ';' compile B ';' dfp dul)) .\n alias: compile(A,B) => dfp(A)';' compile(B)';' dfp(dul)\n\nwork:[15]% alias(bcomp(A),rosi:: bcomp: compile A ) .\n alias: bcomp(A) => rosi:: bcomp: compile(A)\n\nwork:[16]% alias(bcompall(A),(rosi:: bcomp: compile A ';' compile(bel,A)';' rp(bel)';' rp(rosi)';' rp(dul))) .\n alias: bcompall(A) => rosi:: bcomp: compile(A)';' compile(bel,A)';' rp(bel)';' &  ';' & \n\nwork:[17]% alias(rp(A),(dfp A ';' relink: package';' dfp dul)) .\n alias: rp(A) => dfp(A)';' relink: package';' dfp(dul)\n\nwork:[18]% alias(dul,dul:: dul: main) .\n alias: dul => dul:: dul: main\n\nwork:[19]% alias(demo,dul:: dul: demo) .\n alias: demo => dul:: dul: demo\n\nwork:[20]% alias(xdemo(A,B),dul:: dul: xdemo(A,B)) .\n alias: xdemo(A,B) => dul:: dul: xdemo(A,B)\n\n % End of take ( PSI::>sys>user>pmpsi>aliases.1 ) %\n\nwork:[21]% dfp meta';' take\"rosi>meta>install.com\" .\n\nmeta:[22]% package: define(meta,pimos,8#\"777\",St) .\n St = abnormal\n\nmeta:[23]% setenv(task: package,meta,St1) .\n St1 = normal\n\nmeta:[24]% compile[\"rosi>meta>Macro>meta.mac\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>rosi>meta>Macro>meta.mac.1\n!WARNING! no inherit_macro declaration. assumed `pimos'.\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[meta.mac@0] Compile Module : meta\n=>  :- macro_module(meta) .\nCompile Succeeded : meta\n\n!WARNING! register shortage in the guard 60 time(s) : expand_macro/ 6\n\"meta:: meta\" Loaded\nTotal Number of Warning : 3\nCompilation Time = 2221 [MSEC]\n\nmeta:[25]% compile[\"rosi>meta>Copy>*.kl1\",\"rosi>meta>Share>*.kl1\",\"rosi>meta>Common>*.kl1\"] .\n",
 "written": {}
 },
 "dulcinea+alt": {
 "errors": [],
-"instructions": 5961979,
+"instructions": 18095093,
 "loads": [],
 "name": "dulcinea+alt",
-"stop": "refused: wait_value on a structure",
+"stop": "refused: a goal failed inside a shoen",
 "typed": [
 "listener",
 "prompt(\"\\p:[\\!]% \").",
@@ -322,7 +330,7 @@
 "unload:package(soc1,\"save>soc1\").",
 "unload:package(dul,\"save>dul\")."
 ],
-"window": "\n...\n*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \npimos:[2]%  St = normal\n\npimos:[3]% \npimos:[4]% \npimos:[5]% \npimos:[6]%  alias: sv_bel => unload: package(bel,\"Bel>bel\")\n\npimos:[7]%  alias: sv_dul => unload: package(dul,\"save>dul\")\n\npimos:[8]%  alias: sv_rosi => unload: package(rosi,\"save>rosi\")\n\npimos:[9]%  alias: sv_soc1 => unload: package(soc1,\"save>soc1\")\n\npimos:[10]%  alias: sv_soc2 => unload: package(soc2,\"save>soc2\")\n\npimos:[11]%  alias: sv_sancho => unload: package(sancho,\"save>sancho\")\n\npimos:[12]%  alias: compile(A,B) => dfp(A)';' compile(B)';' dfp(dul)\n\npimos:[13]%  alias: bcomp(A) => rosi:: bcomp: compile(A)\n\npimos:[14]%  alias: bcompall(A) => rosi:: bcomp: compile(A)';' compile(bel,A)';' rp(bel)';' &  ';' & \n\npimos:[15]%  alias: rp(A) => dfp(A)';' relink: package';' dfp(dul)\n\npimos:[16]%  alias: dul => dul:: dul: main\n\npimos:[17]%  alias: demo => dul:: dul: demo\n\npimos:[18]%  alias: xdemo(A,B) => dul:: dul: xdemo(A,B)\n\npimos:[19]% \nmeta:[20]%  St = abnormal\n\nmeta:[21]%  St1 = normal\n\nmeta:[22]% ",
+"window": "\n...\n*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \npimos:[2]%  St = normal\n\npimos:[3]% \npimos:[4]% \npimos:[5]% \npimos:[6]%  alias: sv_bel => unload: package(bel,\"Bel>bel\")\n\npimos:[7]%  alias: sv_dul => unload: package(dul,\"save>dul\")\n\npimos:[8]%  alias: sv_rosi => unload: package(rosi,\"save>rosi\")\n\npimos:[9]%  alias: sv_soc1 => unload: package(soc1,\"save>soc1\")\n\npimos:[10]%  alias: sv_soc2 => unload: package(soc2,\"save>soc2\")\n\npimos:[11]%  alias: sv_sancho => unload: package(sancho,\"save>sancho\")\n\npimos:[12]%  alias: compile(A,B) => dfp(A)';' compile(B)';' dfp(dul)\n\npimos:[13]%  alias: bcomp(A) => rosi:: bcomp: compile(A)\n\npimos:[14]%  alias: bcompall(A) => rosi:: bcomp: compile(A)';' compile(bel,A)';' rp(bel)';' &  ';' & \n\npimos:[15]%  alias: rp(A) => dfp(A)';' relink: package';' dfp(dul)\n\npimos:[16]%  alias: dul => dul:: dul: main\n\npimos:[17]%  alias: demo => dul:: dul: demo\n\npimos:[18]%  alias: xdemo(A,B) => dul:: dul: xdemo(A,B)\n\npimos:[19]% \nmeta:[20]%  St = abnormal\n\nmeta:[21]%  St1 = normal\n\nmeta:[22]% ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>rosi>meta>Macro>meta.mac.1\n!WARNING! no inherit_macro declaration. assumed `pimos'.\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[meta.mac@0] Compile Module : meta\n=>  :- macro_module(meta) .\nCompile Succeeded : meta\n\n!WARNING! register shortage in the guard 60 time(s) : expand_macro/ 6\n\"meta:: meta\" Loaded\nTotal Number of Warning : 3\nCompilation Time = 2221 [MSEC]\n\nmeta:[23]% ",
 "written": {}
 },
 "editalign": {
@@ -489,7 +497,7 @@
 },
 "h907_nseq": {
 "errors": [],
-"instructions": 747077,
+"instructions": 747085,
 "loads": [
 [
 "gc.sav",
@@ -497,7 +505,7 @@
 ]
 ],
 "name": "h907_nseq",
-"stop": "refused: get_heap_size at 81278269",
+"stop": "refused: set_heap_alert at 81278293",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -577,15 +585,15 @@
 },
 "kappa_p": {
 "errors": [],
-"instructions": 1236130,
+"instructions": 60000001,
 "loads": [],
 "name": "kappa_p",
-"stop": "refused: wait_value on a structure",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "take(\"KL1comp.com\")"
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> ",
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>icp>icp.mac.1\n[icp.mac@0] Compile Module : icp_macro\n=>  :- macro_module(icp_macro) .\nCompile Succeeded : icp_macro\n\n\"work:: icp_macro\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 490 [MSEC]\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>icp>icp.kl1.1\n[icp.kl1@0] Compile Module : icp\n=>  :- module icp .\nCompile Succeeded : icp\n\n\"work:: icp\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 375 [MSEC]\n The value of task: directory is \">sys>user>pmpsi\" . \n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>lib>isch.mac.1\n[isch.mac@0] Compile Module : internal_schema\n=>  :- macro_module(internal_schema) .\nCompile Succeeded : internal_schema\n\n\"work:: internal_schema\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 3054 [MSEC]\n",
 "written": {}
 },
 "kl1graph": {
@@ -615,26 +623,30 @@
 "written": {}
 },
 "ldlib": {
-"errors": [],
-"instructions": 12806540,
+"errors": [
+"!ERROR![misc.kl1@0] *** Syntax Error ***"
+],
+"instructions": 63204345,
 "loads": [],
 "name": "ldlib",
-"stop": "refused: wait_value on a structure",
+"stop": "refused: wait_value of a variable with itself",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"Make.com\").",
 "compile_all."
 ],
-"window": "\n...\n0-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] setenv klib: dutil_files=[\"buffer.kl1\",\"clist.kl1\",\"dbm.kl1\",\"list.kl1\",\"lstack.kl1\",\"misc.kl1\",\"pimosx.mac\",\"random.kl1\",\"short_circuit.kl1\",\"stream_list.kl1\",\"stream_vector.kl1\",\"vector.kl1\",\"wclist.kl1\"] .\n\n[3] setenv klib: dutil_modules=[buffer,clist,dbm,list,lstack,misc,pimosx,random,short_circuit,stream_list,stream_vector,vector,wclist] .\n\n[4] setenv klib: macro_files=[\"loop.mac\",\"xia.mac\",\"klib.mac\"] .\n\n[5] setenv klib: macro_modules=[loop,xia,klib] .\n\n[6] setenv klib: uutil_files=[\"combine.kl1\",\"map.kl1\",\"split.kl1\"] .\n\n[7] setenv klib: uutil_modules=[combine,map,split] .\n\n[8] setenv klib: klib_files=[\"LD_dhash.kl1\",\"LD_network.kl1\",\"LD_pa.kl1\",\"LD_pm.kl1\",\"LD_srtc.kl1\",\"LD_stb.kl1\",\"LD_bb.kl1\"] .\n\n[9] setenv klib: klib_modules=[bb,dhash,network,pa,pm,srtc,stb] .\n\n[10] setenv klib: prob_files=[\"p_queens.kl1\",\"p_bt.kl1\",\"p_inc.kl1\",\"p_incdec.kl1\",\"p_8p.kl1\",\"p_8pm.kl1\",\"p_15p.kl1\",\"p_15pm.kl1\"] .\n\n[11] setenv klib: prob_modules=[p_queens,p_bt,p_inc,p_incdec,p_8p,p_8pm,p_15p,p_15pm] .\n\n[12] setenv klib: test_files=[\"tdhash_1.kl1\",\"tstb_queens.kl1\",\"tbb_bt.kl1\",\"tpa_inc.kl1\",\"tpa_incdec.kl1\",\"tpa_8pm.kl1\",\"tpa_15pm.kl1\",\"tpm_0.kl1\",\"tpm_1.kl1\",\"tsrtc_8p.kl1\",\"tsrtc_15p.kl1\"] .\n\n[13] setenv klib: test_modules=[tdhash_1,tstb_queens,tbb_bt,tpa_inc,tpa_incdec,tpa_8pm,tpa_15pm,tpm_0,tpm_1,tsrtc_8p,tsrtc_15p] .\n\n[14] alias(klib_compile(X),(getenv(klib: X ,normal(Y)),compile Y )) .\n alias: klib_compile(X) => getenv(klib: X ,normal(Y)),compile(Y)\n\n[15] alias(klib_unload(X,Z),(getenv(klib: X ,normal(Y)),unload(Y,Z))) .\n alias: klib_unload(X,Z) => getenv(klib: X ,normal(Y)),unload(Y,Z)\n\n[16] alias(compile_UTIL,(klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files))) .\n alias: compile_UTIL => klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files)\n\n[17] alias(unload_UTIL,(getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv(klib: uutil_modules,normal(UUM)),list: append(DUM,FM,L1),list: append(L1,UUM,L2),unload(L2,\"UTIL\"))) .\n alias: unload_UTIL => getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv( & , & ), & , & \n\n[18] alias(load_UTIL,load\"UTIL\") .\n alias: load_UTIL => load(\"UTIL\")\n\n[19] alias(compile_KLIB,klib_compile(klib_files)) .\n alias: compile_KLIB => klib_compile(klib_files)\n\n[20] alias(unload_KLIB,klib_unload(klib_modules,\"KLIB\")) .\n alias: unload_KLIB => klib_unload(klib_modules,\"KLIB\")\n\n[21] alias(load_KLIB,load\"KLIB\") .\n alias: load_KLIB => load(\"KLIB\")\n\n[22] alias(compile_PROB,klib_compile(prob_files)) .\n alias: compile_PROB => klib_compile(prob_files)\n\n[23] alias(unload_PROB,klib_unload(prob_modules,\"PROB\")) .\n alias: unload_PROB => klib_unload(prob_modules,\"PROB\")\n\n[24] alias(load_PROB,load\"PROB\") .\n alias: load_PROB => load(\"PROB\")\n\n[25] alias(compile_TEST,klib_compile(test_files)) .\n alias: compile_TEST => klib_compile(test_files)\n\n[26] alias(unload_TEST,klib_unload(test_modules,\"TEST\")) .\n alias: unload_TEST => klib_unload(test_modules,\"TEST\")\n\n[27] alias(load_TEST,load\"TEST\") .\n alias: load_TEST => load(\"TEST\")\n\n[28] alias(compile_all,(compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST)) .\n alias: compile_all => compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST\n\n[29] alias(unload_all,(unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST)) .\n alias: unload_all => unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST\n\n[30] alias(load_all,(load_UTIL';' load_KLIB';' load_PROB';' load_TEST)) .\n alias: load_all => load_UTIL';' load_KLIB';' load_PROB';' load_TEST\n\n % End of take ( PSI::>sys>user>pmpsi>Make.com.1 ) %\n\n[31] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>wclist.kl1.1\n[wclist.kl1@1] Compile Module : wclist\n=>  :- module wclist .\nCompile Succeeded : wclist\n\nCompile File : PSI::>sys>user>pmpsi>vector.kl1.1\n[vector.kl1@1] Compile Module : vector\n=>  :- module vector .\n",
+"window": "!ERROR![misc.kl1@0] *** Syntax Error ***\n...\nompile_UTIL,(klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files))) .\n alias: compile_UTIL => klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files)\n\n[17] alias(unload_UTIL,(getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv(klib: uutil_modules,normal(UUM)),list: append(DUM,FM,L1),list: append(L1,UUM,L2),unload(L2,\"UTIL\"))) .\n alias: unload_UTIL => getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv( & , & ), & , & \n\n[18] alias(load_UTIL,load\"UTIL\") .\n alias: load_UTIL => load(\"UTIL\")\n\n[19] alias(compile_KLIB,klib_compile(klib_files)) .\n alias: compile_KLIB => klib_compile(klib_files)\n\n[20] alias(unload_KLIB,klib_unload(klib_modules,\"KLIB\")) .\n alias: unload_KLIB => klib_unload(klib_modules,\"KLIB\")\n\n[21] alias(load_KLIB,load\"KLIB\") .\n alias: load_KLIB => load(\"KLIB\")\n\n[22] alias(compile_PROB,klib_compile(prob_files)) .\n alias: compile_PROB => klib_compile(prob_files)\n\n[23] alias(unload_PROB,klib_unload(prob_modules,\"PROB\")) .\n alias: unload_PROB => klib_unload(prob_modules,\"PROB\")\n\n[24] alias(load_PROB,load\"PROB\") .\n alias: load_PROB => load(\"PROB\")\n\n[25] alias(compile_TEST,klib_compile(test_files)) .\n alias: compile_TEST => klib_compile(test_files)\n\n[26] alias(unload_TEST,klib_unload(test_modules,\"TEST\")) .\n alias: unload_TEST => klib_unload(test_modules,\"TEST\")\n\n[27] alias(load_TEST,load\"TEST\") .\n alias: load_TEST => load(\"TEST\")\n\n[28] alias(compile_all,(compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST)) .\n alias: compile_all => compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST\n\n[29] alias(unload_all,(unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST)) .\n alias: unload_all => unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST\n\n[30] alias(load_all,(load_UTIL';' load_KLIB';' load_PROB';' load_TEST)) .\n alias: load_all => load_UTIL';' load_KLIB';' load_PROB';' load_TEST\n\n % End of take ( PSI::>sys>user>pmpsi>Make.com.1 ) %\n\n[31] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>wclist.kl1.1\n[wclist.kl1@1] Compile Module : wclist\n=>  :- module wclist .\nCompile Succeeded : wclist\n\nCompile File : PSI::>sys>user>pmpsi>vector.kl1.1\n[vector.kl1@1] Compile Module : vector\n=>  :- module vector .\nCompile Succeeded : vector\n\nCompile File : PSI::>sys>user>pmpsi>stream_vector.kl1.1\n[stream_vector.kl1@1] Compile Module : stream_vector\n=>  :- module stream_vector .\nCompile Succeeded : stream_vector\n\nCompile File : PSI::>sys>user>pmpsi>stream_list.kl1.1\n[stream_list.kl1@1] Compile Module : stream_list\n=>  :- module stream_list .\nCompile Succeeded : stream_list\n\nCompile File : PSI::>sys>user>pmpsi>short_circuit.kl1.1\n[short_circuit.kl1@1] Compile Module : short_circuit\n=>  :- module short_circuit .\nCompile Succeeded : short_circuit\n\nCompile File : PSI::>sys>user>pmpsi>random.kl1.1\n[random.kl1@1] Compile Module : random\n=>  :- module random .\nCompile Succeeded : random\n\nCompile File : PSI::>sys>user>pmpsi>pimosx.mac.1\n[pimosx.mac@0] Compile Module : pimosx\n=>  :- macro_module(pimosx) .\nCompile Succeeded : pimosx\n\nCompile File : PSI::>sys>user>pmpsi>misc.kl1.1\n!ERROR![misc.kl1@0] *** Syntax Error ***\n\n**** Here ****\n1w :-with_macropimos\nCompile File : PSI::>sys>user>pmpsi>lstack.kl1.1\n[lstack.kl1@1] Compile Module : lstack\n=>  :- module lstack .\nCompile Succeeded : lstack\n\nCompile File : PSI::>sys>user>pmpsi>list.kl1.1\n[list.kl1@1] Compile Module : list\n=>  :- module list .\nCompile Succeeded : list\n\nCompile File : PSI::>sys>user>pmpsi>dbm.kl1.1\n[dbm.kl1@1] Compile Module : dbm\n=>  :- module dbm .\nCompile Succeeded : dbm\n\nCompile File : PSI::>sys>user>pmpsi>clist.kl1.1\n[clist.kl1@1] Compile Module : clist\n=>  :- module clist .\nCompile Succeeded : clist\n\nCompile File : PSI::>sys>user>pmpsi>buffer.kl1.1\n[buffer.kl1@1] Compile Module : buffer\n=>  :- module buffer .\nCompile Succeeded : buffer\n\nTotal Number of Error : 1\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>xia.mac.1\n",
 "written": {}
 },
 "ldlib+alt": {
-"errors": [],
-"instructions": 12406961,
+"errors": [
+"!ERROR![misc.kl1@0] *** Syntax Error ***"
+],
+"instructions": 62804682,
 "loads": [],
 "name": "ldlib+alt",
-"stop": "refused: wait_value on a structure",
+"stop": "refused: wait_value of a variable with itself",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -669,7 +681,7 @@
 "alias(load_all, ( load_UTIL; load_KLIB; load_PROB; load_TEST)).",
 "compile_all."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] \n[3] \n[4] \n[5] \n[6] \n[7] \n[8] \n[9] \n[10] \n[11] \n[12] \n[13]  alias: klib_compile(X) => getenv(klib: X ,normal(Y)),compile(Y)\n\n[14]  alias: klib_unload(X,Z) => getenv(klib: X ,normal(Y)),unload(Y,Z)\n\n[15]  alias: compile_UTIL => klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files)\n\n[16]  alias: unload_UTIL => getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv( & , & ), & , & \n\n[17]  alias: load_UTIL => load(\"UTIL\")\n\n[18]  alias: compile_KLIB => klib_compile(klib_files)\n\n[19]  alias: unload_KLIB => klib_unload(klib_modules,\"KLIB\")\n\n[20]  alias: load_KLIB => load(\"KLIB\")\n\n[21]  alias: compile_PROB => klib_compile(prob_files)\n\n[22]  alias: unload_PROB => klib_unload(prob_modules,\"PROB\")\n\n[23]  alias: load_PROB => load(\"PROB\")\n\n[24]  alias: compile_TEST => klib_compile(test_files)\n\n[25]  alias: unload_TEST => klib_unload(test_modules,\"TEST\")\n\n[26]  alias: load_TEST => load(\"TEST\")\n\n[27]  alias: compile_all => compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST\n\n[28]  alias: unload_all => unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST\n\n[29]  alias: load_all => load_UTIL';' load_KLIB';' load_PROB';' load_TEST\n\n[30] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>wclist.kl1.1\n[wclist.kl1@1] Compile Module : wclist\n=>  :- module wclist .\nCompile Succeeded : wclist\n\nCompile File : PSI::>sys>user>pmpsi>vector.kl1.1\n[vector.kl1@1] Compile Module : vector\n=>  :- module vector .\n",
+"window": "!ERROR![misc.kl1@0] *** Syntax Error ***\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] \n[3] \n[4] \n[5] \n[6] \n[7] \n[8] \n[9] \n[10] \n[11] \n[12] \n[13]  alias: klib_compile(X) => getenv(klib: X ,normal(Y)),compile(Y)\n\n[14]  alias: klib_unload(X,Z) => getenv(klib: X ,normal(Y)),unload(Y,Z)\n\n[15]  alias: compile_UTIL => klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files)\n\n[16]  alias: unload_UTIL => getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv( & , & ), & , & \n\n[17]  alias: load_UTIL => load(\"UTIL\")\n\n[18]  alias: compile_KLIB => klib_compile(klib_files)\n\n[19]  alias: unload_KLIB => klib_unload(klib_modules,\"KLIB\")\n\n[20]  alias: load_KLIB => load(\"KLIB\")\n\n[21]  alias: compile_PROB => klib_compile(prob_files)\n\n[22]  alias: unload_PROB => klib_unload(prob_modules,\"PROB\")\n\n[23]  alias: load_PROB => load(\"PROB\")\n\n[24]  alias: compile_TEST => klib_compile(test_files)\n\n[25]  alias: unload_TEST => klib_unload(test_modules,\"TEST\")\n\n[26]  alias: load_TEST => load(\"TEST\")\n\n[27]  alias: compile_all => compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST\n\n[28]  alias: unload_all => unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST\n\n[29]  alias: load_all => load_UTIL';' load_KLIB';' load_PROB';' load_TEST\n\n[30] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>wclist.kl1.1\n[wclist.kl1@1] Compile Module : wclist\n=>  :- module wclist .\nCompile Succeeded : wclist\n\nCompile File : PSI::>sys>user>pmpsi>vector.kl1.1\n[vector.kl1@1] Compile Module : vector\n=>  :- module vector .\nCompile Succeeded : vector\n\nCompile File : PSI::>sys>user>pmpsi>stream_vector.kl1.1\n[stream_vector.kl1@1] Compile Module : stream_vector\n=>  :- module stream_vector .\nCompile Succeeded : stream_vector\n\nCompile File : PSI::>sys>user>pmpsi>stream_list.kl1.1\n[stream_list.kl1@1] Compile Module : stream_list\n=>  :- module stream_list .\nCompile Succeeded : stream_list\n\nCompile File : PSI::>sys>user>pmpsi>short_circuit.kl1.1\n[short_circuit.kl1@1] Compile Module : short_circuit\n=>  :- module short_circuit .\nCompile Succeeded : short_circuit\n\nCompile File : PSI::>sys>user>pmpsi>random.kl1.1\n[random.kl1@1] Compile Module : random\n=>  :- module random .\nCompile Succeeded : random\n\nCompile File : PSI::>sys>user>pmpsi>pimosx.mac.1\n[pimosx.mac@0] Compile Module : pimosx\n=>  :- macro_module(pimosx) .\nCompile Succeeded : pimosx\n\nCompile File : PSI::>sys>user>pmpsi>misc.kl1.1\n!ERROR![misc.kl1@0] *** Syntax Error ***\n\n**** Here ****\n1w :-with_macropimos\nCompile File : PSI::>sys>user>pmpsi>lstack.kl1.1\n[lstack.kl1@1] Compile Module : lstack\n=>  :- module lstack .\nCompile Succeeded : lstack\n\nCompile File : PSI::>sys>user>pmpsi>list.kl1.1\n[list.kl1@1] Compile Module : list\n=>  :- module list .\nCompile Succeeded : list\n\nCompile File : PSI::>sys>user>pmpsi>dbm.kl1.1\n[dbm.kl1@1] Compile Module : dbm\n=>  :- module dbm .\nCompile Succeeded : dbm\n\nCompile File : PSI::>sys>user>pmpsi>clist.kl1.1\n[clist.kl1@1] Compile Module : clist\n=>  :- module clist .\nCompile Succeeded : clist\n\nCompile File : PSI::>sys>user>pmpsi>buffer.kl1.1\n[buffer.kl1@1] Compile Module : buffer\n=>  :- module buffer .\nCompile Succeeded : buffer\n\nTotal Number of Error : 1\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>xia.mac.1\n",
 "written": {}
 },
 "logisim": {

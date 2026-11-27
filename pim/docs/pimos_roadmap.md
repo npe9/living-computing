@@ -582,7 +582,16 @@ addressing rule on a layout known from elsewhere.*
   each, among them `get_heap_size` on the one-PE reference (H9-07),
   the runner's 50M-cell heap limit (rodin's take typed out), a
   Listener syntax error on GDCC's documented query, editalign's FEP
-  socket. Not yet built.*
+  socket. Not yet built.
+  2026-11-27, later: `wait_value` on a module, a code or a shoen's
+  handle (VPIM `klb_equal`, `f_EqualStruct`) and `get_heap_size` on
+  one PE built (`ref_wait_value.py`); the ten rows pinned there rerun
+  and merged (`--summary --update`). Met as a module against 0 or an
+  atom at a macro file's load. Next stops: ldlib a variable with
+  itself, dulcinea a goal failure inside a shoen, consort and desq the
+  FEP pathname (221) on a written file, kappa_p its budget, h907_nseq
+  `set_heap_alert`. Counts unchanged (STOPS 8, NEEDS-SIMPOS 23); first
+  stops now four tied at 2 (`ifs_apps.md` 4).*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
