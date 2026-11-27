@@ -92,29 +92,50 @@ FORMS = {
     # calculation (nano-code DFF 1): MDR1 = the label's absolute address,
     # pc + 2 + c16 as pimm.py's i_try_me_else.  OURS (the A stage).
     'try_me_else': ('label', None),
-    # the tag-test entries: S_STAGE below
-    'switch_on_non_list': ('s_tag', None),
+    # read_variable: the structure element's address, R02 (sp), in MAR1,
+    # as write_value's; 34a0 reads [MAR1] itself.  OURS (nano-code DFF 2,
+    # OS1F 6, ODSF 3 are not decoded: whether the S stage also fetches is
+    # not known); run only to find the first word that does not run.
+    'read_variable': (None, 'sp'),
+    # the tag-test entries (entries with a tag immediate): the S stage
+    # below.  (form, the operand register's field)
+    'switch_on_non_list': ('s_tag', 'x'),
+    'get_atom': ('s_tag', 'op'),
 }
+# get_atom's constant: the atom number, the instruction's low 24 bits, put
+# in MDR2 by the S stage with no tag (the routine stamps it: 3800 ATOMo,
+# 3804 ATOMx).  OURS: that the S stage leaves the constant in MDR2.
+S_CONST = {'get_atom': 'a24'}
 
 # The S stage's tag mechanisms (Nakashima's thesis pp.134-137, DOCUMENTED:
 # (1) the tag of an operand compared with the entry's tag immediate into
-# COND; (2) the multiway set-up by the memory operand's tag (TGT into
-# TDAR); (3) the start address changed by that comparison, "if
-# (data.tag==list) start(for_list) else start(for_others)", with the
-# operand dereferenced first, p.137 "repeats the fetch until the tag is
-# not ref").  How (3) changes the address is not documented:
+# COND, the p.135 box "MDR1 = data, COND = (A[i].tag==list)"; (2) the
+# multiway set-up by the memory operand's tag (TGT into TDAR); (3) the
+# start address changed by that comparison, "if (data.tag==list)
+# start(for_list) else start(for_others)", the operand dereferenced
+# first, p.137 "repeats the fetch until the tag is not ref").  How (3)
+# changes the address is not documented:
 #
-#   S_FOR_IMM (INFERRED): when the dereferenced operand's tag equals the
-#   entry's immediate EMO2 (the whole tag, MRB included), the start is
-#   the entry's address + 1.  Decided at 3301 (switch_on_non_list, A0 a
-#   list with its MRB off, append/3's first reduction): 3301 is word for
-#   word the thesis's one-step for_list routine ("S = MDR1, eop()",
-#   Table 3-6 "list 1 step"): R02 <- MDR1, end.  pimm.py: sp := the car.
+#   S_ENTRY (INFERRED): when the dereferenced operand's tag equals the
+#   decode entry's tag immediate (the whole tag, MRB included), the
+#   routine starts at the entry itself, with COND = (the operand's OWN
+#   tag, before dereference, == the immediate), as in the p.135 box, and
+#   MAR1 = the address of the last cell the dereference read.  Decided
+#   at 3800-3801 (get_atom on an unbound variable, immediate UNDF: the
+#   cell must be bound to {ATOMo, atom}, and 3800 is the word that stamps
+#   ATOMo on the constant; entering at entry + 1 binds it untagged: the
+#   injection 's_imm_plus1' FAILs) and run at 3300-3301
+#   (switch_on_non_list on a list held directly in A0: COND true, the
+#   conditional jump to 3305 not taken, 3301 R02 <- MDR1, end, the
+#   thesis's one-step for_list; entry + 1 gives the same registers
+#   there).  Read, not run: through a REF (COND false) 3300 jumps to
+#   3305-3309, which put the variable cell the list was reached through
+#   on the R19 list.
 #   Any other tag would take the multiway set-up (2) into a row of the
 #   32-word entry; which TGT column and which row granularity is UNKNOWN
 #   here (column = TDPF with 4-word rows fits switch_on_non_list's rows
-#   1-4 when read, not run): raises.
-S_FOR_IMM = True        # switch for the injection 's_for_imm_row'
+#   1-4 when read, not run; get_atom's and wait_nil's do not): raises.
+S_ENTRY = 0             # the injections: 's_imm_plus1' 1; 's_imm_row' 'row'
 
 
 class SStageUnknown(KeyError):
@@ -150,12 +171,20 @@ def setup(pu, name):
         pu.wr[mekbn.MDR1] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
         return start
     if mdr == 's_tag':
-        data, _last = deref(pu, pu.an[pu.ir_field('x')])
+        if imm is None:
+            raise SStageUnknown('S-stage tag set-up for %s: no tag immediate' % name)
+        own = pu.an[pu.ir_field(mar)]
+        data, last = deref(pu, own)
         pu.wr[mekbn.MDR1] = data
-        if S_FOR_IMM and data[0] == nc['EMO2']:
-            return start + 1
-        if not S_FOR_IMM:       # the injection: every tag takes a row
+        if last is not None:
+            pu.wr[mekbn.MAR1] = (0, last)
+        if base(name) in S_CONST:
+            pu.wr[mekbn.MDR2] = (0, {'a24': v & 0xffffff}[S_CONST[base(name)]])
+        if S_ENTRY == 'row':    # the injection: every tag takes a TGT row
             return start | pu.tgt[nc['TDPF']][data[0] & 63] << 2
+        if data[0] == imm:
+            pu.cond, pu.cond_cycle = own[0] == imm, 'S'
+            return start + S_ENTRY
         raise SStageUnknown('S-stage multiway set-up: %s tag %02x, TDPF %d (row entry UNKNOWN)'
                             % (name, data[0], nc['TDPF']))
     if mdr in ('x', 'y'):

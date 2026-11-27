@@ -141,9 +141,9 @@ window rungs):
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
 | U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; reading not reached |
 | U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b |
-| U2c | one unification instruction | U2 | not reached: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) EXECUTED for the immediate's own tag: `switch_on_non_list` on a list starts at entry + 1 (`3301`, the thesis's one-step `for_list`), in `ref/pu/u2_append.py` |
+| U2c | one unification instruction | U2 | not reached: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
 | U2d | `proceed` / `execute` | U2 | not reached |
-| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run; `read_variable`, the label branch (`2447`, JMPF 2) and `wait_*` not reached |
+| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run; `read_variable` (stops at `34a0`, CNDF 7 EM1 28), the label branch (`2447`, JMPF 2) and `wait_*` not reached |
 | U3a | suspend | U3 | not reached |
 | U3b | bind and resume | U3 | not reached |
 | U3c | several goals (the ready structure, goal switch) | U3 | not reached |
@@ -386,17 +386,20 @@ Honest, and in sessions of the length that reached U1.
   instructions.** `ref/pu/u2_append.py` (in `run_tests.sh`, its furthest
   point pinned) runs the IPL image's `append/3` as `append([a], [], Z)`
   instruction after instruction with the PU's state carried over:
-  `try_me_else` (`216a`) and `switch_on_non_list` on a list (`3301`)
-  executed and matched (2 held words), then a stop at `read_variable`
-  (`34a0`), whose S-stage set-up is not modelled. Before it, the
+  `try_me_else` (`216a`) and `switch_on_non_list` on a list (`3300`-`3301`)
+  executed and matched (3 held words), then a stop at `read_variable`
+  at `34a0` (CNDF 7 with EM1 28: the TGT column is UNKNOWN; its MAR1 =
+  R02 is OURS). Before it, the
   firmware's own boot routine for the heap top (`start` `2028` calls
   `204b`-`2052`) runs on a parameter cell and gives R1f (the first of
   the "never set" registers, set by held code; the cell's value is
   OURS, `pimm.py`'s heap pointer, standing for PIMM.PARAM's `ihp`). New
   rules, each INFERRED with its deciding address and an observed
-  injection (`ref/pu/README.md` "U2"): the S stage's start + 1 for the
-  immediate's tag (`3301`, thesis pp.134-137 DOCUMENTED mechanism),
+  injection (`ref/pu/README.md` "U2"): the S stage's entry start with
+  COND for the immediate's tag (`setup.S_ENTRY`, decided by get_atom at
+  `3800`-`3801`, thesis pp.134-137 DOCUMENTED mechanism),
   SC2F b = EM2:EM3 (`204b`), CNDF 2 = ALU result zero (`204f`-`2052`,
   by the round-up contract), the EM-bit-0-clear polarity EXECUTED
-  (`2050`). Not settled: the S12 row entry, JMPF 2, `cjump_time`, R05 /
+  (`2050`). Not settled: the S12 row entry, JMPF 2, `cjump_time` (not
+  attempted), R05 /
   W0d (a census: R05 549 reads, 14 writes, none in `start`).

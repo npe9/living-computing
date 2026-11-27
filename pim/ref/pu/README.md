@@ -105,7 +105,7 @@ and `setup.py`):
 | MCF with EM1 `20` steps R02 by one | `31c7` (`write_integer`: one word, MCF, EM1 `20`; `pimm.py` `_sp += 1`; `set_integer` has neither and leaves sp), `3193` | 22 of the 23 self-loops carry MCF with EM1 `10` (a loop counter, below), so EM1 may select MCF's operation; but `3365`/`3366` carry CNDF 6 with EM1 `0f` and no MCF, so EM1 may belong to the condition instead. Any other MCF use raises |
 | JMPF bit 26 (codes b, c, e) makes a jump conditional; 3, 4, 6 jump unconditionally whatever CNDF holds, and their CNDF only forms COND for a later word | `318c` (`set_variable`, JMPF 4 CNDF b, must jump over `set_marked_variable`'s `318d`-`318e`) | measured over both stores, "Conditions" below; replaces `mekbn.tested()` inside the simulator |
 | CNDF 9: COND := tag of the ALU's first input = EM1; CNDF b: = EM2 | `31fa`, `31d1` (EM1 `ATOMo`), `318c`, `3196`, `31d6` (EM2 `ATOMo`), each tested by the conditional end that follows | "Conditions" below; the refill writes `{ATOMo, 0}` as the last link (`3368`) |
-| A conditional JMPF 1 with EM bit 0 set is taken when COND is false | `31fb`, `31d2`, `318f`, `31d8` (a pop's end, taken unless the link was the end marker) | one fit; the opposite pairing (COND true when the link is a cell, bit 0 = taken on true) is not told apart by these words. EM bit 0 clear: raises |
+| A conditional JMPF 1 with EM bit 0 set is taken when COND is false | `31fb`, `31d2`, `318f`, `31d8` (a pop's end, taken unless the link was the end marker) | one fit; the opposite pairing (COND true when the link is a cell, bit 0 = taken on true) is not told apart by these words. EM bit 0 clear: raised in U1; decided in U2 (`j1_bit0_clear_true`, below) |
 | ODPF 1: the S stage loads R(10 or EMO1) into MAR2 (ODSF 0) or MAR1 (ODSF 1) | `318b` (`set_variable`), `31d0` (`put_list`) | predicted for `put_variable`, `put_vector_1/2`, `write_variable` (run); read for `proceed`, `collect_list`, the marked forms (`setup.py` header). Nano-code field positions are Fig. 3-22 right-aligned on the entry's 56 bits; only ODPF, ODSF, EMO1, EMO2 are used |
 | AS1F 3 with AS2F 0: the first ALU input is the constant EM2 (the result tag from AS2) | `3321` (the allocator loads R03, `rassy`'s `lc`, with EM2 13), `3378` | thesis p.144 (AS1F modifies AS2F's meaning for constants). The value is not compared with any oracle: the evidence is arithmetic, EM2 13 beside the one-cell list (`3321`, `3378`) and 5 beside the two-cell list (`332f`, `337b`), 16 - 3 and 16 / 2 - 3, a 16-word refill chunk. The injection `as1f3_off` shows only that the rule is needed at `3321` |
 | R06 = R07 = 0 | `31d6` (`{UNDF, R07}` where `pimm.py` writes `UNDF 0`) | `{ATOMo, R06}` stands where a nil does (section 17) |
@@ -242,7 +242,8 @@ free lists, memory); the D stage is the held decode table, the E stage
 the held routine. OURS: the A stage (cell and address from `pimm.py`'s
 trace), the goal switch before the first instruction (A0-A2 as
 `pimm.py` leaves them), the seeded free lists, memory as `pimm.py`'s
-cells. Per instruction, every R and M line of `pimm.py`'s trace is
+cells. OURS too: `read_variable`'s MAR1 = R02 (`setup.FORMS`), only so
+that it stops at a microaddress. Per instruction, every R and M line of `pimm.py`'s trace is
 compared under `check_pu.Rename`; `sp` against R02; try_me_else's
 alternative against R11.
 
@@ -250,14 +251,22 @@ alternative against R11.
 |---|---|---|---|
 | boot | start's heap top `204b`-`2052` (called as from `2028`) | 6 (aligned) / 8 | R1f = the parameter cell `1a0 + 4a` rounded up to 16, on 5 parameters (contract) and on `pimm.py`'s heap pointer |
 | 0 | `try_me_else 0, @6658` (`216a`) | 1 | ok: R11 = `{REFo, load + 6658}`, `pimm.py`'s `alt` |
-| 1 | `switch_on_non_list 0,0,8` on a list (`3301`) | 1 | ok: R02 = the car's address, `pimm.py`'s `sp` |
-| 2 | `read_variable 3,0,0` (`34a0`) | 0 | STOP: its S-stage set-up is not modelled |
+| 1 | `switch_on_non_list 0,0,8` on a list (`3300`-`3301`) | 2 | ok: R02 = the car's address, `pimm.py`'s `sp`; COND true, the jump to `3305` not taken |
+| 2 | `read_variable 3,0,0` (`34a0`) | 0 | STOP at `34a0`: CNDF 7 with EM1 28 (case_tag_setup: which TGT column EM1 28 names is UNKNOWN) |
+
+Before the program, one S-stage case decides `S_ENTRY` on its own:
+`get_atom` (entry `3800`, tag immediate UNDF) on an unbound variable,
+on both models from the same state: the cell must be bound to
+`{ATOMo, atom}` (`3800`-`3801`, 2 words, ok). Every write the firmware
+makes to an argument register or a cell with no `pimm.py` R or M line
+for it is a FAIL too (probed in-process: a stray A9 and a stray cell
+write both FAIL at instruction 0).
 
 **New rules** (in `pu.py` `RULES` / `COND_RULES`, `setup.py`):
 
 | Rule | Label | Decided at | Evidence; injection (observed) |
 |---|---|---|---|
-| `setup.S_FOR_IMM`: when the dereferenced operand's tag equals the entry's tag immediate EMO2, the S stage starts the routine at entry + 1 | INFERRED (mechanism DOCUMENTED) | `3301` (switch_on_non_list, A0 `LISTo`) | thesis pp.134-137: the S stage's "start address change by the comparison of the memory operand's tag with the immediate" (`start(for_list)` / `start(for_others)`), and `3301` is word for word its one-step `for_list` ("S = MDR1, eop()", Table 3-6 "list 1 step"): R02 := MDR1, end. Injection `s_for_imm_row` (every tag takes the TGT row, column TDPF 0, 4-word rows: `3308`): STOP at `3309` (MCF EM1 06), 1 of 16 matched |
+| `setup.S_ENTRY`: when the dereferenced operand's tag equals the entry's tag immediate EMO2 (MRB included), the routine starts at the entry itself, with COND = (the operand's own tag, before dereference, == the immediate) and MAR1 = the last cell the dereference read | INFERRED (mechanism DOCUMENTED, thesis pp.134-137) | `3800`-`3801` (get_atom on an unbound variable); run at `3300`-`3301` | thesis p.135: "COND = (A[i].tag==list)" set by the S stage, and p.137 the start address changed by the tag compare; `3800` is the word that stamps ATOMo on the constant, so entering past it binds the cell untagged. Injections: `s_imm_plus1` (entry + 1): get_atom FAIL (cell `00:00000456`, `pimm.py` `02:00000456`), append unchanged (2 of 16, 2 words: entry + 1 gives the same registers at `3301`); `s_imm_row` (every tag takes the TGT row, column TDPF, 4-word rows): get_atom STOP at `3810` (CNDF a), append STOP at `3309` (MCF EM1 06), 1 of 16 |
 | `RULES['sc2_wide']`: SC2F b is EM2:EM3 (10 bits), zero-extended; EM1 non-zero and not a TGIF 1/2 stamp raises | INFERRED | `204b`-`204d` | static: words loading 1a0 carry EM1 0 or a stamp tag (`2071` `{REFo, 1a0}`, `2077` `{INTo, 1a0}`). Injection `wide_em1em2` (EM bits 15..4): the boot reads memory `1e`, never written: STOP, boot contract FAILs on all 5 parameters |
 | `COND_RULES[2]` / `RULES['cnd2_zero']`: CNDF 2 = the ALU result is zero (`rassy`'s `alf_zero`) | INFERRED | `204f`-`2052` | contract: start's heap top is its parameter rounded UP to 16 (never below: the cells below are in use). Injection `cnd2_nonzero`: all 5 parameters FAIL (aligned +16, unaligned rounded down) |
 | `RULES['j1_bit0_clear_true']`: a conditional JMPF 1 with EM bit 0 clear is taken when COND holds | INFERRED by the static agent (6.3 item 4); now EXECUTED on a return | `2050` | jointly with CNDF 2 above (the pairs (zero, taken if COND) and (not zero, taken if not) are the two that pass). Injection `bit0_clear_off`: STOP at `2050` on every parameter |
@@ -269,8 +278,8 @@ words: the CNDF 2 rule and the bit-0-clear polarity meet no U1 word).
 **The boot.** `start` (`2028`, entry `37b`) is the KL1 firmware's
 initialisation, called from outside: `204b` (heap top into R1f), `2053`
 (calls the refill entries `3376`, `337b`, `3380`, `3382`-`3395` for every
-free list, and `2070`-`208d` builds lists from parameter pairs at
-`1a0 + aa`..`b2`), `209f` (with `20bc` R07 := 0: held evidence for the
+free list, and `2070`-`208d`, read not run, reads parameter pairs at
+`1a0 + aa`..`b2`: unexplained), `209f` (with `20bc` R07 := 0: held evidence for the
 `zero_regs` rule's R07, read not run), `20c2`, `20e7`, then R0e and R10.
 `execute_first_predicate` (`2032`) loads R04 (`pc`) with
 `{REFo, [1a0 + 4b]}`, PIMM.PARAM's `bmadr` "Boot Module Address" by its
@@ -285,16 +294,20 @@ R05 is read as a base (`1a0 + R05`, `{INTo, R05}` where 0 belongs) and
 no routine of `start` writes it: probably a constant or hardware source,
 like R06/R07; not settled.
 
-**The first stop, `read_variable` (`34a0`).** Nano-code ACF 0, DFF 2,
-OS1F 6, ODSF 3, TDPF 0, EMO1 9, EMO2 `0d`. The S stage must fetch the
-element at R02, dereference it and set up the multiway (thesis p.135);
-the entry is a 32-word table of 4-word rows. Under "column TDPF, 4-word
-rows" an atom element lands on row 4 (`34b0`), which writes `opda`
-(select a = y = 0), while `pimm.py` writes r[3] (x): so either the row
-or the select reading is wrong for this entry. `read_variable_without_
-deref` (`345a`-`345c`) writes `opd9` (x) from `[MAR1]` and branches
-(JMPF a, conditional: `cjump_time`) into the MRB-marking `case_branch`
-at `35c0`. Not run.
+**The first stop, `read_variable` (`34a0`).** The entry has no tag
+immediate (EMO2 `0d` is start-address bits, not a tag), so it is not
+an S-stage tag test. Nano-code ACF 0, DFF 2, OS1F 6, ODSF 3, TDPF 0,
+EMO1 9. `34a0`-`34a2` is a plain 3-word routine: `34a0` reads [MAR1]
+and is a case_tag_setup (CNDF 7, EM1 28), `34a1` JMPF 8 with CNDF 7,
+`34a2` JMPF 3 (case_branch to `3490`). With MAR1 = R02 (OURS) the run
+stops at `34a0` on CNDF 7 with EM1 28. The blockers: MAR1 from the S
+stage (whether DFF 2 also fetches), JMPF 8, and the TGT column EM1 28
+(or 2d) names. `read_variable_without_deref` (`345a`-`345c`) writes
+`opd9` (x) from `[MAR1]` and branches (JMPF a, conditional:
+`cjump_time`) into the MRB-marking `case_branch` at `35c0`. Not run.
+
+**`cjump_time`** (the timing of conditional a/b/c/e): not attempted in
+this session; no word of the U2 run reaches one.
 
 **The S12 row entry** (a tag-test entry entered at a row by the tag):
 for `switch_on_non_list` (TDPF 0), TGT column 0 (REFo 0, LISTx 1, LISTo
@@ -308,9 +321,9 @@ do not fit column 0, and `wait_nil` (TDPF 1) does not fit column 1 with
 
 ## Next, for U2
 
-In order, as the harness stops on them: the S-stage set-up of
-`read_variable` (element fetch, dereference, TGT row; and the select
-of its result); the S12 row entry (which column, which granularity:
+In order, as the harness stops on them: `read_variable` (`34a0`:
+the TGT column of a case_tag_setup with EM1 28, JMPF 8, and where MAR1
+comes from); the S12 row entry (which column, which granularity:
 `get_atom` and `wait_nil` disagree with the simplest reading) and the
 4-bit JMPF 2 (`2447`, the branch to a label); `put_reused_structure`
 (`31e8`, calls `31a1`/`31a3`), `get_bound_value`, `execute` (`4cc0`),

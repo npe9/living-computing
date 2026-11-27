@@ -14,7 +14,7 @@ The program is the IPL image's own append/3 (scsi_fep_module, cells
     6650  write_variable 3,0,0          6657  proceed 0,0,0
                                         6658  suspend 3, append/3
 
-called as append([a], [], Z): two reductions, 15 instructions on
+called as append([a], [], Z): two reductions, 16 instructions on
 pimm.py.  pimm.py runs it whole (Machine.run) and its trace (I, R, M
 lines) is split at each I line.  The PU then executes the same
 instructions in order, its state carried from one to the next (the
@@ -51,16 +51,23 @@ Before the program, start's held heap-top routine 204b-2052 runs (as
 its contract (R1f = the parameter rounded up to 16), then on pimm.py's
 heap pointer (OURS) to give the run its R1f.
 
-Observed 2026-11-26 (ref/pu/README.md "U2"): the boot contract ok on 5
-parameters; 2 of 16 instructions executed and matched (try_me_else,
-switch_on_non_list on a list), 2 held microinstructions; the first stop
-is read_variable (6646): its S-stage set-up (the structure element's
-fetch, dereference and tag dispatch; nano-code DFF 2, OS1F 6, ODSF 3) is
-not modelled.
+Before the program, the S-stage case that decides setup.S_ENTRY:
+get_atom (entry 3800) on an unbound variable, on both models.  Every
+write of the firmware to an argument register or a cell with no
+pimm.py R / M line is a FAIL.
+
+Observed 2026-11-26 (ref/pu/README.md "U2"): get_atom ok (3800-3801);
+the boot contract ok on 5 parameters; 2 of 16 instructions executed
+and matched (try_me_else 216a, switch_on_non_list on a list 3300-3301),
+3 held microinstructions; the first stop is read_variable (6646) at
+34a0, CNDF 7 with EM1 28 (its MAR1 = R02 is OURS).
 Injections (in-process, no file edited), observed:
-  s_for_imm_row   switch_on_non_list takes the TGT row (3308, column
-                  TDPF 0) for its list: STOP at 3309 (MCF with EM1 06);
-                  1 of 16 matched
+  s_imm_plus1     S_ENTRY entry + 1: get_atom FAILs (the cell bound
+                  untagged, 00:00000456); append unchanged, 2 of 16,
+                  2 words
+  s_imm_row       every tag takes the TGT row (column TDPF, 4-word
+                  rows): get_atom STOP at 3810 (CNDF a); append STOP at
+                  3309 (MCF with EM1 06), 1 of 16 matched
   wide_em1em2     SC2F b read as EM bits 15..4: the boot reads memory
                   1e, never written: the contract FAILs on all 5
                   parameters, and the run STOPs in the boot
@@ -88,7 +95,7 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
-PINNED = dict(steps=16, matched=2, words=2, stop=2)
+PINNED = dict(steps=16, matched=2, words=3, stop=2)
 
 
 def pimm_run():
@@ -169,8 +176,45 @@ def boot_contract():
     return bad
 
 
+def s_stage_case():
+    """The case that decides setup.S_ENTRY: get_atom (a tag immediate of
+    UNDF, entry 3800) on an unbound variable, on both models from the
+    same state.  pimm.py binds the cell to {ATOM, atom}.  Returns a list
+    of failures."""
+    import mekbn
+    fw = mekbn.Firmware()
+    k, atom, var = 5, 0x000456, 0xe0010000
+    op = fw.kl1_entries()['get_atom'][0] & 0xe0 | k
+    ir = (0x23, op << 24 | atom)
+    m = pimm.Machine()
+    m.mem[var] = (pimm.UNDF, 0)
+    m.reg[k] = (pimm.REF, var)
+    pc = len(m.cells)                 # the instruction cell, just past the code
+    m.cells.append(ir)
+    m.i_get_atom(pc, (ir[1] >> 16) & 255, (ir[1] >> 8) & 255, ir[1] & 255, ir[1] & 0xffff)
+    p = PU.PU(fw)
+    p.mem[var] = (pimm.UNDF, 0)
+    p.an[k] = (pimm.REF, var)
+    p.ir, p.pc = ir, m.load + pc
+    try:
+        name = SU.decode(p)
+        n = p.run(SU.setup(p, name))
+    except (PU.Unmodelled, KeyError) as e:
+        return ['get_atom on an unbound variable: STOP %s' % e]
+    bad = []
+    if p.mem[var] != m.mem[var]:
+        bad.append('get_atom on an unbound variable (%d words): cell %s, pimm.py %s'
+                   % (n, check_pu.fmt(p.mem[var]), check_pu.fmt(m.mem[var])))
+    if p.an[k] != m.reg[k]:
+        bad.append('get_atom: A%d %s, pimm.py %s' % (k, check_pu.fmt(p.an[k]), check_pu.fmt(m.reg[k])))
+    return bad
+
+
 def run(verbose=False):
     m, s0, steps = pimm_run()
+    sbad = s_stage_case()
+    print('%s  S stage: get_atom on an unbound variable (entry 3800)%s'
+          % ('FAIL' if sbad else 'ok  ', ': ' + '; '.join(sbad) if sbad else ''))
     bad = boot_contract()
     print('%s  start 204b (heap top) on 5 parameters%s'
           % ('FAIL' if bad else 'ok  ', ': ' + '; '.join(bad) if bad else ''))
@@ -196,6 +240,7 @@ def run(verbose=False):
         p.ir, p.pc = cellv, m.load + pc
         name = '?'
         n0 = len(p.trace)
+        an0, mem0 = dict(p.an), dict(p.mem)
         try:
             name = SU.decode(p)
             start = SU.setup(p, name)
@@ -208,7 +253,7 @@ def run(verbose=False):
         nw = len(p.trace) - n0
         out['words'] += nw
         out['done'] += 1
-        fails = compare(p, m, rn, lines, after, name)
+        fails = compare(p, m, rn, lines, after, name, an0, mem0)
         if fails:
             out['fail'] = (k, pc, name, fails)
             print('FAIL %2d %5d %-22s %d words: %s' % (k, pc, name, nw, '; '.join(fails)))
@@ -225,8 +270,20 @@ def run(verbose=False):
     return out, len(steps)
 
 
-def compare(p, m, rn, lines, after, name):
+def compare(p, m, rn, lines, after, name, an0, mem0):
     fails, notes = [], []
+    # what the firmware wrote that pimm.py did not: an argument register or
+    # a cell changed by the routine with no R / M line for it
+    rl = {int(ln.split()[1]) for ln in lines if ln.startswith('R ')}
+    ml = {m.load + int(ln.split()[1]) for ln in lines if ln.startswith('M ')}
+    for i in sorted(set(p.an) | set(an0)):
+        if p.an.get(i) != an0.get(i) and i not in rl:
+            fails.append('reg %d: firmware wrote %s, pimm.py no write'
+                         % (i, check_pu.fmt(p.an.get(i))))
+    for a in sorted(set(p.mem) | set(mem0)):
+        if p.mem.get(a) != mem0.get(a) and rn.f2p.get(a, a) not in ml:
+            fails.append('heap %x: firmware wrote %s, pimm.py no write'
+                         % (a, check_pu.fmt(p.mem.get(a))))
     for line in lines:
         f = line.split()
         if f[0] not in ('R', 'M'):
@@ -259,7 +316,8 @@ def compare(p, m, rn, lines, after, name):
 
 
 INJECT = {
-    's_for_imm_row': lambda: setattr(SU, 'S_FOR_IMM', False),
+    's_imm_plus1': lambda: setattr(SU, 'S_ENTRY', 1),
+    's_imm_row': lambda: setattr(SU, 'S_ENTRY', 'row'),
     'wide_em1em2': lambda: PU.RULES.update(sc2_wide='EM1:EM2'),
     'cnd2_nonzero': lambda: PU.RULES.update(cnd2_zero=False),
     'bit0_clear_off': lambda: PU.RULES.update(j1_bit0_clear_true=False),

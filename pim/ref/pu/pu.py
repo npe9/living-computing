@@ -139,7 +139,8 @@ RULES = {
     # A conditional JMPF 1 (EM bit 1) with EM bit 0 set is taken when
     # COND is false.  INFERRED, decided at 31fb/31d2/318f/31d8: the
     # pop's end must be taken when the link is not the end marker.  With
-    # EM bit 0 clear: not decided, raises.
+    # EM bit 0 clear: RULES['j1_bit0_clear_true'] below (U2, decided at
+    # the return 2050).
     'j1_bit0_false': True,
     # AS1F 3 with AS2F 0: the AS1 bus carries the constant EM2.  INFERRED
     # (thesis p.144: "AS1F modifies AS2F's meaning for constants"; open in
