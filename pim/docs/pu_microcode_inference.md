@@ -331,6 +331,9 @@ contracts that kill each other value on their own (`--table`):
 | cond_7_09 | never, always (coupled with endpol) | |
 | cond_0, cond_b | open | |
 | **cond_7_29** (side contract) | **mrb_on, mrb_off**; under endpol 'b0=0 ends if cond' **mrb_on** | every value relation, never and always by `reuse_kl1` alone |
+| **ctime** (side contract `execute_fast`, CNDF 3 = lt) | **prev** | same by `execute_fast` alone |
+| **cond_3** (side contract, ctime same) | **never** | every relation and always |
+| **cond_7_19** (side contract, ctime prev) | **never** | every relation and always |
 
 *Added 2026-11-27 (U2, fourth session):* the condition domain of
 CNDF 7 EM1 `29` alone (`TAG_CONDS`) also offers `mrb_on` / `mrb_off`,
@@ -344,6 +347,27 @@ set: offered to every condition or added to the joint set, it made
 `--check` take 67-80 s instead of 17 s. Both rows are pinned by
 `--check`. Injection (in-process): the contract flipped (ends iff the
 MRB is ON) gives 1 FAIL, the fixed-polarity row (`['mrb_off']`).
+
+*Added 2026-11-27 (U2, fifth session):* the side contract
+`execute_fast` (`4cc0`-`4cc1`, `execute`'s first two words): with no
+asynchronous event pending, `4cc1` (a conditional JMPF b to `4cc5`,
+taken when the COND it tests holds) is not taken, whatever the
+registers hold. It is decided with the datapath values already decided
+held fixed (`EXEC_DECIDED`: thesis layout, AS1F 4 MDR1, AS2F 0 zero,
+ALF 1 sub, SD1F 1 XR, SD2F 1 YR, ADF 0 none, AS2F 1 YR, AS1F 2 YR);
+left free, ADF 0 = MDR1 lets `4cc1` compare R0d with itself and
+`same` survives. Results (pinned): with CNDF 3 a relation on the ALU
+result (lt), only **ctime prev** survives; under `same`, CNDF 3 must be
+`never`; under `prev`, CNDF 7 EM1 `19` (the condition `4cc0` forms)
+must be `never` for every register content, i.e. it does not depend on
+the ALU result, as a hardware flag (slit_check, `ref/pu/pu.py`
+`FLAG_CONDS`) that is clear. This is the first test of the timing of a
+conditional JUMP (section 6.3 item 3 had it for ends only); it rests
+on the INFERRED contract and on CNDF 3 being a data condition (rassy's
+short table: carry, zero, sign, same_tag, equal, lc_one). Injections
+(private copy, `--check`): `th_adf_0` left free gives 2 FAIL (ctime
+['same', 'prev'], cond_3 ['lt', 'ne', 'gt', 'never']); the contract
+flipped (4cc1 taken) gives 2 FAIL (cond_3 and cond_7_19 ['always']).
 
 The table was computed before the arithmetic contracts gained their
 end clause. Adding the clause can only remove meanings. After the
@@ -470,3 +494,5 @@ line of every run was read, with no output cap:
 | `pu_smt` add_kl1 contract expects a - b | 13 FAIL: satisfiable False, every one of the 12 pinned selectors [] |
 | `pu_smt` endpol domain cut to its first meaning | 2 FAIL: cond_5 ['eq'], cond_7_0a ['lt'] (the coupling of section 6.3, item 4) |
 | `pu_smt` reuse_kl1 contract flipped (ends iff the MRB is on; 2026-11-27, in-process) | 1 FAIL: cond_7_29 over reuse_kl1 with endpol 'b0=0 ends if cond' ['mrb_off'] |
+| `pu_smt` EXEC_DECIDED without th_adf_0 (2026-11-27, private copy) | 2 FAIL: ctime over execute_fast ['same', 'prev'], cond_3 ['lt', 'ne', 'gt', 'never'] |
+| `pu_smt` execute_fast contract flipped (4cc1 taken; 2026-11-27, private copy) | 2 FAIL: cond_3 and cond_7_19 over execute_fast ['always'] |

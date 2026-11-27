@@ -270,7 +270,7 @@ def run_case(name, ops, regs_extra, declared, verbose=False):
 
 
 def fmt(w):
-    return 'None' if w is None else '%02x:%08x' % w
+    return 'None' if w is None else repr(w) if not isinstance(w, tuple) else '%02x:%08x' % w
 
 
 # Fault injections (--inject NAME): one decoded rule changed in this
@@ -430,7 +430,8 @@ def main(argv):
     seed_lists(p, NFREE)
     upc = SU.dispatch(p)[1]
     keys = {'cycle', 'micro_pc', 'microword', 'reg_reads', 'wr', 'reg_writes',
-            'mem_reads', 'mem_writes', 'cond', 'cond_cycle', 'tdar', 'push', 'pop', 'next'}
+            'mem_reads', 'mem_writes', 'cond', 'cond_cycle', 'tdar', 'mcf', 'push', 'pop',
+            'next'}
     ok = True
     try:
         while upc is not None:

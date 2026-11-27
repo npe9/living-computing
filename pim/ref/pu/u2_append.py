@@ -158,6 +158,40 @@ New injections, observed:
   gbv_mdr2_x      get_bound_value's MDR2 from x, not y: append FAILs at
                   get_bound_value (the variable cell bound to a REF to
                   itself), 7 of 16
+
+Observed 2026-11-27, fifth session: every case above ok; 12 of 16
+instructions executed and matched, 25 held microinstructions (+ execute
+4cc0-4cc3, the fast path, and the second reduction's try_me_else 216a);
+the first stop is switch_on_non_list (6645) on nil: the S-stage
+multiway set-up for a tag other than the immediate (row entry UNKNOWN).
+execute is compared on R04 (the firmware's next PC) against pimm.py's
+next instruction, tag COD (seed_execute, compare_execute: the flags and
+the STALE registers are OURS).  The old injections give the same
+results as listed above, except that those that left append at 10 of
+16 now leave it at 12 (s_cond_true, cnd2_nonzero, deref_tgt_col0,
+prs_operand_x).  New injections, observed:
+  cjump_same      a conditional jump tests its own word's COND: append
+                  STOPs at 4cc1 (the COND 4cc1 forms is STALE: MDR1 - R0d),
+                  10 of 16
+  cjump_false     JMPF b taken when COND is false: STOP at 4cc5 (AS1F 3
+                  with AS2F 1, not modelled), 10 of 16
+  slit_pending    the slit-check flag set (an event pending): STOP at 4cc5,
+                  as cjump_false, 10 of 16
+  interrupt_pending  interrupt_all set: 4cc3 does not end; 4cc4 R04 :=
+                  the old pc, 4cd3 calls 4cf4: STOP at 1c2c (CNDF 7 EM1 0d),
+                  10 of 16, 28 words
+  flags_swapped   EM1 19 read as interrupt_all, 21 as slit_check: nothing
+                  changes (both clear): which flag is which is NOT
+                  discriminated
+  as1f2_off       AS1F 2 unmodelled: STOP at 4cc0, 10 of 16
+  mcf_unknown_raise  MCF 06 / 07 raise: STOP at 4cc1 (MCF with EM1 07)
+  jmpf8_flag_off  JMPF 8 on a flag condition raises: STOP at 4cc2
+  cnd3_off        CNDF 3 unmodelled: nothing changes (4cc1's COND is
+                  STALE before the rule is asked): NOT discriminated
+  execute_mdr1    the label put in MDR1: append FAILs at execute (R04 =
+                  {COD, e0008000}, MDR2's old value, for {COD, e00019f4})
+  tgif3_em1       TGIF 3's tag from EM1: append FAILs at execute (R04
+                  tag 21 BLT for COD)
 """
 import os
 import sys
@@ -177,7 +211,7 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
-PINNED = dict(steps=16, matched=10, words=20, stop=10)
+PINNED = dict(steps=16, matched=12, words=25, stop=12)
 
 
 def pimm_run():
@@ -395,6 +429,50 @@ def reuse_cases():
 
 REUSE_SHARED_STOP = 0x31ee
 
+# execute (6654, entry 4cc0; U2 2026-11-27, fifth session).  What the
+# harness gives it, OURS:
+#   - the hardware flags pu.FLAG_CONDS tests: no asynchronous event
+#     pending (slit_check) and no interrupt (interrupt_all), as on one PE
+#     with no GC request, message or signal (pimm.py has none either);
+#   - R0d, W1f and R04 as STALE (pu.STALE: values the harness does not
+#     know).  R0d is a scratch register (47 writers in image 2, none on
+#     the path run before execute); W1f is written at boot (20a8, W1f := 0,
+#     read not run) and by proceed's 21a1-21fe; R04, rassy's 'pc', is the
+#     A stage's program counter, which the harness does not model.  On
+#     the fast path (4cc0-4cc3) R0d and W1f feed only 4cc1's compare and
+#     XR, which no word tests or keeps (cjump_time 'prev'), and R04's old
+#     value goes to W14 (not compared): a STALE value reaching an
+#     argument register, a cell, an address or a tested COND would STOP
+#     or FAIL the run, so their values are shown not to matter here.
+EXECUTE_FLAGS = {'slit_check': False, 'interrupt_all': False}
+EXECUTE_STALE = (('R', 0x0d), ('W', 0x1f), ('R', 0x04))
+R_PC = 0x04             # rassy's second bank 4, 'pc'
+COD = 0x26              # kbn tag COD (the code-address tag 4cc2 stamps from EM2)
+
+
+def seed_execute(p):
+    p.flags.update(EXECUTE_FLAGS)
+    for f, n in EXECUTE_STALE:
+        {'R': p.r, 'W': p.w}[f][n] = PU.STALE
+
+
+def compare_execute(p, m, after):
+    """execute: the firmware's next PC, R04, against pimm.py's next
+    instruction (the I line after execute's).  The tag must be COD (4cc2
+    stamps EM2 under TGIF 3, RULES['tgif3_tag']; the slow-path words
+    4cc4, 4ccf stamp COD on R04 too).  pimm.py's i_execute also counts a
+    reduction and clears alt; neither has a firmware register compared
+    here."""
+    want = after.get('next_pc')
+    r04 = p.r.get(R_PC)
+    if want is None:
+        return ['execute: no next instruction in pimm.py\'s trace']
+    if PU.is_stale(r04) or r04 is None or r04 != (COD, m.load + want):
+        return ['R04 (pc): firmware %s, pimm.py next instruction {COD, %x}'
+                % (r04 if PU.is_stale(r04) or r04 is None else check_pu.fmt(r04),
+                   m.load + want)]
+    return []
+
 
 def run(verbose=False):
     m, s0, steps = pimm_run()
@@ -425,6 +503,7 @@ def run(verbose=False):
         p.an[i] = w                       # OURS: the goal switch
     p.r[SU.R_REC] = (0, check_pu.REC)
     check_pu.seed_lists(p, NFREE)
+    seed_execute(p)
     rn = check_pu.Rename()
     for a in s0['mem']:
         rn.f2p[a] = rn.p2f[a] = a          # cells present in both: the identity
@@ -432,6 +511,7 @@ def run(verbose=False):
            'boot_words': nboot, 'boot_fail': bad + sbad + lbad + rbad}
     for k, (pc, cellv, lines, after) in enumerate(steps):
         p.ir, p.pc = cellv, m.load + pc
+        after['next_pc'] = steps[k + 1][0] if k + 1 < len(steps) else None
         name = '?'
         n0 = len(p.trace)
         an0, mem0 = dict(p.an), dict(p.mem)
@@ -500,6 +580,8 @@ def compare(p, m, rn, lines, after, name, an0, mem0):
             if not rn.same(p.mem.get(fa), pv, False, notes, 'heap'):
                 fails.append('heap %x: firmware %s, pimm.py %s'
                              % (pa, check_pu.fmt(p.mem.get(fa)), check_pu.fmt(pv)))
+    if base == 'execute':
+        fails += compare_execute(p, m, after)
     if base == 'try_me_else':
         # INFERRED projection: R11 (rassy's 'ap') holds the alternative
         # clause, pimm.py's alt (a cell index; the firmware an address)
@@ -628,6 +710,18 @@ INJECT = {
     'no_reuse_decl': lambda: globals().update(DECLARE_REUSE=False),
     'no_indirect_decl': lambda: globals().update(DECLARE_INDIRECT=False),
     'gbv_mdr2_x': lambda: SU.S_CONST.update(get_bound_value='x'),
+    # U2 execute (2026-11-27, fifth session)
+    'cjump_same': lambda: PU.RULES.update(cjump_time='same'),
+    'cjump_false': lambda: PU.CJUMP_TAKEN_ON.update({0xb: False}),
+    'slit_pending': lambda: EXECUTE_FLAGS.update(slit_check=True),
+    'interrupt_pending': lambda: EXECUTE_FLAGS.update(interrupt_all=True),
+    'flags_swapped': lambda: PU.FLAG_CONDS.update({0x19: 'interrupt_all', 0x21: 'slit_check'}),
+    'as1f2_off': lambda: PU.RULES.update(as1f2_yr=False),
+    'mcf_unknown_raise': lambda: PU.MCF_UNKNOWN.clear(),
+    'jmpf8_flag_off': lambda: PU.RULES.update(jmpf8_flag=False),
+    'cnd3_off': lambda: PU.RULES.update(cnd3_sign=False),
+    'execute_mdr1': lambda: SU.LABEL_ODSF.update({2: 'MDR1'}),
+    'tgif3_em1': lambda: PU.RULES.update(tgif3_tag='EM1'),
 }
 
 

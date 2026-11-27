@@ -96,6 +96,50 @@ DEREF_TGT_COLUMN = None         # injection only: read the set-up as this TGT co
 # there, not a case_branch; at 34a0 nothing tests it before read_variable
 # ends.  Contributes nothing on the executed path: NOT discriminated.
 COND_UNKNOWN = {0x28}
+# CNDF 7 with these EM1 values: COND := a hardware flag (U2, 2026-11-27,
+# fifth session; INFERRED).  Thesis printed p.144 (psi_microword.md 3):
+# CNDF is the branch condition, "rare conditions selected by EM1"
+# (DOCUMENTED that CNDF 7's EM1 selects a condition).  The numbering is
+# rassy's condition constants in the order the class holds them
+# (asm/ptfdump.py pimmutil rassy: 'cond alf_zero' .. 'cond ovf_trap',
+# 40 names, then case_gc_setup / case_tag_setup), read as EM1 = the
+# position: three independent checks fit it.  Position 9 is over_flow
+# and 10 less, where EM1 09 (overflow) and 0a (lt) were found apart from
+# rassy (pu_smt, inference doc 6.3 items 4-5); and positions 21-31
+# (exsw00 .. COL) carry the very numbers rassy's own flag set/reset
+# tables give the same flags (--pairs: set_exsw00 21 .. set_slit_check
+# 25 .. set_COL 31, the same for reset_).  So 19 (= 25) is slit_check,
+# 21 (= 33, inside the list but outside the 21-31 run) interrupt_all.
+# Slit check: "asynchronous events (GC request, packet arrival, signals
+# from other PEs) are latched in flag registers and polled once per
+# reduction through one summary flag ... called slit-checking" (PIM/p,
+# literature_gaps.md [P1] pp. 16, 19, s.5.4; PIM/m's own is TR-715 3.3,
+# docs/multi_pe.md: "decoded at a slit of reductions").  execute ends a
+# reduction: 4cc0 forms it, 4cc1 branches on it, 4cc2 forms
+# interrupt_all, 4cc3 ends unless it holds.  The flags' values are the
+# harness's (OURS, PU.flags; an unset flag raises): a single PE with no
+# event pending, so both are false.  Which flag is which is NOT
+# discriminated on the path run (both false).
+FLAG_CONDS = {0x19: 'slit_check', 0x21: 'interrupt_all'}
+# MCF (bit 18) with these EM1 values: an operation of UNKNOWN meaning on
+# state this simulator does not hold (a flag or counter: PSI-II's TYPF
+# "counter/flag control", thesis printed p.144).  Recorded in the cycle
+# record ('mcf') and nothing else; INFERRED that it touches no register
+# or memory the routines run here read.  06: 75 words, 59 of them in
+# words that put a freed cell on the R19 list (wait_*, switch_on_*,
+# hash_on_constant, 3309) and 4 at execute's / execute_external's ends
+# (4cc3, 4cd0, 4ce1, 4cef).  rassy's flag reset table numbers 6
+# reset_SUSPF (a reduction-end reset would fit execute; the freeing
+# words do not suggest it): not decided.  Executed at 4cc3.  07: 11
+# words, all at goal or reduction boundaries: proceed (2170, 217a, 2212
+# R04 := the next goal's pc), execute (4cc1), execute_external (4ce0,
+# 4ced, 4cf3), suspend (1c60), merge (4040, 4079) and the boot (20a8,
+# W1f := 0); rassy's reset table numbers 7 reset_CGCF.  A reduction
+# counter (pimm.py counts reductions at execute and proceed) or a
+# per-goal flag: not decided.  Executed at 4cc1.  (The EM bits 15-10 of
+# a page-relative jump word are free of its 10-bit target, so 4cc1's
+# EM1 is 07.)  Injection 'mcf_unknown_raise': raises at 4cc1.
+MCF_UNKNOWN = {0x06, 0x07}
 
 
 class _Poison(object):
@@ -103,15 +147,30 @@ class _Poison(object):
     or a memory read of a cell never written (absent_read_poison).  Any
     use raises Unmodelled (the caller checks with is_poison)."""
 
+    def __init__(self, name='POISON'):
+        self.name = name
+
     def __repr__(self):
-        return 'POISON'
+        return self.name
 
 
 POISON = _Poison()
+# A register value the harness does not know (OURS): a scratch register
+# such as R0d at execute, whatever the routine before left there.  It may
+# be copied between registers and through the ALU (the result is STALE,
+# as is a COND formed from it), but testing it, writing it to memory,
+# addressing with it or comparing it with pimm.py raises or FAILs.  So a
+# STALE value that reaches the end of a run is shown not to matter on
+# that path.  (Distinct from POISON, whose ALU use still raises at once.)
+STALE = _Poison('STALE')
 
 
 def is_poison(v):
     return v is POISON
+
+
+def is_stale(v):
+    return v is STALE
 
 
 # ---------------------------------------------------------------------------
@@ -172,8 +231,9 @@ RULES = {
     'bit26_cond': True,
     # The timing of a conditional JMPF b/c/e/a (does it test the COND
     # its own word forms, 'same', or the previous word's, 'prev'?) is
-    # UNKNOWN (inference doc 6.3 item 3): None raises; 'prev'/'same' are
-    # the switch positions for an experiment.  A conditional JMPF 1
+    # 'prev' since U2's fifth session (INFERRED; the evidence below the
+    # RULES dictionary, with CJUMP_TAKEN_ON); None raises, 'same' is the
+    # injection 'cjump_same'.  A conditional JMPF 1
     # (end, return, jump) tests the COND the PREVIOUS executed word
     # formed: EXECUTED for ends by pu_smt (less_than / not_less_than
     # share a first word).  A word with CNDF 0 leaves COND as it was:
@@ -182,7 +242,7 @@ RULES = {
     # matches pimm.py in both arms, the last-cell case included).  With
     # j1_cond_prev_strict (the injection 'cond_prev_strict') a COND not
     # formed by the very previous word raises, and put_variable stops.
-    'cjump_time': None,
+    'cjump_time': 'prev',
     'j1_cond_prev_strict': False,
     # A conditional JMPF 1 (EM bit 1) with EM bit 0 set is taken when
     # COND is false.  INFERRED, decided at 31fb/31d2/318f/31d8: the
@@ -282,7 +342,51 @@ RULES = {
     # off): append's instruction 4 STOPs at 31ee (MCF with EM1 08), the
     # LISTx side case ends at 31ed (a shared list reused: FAIL).
     'em1_29_mrb': 'on',
+    # AS1F 2 puts YR on the AS1 bus.  INFERRED (U2, 2026-11-27, fifth
+    # session).  AS1F is in SD1F's numbering (MEASURED, mekbn), whose
+    # value 2 is yr in rassy's adder-source table (0 nop, 1 xr, 2 yr,
+    # 4 mdr1, 5 mdr2, 6 mar1, 7 mar2; binary_reverse_engineering.md
+    # section 3), and the thesis (printed p.126, psi_microword.md 3b) has
+    # XR, YR, MDR1/2 reach AS1.  Static: of 446 words with AS1F 2 and
+    # AS2F 0, 157 are ALF 3 operations on it alone (shift_left,
+    # shift_right_32m by EM2), 112 copies (MAR1 <- as1_2 ...).  The ALU
+    # reads YR as it stood before the word (the existing 'old' rule for
+    # every ALU input: 0306 'YR <- #1; W1d <- as1_2 - 0' with a zero test
+    # is a test of the old YR).  Executed at 4cc0 (execute: R15 := YR,
+    # not compared).  Off (the injection 'as1f2_off'): raises.
+    'as1f2_yr': True,
+    # CNDF 3: COND := the ALU result is negative (bit 31).  INFERRED from
+    # rassy's short condition table, in the class's order 'cond carry',
+    # 'cond zero', 'cond sign', 'cond same_tag', 'cond equal', 'cond
+    # lc_one', read as CNDF 1..6: 2 (zero, RULES['cnd2_zero'], decided at
+    # 204f-2052), 5 (eq, pu_smt) and 6 (the counted loops on lc,
+    # README "Conditions") fit it independently.  Executed at 4cc1 on a
+    # STALE input, where nothing tests it (cjump_time 'prev'): NOT
+    # discriminated.
+    'cnd3_sign': True,
+    # JMPF 8 sequences as JMPF 0 in a word whose CNDF 7 selects a flag
+    # condition (FLAG_CONDS): INFERRED, as RULES['jmpf8_setup'], and
+    # admitted only there (4cc2, interrupt_all; what bit 26 adds to the
+    # condition is not decided).  Off (the injection 'jmpf8_flag_off'):
+    # raises at 4cc2.
+    'jmpf8_flag': True,
 }
+# The conditional page-relative / relative jumps JMPF a/b/c/e
+# (RULES['cjump_time'] above).  U2, 2026-11-27, fifth session: 'prev',
+# INFERRED.  (1) Thesis printed p.130 (psi_microword.md 3b, DOCUMENTED):
+# the condition is selected into COND one step and branched on the next.
+# (2) The conditional END already tests the previous word's COND
+# (EXECUTED, pu_smt).  (3) execute 4cc0-4cc1: 4cc0 forms the slit check
+# (CNDF 7 EM1 19) and 4cc1, a JMPF b to 4cc5, forms CNDF 3 itself; under
+# 'same' 4cc0's slit check would be overwritten untested on every path,
+# under 'prev' 4cc1 branches on it.  (4) Static (scratch census, image 2,
+# non-self jumps): of the JMPF b words, 27 have no CNDF of their own
+# but a CNDF in the word before, 4 the opposite (a: 97 / 51, c: 123 / 23,
+# e: 94 / 45).  Polarity, CJUMP_TAKEN_ON: which COND value takes the
+# jump, per JMPF code; only b is EXECUTED (4cc1: taken on COND, the slit
+# check pending; not taken with no event, the fast path 4cc2-4cc3 that
+# sets R04 := the label).  Other codes raise.
+CJUMP_TAKEN_ON = {0xb: True}
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
 # conditional word (thesis p.130: condition into the flag COND one step,
@@ -357,7 +461,17 @@ def _cnd2(pu, upc, x, a):
     return z if RULES['cnd2_zero'] else not z
 
 
-COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7, 2: _cnd2}
+def _cnd3(pu, upc, x, a):
+    """CNDF 3: the word's ALU result is negative (RULES['cnd3_sign'])."""
+    if not RULES['cnd3_sign']:
+        raise Unmodelled(upc, 'CNDF 3 (rule off)')
+    if pu.alu_seen is None or pu.alu_seen[2] is None:
+        raise Unmodelled(upc, 'CNDF 3 with no ALU operation')
+    return bool(pu.alu_seen[2] >> 31 & 1)
+
+
+COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7, 2: _cnd2,
+              3: _cnd3}
 
 
 class PU:
@@ -378,6 +492,8 @@ class PU:
         self.mem = {}
         self.mstk = []
         self.cond = None        # COND, set by the previous word (None = not formed)
+        self.flags = {}         # FLAG_CONDS' hardware flags, set by a harness (OURS)
+        self.mcf_log = []       # (upc, EM1) of each MCF_UNKNOWN operation executed
         self.ir = None          # the KL1-B instruction (tag, value) in the E stage
         self.pc = None          # its address (the A stage's, OURS: set by a harness)
         self.ir_c8 = False      # the instruction's constant is c8 (setup.IR_C8)
@@ -452,6 +568,8 @@ class PU:
              MAR1: old[MAR1], MAR2: old[MAR2]}.get(as1, 'open')
         if as1 == 3 and as2 == 0 and RULES['as1f3_em2']:
             a = (0, field(x, 'EM2'))
+        if as1 == 2 and RULES['as1f2_yr']:
+            a = old['YR']
         if a == 'open':
             raise Unmodelled(upc, 'AS1F %d' % as1)
         b = {0: (0, 0), 1: old['YR'], 2: old[MDR1], 3: old[MDR2]}[as2]
@@ -460,6 +578,12 @@ class PU:
                              ' (AS1F %d, AS2F %d)' % (as1, as2))
         if a is None or b is None:
             raise Unmodelled(upc, 'ALU input never set (AS1F %d, AS2F %d)' % (as1, as2))
+        if is_stale(a) or is_stale(b):
+            # a value the harness does not know: the result is not known
+            # either (STALE); a COND formed from it is STALE too (evaluate)
+            self.as1_seen = a
+            self.alu_seen = (a, b, STALE)
+            return STALE
         self.as1_seen = a
         self.alu_seen = (a, b, None)
         alf = field(x, 'ALF')
@@ -490,6 +614,8 @@ class PU:
         the AS1 input's tag.  Only 'other' is executed; the others raise."""
         if self.as1_seen is None:
             raise Unmodelled(upc, 'dereference set-up with no ALU input')
+        if is_stale(self.as1_seen):
+            raise Unmodelled(upc, 'dereference set-up on a value the harness does not know')
         t = self.as1_seen[0] & 63
         if DEREF_TGT_COLUMN is not None:       # injection only: a TGT column instead
             return self.tgt[DEREF_TGT_COLUMN][t]
@@ -537,7 +663,7 @@ class PU:
             if sd1 not in WNAME:
                 raise Unmodelled(upc, 'SD1F %d' % sd1)
             v = self.read_sel(upc, x, sc1)
-            if field(x, 'TGIF') & 1:
+            if field(x, 'TGIF') & 1 and not is_stale(v):
                 v = (self.stamp_tag(x), v[1])
             new[sd1] = v
         sc2, sd2 = field(x, 'SC2F'), field(x, 'SD2F')
@@ -568,12 +694,15 @@ class PU:
             if d:
                 self.write_sel(x, d, res, regw)
         # MCF
+        mcf = None
         if bit(x, 18):
             if field(x, 'EM1') == 0x20 and RULES['mcf_20_sp']:
                 sp = self.r.get(2)
-                if sp is None:
-                    raise Unmodelled(upc, 'MCF 20 with R02 unset')
+                if sp is None or is_stale(sp):
+                    raise Unmodelled(upc, 'MCF 20 with R02 unset or not known')
                 regw.append((('R', 2), (sp[0], (sp[1] + 1) & M32)))
+            elif field(x, 'EM1') in MCF_UNKNOWN:
+                mcf = field(x, 'EM1')       # recorded only (MCF_UNKNOWN)
             else:
                 raise Unmodelled(upc, 'MCF with EM1 %02x' % field(x, 'EM1'))
         # memory (CCF): bit 61 read, 62 write, 60 step; 58 MAR2, 59 MDR2
@@ -583,6 +712,9 @@ class PU:
             mdr = MDR2 if bit(x, mekbn.MDR_SEL_BIT) else MDR1
             if old[mar] is None:
                 raise Unmodelled(upc, 'CCF: %s never set' % WNAME[mar])
+            if is_stale(old[mar]):
+                raise Unmodelled(upc, 'CCF: %s holds a value the harness does not know (STALE)'
+                                 % WNAME[mar])
             addr = old[mar][1]
             if rd and wr:
                 raise Unmodelled(upc, 'CCF %02x: read and write in one word' % field(x, 'CCF'))
@@ -597,6 +729,9 @@ class PU:
                 if is_poison(data):
                     raise Unmodelled(upc, 'CCF: write of %s, read from memory never written'
                                      % WNAME[mdr])
+                if is_stale(data):
+                    raise Unmodelled(upc, 'CCF: write of %s, a value the harness does not know'
+                                     ' (STALE)' % WNAME[mdr])
                 memw.append((addr, data))
             if rd:
                 if addr not in self.mem and not RULES['absent_read_poison']:
@@ -627,12 +762,21 @@ class PU:
             # the ALU's first input, column by EM1 (only 3a -> 2 VERIFIED)
             if self.as1_seen is None:
                 raise Unmodelled(upc, 'case_tag_setup with no ALU input')
+            if is_stale(self.as1_seen):
+                raise Unmodelled(upc, 'case_tag_setup on a value the harness does not know')
             col = TGT_COLUMN[field(x, 'EM1')]
             tdar = (cycle, self.tgt[col][self.as1_seen[0] & 63])
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in DEREF_SETUP:
             tdar = (cycle, self.deref_code(upc, x) << DEREF_SHIFT)
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in COND_UNKNOWN:
             cond_new, cond_cycle = POISON, cycle
+        elif cnd == 7 and mekbn.jk(x) != 1 and field(x, 'EM1') in FLAG_CONDS:
+            # a hardware flag (FLAG_CONDS, INFERRED); its value is the harness's
+            name = FLAG_CONDS[field(x, 'EM1')]
+            if name not in self.flags:
+                raise Unmodelled(upc, 'CNDF 7 EM1 %02x: flag %s, value not given'
+                                 % (field(x, 'EM1'), name))
+            cond_new, cond_cycle = bool(self.flags[name]), cycle
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') not in (0x09, 0x0a, 0x29):
             raise Unmodelled(upc, 'CNDF 7 EM1 %02x: TGT column or condition UNKNOWN'
                              % field(x, 'EM1'))
@@ -640,21 +784,39 @@ class PU:
             rule = COND_RULES.get(cnd)
             if rule is None:
                 raise Unmodelled(upc, 'CNDF %x (condition not known)' % cnd)
-            cond_new, cond_cycle = rule(self, upc, x, self.as1_seen), cycle
+            if is_stale(self.as1_seen) or (self.alu_seen and is_stale(self.alu_seen[2])):
+                cond_new, cond_cycle = STALE, cycle     # formed from a value not known
+            else:
+                cond_new, cond_cycle = rule(self, upc, x, self.as1_seen), cycle
         # sequencing
         if kind == 'jmpf2':
             raise Unmodelled(upc, 'JMPF 2 (4-bit; kind not known)')
         if jf == 8 and RULES['jmpf8_setup'] and cnd == 7 and field(x, 'EM1') in DEREF_SETUP:
             pass                        # sequences as JMPF 0 (RULES['jmpf8_setup'])
+        elif jf == 8 and RULES['jmpf8_flag'] and cnd == 7 and field(x, 'EM1') in FLAG_CONDS:
+            pass                        # sequences as JMPF 0 (RULES['jmpf8_flag'])
         elif jf in (8, 9, 0xd, 0xf):
             raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
         if mekbn.jk(x) == 1 and em == SPECIAL_EM:
             raise Unmodelled(upc, 'JMPF 1 EM 7fff (S9, special form UNKNOWN)')
+        cj_taken = None
         if kind == 'branch' or (jf & 8 and mekbn.jk(x) in (3, 4, 6)):
-            # conditional JMPF a / b / c / e: timing UNKNOWN (a switch)
+            # conditional JMPF a / b / c / e: RULES['cjump_time'] and
+            # CJUMP_TAKEN_ON (INFERRED; only b executed)
             if RULES['cjump_time'] is None:
                 raise Unmodelled(upc, 'JMPF %x conditional: timing UNKNOWN' % jf)
-            raise Unmodelled(upc, 'JMPF %x conditional: polarity not decided' % jf)
+            if jf not in CJUMP_TAKEN_ON:
+                raise Unmodelled(upc, 'JMPF %x conditional: polarity not decided' % jf)
+            tested = prev_cond if RULES['cjump_time'] == 'prev' else cond_new
+            if tested is None:
+                raise Unmodelled(upc, 'JMPF %x conditional with no condition formed' % jf)
+            if is_poison(tested):
+                raise Unmodelled(upc, 'JMPF %x conditional tests a condition of UNKNOWN'
+                                 ' meaning (COND_UNKNOWN)' % jf)
+            if is_stale(tested):
+                raise Unmodelled(upc, 'JMPF %x conditional tests a condition formed from a'
+                                 ' value the harness does not know (STALE)' % jf)
+            cj_taken = bool(tested) == CJUMP_TAKEN_ON[jf]
         if jf == 3:
             # S8 case_branch: base | the TGT byte's low 4 bits, set up by
             # the word just before (a CNDF 7, JMPF 0 word)
@@ -669,10 +831,10 @@ class PU:
         if mekbn.jk(x) in (3, 4, 6):
             if not RULES['bit26_cond']:
                 raise Unmodelled(upc, 'JMPF %x (bit 26 rule off)' % jf)
-            if jf & 8:
+            if jf & 8 and cj_taken is None:
                 raise Unmodelled(upc, 'JMPF %x conditional jump (polarity not decided)' % jf)
             conditional = False
-        taken = True
+        taken = True if cj_taken is None else cj_taken
         if mekbn.jk(x) == 1 and kind in ('jump', 'end', 'return'):
             if kind == 'jump' and em & 4:
                 # S2b: a multiway, low target bits ORed in at run time
@@ -688,6 +850,9 @@ class PU:
                 if is_poison(prev_cond):
                     raise Unmodelled(upc, 'JMPF 1 %s? tests a condition of UNKNOWN meaning'
                                      ' (COND_UNKNOWN)' % kind)
+                if is_stale(prev_cond):
+                    raise Unmodelled(upc, 'JMPF 1 %s? tests a condition formed from a value'
+                                     ' the harness does not know (STALE)' % kind)
                 if RULES['j1_cond_prev_strict'] and self.cond_cycle != cycle - 1:
                     raise Unmodelled(upc, 'JMPF 1 %s?: COND not formed by the previous word' % kind)
                 taken = not prev_cond if em & 1 else bool(prev_cond)
@@ -715,7 +880,7 @@ class PU:
         return {'cycle': len(self.trace), 'micro_pc': upc, 'microword': x,
                 'reg_reads': list(self._reads), 'wr': new, 'reg_writes': regw,
                 'mem_reads': memr, 'mem_writes': memw,
-                'cond': cond_new, 'cond_cycle': cond_cycle, 'tdar': tdar,
+                'cond': cond_new, 'cond_cycle': cond_cycle, 'tdar': tdar, 'mcf': mcf,
                 'push': upc + 1 if push else None, 'pop': pop,
                 'next': nxt}
 
@@ -728,6 +893,8 @@ class PU:
             self.mem[a] = d
             self.writes.append((c['micro_pc'], a, d))
         self.cond, self.cond_cycle, self.tdar = c['cond'], c['cond_cycle'], c['tdar']
+        if c.get('mcf') is not None:
+            self.mcf_log.append((c['micro_pc'], c['mcf']))
         if c['push'] is not None:
             self.mstk.append(c['push'])
         if c['pop']:
