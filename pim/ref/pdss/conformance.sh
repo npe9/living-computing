@@ -96,7 +96,7 @@ done < "$HERE/jobs.txt"
 # The libraries the build reassembled from their .asm (pdssasm): the
 # save-file bytes, which are big-endian by construction (saveload.c).
 if [ "$MODE" != slow ]; then
-  (cd "$ROOT" && for f in runtime/*.sav mpimos/*.sav compiler/*.sav; do
+  (LC_ALL=C; export LC_ALL; cd "$ROOT" && for f in runtime/*.sav mpimos/*.sav compiler/*.sav; do
      echo "$f $($SHA < $f | cut -c1-64)"; done) > "$W/libsav.got"
   if [ "$REC" = --record ]; then cp "$W/libsav.got" "$G/libsav.out"; pass=$((pass+1))
   elif cmp -s "$W/libsav.got" "$G/libsav.out"; then pass=$((pass+1))
