@@ -1245,6 +1245,32 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
        store/C($FT) level frees at the store or with its op level, and
        when it is allocated, are not on any page read here (Table A-2
        gives occupancy, not timing). The MCP boot check was not run on it.
+     - (D) TRACED AND SOURCED, 2026-11-27 (part 3; docs only, no timing
+       change).
+       - The trace is in `ebox_roadmap.md` step 7. The three slower decks
+         share one mechanism: a `*+` refused a fifth slot (1 + LFT 2 +
+         `*+` 2) loads late, and so does its operand fetch.
+       - fp_to_memory_laar's -5 is an artefact: StretchStorage memCtl
+         serves look-ahead fetches by ring slot, not age. In the base, one
+         LFT's read is starved by three younger ones. D, holding fewer
+         levels, avoids that by accident.
+       - The sources are in `spec_lookahead.md` §5, "WHEN A TWO-LEVEL
+         INSTRUCTION'S SECOND LEVEL IS TAKEN AND FREED". Each level is
+         loaded on its own, and the op level frees at the ABC. The store
+         level stays until its word is sent (Buchholz Fig 15.10; CE Fig
+         3.2.25; RefMan p.9), which is also true of ST's single level.
+       - So D is not the sourced rule. The sourced rule lacks two numbers
+         (the FP second load's clock, the store level's hold), and it is
+         not implemented.
+       - Open candidates, each a timing change needing its own measure:
+         (i) age-ordered look-ahead fetch arbitration; (ii) store levels,
+         ST's too, held until `laarFreeAt`, if a source for the hold is
+         found.
+       - Suite on f446b0dd (docs only): GREEN, only the two expected
+         `UNREPRODUCED` p359 lines; 388 HALTREPORT lines identical, in
+         order, to batch60's GREEN run. An intervention: fp_to_memory_laar
+         with the look-ahead fetch order reversed (scratch only) halts at
+         798, against 786, so the slot order is load-bearing.
      - Suite on 9433a22e (A, B and C together): GREEN, only the two
        expected `UNREPRODUCED` p359 lines; 388 HALTREPORT lines identical,
        in order, to batch59's.

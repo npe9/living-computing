@@ -98,6 +98,86 @@ opinion on stage structure is wanted.
    `kind`; `laParts` (StretchLaParts.bsv) has every E-box instruction's
    Table A-2 parts; one-level instructions are loaded with their kind.
    The two-level step moves halts and is stopped there (measured).
+
+   **SUB-STEP D TRACED, 2026-11-27 (A5 part 3).** Re-built in a scratch
+   copy (sub-step D: a two-level FP instruction counts two ring slots from
+   its load to its removal, in all four `la.count()` capacity tests) with
+   a scratch-only trace of every level load, retirement, refused load
+   (`FULL`, `LAARW`), head-not-ready clock (with which `headReady` term
+   is false) and look-ahead fetch issue / arrival. With the trace the
+   halts are 786, 2464, 790, 986, 762, the pinned / batch59-recorded
+   values; D reproduces 781, 2464, 811, 1026, 763. D with ONLY its E-box
+   load capacity test (site 2 of 4) reproduces all five halts, so the
+   E-box load refusals (`FULL`) are the whole effect on these decks.
+   - **The one mechanism behind the three slower decks.** A `*+` whose
+     load would make the ring hold 5 (DL, DLN or D* at 1 + LFT at 2 + `*+`
+     at 2) is refused until the oldest level is removed. Its operand
+     fetch therefore starts that much later. The fetch takes about 18
+     clocks, and the E-box reaches the `*+` before the word arrives, so
+     the delay goes straight into execution.
+     - F216B (790 -> 811): the deck is groups of DL or DLN / LFT / `*+`
+       (three half-word levels) / BZB or BB / SIC / B. In the first nine
+       groups the `*+` loads 2-4 clocks late and the E-box does not see
+       it (retirement deltas -1 and -2). The tenth group, half-word 16947
+       (DL(U),FPK62 / LFT / `*A+`(U),FPK86), is where it starts: OBSERVED
+       in the fetch trace, its DL sits in ring slot 3 and its read is
+       served after the younger LFT's (slot 0), the same slot-order
+       arbitration as fp_to_memory_laar below. So the DL waits at the
+       head about 10 clocks for its word, and D refuses the `*+` (16949)
+       for that long (497-506): it loads at 508, not 498, its word
+       arrives at 527, not 516, and it retires at 531, not 522 (+9).
+       Later retirement deltas step to +11, +15, +17, +16, +17 and +21,
+       not traced group by group.
+     - Buchholz B.3 (986 -> 1026): the inner loop is DL (half-word 205,
+       outer only) / LFT (206) / `*+` (207) / V+I / CBR+. The `*+` is
+       refused at 138-147 until the DL retires at 148. The I-box is in
+       order, so the V+I and CBR+ behind it, and the next LFT, are
+       prepared 10 clocks later. The E-box, which in the base already
+       idled from the `*+` (165) to the next LFT (179), now idles to 189.
+       Retirement deltas run +10, +20, +30, +40 over the four outer
+       passes.
+     - Problem 3.6 (762 -> 763): the first `*+` (half-word 68, behind
+       D* and LFT) loads at 73, not 62. Its word arrives one clock after
+       the E-box is ready (84, not 83). That +1 survives to the halt.
+       After that the loop is LAAR-bound (each LFT waits for
+       `laarFreeAt`), so every later load delay, up to +45, is absorbed.
+   - **Why fp_to_memory_laar gets FASTER (786 -> 781).** (Observed in
+     the fetch trace plus a reading of memCtl; one intervention below.)
+     It is not a
+     look-ahead effect. It is a model-only arbitration order in
+     `StretchStorage.memCtl`, the channel scan `order = {0, 3, 4, 5, 6,
+     1, 2}`: look-ahead channels are served by RING POSITION, slot 0
+     first, not by age.
+     - The eight LFT(U), FONE (half-words 2066-2073) all read word 1153,
+       one memory box. In the base, four are resident.
+     - LFT 2070 is in slot 3 and issues its read at clock 506. Then 2071
+       (slot 0), 2072 (slot 1) and 2073 (slot 2) issue later and each wins
+       the box ahead of it. Its word arrives at 563, after all three.
+     - The LFTs retire every 15 clocks, at `laarFreeAt` (`lftWait`). 2070
+       reaches the head with the LAAR free at 558 and no operand, and
+       retires at 563: the base's one 20-clock gap (543 -> 563).
+     - Under D only two LFTs are resident. The 2070 read meets no
+       three-way contention, its word is there by 544, and it retires at
+       558. The 15-clock rhythm never breaks, for -5.
+     - INTERVENTION: the same deck on the base with the four look-ahead
+       entries of `order` reversed (`{0, 6, 5, 4, 3, 1, 2}`, scratch copy
+       only) halts at 798 instead of 786, so the halt does depend on the
+       slot order.
+     - So the base carries 5 clocks of slot starvation that D removes by
+       accident. Bus priority among look-ahead levels is printed nowhere
+       (`spec_lookahead.md` §4.3 has only exchange > look-ahead > I-box).
+       The machine's operand fetch is requested by the I-box at each
+       level's load ("OF->LA", TR00.722 Fig 6, PDF 31), i.e. in program
+       order. An age-ordered scan is the sourced-looking candidate, but it
+       is a timing change of its own and is NOT made here.
+   - **Not committed, and why.** The sources (`spec_lookahead.md` §5,
+     "WHEN A TWO-LEVEL INSTRUCTION'S SECOND LEVEL IS TAKEN AND FREED")
+     say the second level is loaded as its own level and the op level
+     frees at the ABC, but the store level stays until the SCC has sent
+     its word, and so does the one-level ST's. D frees the second slot
+     with the op level. That is not the sourced rule, and the sourced
+     rule needs two numbers no page gives: the FP second load's clock
+     and the store level's hold. No pin moves.
 8. Add forwarding and accurate SAU/PAU overlap.
 
 ## STATUS, MEASURED AGAINST THE CODE 2026-10-29
@@ -117,7 +197,7 @@ Every number below is a grep over `bsv/*.bsv`, not a recollection.
 | 4 generalise to `mkPAU`/`mkSAU` | **NOT STARTED** | `mkPAU` 0 hits, `mkSAU` 0 hits.  Divide is one box; multiply is the second (see fig 3.8.11 below) |
 | 5 `ebusy` -> real response readiness | **STEP 1 DONE** (2026-11-26, `fidelity_plan.md` A5) | `ebusy` 0 hits; `headReady` waits on `ebox.unitsTerminated()`, the termination of `mkSAU`/`mkPAU`; the part no unit steps yet is still a count, now in the unit |
 | 6 decode/prep as an I-box stage bundle | **NOT STARTED** | `PreparedExec` is a per-instruction record, not a stage output |
-| 7 split `Whole` look-ahead entries | **NOT STARTED** | `LaKind` 5 hits; every live entry is `Whole`; the order is in `fidelity_plan.md` A5 "what is left" |
+| 7 split `Whole` look-ahead entries | **STARTED** (2026-11-27) | one-level instructions carry their Table A-2 kind; the two-level step is traced and stopped (step 7 above: not the sourced rule); the order is in `fidelity_plan.md` A5 "what is left" |
 | 8 forwarding, SAU/PAU overlap | **NOT STARTED** | needs 4 and 5 first |
 
 ### The one number that says "interpreter" best
