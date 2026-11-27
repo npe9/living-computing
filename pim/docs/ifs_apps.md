@@ -39,8 +39,8 @@ the code where it is done:
   above hp first and back to the bottom next, so the limit must fit in
   the 56.4M cells above the prompt's heap. A first sweep had 130M: the
   first collection then came with no room for its to-space
-  (`gc: the to-space is full`) or not at all (`heap full`), and nine
-  applications stopped on memory (OBSERVED, superseded).
+  (`gc: the to-space is full`) or not at all (`heap full`), and 14 rows
+  stopped on memory (OBSERVED, superseded).
 - **Text in EUC.** Several archives keep their text in 7-bit JIS
   (rodin's INSTALL:61,101 asks for the conversion when the files go to
   the FEP); `jis_to_euc` does it, as the PSI's file transfer would.
@@ -182,26 +182,31 @@ from the committed results.
 | pax | 39 | `natural-lang/pimos/pax.tar.Z` | NEEDS-SIMPOS | simpos: the DCG-to-KL1 translator is ESP (TRANS/*.esp), run in the SIMPOS debugger (README:23-25); no translated grammar |  | (not run) | none |  |
 | helic2 | 54 | `exper-apps/pimos/helic2.tar.Z` | NEEDS-OTHER | damaged: about 390 of the 590 files README lists are missing (compile.param, listener.com, CBR>BG>*.exe, ...); plib.sav  |  | (not run) | none |  |
 
-Row `objects`, one line per object file loaded:
+The held objects, one line per file loaded (rows `objects` and `gdcc`):
 
-| Object | Result |
-|---|---|
-| `gc.sav` | Load Succeeded |
-| `SYN002-1-020dom_merc.sav` | Load Succeeded |
-| `SYN009-1dom_merc.sav` | Load Succeeded |
-| `SYN036-4dom_merc.sav` | Load Succeeded |
-| `test2_445.sav` | Load Succeeded |
-| `mgtpNS7.sav` | Load Succeeded |
-| `mgtp-NS-pim7-noRT.sav` | Load Succeeded |
-| `obj>owner-migration>dpool.sav` | Load Succeeded |
-| `obj>owner-fixed>dpool.sav` | Load Succeeded |
-| `obj>access-info>dpool.sav` | Load Succeeded |
-| `mmi_system.sav` | Load Succeeded |
-| `rf.exe` | Load Succeeded |
-| `pia_s2.exe` | Load Succeeded |
-| `tpia_s2.exe` | Load Succeeded |
-| `mdllibrary.exe` | Load Succeeded |
-| `mendel.exe` | Load Succeeded |
+| Row | Object | Result |
+|---|---|---|
+| objects | `gc.sav` | Load Succeeded |
+| objects | `SYN002-1-020dom_merc.sav` | Load Succeeded |
+| objects | `SYN009-1dom_merc.sav` | Load Succeeded |
+| objects | `SYN036-4dom_merc.sav` | Load Succeeded |
+| objects | `test2_445.sav` | Load Succeeded |
+| objects | `mgtpNS7.sav` | Load Succeeded |
+| objects | `mgtp-NS-pim7-noRT.sav` | Load Succeeded |
+| objects | `obj>owner-migration>dpool.sav` | Load Succeeded |
+| objects | `obj>owner-fixed>dpool.sav` | Load Succeeded |
+| objects | `obj>access-info>dpool.sav` | Load Succeeded |
+| objects | `mmi_system.sav` | Load Succeeded |
+| objects | `rf.exe` | Load Succeeded |
+| objects | `pia_s2.exe` | Load Succeeded |
+| objects | `tpia_s2.exe` | Load Succeeded |
+| objects | `mdllibrary.exe` | Load Succeeded |
+| objects | `mendel.exe` | Load Succeeded |
+| gdcc | `shell.sav` | Load Succeeded |
+| gdcc | `alg.sav` | Load Succeeded |
+| gdcc | `simplex_if.sav` | Load Succeeded |
+| gdcc | `bool.sav` | Load Succeeded |
+| gdcc | `parser.sav` | Load Succeeded |
 
 ## 4. The stops, ranked
 
@@ -258,8 +263,10 @@ What each is:
   79,446,157 once the first collection has moved it); which PIMOS
   module is not named here (its name is an atom of PIMOS's own atom
   table; INFERENCE, not resolved). Reached by every `take` typed at the
-  Listener, by GDCC's `gdcc:go` (its shell window, after a shell take),
-  and by editalign. INFERENCE: one small instruction case, and the
+  Listener; by row gdcc, after a shell take whose last line starts
+  `gdcc:go` (GDCC's own window) and with the query typed into the same
+  shell window, so whether gdcc:go or the query reaches it is not
+  separated (INFERENCE: gdcc:go); and by editalign. INFERENCE: one small instruction case, and the
   largest single unblock in the sweep; behind it the applications meet
   the stops listed in the ranking's "next" column.
 - **`b_integer_to_floating_point` (5 first, 8 in all).** Floating point,
@@ -283,7 +290,11 @@ What each is:
   `dp_bench:test_pool` after Distributed Pool's objects and benchmark
   have loaded and compiled.
 - **`a goal failed inside a shoen`** (cohlex): a goal failure the model
-  refuses to pass on, right after `setenv compile:distribution=[1]`.
+  refuses to pass on, right after `setenv compile:distribution=[1]`, on
+  the wildcard compile `compile(["*.mac"])` in the subdirectory. It
+  comes directly after two services of the runner (the directory's
+  pathname, INFERENCE, and the subdirectory's listing, OURS), so it may
+  be theirs rather than the model's: not separated.
 - **FEP `fep#create_socket` (801)** (editalign, behind set_constant):
   the X/Motif front end over TCP; NEEDS-OTHER anyway.
 - **Missing files** (the archives' own): aya's parser is shipped as
@@ -316,9 +327,10 @@ INSTALL:122-130 allows it). `plib.sav` and `failN.exeF` are text. Row
 `objects` loads the 16 whole ones no other row loads into the package
 work, the H9-07 problems before the provers that call them (loaded
 first, `mgtpNS7` is `Load Failed`, `undefined module : work::
-problem`, OBSERVED): all 16 `Load Succeeded` (the table under section
-3). GDCC's five are loaded by row gdcc's `gdcc.init`, all five
-`Load Succeeded`.
+problem`, OBSERVED): all 16 `Load Succeeded`. GDCC's five are loaded
+by row gdcc's `gdcc.init`, all five `Load Succeeded` (both in the table
+under section 3). The 16 `.sav` objects among the 21 (mmi 1, GDCC 5,
+H9-07 7, Distributed Pool 3) all load.
 
 ## 6. The ESP halves: SIMPOS demonstrations
 
@@ -327,9 +339,10 @@ From the sweep, not from the documentation alone:
 1. **mendels (No.61).** The only NEEDS-SIMPOS application whose KL1 half
    runs to its user prompt: `mendel.exe` (the held object) loads into
    the package mendel, the relink succeeds, `mendel .` opens its window
-   and asks for input (`package>>`; readme.e:33-39: the parent directory
-   of the user files). The rest is MENDELS's ESP class package on the
-   PSI. The strongest demonstration candidate.
+   and asks for input: its own window, titled "ESP Package?", two beeps
+   and the prompt `package>>` (mendels' `package.kl1`:60-77
+   read_window), whose answer goes to `ckcreate_esp_device`, the ESP
+   class package on the PSI. The rest is MENDELS's ESP half. The strongest demonstration candidate.
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the
    KL1 half through `pimfep##as_pimos_string_io_device`, the FEP string
@@ -389,6 +402,7 @@ named. OBSERVED 2026-11-26:
 | mgtp's printed value made its own window line, `21497 reductions` (the match path) | mgtp |
 | `needs simpos` dropped from aligndp | aligndp |
 | ERROR_MARK made to match nothing (the window's error lines unseen) | aya, pmonitor+alt |
+| mgtp's printed value altered (the archive lookup, `oracles`) | mgtp |
 
 And one in the source (applied, run, reverted from a copy, `--check`
 PASS again): `classify` with its float branch removed (every refused
@@ -408,6 +422,9 @@ finds all 19 printed values in the archive files their rows cite.
   (`pimm_pe.py`), whose agent owns that code.
 - mgtp's reduction count (R9's open item).
 - GDCC's query is typed into the shell window, not GDCC's own window
-  (`gdcc:go` opens one); its stop comes first, so it was not split.
+  (`gdcc:go` opens one); a run without the query would say whether
+  gdcc:go alone reaches set_constant.
+- cohlex: whether its goal failure is the runner's directory services or
+  the model's.
 - mendels: type the user directory at its prompt and see how far the
   KL1 half goes without the ESP package.

@@ -41,11 +41,13 @@ The route is R8's and R9's (lockstep_shell.play from the prompt, as
 r9_mgtp_probe.py and mp1_rebuild.py): the application's files are home
 files (longrun_ipl.add_home_file for text, HOME>NAME; an object file is
 served byte for byte, as the held pimos: set is), read at run time from
-the archive under docs/nonlocal/ifs (disk only, IFS_MANIFEST.md), never
+the archive under docs/nonlocal/ifs (committed, IFS_MANIFEST.md), never
 from an extraction; then the documentation's own lines are typed at the
-shell or the Listener.  Sources are served as distributed: no row adapts
-a file (unlike R8's NAME_r8.kl1); a refusal of the distributed text is
-the recorded stop.  Files are served where the documentation puts them:
+shell or the Listener.  Sources are served as distributed: no row edits
+a file (unlike R8's NAME_r8.kl1); two serve one under a second name as
+well (aya+alt's ayaparse.k1l as .kl1, cohlex's Makefile. as Makefile,
+each OURS in ifs_rows.py); a refusal of the distributed text is the
+recorded stop.  Files are served where the documentation puts them:
 flat in HOME, as a tree below it (HOME>prog>compile>X) or in an absolute
 directory it names (serve(), install_listing()); text in 7-bit JIS is
 served as EUC (jis_to_euc).  What the runner adds, each OURS and in
@@ -87,7 +89,8 @@ float stop and a SIMPOS need both apply, NEEDS-SIMPOS wins the outcome
 and the float stop is the first stop (the histogram counts the first
 stop).  NEEDS-OTHER: the application needs a host the model has no
 stand-in for (UNIX client over a socket, KLIC, a Prolog step on UNIX),
-or its files are damaged or missing; these rows are not run.
+or its files are damaged or missing; those with nothing to run are
+static rows, not run (editalign and mssd run their KL1 half).
 
 Measured speed: 26,598,077 instructions in about 235 s (mgtp_q6 from
 the prompt, 2026-11-26, at a load average over 200); the PIMOS compiler
@@ -738,11 +741,11 @@ def report(argv):
     return 0
 
 
-def oracles():
+def oracles(rows=None):
     """each printed value of a row, found in the archive file its citation
     names (the oracle is the archive's, not ours); returns the misses"""
     miss = []
-    for name, r in ROWS.items():
+    for name, r in (rows or ROWS).items():
         for pr in r.get('printed', ()):
             # (value as the window shows it, citation[, the text as the
             # archive prints it, when that differs: a table cell])
@@ -765,7 +768,19 @@ def oracles():
 def injections(results):
     """INJECTIONS: each a change to the rows or to a result, in this
     process only; each must make table() report exactly the rows named.
-    OBSERVED 2026-11-26 (see docs/ifs_apps.md, "Injections")."""
+    OBSERVED 2026-11-26 against the committed summary (docs/ifs_apps.md 8):
+      mgtp_n's stop removed                          -> mgtp_n
+      mgtp_n's stop made a float stop                -> mgtp_n
+      mgtp's printed value made its own window line
+        ('21497 reductions': the match path)         -> mgtp
+      `needs simpos` dropped from aligndp            -> aligndp
+      ERROR_MARK made to match nothing               -> aya, pmonitor+alt
+    and in check(): mgtp's printed value altered, the archive lookup
+    (oracles())                                      -> mgtp.
+    A source injection, applied by hand and reverted from a copy:
+    classify() without its float branch failed --check on exactly the
+    eight float rows, ppss, mmi, rodin+alt, aligndp, celplace, examds,
+    logisim+alt, seqanal+alt."""
     import copy
     got = []
     base, bad0 = table(results)
@@ -830,6 +845,18 @@ def check(argv):
     miss = oracles()
     _out, bad = table(results)
     ok, got = injections(results) if not bad else (False, [])
+    # the oracle lookup itself: a printed value altered (a digit added to
+    # its archive form) must be reported missing for that row alone
+    import copy
+    rows = copy.deepcopy(ROWS)
+    n = next(n for n, r in rows.items() if r.get('printed'))
+    pr = rows[n]['printed'][0]
+    rows[n]['printed'][0] = (pr[0] + '9', pr[1]) + ((pr[2] + '9',) if len(pr) > 2 else ())
+    caught = {x.split(':')[0] for x in oracles(rows)}
+    good = caught == {n}
+    ok &= good
+    got.append('injection printed value of %s altered, archive lookup: reported %s (%s)'
+               % (n, sorted(caught), 'as predicted' if good else 'NOT as predicted'))
     for g in got:
         print(g)
     print('oracles: %d printed values, %d not in their archive files' % (
@@ -874,13 +901,13 @@ def markdown(argv):
         print('| %s | %s | `%s` | %s | %s | %s | %s | %s | %s |' % (
             name, r.get('no', '-'), r['archive'], o, cell(f[:120]), cell(alt[:100]),
             cell(typed), cell(printed), cell(last + ('; doc ' + r['doc'] if r.get('doc') else ''))))
-    obj = results.get('objects') or {}
-    if obj.get('loads'):
-        print('\nRow `objects`, one line per object file loaded:\n')
-        print('| Object | Result |')
-        print('|---|---|')
-        for f_, st in obj['loads']:
-            print('| `%s` | %s |' % (f_, st))
+    if any((results.get(n) or {}).get('loads') for n in ('objects', 'gdcc')):
+        print('\nThe held objects, one line per file loaded (rows `objects` and `gdcc`):\n')
+        print('| Row | Object | Result |')
+        print('|---|---|---|')
+        for n in ('objects', 'gdcc'):
+            for f_, st in (results.get(n) or {}).get('loads', ()):
+                print('| %s | `%s` | %s |' % (n, f_, st))
     print()
     for ln in ranking(out, md=True):
         print(ln)
