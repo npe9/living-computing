@@ -114,6 +114,15 @@ FORMS = {
     # 3880 writes MDR2 into the variable cell (MAR1) and ends, as
     # 3800-3801 do for get_atom with the stamp.
     'get_bound_value': ('s_tag', 'x'),
+    # U2 (2026-11-27, sixth session): wait_nil x (entry 3980, ODPF 6, tag
+    # immediate ATOMo): the S-stage test on x, pimm.py's i_wait_nil
+    # (g_word(x)).  OURS (the operand field, pimm.py's reading).
+    'wait_nil': ('s_tag', 'x'),
+    # get_value x, y (entry 38a0, ODPF 6, tag immediate UNDF): the S-stage
+    # test on x; the routine reads y itself (38a0, 38b2: MDR2 and MAR2
+    # := opda, SD1F 3).  OURS (pimm.py's i_get_value unify(reg[x],
+    # reg[y])), with support: row 0 (x unbound) loads A[y] to bind it with.
+    'get_value': ('s_tag', 'x'),
     # U2 (2026-11-27, third session): the ODPF 3 start (ODPF3_START
     # below).  The operand is y, dereferenced (pimm.py's
     # i_put_reused_structure: deref(reg[y]), the result to reg[x]): OURS;
@@ -189,15 +198,82 @@ S_CONST = {'get_atom': 'a24', 'get_bound_value': 'y'}
 #   words, where the thesis's Table 3-6 gives get_list one step, an open
 #   tension; entry + 1 gives one word and the same registers there).
 #   Discriminated: the start (s_imm_plus1) and MAR1 (s_no_mar1: STOP at
-#   3801).  The COND part fits but is NOT discriminated (s_cond_true
-#   changes nothing).  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
+#   3801).  The COND part: s_cond_true changes nothing, but s_cond_false
+#   (sixth session) FAILs append at instruction 1 (3300's jump, a cell
+#   written at 1ea), so the COND is pinned by its false side.  Joint with S_CONST (OURS) above.  Read, not run: through a REF (COND false) 3300 jumps to
 #   3305-3309, which put the variable cell the list was reached through
 #   on the R19 list.
-#   Any other tag would take the multiway set-up (2) into a row of the
-#   32-word entry; which TGT column and which row granularity is UNKNOWN
-#   here (column = TDPF with 4-word rows fits switch_on_non_list's rows
-#   1-4 when read, not run; get_atom's and wait_nil's do not): raises.
+#   Any other tag takes the multiway set-up (2): for ODPF 6 entries,
+#   S_OTHER_ROW below (sixth session); other chains and other ODPF still
+#   raise.
 S_ENTRY = 0             # the injections: 's_imm_plus1' 1; 's_imm_row' 'row'
+
+# U2, 2026-11-27, sixth session: the tag test's other side, for ODPF 6
+# entries (switch_on_non_list, switch_on_non_integer / _atom, wait_*,
+# get_value):
+#
+#   S_OTHER_ROW (INFERRED): when the dereferenced operand's tag is NOT
+#   the immediate's (MRB ignored), the routine starts at entry | (4 |
+#   chain) << 2, chain 0 for an operand held directly (no pointer
+#   followed, MRB off); any other chain code raises.  So the 32 words
+#   behind such an entry are 8 rows of 4: rows 0-3 the immediate's tag,
+#   rows 4-7 the others.  Static: switch_on_non_list (3300) rows 4-7
+#   (3310, 3314, 3318, 331c) all compute the label (XR := R04 + the IR
+#   field, jump 2447), and switch_on_non_integer (32e0) / _atom (32e2),
+#   two words apart, interleave the same 8 rows (32f0 .. 32fe: the label
+#   again in rows 4-7; rows 0-3 put x := the value, mark or free); the
+#   row an operand held directly with its tag's MRB off takes on the
+#   immediate's side is the entry itself (S_ENTRY, executed), so chain
+#   0 is that operand.  The thesis (printed pp.134-137, DOCUMENTED) has
+#   the start address changed by the tag test after the dereference and
+#   the dereference report two chain bits to E (Fig. 3-23), which fits a
+#   2-bit chain code beside the match bit; which code each chain gets
+#   is read from rows 1-3 only (row 1 a marked list, row 2 a freed
+#   variable cell, row 3 both, then 247b), not run.  Rows 5-7 differ
+#   from row 4 in CNDF only.  The rejected reading, TGT column TDPF by
+#   the dereferenced tag (the injection 's_imm_row'), sends LISTo to
+#   row 2.  Executed at 3310 (nil).  Injection 'other_row_entry' (the
+#   entry for every tag).
+#
+#   S_TDAR (INFERRED): the S stage's multiway set-up (thesis printed
+#   p.134 mechanism (2), "a multiway-branch set-up by the memory
+#   operand's tag", DOCUMENTED; the nano-code field TDPF, Fig. 3-22,
+#   "set-up of the E-stage tag multiway branch") loads TDAR with the TGT
+#   byte of the dereferenced operand's tag from column 7 - TDPF of the
+#   KL1 table at 5300, for a later case_branch (pu RULES['jmpf2_case']).
+#   The column is read from the shapes of the tables the entries'
+#   first case_branch reaches (scratch dumps of image 2): TDPF 4
+#   (switch_on_non_vector, 2401 -> 2400) column 3, whose VECT1..VECT6
+#   bytes 8..18 land on the six rows 2408-2412 that differ only in EM1
+#   1..6, and whose 26 (UNDF, HOOKs) lands on 241a's jump to 24b1;
+#   TDPF 2 (write_marked_value 323c -> 3240, put_marked_value 327c ->
+#   3280) column 5, byte for byte (REFo 0, REFx 1, INTo/ATOMo/VECT0o/FLTo
+#   2, INTx 4 ... VECT0x 7 re-stamped o at 3244-3247, UNDF.. 18 {REFx,
+#   XR}); TDPF 0 (switch_on_constant 2425 -> 2420, hash_on_constant 2437
+#   -> 2430, switch_on_non_list's label branch 2447 -> 2440) column 7:
+#   row 0 the constants (2420 starts the switch on them), 2 the
+#   structures, 4 UNDF, 6 the hooks, 8 EXREF, 10 MGHOK/EXMRF (all four
+#   jump to 24b1, the suspension path), 12 REF and the rest.  TDPF 1
+#   (column 6) is not met.  Executed at 2447 (nil, ATOMo: column 7
+#   byte 0, row 2440).  Injections 'tdar_col_tdpf' (column = TDPF),
+#   'tdar_col6' (column 6: nil is 0 there too; the side case on VECT0o
+#   tells them apart).
+#
+#   S_MDR2_OWN (OURS, with support): for these entries the S stage
+#   leaves the operand as it was before the dereference in MDR2 (ODSF 2
+#   is MDR2, as LABEL_ODSF).  Support, read not run: the free-a-cell
+#   rows put MDR2 on the R19 list (3309 R19 := MDR2, [MAR1] := the old
+#   head), so MDR2 is the REF to the cell the dereference went through;
+#   3310's CNDF 9 tests it for REFo.  Executed at 3310 (COND false for
+#   nil held directly).
+#
+#   S_REPORTS (OURS): the chain reports (pu.FLAG_CONDS 'MRP', 'COL') for
+#   an operand held directly: COL false; MRP not given (raises if
+#   formed).  Injection 'col_true'.
+S_OTHER_ROW = 4         # the match bit's row offset; None (injection): the entry
+TDAR_COLUMN = lambda tdpf: 7 - tdpf     # noqa: E731 (an injection replaces it)
+S_MDR2_OWN = True
+S_REPORTS_DIRECT = {'COL': False}
 
 
 class SStageUnknown(KeyError):
@@ -222,6 +298,9 @@ def setup(pu, name):
     """Load the E-stage registers for the instruction pu.ir; return the
     start microaddress."""
     fw = pu.fw
+    pu.tdar = None          # a multiway set-up never outlives its instruction
+    for k in ('MRP', 'COL'):    # nor do the S stage's chain reports (S_REPORTS)
+        pu.flags.pop(k, None)
     idx, start, imm = fw.kl1_entries()[name]
     nc = nano(fw, idx)
     form = FORMS.get(base(name))
@@ -266,11 +345,25 @@ def setup(pu, name):
                 pu.wr[mekbn.MDR2] = (0, v & 0xffffff)
             else:
                 pu.wr[mekbn.MDR2] = pu.an[pu.ir_field(src)]
+        odpf6 = nc['ODPF'] == 6
+        if odpf6:
+            # S_TDAR, S_MDR2_OWN, S_REPORTS (sixth session, above)
+            pu.tdar = ('S', pu.tgt[TDAR_COLUMN(nc['TDPF'])][data[0] & 63])
+            if S_MDR2_OWN and base(name) not in S_CONST:
+                pu.wr[mekbn.MDR2] = own
+            if last is None:
+                pu.flags.update(S_REPORTS_DIRECT)
         if S_ENTRY == 'row':    # the injection: every tag takes a TGT row
             return start | pu.tgt[nc['TDPF']][data[0] & 63] << 2
         if data[0] == imm:
             pu.cond, pu.cond_cycle = own[0] == imm, 'S'
             return start + S_ENTRY
+        if odpf6 and data[0] & ~1 != imm & ~1 and last is None and not data[0] & 1:
+            # S_OTHER_ROW: another tag, held directly, MRB off: chain 0
+            pu.cond, pu.cond_cycle = own[0] == imm, 'S'
+            if S_OTHER_ROW is None:
+                return start
+            return start | S_OTHER_ROW << 2
         raise SStageUnknown('S-stage multiway set-up: %s tag %02x, TDPF %d (row entry UNKNOWN)'
                             % (name, data[0], nc['TDPF']))
     if mdr in ('x', 'y'):

@@ -135,15 +135,15 @@ window rungs):
 | Sub-rung | Milestone | In rung | State (2026-11-26) |
 |---|---|---|---|
 | U1a | straight-line held code executes | U1 | EXECUTED (one-word and multi-word routines) |
-| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. JMPF 3 `case_branch` (S8) at `2d3f`. A CNDF-0 word leaves COND standing (EXECUTED at `put_variable` `31d6`-`31d8`). Conditional JMPF b EXECUTED since U2 (`4cc1`, not taken: `cjump_time` 'prev', INFERRED, pu_smt `execute_fast`). Raise: conditional a/c/e (polarity not decided), JMPF 2 (S10), JMPF 1 EM `7fff` (S9), JMPF 1 multiway with EM bit 2 (S2b, low-bit source UNKNOWN), 8/9/d/f (8 admitted since U2 only in a dereference set-up word, `34a1`) |
+| U1b | branches: conditional and unconditional jumps, micro call and return, COND formed and used | U1 | EXECUTED (tallied over `p.cycles` of the whole check): JMPF 0 (next), JMPF 1 end and return (unconditional, and conditional with EM bit 0), the jumps JMPF 4 and 6, the calls JMPF 5 (`615e`, a held call word) and 7, two pushes and two pops; COND formed by CNDF 9/b and used by a later word. JMPF 3 `case_branch` (S8) at `2d3f`. A CNDF-0 word leaves COND standing (EXECUTED at `put_variable` `31d6`-`31d8`). Conditional JMPF b EXECUTED since U2 (`4cc1`, not taken: `cjump_time` 'prev', INFERRED, pu_smt `execute_fast`); e and a since U2's sixth session (`2440`, `2461`, `3980`: rassy's 'if cond' / 'if not cond'), JMPF 2 (S10) as a short case_branch (`2447`), JMPF 9 as a conditional call not taken (`38b1`). Raise: conditional c, JMPF 1 EM `7fff` (S9), JMPF 1 multiway with EM bit 2 (S2b, low-bit source UNKNOWN), d/f, a taken JMPF 9, 8 outside a set-up or flag word |
 | U1c | the free-list allocator `3320`-`3324` on memory | U1 | EXECUTED: called by a held call word (`scsi_init`'s `615e`) and returning to `615f`, W1c `{REF, cell}` as `pimm.py`'s `new_var`; its last-cell arm reads R05 (UNKNOWN) |
 | U1-dispatch | decode-table dispatch from the instruction cell | U1 | EXECUTED: `setup.dispatch` takes class from the tag, opcode from the top byte, the start from the held table; every compared case enters through it |
 | U1d | `set_variable`, `write_variable` | U1 | EXECUTED, with the marked forms |
 | U2a | tagged terms: lists, vectors, constants built and read | U2 | lists and vectors built EXECUTED; a structure's elements read EXECUTED (`read_variable`, `34a0`-`34a2`, `3494`: two atoms in append, a list pointer in a standalone case, x := the element and R02 + 1 as `pimm.py`); a REF or the immediate (VECTo) element read, not run |
 | U2b | tag dispatch | U2 | EXECUTED for the mechanism at `2d3f` (set-up `2d3e`, CNDF 7 EM1 `3a`, sysinit `5300` column 2, the static agent's VERIFIED column); `2ed7` and `3c61` run the same way in a probe. UNKNOWN: the other EM1 columns, the tag source of a set-up word with no ALU input (`1d3f`), and S2b. The dereference multiway set-up (thesis printed p.133: a ref / immediate / other code in TDAR bits 3-2, a KL1 four-way splitting ref by MRB) INFERRED for CNDF 7 EM1 `2d` (`pu.DEREF_SETUP`), executed for the code 'other' only (`34a1` -> `3494`); EM1 `28` is a condition, meaning UNKNOWN (`pu.COND_UNKNOWN`, untested on the path run) |
-| U2c | one unification instruction | U2 | one case EXECUTED standalone (`get_atom` on an unbound variable, `3800`-`3801`, matches `pimm.py`); in a whole program since 2026-11-27 (fourth session) `get_bound_value` on an unbound variable (`3880`, append's eighth instruction: Z bound to the reused list); other tags raise: the `get_*`/`wait_*` entries need the S stage's tag set-up (nano-code TDPF) and the S12 row entry. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
+| U2c | one unification instruction | U2 | one case EXECUTED standalone (`get_atom` on an unbound variable, `3800`-`3801`, matches `pimm.py`); in a whole program since 2026-11-27 (fourth session) `get_bound_value` on an unbound variable (`3880`, append's eighth instruction: Z bound to the reused list); since the sixth session `wait_nil` on nil (`3980`, `3985`) and the start of `get_value` on a non-variable x (row 4, `38b0`-`38b3`, stop at `0c0c` in the general unifier); the S stage's other-tag row for ODPF 6 entries (`setup.S_OTHER_ROW`) and its TDAR (`setup.S_TDAR`, column 7 - TDPF) INFERRED; chains other than a directly held operand raise. The S stage's start-address change (thesis pp.134-137) INFERRED for the immediate's own tag (`setup.S_ENTRY`): the routine starts at the entry with COND = (own tag == immediate), decided by `get_atom` on an unbound variable (`3800`-`3801`, bound to `{ATOMo, atom}` as `pimm.py`; entry + 1 FAILs) and run on `switch_on_non_list` on a list (`3300`-`3301`), in `ref/pu/u2_append.py` |
 | U2d | `proceed` / `execute` | U2 | `execute` EXECUTED on its fast path in append (`4cc0`-`4cc3`, 2026-11-27 fifth session: R04 = `{COD, label}`, `pimm.py`'s next instruction; the slit-check and interrupt flags, CNDF 7 EM1 `19` / `21`, INFERRED from rassy's condition list, clear by the harness); its slit-check path `4cc5` and goal switch `4c11` not run; `proceed` not reached |
-| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run, then the first clause's body and `execute`, and the second reduction's `try_me_else`: 12 of 16 (the ODPF 3 start and EM1 `29` at `put_reused_structure`, `get_bound_value` `3880`, `execute` `4cc0`-`4cc3`); stop at the second `switch_on_non_list` on nil (the S-stage row entry); the label branch (`2447`, JMPF 2) and `wait_*` not reached |
+| U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run, then the first clause's body and `execute`, and the second reduction's `try_me_else`, the label branch of `switch_on_non_list` on nil (`2447`, JMPF 2) and `wait_nil`: 14 of 16 (sixth session); stop in `get_value` at `0c0c` |
 | U3a | suspend | U3 | not reached |
 | U3b | bind and resume | U3 | not reached |
 | U3c | several goals (the ready structure, goal switch) | U3 | not reached |
@@ -170,7 +170,7 @@ lockstep comparison (U4a) will read:
 | `cond` | COND after the word |
 | `cond_cycle` | the cycle whose word formed COND |
 | `tdar` | `(cycle, byte)`: the TGT byte the last case_tag_setup selected |
-| `mcf` | the EM1 of an MCF operation of UNKNOWN meaning (`pu.MCF_UNKNOWN`, recorded only), else `None` (U2, 2026-11-27) |
+| `mcf` | the EM1 of an MCF operation recorded only (`pu.MCF_UNKNOWN`, of UNKNOWN meaning, and since the sixth session `pu.MCF_NAMED`, 08 pipeline_cancel), else `None` (U2, 2026-11-27) |
 | `push`, `pop` | micro-stack activity |
 | `next` | the next micro_pc (`None` at an end, `-1` a return to the caller) |
 
@@ -448,3 +448,25 @@ Honest, and in sessions of the length that reached U1.
   `indirect`. The stop is `execute` (`4cc0`): no set-up form; its first
   word forms COND with CNDF 7 EM1 `19` (UNKNOWN) and its second is a
   conditional JMPF b (`cjump_time`).
+- 2026-11-27 (fifth session): 12 of 16 (`execute`'s fast path and the
+  second `try_me_else`), stop at `switch_on_non_list` on nil
+  (`ref/pu/README.md` "U2").
+- 2026-11-27 (sixth session): **U2 not reached; furthest point 14 of 16
+  instructions** (was 12), 37 held words: `switch_on_non_list` on nil
+  branches to the label (`3310`-`3311`, `2447`, `2440`, `2461`, `241d`;
+  R04 = `pimm.py`'s next instruction, now compared for every
+  instruction), `wait_nil` (`3980`, `3985`) matches, and `get_value`
+  runs `38b0`-`38b3`. Decided (`ref/pu/README.md` "U2", each with
+  observed injections): JMPF 2 (S10) = a case_branch on upc + EM3,
+  from rassy's jmpf table (HELD-SOURCE) and 15 of 16 aligned bases;
+  the S stage's other-tag row (match << 2 | chain code) and its TDAR
+  (TGT column 7 - TDPF, from the shapes of four tables); the JMPF a / e
+  polarity (rassy's 'if cond' / 'if not cond' pool); EM2 20/30 = MRB
+  off/on, MCF 08 = pipeline_cancel, CNDF 8/a/c on the S1 bus, SD1F 2/3
+  pairs, JMPF 9 a conditional call (all rassy tables); EM1 1e/1f the S
+  stage's MRP/COL reports; R04 = pc + 1 in E (OURS, with support). The
+  stop is `0c0c` (CNDF 7 EM1 `3f`, which rassy's `cndf_others` table
+  names `case_tag_setup mdr2 7`: TDAR from TGT column 0, not yet
+  modelled; reached by a JMPF b that rassy reads as a conditional call:
+  an open conflict). Rassy's EM1 keys also make the earlier flag names
+  (`19`, `21`, `1e`, `1f`) HELD-SOURCE rather than by position.

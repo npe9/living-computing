@@ -120,7 +120,35 @@ COND_UNKNOWN = {0x28}
 # harness's (OURS, PU.flags; an unset flag raises): a single PE with no
 # event pending, so both are false.  Which flag is which is NOT
 # discriminated on the path run (both false).
+# rassy's own decoder confirms the numbering (sixth session, HELD-SOURCE,
+# no longer by position): cndf/7's arm 7 hands off to cndf_others/5
+# (@3321), a hash switch on EM1 (op cd00 mask 7f, 64 keys, 0..3f); key k's
+# arm takes the pool constant at slot 00dc + k for k = 00..27 (the 40
+# 'cond' names: 00 alf_zero, 09 over_flow, 0a less, 19 slit_check, 1e
+# MRP, 1f COL, 21 interrupt_all), keys 28 / 29 build 'cond tag0', 2c-2f
+# '3_way_set_up' / '4_way_set_up' (2e / 2f with '/'), 2a / 2b
+# case_gc_setup mdr1 / mdr2 (slots 0104 / 0105), and 30-3f slots
+# 0106-0115: case_tag_setup mdr1 0, mdr2 0, .. mdr1 7, mdr2 7 (so 3a is
+# case_tag_setup mdr1 5, the column-2 set-up VERIFIED at 2d3e: column
+# 7 - k, as setup.S_TDAR; and 3f is case_tag_setup mdr2 7).  Pool slots
+# are resolved from each arm's relative 'pmi 49' operand
+# (scratch cndo.py; asm/ptfdump.py pimmutil rassy --list).
 FLAG_CONDS = {0x19: 'slit_check', 0x21: 'interrupt_all'}
+# U2, 2026-11-27, sixth session: EM1 1e and 1f are positions 30 and 31 of
+# the same rassy list, 'cond MRP' and 'cond COL' (and rassy's flag
+# tables number set_MRP / reset_MRP 30 and set_COL / reset_COL 31, the
+# 21-31 run above).  The thesis (printed p.138, Fig. 3-23,
+# psi_microword.md 3b, DOCUMENTED) has the S stage's dereference report
+# two such bits to the E stage: whether every MRB in the chain was off,
+# and whether the first two pointers' MRBs were off (the data can be
+# collected).  So 1e / 1f are the S stage's chain reports, formed into
+# COND like the other flags.  INFERRED (the name HELD-SOURCE, rassy's key; that they
+# are the Fig. 3-23 reports).  Their values are the S stage's
+# (setup.py S_REPORTS, OURS): for an operand held directly, no pointer
+# followed, COL is false (nothing to collect); MRP is not given (raises).
+# Executed at 2440 (switch_on_non_list on nil: CNDF 7 EM1 1f, tested by
+# 2461's JMPF e).
+FLAG_CONDS.update({0x1e: 'MRP', 0x1f: 'COL'})
 # MCF (bit 18) with these EM1 values: an operation of UNKNOWN meaning on
 # state this simulator does not hold (a flag or counter: PSI-II's TYPF
 # "counter/flag control", thesis printed p.144).  Recorded in the cycle
@@ -140,6 +168,19 @@ FLAG_CONDS = {0x19: 'slit_check', 0x21: 'interrupt_all'}
 # a page-relative jump word are free of its 10-bit target, so 4cc1's
 # EM1 is 07.)  Injection 'mcf_unknown_raise': raises at 4cc1.
 MCF_UNKNOWN = {0x06, 0x07}
+# U2, 2026-11-27, sixth session: MCF with EM1 08 is pipeline_cancel,
+# position 8 of the rassy flag-control table that numbers 6 reset_SUSPF
+# and 7 reset_CGCF (ptfdump.py pimmutil rassy --pairs: ... 6 reset_SUSPF,
+# 7 reset_CGCF, 8 pipeline_cancel, 9 set_cc).  INFERRED (the name by
+# position; HELD-SOURCE table).  Static fit: the words with MCF EM1 08
+# are the ones that load R04 (rassy's pc) with a new instruction address
+# (2453, 245d, 2461 R04 := XR + YR, the label branch; 31ee XR := R04
+# before 31a1's R04 := XR; 2035, execute_first_predicate): a branch must
+# discard the instructions the pipeline fetched after it.  This
+# simulator has no pipeline (the harness's A stage takes the next
+# instruction from pimm.py's order and compares R04): recorded only, as
+# MCF_UNKNOWN.  Executed at 2461.  Injection 'mcf08_raise': raises.
+MCF_NAMED = {0x08: 'pipeline_cancel'}
 
 
 class _Poison(object):
@@ -370,6 +411,72 @@ RULES = {
     # condition is not decided).  Off (the injection 'jmpf8_flag_off'):
     # raises at 4cc2.
     'jmpf8_flag': True,
+    # JMPF 2 (4-bit; S10, open until now) is a case_branch with a short
+    # base: target = (upc + EM3, EM3 signed as in JMPF 4) | TDAR.
+    # INFERRED (U2, 2026-11-27, sixth session).  rassy's jmpf table
+    # (asm/ptfdump.py pimmutil rassy --list, predicate jmpf/9 @2a5c, a
+    # 16-way switch on the JMPF value): arm 2 names 'base' and
+    # 'case_branch' and formats its operand with short/3, the form arm 4
+    # ('goto', the relative JMPF 4) uses; arm 3 names 'base' and
+    # 'case_branch' with long/4 and em2_not_free (the page-relative
+    # JMPF 3 case_branch, S8).  HELD-SOURCE for the kind; the base
+    # arithmetic is JMPF 4's (mekbn J4_SIGNED).  Static: of the 16 JMPF 2
+    # words of image 2, 15 put upc + EM3 on a 16-word boundary (all but
+    # 0207: 0202), where 1 in 16 would by chance; e.g. 2447 -> 2440,
+    # 2455 -> 2450, 31a1 -> 31a0 (the base 31a3's JMPF 3 also uses),
+    # 2425 -> 2420, 2437 -> 2430, 2401 -> 2400, 323c -> 3240, 327c -> 3280.
+    # EM2 is free (an ALU operation in 6 of the 16).  The TDAR it ORs in
+    # is the S stage's multiway set-up (setup.S_TDAR) when no E-stage
+    # set-up precedes it.  Executed at 2447 (switch_on_non_list on nil:
+    # 2440 | 0).  Injections: 'jmpf2_off' (raises), 'jmpf2_unsigned'
+    # (EM3 unsigned: 2447 -> 2450).
+    'jmpf2_case': 'signed',
+    # ALF 2/3 with EM2 20 / 30: the MRB off / on operations, the result
+    # the AS1 input with its tag's bit 0 cleared / set.  rassy's
+    # special_operation/4 (@3030, a switch on EM2): 0 '+', 2
+    # add_with_carry, ... 15 shift_right_arithmetic, 32 (20) 'mrb_off',
+    # 48 (30) 'mrb_on' (HELD-SOURCE for the names; the value passing
+    # unchanged is INFERRED).  Executed at 2447 (MDR2 := mrb_off(MDR1),
+    # then 2440 writes it to x: nil stays {ATOMo, 0}).  Injection
+    # 'mrb_swapped' (20 = on): the firmware writes A0 := {ATOMx, 0}, FAIL.
+    'em2_mrb': {0x20: 'off', 0x30: 'on'},
+    # JMPF 9: a call taken "if cond" (rassy's jmpf/9 arm 9: 'call',
+    # em1_not_free and em2_not_free, the absolute 16-bit form of arm 5,
+    # and the 'if cond' constant; CJUMP_TAKEN_ON's evidence).  INFERRED
+    # (HELD-SOURCE for the kind).  Only the arm not taken is modelled: the
+    # target, EM absolute or mekbn's JMPF 1 reading (psi_microword.md 7,
+    # both land), is not decided and a taken JMPF 9 raises.  Executed at
+    # 38b1 (get_value's row 4: the S stage's COND, x not UNDF, is false).
+    'jmpf9_call_if': True,
+    # CNDF 8 / a: COND := the tag of the value on the S1 bus == EM1 / EM2
+    # (beside CNDF 9 / b, the ALU's AS1 input).  INFERRED (U2, 2026-11-27,
+    # sixth session).  rassy's cndf/7 (@82a, a switch on CNDF): arms 8
+    # and 9 both 'cond' (an operand's) 'tag = ' EM1 (em1_not_free), a and
+    # b 'tag = ' EM2, 8 / a on one operand of the predicate and 9 / b on
+    # the other (HELD-SOURCE).  MEASURED (scratch census, image 2, words
+    # not JMPF 1): all 217 CNDF 8 words and all 20 CNDF a words read an
+    # S1 source (SC1F or WRBF), 114 and 9 of them with no S1 destination
+    # (rtl's 'read X': a read for the condition alone), and 61 / 3 have
+    # no ALU operation at all; every CNDF 9 (453) and b (56) word has an
+    # ALU input.  Executed at 38b0 (get_value: MAR2 := A[x], EM1 REFo;
+    # false for nil, so 38b1's conditional call is not taken).
+    # CNDF c: the same on the S1 value with the MRB ignored (tag / 5 =
+    # EM1: rassy's arm c, 'cond' 'tag' '/' 5 '=' EM1, the tag's upper 5
+    # bits; arm d the same on the other operand).  Census: 100 CNDF c
+    # words, every EM1 an 'o' tag (REFo 51, INTo 15, VECTo 11, ...), 12
+    # with neither an S1 destination nor an ALU operation; all 232 CNDF
+    # d words have an ALU input.  Executed at 38b2 (get_value: A[y], a
+    # REF either way).  CNDF d is not run and raises.
+    'cnd8_s1': True,
+    # SD1F 2 / 3: the S1 value goes to MDR1 and MAR1 / MDR2 and MAR2 at
+    # once.  rassy's sd1f/2 (@2959): 0 nop, 1 xr, 2 the pair ', mdr1
+    # mar1', 3 ', mdr2 mar2' (the two pool constants just before the
+    # jmpf 'if cond' ones), 4 mdr1, 5 mdr2, 6 mar1, 7 mar2 (HELD-SOURCE;
+    # 1 and 4-7 are mekbn's MEASURED numbering); thesis printed p.144
+    # (psi_microword.md 3, DOCUMENTED): "SD1F codes include writing the
+    # same value to MAR1+MDR1 and MAR2+MDR2".  Executed at 38b2
+    # (get_value: A[y] into MDR2 and MAR2).
+    'sd1_pairs': {2: (MDR1, MAR1), 3: (MDR2, MAR2)},
 }
 # The conditional page-relative / relative jumps JMPF a/b/c/e
 # (RULES['cjump_time'] above).  U2, 2026-11-27, fifth session: 'prev',
@@ -386,7 +493,28 @@ RULES = {
 # jump, per JMPF code; only b is EXECUTED (4cc1: taken on COND, the slit
 # check pending; not taken with no event, the fast path 4cc2-4cc3 that
 # sets R04 := the label).  Other codes raise.
-CJUMP_TAKEN_ON = {0xb: True}
+#
+# U2, 2026-11-27, sixth session: a and e.  rassy's jmpf/9 arms 8-f
+# carry one more constant than arms 0-7, and the class's constant pool
+# holds, in order, 'if cond' four times, 'if not cond' four times, then
+# the same again for jmpf/10 (HELD-SOURCE: ptfdump.py pimmutil rassy
+# --list; resolved: each arm's 'pmi 49' operand is a relative reference,
+# and arms 8-f of jmpf/9 land on pool slots 00af-00b6 (jmpf/10's on
+# 00b7-00be), 00af-00b2 'if cond' and 00b3-00b6 the vector [if, [not,
+# cond]], one slot each; sd1f/2's arms 2 / 3 land on 00ad / 00ae, ',
+# mdr1 mar1' / ', mdr2 mar2', just before).  So JMPF 8-b are taken "if cond"
+# and c-f "if not cond", arms 8-f repeating 4-7's kinds (goto short,
+# call, goto long, call long).  Executed: e at 2440 and 2461
+# (switch_on_non_list on nil: 2440 must jump to 2461 and 2461 to the
+# end 241d for a directly held nil, whose 3310 COND -- MDR2 a REFo -- and
+# COL are false; taken on COND, 2441 would put a cell on the R19 list
+# and 2462 read [MAR2]), a at 3980 (wait_nil on nil: taken on the
+# S stage's COND to the end 3985; not taken, 3981 frees a cell).  This
+# also gives b "call long if cond": the existing 'jump taken on COND' at
+# 4cc1 agrees on the polarity; the call-or-jump question is not met on
+# the path run (4cc1 is not taken) and is recorded open.  Injections:
+# 'e_on_true' (e taken on COND), 'a_on_false'.
+CJUMP_TAKEN_ON = {0xb: True, 0xa: True, 0xe: False}
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
 # conditional word (thesis p.130: condition into the flag COND one step,
@@ -470,8 +598,24 @@ def _cnd3(pu, upc, x, a):
     return bool(pu.alu_seen[2] >> 31 & 1)
 
 
+def _cnd_s1_tag_eq(which, mask=63):
+    """CNDF 8 / a: the tag of the S1-bus value == EM1 / EM2
+    (RULES['cnd8_s1'])."""
+    def rule(pu, upc, x, a):
+        if not RULES['cnd8_s1']:
+            raise Unmodelled(upc, 'CNDF %x (condition not known)' % field(x, 'CNDF'))
+        v = pu.s1_seen
+        if v is None or is_poison(v):
+            raise Unmodelled(upc, 'CNDF %x with no S1-bus value' % field(x, 'CNDF'))
+        if is_stale(v):
+            return STALE
+        return v[0] & mask == field(x, which) & mask
+    return rule
+
+
 COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7, 2: _cnd2,
-              3: _cnd3}
+              3: _cnd3, 8: _cnd_s1_tag_eq('EM1'), 0xa: _cnd_s1_tag_eq('EM2'),
+              0xc: _cnd_s1_tag_eq('EM1', 62)}
 
 
 class PU:
@@ -587,6 +731,14 @@ class PU:
         self.as1_seen = a
         self.alu_seen = (a, b, None)
         alf = field(x, 'ALF')
+        mrb = RULES['em2_mrb'].get(field(x, 'EM2')) if alf in (2, 3) and RULES['em2_mrb'] else None
+        if mrb:
+            # MRB off / on (RULES['em2_mrb']): the AS1 input, tag bit 0 set or cleared
+            self.alu_seen = (a, b, a[1])
+            t = a[0] & ~1 if mrb == 'off' else a[0] | 1
+            if field(x, 'TGIF') & 2:
+                raise Unmodelled(upc, 'MRB %s with a TGIF stamp' % mrb)
+            return (t, a[1] & M32)
         if alf == 0:
             v = a[1] + b[1]
         elif alf == 1:
@@ -659,13 +811,19 @@ class PU:
             raise Unmodelled(upc, 'DBGF set')
         # phase 1: S1 bus (SC1F -> SD1F), S2 bus (SC2F -> SD2F)
         sc1, sd1 = field(x, 'SC1F'), field(x, 'SD1F')
+        self.s1_seen = None
         if sd1:
-            if sd1 not in WNAME:
+            pair = RULES['sd1_pairs'].get(sd1) if RULES['sd1_pairs'] else None
+            if sd1 not in WNAME and not pair:
                 raise Unmodelled(upc, 'SD1F %d' % sd1)
-            v = self.read_sel(upc, x, sc1)
+            v = self.s1_seen = self.read_sel(upc, x, sc1)
             if field(x, 'TGIF') & 1 and not is_stale(v):
                 v = (self.stamp_tag(x), v[1])
-            new[sd1] = v
+            for r in pair or (sd1,):
+                new[r] = v
+        elif field(x, 'CNDF') in (8, 0xa, 0xc) and mekbn.jk(x) != 1 and RULES['cnd8_s1']:
+            # the S1 bus read for the condition alone ('read X', RULES['cnd8_s1'])
+            self.s1_seen = self.read_sel(upc, x, sc1)
         sc2, sd2 = field(x, 'SC2F'), field(x, 'SD2F')
         if sd2:
             if sc2 in (mekbn.SC2_EM1, mekbn.SC2_EM2, mekbn.SC2_WIDE):
@@ -701,8 +859,8 @@ class PU:
                 if sp is None or is_stale(sp):
                     raise Unmodelled(upc, 'MCF 20 with R02 unset or not known')
                 regw.append((('R', 2), (sp[0], (sp[1] + 1) & M32)))
-            elif field(x, 'EM1') in MCF_UNKNOWN:
-                mcf = field(x, 'EM1')       # recorded only (MCF_UNKNOWN)
+            elif field(x, 'EM1') in MCF_UNKNOWN or field(x, 'EM1') in MCF_NAMED:
+                mcf = field(x, 'EM1')       # recorded only (MCF_UNKNOWN, MCF_NAMED)
             else:
                 raise Unmodelled(upc, 'MCF with EM1 %02x' % field(x, 'EM1'))
         # memory (CCF): bit 61 read, 62 write, 60 step; 58 MAR2, 59 MDR2
@@ -790,11 +948,32 @@ class PU:
                 cond_new, cond_cycle = rule(self, upc, x, self.as1_seen), cycle
         # sequencing
         if kind == 'jmpf2':
-            raise Unmodelled(upc, 'JMPF 2 (4-bit; kind not known)')
+            # case_branch, short base (RULES['jmpf2_case'], INFERRED)
+            if not RULES['jmpf2_case']:
+                raise Unmodelled(upc, 'JMPF 2 (4-bit; kind not known)')
+            d = field(x, 'EM3')
+            base = upc + (d - 16 if RULES['jmpf2_case'] == 'signed' and d >= 8 else d)
+            if tdar is None or (tdar[0] != 'S' and tdar[0] != cycle - 1):
+                raise Unmodelled(upc, 'JMPF 2 case_branch without a set-up (S stage or the'
+                                 ' word before)')
+            if base & 15 & tdar[1] or tdar[1] > 15:
+                raise Unmodelled(upc, 'JMPF 2 case_branch base %04x with TDAR %02x'
+                                 % (base, tdar[1]))
+            kind, target, falls = 'jump', base | tdar[1], False
+            conditional = False
         if jf == 8 and RULES['jmpf8_setup'] and cnd == 7 and field(x, 'EM1') in DEREF_SETUP:
             pass                        # sequences as JMPF 0 (RULES['jmpf8_setup'])
         elif jf == 8 and RULES['jmpf8_flag'] and cnd == 7 and field(x, 'EM1') in FLAG_CONDS:
             pass                        # sequences as JMPF 0 (RULES['jmpf8_flag'])
+        elif jf == 9 and RULES['jmpf9_call_if']:
+            # a conditional call, "if cond" (RULES['jmpf9_call_if']); only
+            # the arm not taken is modelled
+            if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
+                raise Unmodelled(upc, 'JMPF 9 conditional call with no usable condition')
+            if bool(prev_cond):
+                raise Unmodelled(upc, 'JMPF 9 conditional call taken (target reading not'
+                                 ' decided)')
+            kind, conditional = 'next', False
         elif jf in (8, 9, 0xd, 0xf):
             raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
         if mekbn.jk(x) == 1 and em == SPECIAL_EM:
@@ -834,6 +1013,9 @@ class PU:
             if jf & 8 and cj_taken is None:
                 raise Unmodelled(upc, 'JMPF %x conditional jump (polarity not decided)' % jf)
             conditional = False
+        if kind == 'branch' and cj_taken is not None:
+            # JMPF a, a conditional page-relative goto (CJUMP_TAKEN_ON)
+            kind, conditional = 'jump', False
         taken = True if cj_taken is None else cj_taken
         if mekbn.jk(x) == 1 and kind in ('jump', 'end', 'return'):
             if kind == 'jump' and em & 4:

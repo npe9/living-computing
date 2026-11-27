@@ -70,12 +70,12 @@ does. TR-733 fig. 4 is kept as the competing layout (section 6).
 | S4 | JMPF 1, EM bit 2 (no bit 3): return | VERIFIED; MSTK DOCUMENTED (thesis p.126) |
 | S5 | JMPF 1, EM bit 1: S2-S4 conditional; EM bit 0 the polarity | VERIFIED; polarity EXECUTED (section 6) |
 | S6 | JMPF 4: a + signed EM bits 3..0 | VERIFIED |
-| S7 | JMPF 5: call absolute; 7 / f: call page-relative; 6 / e / b: page jump; a: page branch | VERIFIED |
+| S7 | JMPF 5: call absolute; 7 / f: call page-relative; 6 / e / b: page jump; a: page branch | VERIFIED. **Open conflict (U2 sixth session):** rassy's `jmpf/9` names b 'call' (long, 'if cond'), as f, and a / e 'goto' long 'if cond' / 'if not cond'; the twin words `0c0c` (JMPF b) and `0c0f` (JMPF 5, call) to `0c15` support b = conditional call; the polarities a, b 'if cond' and e 'if not cond' are adopted (`pu.CJUMP_TAKEN_ON`; HELD-SOURCE, the arms' relative pool operands resolved to slots `00af`-`00b6`), b's call-or-jump is not met on a run path (a taken b still runs as a jump in `pu.py`) |
 | S8 | 4-bit JMPF 3: `case_branch`, base page \| EM 9..0, low 4 bits from the TGT byte a CNDF 7 set-up word selected | mechanism DOCUMENTED (thesis p.131); alignment MEASURED; one column VERIFIED |
 | S9 | JMPF 1, EM = 7fff: computed / special form | INFERRED |
-| S10 | 4-bit JMPF 2: open | UNKNOWN |
+| S10 | 4-bit JMPF 2: `case_branch` with a short base, (a + signed EM3) \| TDAR (U2 2026-11-27, sixth session; `ref/pu/README.md` "U2") | INFERRED: kind HELD-SOURCE (rassy `jmpf/9` arm 2 'base' 'case_branch' with `short/3`, as arm 4); 15 of 16 bases 16-aligned (MEASURED); EXECUTED at `2447` |
 | S11 | decode roots: KL1 from pimm.MEkbn classes 2/3, KL0 from sysidat classes 0/1 | MEASURED |
-| S12 | 32-aligned decode entries are entered at each 4-word row by the tag multiway | INFERRED (thesis p.134; mekbn s.9) |
+| S12 | 32-aligned decode entries are entered at each 4-word row by the tag multiway | INFERRED (thesis p.134; mekbn s.9). U2 sixth session: for ODPF 6 entries the row is match << 2 \| a 2-bit chain code, not a TGT column (`setup.S_OTHER_ROW`, EXECUTED for an operand held directly, row 4 at `3310`); the TGT byte (column 7 - TDPF) goes to TDAR for a later `case_branch` (`setup.S_TDAR`) |
 | S13 | words 0..15 are entry vectors (reset, traps), equal in both firmwares | INFERRED |
 
 ### 2.2 The multiways
