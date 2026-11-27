@@ -330,6 +330,20 @@ contracts that kill each other value on their own (`--table`):
 | **cond_7_0a** | **lt, ge** | eq by not_less_than; the rest jointly |
 | cond_7_09 | never, always (coupled with endpol) | |
 | cond_0, cond_b | open | |
+| **cond_7_29** (side contract) | **mrb_on, mrb_off**; under endpol 'b0=0 ends if cond' **mrb_on** | every value relation, never and always by `reuse_kl1` alone |
+
+*Added 2026-11-27 (U2, fourth session):* the condition domain of
+CNDF 7 EM1 `29` alone (`TAG_CONDS`) also offers `mrb_on` / `mrb_off`,
+the MRB (tag bit 0) of the ALU result's tag (for a word that only
+passes its AS1 input, that input's tag). The contract `reuse_kl1`
+(`31ec`-`31ed`, `put_reused_structure`'s other row, MDR1 = LISTo or
+LISTx): the second word ends (the cell reused in place) iff the MRB is
+off (TR-466 4.2: a single-referenced input cons cell is reused). It is
+decided on its own (`side_contracts`, `SIDE_PINNED`), not in the joint
+set: offered to every condition or added to the joint set, it made
+`--check` take 67-80 s instead of 17 s. Both rows are pinned by
+`--check`. Injection (in-process): the contract flipped (ends iff the
+MRB is ON) gives 1 FAIL, the fixed-polarity row (`['mrb_off']`).
 
 The table was computed before the arithmetic contracts gained their
 end clause. Adding the clause can only remove meanings. After the
@@ -455,3 +469,4 @@ line of every run was read, with no output cap:
 | `pu_sysinit.TGT_STRIDE = 4` | 24 FAIL: the same 21, plus vect_column, ox_same.52c0, ox_same.5300 |
 | `pu_smt` add_kl1 contract expects a - b | 13 FAIL: satisfiable False, every one of the 12 pinned selectors [] |
 | `pu_smt` endpol domain cut to its first meaning | 2 FAIL: cond_5 ['eq'], cond_7_0a ['lt'] (the coupling of section 6.3, item 4) |
+| `pu_smt` reuse_kl1 contract flipped (ends iff the MRB is on; 2026-11-27, in-process) | 1 FAIL: cond_7_29 over reuse_kl1 with endpol 'b0=0 ends if cond' ['mrb_off'] |

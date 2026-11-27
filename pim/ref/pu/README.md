@@ -22,8 +22,8 @@ terminal.
 
 ## State (2026-11-27)
 
-**U1 reached; U2 not reached** (furthest point 4 of 16 instructions of
-append: section "U2" below).
+**U1 reached; U2 not reached** (furthest point 10 of 16 instructions of
+append, the stop at `execute`: section "U2" below).
 
 - 32 cases, all PASS (80 held microinstructions executed). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
@@ -230,13 +230,14 @@ The decoded rules are module dictionaries, `RULES` and `COND_RULES`, so
 a harness can change one (as `check_pu.py --inject` does) without
 editing the file.
 
-## U2: append/3 on the held microcode (2026-11-26, second session; 2026-11-27, third)
+## U2: append/3 on the held microcode (2026-11-26, second session; 2026-11-27, third and fourth)
 
-**U2 not reached. Furthest point: 4 of 16 instructions executed and
-matched (11 held words), then a stop at the fifth
-(`put_reused_structure`, no S-stage set-up form).** Before 2026-11-27: 2
-of 16, a stop at `read_variable` (`34a0`). Plus a held boot routine
-run (start's heap top, `204b`-`2052`, 6 or 8 words).
+**U2 not reached. Furthest point: 10 of 16 instructions executed and
+matched (20 held words), then a stop at the eleventh (`execute`, no
+set-up form).** The fourth session (2026-11-27) took it from 4 of 16
+(stop `put_reused_structure` `31e8`); before that 2 of 16, a stop at
+`read_variable` (`34a0`). Plus a held boot routine run (start's heap
+top, `204b`-`2052`, 6 or 8 words).
 
 **A harness bug, fixed 2026-11-27:** `pimm.py` writes its R and M trace
 lines straight into `Machine.tr` (`_Regs`, `_Mem`), not through
@@ -258,7 +259,23 @@ trace), the goal switch before the first instruction (A0-A2 as
 cells. OURS too: `read_variable`'s MAR1 = R02 (`setup.FORMS`), only so
 that it stops at a microaddress. Per instruction, every R and M line of `pimm.py`'s trace is
 compared under `check_pu.Rename`; `sp` against R02; try_me_else's
-alternative against R11.
+alternative against R11. Two **declared differences**, as U1's
+`indirect` and `mrb` in `check_pu.py` (both in `u2_append.py`, each
+with an injection that turns it off and FAILs):
+
+- `reuse` (`DECLARE_REUSE`): `put_reused_structure` on a structure whose
+  pointer has its MRB off reuses the cells in place (`31ec`-`31ed`: x
+  and R02 := the pointer, no cell written, no list popped); `pimm.py`
+  never reuses (`i_put_reused_structure`: z new cells, "no reference
+  counts here, so nothing is ever reused"). Declared only when the
+  firmware's x holds the source's own address; `pimm.py`'s z new cells
+  are then paired with the reused ones, so `write_value` and
+  `write_variable` after it are compared cell by cell. The firmware is
+  the authority (TR-466 4.2: "When the input cons cell is
+  single-referenced, it can be reused as the new output cons cell");
+  `pimm.py` is not changed here (another agent owns it).
+- `indirect` (`DECLARE_INDIRECT`): U1's `write_variable` difference
+  (below, "What the held words answered" item 1) carried over.
 
 | # | Instruction | Words | Result |
 |---|---|---|---|
@@ -267,7 +284,13 @@ alternative against R11.
 | 1 | `switch_on_non_list 0,0,8` on a list (`3300`-`3301`) | 2 | ok: R02 = the car's address, `pimm.py`'s `sp`; COND true, the jump to `3305` not taken |
 | 2 | `read_variable 3,0,0` (`34a0`-`34a2`, `3494`) | 4 | ok: A3 = `{ATOMo, a}`, R02 + 1 (`pimm.py`'s `sp`) |
 | 3 | `read_variable 4,0,0` (the same words) | 4 | ok: A4 = `{ATOMo, 0}` (nil), R02 + 1 |
-| 4 | `put_reused_structure 0,0,2` (`31e8`) | 0 | STOP: no S-stage set-up form (`setup.FORMS`): its entry has the tag immediate `1e` and ACF 4, DFF 2, ODPF 3, OS1F 1, OS2F 4, ODSF 1, TDPF 4, EMO1 4; the operand is a list, so it is the S12 row entry (not settled) |
+| 4 | `put_reused_structure 0,0,2` (`31e8` entry, `31ec`-`31ed` run) | 2 | ok under the declared `reuse`: the ODPF 3 start for a tag other than the immediate `1e` is `31ec`; x := A0 (`{LISTo, c}`), R02 := it, COND (EM1 `29`) false, end; `pimm.py`'s new cells paired with `c`, `c + 1` |
+| 5 | `write_value 3,0,0` (`31c9`) | 1 | ok: `[R02]` := A3 (`{ATOMo, a}`) into the reused car, R02 + 1 |
+| 6 | `write_variable 3,0,0` (`3195`-`3199`) | 3 | ok under the declared `indirect`: a cell popped from R19 made UNDF, the cdr and A3 := `{REFo, it}` |
+| 7 | `get_bound_value 2,0,0` (`3880`) | 1 | ok: the S stage dereferences A2 to Z's UNDF cell (immediate UNDF: the entry itself, MAR1 = the cell), MDR2 := A0; `3880` writes `[MAR1]` := `{LISTo, c}` (`pimm.py`: Z bound to the new list) |
+| 8 | `put_value 0,4,0` (`31da`) | 1 | ok: A0 := A4 (nil) |
+| 9 | `put_value 2,3,0` (`31da`) | 1 | ok: A2 := A3 |
+| 10 | `execute 3, append/3` (`4cc0`) | 0 | STOP: no set-up form. Read, not run: `4cc0` forms COND with CNDF 7 EM1 `19` (UNKNOWN), `4cc1` is a conditional JMPF b (`cjump_time` UNKNOWN), `4cd3` makes W10 `{COD, MDR2}` (the code address: MDR2 by the set-up, ODSF 2, OS1F 2), then the goal switch `4c11` |
 
 Before the program, `read_variable` on a structure whose element is a
 list pointer (`LISTo`, the structure reached with every MRB off,
@@ -296,10 +319,17 @@ write both FAIL at instruction 0).
 | `RULES['jmpf8_setup']`: JMPF 8 sequences as JMPF 0 in a word whose CNDF 7 is a dereference set-up | INFERRED, admitted only in that combination; every other JMPF 8 word raises | `34a1` | thesis printed p.144 (7): part of the condition generation moved from CNDF to JMPF; what bit 26 adds to a set-up is not decided (the twins `0517`/`051c`, EM1 `2b` with JMPF 0 and 8, are both followed by a case_branch). Injection `jmpf8_off`: STOP at `34a1` in append and in the list case |
 | `RULES['absent_read_poison']`: a read of a cell never written gives the MDR the value POISON; using it (ALU input, write data) raises | OURS | `34a2` | `34a2` reads [MAR1] where MAR1 holds the element itself (an atom, not an address); only the REF rows use what it reads. Injection `absent_read_raise` (the old rule): STOP at `34a2`. `check_pu.py`'s injections give the same results as before |
 | `read_variable`'s MAR1 = R02 (`setup.FORMS`) | OURS, with support | `34a0` | the entry's OS1F is 6 and the thesis's list of S-stage set-up sources (printed p.128) numbers (6) the structure pointer S, as it numbers (4) WR, which fits OS1F 4 in every ODPF 1 entry run (R(10 \| EMO1)); but `read_atom`/`read_integer` have OS1F 5, so the numbering is not fitted. DFF 2 (printed p.127: the R stage's three fetch kinds) is not used on this path: `34a0` reads [MAR1] itself and nothing reads what an S-stage fetch would leave in MDR1 before `34a0` overwrites it |
+| `setup.ODPF3_SHIFT`: an entry with nano-code ODPF 3 and a tag immediate starts at entry \| code << 2: code 0 when the dereferenced operand's tag equals the immediate (MRB ignored), 1 otherwise | INFERRED (mechanism DOCUMENTED: thesis printed p.129, ODPF generates the start address, its low bits modified by the tag test; p.136, `add`: "if (data.tag==int) start(for_int) else start(for_others)"; p.133, the code in TDAR bits 3-2) | `31ec` | static (scratch census of the decode table): 25 entries have ODPF 3, 19 with a tag immediate; 14 of those 19 (all INTo) reach the failure exit XR := R11, R04 := XR from entry + 4, `less_than`..`modulo` at entry + 4 itself (entry + 8 is the next entry: no third row), `shift_left`..`exclusive_or` after further tests (`3b23`); the 4 `*_extended` call `0d87` there. `put_reused_structure` (immediate `1e`, the vector with a descriptor): `31e8` reads `[MAR1]` and tests VDESC, `31ec` is the other row. ODPF 4 and 6 (`get_atom`, `switch_on_non_list`) keep `S_ENTRY` and raise otherwise. Injections (observed): `odpf3_entry` (always the entry): append STOPs at `31e9` (ALU input from a read never written), 4 of 16, both reuse cases at `31e8`; `odpf3_bits10`: append STOPs at `31a3` (case_branch with no set-up), both reuse cases at `31e9` |
+| `RULES['em1_29_mrb']`: CNDF 7 with EM1 `29` forms COND := the MRB (tag bit 0) of the AS1 input is ON | INFERRED | `31ec`-`31ed` | the contract: a structure whose pointer has its MRB on is shared and must not be reused in place; MRB off, it is reused (TR-466 4.2, printed p.7; thesis printed p.138, Fig. 3-23: the S stage tells E whether the data is collectable). `31ed` ends when COND is false (`j1_bit0_false`); else `31ee` calls `31a1` and `31f0` jumps to `put_list` (allocation). `pu_smt` side contract `reuse_kl1` (31ec-31ed, MDR1 LISTo or LISTx; `docs/pu_microcode_inference.md` 6): every value relation, never and always eliminated; mrb_on and mrb_off survive, coupled to the end polarity; under the adopted one mrb_on only. Static: `0ac9`-`0acb`, `0ace`-`0ad0` form it from MDR2 alone and stamp EHOOKo/x or EUNDFo/x by it. Not decided: whether the S stage's chain report (SRP) takes part (append's list is held directly, no REF: the two agree). Side cases in `u2_append.py`: 3,0,2 on LISTo reused (ok), 0,0,2 on LISTx goes on to `31ee` (pinned `REUSE_SHARED_STOP`: R04, pc, never set). Injection `em1_29_off`: append STOPs at `31ee`, 4 of 16; the LISTx case FAILs (ended at `31ed`: a shared list reused) |
+| `RULES['sc2f1_ir']`: SC2F 1 (WRBF clear) puts an IR field on S2, the low 16 bits sign-extended, tag 0; not a register R01 | INFERRED; width NOT discriminated | `31ec` | thesis printed p.129: the S1 bus reaches every register except IR, the S2 bus RF, WR and IR, and IR has field extraction (rassy: `ir/8`, `ir/16`, `ir/24`, signed forms). Static: 46 words read select 1 through SC2F; the 8 label words `32f0`-`32ff` add it to R04 (pc) and jump to the label branch `2447` (`pimm.py`: pc + 2 + sx16(c16)); `wait_vector` (`3a03`, `3a06`, `3a0b`) subtracts it from the vector's length (`pimm.py`: c16). (rassy's second bank, 1 `sr` ... 5 `ir`, names SC1F-side registers; its numbering of S2 sources is not recovered.) `put_reused_structure` is `r_r_c8`: where y is not 0 the c8 and c16 readings differ and the read raises (`setup.IR_C8`). On the path run the value is loaded into MDR2 and not used. Injection `sc2f1_reg` (read as R01): STOP at `31ec` (R01 never set) |
+| `get_bound_value`'s set-up (`setup.FORMS`, `S_CONST`): the S-stage test on A[x] (immediate UNDF, `S_ENTRY`), MDR2 := A[y] | OURS, with support | `3880` | `pimm.py` `i_get_bound_value` unifies reg[x] with reg[y]; OS1F 3 is the thesis's (3) "the RF entry named by r0-r3" (printed p.128; not fitted: `get_atom` has OS1F 1). `3880` = `3800`-`3801` without the stamp. Injections: `gbv_mdr2_x` (MDR2 := A[x]): FAIL at instruction 7 (the cell bound to a REF to itself); `s_no_mar1` now FAILs append there too, `s_imm_plus1` STOPs append at `3881` (zero word): append now discriminates `S_ENTRY`'s start and MAR1 |
+| `put_reused_structure`'s operand y (`setup.FORMS`) | OURS (`pimm.py`'s reading) | `31ec` | append's 0,0,2 cannot tell y from x; the side case 3,0,2 does: injection `prs_operand_x` FAILs it (A3 and R02 = A3's old `{INT, 9}`), append passes |
 
 `check_pu.py` still passes unchanged with these rules (32 cases, 80
 words: the CNDF 2 rule, the bit-0-clear polarity and the 2026-11-27
-rules meet no U1 word).
+rules meet no U1 word; nor do the fourth session's ODPF 3 start, EM1
+`29` and SC2F 1 rules, and `check_pu.py`'s 8 injections give the same
+counts as in "Fault injections").
 
 **The boot.** `start` (`2028`, entry `37b`) is the KL1 firmware's
 initialisation, called from outside: `204b` (heap top into R1f), `2053`
@@ -353,34 +383,40 @@ do not fit column 0, and `wait_nil` (TDPF 1) does not fit column 1 with
 
 ## Next, for U2
 
-In order, as the harness stops on them: `put_reused_structure` (`31e8`,
-entry tag immediate `1e` VECTo, TDPF 4; append's operand is a list, so
-the S stage does not take the immediate's start, and where it starts
-instead is the S12 question: p.135's "start(for_others)" says a second
-start address, and the thesis's p.129 says TDPF sets up the E stage's
-multiway (a column for a later case_branch), not the start; `31e9`
-jumps to `31f3`, whose conditional end tests CNDF 9 VDESC and reads
-R01, never set; it calls `31a1`, a 4-bit JMPF 2. A lead, read not
-run: the entry's 16 words before `put_vector_N[00]` (`31f8`) read as
-four 4-word rows, `31e8` / `31ec` / `31f0` / `31f4`, and `31ec`-`31ed`
-put the operand in x and in R02 and end conditionally, the reuse in
-place of a single-reference list; `get_atom`'s 32 words read as eight
-4-word rows, the first two UNDF reached through REFo (`3800`, binds
-ATOMo, run) and through REFx (`3804`, binds ATOMx), then HOOK o/x
-(`3808`, `380c`), then compares (`3810`-`381c`). So the S stage's start
-looks like entry | code << 2 with a code from the dereference (the
-final tag and the MRB of the last REF), like `34a1`'s set-up, not a TGT
-column (`setup.S_ENTRY` 'row', the injection `s_imm_row`, fails).
-Which code numbering, for which entry, is the open question. And
-`pimm.py` never reuses (`i_put_reused_structure`: new cells), where
-`31ec` reuses the list cell in place, so the comparison will need a
-declared difference, as U1's `indirect` and `mrb`); then
-`write_value`, `write_variable` (run in U1), `get_bound_value`,
-`put_value`, `execute` (`4cc0`), `wait_nil`, `get_value`, `proceed`
-(`216c`). The 4-bit JMPF 2 (`2447`, `31a1`). Then the boot beyond
-`204b` (the refill and list builders: MCF EM1 10 and CNDF 6, the
-counted loop; CCF as a coded field) to drop the seeded lists; the
-conditional a/b/c/e timing (`RULES['cjump_time']`; the boot's fill
-loop `209b`-`209e` and the KL0 LESST path `1046`-`1049` are where it can
-be tested). The other dereference set-ups (EM1 `2a`, `2b`, `2f`) and
-the REF / immediate rows of `2d` are read, not run.
+In order, as the harness stops on them: `execute` (`4cc0`, nano-code
+ACF 0, DFF 0, OS1F 2, ODSF 2, EMO1 5; read, not run): its set-up form
+(the code address in MDR2: `4cd3` W10 := `{COD, MDR2}`; OS1F 2 is the
+thesis's (2) "an operand field of the instruction", printed p.128),
+then `4cc0`'s CNDF 7 EM1 `19` (UNKNOWN: a census of EM1 `19` words, as
+for `28` and `29`), then `4cc1`'s conditional JMPF b, which needs the
+conditional a/b/c/e timing (`RULES['cjump_time']`; the boot's fill loop
+`209b`-`209e` and the KL0 LESST path `1046`-`1049` are where it can be
+tested), then the goal switch at `4c11` (R10's goal records, the
+reduction count). `pimm.py`'s `i_execute` only returns the label, so
+the comparison there is R04 (pc) against the label. Then, in the
+second reduction, `try_me_else`, `switch_on_non_list` on nil (the label
+branch: `330c`-`330d` jump to `2447`, a 4-bit JMPF 2, as `31a1`), the
+alternative clause's `wait_nil`, `get_value`, `proceed` (`216c`).
+
+The lead written before this session, corrected by reading
+`31e8`-`31ff`: the 16 words before `put_vector_N[00]` are NOT four
+4-word rows. Only `31e8` (the immediate, a vector with a descriptor:
+`[MAR1]` read and tested for VDESC) and `31ec` (every other tag) are
+start rows (`setup.ODPF3_SHIFT`); `31ee`'s call to `31a1` returns into
+`31ef`, and `31f0`-`31f2` and `31f4`-`31f7` are continuations (`31f4`
+uses YR and MDR2 set by earlier words). Off append's path, read, not
+run: the allocating arm (`31ee` XR := R04, MDR2 := n - 1, call `31a1`
+(R04 := XR, a 4-bit JMPF 2); `31ef` R02 := MDR1; `31f0` a JMPF 9 to
+`put_list`), the descriptor row (`31e9` -> `31f3`, the n from IR, `31f4`
+the case_branch `31a3` on base `31a0`: `31a4` pops R1a's list, `31a8`
+R19's). `get_atom`'s 4-word rows (`3800` UNDF via MRB off, `3804` via
+MRB on, `3808`/`380c` HOOK, `3810`.. compares) are an ODPF 4 layout,
+still raised for any tag but the immediate.
+
+Then the boot beyond `204b` (the refill and list builders: MCF EM1 10
+and CNDF 6, the counted loop; CCF as a coded field) to drop the seeded
+lists. The other dereference set-ups (EM1 `2a`, `2b`, `2f`) and the REF
+/ immediate rows of `2d` are read, not run; EM1 `28` (`read_variable`'s
+`34a0`) is still a condition of UNKNOWN meaning (its sibling `29` is
+now the MRB test; the S stage's SRP/COL reports, Fig. 3-23, and rassy's
+condition names MRP and COL are candidates, not tested).
