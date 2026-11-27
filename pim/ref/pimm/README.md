@@ -119,6 +119,14 @@ or APPS rows from a prompt checkpoint on the reference and measures
 them: the reductions of the query's shoen by kind (`R9_TALLY`), the
 list case of `mark_element` (`R9_MARKS`), and that case made wrong
 (`R9_INJECT`) (`../../docs/pimos_roadmap.md` R9).
+`ifs_sweep.py` and `ifs_rows.py` (OURS) are the IFS sweep
+(`../../docs/ifs_apps.md`): every held IFS application for PIMOS, its
+files served from the committed archives for its process only, its
+documentation's lines typed from the prompt checkpoint, each row
+classified by its first stop; `--run` needs the checkpoint, `--check`
+(in the suite) does not: it checks the committed summary
+`docs/ifs_sweep_results.json` against the pinned table, the printed
+results against their archive files, and the runner's injections.
 `mp1_rebuild.py` (OURS, not in the suite: it needs the prompt
 checkpoint) is rung MP1(a) of `../../docs/other_pims.md` §4: PIMOS 3.6
 files compiled by the held compiler from the prompt, served as home

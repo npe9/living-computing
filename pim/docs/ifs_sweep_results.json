@@ -1,0 +1,1111 @@
+{
+"aligndp": {
+"errors": [],
+"instructions": 1207950,
+"loads": [],
+"name": "aligndp",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"compile([\"Dayhoff\",\"P1\",\"P1_SUB\",\"P2\",\"P2_SUB\",\"dp_color\",\"inputTDN\",\"makeGrid\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"alignsa": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "alignsa",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"cp1\",\"dayhoff3\",\"energy3\",\"etable3\",\"exp1\",\"input3\",\"io3\",\"move_io3\",\"sa3_1\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>sa3_1.kl1.1\n[sa3_1.kl1@0] Compile Module : sa\n=>  :- module sa .\n",
+"written": {}
+},
+"argus_v": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "argus_v",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"listener &",
+"compile",
+"!take \"compile.com\"",
+"!exit"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> Shell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCOMPILE> ",
+"written": {}
+},
+"aya": {
+"errors": [
+"!ERROR! unable to open file : ayaparse"
+],
+"instructions": 150000001,
+"loads": [],
+"name": "aya",
+"stop": "BUDGET: budget of 150000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"take(\"ayainst.com\")",
+"compile",
+"prime.aya",
+"!exit",
+"listener",
+"prime:top(20)."
+],
+"window": "!ERROR! unable to open file : ayaparse\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\n!ERROR! unable to open file : ayaparse\nCompile File : PSI::>sys>user>pmpsi>sceneCl.kl1.1\n[sceneCl.kl1@0] Compile Module : sceneCl\n=>  :- module sceneCl .\n",
+"written": {}
+},
+"aya+alt": {
+"errors": [],
+"instructions": 371289179,
+"loads": [],
+"name": "aya+alt",
+"stop": "refused: wait_value of a variable with itself",
+"typed": [
+"setenv task:package=work",
+"take(\"ayainst.com\")",
+"compile",
+"prime.aya",
+"!exit",
+"listener",
+"prime:top(20)."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>sceneCl.kl1.1\n[sceneCl.kl1@0] Compile Module : sceneCl\n=>  :- module sceneCl .\nCompile Succeeded : sceneCl\n\nCompile File : PSI::>sys>user>pmpsi>socOp.kl1.1\n[socOp.kl1@0] Compile Module : socOp\n=>  :- module socOp .\nCompile Succeeded : socOp\n\nCompile File : PSI::>sys>user>pmpsi>methCl.kl1.1\n[methCl.kl1@0] Compile Module : methCl\n=>  :- module methCl .\nCompile Succeeded : methCl\n\nCompile File : PSI::>sys>user>pmpsi>methGuard.kl1.1\n[methGuard.kl1@0] Compile Module : methGuard\n=>  :- module methGuard .\nCompile Succeeded : methGuard\n\nCompile File : PSI::>sys>user>pmpsi>genlib.kl1.1\n[genlib.kl1@0] Compile Module : genlib\n=>  :- module genlib .\nCompile Succeeded : genlib\n\nCompile File : PSI::>sys>user>pmpsi>ayagen.kl1.1\n[ayagen.kl1@0] Compile Module : ayagen\n=>  :- module ayagen .\n",
+"written": {}
+},
+"cbcdss": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "cbcdss",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"adamain\",\"adaptst2\",\"append1\",\"arg_match1\",\"balancer\",\"bind_ck\",\"car\",\"cat_stdio\",\"compile_r\",\"con2\",\"connect\",\"consis\",\"coord\",\"cs\",\"dbase\",\"estimate\",\"f_info_ex\",\"fact_info\",\"failure\",\"failurean\",\"file\",\"file_io\",\"file_util\",\"get_tcontF\",\"gmap\",\"history\",\"infer\",\"inference\",\"iop\",\"load_cor\",\"local_evid\",\"makeComP\",\"makeString\",\"makecause\",\"mapping\",\"n_body3\",\"n_connect2\",\"node_lib\",\"node_lib2\",\"pre_trans\",\"r_connect\",\"rc\",\"re_infer1\",\"result_cor\",\"retrieveC\",\"retriever\",\"same_pred\",\"similar\",\"sme\",\"smefail\",\"smekai\",\"smerev2\",\"struct\",\"test_val\",\"trans\",\"trans_io\",\"util1\",\"util2\",\"util_iwa\",\"wm\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"celplace": {
+"errors": [],
+"instructions": 906388,
+"loads": [],
+"name": "celplace",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"compile([\"top\",\"main\",\"an1mat1\",\"an_module1\",\"init\",\"util\",\"overlap\",\"rn\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"cohlex": {
+"errors": [],
+"instructions": 479022,
+"loads": [],
+"name": "cohlex",
+"stop": "refused: a goal failed inside a shoen",
+"typed": [
+"setenv task:package=work",
+"take(\"cohlex>Makefile\")"
+],
+"window": "\n...\n The value of task: package is work . \nShell>>  The value of task: directory is \">sys>user>pmpsi>cohlex\" . \n The value of compile: distribution is [1] . \n",
+"written": {}
+},
+"colodex": {
+"errors": [],
+"instructions": 386291,
+"loads": [],
+"name": "colodex",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"s.com\").",
+"test_ex:t."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"colodex+alt": {
+"errors": [],
+"instructions": 80000001,
+"loads": [],
+"name": "colodex+alt",
+"stop": "BUDGET: budget of 80000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile([\"agent.kl1\",\"component.kl1\",\"processL.kl1\",\"s_glbl_lcl.kl1\",\"agent_trns.kl1\",\"distribute.kl1\",\"product_NJ.kl1\",\"storage_NJ.kl1\",\"agent_util.kl1\",\"eval_comps.kl1\",\"main.kl1\",\"reduct_NJ.kl1\",\"test_ex.kl1\",\"balancer.kl1\",\"process2.kl1\",\"s_comb_nj.kl1\",\"util.kl1\"]).",
+"test_ex:t."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>util.kl1.1\n[util.kl1@0] Compile Module : util\n=>  :- module util .\nCompile Succeeded : util\n\nCompile File : PSI::>sys>user>pmpsi>s_comb_nj.kl1.1\n[s_comb_nj.kl1@0] Compile Module : combine_nj\n=>  :- module combine_nj .\nCompile Succeeded : combine_nj\n\nCompile File : PSI::>sys>user>pmpsi>process2.kl1.1\n",
+"written": {}
+},
+"consort": {
+"errors": [],
+"instructions": 387475,
+"loads": [],
+"name": "consort",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"kl1_source>comp_4p.com\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"consort+alt": {
+"errors": [],
+"instructions": 3794086,
+"loads": [],
+"name": "consort+alt",
+"stop": "refused: wait_value on a structure",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile[\"kl1_source>consort>bignum_macro.mac\"].",
+"compile[\"kl1_source>consort>long_macro.mac\"].",
+"unload([ bignum_macro ],\"kl1>bignum_macro\").",
+"unload([ long_macro ],\"kl1>long_macro\").",
+"compile[\"kl1_source>consort>bignum\" , \"kl1_source>consort>rational\" , \"kl1_source>consort>c_util\" , \"kl1_source>consort>long_fn\" , \"kl1_source>consort>toFloatInDic\"].",
+"unload([bignum , rational , long , c_util , long_with_filter , real_to_float_in_dic ],\"kl1>util_new\").",
+"compile[\"kl1_source>consort>gb_ctl2\" , \"kl1_source>consort>gcd\" , \"kl1_source>consort>new_gb\"].",
+"unload([gb_ctl , gb , gcd ],\"kl1>gb\").",
+"compile[\"kl1_source>consort>smp_util\" , \"kl1_source>consort>wsmplx3-2\"].",
+"unload([smp_util , smplx ],\"kl1>smplx\").",
+"compile[ \"interface1\", \"interv3\", \"interv3_util1\", \"interv3_util2\", \"interv3_util3\", \"interv3_util4\", \"interv3_util5\", \"interv3_gt\", \"interv3_ge\", \"intere3\", \"intere3_util1\", \"enter3_eq\", \"enter3_gt\", \"enter3_ge\", \"process3_exp\", \"process3_eq\", \"process3_gt\", \"process3_ge\", \"listener_util\", \"for_loop\", \"for_long\", \"result1\", \"window_in\", \"window_out\" ].",
+"unload([ interv_interface, interv3, interv3_util1, interv3_util2, interv3_util3, interv3_util4, interv3_util5, interv3_gt, interv3_ge, intere3, intere3_util1, enter3_eq, enter3_gt, enter3_ge, process3_exp, process3_eq, process3_ge, process3_gt, interv_result, listener_util, window_disp_out, window_disp_in, for_loop, long_result, check_rational_type], \">sys>user>desq>kl1>quick_interv7-6_stop.sav\").",
+"compile[\"kl1_source>consort>dummy_debug_w\" , \"kl1_source>consort>dummy_err_disp\" , \"kl1_source>consort>debug_copy\" , \"kl1_source>consort>grouping\" , \"kl1_source>consort>calc_all\" , \"kl1_source>consort>call_to_smplx\" , \"kl1_source>consort>smp_sec\" , \"kl1_source>consort>eval\" , \"kl1_source>consort>msg_check\" , \"kl1_source>consort>conv\" , \"kl1_source>consort>interv_sec\" , \"kl1_source>consort>gb_sec\" , \"kl1_source>consort>gb_part\" , \"kl1_source>consort>freeze_ineq\" , \"kl1_source>consort>freeze_proc\" , \"kl1_source>consort>freeze_remove\" , \"kl1_source>consort>remove_div\" , \"kl1_source>consort>sel_solv\" , \"kl1_source>consort>data_proc\" , \"kl1_source>consort>enter_rel\" , \"kl1_source>consort>freeze_sec\" , \"kl1_source>consort>consort_4pe\" , \"kl1_source>consort>main\"].",
+"unload([kl1_start , consort , smplx_section , call_to_smplx , calc_all , grouping , interv_sec , gb_sec , gb_part , freeze_sec , freeze_remove , freeze_ineq , freeze_proc , enter_rel , data_proc , select_solv , eval , remove_divide , error_disp , debug_window , debug_copy , message_checker , consort_break , consort_data_convert ],\"kl1>consort2_4p\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"desq": {
+"errors": [],
+"instructions": 387475,
+"loads": [],
+"name": "desq",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"kl1_source>comp_4p.com\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"desq+alt": {
+"errors": [],
+"instructions": 3794086,
+"loads": [],
+"name": "desq+alt",
+"stop": "refused: wait_value on a structure",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile[\"kl1_source>consort>bignum_macro.mac\"].",
+"compile[\"kl1_source>consort>long_macro.mac\"].",
+"unload([ bignum_macro ],\"kl1>bignum_macro\").",
+"unload([ long_macro ],\"kl1>long_macro\").",
+"compile[\"kl1_source>consort>bignum\" , \"kl1_source>consort>rational\" , \"kl1_source>consort>c_util\" , \"kl1_source>consort>long_fn\" , \"kl1_source>consort>toFloatInDic\"].",
+"unload([bignum , rational , long , c_util , long_with_filter , real_to_float_in_dic ],\"kl1>util_new\").",
+"compile[\"kl1_source>consort>gb_ctl2\" , \"kl1_source>consort>gcd\" , \"kl1_source>consort>new_gb\"].",
+"unload([gb_ctl , gb , gcd ],\"kl1>gb\").",
+"compile[\"kl1_source>consort>smp_util\" , \"kl1_source>consort>wsmplx3-2\"].",
+"unload([smp_util , smplx ],\"kl1>smplx\").",
+"compile[ \"interface1\", \"interv3\", \"interv3_util1\", \"interv3_util2\", \"interv3_util3\", \"interv3_util4\", \"interv3_util5\", \"interv3_gt\", \"interv3_ge\", \"intere3\", \"intere3_util1\", \"enter3_eq\", \"enter3_gt\", \"enter3_ge\", \"process3_exp\", \"process3_eq\", \"process3_gt\", \"process3_ge\", \"listener_util\", \"for_loop\", \"for_long\", \"result1\", \"window_in\", \"window_out\" ].",
+"unload([ interv_interface, interv3, interv3_util1, interv3_util2, interv3_util3, interv3_util4, interv3_util5, interv3_gt, interv3_ge, intere3, intere3_util1, enter3_eq, enter3_gt, enter3_ge, process3_exp, process3_eq, process3_ge, process3_gt, interv_result, listener_util, window_disp_out, window_disp_in, for_loop, long_result, check_rational_type], \">sys>user>desq>kl1>quick_interv7-6_stop.sav\").",
+"compile[\"kl1_source>consort>dummy_debug_w\" , \"kl1_source>consort>dummy_err_disp\" , \"kl1_source>consort>debug_copy\" , \"kl1_source>consort>grouping\" , \"kl1_source>consort>calc_all\" , \"kl1_source>consort>call_to_smplx\" , \"kl1_source>consort>smp_sec\" , \"kl1_source>consort>eval\" , \"kl1_source>consort>msg_check\" , \"kl1_source>consort>conv\" , \"kl1_source>consort>interv_sec\" , \"kl1_source>consort>gb_sec\" , \"kl1_source>consort>gb_part\" , \"kl1_source>consort>freeze_ineq\" , \"kl1_source>consort>freeze_proc\" , \"kl1_source>consort>freeze_remove\" , \"kl1_source>consort>remove_div\" , \"kl1_source>consort>sel_solv\" , \"kl1_source>consort>data_proc\" , \"kl1_source>consort>enter_rel\" , \"kl1_source>consort>freeze_sec\" , \"kl1_source>consort>consort_4pe\" , \"kl1_source>consort>main\"].",
+"unload([kl1_start , consort , smplx_section , call_to_smplx , calc_all , grouping , interv_sec , gb_sec , gb_part , freeze_sec , freeze_remove , freeze_ineq , freeze_proc , enter_rel , data_proc , select_solv , eval , remove_divide , error_disp , debug_window , debug_copy , message_checker , consort_break , consort_data_convert ],\"kl1>consort2_4p\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"dpool": {
+"errors": [],
+"instructions": 14774768,
+"loads": [
+[
+"obj>owner-migration>dpool.sav",
+"Load Succeeded"
+]
+],
+"name": "dpool",
+"stop": "refused: clause_info at 83489951",
+"typed": [
+"setenv task:package=work",
+"listener",
+"load(\"obj>owner-migration>dpool.sav\").",
+"compile([\"dp_bench\",\"dp_bench_main_int\"]).",
+"dp_bench:test_pool(2,int,put_cc,10,0,1000)."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] Load File : PSI::>sys>user>pmpsi>obj>owner-migration>dpool.sav.1\n\"work:: cache\" Loaded\n\"work:: dpool_util\" Loaded\n\"work:: distributed_pool\" Loaded\n\"work:: directory\" Loaded\nLoad Succeeded\n\n[2] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>dp_bench_main_int.kl1.1\n[dp_bench_main_int.kl1@0] Compile Module : main\n=>  :- module main .\nCompile Succeeded : main\n\nCompile File : PSI::>sys>user>pmpsi>dp_bench.kl1.1\n[dp_bench.kl1@0] Compile Module : dp_bench\n=>  :- module dp_bench .\nCompile Succeeded : dp_bench\n\n\"work:: dp_bench\" Loaded\n\"work:: main\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 1462 [MSEC]\n\n[3] ",
+"written": {}
+},
+"dulcinea": {
+"errors": [],
+"instructions": 386918,
+"loads": [],
+"name": "dulcinea",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take \"install.com\"."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"dulcinea+alt": {
+"errors": [],
+"instructions": 5961979,
+"loads": [],
+"name": "dulcinea+alt",
+"stop": "refused: wait_value on a structure",
+"typed": [
+"listener",
+"prompt(\"\\p:[\\!]% \").",
+"package:define(meta,pimos,8#\"777\",St).",
+"package:define(bel,user); package:define(dul,user).",
+"package:define(rosi,user); package:define(soc1,user).",
+"package:define(soc2,user); package:define(sancho,user).",
+"alias(sv_bel,unload:package(bel,\"Bel>bel\") ).",
+"alias(sv_dul,unload:package(dul,\"save>dul\") ).",
+"alias(sv_rosi,unload:package(rosi,\"save>rosi\") ).",
+"alias(sv_soc1,unload:package(soc1,\"save>soc1\") ).",
+"alias(sv_soc2,unload:package(soc2,\"save>soc2\") ).",
+"alias(sv_sancho,unload:package(sancho,\"save>sancho\") ).",
+"alias(compile(A,B),(dfp(A) ; compile(B) ; dfp(dul) ) ).",
+"alias(bcomp(A), rosi::bcomp:compile(A) ).",
+"alias(bcompall(A), (rosi::bcomp:compile(A); compile(bel,A); rp(bel); rp(rosi); rp(dul)) ).",
+"alias(rp(A), (dfp(A); relink:package; dfp(dul) ) ).",
+"alias(dul,dul::dul:main).",
+"alias(demo,dul::dul:demo).",
+"alias(xdemo(A,B),dul::dul:xdemo(A,B)).",
+"dfp(meta).",
+"package:define(meta,pimos,8#\"777\",St).",
+"setenv(task:package,meta,St1).",
+"compile([\"rosi>meta>Macro>meta.mac\"]).",
+"compile([\"rosi>meta>Copy>*.kl1\",\"rosi>meta>Share>*.kl1\",\"rosi>meta>Common>*.kl1\"]).",
+"unload:package(meta,\"save>metalib\").",
+"dfp(bel); compile\"rosi>meta>Macro>meta.mac\"; compile\"Bel>*.kl1\".",
+"dfp(rosi).",
+"cd\"rosi\".",
+"dfp(meta).",
+"compile(\"meta>Macro>meta.mac\").",
+"load(\"..>save>metalib\").",
+"dfp(rosi).",
+"compile(\"meta>Macro>meta.mac\").",
+"compile([\"attention\", \"util\",\"graph\",\"rosi\",\"conv\", \"bcomp\",\"bcomp_p2\",\"bcomp_p1\"]).",
+"dfp(bel).",
+"compile(\"..>Bel>belief.kl1\").",
+"dfp(soc2).",
+"cd\"..\".",
+"compile\"soc2>*.kl1\" ; dfp(sancho).",
+"compile\"sancho>*.kl1\" ; dfp(soc1).",
+"compile\"soc1>*.kl1\" ; dfp(dul).",
+"compile\"dul>*.kl1\".",
+"unload:package(meta,\"save>metalib\").",
+"unload:package(bel,\"Bel>bel\").",
+"unload:package(rosi,\"save>rosi\").",
+"unload:package(soc2,\"save>soc2\").",
+"unload:package(sancho,\"save>sancho\").",
+"unload:package(soc1,\"save>soc1\").",
+"unload:package(dul,\"save>dul\")."
+],
+"window": "\n...\n*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \npimos:[2]%  St = normal\n\npimos:[3]% \npimos:[4]% \npimos:[5]% \npimos:[6]%  alias: sv_bel => unload: package(bel,\"Bel>bel\")\n\npimos:[7]%  alias: sv_dul => unload: package(dul,\"save>dul\")\n\npimos:[8]%  alias: sv_rosi => unload: package(rosi,\"save>rosi\")\n\npimos:[9]%  alias: sv_soc1 => unload: package(soc1,\"save>soc1\")\n\npimos:[10]%  alias: sv_soc2 => unload: package(soc2,\"save>soc2\")\n\npimos:[11]%  alias: sv_sancho => unload: package(sancho,\"save>sancho\")\n\npimos:[12]%  alias: compile(A,B) => dfp(A)';' compile(B)';' dfp(dul)\n\npimos:[13]%  alias: bcomp(A) => rosi:: bcomp: compile(A)\n\npimos:[14]%  alias: bcompall(A) => rosi:: bcomp: compile(A)';' compile(bel,A)';' rp(bel)';' &  ';' & \n\npimos:[15]%  alias: rp(A) => dfp(A)';' relink: package';' dfp(dul)\n\npimos:[16]%  alias: dul => dul:: dul: main\n\npimos:[17]%  alias: demo => dul:: dul: demo\n\npimos:[18]%  alias: xdemo(A,B) => dul:: dul: xdemo(A,B)\n\npimos:[19]% \nmeta:[20]%  St = abnormal\n\nmeta:[21]%  St1 = normal\n\nmeta:[22]% ",
+"written": {}
+},
+"editalign": {
+"errors": [],
+"instructions": 386591,
+"loads": [],
+"name": "editalign",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take\"load.com\".",
+"dp_new:go."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"editalign+alt": {
+"errors": [],
+"instructions": 9169587,
+"loads": [
+[
+"rf.exe",
+"Load Succeeded"
+]
+],
+"name": "editalign+alt",
+"stop": "FepError: device 39: request [801, b'', b'#p#m#p#s#i', b'']",
+"typed": [
+"setenv task:package=work",
+"listener",
+"load(\"rf.exe\").",
+"dp_new:go."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] Load File : PSI::>sys>user>pmpsi>rf.exe.1\n\"work:: remove_allgap\" Loaded\n\"work:: output_barton\" Loaded\n\"work:: dp_2d_paircost\" Loaded\n\"work:: alignment_barton_cluster\" Loaded\n\"work:: check_outgap\" Loaded\n\"work:: cp\" Loaded\n\"work:: energy_table\" Loaded\n\"work:: dayhoff\" Loaded\n\"work:: new_align\" Loaded\n\"work:: cluster_block\" Loaded\n\"work:: vector_paircost_4\" Loaded\n\"work:: energy\" Loaded\n\"work:: vector_paircost_first\" Loaded\n\"work:: rechange_outgap\" Loaded\n\"work:: outgap\" Loaded\n\"work:: output_barton_c\" Loaded\n\"work:: dp_tree_based\" Loaded\n\"work:: vector_gapcost_4_A\" Loaded\n\"work:: dp_tree_iterative_1\" Loaded\n\"work:: dp_block_based\" Loaded\n\"work:: remove_allgap_c\" Loaded\n\"work:: vector_gapcost_4_B\" Loaded\n\"work:: dp_block_iterative_1\" Loaded\n\"work:: dp_aligned_list3_new\" Loaded\n\"work:: dp_iterative_1\" Loaded\n\"work:: paircost\" Loaded\n\"work:: dp_new\" Loaded\n\"work:: iterative_1\" Loaded\nLoad Succeeded\n\n[2] ",
+"written": {}
+},
+"examds": {
+"errors": [],
+"instructions": 3509438,
+"loads": [],
+"name": "examds",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"take(\"mdl_demo>cmpMDL5gc.inf\")"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"exreps": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "exreps",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"ghcm92\",\"locsver\",\"nm92\",\"ntt92\",\"order92\",\"pe_pos92\",\"ps\",\"psio92\",\"pslio92\",\"pssio92\",\"pswio92\",\"scrio92\",\"server\",\"solve_sys\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"gdcc": {
+"errors": [],
+"instructions": 42252656,
+"loads": [
+[
+"shell.sav",
+"Load Succeeded"
+],
+[
+"alg.sav",
+"Load Succeeded"
+],
+[
+"simplex_if.sav",
+"Load Succeeded"
+],
+[
+"bool.sav",
+"Load Succeeded"
+],
+[
+"parser.sav",
+"Load Succeeded"
+]
+],
+"name": "gdcc",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"take(\"gdcc.init\")",
+"alloc(0,X,Y), alg#X**2 + Y**2 = 1, alg#(X-1)**2 + (Y-1)**2 = 1."
+],
+"window": "\n...\n The value of task: package is work . \nShell>>  The value of task: package is gdcc . \nLoad File : PSI::>sys>user>pmpsi>shell.sav.1\n\"gdcc:: set\" Loaded\n\"gdcc:: expander_sub\" Loaded\n\"gdcc:: expander_commands\" Loaded\n\"gdcc:: ground_term\" Updated\n\"gdcc:: exp_cs\" Loaded\n\"gdcc:: var\" Loaded\n\"gdcc:: query\" Loaded\n\"gdcc:: wconvert\" Loaded\n\"gdcc:: pe_spec\" Loaded\n\"gdcc:: rule_project\" Loaded\n\"gdcc:: gdcc_expander\" Loaded\n\"gdcc:: gdcc\" Loaded\n\"gdcc:: override_pool\" Loaded\n\"gdcc:: expand_options\" Loaded\n\"gdcc:: gdcc_mac\" Loaded\n\"gdcc:: expand_utility\" Loaded\n\"gdcc:: list\" Loaded\n\"gdcc:: gdcc_expander_main\" Loaded\n\"gdcc:: std_block\" Loaded\n\"gdcc:: trans_block\" Loaded\n\"gdcc:: convert\" Updated\nLoad Succeeded\n The value of task: package is alg . \nLoad File : PSI::>sys>user>pmpsi>alg.sav.1\n\"alg:: mole\" Loaded\n\"alg:: find\" Loaded\n\"alg:: std_con\" Loaded\n\"alg:: solver\" Loaded\n\"alg:: for_debug\" Loaded\n\"alg:: wombat\" Loaded\n\"alg:: poly_filter\" Loaded\n\"alg:: poly\" Loaded\n\"alg:: criteria\" Loaded\n\"alg:: ask_daemon\" Loaded\n\"alg:: pe_spec\" Updated\n\"alg:: rule_project\" Updated\n\"alg:: interface\" Loaded\n\"alg:: maze\" Loaded\n\"alg:: otter\" Loaded\n\"alg:: rule_db\" Loaded\n\"alg:: platypus\" Loaded\n\"alg:: rewrite\" Loaded\nLoad Succeeded\n The value of task: package is simplex . \nLoad File : PSI::>sys>user>pmpsi>simplex_if.sav.1\n\"simplex:: std_con\" Loaded\n\"simplex:: solver\" Loaded\n\"simplex:: std\" Loaded\n\"simplex:: ground_term\" Updated\n\"simplex:: var\" Updated\n\"simplex:: smp_util\" Loaded\n\"simplex:: poly_filter1\" Loaded\n\"simplex:: poly\" Loaded\n\"simplex:: rule_project1\" Loaded\n\"simplex:: smplx_if\" Loaded\n\"simplex:: simplex\" Loaded\n\"simplex:: contents\" Loaded\n\"simplex:: defns\" Loaded\n\"simplex:: list\" Updated\n\"simplex:: smplx\" Loaded\nLoad Succeeded\n The value of task: package is bool . \nLoad File : PSI::>sys>user>pmpsi>bool.sav.1\n\"bool:: solver\" Loaded\n\"bool:: bool\" Loaded\n\"bool:: bool_if\" Loaded\nLoad Succeeded\n The value of task: package is parser . \nLoad File : PSI::>sys>user>pmpsi>parser.sav.1\n\"parser:: reader\" Loaded\n\"parser:: variable\" Updated\n\"parser:: var_util\" Loaded\n\"parser:: kl1cmp_wrap\" Updated\n\"parser:: transform\" Loaded\n\"parser:: parms\" Loaded\n\"parser:: analyze\" Loaded\n\"parser:: translator\" Loaded\n\"parser:: output\" Loaded\n\"parser:: normalize\" Loaded\nLoad Succeeded\n The value of task: package is gdcc . \nShell>> ",
+"written": {}
+},
+"gog_kl1": {
+"errors": [],
+"instructions": 386546,
+"loads": [],
+"name": "gog_kl1",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"make.com\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"gog_kl1+alt": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "gog_kl1+alt",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"listener",
+"package:define(gog,user).",
+"default_package(gog).",
+"compile([ \">sys>user>cgs>capcd\", \">sys>user>cgs>capture\", \">sys>user>cgs>client\", \">sys>user>cgs>client_y\", \">sys>user>cgs>commu\", \">sys>user>cgs>cond\", \">sys>user>cgs>count\", \">sys>user>cgs>d4cap_y\", \">sys>user>cgs>d4cap\", \">sys>user>cgs>d4capcd\", \">sys>user>cgs>goban\", \">sys>user>cgs>godisp\", \">sys>user>cgs>gog\", \">sys>user>cgs>gogun\", \">sys>user>cgs>goksn\", \">sys>user>cgs>golab\", \">sys>user>cgs>gomove\", \">sys>user>cgs>gopot\", \">sys>user>cgs>goptn\", \">sys>user>cgs>goren\", \">sys>user>cgs>gorin\", \">sys>user>cgs>goten\", \">sys>user>cgs>gozoku\", \">sys>user>cgs>gunbrd\", \">sys>user>cgs>guncd\", \">sys>user>cgs>henten\", \">sys>user>cgs>jskcv\", \">sys>user>cgs>jskdat\", \">sys>user>cgs>ksnbrd\", \">sys>user>cgs>ksncd\", \">sys>user>cgs>kyoudo\", \">sys>user>cgs>mcap\", \">sys>user>cgs>moyoh\", \">sys>user>cgs>nextmv\", \">sys>user>cgs>nozoki\", \">sys>user>cgs>onksn\", \">sys>user>cgs>phase_y\", \">sys>user>cgs>rencd\", \">sys>user>cgs>renketsu\", \">sys>user>cgs>rktcd\", \">sys>user>cgs>server_y\", \">sys>user>cgs>shicho\", \">sys>user>cgs>tempdm\", \">sys>user>cgs>tencd\", \">sys>user>cgs>tencv\", \">sys>user>cgs>upcv\", \">sys>user>cgs>zahyo\", \">sys>user>cgs>zokubrd\"]).",
+"unload:package(gog,\">sys>user>cgs>gog_y.exe\")."
+],
+"window": "\n...\n*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] \n[3] ",
+"written": {}
+},
+"gpsstap": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "gpsstap",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"take(\"async.com\")"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>planUtil.kl1.1\n[planUtil.kl1@0] Compile Module : planUtil\n=>  :- module planUtil .\n",
+"written": {}
+},
+"h907_nogc": {
+"errors": [],
+"instructions": 4571320,
+"loads": [],
+"name": "h907_nogc",
+"stop": "refused: wait_value of a variable with itself",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile(\"SYN002-1-020dom_merc.kl1\").",
+"load(\"mgtpNS7\").",
+"main:main(50,ns,A)."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"h907_nseq": {
+"errors": [],
+"instructions": 389897,
+"loads": [],
+"name": "h907_nseq",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"Nseq\").",
+"compile(\"SYN002-1-020dom_merc.kl1\").",
+"load(\"mgtpNS7\").",
+"ns(50)."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"h907_nseq+alt": {
+"errors": [
+"Shell>> *** Syntax Error ***",
+"Module not found !! ( mgtp_gc:allocate )",
+"Module not found !! ( st:go )",
+"Syntax error !!",
+"Module not found !! ( alias:go )",
+"Syntax error !!",
+"Syntax error !!",
+"Module not found !! ( alias:go )",
+"Shell>>  Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )",
+"Module not found !! ( alias:go )"
+],
+"instructions": 7113701,
+"loads": [],
+"name": "h907_nseq+alt",
+"stop": "refused: wait_value of a variable with itself",
+"typed": [
+"setenv task:package=work",
+"take(\"Nseq\")",
+"listener",
+"compile(\"SYN002-1-020dom_merc.kl1\").",
+"load(\"mgtpNS7\").",
+"main:main(50,ns,A)."
+],
+"window": "Shell>> *** Syntax Error ***\nModule not found !! ( mgtp_gc:allocate )\nModule not found !! ( st:go )\nSyntax error !!\nModule not found !! ( alias:go )\nSyntax error !!\nSyntax error !!\nModule not found !! ( alias:go )\nShell>>  Module not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\nModule not found !! ( alias:go )\n...\n The value of task: package is work . \nShell>> *** Syntax Error ***\n\n**** Here ****\nload\"gc\"\n Module not found !! ( mgtp_gc:allocate ) \n  [ Job#1, Node#0, PE#0 ]\n Job 1 was aborted . \n Module not found !! ( st:go ) \n  [ Job#2, Node#0, PE#0 ]\n Job 2 was aborted . \n Syntax error !!\n  ( Variable(s) found in Command-line . )\n Module not found !! ( alias:go ) \n  [ Job#3, Node#0, PE#0 ]\n Syntax error !!\n  ( Variable(s) found in Command-line . )\n Job 3 was aborted . \n Syntax error !!\n  ( Variable(s) found in Command-line . )\n Module not found !! ( alias:go ) \n  [ Job#4, Node#0, PE#0 ]\n Job 4 was aborted . \nShell>>  Module not found !! ( alias:go ) \n  [ Job#5, Node#0, PE#0 ]\n Job 5 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#6, Node#0, PE#0 ]\n Job 6 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#7, Node#0, PE#0 ]\n Job 7 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#8, Node#0, PE#0 ]\n Job 8 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#9, Node#0, PE#0 ]\n Job 9 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#10, Node#0, PE#0 ]\n Job 10 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#11, Node#0, PE#0 ]\n Job 11 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#12, Node#0, PE#0 ]\n Job 12 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#13, Node#0, PE#0 ]\n Job 13 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#14, Node#0, PE#0 ]\n Job 14 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#15, Node#0, PE#0 ]\n Job 15 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#16, Node#0, PE#0 ]\n Job 16 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#17, Node#0, PE#0 ]\n Job 17 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#18, Node#0, PE#0 ]\n Job 18 was aborted . \n Module not found !! ( alias:go ) \n  [ Job#19, Node#0, PE#0 ]\n Job 19 was aborted . \n*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"h907_shell": {
+"errors": [],
+"instructions": 3406799,
+"loads": [
+[
+"SYN002-1-020dom_merc.sav",
+"Load Succeeded"
+],
+[
+"mgtpNS7.sav",
+"Load Succeeded"
+]
+],
+"name": "h907_shell",
+"stop": "refused: enqueue_goal_to_processor (0, 1), 2 arguments",
+"typed": [
+"package:define(mgtp,pimos)",
+"setenv task:package=mgtp",
+"load(\"SYN002-1-020dom_merc\")",
+"load(\"mgtpNS7\")",
+"relink(main,problem)",
+"listener",
+"default_package(mgtp).",
+"main:main(50,ns,A)."
+],
+"window": "\n...\nShell>>  The value of task: package is mgtp . \nShell>> Load File : PSI::>sys>user>pmpsi>SYN002-1-020dom_merc.sav.1\n\"mgtp:: problem\" Loaded\nLoad Succeeded\nShell>> Load File : PSI::>sys>user>pmpsi>mgtpNS7.sav.1\n\"mgtp:: main\" Loaded\nLoad Succeeded\nShell>> \"mgtp:: main\" Updated\nRelink Succeeded\nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : mgtp\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] ",
+"written": {}
+},
+"kappa_p": {
+"errors": [],
+"instructions": 1236130,
+"loads": [],
+"name": "kappa_p",
+"stop": "refused: wait_value on a structure",
+"typed": [
+"setenv task:package=work",
+"take(\"KL1comp.com\")"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"kl1graph": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "kl1graph",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"exec\",\"file\",\"map\",\"model\",\"position\",\"pp\",\"program\",\"q_map\",\"q_model\",\"q_position\",\"q_program\",\"window\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>window.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[window.kl1@0] Compile Module : window\n=>  :- module window .\nCompile Succeeded : window\n\nCompile File : PSI::>sys>user>pmpsi>q_program.kl1.1\n",
+"written": {}
+},
+"laputa": {
+"errors": [],
+"instructions": 200000001,
+"loads": [],
+"name": "laputa",
+"stop": "BUDGET: budget of 200000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"dev\",\"dict_index\",\"gainen\",\"grammar\",\"laputa\",\"laputa_syn\",\"m_dict10\",\"m_dict100\",\"m_dict110\",\"m_dict120\",\"m_dict130\",\"m_dict140\",\"m_dict150\",\"m_dict160\",\"m_dict170\",\"m_dict180\",\"m_dict190\",\"m_dict20\",\"m_dict200\",\"m_dict210\",\"m_dict220\",\"m_dict230\",\"m_dict240\",\"m_dict250\",\"m_dict260\",\"m_dict270\",\"m_dict280\",\"m_dict290\",\"m_dict30\",\"m_dict300\",\"m_dict310\",\"m_dict320\",\"m_dict330\",\"m_dict340\",\"m_dict350\",\"m_dict360\",\"m_dict370\",\"m_dict380\",\"m_dict390\",\"m_dict40\",\"m_dict400\",\"m_dict410\",\"m_dict420\",\"m_dict50\",\"m_dict60\",\"m_dict70\",\"m_dict80\",\"m_dict90\",\"trie10\",\"trie20\",\"trie30\",\"trie40\",\"trie50\",\"trie60\",\"trie_index\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"ldlib": {
+"errors": [],
+"instructions": 386546,
+"loads": [],
+"name": "ldlib",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"Make.com\").",
+"compile_all."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"ldlib+alt": {
+"errors": [],
+"instructions": 12406961,
+"loads": [],
+"name": "ldlib+alt",
+"stop": "refused: wait_value on a structure",
+"typed": [
+"setenv task:package=work",
+"listener",
+"setenv klib:dutil_files = [ \"buffer.kl1\",\"clist.kl1\",\"dbm.kl1\",\"list.kl1\",\"lstack.kl1\", \"misc.kl1\",\"pimosx.mac\",\"random.kl1\",\"short_circuit.kl1\", \"stream_list.kl1\",\"stream_vector.kl1\",\"vector.kl1\",\"wclist.kl1\"].",
+"setenv klib:dutil_modules = [ buffer,clist,dbm,list,lstack, misc,pimosx,random,short_circuit,stream_list, stream_vector,vector,wclist].",
+"setenv klib:macro_files = [\"loop.mac\",\"xia.mac\",\"klib.mac\"].",
+"setenv klib:macro_modules = [loop,xia,klib].",
+"setenv klib:uutil_files = [\"combine.kl1\",\"map.kl1\",\"split.kl1\"].",
+"setenv klib:uutil_modules = [combine,map,split].",
+"setenv klib:klib_files = [ \"LD_dhash.kl1\",\"LD_network.kl1\",\"LD_pa.kl1\",\"LD_pm.kl1\", \"LD_srtc.kl1\",\"LD_stb.kl1\",\"LD_bb.kl1\" ].",
+"setenv klib:klib_modules = [ bb,dhash,network,pa,pm,srtc,stb ].",
+"setenv klib:prob_files = [ \"p_queens.kl1\",\"p_bt.kl1\",\"p_inc.kl1\",\"p_incdec.kl1\", \"p_8p.kl1\",\"p_8pm.kl1\",\"p_15p.kl1\",\"p_15pm.kl1\" ].",
+"setenv klib:prob_modules = [ p_queens,p_bt,p_inc,p_incdec,p_8p,p_8pm,p_15p,p_15pm ].",
+"setenv klib:test_files = [ \"tdhash_1.kl1\",\"tstb_queens.kl1\",\"tbb_bt.kl1\",\"tpa_inc.kl1\", \"tpa_incdec.kl1\",\"tpa_8pm.kl1\",\"tpa_15pm.kl1\",\"tpm_0.kl1\", \"tpm_1.kl1\",\"tsrtc_8p.kl1\",\"tsrtc_15p.kl1\" ].",
+"setenv klib:test_modules = [ tdhash_1,tstb_queens,tbb_bt,tpa_inc, tpa_incdec,tpa_8pm,tpa_15pm,tpm_0, tpm_1,tsrtc_8p,tsrtc_15p ].",
+"alias(klib_compile(X), ( getenv(klib:X, normal(Y)), compile(Y))).",
+"alias(klib_unload(X,Z), ( getenv(klib:X, normal(Y)), unload(Y,Z))).",
+"alias(compile_UTIL, ( klib_compile(dutil_files); klib_compile(macro_files); klib_compile(uutil_files) )).",
+"alias(unload_UTIL, ( getenv(klib:dutil_modules,normal(DUM)), getenv(klib:macro_modules,normal(FM)), getenv(klib:uutil_modules,normal(UUM)), list:append(DUM,FM,L1), list:append(L1,UUM,L2), unload(L2,\"UTIL\") )).",
+"alias(load_UTIL, load(\"UTIL\")).",
+"alias(compile_KLIB, klib_compile(klib_files)).",
+"alias(unload_KLIB, klib_unload(klib_modules,\"KLIB\")).",
+"alias(load_KLIB, load(\"KLIB\")).",
+"alias(compile_PROB, klib_compile(prob_files)).",
+"alias(unload_PROB, klib_unload(prob_modules,\"PROB\")).",
+"alias(load_PROB, load(\"PROB\")).",
+"alias(compile_TEST, klib_compile(test_files)).",
+"alias(unload_TEST, klib_unload(test_modules,\"TEST\")).",
+"alias(load_TEST, load(\"TEST\")).",
+"alias(compile_all, ( compile_UTIL; compile_KLIB; compile_PROB; compile_TEST)).",
+"alias(unload_all, ( unload_UTIL; unload_KLIB; unload_PROB; unload_TEST)).",
+"alias(load_all, ( load_UTIL; load_KLIB; load_PROB; load_TEST)).",
+"compile_all."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] \n[3] \n[4] \n[5] \n[6] \n[7] \n[8] \n[9] \n[10] \n[11] \n[12] \n[13]  alias: klib_compile(X) => getenv(klib: X ,normal(Y)),compile(Y)\n\n[14]  alias: klib_unload(X,Z) => getenv(klib: X ,normal(Y)),unload(Y,Z)\n\n[15]  alias: compile_UTIL => klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files)\n\n[16]  alias: unload_UTIL => getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv( & , & ), & , & \n\n[17]  alias: load_UTIL => load(\"UTIL\")\n\n[18]  alias: compile_KLIB => klib_compile(klib_files)\n\n[19]  alias: unload_KLIB => klib_unload(klib_modules,\"KLIB\")\n\n[20]  alias: load_KLIB => load(\"KLIB\")\n\n[21]  alias: compile_PROB => klib_compile(prob_files)\n\n[22]  alias: unload_PROB => klib_unload(prob_modules,\"PROB\")\n\n[23]  alias: load_PROB => load(\"PROB\")\n\n[24]  alias: compile_TEST => klib_compile(test_files)\n\n[25]  alias: unload_TEST => klib_unload(test_modules,\"TEST\")\n\n[26]  alias: load_TEST => load(\"TEST\")\n\n[27]  alias: compile_all => compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST\n\n[28]  alias: unload_all => unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST\n\n[29]  alias: load_all => load_UTIL';' load_KLIB';' load_PROB';' load_TEST\n\n[30] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>wclist.kl1.1\n[wclist.kl1@1] Compile Module : wclist\n=>  :- module wclist .\nCompile Succeeded : wclist\n\nCompile File : PSI::>sys>user>pmpsi>vector.kl1.1\n[vector.kl1@1] Compile Module : vector\n=>  :- module vector .\n",
+"written": {}
+},
+"logisim": {
+"errors": [],
+"instructions": 386801,
+"loads": [],
+"name": "logisim",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"compile.com\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"logisim+alt": {
+"errors": [],
+"instructions": 2075685,
+"loads": [],
+"name": "logisim+alt",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile([\"batch\",\"block\",\"data\",\"dbms\",\"demo_io\",\"diag\",\"dsp_lib\",\"engine\",\"expand\",\"fileio\",\"global\",\"interface\",\"keio\",\"main\",\"memrep\",\"param\",\"parse\",\"partition\",\"rn0\",\"table\",\"table_cmp\",\"truth_tbl\",\"tw_ctrl\"])."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"lsirout": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "lsirout",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"top_l\",\"part1\",\"part2\",\"part3\",\"top_p\",\"dists\",\"masters\",\"lines\",\"terminals\",\"utilities\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>utilities.kl1.1\n[utilities.kl1@0] Compile Module : utilities\n=>  :- module utilities .\nCompile Succeeded : utilities\n\nCompile File : PSI::>sys>user>pmpsi>terminals.kl1.1\n[terminals.kl1@0] Compile Module : terminals\n",
+"written": {}
+},
+"mendels": {
+"errors": [],
+"instructions": 6157417,
+"loads": [
+[
+">sys>user>MENDEL>mendel.exe",
+"Load Succeeded"
+]
+],
+"name": "mendels",
+"stop": "nothing left to run, 1475 goals waiting",
+"typed": [
+"package:define(mendel,user) .",
+"setenv task:package = mendel .",
+"load(\">sys>user>MENDEL>mendel.exe\") .",
+"relink([mendel,tableau_main,execute_main,mdl_compiler,mendel_package,esp_utility,graph,decomp,net,scc,prim])",
+"mendel ."
+],
+"window": "\n...\nShell>>  The value of task: package is mendel . \nShell>> Load File : PSI::>sys>user>MENDEL>mendel.exe.1\n\"mendel:: graph\" Loaded\n\"mendel:: net\" Loaded\n\"mendel:: execute_main\" Loaded\n\"mendel:: tableau_main\" Loaded\n\"mendel:: esp_utility\" Loaded\n\"mendel:: mendel_package\" Loaded\n\"mendel:: mdl_compiler\" Loaded\n\"mendel:: decomp\" Loaded\n\"mendel:: mendel\" Loaded\n\"mendel:: fmnet\" Loaded\n\"mendel:: common\" Loaded\n\"mendel:: mlib\" Loaded\n\"mendel:: interface\" Loaded\n\"mendel:: scc\" Loaded\n\"mendel:: prim\" Loaded\n\"mendel:: fmparts\" Loaded\nLoad Succeeded\nShell>> \"mendel:: graph\" Updated\n\"mendel:: net\" Updated\n\"mendel:: execute_main\" Updated\n\"mendel:: tableau_main\" Updated\n\"mendel:: esp_utility\" Updated\n\"mendel:: mendel_package\" Updated\n\"mendel:: mdl_compiler\" Updated\n\"mendel:: decomp\" Updated\n\"mendel:: mendel\" Updated\n\"mendel:: scc\" Updated\n\"mendel:: prim\" Updated\nRelink Succeeded\nShell>> package>>",
+"written": {}
+},
+"mgtp": {
+"errors": [
+"!ERROR! undefined module : work:: mgtp (referred from : work:: hyper_o)",
+"COMPILE> Shell>> !ERROR! non existent module : hyper_o",
+"Shell>> !ERROR! undefined module : pimos:: mgtp (referred from : pimos:: hyper_o)"
+],
+"instructions": 26598077,
+"loads": [],
+"name": "mgtp",
+"stop": "nothing left to run, 1620 goals waiting",
+"typed": [
+"compile",
+"!package work",
+"preotter",
+"otter",
+"!attach clause clause_trans_o",
+"q6.clause",
+"!exit",
+"relink(hyper_o)",
+"relink(work::hyper_o)",
+"listener",
+"default_package(work).",
+"statistics.",
+"print_depth(10).",
+"print_length(100).",
+"hyper_o:do(20,M)."
+],
+"window": "!ERROR! undefined module : work:: mgtp (referred from : work:: hyper_o)\nCOMPILE> Shell>> !ERROR! non existent module : hyper_o\nShell>> !ERROR! undefined module : pimos:: mgtp (referred from : pimos:: hyper_o)\n...\n** KL1 Compiler **\nCOMPILE> Package : work\n!WARNING! not included in the working packages : work\nCOMPILE> Compile File : PSI::>sys>user>pmpsi>preotter.kl1.1\n[preotter.kl1@0] Compile Module : clause_trans_o\n=>  :- module clause_trans_o .\nCompile Succeeded : clause_trans_o\n\n\"work:: clause_trans_o\" Loaded\nCompilation(s) Succeeded\nCOMPILE> Compile File : PSI::>sys>user>pmpsi>otter.kl1.1\n[otter.kl1@0] Compile Module : hyper_o\n=>  :- module hyper_o .\nCompile Succeeded : hyper_o\n\n!ERROR! undefined module : work:: mgtp (referred from : work:: hyper_o)\nTotal Number of Error : 1\nCOMPILE> Preprocess : clause => pkl1 : clause_trans_o\nCOMPILE> Compile File : PSI::>sys>user>pmpsi>q6.clause.1\n[q6.clause] Compile Module : mgtp\nCompile Succeeded : mgtp\n\n!WARNING! register shortage in the guard 1 time(s) : d/ 4\n!WARNING! register shortage in the guard 2 time(s) : c/ 4\n\"work:: hyper_o\" Loaded\n\"work:: mgtp\" Loaded\nTotal Number of Warning : 2\nCOMPILE> Shell>> !ERROR! non existent module : hyper_o\nTotal Number of Error : 1\nShell>> !ERROR! undefined module : pimos:: mgtp (referred from : pimos:: hyper_o)\nTotal Number of Error : 1\nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2]  20 reductions\n 0 msec\n\n[3]  15 reductions\n 1 msec\n\n[4]  15 reductions\n 2 msec\n\n[5]  M =[mdl([q(6,5),q(5,3),q(4,1),q(3,6),q(2,4),q(1,2)],[]),mdl([q(6,4),q(5,1),q(4,5),q(3,2),q(2,6),q(1,3)],[]),mdl([q(6,3),q(5,6),q(4,2),q(3,5),q(2,1),q(1,4)],[]),mdl([q(6,2),q(5,4),q(4,6),q(3,1),q(2,3),q(1,5)],[])]\n 21497 reductions\n 61 msec\n\n[6] ",
+"written": {}
+},
+"mgtp_n": {
+"errors": [],
+"instructions": 104283213,
+"loads": [],
+"name": "mgtp_n",
+"stop": "refused: enqueue_goal_to_processor (0, 1), 8 arguments",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile([\"mgtpv0\",\"util\"]).",
+"statistics.",
+"print_length(100).",
+"print_depth(20).",
+"mgtpv0: main(1,5,3,[((0,0,0),p(i({4},i(n({4}),{6}))),p(i({5},i(n({5}),{7})))),((0,0,0),p(i({4},i({6},{4}))),p(i({5},i({7},{5})))),((0,0,0),p(i(i({4},i({6},{8})),i({6},i({4},{8})))),p(i(i({5},i({7},{9})),i({7},i({5},{9}))))),((0,0,0),p(i(i({4},{6}),i(i({8},{4}),i({8},{6})))),p(i(i({5},{7}),i(i({9},{5}),i({9},{7}))))),((0,0,0),p(i(i({4},{6}),i(i(n({4}),{6}),{6}))),p(i(i({5},{7}),i(i(n({5}),{7}),{7}))))],[gen(p({1}),p(i({1},{3})),p({3}))],[tst(p(i(i(a,i(a,b)),i(a,b))))],(1,1,2,YYNN),Result,Ncalc,Delta) ."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>mgtpv0.kl1.1\n[mgtpv0.kl1@1] Compile Module : mgtpv0\n=>  :- module mgtpv0 .\nCompile Succeeded : mgtpv0\n\n!WARNING! register shortage in the guard 4 time(s) : subsDS/ 4\nCompile File : PSI::>sys>user>pmpsi>util.kl1.1\n[util.kl1@1] Compile Module : util\n=>  :- module util .\nCompile Succeeded : util\n\n\"work:: mgtpv0\" Loaded\n\"work:: util\" Loaded\nTotal Number of Warning : 1\nCompilation Time = 15279 [MSEC]\n\n[2]  20 reductions\n 0 msec\n\n[3]  15 reductions\n 1 msec\n\n[4]  15 reductions\n 1 msec\n\n[5] ",
+"written": {}
+},
+"mmi": {
+"errors": [],
+"instructions": 25692631,
+"loads": [
+[
+"system.sav",
+"Load Succeeded"
+]
+],
+"name": "mmi",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"listener",
+"load(\"system.sav\").",
+"main:go.",
+"0.",
+"10."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] Load File : PSI::>sys>user>pmpsi>system.sav.1\n\"work:: symbolizer\" Loaded\n\"work:: sequ_util\" Loaded\n\"work:: sequ_pid\" Loaded\n\"work:: sequ_pub\" Loaded\n\"work:: sim_constraint\" Loaded\n\"work:: deep_forward\" Loaded\n\"work:: deep_backward\" Loaded\n\"work:: lup_quality\" Loaded\n\"work:: sequ_p4\" Loaded\n\"work:: sim_rule\" Loaded\n\"work:: deep_model\" Loaded\n\"work:: deep_init\" Loaded\n\"work:: super\" Loaded\n\"work:: sequ_p2\" Loaded\n\"work:: count\" Loaded\n\"work:: sim_start\" Loaded\n\"work:: sequ_pre\" Loaded\n\"work:: sequ_c\" Loaded\n\"work:: utility\" Loaded\n\"work:: sequ_symbol\" Loaded\n\"work:: sequ_post\" Loaded\n\"work:: diag_init\" Loaded\n\"work:: deep_utility\" Loaded\n\"work:: sim_check\" Loaded\n\"work:: sequ_main\" Loaded\n\"work:: bipar\" Loaded\n\"work:: demand_super\" Loaded\n\"work:: func\" Loaded\n\"work:: diag_data\" Loaded\n\"work:: sequ_init\" Loaded\n\"work:: sis_init\" Loaded\n\"work:: sim_super\" Loaded\n\"work:: inf_env\" Loaded\n\"work:: sequ_pesvr\" Loaded\n\"work:: diag_super\" Loaded\n\"work:: sequ_super\" Loaded\n\"work:: sequ_action\" Loaded\n\"work:: offline\" Loaded\n\"work:: qcest\" Loaded\n\"work:: plant_db\" Loaded\n\"work:: mmi\" Loaded\n\"work:: qdb\" Loaded\n\"work:: sequ_p3\" Loaded\n\"work:: demand_init\" Loaded\n\"work:: analog_db\" Loaded\n\"work:: sequ_p1\" Loaded\n\"work:: util\" Loaded\n\"work:: multi_level_load_balancer\" Loaded\n\"work:: sim_utility\" Loaded\n\"work:: sim_calc\" Loaded\n\"work:: deep_principle\" Loaded\n\"work:: pe_server\" Loaded\n\"work:: calset\" Loaded\n\"work:: deep_super\" Loaded\n\"work:: lmtTBL\" Loaded\n\"work:: sim_init\" Loaded\n\"work:: search\" Loaded\n\"work:: sis_filter\" Loaded\n\"work:: qcbp\" Loaded\n\"work:: sis_super\" Loaded\n\"work:: main\" Loaded\n\"work:: calc_qual\" Loaded\n\"work:: io\" Loaded\nLoad Succeeded\n\n[2] \" Now intializing DIS?? \"\n",
+"written": {}
+},
+"mssd": {
+"errors": [],
+"instructions": 18827923,
+"loads": [],
+"name": "mssd",
+"stop": "refused: wait_value of a variable with itself",
+"typed": [
+"setenv task:package=work",
+"compile",
+"cp1,wavelet,geometric1,data,calcH5,main5_p,socket5",
+"!exit"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCOMPILE> Compile File : PSI::>sys>user>pmpsi>socket5.kl1.1\n",
+"written": {}
+},
+"multialign": {
+"errors": [],
+"instructions": 386591,
+"loads": [],
+"name": "multialign",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take\"load.pia\"."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"multialign+alt": {
+"errors": [],
+"instructions": 4511264,
+"loads": [
+[
+"pia_s2.exe",
+"Load Succeeded"
+]
+],
+"name": "multialign+alt",
+"stop": "nothing left to run, 1231 goals waiting",
+"typed": [
+"setenv task:package=work",
+"take\"load.pia\""
+],
+"window": "\n...\n The value of task: package is work . \nShell>> Load File : PSI::>sys>user>pmpsi>pia_s2.exe.1\n\"work:: pia_s2\" Loaded\n\"work:: check_outgap\" Loaded\n\"work:: rechange_outgap\" Loaded\n\"work:: dayhoff\" Loaded\n\"work:: outgap\" Loaded\n\"work:: vector_paircost_4\" Loaded\n\"work:: vector_paircost_first\" Loaded\n\"work:: vector_gapcost_4_A\" Loaded\n\"work:: vector_gapcost_4_B\" Loaded\n\"work:: dp_aligned_list3_new\" Loaded\n\"work:: cp\" Loaded\n\"work:: energy\" Loaded\n\"work:: remove_allgap\" Loaded\n\"work:: file_out\" Loaded\nLoad Succeeded\nShell>> ",
+"written": {}
+},
+"multialign_run": {
+"errors": [],
+"instructions": 7085139,
+"loads": [
+[
+"pia_s2.exe",
+"Load Succeeded"
+]
+],
+"name": "multialign_run",
+"stop": "refused: enqueue_goal_to_processor (0, 1), 10 arguments",
+"typed": [
+"setenv task:package=work",
+"take\"load.pia\"",
+"listener",
+"pia_s2:top([\"KLGQGCFGEVWMGTWNGTTRVAIKTLKPGTMSPEAFLQEAQVMKKLRHEKLVQLYAVVSEEPIYIVTEYMSKGSLLDFLK\",\"KLGGGQYGEVYEGVWKKYSLTVAVKTLKEDTMEVEEFLKEAAVMKEIKHPNLVQLLGVCTREPPFYIITEFMTYGNLLDY\",\"IGEGEFGEVYRGTLRLPSQDCKTVAIKTLKDTSPGGQWWNFLREATIMGQFSHPHILHLEGVVTKRKPIMIITEFMENGA\",\"LLGKGNFGEVYKGTLKDKTSVAVKTCKEDLPQELKIKFLQEAKILKQYDHPNIVKLIGVCTQRQPVYIIMELVSGGDFLT\",\"GQGSFGMVYEGNARDIIKGEAETRVAVKTVNESASLRERIEFLNEASVMKGFTCHHVVRLLGVVSKGQPTLVVMELMAHG\",\"GSGAFGEVYEGTAVDILGVGSGEIKVAVKTLKKGSTDQEKIEFLKEAHLMSKFNHPNILKQLGVCLLNEPQYIILELMEG\",\"GEGAFGKVFLAECHNLLPEQDKMLVAVKALKEASESARQDFQREAELLTMLQHQHIVRFFGVCTEGRPLLMVFEYMRHGD\",\"GEGCFGQVVLAEAIGLDKDKPNRVTKVAVKMLKSDATEKDLSDLISEMEMMKMIGKHKNIINLLGACTQDGPLYVIVEYA\",\"GEGEFGKVVKATAFHLKGRAGYTTVAVKMLKENASPSELRDLLSEFNVLKQVNHPHVIKLYGACSQDGPLLLIVEYAKYG\",\"GSGAFGTVYKGLWIPEGEKVKIPVAIKELREATSPKANKEILDEAYVMASVDNPHVCRLLGICLTSTVQLITQLMPFGCL\",\"VIGKGSFGKVMQVRKKDTQKVYALKAIRKSYIVSKSEVTHTLAERTVLARVDCPFIVPLKFSFQSPEKLYFVLAFINGGE\",\"LLGKGTFGQVYQVKKKDTQRIYAMKVLSKKVIVKKNEIAHTIGERNILVTTASKSSPFIVGLKFSFQTPTDLYLVTDYMS\",\"LGKGGYGKVFQVRKVTGANTGKIFAMKVLKKAMIVRNAKDTAHTKAERNILEEVKHPFIVDLIYAFQTGGKLYLILEYLS\",\"VLGKGSFGKVMLADRKGTEELYAIKILKKDVVIQDDDVECTMVEKRVLALLDKPPFLTQLHSCFQTVDRLYFVMEYVNGG\",\"VLGKGNFGKVILSKSKNTDRLCAIKVLKKDNIIQNHDIESARAEKKVFLLATKTKHPFLTNLYCSFQTENRIYFAMEFIG\",\"TLGTGSFGRVMLVKHKETGNHYAMKILDKQKVVKLKQIEHTLNEKRILQAVNFPFLVKLEFSFKDNSNLYMVMEYVPGGE\",\"LGVGGFGRVELVQLKSEESKTFAMKILKKRHIVDTRQQEHIRSEKQIMQGAHSDFIVRLYRTFKDSKYLYMLMEACLGGE\",\"IIGRGGFGEVYGCRKADTGKMYAMKCLDKKRIKMKQGETLALNERIMLSLVSTGDCPFIVCMSYAFHTPDKLSFILDLMN\",\"ILGRGVSSVVRRCIHKPTCKEYAVKIIDVTGGGSFSAEEVQELREATLKEVDILRKVSGHPNIIQLKDTYETNTFFFLVF\",\"ELGKGAFSVVRRCVKVLAGQEYAAKIINTKKLSARDHQKLEREARICRLLKHPNIVRLHDSISEEGHHYLIFDLVTGGEL\",\"RLGSGKFGQVFRLVEKKTGKVWAGKFFKAYSAKEKENIRDEISIMNCLHHPKLVQCVDAFEEKANIVMVLEMVSGGELFE\",\"LVGQGSFGCVYKATRKDDSKVVAIKVISKRGRATKELKNLRRECDIQARLKHPHVIEMIESFESKTDLFVVTEFALMDLH\"],97,7,1,0,Result,Energy,Count,Path,\"test.res\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> Load File : PSI::>sys>user>pmpsi>pia_s2.exe.1\n\"work:: pia_s2\" Loaded\n\"work:: check_outgap\" Loaded\n\"work:: rechange_outgap\" Loaded\n\"work:: dayhoff\" Loaded\n\"work:: outgap\" Loaded\n\"work:: vector_paircost_4\" Loaded\n\"work:: vector_paircost_first\" Loaded\n\"work:: vector_gapcost_4_A\" Loaded\n\"work:: vector_gapcost_4_B\" Loaded\n\"work:: dp_aligned_list3_new\" Loaded\n\"work:: cp\" Loaded\n\"work:: energy\" Loaded\n\"work:: remove_allgap\" Loaded\n\"work:: file_out\" Loaded\nLoad Succeeded\nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {
+">sys>user>pmpsi>test.res": "\"KLGQGCFGEVWMGTWNGTTRVAIKTLKPGTMSPEAFLQEAQVMKKLRHEKLVQLYAVVSEEPIYIVTEYMSKGSLLDFLK\"\n\"KLGGGQYGEVYEGVWKKYSLTVAVKTLKEDTMEVEEFLKEAAVMKEIKHPNLVQLLGVCTREPPFYIITEFMTYGNLLDY\"\n\"IGEGEFGEVYRGTLRLPSQDCKTVAIKTLKDTSPGGQWWNFLREATIMGQFSHPHILHLEGVVTKRKPIMIITEFMENGA\"\n\"LLGKGNFGEVYKGTLKDKTSVAVKTCKEDLPQELKIKFLQEAKILKQYDHPNIVKLIGVCTQRQPVYIIMELVSGGDFLT\"\n\"GQGSFGMVYEGNARDIIKGEAETRVAVKTVNESASLRERIEFLNEASVMKGFTCHHVVRLLGVVSKGQPTLVVMELMAHG\"\n\"GSGAFGEVYEGTAVDILGVGSGEIKVAVKTLKKGSTDQEKIEFLKEAHLMSKFNHPNILKQLGVCLLNEPQYIILELMEG\"\n\"GEGAFGKVFLAECHNLLPEQDKMLVAVKALKEASESARQDFQREAELLTMLQHQHIVRFFGVCTEGRPLLMVFEYMRHGD\"\n\"GEGCFGQVVLAEAIGLDKDKPNRVTKVAVKMLKSDATEKDLSDLISEMEMMKMIGKHKNIINLLGACTQDGPLYVIVEYA\"\n\"GEGEFGKVVKATAFHLKGRAGYTTVAVKMLKENASPSELRDLLSEFNVLKQVNHPHVIKLYGACSQDGPLLLIVEYAKYG\"\n\"GSGAFGTVYKGLWIPEGEKVKIPVAIKELREATSPKANKEILDEAYVMASVDNPHVCRLLGICLTSTVQLITQLMPFGCL\"\n\"VIGKGSFGKVMQVRKKDTQKVYALKAIRKSYIVSKSEVTHTLAERTVLARVDCPFIVPLKFSFQSPEKLYFVLAFINGGE\"\n\"LLGKGTFGQVYQVKKKDTQRIYAMKVLSKKVIVKKNEIAHTIGERNILVTTASKSSPFIVGLKFSFQTPTDLYLVTDYMS\"\n\"LGKGGYGKVFQVRKVTGANTGKIFAMKVLKKAMIVRNAKDTAHTKAERNILEEVKHPFIVDLIYAFQTGGKLYLILEYLS\"\n\"VLGKGSFGKVMLADRKGTEELYAIKILKKDVVIQDDDVECTMVEKRVLALLDKPPFLTQLHSCFQTVDRLYFVMEYVNGG\"\n\"VLGKGNFGKVILSKSKNTDRLCAIKVLKKDNIIQNHDIESARAEKKVFLLATKTKHPFLTNLYCSFQTENRIYFAMEFIG\"\n\"TLGTGSFGRVMLVKHKETGNHYAMKILDKQKVVKLKQIEHTLNEKRILQAVNFPFLVKLEFSFKDNSNLYMVMEYVPGGE\"\n\"LGVGGFGRVELVQLKSEESKTFAMKILKKRHIVDTRQQEHIRSEKQIMQGAHSDFIVRLYRTFKDSKYLYMLMEACLGGE\"\n\"IIGRGGFGEVYGCRKADTGKMYAMKCLDKKRIKMKQGETLALNERIMLSLVSTGDCPFIVCMSYAFHTPDKLSFILDLMN\"\n\"ILGRGVSSVVRRCIHKPTCKEYAVKIIDVTGGGSFSAEEVQELREATLKEVDILRKVSGHPNIIQLKDTYETNTFFFLVF\"\n\"ELGKGAFSVVRRCVKVLAGQEYAAKIINTKKLSARDHQKLEREARICRLLKHPNIVRLHDSISEEGHHYLIFDLVTGGEL\"\n\"RLGSGKFGQVFRLVEKKTGKVWAGKFFKAYSAKEKENIRDEISIMNCLHHPKLVQCVDAFEEKANIVMVLEMVSGGELFE\"\n\"LVGQGSFGCVYKATRKDDSKVVAIKVISKRGRATKELKNLRRECDIQARLKHPHVIEMIESFESKTDLFVVTEFALMDLH\"\n\nCut_ratio = 97\n(U,V,S) = (7,1,0)\n\nSequencesA,SequencesB,Energy,Cost\n\n"
+}
+},
+"objects": {
+"errors": [],
+"instructions": 72652650,
+"loads": [
+[
+"gc.sav",
+"Load Succeeded"
+],
+[
+"SYN002-1-020dom_merc.sav",
+"Load Succeeded"
+],
+[
+"SYN009-1dom_merc.sav",
+"Load Succeeded"
+],
+[
+"SYN036-4dom_merc.sav",
+"Load Succeeded"
+],
+[
+"test2_445.sav",
+"Load Succeeded"
+],
+[
+"mgtpNS7.sav",
+"Load Succeeded"
+],
+[
+"mgtp-NS-pim7-noRT.sav",
+"Load Succeeded"
+],
+[
+"obj>owner-migration>dpool.sav",
+"Load Succeeded"
+],
+[
+"obj>owner-fixed>dpool.sav",
+"Load Succeeded"
+],
+[
+"obj>access-info>dpool.sav",
+"Load Succeeded"
+],
+[
+"mmi_system.sav",
+"Load Succeeded"
+],
+[
+"rf.exe",
+"Load Succeeded"
+],
+[
+"pia_s2.exe",
+"Load Succeeded"
+],
+[
+"tpia_s2.exe",
+"Load Succeeded"
+],
+[
+"mdllibrary.exe",
+"Load Succeeded"
+],
+[
+"mendel.exe",
+"Load Succeeded"
+]
+],
+"name": "objects",
+"stop": "nothing left to run, 1675 goals waiting",
+"typed": [
+"setenv task:package=work",
+"listener",
+"load(\"gc\").",
+"load(\"SYN002-1-020dom_merc\").",
+"load(\"SYN009-1dom_merc\").",
+"load(\"SYN036-4dom_merc\").",
+"load(\"test2_445\").",
+"load(\"mgtpNS7\").",
+"load(\"mgtp-NS-pim7-noRT\").",
+"load(\"obj>owner-migration>dpool.sav\").",
+"load(\"obj>owner-fixed>dpool.sav\").",
+"load(\"obj>access-info>dpool.sav\").",
+"load(\"mmi_system.sav\").",
+"load(\"rf.exe\").",
+"load(\"pia_s2.exe\").",
+"load(\"tpia_s2.exe\").",
+"load(\"mdllibrary.exe\").",
+"load(\"mendel.exe\")."
+],
+"window": "\n...\ned\n\"work:: pe_server\" Loaded\n\"work:: calset\" Loaded\n\"work:: deep_super\" Loaded\n\"work:: lmtTBL\" Loaded\n\"work:: sim_init\" Loaded\n\"work:: sis_filter\" Loaded\n\"work:: qcbp\" Loaded\n\"work:: sis_super\" Loaded\n\"work:: calc_qual\" Loaded\n\"work:: symbolizer\" Loaded\n\"work:: sequ_util\" Loaded\n\"work:: sequ_pid\" Loaded\n\"work:: sequ_pub\" Loaded\n\"work:: sim_constraint\" Loaded\n\"work:: deep_forward\" Loaded\n\"work:: deep_backward\" Loaded\n\"work:: lup_quality\" Loaded\n\"work:: sequ_p4\" Loaded\n\"work:: sim_rule\" Loaded\n\"work:: deep_model\" Loaded\n\"work:: deep_init\" Loaded\n\"work:: sequ_p2\" Loaded\n\"work:: sim_start\" Loaded\n\"work:: sequ_pre\" Loaded\n\"work:: util\" Loaded\n\"work:: sequ_c\" Loaded\n\"work:: utility\" Loaded\n\"work:: sequ_symbol\" Loaded\n\"work:: sequ_post\" Loaded\n\"work:: diag_init\" Loaded\n\"work:: deep_utility\" Loaded\n\"work:: sim_check\" Loaded\n\"work:: sequ_main\" Loaded\n\"work:: bipar\" Loaded\n\"work:: demand_super\" Loaded\n\"work:: func\" Loaded\n\"work:: diag_data\" Loaded\n\"work:: sequ_init\" Loaded\n\"work:: search\" Loaded\n\"work:: sis_init\" Loaded\n\"work:: sim_super\" Loaded\n\"work:: inf_env\" Loaded\n\"work:: sequ_pesvr\" Loaded\n\"work:: diag_super\" Loaded\n\"work:: sequ_super\" Loaded\n\"work:: main\" Updated\n\"work:: sequ_action\" Loaded\n\"work:: io\" Loaded\n\"work:: offline\" Loaded\nLoad Succeeded\n\n[12] Load File : PSI::>sys>user>pmpsi>rf.exe.1\n\"work:: dp_block_iterative_1\" Loaded\n\"work:: remove_allgap_c\" Loaded\n\"work:: dp_iterative_1\" Loaded\n\"work:: dp_new\" Loaded\n\"work:: paircost\" Loaded\n\"work:: iterative_1\" Loaded\n\"work:: remove_allgap\" Loaded\n\"work:: output_barton\" Loaded\n\"work:: dp_2d_paircost\" Loaded\n\"work:: alignment_barton_cluster\" Loaded\n\"work:: check_outgap\" Loaded\n\"work:: cp\" Loaded\n\"work:: vector_paircost_4\" Loaded\n\"work:: dayhoff\" Loaded\n\"work:: energy_table\" Loaded\n\"work:: new_align\" Loaded\n\"work:: cluster_block\" Loaded\n\"work:: vector_paircost_first\" Loaded\n\"work:: energy\" Loaded\n\"work:: outgap\" Loaded\n\"work:: rechange_outgap\" Loaded\n\"work:: vector_gapcost_4_A\" Loaded\n\"work:: dp_tree_based\" Loaded\n\"work:: output_barton_c\" Loaded\n\"work:: dp_tree_iterative_1\" Loaded\n\"work:: vector_gapcost_4_B\" Loaded\n\"work:: dp_block_based\" Loaded\n\"work:: dp_aligned_list3_new\" Loaded\nLoad Succeeded\n\n[13] Load File : PSI::>sys>user>pmpsi>pia_s2.exe.1\n\"work:: remove_allgap\" Updated\n\"work:: check_outgap\" Updated\n\"work:: cp\" Updated\n\"work:: file_out\" Loaded\n\"work:: vector_paircost_4\" Updated\n\"work:: dayhoff\" Updated\n\"work:: pia_s2\" Loaded\n\"work:: vector_paircost_first\" Updated\n\"work:: energy\" Updated\n\"work:: outgap\" Updated\n\"work:: rechange_outgap\" Updated\n\"work:: vector_gapcost_4_A\" Updated\n\"work:: vector_gapcost_4_B\" Updated\n\"work:: dp_aligned_list3_new\" Updated\nLoad Succeeded\n\n[14] Load File : PSI::>sys>user>pmpsi>tpia_s2.exe.1\n\"work:: paircost\" Updated\n\"work:: munson_new_2_new_barton\" Loaded\n\"work:: rechange_outgap_v\" Loaded\n\"work:: remove_allgap\" Updated\n\"work:: output_barton\" Updated\n\"work:: dp_2d_paircost\" Updated\n\"work:: alignment_barton_cluster\" Updated\n\"work:: check_outgap\" Updated\n\"work:: cp\" Updated\n\"work:: file_out\" Updated\n\"work:: vector_paircost_4\" Updated\n\"work:: dayhoff\" Updated\n\"work:: vector_paircost_first\" Updated\n\"work:: tpia_s2\" Loaded\n\"work:: energy\" Updated\n\"work:: check_outgap_v\" Loaded\n\"work:: outgap\" Updated\n\"work:: rechange_outgap\" Updated\n\"work:: vector_gapcost_4_A\" Updated\n\"work:: vector_gapcost_4_B\" Updated\n\"work:: dp_aligned_list3_new\" Updated\nLoad Succeeded\n\n[15] Load File : PSI::>sys>user>pmpsi>mdllibrary.exe.1\n\"work:: example1\" Loaded\n\"work:: example3\" Loaded\n\"work:: example2\" Loaded\nLoad Succeeded\n\n[16] Load File : PSI::>sys>user>pmpsi>mendel.exe.1\n\"work:: decomp\" Loaded\n\"work:: fmnet\" Loaded\n\"work:: common\" Loaded\n\"work:: interface\" Loaded\n\"work:: scc\" Loaded\n\"work:: mendel\" Loaded\n\"work:: prim\" Loaded\n\"work:: graph\" Loaded\n\"work:: mlib\" Loaded\n\"work:: net\" Loaded\n\"work:: execute_main\" Loaded\n\"work:: tableau_main\" Loaded\n\"work:: esp_utility\" Loaded\n\"work:: fmparts\" Loaded\n\"work:: mendel_package\" Loaded\n\"work:: mdl_compiler\" Loaded\nLoad Succeeded\n\n[17] ",
+"written": {}
+},
+"pmonitor": {
+"errors": [],
+"instructions": 386716,
+"loads": [],
+"name": "pmonitor",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"pm_kl1.com\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"pmonitor+alt": {
+"errors": [
+"!ERROR! unable to open file : chart_ctl"
+],
+"instructions": 60000001,
+"loads": [],
+"name": "pmonitor+alt",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile([ \"pm\", \"trans\", \"sim\", \"count\", \"node_red\", \"pred_red\", \"node_sus\", \"pred_sus\", \"node_ref\", \"pred_ref\", \"n_n_ref\", \"g_g_ref\", \"method\", \"method_ctl\", \"select\", \"selectpm\", \"select_ctl\", \"scroll\", \"scrollpm\", \"scroll_ctl\", \"color\", \"chart\", \"chart_ctl\", \"string\", \"util\" ])."
+],
+"window": "!ERROR! unable to open file : chart_ctl\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\n!ERROR! unable to open file : chart_ctl\nCompile File : PSI::>sys>user>pmpsi>util.kl1.1\n[util.kl1@0] Compile Module : util\n=>  :- module util .\nCompile Succeeded : util\n\nCompile File : PSI::>sys>user>pmpsi>string.kl1.1\n[string.kl1@0] Compile Module : pm_string\n=>  :- module pm_string .\nCompile Succeeded : pm_string\n\nCompile File : PSI::>sys>user>pmpsi>chart.kl1.1\n[chart.kl1@0] Compile Module : pm_chart\n=>  :- module pm_chart .\nCompile Succeeded : pm_chart\n\nCompile File : PSI::>sys>user>pmpsi>color.kl1.1\n[color.kl1@0] Compile Module : color\n=>  :- module color .\nCompile Succeeded : color\n\nCompile File : PSI::>sys>user>pmpsi>scroll_ctl.kl1.1\n[scroll_ctl.kl1@0] Compile Module : pm_scroll_ctrl\n=>  :- module pm_scroll_ctrl .\nCompile Succeeded : pm_scroll_ctrl\n\nCompile File : PSI::>sys>user>pmpsi>scrollpm.kl1.1\n[scrollpm.kl1@0] Compile Module : pm_scroll\n=>  :- module pm_scroll .\nCompile Succeeded : pm_scroll\n\nCompile File : PSI::>sys>user>pmpsi>scroll.kl1.1\n[scroll.kl1@0] Compile Module : scroll\n=>  :- module scroll .\nCompile Succeeded : scroll\n\nCompile File : PSI::>sys>user>pmpsi>select_ctl.kl1.1\n[select_ctl.kl1@0] Compile Module : pm_select_ctrl\n=>  :- module pm_select_ctrl .\nCompile Succeeded : pm_select_ctrl\n\nCompile File : PSI::>sys>user>pmpsi>selectpm.kl1.1\n[selectpm.kl1@0] Compile Module : pm_select\n=>  :- module pm_select .\nCompile Succeeded : pm_select\n\nCompile File : PSI::>sys>user>pmpsi>select.kl1.1\n",
+"written": {}
+},
+"ppss": {
+"errors": [],
+"instructions": 13958025,
+"loads": [],
+"name": "ppss",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"compile([\"a_builtin\",\"andTran2\",\"andor_io\",\"apool\",\"atpimos\",\"ioutil\",\"mode_analyzer\",\"orTran\",\"ppri\",\"rand1024\",\"spcc\",\"tandor\",\"top\",\"utandor\"])",
+"listener",
+"andor_top:go([\"compute.ar2\",\"cycle.ar2\"])."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"rodin": {
+"errors": [],
+"instructions": 390703,
+"loads": [],
+"name": "rodin",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(\"prog>compile>rodin\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"rodin+alt": {
+"errors": [],
+"instructions": 11350250,
+"loads": [],
+"name": "rodin+alt",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"listener",
+"ProgFile = [ \"prog>lib>utility\", \"prog>lib>math\", \"prog>lib>input\", \"prog>lib>output\", \"prog>lib>std_output\"], compile(ProgFile).",
+"ProgFile = [ \"prog>input>alu_spec01\", \"prog>input>alu_spec11\", \"prog>input>alu_spec12\", \"prog>input>alu_spec13\", \"prog>input>alu_spec14\", \"prog>input>alu_spec15\", \"prog>input>alu_spec99\", \"prog>input>expression\", \"prog>input>precedence\", \"prog>input>successor\", \"prog>input>exclusion\", \"prog>input>constraint\", \"prog>input>analysis\"], compile(ProgFile).",
+"ProgFile = [ \"prog>move>from_conf\", \"prog>move>from_exp\", \"prog>move>find_util\", \"prog>move>move_util\" ], compile(ProgFile).",
+"ProgFile = [ \"prog>cost>alu_pool\", \"prog>cost>conf\", \"prog>cost>make_alu\", \"prog>cost>make_life\", \"prog>cost>make_link\", \"prog>cost>make_bus\", \"prog>cost>make_reg\", \"prog>cost>make_time\", \"prog>cost>make_ov_sc\", \"prog>cost>init_cost\", \"prog>cost>alu_cost\", \"prog>cost>bus_cost\", \"prog>cost>link_cost\", \"prog>cost>olap_cost\", \"prog>cost>reg_cost\", \"prog>cost>time_cost\", \"prog>cost>diff_cost\"], compile(ProgFile).",
+"ProgFile = [ \"prog>sa>close_str\", \"prog>sa>copy_table\", \"prog>sa>resource\", \"prog>sa>interface\"], compile(ProgFile).",
+"ProgFile = [ \"prog>rule>move\", \"prog>rule>no_overlap\", \"prog>rule>rand_alu_t\", \"prog>rule>same_f_and\", \"prog>rule>alu_arr\", \"prog>rule>time_rule1\", \"prog>rule>time_rule2\", \"prog>rule>time_rule3\", \"prog>rule>rule_alu_l\", \"prog>rule>rule_alu_1\", \"prog>rule>rule_alu_2\", \"prog>rule>rule_alu_3\", \"prog>rule>rule_alu_4\", \"prog>rule>rule_alu_5\", \"prog>rule>rule_alu_6\", \"prog>rule>rule_alu_7\", \"prog>rule>rule_alu_8\", \"prog>rule>rule_alu_m\" ], compile(ProgFile).",
+"ProgFile = [ \"prog>ra>count\", \"prog>ra>select\", \"prog>ra>loop\", \"prog>ra>file_ra\", \"prog>ra>change\", \"prog>ra>mes_filter\"], compile(ProgFile).",
+"ProgFile = [ \"prog>ga>rule_ga_1\", \"prog>ga>rule_ga_2\", \"prog>ga>rule_ga_3\", \"prog>ga>rule_ga_5\", \"prog>ga>rule_ga_6\", \"prog>ga>rule_ga_7\", \"prog>ga>rule_ga_8\", \"prog>ga>rule_ga_9\", \"prog>ga>rule_ga_4\", \"prog>ga>rule_ga_ma\", \"prog>ga>rule_ga_as\" ], compile(ProgFile).",
+"ProgFile = [ \"prog>rank_test>rank_sum\", \"prog>rank_test>rank_as\"], compile(ProgFile).",
+"ProgFile = [ \"prog>gcls>cls_list\", \"prog>gcls>cls_write\", \"prog>gcls>out_assist\", \"prog>gcls>out_mes\", \"prog>gcls>slave\", \"prog>gcls>mss_to_sl\", \"prog>gcls>master\", \"prog>gcls>rwalk\", \"prog>gcls>alone_mas\", \"prog>gcls>mss_to_mas\", \"prog>gcls>host\", \"prog>gcls>cls_init\"], compile(ProgFile).",
+"ProgFile = [ \"prog>register>reg_pimos\", \"prog>register>reg_alloc3\", \"prog>register>reg_alloc2\", \"prog>register>reg_alloc1\"], compile(ProgFile).",
+"ProgFile = [ \"prog>verilog>vhdl_pimos\", \"prog>verilog>vhdl_parm\", \"prog>verilog>verilog51\", \"prog>verilog>verilog11\", \"prog>verilog>verilog12\", \"prog>verilog>verilog13\", \"prog>verilog>verilog14\", \"prog>verilog>verilog02\", \"prog>verilog>verilog03\", \"prog>verilog>verilog04\", \"prog>verilog>verilog05\", \"prog>verilog>verilog07\", \"prog>verilog>verilog08\", \"prog>verilog>verilog06\", \"prog>verilog>verilog01\"], compile(ProgFile).",
+"compile(\"prog>main>rodin_s\").",
+"compile(\"prog>main>rodin\")."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>prog>lib>std_output.kl1.1\n[std_output.kl1@1] Compile Module : std_output\n=>  :- module std_output .\nCompile Succeeded : std_output\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>output.kl1.1\n[output.kl1@1] Compile Module : output\n=>  :- module output .\n",
+"written": {}
+},
+"seqanal": {
+"errors": [],
+"instructions": 409974,
+"loads": [],
+"name": "seqanal",
+"stop": "refused: set_constant at 79446157",
+"typed": [
+"setenv task:package=work",
+"listener",
+"take(cmpfiles)."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"seqanal+alt": {
+"errors": [],
+"instructions": 2876795,
+"loads": [],
+"name": "seqanal+alt",
+"stop": "refused: b_integer_to_floating_point at 78127786",
+"typed": [
+"setenv task:package=work",
+"listener",
+"compile([\"dl\",\"eval\",\"exchan\",\"ga\",\"library\",\"log\",\"main\", \"operate\",\"peserv\",\"print\",\"protoc\",\"random\",\"report\", \"select\",\"sga\",\"statist\",\"table\"])."
+],
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"written": {}
+},
+"sme": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "sme",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"arg_mat\",\"arg_match1\",\"chiku_con\",\"co3_1121\",\"con2\",\"consis10_29\",\"consist\",\"e_check2\",\"evid3_18\",\"file\",\"gmap\",\"infer\",\"loc_evid\",\"n_body2\",\"n_change\",\"n_t_gmap5\",\"ncm\",\"new_infer\",\"number\",\"root_check\",\"s_top\",\"same_pred\",\"util1\",\"y_util2\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>y_util2.kl1.1\n[y_util2.kl1@0] Compile Module : util2\n=>  :- module util2 .\n",
+"written": {}
+},
+"strtgysh": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "strtgysh",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"iexam\",\"makenet\",\"os\",\"os1\",\"os2\",\"os3\",\"os4\",\"os4m\",\"ostest\",\"spec56\",\"timer2\",\"vcall\",\"vguard\",\"vintf\",\"vload\",\"vmeta\",\"vnoop\",\"vshoen\",\"vtrans\",\"vtrial\",\"vunify\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ",
+"written": {}
+},
+"voronoi": {
+"errors": [],
+"instructions": 60000001,
+"loads": [],
+"name": "voronoi",
+"stop": "BUDGET: budget of 60000000 instructions spent",
+"typed": [
+"setenv task:package=work",
+"compile([\"backet\",\"balancer\",\"db\",\"env\",\"file_io\",\"stot\",\"vline\",\"voronoi_fig\",\"vpoint\",\"vpoly\"])"
+],
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>vpoint.kl1.1\n[vpoint.kl1@0] Compile Module : vpoint\n=>  :- module vpoint .\nCompile Succeeded : vpoint\n\nCompile File : PSI::>sys>user>pmpsi>vpoly.kl1.1\n[vpoly.kl1@0] Compile Module : vpoly\n=>  :- module vpoly .\nCompile Succeeded : vpoly\n\nCompile File : PSI::>sys>user>pmpsi>voronoi_fig.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[voronoi_fig.kl1@0] Compile Module : voronoi_fig\n=>  :- module voronoi_fig .\nCompile Succeeded : voronoi_fig\n\nCompile File : PSI::>sys>user>pmpsi>vline.kl1.1\n[vline.kl1@0] Compile Module : vline\n=>  :- module vline .\n",
+"written": {}
+}
+}
