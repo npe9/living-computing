@@ -37,8 +37,9 @@ Ours, each for want of PIM/m's:
     Afterwards lo is where the to-space started and hp its end.
   - Roots, in this order: the ready queue, the merger's list and the
     goals made ready since the last pickup (each list in its order),
-    the armed alarm's variable, each SCSI command that waits for the
-    device (its buffer, its CDB, its three output variables), then the
+    the armed alarm's variable, set_heap_alert's armed Alarm (none
+    before 2026-11-27, and none on any lockstep run), each SCSI
+    command that waits for the device (its buffer, its CDB, its three output variables), then the
     current shoen (the last goal's: a unification the alarm makes
     before the next goal is taken makes its goal there).  Nothing else
     of the machine holds a heap address at a goal switch: the
@@ -171,7 +172,8 @@ class Collector:
         # which paths ran, for the tests (not machine state)
         self.counts = dict.fromkeys(('goal', 'susp', 'shoen', 'parked', 'module', 'code', 'string',
                                      'long_vector', 'mixed', 'merge_in', 'to_processor',
-                                     'mq', 'mwh', 'alarm', 'scsi', 'cur_shoen'), 0)
+                                     'mq', 'mwh', 'alarm', 'heap_alert', 'scsi',
+                                     'cur_shoen'), 0)
         stubs = m.stubs
         self.merge_in = m.load + stubs['$merge_in']['addr']
         self.to_processor = {m.load + s['addr']: int(n[len('$to_processor'):])
@@ -436,6 +438,11 @@ class Collector:
         self.counts['mq'], self.counts['mwh'] = int(mq != 0), int(mwh != 0)
         alarm = self.word(m.alarm_var) if m.alarm_var is not None else None
         self.counts['alarm'] = int(alarm is not None)
+        # set_heap_alert's Alarm (pimm.py i_set_heap_alert): a root, as
+        # VPIM's HeapAlertVariable is (structures/str_gc_pre_post.psl.c
+        # 2.11, s_CopyGCRootHeapAlertVar); copied after the alarm's
+        halert = self.word(m.heap_alert_var) if m.heap_alert_var is not None else None
+        self.counts['heap_alert'] = int(halert is not None)
         waiting = []
         for c in m.scsi_waiting:
             waiting.append((self.word(c['word']), self.word(c['cdbw']),
@@ -457,6 +464,8 @@ class Collector:
         m.rq, m.mq, m.mwh, m.mwt = rq, mq, mwh, mwt
         if alarm is not None:
             m.alarm_var = alarm
+        if halert is not None:
+            m.heap_alert_var = halert
         for c, (w, cdbw, outs) in zip(m.scsi_waiting, waiting):
             c['word'], c['cdbw'], c['outs'] = w, cdbw, outs
         m.shoen = cur

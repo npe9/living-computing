@@ -45,7 +45,11 @@ line numbers below are of that tool's output) and the compiled ESP with
 - **`@node(N)` is one instruction**, `enqueue_goal_to_processor`
   (23:65); `@processor` is commented out of the compiler. On PIM/m a
   node is a PE and the processor number inside it is always 0 (manual,
-  PRINTED).
+  PRINTED). The one-PE reference `pimm.py` makes the goal of any
+  integer node here (since 2026-11-27, the IFS sweep; as PDSS
+  `compiler/outp.kl1` 360-363 and KLIC on one node, `runtime/sched.c`
+  277-289): a declared difference from PIM/m's `range_overflow`,
+  which `pimm_pe.py` keeps (`ref_node_alert.py`).
 - **Printed oracles exist**: the primer's `sample9` with its printed
   placement order, the manual's exception rules for a bad node number,
   and PIMOS's own `gc` and `seqgc` commands, whose collections over

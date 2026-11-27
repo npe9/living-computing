@@ -64,7 +64,9 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
   to_processor: one cell long            processor, line 65
 NOT caught:
   to_processor: any integer taken for the processor (only 0 is run;
-  the other numbers are a refusal)
+  the other numbers are a refusal on the core; since 2026-11-27 the
+  reference makes their goal here too, ref_node_alert.py, which no
+  lockstep reaches)
 
 Not run:
   b_string at a real site here: each of the image's five is followed
