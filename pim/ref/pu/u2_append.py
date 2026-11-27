@@ -307,10 +307,8 @@ write cells) where it stopped at 3498.  New injections, observed:
                   to an atomic value: FAIL at 14 (17 words: heap 0
                   written with nil, the cell e000800b given the free-list
                   link 11:f2000001 where pimm.py binds it to nil)
-  proceed_seeded  a probe: R1b and R14 (nil) given: 216c-216d run (216d
-                  pushes the record; since the eighth session R15 :=
-                  R15 - 1, and R15 is STALE: EXECUTE_MDR1_STALE), STOP
-                  at 216e (JMPF a tests a STALE COND), 15 of 16, 51 words
+  proceed_seeded  (removed in the eighth session: the proceed side cases
+                  below replace the probe)
   cts_col_k       column k, not 7 - k: STOP at 0c15 (column 7 gives the
                   REFo 12, which overlaps base 0e38), 14 of 16
   cts_mdr_swapped EM1 even = MDR2, odd = MDR1: 0c0c tests nil (MDR1):
@@ -342,6 +340,49 @@ results (STOP at 4cc0, 10 of 16; STOP at 0802, 14 of 16).
   execute_mdr1_carried  MDR1 as left: 15 of 16
   ext_ir_off      SC2F 1 the old c16s reading: 15 of 16 (31ec's value is
                   loaded into MDR2 and not used)
+The proceed side cases (proceed_cases; eighth session; README "Next,
+for U2"): proceed's routine on a ready queue built by pimm.py's own
+record() and laid out as the firmware's records (seed_proceed,
+fw_record: OURS mapping, layout INFERRED), compared with pimm.py's
+pick: R04 (the next goal's code), A0..An-1, R10, R14 (pimm.py's rq
+after the pick), and no cell written but the freed record (declared:
+R1b := it, its cell 0 := {VECT0x, old R1b}).  Cases: the queue empty
+with crr 8 and 1 (the empty arm 21b2 entered, nothing dispatched,
+pick 0; pinned stop EMPTY_STOP 21b3, an ALF 3 shift), one goal of arity
+2, two goals whose newest has arity 0, 1, 2, 3, 4, 5, 6, 11.  All 11 ok.
+Injections, observed (append itself unchanged at 15 of 16 in each):
+  rec_code_13     cells 12 / 13 swapped: the 9 queued cases FAIL on R04
+  args_from_2     arguments from cell 2: the 8 cases of arity > 0 FAIL
+                  on the A registers
+  empty_int0      the empty queue as {INT, 0}: the empty cases STOP
+                  (2173, 217c), the one-goal case FAILs on R14
+  parent_other    cell 14 not R13: the 9 queued cases STOP at 2250
+  free_undeclared the freed record's write not declared: all 11 FAIL
+  rfar_off        DSTF c a register again: the 8 cases of arity > 0 FAIL
+  lc_new          lc conditions after the decrement: arity 4 STOPs at
+                  222b, arities 5, 6, 11 FAIL (the last A not loaded)
+  alf_poison      the alf flags POISON again: all 11 STOP at 216f
+  jmpf9_taken_raise  JMPF 9 taken raises: the crr-1 empty case STOPs
+                  at 217b
+  jmpf9_cndf_off  no CNDF in a JMPF 9 word: the 9 queued cases STOP at
+                  2250 (2215 tests 2213's interrupt flag)
+  jmpf_f_off      JMPF f undecided: the 9 queued cases STOP at 2215
+  alu_old         all 11 STOP at 216d (AS1F 2 AS2F 1 read as YR)
+  em_imm_off      all 11 STOP at 216d (R0d never set)
+  const_em3       the 9 queued cases STOP at 217c (216d's R15 - 12)
+  as1f3_xr_off, ext_ir_off, execute_mdr1_carried: no change (NOT
+                  discriminated)
+Every old injection was re-run (scratch maindiff.py against the run
+before the proceed rules).  Their main-run results are unchanged except
+three, which now run further: em1_29_off still STOPs at 31a1, now on
+its JMPF 2 (MCF 0a with sub-key 2 is rf_lock, recorded); interrupt_
+pending STOPs at 1c2f (1c2c's lc_zero is now formed), 10 of 16, 31
+words; s_imm_row's get_atom case STOPs at 0cd9 (3811's taken JMPF 9 now
+calls its EM).  These also FAIL proceed side cases (count of 11):
+a_on_false 9, as1f2_off 11, as1f3_open_raise 11, cjump_false 10,
+cjump_same 9, cnd2_nonzero 9, cnd3_off 11, cnd8_off 11, e_mdr2_col 1,
+e_on_true 1, interrupt_pending 9, jmpf9_off 10, mcf08_raise 11,
+mcf_unknown_raise 11, slit_pending 9.
 """
 import os
 import sys
@@ -646,18 +687,232 @@ def seed_execute(p):
     p.flags.update(EXECUTE_FLAGS)
     for f, n in EXECUTE_STALE:
         {'R': p.r, 'W': p.w}[f][n] = PU.STALE
-    if PROCEED_SEED:
-        # the injection 'proceed_seeded' (a probe, OURS): the goal-record
-        # list R1b (rassy fgp) with a free record, and the ready queue
-        # R14 empty, in the form 216f / 217a test for (nil: INFERRED)
-        p.r[0x1b] = (0x11, PROCEED_R1B)
-        p.r[0x14] = (pimm.ATOM, 0)
 
 
-# proceed's scheduler state is not given (README "Next, for U2"); the
-# probe 'proceed_seeded' gives R1b and R14 to see the next stop.
-PROCEED_SEED = False
-PROCEED_R1B = 0xf3000000
+# ---------------------------------------------------------------- proceed
+# U2, eighth session: proceed (entry 216c) is the goal scheduler.  What
+# the held words do with the state (README "U2", the proceed rows; each
+# rule in pu.py):
+#   216c-216d  push the finished goal's record (MAR1 = R10, NANO_ODPF1)
+#              on R1b's list (rassy fgp): its cell 0 := {VECT0x, old R1b},
+#              R1b := R10; R15 (rassy crr) := R15 - 1 (with_constant,
+#              EM2 1), set_alf; YR := EM3 = 12 (S2_IMM).
+#   216e-216f  R10 := R14 (rassy gsp, the goal stack); crr - 1 negative
+#              (216e) or zero (216f, alf_zero) -> 217a; COND := R14 is nil.
+#   2170       MAR1 := R14 + 12; R14 nil -> call 21b2 (the empty arm).
+#   2171-2173  R16 (rassy ccc) - 1; R04 := cell 12 (the code address);
+#   2213-2216  R12 (cpr) := cell 13; cell 14 against R13 (cfpp: another
+#              foster parent calls 2250); R14 := cell 15 (the link);
+#   2218-2224  lc := cell 0 - 3; A0, A1, ... := cells 1, 2, ... through
+#              '++ rfar' (RFAR := 0 at 2215) under the lc loop; end.
+# The stand-in below gives the state these words read.  OURS, each item:
+#   R1b        one free goal record (FREE_GREC), the list's head;
+#   R15, R16   crr and ccc not exhausted (PROCEED_CRR, PROCEED_CCC: > 1,
+#              so 216e-216f and 2173 fall to the dequeue; their meaning,
+#              a reduction / switch budget, is INFERENCE from the
+#              decrements and is not compared);
+#   R12, R13   the current priority and foster parent; a queued goal
+#              carries the same R13 in cell 14 (one shoen);
+#   W1f        0 (start's 20a8 writes W1f := 0, held, read not run);
+#   R14        pimm.py's ready queue Machine.rq mapped onto records in
+#              the firmware's layout (fw_record), or nil when it is empty
+#              (216f / 217a test R14's tag against ATOMo; enqueue_goal's
+#              4c06 puts the old R14 in cell 15, so the empty list's end
+#              is what R14 held: nil, INFERRED).
+# The record layout (INFERRED; pseudo_pimm_microcode.md section 18,
+# corrected by this session's datapath): cell 0 {GOAL, arity} (enqueue_goal
+# 4c00 YR := the IR's x field (ext_ir 6), 4c01 MDR2 := it stamped GOAL by
+# TGIF 3's EM2 3c, 4c03 writes it at R10); cells 1.. the arguments (set_*
+# write R10 + x, x from 1: pimm.py's i_enqueue_goal takes argv[1:x+1]);
+# 12 {COD, code}, 13 the priority (R12), 14 the foster parent (R13), 15
+# the link (enqueue_goal 4c03 MAR2 := R10 + 12 (with_constant EM2 12),
+# then four writes of {COD, W10}, R12, R13, R14 in that order; suspend's
+# 1c0d-1c10 the same; proceed's reads above take them back the same
+# way).  Cells n+1 .. 11 hold what the recycled record held: FILLER.
+PROCEED_CRR = 8
+PROCEED_CCC = 8
+PROCEED_PRIO = (pimm.INT, 0x40000000)
+PROCEED_PARENT = (0x39, 0xf5000000)     # FPREC (1c12 stamps it on R13)
+FREE_GREC = 0xf4000000
+FW_RECS = 0xf6000000
+HOOKO, GOAL, VECT0X = 0x0a, 0x3c, 0x11
+FILLER = (pimm.INT, 0xdead)
+NIL = (pimm.ATOM, 0)
+REC_CODE, REC_PRIO, REC_PARENT, REC_LINK = 12, 13, 14, 15   # injection 'rec_code_13' swaps
+ARG_BASE = 1            # cell of the first argument (injection 'args_from_2')
+EMPTY_LINK = NIL        # the empty queue's R14 (injection 'empty_int0')
+REC_PARENT_VALUE = None  # cell 14 as R13 (injection 'parent_other')
+# proceed's empty arm (21b2, entered from 2170's call or 217b's JMPF 9)
+# stops at its second word: 21b3 is an ALF 3 shift_left of W1f (by EM1
+# 15, then 21b4 returns on the sign: bit 16 of W1f), and the shift
+# operations are not modelled.  Past it the arm returns, or 21b5 starts
+# a search of the goal stacks by priority that reads the Goal Stack
+# Entry Table parameters at fixed cells b7 / b6 (PIMM.PARAM's gsesh and
+# gseb, INFERENCE), which neither model holds.  So the empty case
+# compares only: the arm was entered, no goal was dispatched (R04 and
+# the A registers as they were), and no cell but the freed record was
+# written; pimm.py's pick returns 0.  The stop is pinned here.
+EMPTY_STOP = 0x21b3
+EMPTY_ARM = 0x21b2
+
+
+def fw_record(p, k, code, args, link):
+    """Write pimm.py's goal (code a cell index, args) as firmware record k
+    (the layout above, OURS mapping); returns its address."""
+    a = FW_RECS + 16 * k
+    for i in range(1, 12):
+        p.mem[a + i] = FILLER
+    p.mem[a] = (GOAL, len(args))
+    for i, w in enumerate(args):
+        p.mem[a + ARG_BASE + i] = w
+    p.mem[a + REC_CODE] = (COD, code)
+    p.mem[a + REC_PRIO] = PROCEED_PRIO
+    p.mem[a + REC_PARENT] = REC_PARENT_VALUE or PROCEED_PARENT
+    p.mem[a + REC_LINK] = link
+    return a
+
+
+def seed_proceed(p, ready, crr=None):
+    """The scheduler stand-in (OURS, above).  ready: pimm.py's ready queue
+    as [(code address, args)], newest first.  Returns the firmware records."""
+    p.r[0x1b] = (VECT0X, FREE_GREC)
+    p.r[0x15] = (pimm.INT, PROCEED_CRR if crr is None else crr)
+    p.r[0x16] = (pimm.INT, PROCEED_CCC)
+    p.r[0x12] = PROCEED_PRIO
+    p.r[0x13] = PROCEED_PARENT
+    p.w[0x1f] = (0, 0)
+    p.flags.update(EXECUTE_FLAGS)
+    recs, link = [], EMPTY_LINK
+    for k, (code, args) in reversed(list(enumerate(ready))):
+        a = fw_record(p, k, code, args, link)
+        recs.insert(0, a)
+        link = (HOOKO, a)
+    p.r[0x14] = link
+    return recs
+
+
+def compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs):
+    """proceed's result against pimm.py's pick.  want: None (pick finds no
+    goal) or (code address, args, next record index or None)."""
+    bad = []
+    # the finished goal's record is pushed on R1b's list: declared, as
+    # 'reuse' (the cell and value exact; pimm.py frees nothing traced)
+    if DECLARE_FREE:
+        if p.r.get(0x1b) != (0, rec0[1]) and p.r.get(0x1b) != rec0:
+            bad.append('R1b %s, the finished record %s' % (check_pu.fmt(p.r.get(0x1b)),
+                                                            check_pu.fmt(rec0)))
+        if p.mem.get(rec0[1]) != (VECT0X, r1b0[1]):
+            bad.append('the finished record\'s cell 0 %s, want {VECT0x, old R1b}'
+                       % check_pu.fmt(p.mem.get(rec0[1])))
+    for a in sorted(set(p.mem) | set(mem0)):
+        if p.mem.get(a) != mem0.get(a) and not (DECLARE_FREE and a == rec0[1]):
+            bad.append('heap %x: firmware wrote %s' % (a, check_pu.fmt(p.mem.get(a))))
+    if want is None:
+        if p.r.get(R_PC) != an0['R04']:
+            bad.append('pimm.py picks no goal; the firmware dispatched R04 %s'
+                       % check_pu.fmt(p.r.get(R_PC)))
+        if EMPTY_ARM not in [u for u, _ in p.trace[an0['n0']:]]:
+            bad.append('pimm.py picks no goal; the firmware did not take the empty arm (%04x)'
+                       % EMPTY_ARM)
+        if p.an != an0['an']:
+            bad.append('pimm.py picks no goal; the firmware wrote argument registers')
+        return bad
+    code, args, nxt = want
+    if p.r.get(R_PC) != (COD, code):
+        bad.append('R04 %s, pimm.py\'s next goal\'s code {COD, %x}'
+                   % (check_pu.fmt(p.r.get(R_PC)), code))
+    if p.r.get(0x10) != (HOOKO, recs[0]):
+        bad.append('R10 %s, the dispatched record {HOOKo, %x}'
+                   % (check_pu.fmt(p.r.get(0x10)), recs[0]))
+    want14 = NIL if nxt is None else (HOOKO, recs[nxt])
+    if p.r.get(0x14) != want14:
+        bad.append('R14 %s, pimm.py\'s ready queue after pick %s'
+                   % (check_pu.fmt(p.r.get(0x14)), check_pu.fmt(want14)))
+    for i, w in enumerate(args):
+        if p.an.get(i) != w:
+            bad.append('A%d %s, pimm.py %s' % (i, check_pu.fmt(p.an.get(i)), check_pu.fmt(w)))
+    # beyond the arity: the loop's minimum of two loads (2219, 2223) may
+    # write A1 for an arity 0 or 1 goal, with the record's own cell 2
+    for i in sorted(set(p.an) | set(an0['an'])):
+        if i >= len(args) and p.an.get(i) != an0['an'].get(i):
+            if not (i < 2 and p.an.get(i) == p.mem.get(recs[0] + 1 + i)):
+                bad.append('A%d written %s beyond the arity %d'
+                           % (i, check_pu.fmt(p.an.get(i)), len(args)))
+    return bad
+
+
+DECLARE_FREE = True
+# The side case's goals: (arity, args).  Arities on both sides of 3 (the
+# lc loop's set-up, 2218 lc := arity - 3) up to 11 (the slots 2219-2223
+# load; pimm.py: "A goal has 11 argument slots").
+DISPATCH_ARITIES = (0, 1, 2, 3, 4, 5, 6, 11)
+
+
+def proceed_case(m, step, arities, crr=None):
+    """proceed on the held microcode with pimm.py's ready queue made of
+    goals of these arities (newest first); against pimm.py's pick on the
+    same queue.  Returns (fails, stop)."""
+    q = pimm.Machine()
+    want = None
+    for k in reversed(range(len(arities))):
+        n = arities[k]
+        args = [(pimm.INT, 100 * k + i) if i % 2 else (pimm.ATOM, 0x200 + 16 * k + i)
+                for i in range(n)]
+        q.record(pimm.READY, 1000 + 10 * k, args)
+    g = q.pick()
+    rq = []
+    gs, h = [], g
+    if g:
+        # the queue as pimm.py held it before pick: g, then g's link on
+        h = g
+        while h:
+            gs.append(h)
+            h = q.mem[h + pimm.G_LINK][1]
+    for h in gs:
+        n = q.mem[h + pimm.G_ARGN][1]
+        rq.append((q.mem[h + pimm.G_CODE][1],
+                   [q.mem[h + pimm.G_ARGS + i] for i in range(n)]))
+    if g:
+        # pimm.py's ready queue after pick: q.rq, a record of the walk
+        want = (rq[0][0], rq[0][1], gs.index(q.rq) if q.rq else None)
+    p = PU.PU()
+    check_pu.seed_lists(p, NFREE)
+    p.r[SU.R_REC] = (0, check_pu.REC)
+    pc, cellv = step[0], step[1]
+    p.r[R_PC] = (COD, m.load + pc + 1)
+    for i in range(16):
+        p.an[i] = (pimm.INT, 0xa000 + i)      # the finished goal's registers (OURS)
+    recs = seed_proceed(p, rq, crr)
+    p.ir, p.pc = cellv, m.load + pc
+    rec0, r1b0 = p.r[SU.R_REC], p.r[0x1b]
+    an0 = {'an': dict(p.an), 'R04': p.r.get(R_PC), 'n0': len(p.trace)}
+    mem0 = dict(p.mem)
+    stop = None
+    try:
+        name = SU.decode(p)
+        p.run(SU.setup(p, name))
+    except PU.Unmodelled as e:
+        stop = str(e)
+    if want is None and stop and stop.startswith('%04x:' % EMPTY_STOP):
+        stop = None             # the empty arm's pinned stop (EMPTY_STOP)
+    if stop:
+        return [], stop
+    return compare_dispatch(p, rec0, r1b0, an0, mem0, want, recs), None
+
+
+def proceed_cases(m, step):
+    """The side cases: the queue empty (crr not exhausted, and exhausted:
+    217a / 217b's JMPF 9 to the same empty arm); one goal of arity 2 (the
+    queue left nil); then two goals, the newest of each arity of
+    DISPATCH_ARITIES (dispatched; R14 left at the other)."""
+    out = []
+    for crr in (PROCEED_CRR, 1):
+        bad, stop = proceed_case(m, step, (), crr)
+        out.append(('empty queue, crr %d' % crr, bad, stop))
+    for q in [(2,)] + [(n, 1) for n in DISPATCH_ARITIES]:
+        bad, stop = proceed_case(m, step, q)
+        out.append(('queue of arities %s' % (q,), bad, stop))
+    return out
 
 
 def compare_execute(p, m, after):
@@ -725,7 +980,13 @@ def run(verbose=False):
     lbad = read_list_element_case()
     print('%s  read_variable on a list element (the 34a1 set-up)%s'
           % ('FAIL' if lbad else 'ok  ', ': ' + '; '.join(lbad) if lbad else ''))
-    bad = boot_contract()
+    pbad = []
+    for what, fails, stop in proceed_cases(m, steps[-1]):
+        if stop:
+            fails = ['STOP ' + stop]
+        pbad += ['proceed, %s: %s' % (what, f) for f in fails]
+        print('%s  proceed side case, %s%s' % ('FAIL' if fails else 'ok  ', what,
+                                              ': ' + '; '.join(fails) if fails else ''))
     bad = boot_contract()
     print('%s  start 204b (heap top) on 5 parameters%s'
           % ('FAIL' if bad else 'ok  ', ': ' + '; '.join(bad) if bad else ''))
@@ -747,7 +1008,7 @@ def run(verbose=False):
     for a in s0['mem']:
         rn.f2p[a] = rn.p2f[a] = a          # cells present in both: the identity
     out = {'done': 0, 'matched': 0, 'words': 0, 'stop': None, 'fail': None,
-           'boot_words': nboot, 'boot_fail': bad + sbad + lbad + rbad + wbad}
+           'boot_words': nboot, 'boot_fail': bad + sbad + lbad + rbad + wbad + pbad}
     for k, (pc, cellv, lines, after) in enumerate(steps):
         p.ir, p.pc = cellv, m.load + pc
         if A_STAGE_R04 is not None:
@@ -1022,7 +1283,6 @@ INJECT = {
     'jmpf_b_jump': lambda: PU.RULES.update(jmpf_b_call=False),
     'cts_as1': lambda: setattr(PU, 'CTS_SOURCE', 'as1'),
     'case_low4': lambda: PU.RULES.update(case_wide='low4'),
-    'proceed_seeded': lambda: globals().update(PROCEED_SEED=True),
     'cts_col_k': lambda: setattr(PU, 'CTS_COLUMN', lambda k: k),
     'cts_mdr_swapped': lambda: PU.CTS_MDR.update({0: PU.MDR2, 1: PU.MDR1}),
     'case_4bit': lambda: PU.RULES.update(case_wide=False),
@@ -1037,6 +1297,18 @@ INJECT = {
     'execute_mdr1_carried': lambda: setattr(SU, 'EXECUTE_MDR1_STALE', False),
     'ext_ir_off': lambda: PU.RULES.update(sc2f1_ir='c16s'),
     's_mar1_kept': lambda: setattr(SU, 'S_MAR1_DIRECT_STALE', False),
+    # eighth session, proceed (the side cases, proceed_cases)
+    'rec_code_13': lambda: globals().update(REC_CODE=13, REC_PRIO=12),
+    'args_from_2': lambda: globals().update(ARG_BASE=2),
+    'empty_int0': lambda: globals().update(EMPTY_LINK=(pimm.INT, 0)),
+    'parent_other': lambda: globals().update(REC_PARENT_VALUE=(0x39, 0xf5000010)),
+    'free_undeclared': lambda: globals().update(DECLARE_FREE=False),
+    'rfar_off': lambda: PU.RULES.update(dstf_c_rfar=False),
+    'lc_new': lambda: PU.RULES.update(lc_ops='new'),
+    'alf_poison': lambda: setattr(PU, 'ALF_LATCHED', ()),
+    'jmpf9_taken_raise': lambda: PU.RULES.update(jmpf9_vlong=False),
+    'jmpf9_cndf_off': lambda: PU.RULES.update(jmpf9_cndf=False),
+    'jmpf_f_off': lambda: PU.RULES.update(jmpf_f_call_ifnot=False),
 }
 
 

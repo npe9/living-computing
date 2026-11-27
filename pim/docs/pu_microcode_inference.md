@@ -458,6 +458,16 @@ runs were done by a scratch script.
      TGT byte of the last CNDF 7 set-up word;
    * S2b: a JMPF 1 jump with EM bit 2 is a multiway;
    * fail loud on S9 (EM = 7fff) and S10 (JMPF 2): their meaning is open.
+   * *Added 2026-11-27 (U2, eighth session), from rassy's jmpf/9
+     (HELD-SOURCE):*
+     - JMPF 9 is a call to the absolute 16-bit EM, taken if cond (its
+       arm prints with `vlong`, as JMPF 5's does).
+     - JMPF f is a page-relative call taken if NOT cond.
+     - In a JMPF 1 word, CNDF is the key of `special_jump/8` (@30ec),
+       not a condition; in a JMPF 9 word it is a condition.
+
+     Executed in `proceed`'s dequeue (`2214`, `2215`, `217b`;
+     `ref/pu/README.md` "Next, for U2").
 3. **TGT.** Load sysinit 5280 / 52c0 / 5300 as three 64 x 8 tables;
    use 5300 for KL1. Column 2 is VERIFIED for set-up EM1 = 0x3a. Make
    every other EM1 → column choice a loud UNKNOWN until it is pinned.
