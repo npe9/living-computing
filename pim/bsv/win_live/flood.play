@@ -1,0 +1,49 @@
+# The owner's live run of 2026-11-26 (run_win_live.sh live, mode 3), as a
+# scripted user: tools/winview --play (its header has the format; screen
+# dots of the 640 x 480 view, wall ms).  Motion all the way, at a real
+# mouse's rates: every 8 ms (a 125 Hz mouse, or the OS's coalescing at a
+# 120 Hz display) or, where a glide ends in 1, every 1 ms (a 1,000 Hz
+# mouse with nothing coalescing; the owner's mouse's rate is not known:
+# OURS); past the window's edges (SDL reports positions outside the
+# window while a button is held); a right double click for the system
+# menu, Login PIMOS, the requester's answers typed with the mouse still
+# moving, and motion while kl0 runs and draws.  The events the kl0 host
+# must recover (moves aside) are run_win_live.sh `flood`'s FLOOD_EXPECT.
+glide 600 40 700 1
+glide 5 460 600
+glide -40 200 300
+glide 700 520 300
+glide 320 268 500
+click r 320 268 70
+wait 300
+click r 320 268 70
+# each pause (600 ms, > the bench's 500 ms quiet) lets kl0 run; the mouse
+# moves on while kl0 runs (the bench waits for it) and while its drawing
+# goes down the link, contending with the board's answers on the link up
+wait 600
+glide 200 400 1200 1
+glide 600 100 800
+glide 489 290 500
+wait 100
+click l 489 290 80
+wait 600
+glide 100 100 900 1
+glide 600 400 900
+glide 300 200 600
+drift 500 350 700
+type local
+key 28
+wait 600
+glide 100 450 1000 1
+glide 600 300 800
+drift 200 300 900
+type pimos
+key 28
+wait 600
+glide 50 50 1000 1
+glide 450 150 800
+drift 300 250 500
+type Sec
+glide 320 240 400
+wait 1000
+end

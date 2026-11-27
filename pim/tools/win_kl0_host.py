@@ -51,10 +51,32 @@ TWO ROUTES:
 --report FILE   at F, the verdicts: the script (JSON), `script = tape`,
                 the software frame's sha256 and dots, the pin's (tape
                 route), and the commands sent.
+--sw-pbm FILE   (probe route) the software frame of each run, as a PBM.
+--live          (probe route) an interactive session (bsv/run_win_live.sh
+                `live`, `flood`), added 2026-11-26 after the owner's live
+                run died at kl0's StepLimit 600001.  The probe route runs
+                kl0 again from the boot with ALL the events so far, so its
+                steps grow with the session (MEASURED 2026-11-26: 15,747
+                steps with no events, ~1,000 more a click, ~3,000 a typed
+                key: about 200 keys after a hundred clicks pass
+                test_espc.py fs_machine's fixed 600,000).  With --live the
+                limit is LIVE_BASE + LIVE_PER_EVENT a event, and a kl0
+                failure does not end the session: the events since the last
+                run that worked are dropped (logged, counted as
+                `kl0_failures` and `dropped_events` in the report), the
+                screen stays as it was, and the session goes on.  The
+                scripted cases do not pass it, so their limit and pins are
+                unchanged.  OURS.
 
 Also:  python3 -I tools/win_kl0_host.py expect SCRIPT the events a script must give (JSON)
        python3 -I tools/win_kl0_host.py mode N        the monitor's mode line
        python3 -I tools/win_kl0_host.py config N OUT  win_scan.hex, cursor off
+       python3 -I tools/win_kl0_host.py view N IN.pbm OUT.pbm
+                the display window of mode N (psi/winscan.py window_dot:
+                the 2:1 OR reduction of mode 3) of a 1,280 x 1,024 frame,
+                cursor off: what the monitor takes and the viewer shows
+       python3 -I tools/win_kl0_host.py png IN.pbm OUT.png [SCALE]
+                any P4 PBM as a greyscale PNG, each dot SCALE x SCALE
 """
 import json
 import os
@@ -67,6 +89,8 @@ sys.path.insert(0, HERE)
 
 DCLICK_MS = 400
 BATCH_MS = 1000
+LIVE_BASE = 600000              # test_espc.py fs_machine's limit
+LIVE_PER_EVENT = 10000          # > the ~3,000 a typed key measured
 NAMES = ['lf', 'cr', 'del', 'enter', 'esc', 'tab', 'bs', 'bell', 'up', 'down', 'left', 'right',
          'abort', 'help']
 NAMED_CODE = {'cr': 13, 'enter': 13, 'lf': 10, 'tab': 9, 'bs': 8, 'del': 127, 'esc': 27,
@@ -200,11 +224,25 @@ def window():
     return T, T.Window('test_win_m5_login_screen')
 
 
-def probe_run(t, evs):
+def probe_run(t, evs, max_steps=None):
     import fep_bridge as FB
     import windev
-    m, r = t.boot_to_top([FB.event(e) for e in evs], probes=t.B3M_PROBES, boot='b3m_boot',
-                         before=t.pimos_texts(t.PIMOS_OK))
+    if max_steps:
+        # t.boot_to_top builds its machine by t.fs_machine (test_espc.py,
+        # max_steps 600000): this run's limit is set on that machine
+        orig = t.fs_machine
+
+        def fs_machine(extra=''):
+            m = orig(extra)
+            m.max_steps = max_steps
+            return m
+        t.fs_machine = fs_machine
+    try:
+        m, r = t.boot_to_top([FB.event(e) for e in evs], probes=t.B3M_PROBES, boot='b3m_boot',
+                             before=t.pimos_texts(t.PIMOS_OK))
+    finally:
+        if max_steps:
+            del t.fs_machine
     return windev.device(m)
 
 
@@ -230,10 +268,15 @@ def tape_run(path, script):
 def serve(argv):
     tape = argv[argv.index('--tape') + 1] if '--tape' in argv else None
     report = argv[argv.index('--report') + 1] if '--report' in argv else None
+    sw_pbm = argv[argv.index('--sw-pbm') + 1] if '--sw-pbm' in argv else None
+    live = '--live' in argv
     ad = Adapter()
     snd = Sender()
     T = t = None
     rep = {}
+    if live:
+        rep.update(kl0_failures=0, dropped_events=0)
+    n_ok = 0                    # (--live) the events of the last run that worked
     for line in sys.stdin:
         w = line.split()
         if not w:
@@ -279,14 +322,29 @@ def serve(argv):
                 import windev
                 if T is None:
                     T, t = window()
-                dev = probe_run(t, [e for _t, e in ad.out])
-                rep['script'] = [e for _t, e in ad.out]
+                evs = [e for _t, e in ad.out]
+                dev = probe_run(t, evs, LIVE_BASE + LIVE_PER_EVENT * len(evs) if live else None)
+                n_ok = len(evs)
+                rep['script'] = evs
                 rep['sw_sha'] = windev.pbm_sha256(dev.frame)
                 rep['sw_dots'] = dev.frame.count()
                 rep['commands'] = snd.send(dev.log)
+                if sw_pbm:
+                    with open(sw_pbm, 'wb') as f:
+                        f.write(dev.frame.pbm())
         except Exception as e:          # a kl0 failure ends the run loudly
             log('kl0: %s: %s' % (type(e).__name__, e))
-            print('X kl0 failed: %s' % type(e).__name__)
+            if live and not tape:
+                # the session goes on: the events since the last run that
+                # worked are dropped, the screen stays (the module header)
+                gone = len(ad.out) - n_ok
+                del ad.out[n_ok:]
+                rep['kl0_failures'] += 1
+                rep['dropped_events'] += gone
+                log('--live: the %d events since the last run that worked are dropped; '
+                    'the screen stays as it was' % gone)
+            else:
+                print('X kl0 failed: %s' % type(e).__name__)
         print('.')
         sys.stdout.flush()
         if report:
@@ -323,11 +381,25 @@ def expect(path):
     return [e for _t, e in ad.out]
 
 
+def mode_pan(n):
+    """The pan of mode N's scan configuration (`config`): (frame dots
+    across, rows down) at the display window's corner.  Mode 3's is
+    (0, 24): winscan.case's, rows 24..983 shown, the status band included."""
+    import winscan
+    pan = winscan.case('mode%d' % n)[2]
+    return 16 * pan[0], pan[1]
+
+
 def mode_line(n):
+    """The monitor's mode line: winscan MODES' timing and window, then the
+    pan (WinHostDev.c maps the viewer's dots to frame dots by it; added
+    2026-11-26: without it mode 3's clicks landed 24 frame rows above the
+    dot the person pointed at)."""
     import winscan
     m = winscan.MODES[n]
-    return ' '.join(str(int(m[k])) for k in ('ha', 'hf', 'hs', 'hb', 'va', 'vf', 'vs', 'vb',
-                                             'hpos', 'vpos', 'x0', 'y0', 'fw', 'fh', 'half'))
+    return ' '.join([str(int(m[k])) for k in ('ha', 'hf', 'hs', 'hb', 'va', 'vf', 'vs', 'vb',
+                                              'hpos', 'vpos', 'x0', 'y0', 'fw', 'fh', 'half')] +
+                    [str(v) for v in mode_pan(n)])
 
 
 def config(n, out):
@@ -338,7 +410,115 @@ def config(n, out):
         f.write(''.join('%08x\n' % v for v in w))
 
 
+def read_pbm(path):
+    """A P4 PBM -> (w, h, rows as ints, dot x = bit w - 1 - x)."""
+    with open(path, 'rb') as f:
+        data = f.read()
+    parts = data.split(b'\n', 2)
+    if parts[0] != b'P4':
+        raise ValueError('%s: not a P4 PBM' % path)
+    w, h = map(int, parts[1].split())
+    rb = (w + 7) // 8
+    rows = [int.from_bytes(parts[2][y * rb:(y + 1) * rb], 'big') >> (rb * 8 - w) for y in range(h)]
+    return w, h, rows
+
+
+def write_pbm(path, w, h, rows):
+    rb = (w + 7) // 8
+    with open(path, 'wb') as f:
+        f.write(b'P4\n%d %d\n' % (w, h) + b''.join((r << (rb * 8 - w)).to_bytes(rb, 'big') for r in rows))
+
+
+def view(n, src, dst):
+    """The display window of mode N of a 1,280 x 1,024 frame (no cursor,
+    the pan of the scan configuration `config` writes)."""
+    import winscan
+    m = winscan.MODES[n]
+    pan = winscan.case('mode%d' % n)[2]
+    w, h, rows = read_pbm(src)
+    if (w, h) != (1280, 1024):
+        raise ValueError('%s: not a 1280 x 1024 frame' % src)
+    out = []
+    for v in range(m['fh']):
+        r = 0
+        for u in range(m['fw']):
+            r = r << 1 | winscan.window_dot(m, pan, rows, u, v)
+        out.append(r)
+    write_pbm(dst, m['fw'], m['fh'], out)
+
+
+def png(src, dst, scale=1):
+    """Any P4 PBM as an 8-bit greyscale PNG (1 = black), stdlib only."""
+    import struct
+    import zlib
+    w, h, rows = read_pbm(src)
+    raw = []
+    for r in rows:
+        line = bytes(0 if (r >> (w - 1 - x)) & 1 else 255 for x in range(w) for _ in range(scale))
+        raw += [b'\x00' + line] * scale
+
+    def chunk(kind, data):
+        return (struct.pack('>I', len(data)) + kind + data +
+                struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff))
+    with open(dst, 'wb') as f:
+        f.write(b'\x89PNG\r\n\x1a\n' +
+                chunk(b'IHDR', struct.pack('>IIBBBBB', w * scale, h * scale, 8, 0, 0, 0, 0)) +
+                chunk(b'IDAT', zlib.compress(b''.join(raw), 9)) + chunk(b'IEND', b''))
+
+
+def selftest_live():
+    """--live's step budget and its rollback (bsv/run_win_live.sh `budget`).
+    The limit is set to the steps of the run with one typed key (measured
+    first), so the next run, with 30 keys more, exceeds it.  With --live
+    the session must survive that: no X, the 30 keys dropped and counted,
+    and the run after it (the one key again) works.  -> 0 if so."""
+    import io
+    import tempfile
+    global LIVE_BASE, LIVE_PER_EVENT
+    _T, t = window()
+    seen = []
+    orig = t.fs_machine
+
+    def fs_machine(extra=''):
+        m = orig(extra)
+        seen.append(m)
+        return m
+    t.fs_machine = fs_machine
+    probe_run(t, [['key', 0x2361]])
+    del t.fs_machine
+    one = seen[-1].steps
+    keys = ''.join('E 1 %04x 0000 0000 00 %04x\n' % (0x2361 + i % 26, 10 + i) for i in range(30))
+    lines = 'Q 0\nE 1 2361 0000 0000 00 0005\nQ 8\n' + keys + 'Q 40\nQ 50\nX\n'
+    saved = LIVE_BASE, LIVE_PER_EVENT, sys.stdin, sys.stdout
+    rep = tempfile.NamedTemporaryFile(suffix='.json', delete=False).name
+    try:
+        LIVE_BASE, LIVE_PER_EVENT = one, 0
+        sys.stdin, sys.stdout = io.StringIO(lines), io.StringIO()
+        serve(['--probe', '--live', '--report', rep])
+        text = sys.stdout.getvalue()
+        with open(rep) as f:
+            r = json.load(f)
+    finally:
+        LIVE_BASE, LIVE_PER_EVENT, sys.stdin, sys.stdout = saved
+        os.unlink(rep)
+    ok = ('\nX ' not in '\n' + text and r.get('kl0_failures') == 1 and
+          r.get('dropped_events') == 30 and r.get('script') == [['key', 0x2361]])
+    print('win_kl0_host selftest-live: %s (limit %d steps, the one-key run\'s; %s kl0 failures, '
+          '%s events dropped, %s X lines, the last script %s)' % (
+              'ok' if ok else 'FAIL', one, r.get('kl0_failures'), r.get('dropped_events'),
+              ('\n' + text).count('\nX '), r.get('script')))
+    return 0 if ok else 1
+
+
 def main(argv):
+    if argv == ['selftest-live']:
+        return selftest_live()
+    if argv[:1] == ['view'] and len(argv) == 4:
+        view(int(argv[1]), argv[2], argv[3])
+        return 0
+    if argv[:1] == ['png'] and len(argv) in (3, 4):
+        png(argv[1], argv[2], int(argv[3]) if len(argv) == 4 else 1)
+        return 0
     if argv[:1] == ['mode'] and len(argv) == 2:
         print(mode_line(int(argv[1])))
         return 0
