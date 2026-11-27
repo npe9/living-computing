@@ -1,0 +1,14 @@
+# H5: moves (short, long, past every edge: clamped), each button's click
+moveto 700 500
+click l 700 500
+click m 800 300
+click r 640 560
+click r 640 560
+click l 978 605
+moveto 1500 1200
+click l 1400 1100
+moveto -40 -30
+click r 0 0
+wait 3
+moveto 300 300
+click l 300 300

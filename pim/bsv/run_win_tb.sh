@@ -22,6 +22,8 @@
 #      the pipelined stages (H3 follow-up), reads_stall.txt the read and
 #      targets_stall.txt the drawing targets (the 2026-11-26 extension);
 #  10. run_win_link.sh (its own header).
+#  11. run_win_input.sh (H5, its own header).
+#  12. run_win_live.sh (H7s, its own header).
 # Everything goes to bsv/build-win/ (WIN_BUILD to override; the root
 # .gitignore's build-*/ covers it).  BSC_BIN pins a compiler, as in
 # run_fepemu.sh.  WIN_PART=h2 skips step 4 (for scan-out injection runs).
@@ -401,6 +403,29 @@ if [ "${WIN_PART:-}" != h2 ]; then
     grep -E "^   same" "$B/run_win_link.log"
   else
     grep -E "DIFFERS|FAIL" "$B/run_win_link.log" || tail -5 "$B/run_win_link.log"
+    status=1
+  fi
+fi
+
+# ---- H5: the input box (WinInput.bsv) against tools/wininput.py
+if [ "${WIN_PART:-}" != h2 ]; then
+  echo "== run_win_input.sh: mkWinInput, PS/2 at the wire level"
+  if WIN_BUILD="$B" ./run_win_input.sh > "$B/run_win_input.log" 2>&1; then
+    grep -E "^   same|^wininput" "$B/run_win_input.log"
+  else
+    grep -E "DIFFERS|FAIL" "$B/run_win_input.log" || tail -5 "$B/run_win_input.log"
+    status=1
+  fi
+fi
+
+# ---- H7s: the board's composition with the screen, keyboard and mouse
+# emulated (WinLiveTb.bsv, WinHostDev.bsv/.c), kl0 on the host
+if [ "${WIN_PART:-}" != h2 ]; then
+  echo "== run_win_live.sh: Login PIMOS typed at the PS/2 wire, drawn through the link, seen by the monitor"
+  if WIN_BUILD="$B" ./run_win_live.sh > "$B/run_win_live.log" 2>&1; then
+    grep -E "^   same|skipped" "$B/run_win_live.log"
+  else
+    grep -E "DIFFERS|FAIL" "$B/run_win_live.log" || tail -5 "$B/run_win_live.log"
     status=1
   fi
 fi

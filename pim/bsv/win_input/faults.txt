@@ -1,0 +1,26 @@
+# H5: line faults and unknown codes on both receivers, between good keys
+type ab
+fault kbd 0x2b glitch
+fault kbd 0xf0 glitch
+fault kbd 0x2b glitch
+fault kbd 0x1c parity
+type c
+fault kbd 0x1c stop
+type d
+fault kbd 0x1c cut
+wait 10
+type e
+fault kbd 0x0f none
+fault kbd 0xe0 none
+fault kbd 0x0f none
+type f
+click l 650 480
+fault mouse 0x08 glitch
+fault mouse 0x00 glitch
+fault mouse 0x00 glitch
+fault mouse 0x00 none
+fault mouse 0x09 parity
+click r 660 490
+fault mouse 0x08 cut
+wait 10
+click m 670 500

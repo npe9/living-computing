@@ -464,6 +464,43 @@ def adapted(lines, edits):
 _home = {}
 
 
+def home_bytes(raw):
+    """A text file's bytes as the FEP gives them, 16-bit per character
+    (MP1, 2026-11-26, for PIMOS's own sources): an LF is element 10 and
+    any other control byte (TAB, FF) its one-byte element, as TAB is
+    above (INFERENCE, the same reading); a byte pair from 80h up is EUC
+    and becomes its JIS pair (each byte less 80h: EUC's definition); the
+    rest as fep.jis."""
+    out = []
+    i = 0
+    while i < len(raw):
+        c = raw[i]
+        if c == 10:
+            out.append(b'\x00\x0a')
+        elif c < 32:
+            out.append(bytes([0, c]))
+        elif c >= 0x80:
+            out.append(bytes([c & 0x7f, raw[i + 1] & 0x7f]))
+            i += 1
+        else:
+            out.append(fepm.jis(chr(c)))
+        i += 1
+    return b''.join(out)
+
+
+def add_home_file(name, raw):
+    """Serve the bytes raw as HOME>NAME from now on, in this process
+    only (MP1: ref/pimm/mp1_rebuild.py puts PIMOS's sources and pimos.h
+    there).  Not in the default HOME_FILES, so ls's listing and its pins
+    are unchanged for every other run."""
+    data = home_bytes(raw)
+    HOME_FILES[name] = (('bytes',), None, None, None, None)
+    _home[name] = fepm.FileData(
+        data, 'PSI::%s>%s.1' % (HOME, name),
+        fepm.attribute_string('pmpsi', 'pmpsi', '20-May-93', '00:00:00', '20-May-93',
+                              '00:00:00', 1, len(data), 0))
+
+
 def home_file(name):
     """HOME>NAME as the FEP gives it (fep.FileData), or None."""
     if name not in HOME_FILES:

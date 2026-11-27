@@ -41,6 +41,12 @@ argument order here is OURS, as the plan §4.1 says it would be):
                                                     frame (target, copy)
   :load_font(#bitmap_display, File, ^Id, ^W, ^H)    the plan's font_load
   :default_font(#bitmap_display, ^Id, ^W, ^H)       OURS (see below)
+  :bias(#bitmap_display, Font, Code, ^B)            the glyph record's bias
+                                                    (f822 word 6): rows from
+                                                    draw_string's Y to the
+                                                    glyph's top (2026-11-26,
+                                                    INFERENCE, psi/README.md
+                                                    "The PSI's line geometry")
   :get_size(#bitmap_display, ^W, ^H)                1280 x 944
 
 Op is an atom: set, reset, exclusive_or (W§2.5's drawing operations),
@@ -309,9 +315,23 @@ def install(models, K):
         ok = m.unify(m.x[0], SCREEN_W) and m.unify(m.x[1], SCREEN_H)
         return m.proceed() if ok else m.fail()
 
+    def bias(m):
+        # a query only, no command sent: the f822 record's sixth word (the
+        # missing-glyph box's for a code the font lacks, as `glyph` draws)
+        fid, code = ints(m, 2, 'bias/4')
+        d = device(m)
+        font = winfb.test_11() if fid == 0 else (d.fonts[fid] if fid < len(d.fonts) else None)
+        if font is None:
+            raise K.Refusal('simpos', 'bitmap_display bias/4: no font %d' % fid)
+        rec = font.records.get(code) if winfb.jis_indexable(code) else None
+        if rec is None:
+            rec = font.records.get(0xffff)
+        return m.proceed() if m.unify(m.x[2], rec[4] if rec else 0) else m.fail()
+
     models.update({
         (D, 'class', 'fill', 6): fill,
         (D, 'class', 'glyph', 6): glyph,
+        (D, 'class', 'bias', 4): bias,
         (D, 'class', 'copy', 8): copy,
         (D, 'class', 'line', 7): line,
         (D, 'class', 'line', 8): styled,

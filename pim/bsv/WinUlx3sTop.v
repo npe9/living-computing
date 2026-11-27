@@ -14,10 +14,18 @@
 // The serializer's four lanes leave through ODDRX1F, D0 first then D1,
 // as flute-lx50's Video_DVI.v does at 640x480.  The design is held in
 // reset until the PLL locks and for 255 clocks after configuration;
-// FIRE1 (BTN1) resets it.
+// FIRE1 (BTN1) resets it.  H6 (2026-11-26): the host link on the FTDI
+// UART (mkWinLink inside mkWinUlx3s); led[3] lights while the line in is low.
+// H5: the PS/2 keyboard on US2 (bd_dp clock, bd_dn data); led[4] its clock low.
 module ulx3s_win_top(
     input  wire       clk_25mhz,
     input  wire       BTN1,
+    input  wire       ftdi_txd,     // the host's line in (M1)
+    output wire       ftdi_rxd,     // the board's line out (L4)
+    input  wire       usb_fpga_bd_dp,  // US2 D+: the PS/2 clock (D15)
+    input  wire       usb_fpga_bd_dn,  // US2 D-: the PS/2 data (E15)
+    output wire       usb_fpga_pu_dp,  // US2's pull-ups on (B12, C12)
+    output wire       usb_fpga_pu_dn,
     output wire [7:0] led,
     output wire [3:0] gpdi_dp       // [0] blue, [1] green, [2] red, [3] clock
 );
@@ -41,6 +49,10 @@ module ulx3s_win_top(
         .RST_N(rst_n),
         .CLK_pclk(pclk),
         .CLK_sclk(sclk),
+        .rxd(ftdi_txd),
+        .txd(ftdi_rxd),
+        .ps2_clk(usb_fpga_bd_dp),
+        .ps2_dat(usb_fpga_bd_dn),
         .pins(pins),
         .led(st),
         .blink(blink)
@@ -52,5 +64,9 @@ module ulx3s_win_top(
                      .Q(gpdi_dp[i]));
     end endgenerate
 
-    assign led = {locked, 4'b0, blink, st[1], st[0]};
+    assign led = {locked, 2'b0, ~usb_fpga_bd_dp, ~ftdi_txd, blink, st[1], st[0]};
+    // the PS/2 lines are open-collector and idle high: US2's 1.5k pull-ups
+    // on both (INFERENCE: the ULX3S's pu_dp/pu_dn drive them; unchecked)
+    assign usb_fpga_pu_dp = 1'b1;
+    assign usb_fpga_pu_dn = 1'b1;
 endmodule

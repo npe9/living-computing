@@ -399,14 +399,15 @@ in `../../psi/README.md` "Window M8's stops resolved".
 - Step 3b DONE (`test_win_m8_stops_surface`):
   - windows drawn before they are shown, or never shown, draw into surface panes in bitmap
     memory;
-  - paragraph `make/3` runs go1-go6, but its images do NOT match the held ones (every word
-    differs: line geometry and pattern phase, OURS; open in `psi/README.md`);
+  - paragraph `make/3` runs go1-go6, and since 2026-11-26 its six images equal the held
+    `profiler_icon_image1..6` word for word (the line geometry, the saved words' 1 = white,
+    `light_paint`, the image origin, the glyph bias and `exclusive_or` between areas re-derived
+    from them: `psi/README.md` "The PSI's line geometry");
   - icotext's 2000 x 2000 canvas refuses loudly (H8).
 - Step 4 DONE (`test_win_m8_stops_matrix`): the axis-aligned whole-scale matrix `copy/9`, nearest
   dot, above the line (a read, then rows drawn as images). Rotation, shear, offsets and fractional
   scales refuse. `magnify`/`expand/9` are not stood in.
 - All four steps are done. Open:
-  - the paragraph images differ from the held ones;
   - paint is dot by dot;
   - the host link does not carry reads (`WinLink.bsv`).
 

@@ -4663,9 +4663,11 @@ so the hardware contract is unchanged.
   (`window_pane.esp` `named/3`). `light_paint` is HELD-DERIVED: the held
   paragraph images were saved from a window filled `fix, set` and then
   `light_paint, reset`, and `profiler_mono_selector_image` has 16#"7777"
-  on every even row and 16#"DDDD" on every odd one, so `light_paint` is
-  16#"8888" / 16#"2222" (measured in `test_win_m8_images`). Its phase,
-  and the other names' looks, are OURS;
+  on every even row and 16#"DDDD" on every odd one (measured in
+  `test_win_m8_images`). Since 2026-11-26 the saved words are read as
+  1 = white, so `light_paint` IS 16#"7777" / 16#"DDDD", anchored at the
+  inside's top-left (see "The PSI's line geometry" below; it was the
+  complement, 8888 / 2222, before). The other names' looks are OURS;
 - a held pattern string (256 words, made by paragraph `bar_v.esp`
   `set_pattern/2`, which writes each word four times) read as a 64 x 64
   tile, 4 words a row (INFERENCE). The tile is anchored at the inside's
@@ -4675,8 +4677,8 @@ so the hardware contract is unchanged.
   in `test_kl0.py` (each to the next refusal, accounted there).
 
 **Images**: `restore_image/6` draws a `double_bytes` string, ceil(W/16)
-words a row, MSB leftmost, opaque (the area reset, then the 1 dots set;
-OURS). `get_label_height/2` answers the label strip's height. A new
+words a row, MSB leftmost, opaque (OURS; since 2026-11-26 a 1 is white:
+the area set, then the 1 dots reset, see "The PSI's line geometry"). `get_label_height/2` answers the label strip's height. A new
 stand-in class `bitmap` answers `get_plane_count/2` = 1, so the held
 image code takes its monochrome path. The held paragraph
 `type_switch_icon` `draw/6` runs from the .ptf: three held `draw_box`
@@ -4901,18 +4903,10 @@ bodies).**
   - the refused-uncover case;
   - icotext's canvas;
   - the stream replaying to the same frame and bitmap memory.
-- **Open: the paragraph images do not match the held
-  `profiler_icon_image1..6`; every word differs.** The counts are pinned
-  as `PARAGRAPH_GAP`, MEASURED, not a target. Image 5 (lines only) shows
-  three causes:
-  - the stand-in's light_paint phase is 3 dots off (its anchor at the
-    inside is OURS);
-  - the box lines lie about 8 rows higher;
-  - they are drawn black where the held image is white.
-  So the stand-in's `draw_line` geometry and ops (OURS) are not the
-  PSI's. This is the first independent oracle for them. Fixing it needs
-  the line semantics re-derived from these images, which is not done
-  here.
+- The paragraph images now equal the held `profiler_icon_image1..6`
+  word for word (0 differing dots in each). Until 2026-11-26 every word
+  differed (pinned then as `PARAGRAPH_GAP`); the rules that closed it are
+  in "The PSI's line geometry" below.
 
 **Step 4: copy/9's matrix form, whole scales.** `(W, DX, DY, Src, SX,
 SY, Width, Height, {A, B, C, D, E, F})` (USAGE icotext
@@ -4932,6 +4926,60 @@ affine map (INFERENCE, m8_stops.md §5).
 - `test_win_m8_stops_matrix` covers {2,0,0,0,2,0} and {3,0,0,0,1,0}
   against a dot-by-dot reference, and the refusals. Its header records
   the injections.
+
+### The PSI's line geometry, from the held paragraph images (2026-11-26)
+
+The HELD paragraph `p_imag.esp` `go1`-`go6` draw icons into a 500 x 400
+`standard_io_window` (label, margin and border off, never shown) and save
+them with `save_image/6`; the results are the HELD classes
+`profiler_icon_image1..6`. Those are the first independent oracle for the
+stand-in's drawing. The rules below were fitted to them (a scratch
+simulator of go3-go6, then the stand-in itself), each against the dots
+that decide it, and checked on a second held image,
+`profiler_mono_selector_image` (`p_v_imag.esp` `draw/2`, a titled
+window saved at (0, 0)). All are INFERENCE.
+
+| rule | before | now | the dots that decide it |
+|---|---|---|---|
+| saved words' sense | 1 = black | **1 = white**: `read_in/6` inverts, `image_in/6` draws 1 white | every image: `set` lines, `set` strings and `reset` fills are known; all seven images hold the `set` dots 0, the `reset` dots 1 (selector: `box/6`'s `fix,reset` interiors 1, its `set` text 0) |
+| `light_paint` | 8888 / 2222 | **7777 / DDDD**, anchored at the inside | follows from the sense: the backgrounds (`fix,set` then `light_paint,reset`) read 7777 / DDDD in both windows, at the inside's phase once the image origin is taken off |
+| image origin | the inside | **(3, 8) above-left of a never-shown pane's inside** (`save_image_in/6`) | go1-go6 save at (X+4, Y+8) the dots drawn at (X+1, Y): images 5 and 6 fit only with draw +(3, 8) (e.g. image 6's box tops, rows 50-51 and 77-78 of the inside, are rows 0-1 and 27-28 of the image saved at Y+8 = 58) (the next best offset, (4, 8), leaves 64 of their dots wrong). The selector holds its title strip in rows 0-23 and its inside from row 24, and `adjust_pos/3` adds `get_label_height - 24`, so the image methods address the outer rectangle on the PSI; why a flags-off window's inside sits at (3, 8) is unknown. A shown pane keeps the inside as origin (OURS) |
+| end points | both | both | images 3-6: leaving the last point off gives 36 wrong dots; e.g. image 3's `draw_up1` line (57, 54)-(51, 63), `set`: its last dot (51, 63) is 0 in the held image (inside coordinates) |
+| ties | away from the first end point (winfb's Bresenham) | **toward the first end point** | image 4's eight slope-1/2 x-major lines (`draw_left1`/`draw_right1` with W 12, H1 6: tips at (82..83, 59..60) and (121..122, 59..60), all four directions): away 60 wrong dots, "always up" 36, "always down" 24, "from the left end" 30, "from the top end" 24, toward 0. Held-out check: the selector's y-major `draw_up_tra`/`draw_down_tra` (dx 9 or 7, dy 12): toward 0 wrong dots on the triangles, away 12 |
+| width | x-major down, y-major right (the device's) | **x-major UP, y-major right** | images 4-6, selector: every 2-wide line is axis-aligned. A box's `{X,Y+1,X+W-1,Y+1,2}` covers rows Y and Y+1, its `{X,Y,X,Y+H-1,2}` columns X and X+1 (images 3-6: x-major down gives 107 wrong dots, y-major left 72; e.g. image 5's top line, `reset`, makes (52, 50) 1 where `light_paint` leaves a 0, so row Y is covered; image 4's (74, 50) stays the `set` 0 of box 1's right column although box 2's 2-wide `reset` column starts at x 75, so that column goes right). Every wide line is drawn left to right or top to bottom, so "left of the direction drawn" fits as well; a wide line drawn the other way, and a wide slanted line, are OURS |
+| glyph | its cell at Y | **its cell `bias` rows below Y** (the f822 record's word 6, 3 for test_11; new device query `bias/4`) | images 1, 2: `draw_label/5`'s `r`, `s` and `&` lie 3 rows below; the selector's `WhatxWhen` (`box/6`, Y+1) starts at row Y+4 |
+| `exclusive_or` between areas (`transfer/8`) | the device's | **the PSI's dots' xor (1 = white)**, so on the frame the destination is inverted after the device's xor | images 1, 2: `draw_label/5`'s mono path (copy, `light_paint` reset, `exclusive_or`) gives the held glyph knocked out of the background only so; with the device's xor the glyph's cell comes out as the pattern's complement. `set`/`reset`/`copy` between areas: `copy` checked (same path), the others OURS |
+
+How it is done without changing the device (so `winfb` and
+`bsv/WinFbBox.bsv` stay as they are, and their command streams agree):
+`window_pane.esp` `line_in/7` sends a slanted line from (X2, Y2) to
+(X1, Y1) (the device's Bresenham run backwards rounds ties toward the
+caller's first point; checked equal for every line within 15 dots), and
+moves an x-major line up by Width - 1; the horizontal fill moves up the
+same way, and `drawable/6` checks the moved box. `get_point_value/4` and
+`set_point_value/4` take the saved words' sense (1 = white).
+
+The glyph bias applies to `draw_string/4-6` (`draw_string_in/6`); the
+stand-ins' own cell text (`string_in/6`, the choice window) stays in its
+cells (OURS layout). The held `g_window` `draw_list_b/8` corroborates it:
+it draws each number at Y and its bar at Y+3, so with the bias the
+glyph's cell top meets the bar's.
+
+`test_win_m8_stops_surface` asserts the six images equal the held ones
+(0 differing dots each). Discriminating injection L1, OBSERVED: the
+tie-break flipped (the slanted line sent from (X1, Y1)) fails that test
+at image 4 with 60 differing dots, `test_win_m8_shapes` (its reference
+sends lines reversed) and `test_win_m8_rest_screen` (the pin), nothing
+else in Window.
+
+Pins moved (2026-11-26): `GRAPHICS_PIN` (`window_graphics.png`: the held
+box's 2-wide lines one row up, the string 3 rows down; same dot count
+107,429) and `GRAPHICS_REST_PIN` (`window_graphics_rest.png`: 110,989 to
+113,666 dots, `light_paint` now covers 3 dots in 4 and the restored held
+icon image is drawn 1 = white). `test_boot_route.py`'s `SCREEN_SHA` did
+not move (rerun with `--png`). Test references updated to the rules:
+`put_line`, `image_ref`, `NAMED_PATTERNS`, the graphics and forms boxes,
+the text reads 3 rows down, `save_image` words and point values 1 = white.
 
 ### Window M7's rest, pinned: the coordinator's own writes (2026-11-26)
 
