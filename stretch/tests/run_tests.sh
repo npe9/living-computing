@@ -10550,6 +10550,13 @@ run "PAU MIXED CLASSES (FP and divide back to back; an abandoned divide)" "$TEST
 # script of terminate / holdTerm / terminated, checked every clock against a
 # literal table; injections in the bench headers.
 run "PAU STEPPING (*+ chained; Table 2 add terms, literal; the termination)" "$TESTS_DIR/run_paustep_test.sh"
+# 2026-11-27 (fidelity_plan.md A5 part 2, ebox_roadmap step 7): laParts, an
+# instruction's look-ahead levels as Table A-2's E-box sheet gives them
+# (Perf. Char. Vol. 1 printed A-12, PDF 71), with the sheet's crossing and
+# progressive note; 24 literal vectors, among them M+ crossing with
+# progressive indexing = 6 levels (Buchholz printed p.246, PDF 271).
+# Injections and their observed failure sets: bsv/StretchLaParts.bsv.
+run "LOOK-AHEAD LEVELS PER INSTRUCTION (Table A-2 E-box sheet; literal)" "$TESTS_DIR/run_laparts_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block

@@ -732,7 +732,14 @@ typedef enum {
   LaTest,    // Table A-2 "test"
   LaIxRec,   // Table A-2 "IX Rec."   -- index recovery, a pseudo-store
   LaBRec,    // Table A-2 "B Rec."    -- branch recovery
-  LaNoop     // Table A-2 "NOOP"      -- indicator transfer only
+  LaNoop,    // Table A-2 "NOOP"      -- indicator transfer only
+  // Appended 2026-11-27 (StretchLaParts, Table A-2's E-box sheet, printed
+  // A-12, PDF 71); appended, not inserted, so `Whole` stays the reset
+  // encoding:
+  LaOpOpnd,  // Table A-2 "op + opnd" -- op code plus operand, one level (FP)
+  LaOpCount, // Table A-2 "op + count" -- FP SHF
+  LaCft,     // Table A-2 "C($FT)"   -- *+'s factor level
+  LaLaop     // Table A-2 "LAOP"     -- LA operation (I/O)
 } LaKind deriving (Bits, Eq, FShow);
 
 // >>> WHAT A LEVEL CARRIES OF THE I-BOX'S INDEXING, 2026-11-15. <<<
