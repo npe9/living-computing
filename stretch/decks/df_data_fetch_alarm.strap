@@ -173,7 +173,9 @@ START   BD,  $+.32                   ! disable: words 2 and 3 are protected
 !
 ! SUPERSEDED 2026-09-25, AND THE NOPS ARE NOW GENUINE PADDING.  The
 ! deviation the paragraph above describes is fixed, by deleting one
-! term: StretchCore's armInterrupt no longer waits for `ebusy`, the
+! term: StretchCore's armInterrupt no longer waits for `ebusy` (the
+! E-box countdown, itself gone since fidelity_plan.md A5 step 1,
+! 2026-11-26: the units' termination count holds that time now), the
 ! CHARGED TIME of the instruction just removed from a look-ahead level
 ! -- which is not a structural busy and which rl_prepare never waited
 ! for, so every I-box instruction that fitted inside the budget ran
