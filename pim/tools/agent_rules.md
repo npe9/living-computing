@@ -11,8 +11,9 @@ the practices learned in pim sessions.
   edit, build in, revert, clean or commit them.
 - Stage by path, never `git add -A`. Commit on your worktree branch, one
   milestone per commit. Each message says what was verified and how, and
-  ends with exactly
-  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+  ends with the attribution lines your session's system reminder gives
+  (`Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`, followed by
+  a `Claude-Session:` line when the reminder includes one).
   Do not push; the parent merges with `pim/tools/merge_agent.sh`.
 
 ## Verification
