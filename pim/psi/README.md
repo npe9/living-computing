@@ -26,6 +26,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
 | `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`; since step 3i, the interpolated `boot_process`; since step 3j, the interpolated `context` and `as_resource` (basis table in "Step 3j"); since step 3k, the interpolated `date_time` (basis table in "Step 3k"). |
 | `test_boot_route.py` | Step 3o: the boot route's B8 top level, the debugger stand-in as the listener with TM-134 p71's dialogue typed, and the timer's alarms. It is in `../run_tests.sh` and takes about 10 s. `--png DIR` writes its screen. |
+| `test_live.py`, `live_sessions/` | Window M11: the live view on `../tools/winview` (`../tools/simpos_live.py`). Recorded sessions (`live_sessions/*.script`) run through the live path give the scripted pins; the real viewer runs headless. It is in `../run_tests.sh` and takes about 40 s. See "Window M11: the live view". |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -46,6 +47,8 @@ From `pim/`:
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
     python3 -I psi/test_boot_route.py             # step 3o, the debugger's listener (~10 s)
+    python3 -I tools/simpos_live.py live          # SIMPOS live in a window (build tools/winview first)
+    python3 -I psi/test_live.py                   # window M11, the live view headless (~40 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
     python3 -I psi/espc.py behave [-v]            # compiled paragraph against paragraph.ptf
     python3 -I psi/espc.py compile psi/standin/stream.esp --package simpos --listing
@@ -5288,6 +5291,157 @@ inherits `debugger` or `debugger_window`, and the census's
 2026-11-26: `on_at/4` and `on_after/4` fail on their unbound count,
 `do_on_at/4` and `do_on_after/4` refuse at `allow_forced_event/1` to an
 unbound receiver, as before).
+
+### Window M11: the live view (2026-11-26)
+
+Window plan M11's first half (`../docs/simpos/window_environment_plan.md`
+M11). The stand-in SIMPOS draws to a real window on the Mac, and the
+Mac's keyboard and mouse go back in as PSI events. The plan's "browser
+canvas" was replaced by the SDL2 viewer `../tools/winview`
+(`../docs/simpos/winview_protocol.md`), which the window hardware's H7s
+had made. Everything here is OURS unless a line says otherwise.
+
+**For the owner: try it.** From `pim/`, once:
+
+    brew install sdl2 pkg-config        # if pkg-config does not find sdl2
+    tools/winview/build.sh              # -> bsv/build-win/winview/winview
+
+then the one command:
+
+    python3 -I tools/simpos_live.py live
+
+It boots the stand-in SIMPOS in kl0 (no PIMOS), opens the SYSTEM MENU,
+chooses `debugger`, and shows the screen in a 1280 x 1024 window. The
+window is shrunk to fit a smaller display, and it can be resized.
+Close the window to stop. Things to try:
+- **Type at the debugger.** `:create(#process,P).` then RETURN answers
+  `> Success !!`. Backspace and Delete rub out. The PSI's dialogue
+  (TM-134 p71) is:
+
+      :create(#pimfep##pimos_login_requester,Req).
+      :create(#process,Proc).
+      :activate(Proc,Req).
+
+  The login requester's window then takes the keyboard. Answer `local`,
+  a user, and a password (not echoed).
+- **The SYSTEM MENU**: the right button twice (mouse#rr, the PSI's) on
+  the background; move onto an item and click it. `debugger` and
+  `Login PIMOS` work. The other items' classes are not stood in. A
+  refusal is shown in the title bar, and the click is taken back: the
+  session runs again without it, so you can go on.
+- **Clicks are the PSI's.** Two clicks of one button within 400 ms
+  are a double (mouse#ll, mm, rr), and the coordinator ignores ll and
+  mm. So leave a moment between two left clicks. The classification is
+  done in the launcher (OURS), not in the handler process as plan §3.2
+  has it.
+- **The window manipulator**: the middle button on a window, or
+  Option + the left button (OURS, for a trackpad). It has SHOW, HIDE,
+  RESHAPE (click two corners), MOVE (click the new place) and the rest
+  of TM-125 p8's items. A left click on a window selects it, and the
+  keyboard goes to the selected window.
+- **The Pmacs editor**: `python3 -I tools/simpos_live.py live
+  --program exshow` (the start is then Login PIMOS) runs the held `disc/exshow.esp` on
+  `me:boot.init`, by the M10 harness (an extra system-menu item `M10`,
+  started at once). Click in its window, then type. The stand-in's keys
+  are C-f C-b C-n C-p C-a C-e, C-d, C-k, Backspace or Delete, RETURN,
+  the arrows, C-x C-s to save a new version, and C-x C-z to exit. The
+  right button gives the EDITOR MENU. After C-x C-z the session goes
+  on (checked headless). `--program cal` and `--program select` run
+  the held cal and papyrus programs the same way. Headless, each started
+  and took typing; neither was examined further.
+- **Graphics**: not attempted live. The window M8 tests send the draw
+  calls to a window from Python (`test_espc.py` `graphics_window`);
+  there is no program to start from a menu.
+- `--record F.events` writes the session's events. `python3 -I
+  tools/simpos_live.py replay F.events OUT.pbm` runs them again
+  headless and gives the same frame.
+- `--start none` shows the bare screen; `--scale 2` doubles the dots.
+
+**How it works** (`../tools/simpos_live.py`, its header):
+
+| Part | What it does | Label |
+|---|---|---|
+| The screen | `windev.Device.tees`: every command the device runs also goes to the launcher's own `winfb.Frame`. At each quiet moment (every PSI process waits), and every 40 ms while a long run draws, the band of rows that changed goes to the viewer as one `R` (the first flush is `H` and `F`). The device's log and stream are untouched | OURS |
+| Keys | The viewer's HID usage goes to its PS/2 set 2 bytes (`wininput.HOST`). The keyboard receiver's model, now fed a byte at a time (`wininput.KbdReceiver`, `receive_kbd` unchanged), applies the §3.1 table KEYS with Shift and Ctrl. The result is the stand-ins' codes (`espc.KEY_CODES`): JIS characters; Ctrl+letter its ASCII control code (control#"x" = 24); cr 13, keypad Enter key#enter, bs 8, del 127, tab, esc, the arrows, Insert key#help, Pause key#abort; F1-F12 pf#0-11, Shift-F1..F7 pf#12-18. Alt is not passed on | tables as H5 (OURS); codes OURS except key#lf (G2) |
+| Mouse | Moves and buttons go to the H7s adapter (`win_kl0_host.Adapter`): a click is a down and an up; a second click of the same button whose down comes within 400 ms makes `ll`/`mm`/`rr`; moves are held, and the last is sent at the quiet moment unless a click carries the place. The viewer stamps each event (the `W` message before it, SDL's event time), so clicks are classified by when they were made. Option + left = middle | OURS (plan §3.2 gives double clicks to the handler process; its stand-in does not classify) |
+| Events in | Each batch goes on the coordinator's event stream at the next quiet moment: `PsiSide.run`'s idle hook, the path `test_espc.py` `Window.later_run` uses. The launcher blocks there until the viewer has something | the pump of window M1 |
+| A refusal | kl0 cannot go on after a refusal, so the batch that met it is dropped and the session is run again from the boot with the events before it (seconds). The viewer is redrawn | OURS |
+| Rubout | `standard_io_window` `getl/2`: BS and DEL take the line's last code back, and with echo on rub out its character (`window_pane` `rub_out/1`, back across a wrapped row). They are not echoed | INFERENCE that the PSI's line read had one; body OURS |
+
+**Recorded mode, the proof that the live path is the tested machine**
+(`test_live.py`, in `../run_tests.sh`, about 40 s). The session scripts
+`live_sessions/*.script` are a user's keys and mouse, in `wininput.py`'s
+script lines plus `quiet` and `start`. They are compiled to the
+viewer's raw events, written to an event file and read back, then run
+through the launcher's `Session`. The frame checked is the one rebuilt
+from the H, F and R messages the viewer was sent (`simpos_live.Peer`):
+
+| Session | Pin | Exercises |
+|---|---|---|
+| `debugger_dialogue` | `test_boot_route.SCREEN_SHA` | mouse#rr, the menu item, shifted punctuation, RETURN, six batches |
+| `debugger_rubout` | the same sha | Backspace across the wrapped goal, Delete, a rubout in the unechoed password |
+| `system_menu` | `Window.MENU_PINS['boxed']` | a held move, flushed at the quiet moment |
+| `pmacs_editor` | `Window.M10_PINS['pmacs']` | Ctrl letters as control codes (C-n, C-x C-s); the M10 harness's `start` |
+| `manipulator_reshape` | `Window.SHOT_PINS['reshaped']` | the middle button; left clicks 500 ms apart; other batch boundaries than the pin's |
+| `manipulator_hide` | `Window.SHOT_PINS['hidden']` | HIDE, the save area restored |
+| `editor_menu` | `Window.M10_PINS['editor_menu']` | one right click: mouse#r once the double-click time has passed, not rr |
+
+Each also checks that the viewer's frame equals the device's.
+`test_live_keys` pins the translation table. `test_live_takeback` runs
+the live loop on a stand-in viewer: a click on `pmacs` is refused and
+taken back, and the next line reaches the debugger. `test_live_winview` runs
+the real viewer headless (`SDL_VIDEODRIVER=dummy`, only if pkg-config
+finds sdl2). Its new `--events` pushes `debugger_dialogue`'s events
+into SDL's own queue, so they leave by winview's event code with its
+time stamps. The launcher takes them as a user's, in 26 batches where
+the script had 7. The viewer's own `--dump` equals `SCREEN_SHA`, and
+the launcher's `--record` of it replays to the same frame.
+
+**Injections, OBSERVED** (2026-11-26; each into the file, restored with
+`cp` and checked with `cmp`; `test_live.py` run):
+
+| | injection | fails |
+|---|---|---|
+| I1 | `wininput.key_event`: Shift lost on digits and punctuation (a wrong key mapping) | `_keys`, `_pins` (debugger_dialogue, debugger_rubout), `_winview` |
+| I2 | `windev.Device.run`: the tee skips `glyph` (a dropped tee command) | `_pins` (all five sessions then: the viewer's frame is not the pin), `_winview` |
+| I3 | `LiveAdapter`: Ctrl+letter sends the JIS code (the H7s adapter's way) | `_keys`, `_pins` (pmacs_editor) |
+| I4 | `standard_io_window.esp`: BS and DEL kept in the line | `_pins` (debugger_rubout) |
+| I5 | `Screen.flush`: the changed band sent one row short | `_pins` (all five sessions then), `_winview` |
+| I6 | `sessions`: the take-back drops one event more | `_takeback` only |
+
+I1-I5 were run before `test_live_takeback` existed, I6 after it, and
+all six before `manipulator_hide` and `editor_menu` joined the pins.
+
+**Screens** (`../docs/simpos/screens/live_*.png`): the stages of
+`live_sessions/tour.script` (`live_system_menu`, `live_debugger`,
+`live_manipulator` opened with Option + left, `live_moved` after MOVE)
+and `tour_pmacs.script` (`live_pmacs`: a line typed above
+`boot.init`'s first, then C-p C-e, a Backspace and `!`). Each is
+winview's own `--dump` from a headless live run of the stage's events,
+checked against an in-process replay of them (`python3 -I
+tools/simpos_live.py shots psi/live_sessions/tour.script
+docs/simpos/screens`). exshow's 1100 x 700 window does not fit the save
+memory over the debugger's two windows. Started after them, it is
+refused (winfb BADSAVE), so the Pmacs session starts from Login PIMOS,
+as `--start login --program exshow` does.
+
+**What was tested only headless.** Everything above ran with SDL's dummy
+video driver, and no one has watched or typed into the window. Not
+tested: a real display; a real keyboard (HID usages as SDL reports them
+on macOS); the trackpad's buttons; and typing speed against kl0's.
+The fitted or resized window is not tested either. When the window is
+shrunk, SDL scales the 1-bit raster with its default (nearest)
+sampling, so thin strokes of the 11 x 14 glyphs may drop out. A display
+with 1,024 free rows, or an external monitor, shows every dot. Many
+mouse moves are cheap to replay: 2,000 move-only batches added 0.4 s
+to a take-back's replay. The protocol, the viewer's event code and the
+launcher are the same code in both cases. The first interactive run is
+the owner's.
+
+**Not done.** The IFS-application half of M11. The system menu's other
+eight items have no stand-in class. The graphics demos have no menu
+entry. Double clicks are classified host-side, not in the handler
+process. There is no meta# (Alt), and no key repeat beyond SDL's own.
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

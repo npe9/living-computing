@@ -1,0 +1,8 @@
+# psi/test_espc.py Window test_win_m6_system_menu's boxed menu (the pin
+# MENU_PINS['boxed'], docs/simpos/screens/system_menu.png): the right
+# button twice at fep_bridge.MENU_AT opens the SYSTEM MENU there, and the
+# mouse moved onto `Login PIMOS` boxes it; one batch, as menu_run's
+click r 640 560
+click r 640 560
+moveto 978 605
+quiet

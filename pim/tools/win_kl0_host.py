@@ -17,7 +17,8 @@ speaks its line protocol (that file's header):
 THE ADAPTER from raw records to the coordinator's events (ALL OURS; the
 plan §3.2 leaves double clicks to the handler process, whose stand-in
 does not classify them, so it is done here, and is an open item for
-psi/):
+psi/; tools/simpos_live.py, the software stack's live view, uses this
+Adapter's click and move rules too, with its own key codes):
   - a key with a JIS code -> {key, JIS}; named keys -> {key, Code} with
     their ASCII control codes, cr and keypad enter 13, lf 10, tab 9, bs 8,
     del 127, esc 27, bell 7 (OURS: only RETURN, 13, is used by the held

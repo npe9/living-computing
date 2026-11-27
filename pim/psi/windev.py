@@ -87,6 +87,10 @@ transcript proves dots, not a shadow), `stream_text` and `pbm_sha256`.
 Use:  python3 -I psi/windev.py png IN.pbm OUT.png     (any winfb PBM)
 The live screens are made by psi/winshot.py; the tests are
 psi/test_espc.py `test_win_*`.
+
+The tee (window M11, OURS): Device.tees is a list of sinks, each called
+with (op, operands) after every command is run; tools/simpos_live.py uses
+it to drive the viewer tools/winview from a live kl0 run (psi/test_live.py).
 """
 import hashlib
 import os
@@ -111,12 +115,20 @@ class Device:
         self.log = []                   # [(op byte, [A..F])], in order
         self.fonts = []                 # id -> winfb.Font (id 0 test_11)
         self.aim = None                 # the surface drawn on: None = the frame
+        self.tees = []                  # the tee (window M11, OURS): see run()
 
     def run(self, prim, rop, args):
         op = prim << 4 | rop
         args = list(args) + [0] * (6 - len(args))
         st = self.frame.command(op, args)
         self.log.append((op, args))
+        # the tee (window M11's live view, 2026-11-26, OURS): every command
+        # run here, in order, also goes to each sink in `tees` as (op, the
+        # six operands); tools/simpos_live.py runs them on its own frame,
+        # whose dots go to tools/winview.  The log and the stream are not
+        # touched by it.
+        for t in self.tees:
+            t(op, list(args))
         return st
 
     def aim_at(self, area):

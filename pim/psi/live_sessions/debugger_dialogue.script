@@ -1,0 +1,28 @@
+# The debugger dialogue of psi/test_boot_route.py test_step3o_dialogue, as
+# a user's keys and mouse at the viewer (tools/simpos_live.py SCRIPT form,
+# OURS).  Its frame must be test_boot_route.SCREEN_SHA.
+# The system menu: the right button twice (mouse#rr) at fep_bridge.MENU_AT,
+# then the left button on its first item, `debugger`
+click r 640 560
+click r 640 560
+click l 700 589
+quiet
+type :create(#pimfep##pimos_login_requester,Req).
+key enter
+quiet
+type :create(#process,Proc).
+key enter
+quiet
+type :activate(Proc,Req).
+key enter
+quiet
+# the requester's three answers
+type local
+key enter
+quiet
+type pimos
+key enter
+quiet
+type secret
+key enter
+quiet

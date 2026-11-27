@@ -1,0 +1,43 @@
+# A short interactive session (window M11, OURS): the screenshots
+# docs/simpos/screens/live_*.png are winview's own dumps of its stages, run
+# headless (tools/simpos_live.py `shots`).  The Pmacs stage is its own
+# session, tour_pmacs.script.
+# Stage marks (`# stage NAME`) end a stage: its screenshot is the frame
+# after the events above it.
+#
+# the SYSTEM MENU (the right button twice), the mouse on `debugger`
+click r 640 560
+click r 640 560
+moveto 700 589
+quiet
+# stage system_menu
+click l 700 589
+quiet
+type :create(#process,P).
+key enter
+quiet
+type :create(#pimfep##pimos_login_requester,Req), :activate(P,Req).
+key enter
+quiet
+# stage debugger
+# the requester's window has the keyboard: its first answer, with a slip
+type locl
+key bs
+type al
+key enter
+quiet
+# the manipulator on the debugger's window: Option + the left button
+# (OURS alternate for the middle button)
+down alt
+click l 900 150
+up alt
+quiet
+# stage manipulator
+# MOVE (item 3), then the new place
+click l 980 226
+wait 500
+moveto 400 120
+quiet
+click l 400 120
+quiet
+# stage moved

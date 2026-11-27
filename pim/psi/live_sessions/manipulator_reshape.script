@@ -1,0 +1,32 @@
+# psi/test_espc.py Window's manipulator screens (SHOT_PINS['reshaped'],
+# docs/simpos/screens/manipulator_reshape.png; Window.manip_events):
+# Login PIMOS from the system menu (window 1); window 2 by create/kill's
+# pop-up and a sweep of two corners; then the middle button on window 2
+# opens the manipulator, RESHAPE, and two corners (100, 100), (500, 300).
+# Left clicks wait 500 ms apart, so that none makes a double (mouse#ll).
+click r 640 560
+click r 640 560
+click l 978 605
+quiet
+# window 2: the system menu at (200, 150), its create/kill pop-up item,
+# `create`, and the sweep's two corners
+click r 200 150
+click r 200 150
+click l 500 195
+wait 500
+click l 540 220
+wait 500
+click l 600 500
+wait 500
+click l 1000 640
+quiet
+# the manipulator on window 2 (the middle button), RESHAPE (item 2)
+click m 620 560
+click l 700 620
+wait 500
+click l 100 100
+quiet
+moveto 300 250
+quiet
+click l 500 300
+quiet

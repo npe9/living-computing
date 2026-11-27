@@ -229,7 +229,7 @@ if [ "$WHAT" = live ]; then
   R=$B/interactive; prep "$R" "$M"
   ../tools/winview/build.sh "$B/winview"
   SC=2; [ "$M" = 3 ] || SC=1
-  (cd "$R" && "$B/winview" view.sock --scale $SC) &
+  (cd "$R" && exec "$B/winview" view.sock --scale $SC) &
   VPID=$!
   sleep 1
   echo "== the bench on the viewer (close the window to stop; Cmd-S saves the frame shown)"
@@ -312,7 +312,7 @@ FLOOD_EXPECT='[["mouse", "rr", 640, 560], ["mouse", "l", 978, 604],
  ["key", 9043], ["key", 9061], ["key", 9059]]'
 flood_case() {
   R=$B/flood; rm -rf "$R"; prep "$R" 3
-  (cd "$R" && SDL_VIDEODRIVER=dummy "$B/winview" v.sock --scale 2 --dump viewer.pbm \
+  (cd "$R" && SDL_VIDEODRIVER=dummy exec "$B/winview" v.sock --scale 2 --dump viewer.pbm \
     --play "$HERE/win_live/flood.play" > viewer.log 2>&1) &
   VPID=$!
   sleep 1
@@ -374,7 +374,7 @@ esac
 if pkg-config --exists sdl2 2>/dev/null; then
   R=$B/viewer; rm -rf "$R"; prep "$R" 0
   ../tools/winview/build.sh "$B/winview" > "$B/winview_build.log" 2>&1 || { cat "$B/winview_build.log"; exit 1; }
-  (cd "$R" && SDL_VIDEODRIVER=dummy "$B/winview" v.sock --dump viewer.pbm --fake-events > viewer.log 2>&1) &
+  (cd "$R" && SDL_VIDEODRIVER=dummy exec "$B/winview" v.sock --dump viewer.pbm --fake-events > viewer.log 2>&1) &
   VPID=$!
   sleep 1
   (cd "$R" && WIN_HOSTDEV_MODE=mode.txt WINVIEW_SOCKET=v.sock WIN_HOSTDEV_RUNFRAMES=14 WIN_HOSTDEV_PBM=frame.pbm \

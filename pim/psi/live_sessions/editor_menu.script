@@ -1,0 +1,15 @@
+# psi/test_espc.py Window test_win_m10_menu's EDITOR MENU (the pin
+# M10_PINS['editor_menu'], docs/simpos/screens/editor_menu.png): exshow
+# as in pmacs_editor.script, `Hi` typed, then ONE right click (it waits
+# out the double-click time, so it is mouse#r, not mouse#rr) in the Pmacs
+# window opens its EDITOR MENU (standard_editor.esp show_menu/1)
+click r 640 560
+click r 640 560
+click l 978 605
+quiet
+start exshow
+click l 200 150
+type Hi
+quiet
+click r 300 200
+quiet

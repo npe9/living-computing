@@ -1,0 +1,21 @@
+# The Pmacs stage of the screenshots (tour.script's header): a session of
+# its own, as `simpos_live.py live --start login --program exshow` starts
+# one.  exshow's 1100 x 700 window does not fit the save memory over the
+# debugger's windows (winfb BADSAVE, a refusal), so it comes after Login
+# PIMOS only, as the pin pmacs_editor.script does.
+click r 640 560
+click r 640 560
+click l 978 605
+quiet
+start exshow
+# the window selected by a click; a line typed above the file's first,
+# then C-p C-e, a Backspace and `!` at its end
+click l 200 150
+type Hello, SIMPOS.
+key enter
+ctrlkey p
+ctrlkey e
+key bs
+type !
+quiet
+# stage pmacs
