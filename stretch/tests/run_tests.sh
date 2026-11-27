@@ -10514,7 +10514,10 @@ run "SAU MIXED CLASSES (shared registers; literal answers and clocks)" "$TESTS_D
 # 3-10; Buchholz p.209); literal answers, literal clock counts, and the
 # unit's ownClocks() equal to the clocks taken.  Injections:
 # bsv/StretchSAU.bsv at mkSauStepTb and fidelity_plan.md A3 (b).
-run "SAU STEPPED ADD (Table 3's passes, 2 clocks each; literal answers and clocks)" "$TESTS_DIR/run_saustep_test.sh"
+# 2026-11-27 (fidelity_plan.md A5 part 2): both benches end with a 24-clock
+# script of terminate / holdTerm / terminated, checked every clock against a
+# literal table; injections in the bench headers.
+run "SAU STEPPED ADD (Table 3's passes, 2 clocks each; literal answers and clocks; the termination)" "$TESTS_DIR/run_saustep_test.sh"
 # 2026-11-19: mkFpBox, the floating-point box (plan §1c step 5f, stage 1:
 # MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
 # printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution
@@ -10543,7 +10546,17 @@ run "PAU MIXED CLASSES (FP and divide back to back; an abandoned divide)" "$TEST
 # p.3-4, PDF 22).  Also the plain add's terms (pre-shift, forced zero; p.3-3,
 # PDF 21) as pauAddTerms' values while pauAddStep is off.  Each switch's
 # injection and its observed failure set are in StretchPAU.bsv at the bench.
-run "PAU STEPPING (*+ chained; Table 2 add terms, literal)" "$TESTS_DIR/run_paustep_test.sh"
+# 2026-11-27 (fidelity_plan.md A5 part 2): both benches end with a 24-clock
+# script of terminate / holdTerm / terminated, checked every clock against a
+# literal table; injections in the bench headers.
+run "PAU STEPPING (*+ chained; Table 2 add terms, literal; the termination)" "$TESTS_DIR/run_paustep_test.sh"
+# 2026-11-27 (fidelity_plan.md A5 part 2, ebox_roadmap step 7): laParts, an
+# instruction's look-ahead levels as Table A-2's E-box sheet gives them
+# (Perf. Char. Vol. 1 printed A-12, PDF 71), with the sheet's crossing and
+# progressive note; 24 literal vectors, among them M+ crossing with
+# progressive indexing = 6 levels (Buchholz printed p.246, PDF 271).
+# Injections and their observed failure sets: bsv/StretchLaParts.bsv.
+run "LOOK-AHEAD LEVELS PER INSTRUCTION (Table A-2 E-box sheet; literal)" "$TESTS_DIR/run_laparts_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
@@ -12616,6 +12629,11 @@ run "Interruption timing: the deck's BE / one instruction / BD bracket" ./run_pr
 # rl_interrupt has no injection that could catch it, because the three
 # CYCLES benchmarks never enable interrupts and every interrupting test
 # checks a halt address rather than a clock count.
+# (2026-11-27: `ebusy` -- the E-box countdown -- is gone since
+# fidelity_plan.md A5 step 1, 2026-11-26; the E-box time is the units'
+# termination count, and that line is now rl_interrupt's `eArm.send`,
+# with the same effect: the count is not held in the next clock.  The
+# "ebusy == 0" and "ebusy already dropped" notes above are 2026-09-25's.)
 #
 # AND THE HARDER HALF IS UNTOUCHED.  An I-box-class instruction that the
 # I-box has already run AHEAD of a pending level is committed and cannot

@@ -93,7 +93,11 @@ opinion on stage structure is wanted.
 6. Move decode/preparation fully into an I-box stage output bundle.
 7. Split whole-instruction look-ahead entries into the historical
    operation / operand / store / recovery entries. (`LaKind` already
-   admits this: every live entry is `Whole`.)
+   admits this: every live entry is `Whole`.) STARTED 2026-11-27
+   (`fidelity_plan.md` A5 "what is left" 3): dispatch reads `ibox`, not
+   `kind`; `laParts` (StretchLaParts.bsv) has every E-box instruction's
+   Table A-2 parts; one-level instructions are loaded with their kind.
+   The two-level step moves halts and is stopped there (measured).
 8. Add forwarding and accurate SAU/PAU overlap.
 
 ## STATUS, MEASURED AGAINST THE CODE 2026-10-29

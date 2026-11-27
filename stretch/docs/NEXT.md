@@ -226,7 +226,8 @@ STILL OPEN, in order:
    the recovery (an undone index indicator may have been its cause).
 7. **THE REMOVAL HOLD IS UNREACHED.** `intWin`'s hold on removing the
    next level moved nothing when injected away: a completing level charges
-   `ebusy`, so only a level charged 0-1 clocks could reach it. No deck
+   `ebusy` (since A5 step 1, 2026-11-26, the units' termination count),
+   so only a level charged 0-1 clocks could reach it. No deck
    does. And rl_recover's slot choice (`recoverSlot`) is untested: every
    guessing branch in the suite was the head level (injection J7).
 8. **THE FOREIGN-INDICATOR GUARD IS UNREACHED.** `otherSeq` (StretchCore's
@@ -4920,6 +4921,11 @@ left is a runnable slice, not a missing instruction.
   were wrong: the three `CYCLES<=` benchmarks never enable the
   interruption system, and the tests that do interrupt check halt
   addresses, not cycles. Stated here rather than left to be found.
+  (2026-11-27: `ebusy` is gone since `fidelity_plan.md` A5 step 1,
+  2026-11-26. The E-box's time is the units' termination count
+  (`ebox.terminate`, `unitsTerminated`), and this line is now
+  `rl_interrupt`'s `eArm.send`: the count is not held in the next clock.
+  Same effect, still untested.)
 
   **The other candidate was measured and ruled out.** `interruptDue()`
   is latched — an every-clock rule publishing its answer one clock
@@ -6064,7 +6070,8 @@ inherits another instruction's number with no source of its own.
   reshaping.**
 * It rides the 2026-09-25 interruption-timing edge rather than needing
   a new one — and note that fix's untested `ebusy <= eb;` line would
-  gain a second caller and still be untested.
+  gain a second caller and still be untested (that line is now
+  `rl_interrupt`'s `eArm.send`, A5 step 1, 2026-11-26).
 
 ### And it is DECK-VERIFIED work, not manual-only — five blocks, none transcribed
 

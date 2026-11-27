@@ -2043,6 +2043,26 @@ endmodule
 // (pauChainMulAdd is the E-box arm's choice, not this unit's: the atlas
 // run with every term off and the chain on matches the base on PDF 57/88
 // within 0.05 clock on all 320 rows, fidelity_plan.md A4.)
+// THE TERMINATION (fidelity_plan.md A5 part 2, 2026-11-27): mkSauStepTb's
+// script, clock for clock (tc = 0..23, terminated() checked in every
+// clock against the literal termWant), on mkPAU's own copy of it; the
+// request beside the termination at tc 18 is vector 7's plain MULTIPLY,
+// 4 clocks: responseReady False at 21, True at 22 with fpMul's answer.
+//   tc 0  terminate(3)              True at 0, False 1-3, True at 4
+//   tc 5  terminate(0)              True at 5 and 6: nothing owed
+//   tc 7  terminate(2), hold at 8   False 8-10, True at 11 (10 unheld)
+//   tc 12 hold while idle           True
+//   tc 13 terminate(5), at 15 terminate(1): False 14-16, True at 17
+//   tc 18 terminate(4) and the multiply: False 19-22, True at 23
+// INJECTIONS, OBSERVED 2026-11-27 (in mkPAU, each reverted by the exact
+// inverse edit, `git diff` unchanged after; step vectors 0-10 pass under
+// every one, so only this script guards the termination):
+//   * terminate stores n, not n + 1: term 3, 10, 16, 22 FAIL; 4 failures.
+//   * rl_term ignores the hold (`!pw_termHold` dropped): term 10 FAILS.
+//   * terminate adds to what is owed (`rg_term[1] + n + 1`): term 17, 18,
+//     23 FAIL; 3 failures.
+//   * responseReady() also waits on the termination (`&& rg_term[1] == 0`):
+//     term 22 FAILS (the multiply beside it late); 1 failure.
 // ---------------------------------------------------------------------
 typedef 11 NPauStepVec;
 
@@ -2136,7 +2156,48 @@ module mkPauStepTb(Empty);
     else idx <= idx + 1;
   endrule
 
-  rule rl_finish (done);
+  // THE TERMINATION SCRIPT (header).  rl_thold is its own rule: holdTerm()
+  // must come before mkPAU's rl_term and terminate() after it.
+  Reg#(Bit#(5))  tc     <- mkReg(0);
+  Reg#(Bool)     tdone  <- mkReg(False);
+  function Bool termWant(Bit#(5) t) =
+    case (t) 1, 2, 3, 8, 9, 10, 14, 15, 16, 19, 20, 21, 22: False; default: True; endcase;
+  rule rl_thold (done && !tdone && (tc == 8 || tc == 12));
+    box.holdTerm();
+  endrule
+  rule rl_tphase (done && !tdone);
+    Bool t = box.terminated();
+    Bit#(8) nf = 0;
+    if (t != termWant(tc)) begin
+      $display("FAIL pau term[%0d]: terminated() = %0d, want %0d", tc, t, termWant(tc));
+      nf = nf + 1;
+    end
+    if (tc == 21 && box.responseReady()) begin
+      $display("FAIL pau term[21]: the request beside the termination is ready early");
+      nf = nf + 1;
+    end
+    if (tc == 22 && (!box.responseReady()
+                     || pack(pauFpRsp(box.response())) != pack(FpRsp'(tagged FpRspSingle fpMul(one, one, True, False))))) begin
+      $display("FAIL pau term[22]: the request beside the termination is late or wrong");
+      nf = nf + 1;
+    end
+    fails <= fails + nf;
+    case (tc)
+      0: box.terminate(3);
+      5: box.terminate(0);
+      7: box.terminate(2);
+      13: box.terminate(5);
+      15: box.terminate(1);
+      18: begin box.terminate(4); box.request(tagged PauFp (tagged FpMul m0)); end
+    endcase
+    if (tc == 23) begin
+      tdone <= True;
+      $display("PASS pau term: 24 clocks scripted");
+    end
+    tc <= tc + 1;
+  endrule
+
+  rule rl_finish (done && tdone);
     if (fails == 0) $display("ALL TESTS PASSED");
     else $display("%0d TEST(S) FAILED", fails);
     $finish(0);

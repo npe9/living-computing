@@ -1395,6 +1395,32 @@ endmodule
 //   rest pass.
 // STEP 4 (2026-11-26): sauRndPasses := 1 fails 22 (2 against 4); the rest
 //   pass.
+// THE TERMINATION (fidelity_plan.md A5 part 2, 2026-11-27): after the step
+// vectors, a clock-by-clock script, tc = 0..23, drives terminate(n) and
+// holdTerm() and checks terminated() in EVERY clock against a literal
+// table (termWant), worked from the interface note: terminate(n) in clock
+// c is unseen in c (a read precedes the write), owes n clocks, and
+// terminated() is first True in c + n + 1; a held clock does not count;
+// a second terminate() REPLACES what is owed (the countdown register's
+// write did the same); a request runs beside it, its answer on time.
+//   tc 0  terminate(3)              True at 0, False 1-3, True at 4
+//   tc 5  terminate(0)              True at 5 and 6: nothing owed
+//   tc 7  terminate(2), hold at 8   False 8-10, True at 11 (10 unheld)
+//   tc 12 hold while idle           True
+//   tc 13 terminate(5), at 15 terminate(1): False 14-16, True at 17
+//   tc 18 terminate(4) and a request (vector 0's add, 2 clocks):
+//         responseReady False at 19, True at 20; False 19-22, True at 23
+// INJECTIONS, OBSERVED 2026-11-27 (in mkSAU, each reverted by the exact
+// inverse edit, `git diff` unchanged after; the step vectors 0-27 pass
+// under every one of them, so only this script guards the termination):
+//   * terminate stores n, not n + 1: term 3, 10, 16, 22 FAIL (True a clock
+//     early, after each terminate with n > 0); 4 failures.
+//   * rl_term ignores the hold (`!pw_termHold` dropped): term 10 FAILS
+//     (the held clock counted); 1 failure.
+//   * terminate adds to what is owed (`rg_term[1] + n + 1`): term 17, 18
+//     and 23 FAIL (still owing); 3 failures.
+//   * responseReady() also waits on the termination (`&& rg_term[1] == 0`):
+//     term 20 FAILS (the request beside it late); 1 failure.
 // ---------------------------------------------------------------------
 typedef 28 NStepVec;
 
@@ -1521,7 +1547,47 @@ module mkSauStepTb(Empty);
     else idx <= idx + 1;
   endrule
 
-  rule rl_finish (done);
+  // THE TERMINATION SCRIPT (header).  rl_thold is its own rule: holdTerm()
+  // must come before mkSAU's rl_term and terminate() after it.
+  Reg#(Bit#(5))  tc     <- mkReg(0);
+  Reg#(Bool)     tdone  <- mkReg(False);
+  function Bool termWant(Bit#(5) t) =
+    case (t) 1, 2, 3, 8, 9, 10, 14, 15, 16, 19, 20, 21, 22: False; default: True; endcase;
+  rule rl_thold (done && !tdone && (tc == 8 || tc == 12));
+    box.holdTerm();
+  endrule
+  rule rl_tphase (done && !tdone);
+    Bool t = box.terminated();
+    Bit#(8) nf = 0;
+    if (t != termWant(tc)) begin
+      $display("FAIL sau term[%0d]: terminated() = %0d, want %0d", tc, t, termWant(tc));
+      nf = nf + 1;
+    end
+    if (tc == 19 && box.responseReady()) begin
+      $display("FAIL sau term[19]: the request beside the termination is ready early");
+      nf = nf + 1;
+    end
+    if (tc == 20 && (!box.responseReady() || sauDecRsp(box.response()) != wantOf(0))) begin
+      $display("FAIL sau term[20]: the request beside the termination is late or wrong");
+      nf = nf + 1;
+    end
+    fails <= fails + nf;
+    case (tc)
+      0: box.terminate(3);
+      5: box.terminate(0);
+      7: box.terminate(2);
+      13: box.terminate(5);
+      15: box.terminate(1);
+      18: begin box.terminate(4); box.request(tagged SauAdd reqOf(0)); end
+    endcase
+    if (tc == 23) begin
+      tdone <= True;
+      $display("PASS sau term: 24 clocks scripted");
+    end
+    tc <= tc + 1;
+  endrule
+
+  rule rl_finish (done && tdone);
     if (fails == 0) $display("ALL TESTS PASSED");
     else $display("%0d TEST(S) FAILED", fails);
     $finish(0);
