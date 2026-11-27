@@ -205,9 +205,10 @@ every row, so the rows that could meet them were looked for in the
 lines each row types and the command files it takes (no model run): a
 wildcard, a `..`, a `cd` or an absolute path; beyond these twelve only
 gdcc (a `*` in its query, not a path) and gog_kl1 (absolute file names,
-no wildcard: the shell expands only a wildcard from the root, and
-gog_kl1 never asked 204 of the root before) have one, so no other row
-was rerun. (`unification_failure` came after the rerun began; a model
+no wildcard; INFERENCE, from its committed run, which spent its budget
+compiling and so never met the root's refusal: the shell walks from
+the root for a wildcard only) have one, so no other row was rerun. The
+rerun ran at 9d7bfb79. (`unification_failure` came after it; a model
 stop ends a run, and the only rows that met it are cohlex and
 dulcinea, which no longer do.) Their next stops: h907_nseq, h907_nogc
 and h907_shell run the query `main:main(50,ns,A)` to their budgets
@@ -507,8 +508,11 @@ What each is:
   shoen was refused; it is now reported as the exception
   `unification_failure` (10, Info `{Pe, DataX, DataY}`, `kernel/
   builtin/excpt_tbl.kl1` 56, 209-215; VPIM
-  `f_reduce_exception_handler.psl.c` 79-96) on both reference models
-  (`ref_prio_list.py`; the Bluespec core has no such path). Next:
+  `f_reduce_exception_handler.psl.c` 79-96), the body going on at the
+  next instruction as VPIM's does (`klb_unify_bound.psl.c` 263-269,
+  371-374), on both reference models for the one-cell `get_*`
+  (`ref_prio_list.py`; a structure's or a built-in's failure is still
+  refused; the Bluespec core has no such path). Next:
   their compiles run to the budget (undetermined).
 - **FEP `fep#pathname` (221) on a written file** (consort, desq; done
   2026-11-27, in the runner, where the written files are): the same

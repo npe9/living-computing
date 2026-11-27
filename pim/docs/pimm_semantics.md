@@ -492,10 +492,15 @@ Three tiers, kept apart:
   a shoen is exception 10 `unification_failure`, Info `{Pe, DataX,
   DataY}` "without Caller" (`excpt_tbl.kl1` 56, 209-215; VPIM
   `f_reduce_exception_handler.psl.c` 79-96, tag bit 0x04000000), made
-  by the same path, the goal ending there (OURS); the pair is the one
-  that would not unify, for a structure its elements (INFERENCE).
-  Refused before (`a goal failed inside a shoen`); the Bluespec core
-  has no such path (`ref_prio_list.py`).
+  by the same path, and the body goes on at the next instruction, as
+  VPIM's active unification returns to the instruction stream after
+  reporting (`interpreter/klb_unify_bound.psl.c` 263-269, 371-374); the
+  pair is the one that would not unify. The one-cell `get_atom`,
+  `get_integer`, `get_value`, `get_bound_value`, `get_nil` only
+  (`pimm.py` `UNIFY_GOES_ON`); a failure in a structure's `unify_step`
+  or a built-in's output is still refused (`a goal failed inside a
+  shoen`), as every one was before. The Bluespec core has no such path
+  (`ref_prio_list.py`).
 - **Carried over from the siblings, not PIM/m-sourced**: counting a
   shoen's goals and its child shoen and ending it at zero (PDSS
   `emulator/emulate.c`:340, `shoen.c`:123-178 and 280-309); the first

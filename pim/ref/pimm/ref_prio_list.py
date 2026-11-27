@@ -29,7 +29,11 @@ the model's half of a third.
    Caller" (PIMOS kernel/builtin/excpt_tbl.kl1 56, 209-215; VPIM
    functions/f_reduce_exception_handler.psl.c 79-96, the number 2257
    and its tag bit 0x04000000, 2283), reported by the path a reduction
-   failure takes (pimm.py Machine.exception); the goal ends.  What they
+   failure takes (pimm.py Machine.exception); the body goes on at the
+   next instruction, as VPIM's active unification returns to the
+   instruction stream after f_FailActiveUnify_Sub (interpreter/
+   klb_unify_bound.psl.c 263-269, 371-374).  The one-cell get_* only;
+   elsewhere still refused.  What they
    met was a FEP stand-in gap, not this (the root directory refused,
    docs/ifs_apps.md 4); this is the model's half.
 
@@ -53,13 +57,16 @@ The parts, R worked by hand:
   l([], R) l(a, R) l(5, R) l({a}, R) l("ab", R)    R = 0 each
   l(V, R)                     waits on V; V = [1|2]: R = 1
   l(W, R)                     waits on W; W = []: R = 0
-  u(X) :- true | X = a, its goal in a started shoen (mask -1, resource
-      2^30, built as create_shoen leaves one): get_atom r0, a; proceed
-  u(b)                        the shoen's report: {2, 10, {0, b, a},
+  u(X, Y) :- true | X = a, Y = 1, its goal in a started shoen (mask -1,
+      resource 2^30, built as create_shoen leaves one): get_atom r0, a;
+      get_integer r1, 1; proceed
+  u(b, Y)                     the shoen's report: {2, 10, {0, b, a},
                               NewCode, NewArgv}; apply(NewCode, NewArgv)
-                              waits (Suspend)
-  u(a)                        no exception: terminated (12) its report
-  u(b), mask 1 << 25 (reduction_failure's bit alone)    refused, `an
+                              waits (Suspend); Y = 1 (the body goes on,
+                              as VPIM's: klb_unify_bound.psl.c 263-269,
+                              371-374 return to the instruction stream)
+  u(a, Y)                     no exception: terminated (12) its report
+  u(b, Y), mask 1 << 25 (reduction_failure's bit alone)    refused, `an
                               exception (tag 4000000) no shoen accepts`
 
 Observed fault injections (each into a private copy of ref/pimm, this
@@ -82,6 +89,8 @@ script run on it, 2026-11-27; the failures listed are all of them):
   unification failure: X and Y swapped   u(b): Info {0, a, b} (2 lines)
   unification failure numbered 9 (as a   u(b): number 9; and the mask of
     reduction failure, its tag 1 << 25)  1 << 25 accepts it (4 lines)
+  unification failure ends the goal      u(b): Y unbound, the body after
+    (the first version's rule)           it not run (2 lines)
 """
 import os
 import sys
@@ -197,9 +206,10 @@ def check(name, make):
     return bad, answers + 9
 
 
-UCODE = [(KLB, (0xc0 | 0) << 24 | 0x55),     # u(X) :- true | X = a: get_atom r0, a
+UCODE = [(KLB, (0xc0 | 0) << 24 | 0x55),     # u(X, Y) :- true | X = a, Y = 1: get_atom r0, a
+         klb(0xb9, 1, c16=1),                # get_integer r1, 1
          klb(0x60)]                          # proceed
-UNAMES = ['get_atom', 'proceed']
+UNAMES = ['get_atom', 'get_integer', 'proceed']
 A, B = (pimm.ATOM, 0x55), (pimm.ATOM, 0x56)
 
 
@@ -220,9 +230,9 @@ def shoen(m, mask):
 
 
 def check_unify(name, make):
-    """u(b) in a shoen: the exception unification_failure reported, its
-    Info {0, b, a}, and the handler's goal apply(NewCode, NewArgv) left
-    waiting; u(a) in one: terminated its only report; u(b) in a shoen
+    """u(b, Y) in a shoen: the exception unification_failure reported,
+    its Info {0, b, a}, the handler's goal apply(NewCode, NewArgv) left
+    waiting, and the body gone on (Y = 1); u(a) in one: terminated its only report; u(b) in a shoen
     whose mask lacks the tag: refused"""
     bad = []
     m = make()
@@ -231,7 +241,8 @@ def check_unify(name, make):
                                  ('u(a) in a shoen', A, 0xffffffff, 'none'),
                                  ('u(b), the mask without the tag', B, 1 << 25, 'refused')):
         sh, rep = shoen(m, mask)
-        m.record(pimm.READY, uc, [x], shoen=sh)
+        y = m.new_var()
+        m.record(pimm.READY, uc, [x, y], shoen=sh)
         m.mem[sh + pimm.SH_COUNT] = I(1)
         out = go(m, None, [])
         r = m.deref(rep)
@@ -254,6 +265,8 @@ def check_unify(name, make):
         if len(el) != 5 or el[0] != I(2) or el[1] != I(10) or info != [I(0), B, A] \
                 or not (out or '').startswith('Suspend'):
             bad.append((name, label, el, info, out))
+        if term(m, y) != 1:
+            bad.append((name, label + ': the body after it', term(m, y)))
     return bad
 
 

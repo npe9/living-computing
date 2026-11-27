@@ -129,6 +129,9 @@ def unify_fail(text, a, b):
 # 56, translate 209-215; VPIM functions/f_reduce_exception_handler.psl.c
 # 79-96 and the number, 2257, its tag bit 0x04000000, 2283)
 EXC_UNIFICATION_FAILURE = 10
+# the one-cell body unifications whose failure inside a shoen is reported
+# and the body goes on (Machine.reduce)
+UNIFY_GOES_ON = ('get_atom', 'get_integer', 'get_value', 'get_bound_value', 'get_nil')
 
 
 def sx24(v):
@@ -968,33 +971,41 @@ class Machine:
                 fn = getattr(self, 'i_' + name, None)
                 if fn is None:
                     raise Unimplemented('%s at %d' % (name, pc))
-                nxt = fn(pc, (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff)
+                try:
+                    nxt = fn(pc, (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff)
+                except Fail as e:
+                    # A failed body unification inside a shoen (2026-11-27):
+                    # the exception unification_failure, Info {Pe, DataX,
+                    # DataY}, the pair that would not unify, by the path a
+                    # reduction failure takes (Machine.exception, VPIM's
+                    # order), and the body GOES ON at the next instruction:
+                    # VPIM's active unification calls f_FailActiveUnify_Sub
+                    # and returns to the instruction stream (interpreter/
+                    # klb_unify_bound.psl.c 263-269, 371-374; functions/
+                    # f_reduce_active_unify.psl.c 469; the handler's
+                    # apply(NewCode, NewArgv) stands for the failed
+                    # unification, f_reduce_exception_handler.psl.c 67-96).
+                    # Only the one-cell get_* instructions are taken so;
+                    # a failure elsewhere (a structure's unify_step, a
+                    # built-in's output) is still refused below.  Met by
+                    # the IFS sweep's cohlex and dulcinea before the runner
+                    # served the root directory (docs/ifs_apps.md 4)
+                    if not (self.shoen and e.terms is not None and name in UNIFY_GOES_ON):
+                        raise
+                    self.exception(EXC_UNIFICATION_FAILURE, 1 << 16 + EXC_UNIFICATION_FAILURE,
+                                   e.terms[0], e.terms[1])
+                    self.event('E unify fail')
+                    nxt = None
                 if nxt == 'done':
                     return
                 pc = pc + 1 if nxt is None else nxt
-        except Fail as e:
+        except Fail:
             if self.shoen:
                 # inside a shoen a failure is reported to the shoen (the
-                # exception path).  A reduction failure is (i_suspend).
-                # A failed body unification (2026-11-27): the exception
-                # unification_failure, Info {Pe, DataX, DataY}, the pair
-                # that would not unify, by the path a reduction failure
-                # takes (Machine.exception, VPIM's order); the goal ends
-                # there, what its body did before stays done, as a
-                # reduction failure's goal ends (OURS: when the firmware
-                # stops the body is not held).  Which pair, for a
-                # structure unified element by element (unify_step), the
-                # elements: INFERENCE (VPIM passes its A_Term1, A_Term2,
-                # f_reduce_exception_handler.psl.c 83).  Met by the IFS
-                # sweep's cohlex and dulcinea before the runner served
-                # the root directory (docs/ifs_apps.md 4)
-                if e.terms is None:
-                    raise Unimplemented('a goal failed inside a shoen')
-                self.exception(EXC_UNIFICATION_FAILURE, 1 << 16 + EXC_UNIFICATION_FAILURE,
-                               e.terms[0], e.terms[1])
-                self.chain += 1
-                self.event('E fail')
-                return
+                # exception path).  A reduction failure is (i_suspend);
+                # a failed body unification is above; any other is
+                # refused
+                raise Unimplemented('a goal failed inside a shoen')
             self.event('E fail')
             raise
 
