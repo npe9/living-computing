@@ -55,8 +55,10 @@ flat in HOME, as a tree below it (HOME>prog>compile>X) or in an absolute
 directory it names (serve(), install_listing()); text in 7-bit JIS is
 served as EUC (jis_to_euc).  What the runner adds, each OURS and in
 docs/ifs_apps.md 1: the package work typed first (WORK), R7G's collector
-with a 50M-cell limit (run_row), three FEP services fep.py lacks
-(install_write_files), and for a Listener take the file's commands typed
+with a 50M-cell limit (run_row), FEP services fep.py lacks
+(install_write_files; since 2026-11-27 also the root and the
+directories on the way, 237 with any wildcard, versioned opens, "..",
+221 on a written file: install_listing, checked by services_check), and for a Listener take the file's commands typed
 one by one (expand_take, the +alt rows).  Downloads are untrusted: nothing in
 them is executed on the host; they are data given to the model.
 
@@ -172,30 +174,110 @@ def serve_abs(path, raw):
                               '00:00:00', 1, len(data), 0))
 
 
+def served_dirs():
+    """every directory that holds a served file, and each of its
+    ancestors up to the root ">": HOME, HOME's subdirectories (the
+    trees), serve_abs's directories"""
+    dirs = set()
+    for n in L.HOME_FILES:
+        parts = n.split('>')[:-1]
+        for k in range(len(parts) + 1):
+            dirs.add('>'.join([L.HOME] + parts[:k]))
+    for a in _abs:
+        dirs.add(a[:a.rindex('>')])
+    out = set()
+    for d in dirs:
+        parts = d.split('>')
+        for k in range(1, len(parts) + 1):
+            out.add('>'.join(parts[:k]) or '>')
+    return out
+
+
 def install_listing():
     """a directory below HOME (HOME>DIR, served from a tree) or one of
     serve_abs's listed as HOME is (longrun_ipl.home_listing answers only
     for HOME): the names served directly in it, ".1" each (OURS, for
-    the wildcards of the applications' command files, compile"Bel>*.kl1")"""
+    the wildcards of the applications' command files, compile"Bel>*.kl1").
+    Since 2026-11-27 (cohlex, dulcinea): also the root ">" and every
+    directory on the way to a served one (">sys", ">sys>user"), and each
+    directory lists the directories in it, by name with no version
+    (fep.listing's header: no period, a directory, shell/utils/
+    pathname.kl1 is_directory_or_file/4).  The shell expands a wildcard
+    of an absolute path from the root: expandPathname's
+    checkPathnameList(absolute, ..) opens `directory(">",
+    normal(Dir,_,_))` and asks `listing("sys", S)` of it, then of each
+    directory down the path (pathname.kl1 183-189, checkNode 254-271),
+    and a directory the FEP refuses fails that unification (cohlex's
+    `compile(["*.mac"])`, OBSERVED 2026-11-27: 204 on ">" answered 5,
+    then `a goal failed inside a shoen` in fileRfil's
+    -directory$$$enu$1/4).  A PSI's FEP has the root; what it lists
+    there is INFERENCE (the directories on the way only).  OURS, the
+    runner's only"""
     orig = L.home_listing
 
     def home_listing(path):
         name = L.text_of(__import__('struct').unpack('>%dH' % (len(path) // 2), path))
-        pre = name + '>'
-        if name == L.HOME:
-            if any('>' in n for n in L.HOME_FILES):
-                return fepm.listing(sorted(n + '.1' for n in L.HOME_FILES if '>' not in n))
+        pre = name if name == '>' else name + '>'
+        dirs = served_dirs()
+        if name not in dirs:
+            return orig(path)
+        if name == L.HOME and not any('>' in n for n in L.HOME_FILES):
+            return orig(path)
+        sub = sorted({d[len(pre):] for d in dirs if d.startswith(pre) and d != name
+                      and '>' not in d[len(pre):]})
+        if name == L.HOME or name.startswith(L.HOME + '>'):
+            rel = '' if name == L.HOME else name[len(L.HOME) + 1:] + '>'
+            names = [n[len(rel):] for n in L.HOME_FILES if n.startswith(rel)]
         else:
-            if name.startswith(L.HOME + '>'):
-                rel = name[len(L.HOME) + 1:] + '>'
-                names = [n[len(rel):] for n in L.HOME_FILES if n.startswith(rel)]
-            else:
-                names = [n[len(pre):] for n in _abs if n.startswith(pre)]
-            names = sorted(n for n in names if '>' not in n)
-            if names:
-                return fepm.listing([n + '.1' for n in names])
-        return orig(path)
+            names = [n[len(pre):] for n in _abs if n.startswith(pre)]
+        names = sorted(n for n in names if '>' not in n)
+        return fepm.listing(sub + [n + '.1' for n in names])
     L.home_listing = home_listing
+
+    # A served file opened by its listed name, the version on (the
+    # shell's wildcard expansion gives the compiler
+    # ">sys>user>pmpsi>cohlex>layout1.mac.1", `!ERROR! unable to open
+    # file` for each before this, OBSERVED 2026-11-27): the file of that
+    # name without ".1", the one version served (OURS; a FEP's file
+    # system keeps versions, INFERENCE that it opens one named so)
+    korig = L.kernel_file
+
+    def kernel_file(p):
+        name = L.text_of(__import__('struct').unpack('>%dH' % (len(p) // 2), p))
+        if name.endswith('.1') and name.count('.') >= 2 and '>' in name:
+            got = korig(fepm.jis(name[:-2]))
+            if got is not None:
+                return got
+        return korig(p)
+    L.kernel_file = kernel_file
+
+
+def resolve_parent(path):
+    """a directory path with its ".." nodes resolved (">a>b>.." is
+    ">a"); the path unchanged if it has none"""
+    if '>..' not in path:
+        return path
+    out = []
+    for node in path.split('>')[1:]:
+        if node == '..':
+            if out:
+                out.pop()
+        else:
+            out.append(node)
+    return '>' + '>'.join(out)
+
+
+def wildcard_match(pattern, entry):
+    """237 with a wildcard other than fep.py's "*.*" (the shell's
+    listing("sys", S), listing("*.mac", S): pathname.kl1 checkNode):
+    `*` any characters, `?` one (INFERENCE: fnmatch's); a pattern of no
+    more than one period is matched against the entry without its
+    version (meta.mac.1 as meta.mac; a directory as its name), a longer
+    one against the whole entry.  OURS"""
+    import fnmatch
+    if pattern.count('.') < 2 and entry.count('.') >= 2:
+        entry = entry[:entry.rindex('.')]
+    return fnmatch.fnmatchcase(entry, pattern)
 
 
 def jis_to_euc(raw):
@@ -400,7 +482,38 @@ def install_write_files(f):
             if cmd == fepm.CLOSE:
                 del w[dev]
             return [fepm.NORMAL]
+        if dev in w and cmd == fepm.PATHNAME and len(msg) == 1:
+            # fep#pathname (221) on a file opened by 202: the same
+            # request as on a read file (bios/fep_module/file_dvc.kl1
+            # device_io1 318-321; the read, write and append opens of
+            # device_create/5, 21-44, all go on to the one reply/5 and
+            # device_process/4; docs/fep_services.md 2.2), asked by unload after its write_open (consort, desq:
+            # `unload([bignum_macro],"kl1>bignum_macro")`, FepError
+            # before this, OBSERVED 2026-11-27).  The answer as a home
+            # file's (longrun_ipl.add_home_file, 'PSI::' + the path +
+            # '.1'): the version of a new file 1, INFERENCE.  OURS, the
+            # runner's only, beside its write_open
+            return [fepm.NORMAL, fepm.jis('PSI::%s.1' % w[dev])]
+        if cmd == fepm.LISTING_ALL and len(msg) == 2 and isinstance(msg[1], bytes) \
+                and msg[1] != fepm.LISTING_WILDCARD and dev in getattr(f, 'dirs', {}):
+            # fep#listing_all (237) with a wildcard fep.py does not
+            # serve (it serves "*.*" only, as the FEP tapes pin): the
+            # entries of 204's listing that match it (wildcard_match),
+            # in fep.listing's form.  The shell's pathname expansion
+            # asks it with each node of the path and the last one's
+            # wildcard (shell/utils/pathname.kl1 checkNode 254-271;
+            # server/fep/file/dir_dvc.kl1 244-255 sends the wildcard as
+            # given).  OURS, the runner's only (install_listing)
+            pat = fepm.unjis(msg[1])
+            names = [n for n in fepm.unjis(f.dirs[dev]).split('\n') if n]
+            return [fepm.NORMAL, fepm.listing([n for n in names if wildcard_match(pat, n)])]
         if cmd == fepm.DIRECTORY and len(msg) == 5:
+            # ".." resolved (cohlex's last `cd ..`: `Unable to change
+            # directory ">sys>user>pmpsi>cohlex>.."`, 204 answered 5,
+            # OBSERVED 2026-11-27; the shell sends the path with it,
+            # INFERENCE that the FEP resolves it).  OURS
+            if isinstance(msg[4], bytes):
+                msg = list(msg[:4]) + [fepm.jis(resolve_parent(fepm.unjis(msg[4])))]
             dirs[dev] = msg[4]           # the path, for a 221 on it (below)
         if cmd == fepm.PATHNAME and len(msg) == 1 and dev in dirs \
                 and dev in getattr(f, 'dirs', {}):
@@ -855,6 +968,86 @@ def injections(results):
     return ok, got
 
 
+SERVICES = [
+    # (what, the request, the answer wanted as text: a status, then the
+    # reply's strings unjis'd); one device per directory or file opened
+    ('the root', (60, [fepm.DIRECTORY, b'', b'pmpsi', b'', '>']), [1]),
+    ('the root, listing("sys")', (60, [fepm.LISTING_ALL, 'sys']), [1, 'sys\n']),
+    ('>sys>user', (61, [fepm.DIRECTORY, b'', b'pmpsi', b'', '>sys>user']), [1]),
+    ('>sys>user, "*"', (61, [fepm.LISTING_ALL, '*']), [1, 'cgs\npmpsi\n']),
+    ('HOME, listing("cohlex")', (62, [fepm.DIRECTORY, b'', b'pmpsi', b'', L.HOME]), [1]),
+    ('HOME, "cohlex"', (62, [fepm.LISTING_ALL, 'cohlex']), [1, 'cohlex\n']),
+    ('HOME, "*.*" (fep.py\'s own: every entry, the directory too)',
+     (62, [fepm.LISTING_ALL, '*.*']), [1, 'cohlex\ntop.kl1.1\n']),
+    ('HOME>cohlex, "*.mac"', (63, [fepm.DIRECTORY, b'', b'pmpsi', b'', L.HOME + '>cohlex']), [1]),
+    ('HOME>cohlex, "*.mac" listed', (63, [fepm.LISTING_ALL, '*.mac']), [1, 'a.mac.1\n']),
+    ('HOME>cohlex>a.mac.1 opened', (64, [fepm.READ_OPEN, b'', b'pmpsi', b'', L.HOME + '>cohlex>a.mac.1']),
+     [1]),
+    ('HOME>cohlex>a.mac.2 not', (65, [fepm.READ_OPEN, b'', b'pmpsi', b'', L.HOME + '>cohlex>a.mac.2']),
+     [5]),
+    ('HOME>cohlex>.. opened', (66, [fepm.DIRECTORY, b'', b'pmpsi', b'', L.HOME + '>cohlex>..']), [1]),
+    ('HOME>cohlex>.., its pathname', (66, [fepm.PATHNAME]), [1, 'PSI::' + L.HOME]),
+    ('>sys>other not', (67, [fepm.DIRECTORY, b'', b'pmpsi', b'', '>sys>other']), [5]),
+    ('a written file', (68, [WRITE_OPEN, b'', b'pmpsi', b'', L.HOME + '>kl1>m.sav']), [1]),
+    ('a written file, its pathname', (68, [fepm.PATHNAME]), [1, 'PSI::' + L.HOME + '>kl1>m.sav.1']),
+]
+
+
+def services_check():
+    """the runner's directory and written-file services (install_listing,
+    install_write_files) on a bare fep.Fep, no checkpoint: SERVICES'
+    requests and answers.  The longrun_ipl state they wrap is restored
+    after.  Returns the parts that differ.
+
+    Observed injections (each into a private copy of ref/pimm, --check
+    run on it, 2026-11-27; the services lines listed are all of them):
+      the root and the way not served     the root and >sys>user: 204
+        (served_dirs: HOME's only)        answered 5, then 237 FepError
+                                          (4 lines)
+      no wildcard listing (fep.py's       237 FepError for "sys", "*",
+        "*.*" only)                       "cohlex", "*.mac" (4 lines)
+      the wildcard matched against the    "*.mac" lists nothing (1 line)
+        whole entry, version and all
+      directories not listed              "sys", "*", "cohlex" list
+                                          nothing, "*.*" lacks cohlex
+                                          (4 lines)
+      no versioned open                   a.mac.1 answered 5 (1 line)
+      ".." not resolved                   HOME>cohlex>.. answered 5, its
+                                          221 FepError (2 lines)
+      no 221 on a written file            FepError (1 line)"""
+    saved = (dict(L.HOME_FILES), dict(L._home), L.home_listing, L.kernel_file, dict(_abs))
+    try:
+        L.add_home_file('top.kl1', b'x.\n')
+        L.add_home_file('cohlex>a.mac', b'x.\n')
+        L.add_home_file('cohlex>b.kl1', b'x.\n')
+        serve_abs('>sys>user>cgs>c.kl1', b'x.\n')
+        # HOME with only these (the default home files set apart)
+        for n in [n for n in L.HOME_FILES if n not in ('top.kl1', 'cohlex>a.mac', 'cohlex>b.kl1')]:
+            del L.HOME_FILES[n]
+        install_listing()
+        f = fepm.Fep(lambda p: L.kernel_file(p), getb_unit=2, list_dir=lambda p: L.home_listing(p))
+        install_write_files(f)
+        bad = []
+        for what, (dev, msg), want in SERVICES:
+            msg = [fepm.jis(x) if isinstance(x, str) else x for x in msg]
+            try:
+                got = f.request(dev, msg)
+            except fepm.FepError as e:
+                got = ['FepError %s' % e]
+            got = [fepm.unjis(x) if isinstance(x, bytes) else x for x in got]
+            if got != want:
+                bad.append('services: %s: %r, not %r' % (what, got, want))
+        return bad
+    finally:
+        L.HOME_FILES.clear()
+        L.HOME_FILES.update(saved[0])
+        L._home.clear()
+        L._home.update(saved[1])
+        L.home_listing, L.kernel_file = saved[2], saved[3]
+        _abs.clear()
+        _abs.update(saved[4])
+
+
 def check(argv):
     """the checkpoint-free check (run_tests.sh): the oracles against the
     archives, the committed summary against PINNED, the injections"""
@@ -862,6 +1055,7 @@ def check(argv):
     results = load_results(src)
     miss = oracles()
     _out, bad = table(results)
+    bad += services_check()
     ok, got = injections(results) if not bad else (False, [])
     # the oracle lookup itself: a printed value altered (a digit added to
     # its archive form) must be reported missing for that row alone
@@ -884,7 +1078,8 @@ def check(argv):
     if miss or bad or not ok:
         print('ifs sweep check: FAIL')
         return 1
-    print('ifs sweep check: PASS (%d rows)' % len(ROWS))
+    print('ifs sweep check: PASS (%d rows; the runner\'s FEP services, %d requests)'
+          % (len(ROWS), len(SERVICES)))
     return 0
 
 

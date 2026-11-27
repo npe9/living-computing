@@ -601,7 +601,19 @@ addressing rule on a layout known from elsewhere.*
   `enqueue_goal_with_priority` of 12 arguments, mmi the guard `list`,
   ldlib a syntax error on `misc.kl1`, mssd a float built-in waiting
   with no stub; mgtp_n, multialign_run, aya+alt their budgets. STOPS 7,
-  BUDGET 5; first stops now two tied at 2, then one each.*
+  BUDGET 5; first stops now two tied at 2, then one each.
+  2026-11-27, last: `enqueue_goal_with_priority` of more than 11
+  arguments spread as `enqueue_goal`'s (PIMOS compiler `newnorm.kl1`
+  907-909), the guard `list`, and a failed body unification inside a
+  shoen reported as `unification_failure` (`ref_prio_list.py`); the
+  shoen failure of cohlex and dulcinea was the runner's directory
+  service (no root `>`, which the shell's wildcard expansion walks
+  from), and the runner now serves the root and the way down, 237
+  with a wildcard, versioned opens, `..` and 221 on a written file
+  (`services_check`). The twelve rows rerun and merged: the H9-07
+  rows, dulcinea, cohlex, consort and desq now spend their budgets;
+  mmi meets `enqueue_goal_to_processor` of 13 arguments with the node
+  unbound. STOPS 5, BUDGET 7; every first stop now one each.*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as

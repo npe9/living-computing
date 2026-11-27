@@ -113,7 +113,25 @@ class Suspend(Exception):
 
 
 class Fail(Exception):
-    """No clause applies (a reduction failure), or a body unification fails."""
+    """No clause applies (a reduction failure), or a body unification
+    fails; then `terms` is the pair that would not unify."""
+    terms = None
+
+
+def unify_fail(text, a, b):
+    e = Fail(text)
+    e.terms = (a, b)
+    return e
+
+
+# unification_failure, exception number 10, Info {Pe, DataX, DataY}
+# "without Caller" (PIMOS kernel/builtin/excpt_tbl.kl1 "FIRMWARE FORMAT"
+# 56, translate 209-215; VPIM functions/f_reduce_exception_handler.psl.c
+# 79-96 and the number, 2257, its tag bit 0x04000000, 2283)
+EXC_UNIFICATION_FAILURE = 10
+# the one-cell body unifications whose failure inside a shoen is reported
+# and the body goes on (Machine.reduce)
+UNIFY_GOES_ON = ('get_atom', 'get_integer', 'get_value', 'get_bound_value', 'get_nil')
 
 
 def sx24(v):
@@ -416,10 +434,10 @@ class Machine:
             self.bind(b, a)
             return
         if a[0] & ~1 != b[0] & ~1:
-            raise Fail('unify %r %r' % (a, b))
+            raise unify_fail('unify %r %r' % (a, b), a, b)
         if a[0] & ~1 in (INT, ATOM, FLT):    # a float by its bits (atomic())
             if a[1] != b[1]:
-                raise Fail('unify %r %r' % (a, b))
+                raise unify_fail('unify %r %r' % (a, b), a, b)
             return
         if a[0] & ~1 == STRG:
             # Only the same string object: comparing contents is not
@@ -953,7 +971,31 @@ class Machine:
                 fn = getattr(self, 'i_' + name, None)
                 if fn is None:
                     raise Unimplemented('%s at %d' % (name, pc))
-                nxt = fn(pc, (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff)
+                try:
+                    nxt = fn(pc, (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff)
+                except Fail as e:
+                    # A failed body unification inside a shoen (2026-11-27):
+                    # the exception unification_failure, Info {Pe, DataX,
+                    # DataY}, the pair that would not unify, by the path a
+                    # reduction failure takes (Machine.exception, VPIM's
+                    # order), and the body GOES ON at the next instruction:
+                    # VPIM's active unification calls f_FailActiveUnify_Sub
+                    # and returns to the instruction stream (interpreter/
+                    # klb_unify_bound.psl.c 263-269, 371-374; functions/
+                    # f_reduce_active_unify.psl.c 469; the handler's
+                    # apply(NewCode, NewArgv) stands for the failed
+                    # unification, f_reduce_exception_handler.psl.c 67-96).
+                    # Only the one-cell get_* instructions are taken so;
+                    # a failure elsewhere (a structure's unify_step, a
+                    # built-in's output) is still refused below.  Met by
+                    # the IFS sweep's cohlex and dulcinea before the runner
+                    # served the root directory (docs/ifs_apps.md 4)
+                    if not (self.shoen and e.terms is not None and name in UNIFY_GOES_ON):
+                        raise
+                    self.exception(EXC_UNIFICATION_FAILURE, 1 << 16 + EXC_UNIFICATION_FAILURE,
+                                   e.terms[0], e.terms[1])
+                    self.event('E unify fail')
+                    nxt = None
                 if nxt == 'done':
                     return
                 pc = pc + 1 if nxt is None else nxt
@@ -961,8 +1003,8 @@ class Machine:
             if self.shoen:
                 # inside a shoen a failure is reported to the shoen (the
                 # exception path).  A reduction failure is (i_suspend);
-                # a failed body unification, unification_failure, is
-                # not modelled: refused
+                # a failed body unification is above; any other is
+                # refused
                 raise Unimplemented('a goal failed inside a shoen')
             self.event('E fail')
             raise
@@ -1797,6 +1839,19 @@ class Machine:
         if w is None or w[0] & ~1 != ATOM:
             return self.guard_fail()
 
+    def i_list(self, pc, x, y, z, c16):          # guard type check
+        # list(X), 23:E3 r (PIMOS library/assembler/inst_tab.kl1 190):
+        # "Succeeds if X is a list.  Suspend: If X is uninstantiated.
+        # Fail: If X is anything other than a list" (PIMOS manual
+        # e-builtin.tex 62-68, PRINTED).  A list cell only: [] is the
+        # atom 0 here (NIL), not a list, as in PDSS (emulate.c 685
+        # KL1B_LIST: WAIT_AND_CHECK_TYPE1(LIST), 669-677; [] is the
+        # atom NIL, atom.h 8, its tag ATOM, cell.h 45, 48) and VPIM (interpreter/klb_index.psl.c 117-127
+        # klb_is_list, s_IfNotLIST).  2026-11-27, the IFS sweep's mmi
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != LIST:
+            return self.guard_fail()
+
     def i_integer(self, pc, x, y, z, c16):       # guard type check
         if self.g_int(x) is None:
             return self.guard_fail()
@@ -2278,10 +2333,21 @@ class Machine:
         # the next cell's top byte (assembler/klb_opr.kl1
         # p(r_c16_c8_exe)).  The priority must be an integer and is
         # then DROPPED: there is one ready queue here, where the
-        # machine has a goal stack per priority.
+        # machine has a goal stack per priority.  More than 11
+        # arguments (2026-11-27, the IFS sweep's H9-07: a goal of 12
+        # with @priority(3000)): the arguments from the 11th on are in
+        # a vector in the 11th, as for enqueue_goal, and spread the same
+        # way.  The compiler packs a goal with a pragma as it packs a
+        # plain one (PIMOS library/compiler/newnorm.kl1 907-909:
+        # normalize_body_goal(Goal@Pragma) calls pack_body_goal before
+        # normalize_with_pragma; the instruction's arity is the
+        # unpacked goal's, the Label F/A of pack.kl1 15-19, passed to
+        # normalize_with_priority_or_alloc as its fourth argument,
+        # newnorm.kl1 893-901)
         n = self.cells[pc + 1][1] >> 24
-        if self.reg[x][0] & ~1 != INT or n > 11:
+        if self.reg[x][0] & ~1 != INT:
             raise Unimplemented('enqueue_goal_with_priority %r, %d arguments' % (self.reg[x], n))
+        self.spread_args(n, 'enqueue_goal_with_priority')
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
         return pc + 2
 
@@ -3066,7 +3132,7 @@ class Machine:
             # step, and the elements from the descriptors
             n = self.vsize(a)
             if self.vsize(b) != n:
-                raise Fail('unify of vectors of %d and %d' % (n, self.vsize(b)))
+                raise unify_fail('unify of vectors of %d and %d' % (n, self.vsize(b)), a, b)
             ba, bb = self.vbase(a), self.vbase(b)
         else:
             n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1
