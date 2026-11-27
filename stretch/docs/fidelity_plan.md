@@ -1183,6 +1183,97 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
      the connectives and VFL logic into mkSAU's passes, as A3 did the
      adds; the plain FP add's terms are measured in A4 and held off
      (`pauAddStep`).
+     **PART 4, 2026-11-27: THE CENSUS, AND A MEASURED STOP. Nothing moved.**
+     - THE CENSUS. Only E-box-class levels (VflInt, Connective, Fp) and
+       branch levels reach removal. A level is charged its WHOLE timing
+       row as a termination, with no unit request, at one of two sites:
+       `rl_au_remove` (the operand was in the level) or `rl_exec_resume`'s
+       look-ahead branch with `boxK == 0` and `sauOwn` Invalid (the
+       instruction bailed for a read first: a crossing field, a
+       read-modify-write, a progressive refill). The time goes to mkPAU
+       for FP and to mkSAU for the rest. Row sources: VFL and connective
+       rows are Perf. Char. Vol. 1 Table 3 with the Vol. 2 atlas fits
+       (StretchTiming `eboxClocks`); FP rows are Table 2's minimum,
+       printed pp.3-3 to 3-5 (PDF 21-23); the branch level is Blosk
+       fig.10's `2 * 6`.
+
+       | family | unit | path today | clock source |
+       |---|---|---|---|
+       | C, CT, CM (every radix and byte size) | SAU | whole row, no request | `eboxClocks` Connective arm |
+       | VFL binary L, LWF | SAU | whole row | Table 3 / atlas, `12 + 2b` |
+       | VFL ST (binary; decimal without a round), SRD binary, decimal SRD with offset 0 | SAU | whole row | `18 + 2b` / `21 + b` |
+       | VFL binary M+, M+MG, M+1 | SAU | whole row | same row; M+1 `21`/`22` |
+       | VFL binary K, KE, KR, KF, KFE, KFR; decimal K decided at the signs (`skipCmp`) | SAU | whole row | `10 + 2b` / `8 + 2b`, immediate form |
+       | VFL LFT, LTRS, and decimal `*`, `*+`, `/` (the LTRS action) | SAU | whole row | `44`/`66` (+16 over 48 bits) |
+       | branch level (indicator branch's guess) | SAU | whole 12 | Blosk fig.10 |
+       | FP L, LWF, DL, DLWF, LFT, K, KMG, KR, KMGR, E+ | PAU | whole row | Table 2 |
+       | FP store class: ST, SRD, SLO, SHF, E+I, SRT (108) | PAU | whole row | Table 2 |
+       | FP adds with an early answer (`viaDp` False: +, +MG, M+, M+MG, D+, D+MG, F+) | PAU | whole row | Table 2 |
+
+       Already through a unit, for contrast. STEPPED (the unit owns its
+       passes; the row's fixed part terminates, `sauRowWithUnit`): `+`/`+MG`
+       in both radices; decimal L/LWF, the M+ family, the K family, SRD's
+       round; LCV, LTRCV, CV, DCV. UNSTEPPED (the row less the unit's
+       clocks, `budget - boxK`): VFL binary `*`, `*+` (mkSAU's
+       multiplier), `/` (mkPAU's divider); FP `*`, `D*`, `*+`, the adds
+       with `viaDp` (mkPAU, `boxCharge` adds Table 2's data terms), `/`,
+       `R/`, `D/`.
+       Frequencies on MCP's own bootstrap (`run_mcp_boot.sh`, a scratch
+       build printing at the two charge sites): 98,507 branch levels; C
+       931, CT 307, CM 317; VFL L 413, ST 304, K 40, KF 416, M+1 59, M+ and M+MG 12. No
+       FP instruction.
+     - THE MEASUREMENT. The only request/response the units have is the
+       NeedBox hold: the removal clock sends the request and holds the
+       level, and `rl_exec_resume` completes it when the unit answers,
+       charging the row less the unit's clocks. A one-clock unit therefore
+       keeps each instruction's total. What it changes:
+       - the level retires a clock later;
+       - the resume takes an arm clock;
+       - the writes and indicators land a clock later.
+       The binary add's move into mkDecBox (`microarchitecture_plan.md`
+       §1c 5e stage 3) moved nine halt clocks the same way. Measured here,
+       in a scratch copy only (never committed), with a void box kind 5
+       that answers in the next clock, RELEASED like the other boxes
+       (`boxReleases`; release-off was not run). Each probe built from
+       f125d436:
+       - PROBE 1, all three connectives: `cm_adjacent_offsets` 527 -> 528,
+         `vfl_cross_tomemory` 1194 (its base is not in the suite log: the
+         `tail -20` window drops its HALTREPORT; 1193 at 1c140c22, the A5
+         table). Both have CM and no C or CT. Ten other decks identical
+         (`cm_crossing_field`, `connective_counts`, `connective_byte_size`,
+         the crossing-store decks, the three `*_box_release` decks,
+         `fp_mplus_ds_not_df`, `fp_to_memory_laar`).
+       - PROBE 1', C and CT only (CM at removal): `connective_counts` 514
+         and `connective_byte_size` 491 identical, but MCP's bootstrap
+         6,321,488 -> **6,321,529 (+41)**. MCP's HALTREPORT is not among
+         the suite's 388 lines (the same window), so the suite would have
+         passed this move. A real C/CT move was then written in the
+         worktree (mkSAU logic class `SauLogic`, one clock, with three
+         mkSauMixTb vectors, which passed), and DISCARDED before its core build finished: it is
+         the probe's timing. The patch was kept outside the repo only.
+       - PROBE 2, connectives at removal again, every VFL and every FP
+         instruction that completes with no unit (the census rows above)
+         through the same hold: six of ten decks move, two pins FAIL.
+         `vfl_crossing_store` 401 -> 402, `connective_counts` 514 -> 515
+         (its L and ST), `vfl_cross_storewait` 283 -> 285 (**FAIL**,
+         `CYCLES=283+-0`), `fp_to_memory_laar` 786 -> 782 (**FAIL**,
+         `CYCLES=786+-0`), Buchholz B.1 129 -> 130, Problem 3.6 762 -> 763.
+         Unchanged: `fp_mplus_ds_not_df` 1056, `dec_box_release` 868, F216B
+         790, Buchholz B.3 986. MCP's bootstrap 6,321,488 -> 6,321,803 (+315).
+     - SO NO FAMILY MOVES IN THIS PART. Two other shapes were considered
+       and not taken:
+       - The unit DERIVING the count from a typed request while the
+         datapath and the commit stay at removal. `laarRetire` and
+         `eboxDoneAt` need the number in the removal clock, so the core
+         would compute it anyway. That is a relocation of `eboxClocks`,
+         not a request/response.
+       - A combinational value method, the datapath in the unit with no
+         hold. That is Piccolo's single-cycle ALU, which stays a stage
+         function; it is not a box.
+       What a move needs first is a SOURCED reason for the clock it costs.
+       Candidates: the serial unit's own start-up, or the level's release
+       timing (Buchholz §15.5's arithmetic-bus counter). With that, the
+       hold becomes a timing change with a source, like A6's.
   2. The termination's rule-of-arms hold. Removing it is a TIMING change
      (a crossing store's E-box time one clock shorter when nothing else
      is pending: -5 on vfl_crossing_store and cm_crossing_field, above); measure it on the WB XOVR atlas columns (PDF 143-169)
