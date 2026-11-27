@@ -81,8 +81,9 @@ the code where it is done:
 - **RUNS-DIFFERS**: ran to the end and printed something else.
 - **RUNS-NO-ORACLE**: ran to the end; the documentation prints nothing to
   compare with.
-- **STOPS / STOPS(float)**: the first stop named. Floating point is being
-  added by another agent; its stops are only marked.
+- **STOPS / STOPS(float)**: the first stop named. A refused floating-point
+  operation is marked STOPS(float); floating point is on master since
+  the float merge, and no row of the rerun has such a stop.
 - **BUDGET**: still running, without an error, when its instruction
   budget was spent.
 - **NEEDS-SIMPOS**: the application has an ESP half that runs on the
@@ -118,9 +119,10 @@ first sweep's counts:
 No row stops at `set_constant` or at a float built-in any more: of
 the 14 behind set_constant and the 5 behind float, 9 now spend their
 budget compiling (ppss, colodex, rodin, aligndp, celplace, examds,
-gog_kl1, logisim, seqanal), 5 stop at `wait_value on a structure`
-(ldlib, dulcinea, consort, desq, which were its "next" stops, and
-kappa_p as before), and the rest meet new stops: mmi a second PE,
+gog_kl1, logisim, seqanal), 4 stop at `wait_value on a structure`
+(ldlib, dulcinea, consort, desq, which were their "next" stops; with
+kappa_p, as before, it is now the largest first stop, 5), and the
+other 6 meet new stops: mmi a second PE,
 h907_nseq `get_heap_size`, gdcc a Listener syntax error on its
 documented query, editalign the FEP socket request, pmonitor its
 missing `chart_ctl`; multialign's take now loads `pia_s2.exe` and ends.
@@ -273,8 +275,10 @@ What each is:
   row is STOPS(float). Every take typed at the Listener now runs past
   the point where the first sweep stopped; what the 19 meet instead is
   in the table (section 2's paragraph). The first sweep's INFERENCE
-  that gdcc's set_constant came from `gdcc:go` is now confirmed: the
-  whole `gdcc.init` take, `gdcc:go` last, runs and opens GDCC's window.
+  that gdcc's set_constant came from `gdcc:go` is consistent with the
+  rerun (the whole `gdcc.init` take, `gdcc:go` last, now runs and opens
+  GDCC's window) but still not observed: nothing refuses set_constant
+  any more, so where it was met is not shown.
 - **`wait_value on a structure` (5 first, 5 in all).** The guard `X = Y`
   on a structure and a non-atomic value the model does not compare
   (`pimm.py` `i_wait_value`). kappa_p meets it at once; ldlib,
