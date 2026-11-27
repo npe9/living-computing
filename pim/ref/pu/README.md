@@ -361,10 +361,20 @@ start address, and the thesis's p.129 says TDPF sets up the E stage's
 multiway (a column for a later case_branch), not the start; `31e9`
 jumps to `31f3`, whose conditional end tests CNDF 9 VDESC and reads
 R01, never set; it calls `31a1`, a 4-bit JMPF 2. A lead, read not
-run: `31ec`-`31ed` (entry + 4) put the operand in x and in R02 and end
-conditionally, the reuse in place of a single-reference list, so
-"start(for_others)" may be entry + 4 here; `get_atom`'s `3804` stamps
-ATOMx, which does not obviously fit the same reading); then
+run: the entry's 16 words before `put_vector_N[00]` (`31f8`) read as
+four 4-word rows, `31e8` / `31ec` / `31f0` / `31f4`, and `31ec`-`31ed`
+put the operand in x and in R02 and end conditionally, the reuse in
+place of a single-reference list; `get_atom`'s 32 words read as eight
+4-word rows, the first two UNDF reached through REFo (`3800`, binds
+ATOMo, run) and through REFx (`3804`, binds ATOMx), then HOOK o/x
+(`3808`, `380c`), then compares (`3810`-`381c`). So the S stage's start
+looks like entry | code << 2 with a code from the dereference (the
+final tag and the MRB of the last REF), like `34a1`'s set-up, not a TGT
+column (`setup.S_ENTRY` 'row', the injection `s_imm_row`, fails).
+Which code numbering, for which entry, is the open question. And
+`pimm.py` never reuses (`i_put_reused_structure`: new cells), where
+`31ec` reuses the list cell in place, so the comparison will need a
+declared difference, as U1's `indirect` and `mrb`); then
 `write_value`, `write_variable` (run in U1), `get_bound_value`,
 `put_value`, `execute` (`4cc0`), `wait_nil`, `get_value`, `proceed`
 (`216c`). The 4-bit JMPF 2 (`2447`, `31a1`). Then the boot beyond
