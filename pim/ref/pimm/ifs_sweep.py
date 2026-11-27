@@ -34,7 +34,7 @@ The table and the stop histogram are docs/ifs_apps.md.
 A DOCUMENTED LONG RUNNER, NOT part of run_tests.sh: PROMPT.pkl is the
 machine saved at the shell's prompt (lockstep_shell.py's header:
 longrun_ipl.py --load LINK --go --fep --save-prompt), ~1.1 GB, not in
-git; the whole sweep took 2,504 s ten at a time (docs/ifs_apps.md 7).  Reference model only (ref/pimm/pimm.py); no row is in lockstep
+git; the whole sweep took 2,504 s ten at a time (2026-11-26), 2,159 s in the rerun of 2026-11-27 (docs/ifs_apps.md 7).  Reference model only (ref/pimm/pimm.py); no row is in lockstep
 on the core (the bsv lockstep's rows are lockstep_shell.APPS, R8 and R9).
 
 The route is R8's and R9's (lockstep_shell.play from the prompt, as
@@ -768,19 +768,24 @@ def oracles(rows=None):
 def injections(results):
     """INJECTIONS: each a change to the rows or to a result, in this
     process only; each must make table() report exactly the rows named.
-    OBSERVED 2026-11-26 against the committed summary (docs/ifs_apps.md 8):
+    OBSERVED 2026-11-27 against the committed summary of the rerun
+    (docs/ifs_apps.md 8):
       mgtp_n's stop removed                          -> mgtp_n
-      mgtp_n's stop made a float stop                -> mgtp_n
+      mgtp_n's stop made a float stop                -> mgtp_n, and
+        classified `float:` (the float branch's own case)
       mgtp's printed value made its own window line
         ('21497 reductions': the match path)         -> mgtp
       `needs simpos` dropped from aligndp            -> aligndp
-      ERROR_MARK made to match nothing               -> aya, pmonitor+alt
+      ERROR_MARK made to match nothing               -> aya, gdcc,
+                                                        pmonitor, pmonitor+alt
     and in check(): mgtp's printed value altered, the archive lookup
     (oracles())                                      -> mgtp.
     A source injection, applied by hand and reverted from a copy:
     classify() without its float branch failed --check on exactly the
-    eight float rows, ppss, mmi, rodin+alt, aligndp, celplace, examds,
-    logisim+alt, seqanal+alt."""
+    eight float rows of the first sweep (2026-11-26); against the
+    rerun's summary, which has no float row, the same injection left
+    --check PASS until the float case above checked the class, and with
+    it fails that one case (OBSERVED 2026-11-27)."""
     import copy
     got = []
     base, bad0 = table(results)
@@ -801,7 +806,10 @@ def injections(results):
         cases.append(('stop of %s removed' % n, ROWS, res, {n}))
         res = copy.deepcopy(results)
         res[n]['stop'] = 'refused: b_floating_point_add at 1'      # another stop
-        cases.append(('stop of %s made a float stop' % n, ROWS, res, {n}))
+        # and classified as one: since the float merge no row of the
+        # summary stops at float, so this is what keeps classify()'s
+        # float branch covered (docs/ifs_apps.md 8)
+        cases.append(('stop of %s made a float stop' % n, ROWS, res, {n}, 'float'))
     differs = [n for n, o, _f in base if o == 'RUNS-DIFFERS' and n in results]
     if differs:
         n = differs[0]
@@ -826,11 +834,14 @@ def injections(results):
         if case[4:] == ('blind',):
             ERROR_MARK = re.compile(r'(?!x)x')
         try:
-            _o, bad = table(res, rows)
+            out, bad = table(res, rows)
         finally:
             ERROR_MARK = saved
         caught = {b.split(':')[0].split(' ')[0] for b in bad}
         good = caught == want
+        if case[4:] == ('float',):
+            good &= all(o in ('STOPS(float)', 'NEEDS-SIMPOS', 'NEEDS-OTHER')
+                        and f.startswith('float: ') for n_, o, f in out if n_ in want)
         ok &= good
         got.append('injection %s: reported %s (%s)' % (what, sorted(caught),
                                                       'as predicted' if good else 'NOT as predicted'))

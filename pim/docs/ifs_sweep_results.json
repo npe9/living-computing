@@ -1,15 +1,15 @@
 {
 "aligndp": {
 "errors": [],
-"instructions": 1207950,
+"instructions": 60000001,
 "loads": [],
 "name": "aligndp",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "compile([\"Dayhoff\",\"P1\",\"P1_SUB\",\"P2\",\"P2_SUB\",\"dp_color\",\"inputTDN\",\"makeGrid\"])"
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> ",
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>inputTDN.kl1.1\n[inputTDN.kl1@0] Compile Module : input\n=>  :- module input .\n",
 "written": {}
 },
 "alignsa": {
@@ -94,15 +94,15 @@
 },
 "celplace": {
 "errors": [],
-"instructions": 906388,
+"instructions": 60000001,
 "loads": [],
 "name": "celplace",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "compile([\"top\",\"main\",\"an1mat1\",\"an_module1\",\"init\",\"util\",\"overlap\",\"rn\"])"
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> ",
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>rn.kl1.1\n[rn.kl1@0] Compile Module : rn0\n=>  :- module rn0 .\nCompile Succeeded : rn0\n\nCompile File : PSI::>sys>user>pmpsi>overlap.kl1.1\n[overlap.kl1@0] Compile Module : remove_overlap\n=>  :- module remove_overlap .\nCompile Succeeded : remove_overlap\n\nCompile File : PSI::>sys>user>pmpsi>util.kl1.1\n",
 "written": {}
 },
 "cohlex": {
@@ -120,17 +120,17 @@
 },
 "colodex": {
 "errors": [],
-"instructions": 386291,
+"instructions": 80000001,
 "loads": [],
 "name": "colodex",
-"stop": "refused: set_constant at 79446157",
+"stop": "BUDGET: budget of 80000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"s.com\").",
 "test_ex:t."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] compile[\"agent.kl1\",\"component.kl1\",\"processL.kl1\",\"s_glbl_lcl.kl1\",\"agent_trns.kl1\",\"distribute.kl1\",\"product_NJ.kl1\",\"storage_NJ.kl1\",\"agent_util.kl1\",\"eval_comps.kl1\",\"main.kl1\",\"reduct_NJ.kl1\",\"test_ex.kl1\",\"balancer.kl1\",\"process2.kl1\",\"s_comb_nj.kl1\",\"util.kl1\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>util.kl1.1\n[util.kl1@0] Compile Module : util\n=>  :- module util .\nCompile Succeeded : util\n\nCompile File : PSI::>sys>user>pmpsi>s_comb_nj.kl1.1\n[s_comb_nj.kl1@0] Compile Module : combine_nj\n=>  :- module combine_nj .\nCompile Succeeded : combine_nj\n\nCompile File : PSI::>sys>user>pmpsi>process2.kl1.1\n",
 "written": {}
 },
 "colodex+alt": {
@@ -150,16 +150,16 @@
 },
 "consort": {
 "errors": [],
-"instructions": 387475,
+"instructions": 4338703,
 "loads": [],
 "name": "consort",
-"stop": "refused: set_constant at 79446157",
+"stop": "refused: wait_value on a structure",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"kl1_source>comp_4p.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] cd\">sys>user>desq\" .\n >sys>user>desq not found !!\n\n[3] compile[\"kl1_source>consort>bignum_macro.mac\"] .\n",
 "written": {}
 },
 "consort+alt": {
@@ -191,16 +191,16 @@
 },
 "desq": {
 "errors": [],
-"instructions": 387475,
+"instructions": 4338703,
 "loads": [],
 "name": "desq",
-"stop": "refused: set_constant at 79446157",
+"stop": "refused: wait_value on a structure",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"kl1_source>comp_4p.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] cd\">sys>user>desq\" .\n >sys>user>desq not found !!\n\n[3] compile[\"kl1_source>consort>bignum_macro.mac\"] .\n",
 "written": {}
 },
 "desq+alt": {
@@ -240,7 +240,7 @@
 ]
 ],
 "name": "dpool",
-"stop": "refused: clause_info at 83489951",
+"stop": "refused: clause_info at 83600795",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -253,16 +253,16 @@
 },
 "dulcinea": {
 "errors": [],
-"instructions": 386918,
+"instructions": 6503359,
 "loads": [],
 "name": "dulcinea",
-"stop": "refused: set_constant at 79446157",
+"stop": "refused: wait_value on a structure",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take \"install.com\"."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] prompt(\"\\p:[\\!]% \") .\n\nwork:[3]% package: define(meta,pimos,8#\"777\",St) .\n St = normal\n\nwork:[4]% package: define(bel,user)';' package: define(dul,user) .\n\nwork:[5]% package: define(rosi,user)';' package: define(soc1,user) .\n\nwork:[6]% package: define(soc2,user)';' package: define(sancho,user) .\n\nwork:[7]% take\"aliases\" .\n\nwork:[8]% alias(sv_bel,unload: package(bel,\"Bel>bel\")) .\n alias: sv_bel => unload: package(bel,\"Bel>bel\")\n\nwork:[9]% alias(sv_dul,unload: package(dul,\"save>dul\")) .\n alias: sv_dul => unload: package(dul,\"save>dul\")\n\nwork:[10]% alias(sv_rosi,unload: package(rosi,\"save>rosi\")) .\n alias: sv_rosi => unload: package(rosi,\"save>rosi\")\n\nwork:[11]% alias(sv_soc1,unload: package(soc1,\"save>soc1\")) .\n alias: sv_soc1 => unload: package(soc1,\"save>soc1\")\n\nwork:[12]% alias(sv_soc2,unload: package(soc2,\"save>soc2\")) .\n alias: sv_soc2 => unload: package(soc2,\"save>soc2\")\n\nwork:[13]% alias(sv_sancho,unload: package(sancho,\"save>sancho\")) .\n alias: sv_sancho => unload: package(sancho,\"save>sancho\")\n\nwork:[14]% alias(compile(A,B),(dfp A ';' compile B ';' dfp dul)) .\n alias: compile(A,B) => dfp(A)';' compile(B)';' dfp(dul)\n\nwork:[15]% alias(bcomp(A),rosi:: bcomp: compile A ) .\n alias: bcomp(A) => rosi:: bcomp: compile(A)\n\nwork:[16]% alias(bcompall(A),(rosi:: bcomp: compile A ';' compile(bel,A)';' rp(bel)';' rp(rosi)';' rp(dul))) .\n alias: bcompall(A) => rosi:: bcomp: compile(A)';' compile(bel,A)';' rp(bel)';' &  ';' & \n\nwork:[17]% alias(rp(A),(dfp A ';' relink: package';' dfp dul)) .\n alias: rp(A) => dfp(A)';' relink: package';' dfp(dul)\n\nwork:[18]% alias(dul,dul:: dul: main) .\n alias: dul => dul:: dul: main\n\nwork:[19]% alias(demo,dul:: dul: demo) .\n alias: demo => dul:: dul: demo\n\nwork:[20]% alias(xdemo(A,B),dul:: dul: xdemo(A,B)) .\n alias: xdemo(A,B) => dul:: dul: xdemo(A,B)\n\n % End of take ( PSI::>sys>user>pmpsi>aliases.1 ) %\n\nwork:[21]% dfp meta';' take\"rosi>meta>install.com\" .\n\nmeta:[22]% package: define(meta,pimos,8#\"777\",St) .\n St = abnormal\n\nmeta:[23]% setenv(task: package,meta,St1) .\n St1 = normal\n\nmeta:[24]% compile[\"rosi>meta>Macro>meta.mac\"] .\n",
 "written": {}
 },
 "dulcinea+alt": {
@@ -327,17 +327,22 @@
 },
 "editalign": {
 "errors": [],
-"instructions": 386591,
-"loads": [],
+"instructions": 9278947,
+"loads": [
+[
+"rf.exe",
+"Load Succeeded"
+]
+],
 "name": "editalign",
-"stop": "refused: set_constant at 79446157",
+"stop": "FepError: device 40: request [801, b'', b'#p#m#p#s#i', b'']",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take\"load.com\".",
 "dp_new:go."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] load\"rf.exe\" .\nLoad File : PSI::>sys>user>pmpsi>rf.exe.1\n\"work:: remove_allgap\" Loaded\n\"work:: output_barton\" Loaded\n\"work:: dp_2d_paircost\" Loaded\n\"work:: alignment_barton_cluster\" Loaded\n\"work:: check_outgap\" Loaded\n\"work:: cp\" Loaded\n\"work:: energy_table\" Loaded\n\"work:: dayhoff\" Loaded\n\"work:: new_align\" Loaded\n\"work:: cluster_block\" Loaded\n\"work:: vector_paircost_4\" Loaded\n\"work:: energy\" Loaded\n\"work:: vector_paircost_first\" Loaded\n\"work:: rechange_outgap\" Loaded\n\"work:: outgap\" Loaded\n\"work:: output_barton_c\" Loaded\n\"work:: dp_tree_based\" Loaded\n\"work:: vector_gapcost_4_A\" Loaded\n\"work:: dp_tree_iterative_1\" Loaded\n\"work:: dp_block_based\" Loaded\n\"work:: remove_allgap_c\" Loaded\n\"work:: vector_gapcost_4_B\" Loaded\n\"work:: dp_block_iterative_1\" Loaded\n\"work:: dp_aligned_list3_new\" Loaded\n\"work:: dp_iterative_1\" Loaded\n\"work:: paircost\" Loaded\n\"work:: dp_new\" Loaded\n\"work:: iterative_1\" Loaded\nLoad Succeeded\n\n % End of take ( PSI::>sys>user>pmpsi>load.com.1 ) %\n\n[3] ",
 "written": {}
 },
 "editalign+alt": {
@@ -362,10 +367,10 @@
 },
 "examds": {
 "errors": [],
-"instructions": 3509438,
+"instructions": 60000001,
 "loads": [],
 "name": "examds",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "take(\"mdl_demo>cmpMDL5gc.inf\")"
@@ -387,8 +392,10 @@
 "written": {}
 },
 "gdcc": {
-"errors": [],
-"instructions": 42252656,
+"errors": [
+"[12] *** Syntax Error ***"
+],
+"instructions": 44162140,
 "loads": [
 [
 "shell.sav",
@@ -412,27 +419,27 @@
 ]
 ],
 "name": "gdcc",
-"stop": "refused: set_constant at 79446157",
+"stop": "nothing left to run, 1664 goals waiting",
 "typed": [
 "setenv task:package=work",
 "take(\"gdcc.init\")",
 "alloc(0,X,Y), alg#X**2 + Y**2 = 1, alg#(X-1)**2 + (Y-1)**2 = 1."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>>  The value of task: package is gdcc . \nLoad File : PSI::>sys>user>pmpsi>shell.sav.1\n\"gdcc:: set\" Loaded\n\"gdcc:: expander_sub\" Loaded\n\"gdcc:: expander_commands\" Loaded\n\"gdcc:: ground_term\" Updated\n\"gdcc:: exp_cs\" Loaded\n\"gdcc:: var\" Loaded\n\"gdcc:: query\" Loaded\n\"gdcc:: wconvert\" Loaded\n\"gdcc:: pe_spec\" Loaded\n\"gdcc:: rule_project\" Loaded\n\"gdcc:: gdcc_expander\" Loaded\n\"gdcc:: gdcc\" Loaded\n\"gdcc:: override_pool\" Loaded\n\"gdcc:: expand_options\" Loaded\n\"gdcc:: gdcc_mac\" Loaded\n\"gdcc:: expand_utility\" Loaded\n\"gdcc:: list\" Loaded\n\"gdcc:: gdcc_expander_main\" Loaded\n\"gdcc:: std_block\" Loaded\n\"gdcc:: trans_block\" Loaded\n\"gdcc:: convert\" Updated\nLoad Succeeded\n The value of task: package is alg . \nLoad File : PSI::>sys>user>pmpsi>alg.sav.1\n\"alg:: mole\" Loaded\n\"alg:: find\" Loaded\n\"alg:: std_con\" Loaded\n\"alg:: solver\" Loaded\n\"alg:: for_debug\" Loaded\n\"alg:: wombat\" Loaded\n\"alg:: poly_filter\" Loaded\n\"alg:: poly\" Loaded\n\"alg:: criteria\" Loaded\n\"alg:: ask_daemon\" Loaded\n\"alg:: pe_spec\" Updated\n\"alg:: rule_project\" Updated\n\"alg:: interface\" Loaded\n\"alg:: maze\" Loaded\n\"alg:: otter\" Loaded\n\"alg:: rule_db\" Loaded\n\"alg:: platypus\" Loaded\n\"alg:: rewrite\" Loaded\nLoad Succeeded\n The value of task: package is simplex . \nLoad File : PSI::>sys>user>pmpsi>simplex_if.sav.1\n\"simplex:: std_con\" Loaded\n\"simplex:: solver\" Loaded\n\"simplex:: std\" Loaded\n\"simplex:: ground_term\" Updated\n\"simplex:: var\" Updated\n\"simplex:: smp_util\" Loaded\n\"simplex:: poly_filter1\" Loaded\n\"simplex:: poly\" Loaded\n\"simplex:: rule_project1\" Loaded\n\"simplex:: smplx_if\" Loaded\n\"simplex:: simplex\" Loaded\n\"simplex:: contents\" Loaded\n\"simplex:: defns\" Loaded\n\"simplex:: list\" Updated\n\"simplex:: smplx\" Loaded\nLoad Succeeded\n The value of task: package is bool . \nLoad File : PSI::>sys>user>pmpsi>bool.sav.1\n\"bool:: solver\" Loaded\n\"bool:: bool\" Loaded\n\"bool:: bool_if\" Loaded\nLoad Succeeded\n The value of task: package is parser . \nLoad File : PSI::>sys>user>pmpsi>parser.sav.1\n\"parser:: reader\" Loaded\n\"parser:: variable\" Updated\n\"parser:: var_util\" Loaded\n\"parser:: kl1cmp_wrap\" Updated\n\"parser:: transform\" Loaded\n\"parser:: parms\" Loaded\n\"parser:: analyze\" Loaded\n\"parser:: translator\" Loaded\n\"parser:: output\" Loaded\n\"parser:: normalize\" Loaded\nLoad Succeeded\n The value of task: package is gdcc . \nShell>> ",
+"window": "[12] *** Syntax Error ***\n...\n The value of task: package is work . \nShell>>  The value of task: package is gdcc . \nLoad File : PSI::>sys>user>pmpsi>shell.sav.1\n\"gdcc:: set\" Loaded\n\"gdcc:: expander_sub\" Loaded\n\"gdcc:: expander_commands\" Loaded\n\"gdcc:: ground_term\" Updated\n\"gdcc:: exp_cs\" Loaded\n\"gdcc:: var\" Loaded\n\"gdcc:: query\" Loaded\n\"gdcc:: wconvert\" Loaded\n\"gdcc:: pe_spec\" Loaded\n\"gdcc:: rule_project\" Loaded\n\"gdcc:: gdcc_expander\" Loaded\n\"gdcc:: gdcc\" Loaded\n\"gdcc:: override_pool\" Loaded\n\"gdcc:: expand_options\" Loaded\n\"gdcc:: gdcc_mac\" Loaded\n\"gdcc:: expand_utility\" Loaded\n\"gdcc:: list\" Loaded\n\"gdcc:: gdcc_expander_main\" Loaded\n\"gdcc:: std_block\" Loaded\n\"gdcc:: trans_block\" Loaded\n\"gdcc:: convert\" Updated\nLoad Succeeded\n The value of task: package is alg . \nLoad File : PSI::>sys>user>pmpsi>alg.sav.1\n\"alg:: mole\" Loaded\n\"alg:: find\" Loaded\n\"alg:: std_con\" Loaded\n\"alg:: solver\" Loaded\n\"alg:: for_debug\" Loaded\n\"alg:: wombat\" Loaded\n\"alg:: poly_filter\" Loaded\n\"alg:: poly\" Loaded\n\"alg:: criteria\" Loaded\n\"alg:: ask_daemon\" Loaded\n\"alg:: pe_spec\" Updated\n\"alg:: rule_project\" Updated\n\"alg:: interface\" Loaded\n\"alg:: maze\" Loaded\n\"alg:: otter\" Loaded\n\"alg:: rule_db\" Loaded\n\"alg:: platypus\" Loaded\n\"alg:: rewrite\" Loaded\nLoad Succeeded\n The value of task: package is simplex . \nLoad File : PSI::>sys>user>pmpsi>simplex_if.sav.1\n\"simplex:: std_con\" Loaded\n\"simplex:: solver\" Loaded\n\"simplex:: std\" Loaded\n\"simplex:: ground_term\" Updated\n\"simplex:: var\" Updated\n\"simplex:: smp_util\" Loaded\n\"simplex:: poly_filter1\" Loaded\n\"simplex:: poly\" Loaded\n\"simplex:: rule_project1\" Loaded\n\"simplex:: smplx_if\" Loaded\n\"simplex:: simplex\" Loaded\n\"simplex:: contents\" Loaded\n\"simplex:: defns\" Loaded\n\"simplex:: list\" Updated\n\"simplex:: smplx\" Loaded\nLoad Succeeded\n The value of task: package is bool . \nLoad File : PSI::>sys>user>pmpsi>bool.sav.1\n\"bool:: solver\" Loaded\n\"bool:: bool\" Loaded\n\"bool:: bool_if\" Loaded\nLoad Succeeded\n The value of task: package is parser . \nLoad File : PSI::>sys>user>pmpsi>parser.sav.1\n\"parser:: reader\" Loaded\n\"parser:: variable\" Updated\n\"parser:: var_util\" Loaded\n\"parser:: kl1cmp_wrap\" Updated\n\"parser:: transform\" Loaded\n\"parser:: parms\" Loaded\n\"parser:: analyze\" Loaded\n\"parser:: translator\" Loaded\n\"parser:: output\" Loaded\n\"parser:: normalize\" Loaded\nLoad Succeeded\n The value of task: package is gdcc . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : gdcc\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] change_macro(gdcc:: gdcc_expander) .\n [pimos] => [gdcc:: gdcc_expander]\n\n[2]  # set_mode(go) .\n\n[3] default_package gdcc .\n\n[4] display_variables(all) .\n\n[5] display_alloc(all) .\n\n[6] display_constraints(all) .\n\n[7]  # use(alg), # register(alg,alg) .\n\n[8] remember .\n\n[9] print_depth 16 .\n\n[10] print_length 128 .\n\n[11] st .\n 1297 reductions\n 12 msec\n\n % End of take ( PSI::>sys>user>pmpsi>gdcc.com.1 ) %\n\n[12] *** Syntax Error ***\nalloc(0,X,Y),alg #\n**** Here ****\nX **2 +Y **2 =1,alg #(Xmint(1)) **2 +(Ymint(1)) **2 =1\nShell>> ",
 "written": {}
 },
 "gog_kl1": {
 "errors": [],
-"instructions": 386546,
+"instructions": 60000001,
 "loads": [],
 "name": "gog_kl1",
-"stop": "refused: set_constant at 79446157",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"make.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] package: define(gog,user) .\n\n[3] default_package gog .\n\n[4] compile[\">sys>user>cgs>capcd\",\">sys>user>cgs>capture\",\">sys>user>cgs>client\",\">sys>user>cgs>client_y\",\">sys>user>cgs>commu\",\">sys>user>cgs>cond\",\">sys>user>cgs>count\",\">sys>user>cgs>d4cap_y\",\">sys>user>cgs>d4cap\",\">sys>user>cgs>d4capcd\",\">sys>user>cgs>goban\",\">sys>user>cgs>godisp\",\">sys>user>cgs>gog\",\">sys>user>cgs>gogun\",\">sys>user>cgs>goksn\",\">sys>user>cgs>golab\",\">sys>user>cgs>gomove\",\">sys>user>cgs>gopot\",\">sys>user>cgs>goptn\",\">sys>user>cgs>goren\",\">sys>user>cgs>gorin\",\">sys>user>cgs>goten\",\">sys>user>cgs>gozoku\",\">sys>user>cgs>gunbrd\",\">sys>user>cgs>guncd\",\">sys>user>cgs>henten\",\">sys>user>cgs>jskcv\",\">sys>user>cgs>jskdat\",\">sys>user>cgs>ksnbrd\",\">sys>user>cgs>ksncd\",\">sys>user>cgs>kyoudo\",\">sys>user>cgs>mcap\",\">sys>user>cgs>moyoh\",\">sys>user>cgs>nextmv\",\">sys>user>cgs>nozoki\",\">sys>user>cgs>onksn\",\">sys>user>cgs>phase_y\",\">sys>user>cgs>rencd\",\">sys>user>cgs>renketsu\",\">sys>user>cgs>rktcd\",\">sys>user>cgs>server_y\",\">sys>user>cgs>shicho\",\">sys>user>cgs>tempdm\",\">sys>user>cgs>tencd\",\">sys>user>cgs>tencv\",\">sys>user>cgs>upcv\",\">sys>user>cgs>zahyo\",\">sys>user>cgs>zokubrd\"] .\n",
 "written": {}
 },
 "gog_kl1+alt": {
@@ -482,10 +489,15 @@
 },
 "h907_nseq": {
 "errors": [],
-"instructions": 389897,
-"loads": [],
+"instructions": 747077,
+"loads": [
+[
+"gc.sav",
+"Load Succeeded"
+]
+],
 "name": "h907_nseq",
-"stop": "refused: set_constant at 79446157",
+"stop": "refused: get_heap_size at 81278269",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -494,7 +506,7 @@
 "load(\"mgtpNS7\").",
 "ns(50)."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] load\"gc\" .\nLoad File : PSI::>sys>user>pmpsi>gc.sav.1\n\"work:: mgtp_gc\" Loaded\nLoad Succeeded\n\n[3]  mgtp_gc: allocate(80) & .\n",
 "written": {}
 },
 "h907_nseq+alt": {
@@ -604,17 +616,17 @@
 },
 "ldlib": {
 "errors": [],
-"instructions": 386546,
+"instructions": 12806540,
 "loads": [],
 "name": "ldlib",
-"stop": "refused: set_constant at 79446157",
+"stop": "refused: wait_value on a structure",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"Make.com\").",
 "compile_all."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n0-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] setenv klib: dutil_files=[\"buffer.kl1\",\"clist.kl1\",\"dbm.kl1\",\"list.kl1\",\"lstack.kl1\",\"misc.kl1\",\"pimosx.mac\",\"random.kl1\",\"short_circuit.kl1\",\"stream_list.kl1\",\"stream_vector.kl1\",\"vector.kl1\",\"wclist.kl1\"] .\n\n[3] setenv klib: dutil_modules=[buffer,clist,dbm,list,lstack,misc,pimosx,random,short_circuit,stream_list,stream_vector,vector,wclist] .\n\n[4] setenv klib: macro_files=[\"loop.mac\",\"xia.mac\",\"klib.mac\"] .\n\n[5] setenv klib: macro_modules=[loop,xia,klib] .\n\n[6] setenv klib: uutil_files=[\"combine.kl1\",\"map.kl1\",\"split.kl1\"] .\n\n[7] setenv klib: uutil_modules=[combine,map,split] .\n\n[8] setenv klib: klib_files=[\"LD_dhash.kl1\",\"LD_network.kl1\",\"LD_pa.kl1\",\"LD_pm.kl1\",\"LD_srtc.kl1\",\"LD_stb.kl1\",\"LD_bb.kl1\"] .\n\n[9] setenv klib: klib_modules=[bb,dhash,network,pa,pm,srtc,stb] .\n\n[10] setenv klib: prob_files=[\"p_queens.kl1\",\"p_bt.kl1\",\"p_inc.kl1\",\"p_incdec.kl1\",\"p_8p.kl1\",\"p_8pm.kl1\",\"p_15p.kl1\",\"p_15pm.kl1\"] .\n\n[11] setenv klib: prob_modules=[p_queens,p_bt,p_inc,p_incdec,p_8p,p_8pm,p_15p,p_15pm] .\n\n[12] setenv klib: test_files=[\"tdhash_1.kl1\",\"tstb_queens.kl1\",\"tbb_bt.kl1\",\"tpa_inc.kl1\",\"tpa_incdec.kl1\",\"tpa_8pm.kl1\",\"tpa_15pm.kl1\",\"tpm_0.kl1\",\"tpm_1.kl1\",\"tsrtc_8p.kl1\",\"tsrtc_15p.kl1\"] .\n\n[13] setenv klib: test_modules=[tdhash_1,tstb_queens,tbb_bt,tpa_inc,tpa_incdec,tpa_8pm,tpa_15pm,tpm_0,tpm_1,tsrtc_8p,tsrtc_15p] .\n\n[14] alias(klib_compile(X),(getenv(klib: X ,normal(Y)),compile Y )) .\n alias: klib_compile(X) => getenv(klib: X ,normal(Y)),compile(Y)\n\n[15] alias(klib_unload(X,Z),(getenv(klib: X ,normal(Y)),unload(Y,Z))) .\n alias: klib_unload(X,Z) => getenv(klib: X ,normal(Y)),unload(Y,Z)\n\n[16] alias(compile_UTIL,(klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files))) .\n alias: compile_UTIL => klib_compile(dutil_files)';' klib_compile(macro_files)';' klib_compile(uutil_files)\n\n[17] alias(unload_UTIL,(getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv(klib: uutil_modules,normal(UUM)),list: append(DUM,FM,L1),list: append(L1,UUM,L2),unload(L2,\"UTIL\"))) .\n alias: unload_UTIL => getenv(klib: dutil_modules,normal(DUM)),getenv(klib: macro_modules,normal(FM)),getenv( & , & ), & , & \n\n[18] alias(load_UTIL,load\"UTIL\") .\n alias: load_UTIL => load(\"UTIL\")\n\n[19] alias(compile_KLIB,klib_compile(klib_files)) .\n alias: compile_KLIB => klib_compile(klib_files)\n\n[20] alias(unload_KLIB,klib_unload(klib_modules,\"KLIB\")) .\n alias: unload_KLIB => klib_unload(klib_modules,\"KLIB\")\n\n[21] alias(load_KLIB,load\"KLIB\") .\n alias: load_KLIB => load(\"KLIB\")\n\n[22] alias(compile_PROB,klib_compile(prob_files)) .\n alias: compile_PROB => klib_compile(prob_files)\n\n[23] alias(unload_PROB,klib_unload(prob_modules,\"PROB\")) .\n alias: unload_PROB => klib_unload(prob_modules,\"PROB\")\n\n[24] alias(load_PROB,load\"PROB\") .\n alias: load_PROB => load(\"PROB\")\n\n[25] alias(compile_TEST,klib_compile(test_files)) .\n alias: compile_TEST => klib_compile(test_files)\n\n[26] alias(unload_TEST,klib_unload(test_modules,\"TEST\")) .\n alias: unload_TEST => klib_unload(test_modules,\"TEST\")\n\n[27] alias(load_TEST,load\"TEST\") .\n alias: load_TEST => load(\"TEST\")\n\n[28] alias(compile_all,(compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST)) .\n alias: compile_all => compile_UTIL';' compile_KLIB';' compile_PROB';' compile_TEST\n\n[29] alias(unload_all,(unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST)) .\n alias: unload_all => unload_UTIL';' unload_KLIB';' unload_PROB';' unload_TEST\n\n[30] alias(load_all,(load_UTIL';' load_KLIB';' load_PROB';' load_TEST)) .\n alias: load_all => load_UTIL';' load_KLIB';' load_PROB';' load_TEST\n\n % End of take ( PSI::>sys>user>pmpsi>Make.com.1 ) %\n\n[31] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>wclist.kl1.1\n[wclist.kl1@1] Compile Module : wclist\n=>  :- module wclist .\nCompile Succeeded : wclist\n\nCompile File : PSI::>sys>user>pmpsi>vector.kl1.1\n[vector.kl1@1] Compile Module : vector\n=>  :- module vector .\n",
 "written": {}
 },
 "ldlib+alt": {
@@ -662,24 +674,24 @@
 },
 "logisim": {
 "errors": [],
-"instructions": 386801,
+"instructions": 60000001,
 "loads": [],
 "name": "logisim",
-"stop": "refused: set_constant at 79446157",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"compile.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] compile[\"batch\",\"block\",\"data\",\"dbms\",\"demo_io\",\"diag\",\"dsp_lib\",\"engine\",\"expand\",\"fileio\",\"global\",\"interface\",\"keio\",\"main\",\"memrep\",\"param\",\"parse\",\"partition\",\"rn0\",\"table\",\"table_cmp\",\"truth_tbl\",\"tw_ctrl\"] .\n",
 "written": {}
 },
 "logisim+alt": {
 "errors": [],
-"instructions": 2075685,
+"instructions": 60000001,
 "loads": [],
 "name": "logisim+alt",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -772,7 +784,7 @@
 },
 "mmi": {
 "errors": [],
-"instructions": 25692631,
+"instructions": 27706148,
 "loads": [
 [
 "system.sav",
@@ -780,7 +792,7 @@
 ]
 ],
 "name": "mmi",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "refused: enqueue_goal_to_processor (0, 1)",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -809,16 +821,21 @@
 },
 "multialign": {
 "errors": [],
-"instructions": 386591,
-"loads": [],
+"instructions": 4811047,
+"loads": [
+[
+"pia_s2.exe",
+"Load Succeeded"
+]
+],
 "name": "multialign",
-"stop": "refused: set_constant at 79446157",
+"stop": "nothing left to run, 1602 goals waiting",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take\"load.pia\"."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] load\"pia_s2.exe\" .\nLoad File : PSI::>sys>user>pmpsi>pia_s2.exe.1\n\"work:: pia_s2\" Loaded\n\"work:: check_outgap\" Loaded\n\"work:: rechange_outgap\" Loaded\n\"work:: dayhoff\" Loaded\n\"work:: outgap\" Loaded\n\"work:: vector_paircost_4\" Loaded\n\"work:: vector_paircost_first\" Loaded\n\"work:: vector_gapcost_4_A\" Loaded\n\"work:: vector_gapcost_4_B\" Loaded\n\"work:: dp_aligned_list3_new\" Loaded\n\"work:: cp\" Loaded\n\"work:: energy\" Loaded\n\"work:: remove_allgap\" Loaded\n\"work:: file_out\" Loaded\nLoad Succeeded\n\n % End of take ( PSI::>sys>user>pmpsi>load.pia.1 ) %\n\n[3] ",
 "written": {}
 },
 "multialign+alt": {
@@ -956,17 +973,19 @@
 "written": {}
 },
 "pmonitor": {
-"errors": [],
-"instructions": 386716,
+"errors": [
+"!ERROR! unable to open file : chart_ctl"
+],
+"instructions": 60000001,
 "loads": [],
 "name": "pmonitor",
-"stop": "refused: set_constant at 79446157",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"pm_kl1.com\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "!ERROR! unable to open file : chart_ctl\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] compile[\"pm\",\"trans\",\"sim\",\"count\",\"node_red\",\"pred_red\",\"node_sus\",\"pred_sus\",\"node_ref\",\"pred_ref\",\"n_n_ref\",\"g_g_ref\",\"method\",\"method_ctl\",\"select\",\"selectpm\",\"select_ctl\",\"scroll\",\"scrollpm\",\"scroll_ctl\",\"color\",\"chart\",\"chart_ctl\",\"string\",\"util\"] .\n** KL1 Compiler **\n!ERROR! unable to open file : chart_ctl\nCompile File : PSI::>sys>user>pmpsi>util.kl1.1\n[util.kl1@0] Compile Module : util\n=>  :- module util .\nCompile Succeeded : util\n\nCompile File : PSI::>sys>user>pmpsi>string.kl1.1\n[string.kl1@0] Compile Module : pm_string\n=>  :- module pm_string .\nCompile Succeeded : pm_string\n\nCompile File : PSI::>sys>user>pmpsi>chart.kl1.1\n[chart.kl1@0] Compile Module : pm_chart\n=>  :- module pm_chart .\nCompile Succeeded : pm_chart\n\nCompile File : PSI::>sys>user>pmpsi>color.kl1.1\n[color.kl1@0] Compile Module : color\n=>  :- module color .\nCompile Succeeded : color\n\nCompile File : PSI::>sys>user>pmpsi>scroll_ctl.kl1.1\n[scroll_ctl.kl1@0] Compile Module : pm_scroll_ctrl\n=>  :- module pm_scroll_ctrl .\nCompile Succeeded : pm_scroll_ctrl\n\nCompile File : PSI::>sys>user>pmpsi>scrollpm.kl1.1\n[scrollpm.kl1@0] Compile Module : pm_scroll\n=>  :- module pm_scroll .\nCompile Succeeded : pm_scroll\n\nCompile File : PSI::>sys>user>pmpsi>scroll.kl1.1\n[scroll.kl1@0] Compile Module : scroll\n=>  :- module scroll .\nCompile Succeeded : scroll\n\nCompile File : PSI::>sys>user>pmpsi>select_ctl.kl1.1\n[select_ctl.kl1@0] Compile Module : pm_select_ctrl\n=>  :- module pm_select_ctrl .\nCompile Succeeded : pm_select_ctrl\n\nCompile File : PSI::>sys>user>pmpsi>selectpm.kl1.1\n[selectpm.kl1@0] Compile Module : pm_select\n=>  :- module pm_select .\nCompile Succeeded : pm_select\n\nCompile File : PSI::>sys>user>pmpsi>select.kl1.1\n",
 "written": {}
 },
 "pmonitor+alt": {
@@ -987,39 +1006,39 @@
 },
 "ppss": {
 "errors": [],
-"instructions": 13958025,
+"instructions": 80000001,
 "loads": [],
 "name": "ppss",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "BUDGET: budget of 80000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "compile([\"a_builtin\",\"andTran2\",\"andor_io\",\"apool\",\"atpimos\",\"ioutil\",\"mode_analyzer\",\"orTran\",\"ppri\",\"rand1024\",\"spcc\",\"tandor\",\"top\",\"utandor\"])",
 "listener",
 "andor_top:go([\"compute.ar2\",\"cycle.ar2\"])."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> ",
+"window": "\n...\n The value of task: package is work . \nShell>> ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>utandor.kl1.1\n[utandor.kl1@0] Compile Module : utandor\n=>  :- module utandor .\nCompile Succeeded : utandor\n\nCompile File : PSI::>sys>user>pmpsi>top.kl1.1\n[top.kl1@0] Compile Module : andor_top\n=>  :- module andor_top .\n",
 "written": {}
 },
 "rodin": {
 "errors": [],
-"instructions": 390703,
+"instructions": 150000001,
 "loads": [],
 "name": "rodin",
-"stop": "refused: set_constant at 79446157",
+"stop": "BUDGET: budget of 150000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(\"prog>compile>rodin\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\npmpsi>prog>lib>math.kl1.1\n[math.kl1@1] Compile Module : math\n=>  :- module math .\nCompile Succeeded : math\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>utility.kl1.1\n[utility.kl1@1] Compile Module : utility\n=>  :- module utility .\nCompile Succeeded : utility\n\n\"work:: input\" Loaded\n\"work:: math\" Loaded\n\"work:: utility\" Loaded\n\"work:: std_output\" Loaded\n\"work:: output\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 5962 [MSEC]\n ProgFile =[\"prog>lib>utility\",\"prog>lib>math\",\"prog>lib>input\",\"prog>lib>output\",\"prog>lib>std_output\"]\n\n % End of take ( PSI::>sys>user>pmpsi>prog>compile>lib.com.1 ) %\n\n[4] take\"prog>compile>input\" .\n\n[5] ProgFile =[\"prog>input>alu_spec01\",\"prog>input>alu_spec11\",\"prog>input>alu_spec12\",\"prog>input>alu_spec13\",\"prog>input>alu_spec14\",\"prog>input>alu_spec15\",\"prog>input>alu_spec99\",\"prog>input>expression\",\"prog>input>precedence\",\"prog>input>successor\",\"prog>input>exclusion\",\"prog>input>constraint\",\"prog>input>analysis\"],compile ProgFile  .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>prog>input>analysis.kl1.1\n[analysis.kl1@0] Compile Module : analysis\n=>  :- module analysis .\nCompile Succeeded : analysis\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>constraint.kl1.1\n[constraint.kl1@0] Compile Module : constraint\n=>  :- module constraint .\nCompile Succeeded : constraint\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>exclusion.kl1.1\n[exclusion.kl1@1] Compile Module : exclusion\n=>  :- module exclusion .\nCompile Succeeded : exclusion\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>successor.kl1.1\n[successor.kl1@1] Compile Module : successor\n=>  :- module successor .\nCompile Succeeded : successor\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>expression.kl1.1\n[expression.kl1@0] Compile Module : expression\n=>  :- module expression .\nCompile Succeeded : expression\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>precedence.kl1.1\n[precedence.kl1@1] Compile Module : precedence\n=>  :- module precedence .\nCompile Succeeded : precedence\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec99.kl1.1\n[alu_spec99.kl1@1] Compile Module : spec_file\n=>  :- module spec_file .\nCompile Succeeded : spec_file\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec15.kl1.1\n[alu_spec15.kl1@1] Compile Module : syntax\n=>  :- module syntax .\nCompile Succeeded : syntax\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec14.kl1.1\n[alu_spec14.kl1@1] Compile Module : spec_list\n=>  :- module spec_list .\nCompile Succeeded : spec_list\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec13.kl1.1\n[alu_spec13.kl1@1] Compile Module : operat\n=>  :- module operat .\nCompile Succeeded : operat\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec12.kl1.1\n[alu_spec12.kl1@1] Compile Module : index\n=>  :- module index .\nCompile Succeeded : index\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec11.kl1.1\n[alu_spec11.kl1@1] Compile Module : quadruple\n=>  :- module quadruple .\nCompile Succeeded : quadruple\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>alu_spec01.kl1.1\n[alu_spec01.kl1@1] Compile Module : lexical\n=>  :- module lexical .\nCompile Succeeded : lexical\n\n\"work:: exclusion\" Loaded\n\"work:: constraint\" Loaded\n\"work:: operat\" Loaded\n\"work:: expression\" Loaded\n\"work:: syntax\" Loaded\n\"work:: lexical\" Loaded\n\"work:: spec_file\" Loaded\n\"work:: analysis\" Loaded\n\"work:: index\" Loaded\n\"work:: spec_list\" Loaded\n\"work:: successor\" Loaded\n\"work:: quadruple\" Loaded\n\"work:: precedence\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 15736 [MSEC]\n ProgFile =[\"prog>input>alu_spec01\",\"prog>input>alu_spec11\",\"prog>input>alu_spec12\",\"prog>input>alu_spec13\",\"prog>input>alu_spec14\",\"prog>input>alu_spec15\",\"prog>input>alu_spec99\",\"prog>input>expression\",\"prog>input>precedence\",\"prog>input>successor\", ... ]\n\n % End of take ( PSI::>sys>user>pmpsi>prog>compile>input.com.1 ) %\n\n[6] take\"prog>compile>move\" .\n\n[7] ProgFile =[\"prog>move>from_conf\",\"prog>move>from_exp\",\"prog>move>find_util\",\"prog>move>move_util\"],compile ProgFile  .\n",
 "written": {}
 },
 "rodin+alt": {
 "errors": [],
-"instructions": 11350250,
+"instructions": 62322163,
 "loads": [],
 "name": "rodin+alt",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "RuntimeError: heap full: past the heap limit",
 "typed": [
 "setenv task:package=work",
 "listener",
@@ -1038,35 +1057,35 @@
 "compile(\"prog>main>rodin_s\").",
 "compile(\"prog>main>rodin\")."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>prog>lib>std_output.kl1.1\n[std_output.kl1@1] Compile Module : std_output\n=>  :- module std_output .\nCompile Succeeded : std_output\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>output.kl1.1\n[output.kl1@1] Compile Module : output\n=>  :- module output .\n",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>prog>lib>std_output.kl1.1\n[std_output.kl1@1] Compile Module : std_output\n=>  :- module std_output .\nCompile Succeeded : std_output\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>output.kl1.1\n[output.kl1@1] Compile Module : output\n=>  :- module output .\nCompile Succeeded : output\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>input.kl1.1\n[input.kl1@1] Compile Module : input\n=>  :- module input .\nCompile Succeeded : input\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>math.kl1.1\n[math.kl1@1] Compile Module : math\n=>  :- module math .\nCompile Succeeded : math\n\nCompile File : PSI::>sys>user>pmpsi>prog>lib>utility.kl1.1\n[utility.kl1@1] Compile Module : utility\n=>  :- module utility .\nCompile Succeeded : utility\n\n\"work:: input\" Loaded\n\"work:: math\" Loaded\n\"work:: utility\" Loaded\n\"work:: std_output\" Loaded\n\"work:: output\" Loaded\nCompilation(s) Succeeded\nCompilation Time = 5963 [MSEC]\n ProgFile =[\"prog>lib>utility\",\"prog>lib>math\",\"prog>lib>input\",\"prog>lib>output\",\"prog>lib>std_output\"]\n\n[2] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>prog>input>analysis.kl1.1\n[analysis.kl1@0] Compile Module : analysis\n=>  :- module analysis .\nCompile Succeeded : analysis\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>constraint.kl1.1\n[constraint.kl1@0] Compile Module : constraint\n=>  :- module constraint .\nCompile Succeeded : constraint\n\nCompile File : PSI::>sys>user>pmpsi>prog>input>exclusion.kl1.1\n[exclusion.kl1@1] Compile Module : exclusion\n=>  :- module exclusion .\n",
 "written": {}
 },
 "seqanal": {
 "errors": [],
-"instructions": 409974,
+"instructions": 60000001,
 "loads": [],
 "name": "seqanal",
-"stop": "refused: set_constant at 79446157",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "take(cmpfiles)."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] \n[2] compile[\"dl\",\"eval\",\"exchan\",\"ga\",\"library\",\"log\",\"main\",\"operate\",\"peserv\",\"print\",\"protoc\",\"random\",\"report\",\"select\",\"sga\",\"statist\",\"table\"] .\n** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>table.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[table.kl1@0] Compile Module : table\n=>  :- module table .\nCompile Succeeded : table\n\nCompile File : PSI::>sys>user>pmpsi>statist.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[statist.kl1@0] Compile Module : statistics\n=>  :- module statistics .\nCompile Succeeded : statistics\n\nCompile File : PSI::>sys>user>pmpsi>sga.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[sga.kl1@0] Compile Module : sga\n=>  :- module sga .\nCompile Succeeded : sga\n\nCompile File : PSI::>sys>user>pmpsi>select.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[select.kl1@0] Compile Module : selection\n=>  :- module selection .\nCompile Succeeded : selection\n\nCompile File : PSI::>sys>user>pmpsi>report.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[report.kl1@0] Compile Module : report\n=>  :- module report .\nCompile Succeeded : report\n\nCompile File : PSI::>sys>user>pmpsi>random.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[random.kl1@0] Compile Module : random\n=>  :- module random .\nCompile Succeeded : random\n\nCompile File : PSI::>sys>user>pmpsi>protoc.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[protoc.kl1@0] Compile Module : protocol\n=>  :- module protocol .\nCompile Succeeded : protocol\n\nCompile File : PSI::>sys>user>pmpsi>print.kl1.1\n",
 "written": {}
 },
 "seqanal+alt": {
 "errors": [],
-"instructions": 2876795,
+"instructions": 60000001,
 "loads": [],
 "name": "seqanal+alt",
-"stop": "refused: b_integer_to_floating_point at 78127786",
+"stop": "BUDGET: budget of 60000000 instructions spent",
 "typed": [
 "setenv task:package=work",
 "listener",
 "compile([\"dl\",\"eval\",\"exchan\",\"ga\",\"library\",\"log\",\"main\", \"operate\",\"peserv\",\"print\",\"protoc\",\"random\",\"report\", \"select\",\"sga\",\"statist\",\"table\"])."
 ],
-"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ",
+"window": "\n...\n The value of task: package is work . \nShell>> *** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : work\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n[1] ** KL1 Compiler **\nCompile File : PSI::>sys>user>pmpsi>table.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[table.kl1@0] Compile Module : table\n=>  :- module table .\nCompile Succeeded : table\n\nCompile File : PSI::>sys>user>pmpsi>statist.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[statist.kl1@0] Compile Module : statistics\n=>  :- module statistics .\nCompile Succeeded : statistics\n\nCompile File : PSI::>sys>user>pmpsi>sga.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[sga.kl1@0] Compile Module : sga\n=>  :- module sga .\nCompile Succeeded : sga\n\nCompile File : PSI::>sys>user>pmpsi>select.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[select.kl1@0] Compile Module : selection\n=>  :- module selection .\nCompile Succeeded : selection\n\nCompile File : PSI::>sys>user>pmpsi>report.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[report.kl1@0] Compile Module : report\n=>  :- module report .\nCompile Succeeded : report\n\nCompile File : PSI::>sys>user>pmpsi>random.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[random.kl1@0] Compile Module : random\n=>  :- module random .\nCompile Succeeded : random\n\nCompile File : PSI::>sys>user>pmpsi>protoc.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[protoc.kl1@0] Compile Module : protocol\n=>  :- module protocol .\nCompile Succeeded : protocol\n\nCompile File : PSI::>sys>user>pmpsi>print.kl1.1\n!WARNING! no with_macro declaraion. assumed `pimos'.\n[print.kl1@0] Compile Module : print\n",
 "written": {}
 },
 "sme": {
