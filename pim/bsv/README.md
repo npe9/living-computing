@@ -76,6 +76,7 @@ instruction and is tested by trace comparison with it.
 | `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard); (R7L) the resource: left at create 0, taken at the end of each run from the shoen and those above it, a goal parked when none is left with `resource_low` once until allowed, `add_shoen_resource` releasing them, `allow_shoen_resource_report`, `return_resource` of what is left |
 | `PimmTBox.bsv` | timer box (R7L): the processor's one alarm, `set_timer` to a time still to come; checked at each goal switch by the core's `pick_or_fire`, fired with the time, the waiting goals woken (`lockstep_timer.py`) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
+| `PimmFBox.bsv` | float box (2026-11-26, `../docs/float.md`): IEEE single add, subtract, multiply and divide by Flute's FPU (`vendor/flute/`, Apache-2.0, see its README), request/response; the invalid cases and x/0 decided from the operands; the conversions and compares as functions (`lockstep_float.py`) |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
 | `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`), and answers the core's SCSI port from the script's device tape, printing a `B` line per command from what the core sent |
@@ -1016,16 +1017,62 @@ its pins:
 - the host UART on the link;
 - `../tools/win_kl0_host.py` (kl0) as the host.
 
-`run_win_live.sh` (from `run_win_tb.sh`) has three scripted cases:
+`run_win_live.sh` (from `run_win_tb.sh`) has five cases:
 - `console`: the `console_pwd.json` tape's user typed at the wire; the frame is
   `CONSOLE_PIN`;
 - `password`: the probe route;
-- `viewer`: the SDL viewer, headless.
+- `budget`: the interactive kl0 host's step budget and rollback
+  (`win_kl0_host.py selftest-live`);
+- `viewer`: the SDL viewer, headless;
+- `flood`: the owner's garbled live run of 2026-11-26, scripted: the viewer
+  plays `win_live/flood.play` (real-rate motion, past the window's edges, a
+  right double click, typing while the mouse moves, motion while kl0 draws)
+  in mode 3. It requires 0 bytes dropped by the receivers, 0 input errors,
+  no kl0 StepLimit, the clicks and keys of the play file, and the viewer's
+  frame = the monitor's = the software frame's mode 3 view.
 
-`run_win_live.sh live` is the owner's interactive run on `../tools/winview`
-(SDL2; protocol `../docs/simpos/winview_protocol.md`). Mode 3 (640×480) is
-the default, at 4.76 frames/s against mode 0's 0.94 (MEASURED).
-`run_win_live.sh speed` measures both.
+**The interactive run, for the owner:**
+
+```
+cd pim/bsv && ./run_win_live.sh live        # mode 3, 640x480 at scale 2
+```
+
+- The window is the PSI's screen at 2:1 (frame rows 24-983, the status
+  band included). Point and click as on the PSI: a right double click opens
+  the system menu. There is no hardware cursor (it is off, so the frame
+  equals the software's); the Mac's own pointer is the cursor.
+- Cmd-S saves the frame shown as `build-win/live/interactive/winview_N.pbm`.
+  Closing the window ends the run; the last frame is saved as
+  `winview_last.pbm`, and the runner writes a PNG of each saved frame,
+  counts the receivers' dropped bytes and kl0's step limits, and compares
+  the last frame with the software frame of kl0's last run.
+- kl0 runs again from the boot after each pause in the input (500 ms), so
+  the screen changes a second or two after you stop. While you are active
+  the bench is held to the wall clock (double clicks are timed as you make
+  them); between, it runs free.
+- The whole log is `build-win/live/interactive/sim.log`.
+
+What was wrong in the first live run (2026-11-26, found by the `flood`
+case; `WinHostDev.c`'s header has the detail):
+- every host mouse event became a PS/2 packet, sent back to back: up to
+  ~230 packets a receiver second, where the scaled bench's link carries ~150
+  records up. The receivers' 8-byte queue (OURS, undocumented) overflowed. The broken
+  packets became phantom clicks (middle clicks from a two-button mouse) and
+  "input error code 5" records. Now a PS/2 mouse is modelled: 100 samples
+  a second, motion coalesced, one button change a packet;
+- free-running, the bench passes ~4 receiver s a wall second, so a person's
+  double click was too slow for the adapter's 400 ms. Now events keep their
+  wall-clock gaps;
+- mode 3 shows the frame from row 24, but the viewer's clicks were mapped
+  without that pan, 24 rows too high. The mode line now carries the pan;
+- kl0's 600,000-step limit is reached after about 200 typed keys, because
+  every run replays the whole session. `--live` sets the limit by the
+  event count, and on a failure drops the new events instead of ending the
+  session.
+
+`run_win_live.sh speed` measures Bluesim's frames per second in modes 0 and
+3 (4.76 frames/s against mode 0's 0.94, MEASURED when the bench was built;
+2.56 against 0.50 on a loaded machine on 2026-11-26).
 
 LEDs: 7 the PLL lock, 0 the self-test done, 1 a self-test error (a
 command status not OK), 2 toggles every 16 frames of the pixel domain

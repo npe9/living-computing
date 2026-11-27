@@ -253,6 +253,11 @@ PINNED = {
     ('prompt', mgtp_typed(False, 'q6.clause')): (94329837, 26598077),
     ('prompt', mgtp_typed(False, 'q8.clause')): (127552240, 36549912),
     ('prompt', mgtp_typed(True, 'q6.clause')): (234936778, 67790829),
+    # floating point (2026-11-26, docs/float.md): APPS float_klic,
+    # measured on the reference from the prompt checkpoint, then on both
+    # models
+    ('prompt', ('compile', '!package work', 'flt', '!exit', 'listener',
+                'default_package(work).', 'flt:go(R).', 'flt:show(A).')): (11596312, 2829790),
 }
 # R7 ls: the home directory's listing (longrun_ipl.HOME_FILES, name order)
 _LS = ''.join(' >sys>user>pmpsi>%s.1\n' % n for n in (
@@ -596,6 +601,19 @@ APPS['pkl1_nrev30'] = _pkl1b('nrev_r8', _one('nrev_r8', 'nrev'),
 APPS['pkl1_qsort50'] = _pkl1b('qsort_r8', _one('qsort_r8', 'qsort'),
                               (('print_length(60).', '\n'),
                                ('qsort:qsort(%s,R).' % LIST50, ' R =%s\n\n' % SORTED50)))
+# Floating point (2026-11-26, docs/float.md): docs/float/flt.kl1 (OURS)
+# compiled into work by the held compiler and run in the Listener.  It
+# is served as HOME>flt.kl1 for this row alone (APP_FILES, through
+# longrun_ipl.add_home_file in the row's own process), so ls's listing
+# and its pin stay as they are.  The answers of go/1 are KLIC 2.002's
+# on the same text (docs/float/oracle_flt.out, docs/float.md "The KLIC
+# comparison"); show/1's float is printed by PIMOS's own printer (held
+# code), as 3.750000E+0 (OBSERVED 2026-11-26), KLIC printing 3.750000
+APP_FILES = {'float_klic': {'flt.kl1': os.path.join(HERE, '..', '..', 'docs', 'float',
+                                                    'flt.kl1')}}
+APPS['float_klic'] = _pkl1b('flt', _one('flt', 'flt'),
+                            (('flt:go(R).', ' R =[3,-8,125,15,lt,eq,gt,10]\n\n'),
+                             ('flt:show(A).', ' A = 3.750000E+0\n\n')))
 # R9 (2026-11-26): MGTP/G, IFS No.22 (longrun_ipl MGTP_TGZ, served whole
 # as home files), by its manual's own procedure (mgtp/manualE.tex
 # 86-128 for MGTP/G/MERC, 132-178 for MGTP/G/MERC/PF): compile the
@@ -1034,6 +1052,9 @@ def apps(argv):
         pid = os.fork()
         if pid == 0:
             try:
+                for fname, path in APP_FILES.get(n, {}).items():
+                    with open(path, 'rb') as f:
+                        longrun.add_home_file(fname, f.read())
                 record(m, loaded, kind, list(APPS[n][0]), d, before, gaps, LIMITS.get(n, 0))
                 os.symlink(os.path.join('..', '..', 'heap.hex'), os.path.join(d, 'heap.hex'))
             finally:

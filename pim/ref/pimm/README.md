@@ -91,6 +91,8 @@ login and the shell's prompt (`unbound`, the four double-precision
 integer built-ins, the guards `module`, `extended_floating_point`,
 `bignum_less_than` and `bignum_not_less_than`, `apply` of seven or
 more, `enqueue_goal` of more than 16),
+`lockstep_float.py` the single-precision float built-ins, guard and
+body, against hand-written IEEE constants (`docs/float.md`),
 `lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
 against a small model of the front-end processor (`fep.py`), the
 device on the bench a tape the reference recorded (`driver.py` "The
@@ -209,6 +211,21 @@ and the FEP on PE 0. At the prompt it compiles and runs the primer's
 with `@node`, and compares the console and window with the one-PE
 run's. Its last line is `m5 boot: PASS (12 runs)`, after about 7
 minutes. It is a long runner, not in the suite: docs/multi_pe.md 5, M5.
+
+Rung M6 (2026-11-26): a period multi-node program.
+
+    M5_CACHE=PATH M6_CACHE=DIR python3 ref/pimm/m6_mgtpn.py LINK.pkl [--run N,C,T ...] [--quota Q ...]
+
+MGTP/N's model-distributed prover (IFS No. 91, `mgtpv0.kl1` and
+`util.kl1`, served from the held tgz) is compiled at PIMOS's prompt on
+N PEs and given the problem its `INSTALL.j` prints, with workers C..T.
+Every run must answer `unsat`, as the print does for five workers on 6
+PEs; Delta's shape, the placement and what is left are checked, and
+Ncalc and reductions are pinned (they depend on the schedule). Its
+last line is `m6 mgtpn: PASS (8 runs)`; a boot and compile is about 16
+minutes, the queries from `M6_CACHE` about 12. `M6_INJECT=local|lifo|
+nowake|oldwait` makes one fault. A long runner, not in the suite:
+docs/multi_pe.md 5, M6.
 
     python3 ref/pimm/test_jtoa.py
 

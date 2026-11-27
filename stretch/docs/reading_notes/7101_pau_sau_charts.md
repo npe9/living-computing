@@ -972,7 +972,7 @@ KMGR; 3.8.11 mentions "IF THIS IS DOUBLE OPER.").
 | VFL `/` (`VflInt`) | same formula | NOT SHOWN (axis broken) | 3.8.19 | no divide-specific VFL budget in the model |
 | Connectives | `2*bytes` | -- | none | not charted here (SAU only) |
 
-Also relevant to `bsv/StretchDivBox.bsv` (standalone, not instantiated): its
+Also relevant to `bsv/StretchPAU.bsv (was StretchDivBox.bsv)` (standalone, not instantiated): its
 header leaves open whether one normalization pass is one cycle or two. On
 3.8.15 sheets 1-2 and 3.8.19 every pass (divisor loop, dividend loop, trial,
 intermediate, last reduction) is drawn as one `D3` period plus one `D4`

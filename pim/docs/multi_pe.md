@@ -50,9 +50,11 @@ line numbers below are of that tool's output) and the compiled ESP with
   placement order, the manual's exception rules for a bad node number,
   and PIMOS's own `gc` and `seqgc` commands, whose collections over
   the nodes follow from their source. MGTP/G (R9) is not a multi-PE
-  oracle; MGTP-N (IFS No. 91, "only executable on PIM/m") is a later
-  one: its manual prints a 1-PE run's statistics and the goals for 64
-  and 256 PEs, but no per-PE figure (§1.5).
+  oracle; MGTP-N (IFS No. 91, "only executable on PIM/m") is: its
+  model-distributed KL1 version (`mgtpv0.kl1`, `util.kl1`, held) has a
+  printed run on five worker nodes (`INSTALL.j`; the Japanese manual
+  4.3.3.2, pp. 58-59), the M6 oracle (§1.5, §5). The manual's 1-PE
+  statistics (p. 57) are of another version whose source is not held.
 - **Rungs M1..M7** are in §4. M1: N separate machines,
   `current_node`, `Goal@node(K)` as a `%throw_goal`, and the `%unify`
   that binds an exported variable, checked by PIMOS's own compiled
@@ -60,7 +62,9 @@ line numbers below are of that tool's output) and the compiled ESP with
   under two schedules. M2 and M3 add reading across PEs and the
   white/black tables, M4 the shoen across PEs, and M5 PIMOS booted on
   1, 2 and 4 PEs running the primer's `sample9` and R8's qsort with
-  `@node` from its prompt (a long runner). Their status is in §5.
+  `@node` from its prompt (a long runner). M6 runs MGTP/N's
+  model-distributed prover from the prompt on 1, 2, 5 and 6 PEs (a long
+  runner). Their status is in §5.
 
 ## 1. What the held sources say
 
@@ -210,8 +214,19 @@ packet bytes and hardware-assembled 40-bit words.
   for them (p. 57, PRINTED). Its CMGTP chapter gives a speedup only as
   a ratio of times (256 PEs against 62: 3.97, limited-branch scheme;
   the per-scheme run-time monitors are figures 6.8-6.10, pictures; p.
-  72, PRINTED). So no per-PE count is printed; the 1-PE statistics are
-  an answer a multi-PE run must reproduce (M6).
+  72, PRINTED). So no per-PE count is printed.
+  **Correction (2026-11-26, M6):** that p. 57 run is of the
+  "MGTP/N" version compiled from `mgtpN`, `print`, `meta`, `tm`,
+  `tmLib` and `pro3` (pp. 56-57, PRINTED), which IFS No. 91 does not
+  hold (its KL1 tgz has `mgtpv0..4.kl1` and `util.kl1`; the Prolog tgz
+  has Prolog only). Its statistics cannot be an oracle. What is held
+  with a printed answer is the model-distributed version (manual
+  5.3.3, "only on PIM/m"): `INSTALL.j` (and the Japanese manual
+  4.3.3.2, pp. 58-59; the English manual's 5.3.3 stops at `[3] pl.`)
+  prints problem 2 run by `mgtpv0:main(1,5,...)` on five worker nodes:
+  `Result=unsat`, `Ncalc= 18`, `time=385832 reductions`, and the 18
+  model candidates of Delta, each with its key (node, number on that
+  node) and first term (PRINTED). That is M6's oracle (§5).
 
 ## 2. Oracles for the multi-PE rungs
 
@@ -222,7 +237,8 @@ packet bytes and hardware-assembled 40-bit words.
 | KL1's semantics | placement does not change an answer: every multi-PE run's results equal the one-PE run's and KLIC 2.002's | the language |
 | The primer's `sample9` | the placement order 0,1,2,3,0,1,2,3 for `distribute(8)` on 4 nodes | PRINTED |
 | The manual's exception rules | an atom node is `illegal_input`, an out-of-range one `range_overflow` | PRINTED |
-| MGTP-N (IFS No. 91), STB/MLB, Distributed Pool | larger programs written for several nodes; for MGTP-N the manual's 1-PE run, whose model statistics (`model:1758`, `kept:1753`, ...) a run on more PEs must give again (§1.5); no per-PE figure printed | HELD-SOURCE; PRINTED (MGTP-N manual p. 57); others as KLIC's or the papers' |
+| MGTP/N's model-distributed version (IFS No. 91, `mgtpv0.kl1`) | `INSTALL.j`'s run on 5 worker nodes: `unsat`, `Ncalc= 18`, 385,832 reductions, an 18-entry Delta (§1.5). KL1 fixes only the result: Ncalc and Delta depend on the schedule (§5, M6) | PRINTED (INSTALL.j; manual-J pp. 58-59) |
+| STB/MLB, Distributed Pool | larger programs written for several nodes; no printed answer | HELD-SOURCE |
 
 ## 3. Choices that are ours
 
@@ -259,7 +275,7 @@ packet bytes and hardware-assembled 40-bit words.
 | M3 | The tables as the machine had them: white and black by MRB with WEC (TR-390 §7, unit 2^24), `%release` with WEC, an imported ID passed on as VPIM does (the release export, half the WEC, the indirect export), the export table a root of the collector and the import table weak; the exported variable retagged `EUNDF`/`EHOOK` (TM-1044; `EMHOK` not) | the heap monitors of M2 collected at every quiescence, WEC conserved, every entry named by an import; an injected leak or double release failing a check; a collection with live exports | M2 |
 | M4 | The shoen across PEs: foster parents (`FPREC`), WTC (`wtctu`, `wtcsu`), `%terminated`, `%ready`, resource messages, exceptions for a bad node number | the manual's `range_overflow`/`illegal_input`; a shoen spread over nodes terminating once | M3 |
 | M5 | PIMOS boots on N PEs (its 113 `@node` sites), and the shell's `cn`, `gc`, `seqgc`, `set node` run | `cn.kl1`'s printout; §2's collection counts through the shell | M4; code fetch by module identifier |
-| M6 | A period multi-node program: MGTP-N, STB/MLB, Distributed Pool | its answer (KLIC's; for MGTP-N the 1-PE statistics its manual prints, p. 57) | M5 |
+| M6 | A period multi-node program: MGTP/N's model-distributed prover (chosen), STB/MLB, Distributed Pool | its printed answer (INSTALL.j: unsat on 5 worker nodes), the same on 1 and 2 PEs | M5 |
 | M7 | The Bluespec core: N cores on `PimMesh.bsv`, or one core whose network port is answered from a recorded tape (as `lockstep_scsi.py` answers the SCSI port), in lockstep with the reference | the reference's per-PE traces | M1 on the reference (the tape) |
 
 **Why M1 is not on the core in this step.** The core is one PE. In
@@ -838,7 +854,9 @@ Not reached at M5, open:
 
 - The shell's `cn`, `gc`, `seqgc` and `set node` from the prompt, with
   `cn.kl1`'s printout as the oracle.
-- MGTP (R9) with `@node`; the other R8 samples.
+- (Done at M6, below: a period program written for several nodes,
+  MGTP/N's model-distributed prover.) MGTP/G (R9) with `@node`; the
+  other R8 samples.
 - The fetch is a copy made at once, with no messages; PIM/m's code
   fetch messages are not modelled.
 - Each PE's own `new_atom` counter (OURS) would collide if two PEs
@@ -848,3 +866,140 @@ Not reached at M5, open:
   link checkpoint is made on one machine and copied.
 - The run takes minutes and the checkpoint is not in git, so it is
   not in the suite.
+
+**M6 reached on the reference model, 2026-11-26.** `ref/pimm/m6_mgtpn.py`
+is a long runner, NOT in `run_tests.sh`: it needs M5's link checkpoint,
+and each boot and compile is about 16 minutes on a loaded machine (the
+compile is ~105M instructions on PE 0); `M6_CACHE=DIR` keeps each N's
+compiled System (330-420 MB a pickle) so the queries alone are rerun.
+
+**The program, and why.** MGTP/N's model-distributed KL1 version (ICOT
+Free Software No. 91, `MGTP-N-KL1.tgz`, in git with its NO WARRANTY
+terms): `mgtpv0.kl1` (454 lines, "Multi-PSI version0 ... master-node")
+and `util.kl1` (1,417), written for PIM/m ("only executable on PIM/m",
+README). It is the only M6 candidate held with a printed answer:
+`INSTALL.j` (and the Japanese manual 4.3.3.2, pp. 58-59) prints a run
+of problem 2 (a condensed-detachment problem: five axioms, one mixed
+clause `p(X),p(i(X,Y)) -> p(Y)`, one negative clause) on five worker
+nodes, `mgtpv0: main(1,5,3,...)`, with `Result=unsat`, `Ncalc= 18`,
+`time=385832 reductions 2367 msec` and the 18 model candidates of
+Delta. STB/MLB is a load-balancing utility with no answer of its own,
+and Distributed Pool (10,947 lines) has no printed result
+(`pimos_roadmap.md` §6). The p. 57 statistics the plan had named are
+of a version not held (§1.5, correction).
+
+**How it runs** (OURS where it differs from INSTALL.j): PIMOS boots on
+N PEs as at M5; at the prompt `compile`, `!package work`, `util`,
+`mgtpv0`, `!exit` (INSTALL's `compile(["mgtpv0","util"])`; mgtpv0
+first is refused, `undefined module : work:: util`); then `listener`,
+`default_package(work).`, `statistics.`, `print_depth(20).`,
+`print_length(100).` (INSTALL's `st.`, `pd.`, `pl.`), then the goal,
+typed as printed (its lines joined). The two files are home files
+served byte for byte from the tgz, a form feed (7 lines of
+`util.kl1`) as JIS 00 0C (INFERENCE, as a TAB is 00 09); they are
+registered in the runner only. Every PE has `heap_limit` = 24M cells
+(OURS): without one the second compile fills memory ("heap full"),
+with it PE 0 collects (`PECollector`) during the compile; in the
+queries only PE 0 of (5, 0..4) at quota 1 and the 1-PE run collect,
+once each.
+`main`'s Cnd..Tnd are the worker nodes, node 0 the master's; each gets
+one `disperse_node/8` by `@node(PEone)`, so the printed run needs 6
+PEs. A worker on a node >= N is PIMOS's `range_overflow` (not
+modelled), so the five-worker program cannot run on one PE; the runs
+are (N, Cnd..Tnd) = (6, 1..5), the printed one; (5, 0..4), the same
+five workers with the master sharing PE 0 (Cnd = 0 is OURS, outside
+the documented `>=1`); (1, 0..0) and (2, 1..1), one worker. Each query
+is forked from the compiled System under quota 1 and quota 1,000,000.
+
+**What M6 needed in `pimm_pe.py`:** the guard `X = Y` with both
+arguments one external cell (met only with several worker PEs: 158
+times in the 6-PE query at quota 1, 45 at quota 1,000,000; never on 1
+or 2 PEs, where the value is local or bound) suspends on the cell, which sends `%read`, as PDSS
+suspends `X = Y` on an unbound X even when Y is the same variable
+(`emulator/passive.c` `passive_unify`, case REF). Before it, both
+6-PE queries stopped with `refused: wait_value of a variable with
+itself`. One plain variable twice is still refused.
+
+**Results** (`m6 mgtpn: PASS (8 runs)`):
+
+| N | workers | quota | Result | Ncalc | Listener reductions | reductions per PE in the query |
+|---|---|---|---|---|---|---|
+| 6 | 1..5 | 1 | unsat | 33 | 2,406,271 | 106,279 / 492,455 / 494,480 / 618,455 / 491,969 / 403,463 |
+| 6 | 1..5 | 1,000,000 | unsat | 21 | 587,072 | 69,338 / 126,581 / 133,793 / 142,064 / 123,587 / 124,210 |
+| 5 | 0..4 | 1 | unsat | 26 | 1,278,086 | 365,878 / 287,693 / 281,758 / 257,547 / 228,276 |
+| 5 | 0..4 | 1,000,000 | unsat | 21 | 594,582 | 190,925 / 136,681 / 145,175 / 126,358 / 128,449 |
+| 1 | 0..0 | either | unsat | 29 | 663,360 | 740,048 |
+| 2 | 1..1 | 1 | unsat | 29 | 663,584 | 81,409 / 665,401 |
+| 2 | 1..1 | 1,000,000 | unsat | 29 | 661,556 | 81,801 / 668,654 |
+| PIM/m, printed | 1..5 | - | unsat | 18 | 385,832 | not printed |
+
+Messages, 6 PEs, quota 1,000,000: throw 5, ready 5, terminated 5,
+read 44,623, answer_value 43,547, release 43,522, unify 1,666,
+supply_wtc 5, request_resource 20, supply_resource 20 (quota 1: read
+105,050). The per-PE column is `pe.reductions` over the query (PIMOS's
+own goals included); the Listener's figure is the query shoen's.
+
+**What is checked, and what KL1 does not fix.** Every run gives the
+print's `unsat`: a refutation, the one answer KL1 fixes. Ncalc and
+Delta are not fixed, and the runner does not compare them with the
+print. The master (`mgtpv0.kl1` `master/9`) tries `Result` before the
+next step's J under `alternatively`, and the workers bind both in the
+same step; and `merge/2` orders a step's candidates as they come, so
+which candidate a node numbers first and the step at which `unsat` is
+seen depend on the schedule. On 6 PEs the two quotas give 33 and 21
+steps, PIM/m printed 18; of the print's 13 derived candidates, 12 (q
+1) or 11 (q 1,000,000) are in our Delta. What the runner checks
+instead: Delta begins with the five axioms as typed, whose first terms
+are the print's; Ncalc is Delta's length; each derived key is (a worker
+node, a number rising on that node, `dummy`); with one worker, where
+`disperse_node` is placed once
+on each worker node and every worker PE other than 0 reduces; no
+anomaly, every shoen accounted for, the shoen tables after the query
+as before it; the goals left suspended after the query are exactly
+the `%read`s never answered (6 PEs: 2,508 at quota 1, 1,076 at quota
+1,000,000; 5 PEs: 1,375 and 852; 1 and 2 PEs: none). They are reply
+records on variables the finished proof never binds (INFERENCE: a
+read sent for a candidate's switch or the shared Result that no step
+binds any more waits on at its owner); and the (Ncalc, reductions) of each run is pinned
+(OBSERVED: the model is deterministic; the uncached run and two
+reruns from the cache gave the same numbers). Even one worker is not
+fixed: on 2 PEs at quota 1 its Delta is the 1-PE one with node 0 made
+1, entry for entry, but at quota 1,000,000 14 of its 24 derived
+entries differ, and not only in order (the same Ncalc, 29): printed,
+not checked.
+
+Data from the `local` injection below (every `@node` made on PE 0):
+the five-worker program run on one PE gives `unsat`, Ncalc 31 and
+1,989,309 reductions under both quotas, and the one-worker program
+663,360, the 1-PE figure exactly. It is the only way to run the
+five-worker program on one PE (a node >= N being `range_overflow`). The 1-worker figure, 663,360
+reductions for 29 steps on one PE, against PIM/m's 385,832 for 18 on
+five workers, is no comparison: a different program run.
+
+Observed fault injections (each `M6_INJECT=...` in the forked query
+only, the runner on the cached Systems):
+
+| Injection | Observed |
+|---|---|
+| every `@node` made local (`local`; on (6, 1..5) and (2, 1..1)) | 12 FAIL lines: `disperse_node` placed on 0, no worker PE reduces, and the pins (31 steps, 1,989,309 reductions; 29, 663,360). Every answer is still `unsat`, as KL1 says it must be |
+| an exported variable bound without waking its goals (`nowake`) | 29: no answer in any run (Result, Delta, Ncalc, YYNN, pins), a shoen and its foster parents left on every PE |
+| `X = Y` on one external cell refused, as before M6 (`oldwait`, 6 PEs) | 22: both queries stop `refused: wait_value of a variable with itself`, messages in flight, goals left, the path never met, no answer |
+| each pair's channel LIFO (`lifo`; it reversed 3,623 and 3,822 deliveries on 2 PEs, 80,902 and 39,211 on 6, 52,680 and 29,502 on 5) | 1 FAIL line, a pin: (5, 0..4) at quota 1,000,000 gives Ncalc 18 and 397,125 reductions for 21 and 594,582; the 2- and 6-PE runs give their pinned numbers exactly, and every answer is `unsat`. As at M2, no check but a pin depends on the order within a pair |
+
+`local` and `nowake` were run before the runner gained its goals-left
+and `X = Y`-path checks, so their counts are of the earlier checks.
+
+`m6 mgtpn: PASS (8 runs)` without injection, from the cache in about
+12 minutes.
+
+Not reached at M6, open:
+
+- Ncalc and Delta as printed: a schedule of the real PIM/m, which the
+  model's round-robin does not reproduce; the timing it would need
+  (TR-715's message costs, the PEs' speeds) is not modelled.
+- The bad node numbers (`range_overflow`, `illegal_input`): still
+  refused, so a worker range wider than N does not run.
+- The manual's other versions (`mgtpv1..4.kl1`, no printed run; the
+  p. 57 version, not held).
+- The runner is not in the suite (minutes, and the checkpoint).
+

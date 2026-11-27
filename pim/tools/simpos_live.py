@@ -457,9 +457,9 @@ def write_events(path, events, head=''):
 class Viewer:
     """A connection to winview: sendall for the Screen, and the events it
     sends parsed.  Each event is stamped with the viewer's own time (the
-    4-byte stamp K, M and B end with: when it was made, not when kl0 got
-    to it), plus BASE; now() estimates the viewer's clock from the stamps
-    seen (OURS)."""
+    W message before each K, M and B: SDL's event time, so when it was
+    made, not when kl0 got to it), plus BASE; now() estimates the viewer's
+    clock from the stamps seen (OURS)."""
 
     def __init__(self, path, base=0):
         self.s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -475,6 +475,7 @@ class Viewer:
         self.base = base
         self.off = None         # the viewer's ms less ours, the largest seen
         self.last = base
+        self.w = None           # the time of the next K, M or B (a W message)
         self.closed = False
 
     def mono(self):
@@ -485,9 +486,9 @@ class Viewer:
             return self.last
         return max(self.last, self.base + self.mono() + self.off)
 
-    def stamp(self, p, at):
-        if len(p) >= at + 4:
-            v = struct.unpack('>I', p[at:at + 4])[0]
+    def stamp(self):
+        v, self.w = self.w, None
+        if v is not None:
             off = v - self.mono()
             self.off = off if self.off is None else max(self.off, off)
             t = self.base + v
@@ -523,13 +524,15 @@ class Viewer:
             if len(self.buf) < 5 + n:
                 break
             p, self.buf = self.buf[5:5 + n], self.buf[5 + n:]
-            if typ == 'K':
-                out.append((self.stamp(p, 3), 'K', [p[0], struct.unpack('>H', p[1:3])[0]]))
+            if typ == 'W':
+                self.w = struct.unpack('>I', p[:4])[0]
+            elif typ == 'K':
+                out.append((self.stamp(), 'K', [p[0], struct.unpack('>H', p[1:3])[0]]))
             elif typ == 'M':
-                out.append((self.stamp(p, 4), 'M', list(struct.unpack('>HH', p[:4]))))
+                out.append((self.stamp(), 'M', list(struct.unpack('>HH', p[:4]))))
             elif typ == 'B':
                 b, d, x, y = struct.unpack('>BBHH', p[:6])
-                out.append((self.stamp(p, 6), 'B', [b, d, x, y]))
+                out.append((self.stamp(), 'B', [b, d, x, y]))
             elif typ == 'Q':
                 self.closed = True
                 out.append((self.now(), 'X', []))

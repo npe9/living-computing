@@ -272,6 +272,21 @@ class PE(pimm.Machine):
     def ran(self, path):
         self.paths[path] = self.paths.get(path, 0) + 1
 
+    def i_wait_value(self, pc, x, y, z, c16):
+        """The guard X = Y with both arguments one external cell
+        (M6, 2026-11-26: MGTP/N on 6 PEs, never on one, where the value
+        is local and bound): the goal suspends on it, which sends
+        %read, as PDSS suspends X = Y on an unbound X even when Y is
+        the same variable (emulator/passive.c passive_unify, case REF:
+        PushToSuspensionStack2(x), NO).  One plain variable twice is
+        still refused, as on one machine."""
+        a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
+        if self.is_ex(a) and self.is_ex(b) and a[1] == b[1]:
+            self.ran('wait_value of an external cell with itself')
+            self.waiting.append(a[1])
+            return self.guard_fail()
+        return pimm.Machine.i_wait_value(self, pc, x, y, z, c16)
+
     # ---- what a PE knows of the others ------------------------------
     def i_current_node(self, pc, x, y, z, c16):
         self.reg[x] = (INT, self.pe)

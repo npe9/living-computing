@@ -32,6 +32,16 @@
 ! C2's C1111 into the LEFT word is redundant -- the DL two rows later
 ! overwrites the whole of IBM 0-59 and zeroes 60-107 -- but it is in
 ! the listing and is transcribed as printed.
+!
+! HALT CLOCKS, fidelity_plan.md A4 step 3 (2026-11-26). No check here pins
+! a time.
+! The STRETCH_HALT_REPORT halt moved 399 -> 400 (+1).
+! The cause was measured by running this deck with StretchPAU.bsv's
+! switches.
+! With every step-3 switch off (pauChainMulAdd and pauMa*), the halt is 399
+! again.
+! With the chain on and the terms off, it is 399. So the cause is the Table
+! 2 add terms (pauMaPreshift/Norm/Recomp).
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

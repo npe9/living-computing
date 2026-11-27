@@ -561,7 +561,7 @@ typedef enum { SauIdle, SauAddPass, SauRecomp, SauMulPass, SauToDec, SauToBin, S
 (* synthesize *)
 module mkSAU(SAU);
   // CREGS WITH THE PORT ASSIGNMENT AS THE SCHEDULE, for the reason
-  // mkDivBox gives (StretchDivBox.bsv): the rules use port 0 and every
+  // mkDivBox gives (StretchPAU.bsv, now mkPAU): the rules use port 0 and every
   // method port 1, so the rules come before the methods and a caller
   // rule may poll, take and re-request in one clock -- and the answer of
   // a last pass is readable in the clock of that pass.

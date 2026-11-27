@@ -551,7 +551,11 @@ addressing rule on a layout known from elsewhere.*
   the one instruction 23:65; the oracles are PIMOS's own `seqgc` and
   `gc` commands and the primer's `sample9`. M1 is reached on the
   reference model (`ref/pimm/pimm_pe.py`, `m1_gc.py`, `multi_pe.md`
-  §5); the core stays one PE until M7.*
+  §5); the core stays one PE until M7. M2-M6 followed on the reference
+  the same day; M6 is MGTP/N's model-distributed prover (IFS No. 91)
+  run from the prompt on 1, 2, 5 and 6 PEs, `unsat` on every one as
+  its INSTALL.j prints for five worker nodes (`m6_mgtpn.py`, a long
+  runner; Ncalc and Delta depend on the schedule).*
 - Timing: only where a published figure exists (`plan.md` evidence
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as

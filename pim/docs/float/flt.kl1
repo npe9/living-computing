@@ -1,0 +1,46 @@
+%% Floating point on PIM/m against KLIC 2.002 (OURS, 2026-11-26).
+%% Every value below is exact in IEEE single, so the answers do not
+%% depend on the precision (PIM/m single, KLIC double).  A float is
+%% made into an integer in a goal of its own that waits for it
+%% (toint/2): KLIC 2.002 reads `I := int(X)` in the body that binds X
+%% with `$:=` before X is bound, and answers 0.
+:- module flt.
+:- public go/1, show/1.
+
+go(R) :- true |
+    A $:= 1.5 + 2.25,
+    B $:= A * 4.0,
+    C $:= B / 8.0,
+    D $:= C - 10.0,
+    F $:= float(1000),
+    E $:= F / 64.0,
+    G $:= E * 8.0,
+    toint(A, I1),
+    toint(D, I2),
+    toint(G, I3),
+    cmp(A, B, K1),
+    cmp(B, B, K2),
+    cmp(C, D, K3),
+    sum([0.5, 0.25, 0.125, 0.0625], 0.0, S),
+    scale(S, H),
+    toint(H, I4),
+    halve(1000.0, 0, N),
+    R = [I1, I2, I3, I4, K1, K2, K3, N].
+
+toint(X, I) :- wait(X) | I := int(X).
+
+scale(X, Y) :- wait(X) | Y $:= X * 16.0.
+
+cmp(X, Y, K) :- X $< Y | K = lt.
+cmp(X, Y, K) :- X $=:= Y | K = eq.
+cmp(X, Y, K) :- X $> Y | K = gt.
+
+sum([], S0, S) :- true | S = S0.
+sum([X|Xs], S0, S) :- wait(X), wait(S0) | S1 $:= S0 + X, sum(Xs, S1, S).
+
+%% how many halvings bring X below 1.0
+halve(X, N0, N) :- X $< 1.0 | N = N0.
+halve(X, N0, N) :- X $>= 1.0 | Y $:= X / 2.0, N1 := N0 + 1, halve(Y, N1, N).
+
+%% a float printed by the system: 3.75
+show(A) :- true | A $:= 1.5 + 2.25.

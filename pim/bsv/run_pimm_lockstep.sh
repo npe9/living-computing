@@ -24,7 +24,7 @@ export PATH
 
 python3 ../asm/gen_pimm_bsv.py generated
 mkdir -p build_pimm
-"$BSC" -sim -p generated:+ -bdir build_pimm -simdir build_pimm -info-dir build_pimm \
+"$BSC" -sim -p generated:vendor/flute:+ -bdir build_pimm -simdir build_pimm -info-dir build_pimm \
   -g mkPimmDriverTb -u PimmDriverTb.bsv > build_pimm/compile.log 2>&1 \
   || { cat build_pimm/compile.log; exit 1; }
 "$BSC" -sim -bdir build_pimm -simdir build_pimm -e mkPimmDriverTb \
@@ -34,7 +34,7 @@ mkdir -p build_pimm
 # Each test writes its script, the driver executes it, the test
 # compares the trace with the reference model's.
 # With arguments: only those tests (a fault injection's quick run).
-for t in ${*:-jtoa conv get4 ccode asf repl ground rpos dec0 rss dect deca gca modc lmod ext ptab pack newm melem mklist file file3 pool merge load mrb atab cons run link unif s32 s1 ipll p2c apply where shoen shoen2 shoen3 alt body elw reuse prio atom xmod gmul rdvc pvec pstruct tproc timer sord wint bignum login scsi scsi@1 scsi@2 scsi@3 scsi@4 scsi@5 scsi@6}; do
+for t in ${*:-jtoa conv get4 ccode asf repl ground rpos dec0 rss dect deca gca modc lmod ext ptab pack newm melem mklist file file3 pool merge load mrb atab cons run link unif s32 s1 ipll p2c apply where shoen shoen2 shoen3 alt body elw reuse prio atom xmod gmul rdvc pvec pstruct tproc timer sord float wint bignum login scsi scsi@1 scsi@2 scsi@3 scsi@4 scsi@5 scsi@6}; do
   # test@N: part N of a test with several scripts (lockstep_scsi.py --part N)
   part=
   case $t in *@*) part="--part ${t#*@}"; t=${t%@*};; esac

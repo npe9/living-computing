@@ -2011,7 +2011,7 @@ module mkStretchCore(StretchCore);
         // box keeps the E-box's time.  (Not every instruction's time:
         // while the box runs, the held level stops I-box instructions
         // that used to overlap the countdown.  Measured on eight FP
-        // decks, +1 to +16 clocks; StretchDivBox.bsv's header has the
+        // decks, +1 to +16 clocks; StretchPAU.bsv's header has the
         // table.)  The budget is
         // charged from completion; a divide used to complete in the
         // clock it started and now completes `boxK` clocks later

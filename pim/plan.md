@@ -129,6 +129,14 @@ independent trees. WP1.3's pim runner is in place.
 
 ### Ordered work plan
 
+**The held microprogram (2026-11-26).** ICOT's own KL1 microcode
+(`pimm.MEkbn` image 2) now executes: `ref/pu/` runs it and matches
+`pimm.py` on 22 instructions (rung U1). The rungs from there to a
+Bluespec PU with the held WCS that replaces `mkPimmExec`'s hand-written
+sequencer, and to the PSI-III ESP store on the same PU, are U2-U5 of
+`docs/pu_microcode_plan.md`; the next step for U2 is in
+`ref/pu/README.md`.
+
 Each work package states a deliverable and the check that closes it.
 Do not start a later package before the earlier one's check is observed.
 
@@ -356,6 +364,13 @@ test or an explicit label.
    refuses the manual's `relink(hyper_o)` for a package reason, and it
    is not needed (`docs/pimos_roadmap.md` R9 row;
    `docs/binary_reverse_engineering.md` 1.4, "R9, MGTP/G").
+   *Floating point (2026-11-26):* IEEE single, the immediate word
+   {30h, value}, on both models (`docs/float.md`): the guard and body
+   float built-ins (23:FC, 23:FD, 22:CE, 22:CF), the Bluespec side by
+   Flute's FPU vendored and wrapped as `mkPimmFBox`; in lockstep
+   (`lockstep_float.py`); a KL1 program compiled by the held compiler
+   answers as KLIC 2.002 (APPS `float_klic`); MP1's `bufutil` and
+   `token` now compile. The extended (68882) float is not modelled.
 
    **KL1-B execution design (milestone 2).** The model's current ISA is
    the diagnostic stand-in; KL1-B is a separate execution path. The

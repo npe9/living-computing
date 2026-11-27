@@ -6,6 +6,9 @@ source archive, which is a primary source: ICOT's own assembler for the
 KL1-B virtual machine that PIMOS runs. It closes the "no KL1-B encoding
 table" gap recorded in `kl1_architecture.md` §8 and `plan.md` Stage 6.
 
+The float instructions' formats, semantics and use counts in the held
+objects are in `float.md`.
+
 ## Provenance
 
 | Artifact | Location | Contents |
