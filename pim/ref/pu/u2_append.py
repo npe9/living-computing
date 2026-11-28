@@ -184,7 +184,8 @@ prs_operand_x).  New injections, observed:
                   changes (both clear): which flag is which is NOT
                   discriminated
   as1f2_off       AS1F 2 unmodelled: STOP at 4cc0, 10 of 16
-  mcf_unknown_raise  MCF 06 / 07 raise: STOP at 4cc1 (MCF with EM1 07)
+  mcf_unknown_raise  MCF 06 / 07 raise (and, since U3's third step,
+                  pu.SUSP_FLAG_OPS off): STOP at 4cc1 (MCF with EM1 07)
   jmpf8_flag_off  JMPF 8 on a flag condition raises: STOP at 4cc2
   cnd3_off        CNDF 3 unmodelled: nothing changes (4cc1's COND is
                   STALE before the rule is asked): NOT discriminated
@@ -391,6 +392,15 @@ a_on_false 14, as1f2_off 15, as1f3_open_raise 15, cjump_false 14,
 cjump_same 14, cnd2_nonzero 13, cnd3_off 15, cnd8_off 15, e_mdr2_col 1,
 e_on_true 1, interrupt_pending 13, jmpf9_off 14, mcf08_raise 15,
 mcf_unknown_raise 15, slit_pending 13.
+U3 third step (2026-11-28), re-diffed against a clean 03fb0ffd: three
+injections now run further and are still caught.  cnd2_nonzero FAILs at
+wait_nil (R04: 3986's MCF EM1 02 sub-key 4 is f_jump, pu.MCF_SUB) where
+it stopped there, 13 of 16, 35 words.  deref_tgt_col5 FAILs at
+read_variable (reg 3, sp, R04: 3492's MCF likewise) where it stopped,
+2 of 16.  interrupt_pending STOPs at 1c31 (read of W15: 1c2e's alf_high
+is now formed), 10 of 16, 35 words.  mcf_unknown_raise also switches
+pu.RULES['susp_flags'] off (06 / 07 now set the suspension flags) and
+is unchanged.  Every other injection is unchanged.
 U3 (2026-11-27, first session), the rules pu.RULES['ccf_rassy'],
 ['wsel_d_em1'], ['jmpf8_goto_if'] and setup.EXECUTE_MDR1_EMO1: this run
 and every injection above unchanged (diffed against a clean snapshot),
@@ -1285,7 +1295,9 @@ INJECT = {
     'interrupt_pending': lambda: EXECUTE_FLAGS.update(interrupt_all=True),
     'flags_swapped': lambda: PU.FLAG_CONDS.update({0x19: 'interrupt_all', 0x21: 'slit_check'}),
     'as1f2_off': lambda: PU.RULES.update(alu_sources='old', as1f2_yr=False),
-    'mcf_unknown_raise': lambda: PU.MCF_UNKNOWN.clear(),
+    # U3 third step: 06 / 07 now set the suspension flags first
+    # (pu.SUSP_FLAG_OPS), so the injection turns that off too
+    'mcf_unknown_raise': lambda: (PU.MCF_UNKNOWN.clear(), PU.RULES.update(susp_flags=None)),
     'jmpf8_flag_off': lambda: PU.RULES.update(jmpf8_flag=False),
     'cnd3_off': lambda: PU.RULES.update(cnd3_sign=False),
     'execute_mdr1': lambda: SU.LABEL_ODSF.update({2: 'MDR1'}),

@@ -162,6 +162,14 @@ FORMS = {
     # agree on one destination, so ENQ_HEAD is kept apart from ODSF_MAR.
     # Injections 'enq_head_mar1', 'enq_label_mdr2'.
     'enqueue_goal': ('label', None),
+    # U3 third step (2026-11-27): suspend n, label (entry 1c08; nano-code
+    # DFF 0, ODPF 0, OS1F 0, ODSF 0, EMO2 7).  OURS: the label, pc + 2 +
+    # c16 as pimm.py's suspend_goal (the entry the goal resumes at), in
+    # MDR1, as enqueue_goal's; support: 1c08 stamps MDR1 COD into W10,
+    # which 1c0c writes as the record's cell 12, the code, as enqueue_goal's
+    # 4c00 / 4c03.  The nano-code does not say where the label goes (DFF
+    # 0, unlike the four DFF 1 label entries): not decided.
+    'suspend': ('label', None),
 }
 ENQ_HEAD = {2: 'MAR2'}
 LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)
@@ -317,6 +325,66 @@ S_REPORTS_DIRECT = {'COL': False}
 # 's_mar1_kept' (MAR1 keeps the previous instruction's value, the old
 # behaviour).
 S_MAR1_DIRECT_STALE = True
+# U3, third step (2026-11-27): the other side of the tag test reached
+# THROUGH pointers (an operand that is a REF to a variable cell: the
+# suspension's first instruction, switch_on_non_list on an unbound
+# argument).
+#
+#   S_CHAIN_ROW (INFERRED; the two reports DOCUMENTED): the row is 4 |
+#   code, code = (SRP false) | (COL true) << 1, where the S stage's two
+#   dereference reports are those of the thesis (printed p.138, Fig. 3-23,
+#   read from the page image 2026-11-27): SRP "every MRB in the chain is
+#   off" (the pointers followed and the word reached), COL "the first two
+#   pointers' MRBs are off" (the figure's four cases: ref o -> list o
+#   yes/yes; list o held directly yes/no; ref o -> ref o -> list x no/yes;
+#   ref x -> list o no/no).  The code fits the match side's four rows of
+#   switch_on_non_list as read (3300 row 0: held directly, SRP yes COL no;
+#   3304 row 1: re-stamps the list LISTx, SRP no; 3308 row 2: frees the
+#   variable cell through 3305-3309, COL yes; 330c row 3: both, then
+#   247b), not run there: the match side keeps S_ENTRY.  The reports go
+#   to the flags MRP (rassy's name for SRP: INFERRED) and COL.  MAR1 is
+#   the last cell the dereference read (as S_ENTRY), MDR1 what it read,
+#   MDR2 the operand as it was (S_MDR2_OWN).  Injections 'chain_row_srp'
+#   (code from SRP true), 'chain_row_off' (raises again).
+S_CHAIN_ROW = True
+#   S_CHAIN_MAR1_PTR (INFERRED): on these rows MAR1 holds the last pointer
+#   the dereference followed, its tag included ({REFx, cell} for a shared
+#   variable), not the bare address S_ENTRY gives (tag 0).  Decided at
+#   24b1 (switch_on_non_list's suspension path: x := MAR1, and pimm.py
+#   leaves the register as it is: the REF to the variable) and 3a34 (MDR1
+#   := MAR1, kept in R18, rassy 'sst', the suspension stack's cache: a
+#   pointer to the variable, as VPIM's s_PushSuspendStack takes a REF).
+#   Injection 'chain_mar1_bare' (the bare address): FAILs at the
+#   instruction (A0 rewritten untagged).
+S_CHAIN_MAR1_PTR = True
+# The injection 'chain_row_srp' (CHAIN_SRP_TRUE: the row from SRP true,
+# row 4 = 3310 for a REFx chain) changes nothing on the path run: 3310's
+# CNDF 9 (MDR2, the operand {REFx, X}, a REFo?) is false as 3314's CNDF 3
+# with no ALU (pu.RULES['cnd_noalu_poison'] 'zero'): WEAK, recorded.
+CHAIN_SRP_TRUE = False
+
+
+def last_pointer(mem, own):
+    """The last pointer the dereference followed (tag and address): the
+    word whose address is the cell reached."""
+    w = own
+    while mem.get(w[1], (0, 0))[0] & ~1 == 0x06:
+        w = mem[w[1]]
+    return w
+
+
+def chain_reports(mem, own, data):
+    """The S stage's two dereference reports (Fig. 3-23) for the operand
+    own, dereferenced to data: (SRP, COL)."""
+    ptrs = []
+    w = own
+    while w[0] & ~1 == 0x06:
+        ptrs.append(w)
+        w = mem[w[1]] if len(ptrs) < 64 else (0, 0)
+    words = ptrs + [data]
+    srp = not any(x[0] & 1 for x in words)
+    col = bool(ptrs) and not any(x[0] & 1 for x in words[:2])
+    return srp, col
 
 
 class SStageUnknown(KeyError):
@@ -430,6 +498,16 @@ def setup(pu, name):
             if S_OTHER_ROW is None:
                 return start
             return start | S_OTHER_ROW << 2
+        if odpf6 and S_CHAIN_ROW and data[0] & ~1 != imm & ~1 and last is not None:
+            # S_CHAIN_ROW (U3 third step, above): through pointers
+            srp, col = chain_reports(pu.mem, own, data)
+            if CHAIN_SRP_TRUE:          # injection 'chain_row_srp'
+                srp = True
+            pu.flags.update(MRP=srp, COL=col)
+            if S_CHAIN_MAR1_PTR:
+                pu.wr[mekbn.MAR1] = last_pointer(pu.mem, own)
+            pu.cond, pu.cond_cycle = own[0] == imm, 'S'
+            return start | (4 | (0 if srp else 1) | (2 if col else 0)) << 2
         raise SStageUnknown('S-stage multiway set-up: %s tag %02x, TDPF %d (row entry UNKNOWN)'
                             % (name, data[0], nc['TDPF']))
     if mdr in ('x', 'y'):

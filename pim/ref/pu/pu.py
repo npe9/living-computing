@@ -239,6 +239,27 @@ FLAG_CONDS[0x1a] = 'PMPF'
 # stay POISON: alf_cond has their readings, but nothing run tests them
 # (0841's alf_equal is overwritten at 0864).
 ALF_LATCHED = ('alf_zero',)
+GSET_SHIFT_WORDS = {0x4d3d}   # RULES['alu_gset']: where shift_left is modelled
+# U3 third step (2026-11-27): alf_high (rassy position 7) is formed from the
+# latch as well: the ALU's first input above its second, unsigned (the
+# 'high' of a compare, the result of a - b taken without borrow and not
+# zero).  INFERRED from the name (HELD-SOURCE).  Decided at suspend's
+# 1c2e (formed on 1c2d's latch: W1a := the arity - 11) and 1c2f (JMPF b to
+# 1c34 if high): a goal of arity 3 must take 1c30, the counted copy of
+# the argument registers into the record's cells 1.. (11 argument cells
+# below the trailer 12-15, U3's record); above 11, 1c34-1c39 go on to an
+# allocation by size.  Injection 'alf_high_reversed' (b above a).
+ALF_LATCHED += ('alf_high',)
+ALF_HIGH_REVERSED = False     # the injection
+# Also decided at suspend's 1c64 (alf_high on 1c63's latch: [b4], the
+# suspension stack base sspb, against R17, ssp, which the first noting's
+# 3a3f left at sspb - 1, RULES['sc2_a_imm']), tested by 1c65's JMPF e
+# ('goto long if not cond') to 1d20, the many-variable path that walks
+# the stack from the base (1d22-1d29, up to R18): with one variable noted
+# the single-waiter path 1c66 -> 1c70 is taken.  A signed reading was
+# tried while 3a3c read A0 (R17 = ffffffff) and withdrawn with it
+# (ALF_HIGH_SIGNED, kept False; the injection 'alf_high_signed').
+ALF_HIGH_SIGNED = False
 ALF_CONDS = {0x00: 'alf_zero', 0x01: 'alf_sign', 0x02: 'alf_carry', 0x03: 'alf_overflow',
              0x04: 'alf_same_tag', 0x05: 'alf_equal', 0x06: 'alf_less', 0x07: 'alf_high',
              0x08: 'alf_less_zero'}
@@ -311,6 +332,61 @@ MCF_NAMED[0x01] = 'set_alf'
 # rf_unlock, which bracket the argument loads.
 MCF_NAMED[0x0e] = 'set_SUSPF'
 MCF_SUB = {(0x0a, 2): 'rf_lock', (0x02, 2): 'rf_unlock'}
+# U3 third step (2026-11-27): sub-key 4 of mc2 key 2, 'f_jump' (rassy, the
+# same reset_ list: HELD-SOURCE), recorded only.  It is carried by every
+# row of the guard-failure table 3a31-3a3a (EM 84x: mc2 2, sub-key 4, EM3
+# the JMPF 4 offset to 3a33), whose words load R04 from R11 (the
+# alternative, rassy 'ap'); INFERRED: a fetch-side control (the I-stream
+# redirected to R04), nothing this simulator reads; the next PC itself
+# is compared with pimm.py's.  Executed at 3a34.  Injection
+# 'f_jump_raise' (raises again).
+MCF_SUB[(0x02, 4)] = 'f_jump'
+# U3 third step (2026-11-27): the two flags rassy names SUSPF and CGCF,
+# now held (they were recorded only: MCF 06 / 07 MCF_UNKNOWN, 0e
+# MCF_NAMED).  rassy disagrees with itself on which is which, read
+# against the firmware's use:
+#   - its condition list (the decoder's keys, HELD-SOURCE): 13 'cond CGCF',
+#     14 'cond SUSPF';
+#   - its MCF number lists (HELD-SOURCE): 06 reset_SUSPF, 07 reset_CGCF,
+#     0e set_SUSPF, 0f set_CGCF.
+# The use (a scan of image 2): cond 14 is tested where a guard notes an
+# unbound variable (3a33, 3a3b), by otherwise (1c00), by suspend (1c0f,
+# 1c20), read_eagerly (1ce2) and merge; MCF 0f is in exactly three words,
+# 3a3e (the path that puts the first noted variable in R18, rassy 'sst')
+# and merge's 4064 / 407a; MCF 07 at every reduction boundary (proceed
+# 2170 / 217a / 2212, execute 4cc1, execute_external, suspend 1c60, merge,
+# the boot's 20a8).  MCF 0e is proceed's 2215 alone (at the dispatch);
+# 06 is in 75 words, 59 of them freeing a cell onto R19, and execute's
+# ends; cond 13 is tested in execute (4cb6) and nearby (4d34, 4ea5, 4eb5).
+# So the flag cond 14 reads is set by 0f and reset by 07: "a suspension
+# reason is held" (the first noting sets it, each reduction starts with
+# it clear), as in VPIM's suspend stack (vpim.tar.Z, src/structures/
+# str_suspend_stack.psl.c, HELD-SOURCE, the same machine family's
+# emulator: s_PushSuspendStack caches the first variable in
+# D_SuspendStackCache and marks the stack valid; s_ResetSuspendStack runs
+# before each reduction).  Under rassy's MCF names (0e set_SUSPF) the
+# first noting of a fresh goal would take 3a3c's goto and push a stale
+# R18: refuted by the use.  INFERRED: the pairing below (by the use;
+# which of rassy's two lists has the names crossed is not decided; the
+# names are kept by the condition list).  CGCF (0e / 06, cond 13) is
+# held the same way; nothing run tests it.  Executed: 3a33 (formed), 3a3c
+# (tested), 3a3e (set).  Injection 'susp_flags_rassy' (the MCF lists'
+# pairing: 06 / 0e SUSPF, 07 / 0f CGCF).
+JMPF8_GOTO_CNDF = {0x2}       # RULES['jmpf8_goto_cndf']
+SUSP_FLAG_OPS = {
+    'usage': {0x07: ('SUSPF', False), 0x0f: ('SUSPF', True),
+              0x06: ('CGCF', False), 0x0e: ('CGCF', True)},
+    'rassy': {0x06: ('SUSPF', False), 0x0e: ('SUSPF', True),
+              0x07: ('CGCF', False), 0x0f: ('CGCF', True)},
+}
+FLAG_CONDS.update({0x13: 'CGCF', 0x14: 'SUSPF'})
+# U3 third step: EM1 20 is 'cond interrupt' (position 32 of the same rassy
+# list, HELD-SOURCE; 21 is interrupt_all), a hardware flag whose value is
+# the harness's (OURS, as interrupt_all: a single PE with nothing
+# pending, false).  Formed at suspend's 1c0d, tested by its JMPF 6 /
+# 1c0e (to 1c21 when an interrupt is pending).  Injection (u3_goals.py)
+# 'interrupt_pending'.
+FLAG_CONDS[0x20] = 'interrupt'
 # U3 second session (2026-11-27): PMPF, key 26 of the same two
 # sub-switches (HELD-SOURCE: ptfdump.py pimmutil rassy --pairs: under mc2
 # key 2 'reset_' 21 exsw00 .. 25 slit_check, 26 PMPF, .. 31 COL; under key
@@ -501,6 +577,21 @@ RULES = {
     # short (cell 15 of the next record) and the third pop's record is
     # misaligned (u3_goals.py, observed in its header).
     'alu_with_one': True,
+    # U3 third step (2026-11-27): three more ALU operations by rassy's names
+    # (mekbn.RASSY_ALU, HELD-SOURCE): reverse_sub is b - a; shift_right_32m
+    # is a shifted right (logical) by 32 - b; shift_left is a shifted left
+    # by b.  INFERRED from the names, and from PIMM.PARAM's comment on gsesh,
+    # "Goal Stack Entry Table "GSET" Shift Count (16'20 - log2(Entry))"
+    # (docs/pseudo_pimm_microcode.md): the wake path's 4d38-4d3e finds a
+    # priority's entry as [b6] + (prio >> [b7]) << 2, computing 4d3b
+    # MDR2 := 20 - [b7] (EM1 20, reverse_sub) and 4d3c MDR1 := prio
+    # shift_right_32m MDR2.  NOT discriminated on the path run: the woken
+    # goal's priority is 0 (its record's cell 13), so every reading gives
+    # entry 0.  shift_left is enabled only at GSET_SHIFT_WORDS (4d3d):
+    # proceed's empty arm 21b3 (U2's pinned stop, not this step's) keeps
+    # raising.  Injections: 'reverse_sub_plain' (a - b), 'shr_by_b'
+    # (shift by b): both change nothing on the path (recorded).
+    'alu_gset': True,
     # A conditional JMPF 1 with EM bit 0 CLEAR is taken when COND holds:
     # the static agent's INFERRED polarity (pu_microcode_inference.md 6.3
     # item 4, "EM bit 0 = 0 ends if the condition holds"), now EXECUTED on
@@ -586,6 +677,29 @@ RULES = {
     # off): append's instruction 4 STOPs at 31ee (MCF with EM1 08), the
     # LISTx side case ends at 31ed (a shared list reused: FAIL).
     'em1_29_mrb': 'on',
+    # CNDF 7 with EM1 28 (U3 third step, 2026-11-27): COND := tag bit 0 of
+    # the word's S1-bus value.  rassy's cndf_others arms 28 and 29 both
+    # build 'cond tag0' (asm/ptfdump.py pimmutil rassy --list @34c6-34d8;
+    # they differ in one small operand, 2 against 3, not resolved),
+    # HELD-SOURCE for 'tag bit 0'; 29 is the AS1 input's (em1_29_mrb).
+    # INFERRED that 28 reads the S1 bus.  Formed at suspend's 1c0e, on R13
+    # (the foster parent, {FPREC, record}: bit 0 set), tested by 1c0f's
+    # JMPF c ('goto if not cond'): clear, 1c12 re-stamps R13 FPREC (both
+    # arms leave R13 the same).  Discriminated at 1c66 (tag0 of R18, the
+    # noted {REFx, X}) tested by 1c80 (JMPF 1 'jump 2209 ?'): set, 1c81
+    # rewrites the hook {HOOKx, record} over 1c80's {HOOKo, record}.  The
+    # injection 'em1_28_false' (COND false): FAIL at suspend, X left
+    # {HOOKo, record}.  A word with no S1 value keeps COND_UNKNOWN (POISON).
+    'em1_28_s1_mrb': True,
+    # U3 third step: a CNDF 7 EM1 28 word with an SC1F and no SD1F reads the
+    # S1 bus for the condition alone, as CNDF 8 / a / c do ('read R18' in
+    # mekbn's RTL).  INFERRED.  Run at suspend's 1c66 (cond tag0 on R18,
+    # the noted variable's pointer; the word's JMPF 3 case_branch takes
+    # its TDAR from 1c65's case_tag_setup mdr2 5 on [variable], EM1 3b
+    # free in a JMPF e word, whose target is EM2:EM3 page-relative).  The
+    # COND it forms is tested at 1c80 (RULES['em1_28_s1_mrb']).  Injection
+    # 'em1_28_read_off': STOP at 1c66 (CNDF 7 EM1 28 with no ALU operation).
+    'em1_28_s1_read': True,
     # AS1F 2 puts YR on the AS1 bus.  INFERRED (U2, 2026-11-27, fifth
     # session).  AS1F is in SD1F's numbering (MEASURED, mekbn), whose
     # value 2 is yr in rassy's adder-source table (0 nop, 1 xr, 2 yr,
@@ -608,6 +722,27 @@ RULES = {
     # STALE input, where nothing tests it (cjump_time 'prev'): NOT
     # discriminated.
     'cnd3_sign': True,
+    # CNDF 2 / 3 in a word with no ALU operation (no AS1F input, no ALF):
+    # the ALU's output is then 0 (0 + 0), so CNDF 2 (zero) is true and
+    # CNDF 3 (negative) false.  INFERRED.  U3 third step: switch_on_non_list's
+    # through-pointer rows 5-7 (3314 CNDF 3, 3318 CNDF 2, 331c CNDF 3, the
+    # S stage's chain reports, setup.S_CHAIN_ROW) differ from row 4 (3310,
+    # CNDF 9 on MDR2) in CNDF only and carry no ALU input; their next word
+    # (3315 / 3319 / 331d) is a JMPF 1, whose CNDF is the special jump's
+    # kind, so the COND reaches 2440's JMPF e ('goto long if not cond' to
+    # 2461, the non-list end).  Decided at the resumed goal's
+    # switch_on_non_list on X, now {ATOMx, 0} through {REFx, X} (row 5,
+    # 3314): pimm.py's next instruction is the label (6655), as for a
+    # directly held nil (3310's COND false), which COND false gives;
+    # true would take 2441 (a cell given to the R19 list: row 6, both
+    # reports set, Fig. 3-23's collectable case, has CNDF 2).  At the
+    # first visit (X unbound, row 5) 2444 forms a new COND first.
+    # Injections 'cnd_noalu_poison' (POISON, the first reading: STOP at
+    # 2440) and 'cnd_noalu_raise' (raises at 3314).
+    'cnd_noalu_poison': 'zero',
+    # SUSP_FLAG_OPS (U3 third step): which pairing of rassy's names the
+    # MCF 06 / 07 / 0e / 0f words write; None: recorded only, as before.
+    'susp_flags': 'usage',
     # JMPF 8 sequences as JMPF 0 in a word whose CNDF 7 selects a flag
     # condition (FLAG_CONDS): INFERRED, as RULES['jmpf8_setup'], and
     # admitted only there (4cc2, interrupt_all; what bit 26 adds to the
@@ -684,6 +819,16 @@ RULES = {
     # flag clear it falls through to the trailer 4c02-4c07.  Off (the
     # injection 'jmpf8_goto_off'): raises at 4c01.
     'jmpf8_goto_if': True,
+    # U3 third step (2026-11-27): the same short goto 'if cond' in a JMPF 8
+    # word that also forms a condition of its own, CNDF 2 (JMPF8_GOTO_CNDF):
+    # the goto tests the COND the word before formed (cjump_time 'prev', as
+    # every conditional jump here) and the word's CNDF forms the next one.
+    # rassy's arm 8 is 'goto' short 'if cond' for every JMPF 8 word
+    # (HELD-SOURCE, the kind); the timing INFERRED.  Decided at 3a3c (the
+    # second noting's goto to 3a41 on SUSPF, formed at 3a33; its CNDF 2
+    # forms 'R18 = the variable' for 3a41's conditional end).  Off (the
+    # injection 'jmpf8_cndf_off'): raises at 3a3c.
+    'jmpf8_goto_cndf': True,
     # Tension, recorded not resolved: rassy's arm 8 covers EVERY JMPF 8
     # word, but 34a1 (jmpf8_setup) and 4cc2 (jmpf8_flag) still fall
     # through unconditionally here; on the paths run their COND would
@@ -709,6 +854,64 @@ RULES = {
     # 'wsel_d_off'): W0d again.  Census: 53 of the 99 select-d words
     # are admitted (EM1 0-f, no other EM1 consumer).
     'wsel_d_em1': True,
+    # U3 third step (2026-11-27): a page-relative JMPF 3 / 6 / 7 / b / e / f
+    # (rassy jmpf/9 prints their target with long/4, @32cd: upc & fc00 |
+    # EM2 << 4 | EM3, HELD-SOURCE) leaves EM1 to the other fields:
+    # em1_other_use no longer counts the jump.  Static evidence in the
+    # path run: 3377 (JMPF 6) stamps with EM1 (TGIF 2), 1c65 (JMPF e)
+    # carries case_tag_setup mdr2 5 in EM1, which 1c66's case_branch
+    # uses.  Decided at the wake path's 4d1b (JMPF 7 call 4d3a, select d
+    # with EM1 2: MDR1 := R12, cpr, the current priority, for the second
+    # GSET entry).  Census: the select-d words admitted rise from 53 of
+    # 99 (RULES['wsel_d_em1']'s count) by those with such a jump.
+    # Injection 'long_em1_busy': STOP at 4d1b (select d not decided).
+    'long_em1_free': True,
+    # U3 third step: ADF 2 ('w2' in mekbn's RTL) is YR.  INFERRED.  Decided
+    # on the wake path (enqueue by priority, 4d1a-4d1e): 4d1a / 4d1b call
+    # 4d38 / 4d3a for the GSET entry of the woken goal's priority (its
+    # record's cell 13) and of the current one (R12, cpr); 4d1b's ADF 2
+    # keeps the first entry while 4d3a-4d3e compute the second, 4d1c
+    # (CNDF 2) forms 'MDR1 - YR = 0', the two entries equal, and 4d1d's
+    # JMPF c then falls to 4d1d-4d1e, the push onto R14 (gsp, the current
+    # queue: cell 15 := old R14, R14 := {HOOKo, record}); otherwise 4d1f-
+    # 4d23 push onto the GSET entry in memory and mark W1f.  With ADF 2
+    # writing no register, YR is still b7 at 4d1c and a goal of the
+    # current priority goes to the GSET entry, which R14 caches: the two
+    # diverge.  ADF 2 may not write MAR1: 4d3a reads [MAR1] as the shift
+    # count, MAR1 = b7 where 4d3d's '[MAR1++]' left it (so not SD1F's
+    # pair MDR1 + MAR1, RULES['sd1_pairs']).  Injections 'adf2_none'
+    # (the GSET path) and 'adf2_pair': observed in u3_goals.py.
+    'adf2': 'yr',
+    # U3 third step: SC2F e (with WRBF) reads the first-bank register
+    # R(10 | EM2).  rassy's sc2f/8 arm e (@2675-2705) is a 16-way switch on
+    # one operand naming cgp, ap, cpr, cfpp, gsp, crr, ccc, ssp, sst, fvp,
+    # flp, fgp, fwep, fwip, rcnt, hp (the R10-R1f names), each arm
+    # marking em2_not_free: HELD-SOURCE for the names and that EM2 is the
+    # field; INFERRED that the operand is EM2's value (as select d's
+    # R(10 | EM1), RULES['wsel_d_em1']).  mekbn's RTL printed 'W0e'.
+    # Census: 56 SC2F e words with an S2 destination, 16 with WRBF (the
+    # others keep their old reading).  Decided at the wake path's 4d1c
+    # (EM2 4: MDR1 := R14, gsp, the ready queue) and read, not run, at
+    # 1d28 (EM2 8: YR := R18, sst, the end of the many-variable walk).
+    # Injection 'sc2_e_off': STOP at 4d1c (read of W0e, never set).
+    'sc2_e_em2': True,
+    # U3 third step: SC2F a (WRBF clear) on the S2 bus is an immediate,
+    # EM2 << 4 | EM1, not the operand register y.  rassy's sc2f/8 arm a
+    # (@2613-261a) marks em1_not_free and em2_not_free (HELD-SOURCE: it
+    # consumes both fields; arms 8 / 9 mark one each, the EM1 / EM2
+    # immediates).  The combination is INFERRED from the census of the 62
+    # SC2F a words: 0xb0 from two encodings (EM1 10 / EM2 0a in 21 words,
+    # 30 / 08 at 05c2 and 289a), 0x20 / 0x40 / 0x80 at 18cb-18cd and
+    # 3392 / 3394, 0xff at 4ccc / 4ceb, 0xb4 at 3a3c, the parameter area
+    # a0-bf and masks.  Decided at the first noting 3a3c-3a3f: MDR2 :=
+    # b4, 3a3d MAR2 := it, 3a3e reads [b4] (sspb), 3a3f R17 := sspb - 1, the
+    # empty suspension stack (3a41-3a42 push at R17 + 1); 1c62-1c64's
+    # alf_high ([b4] above R17) then takes the single-waiter path.  As
+    # opd y it read A0 and made R17 := [X] - 1 = ffffffff.  Also met at
+    # the boot's 20a1 (YR := b0, overwritten at 20a6 on the path run; the
+    # 2003 entry's 20a2-20a3 read [R05 + b0]).  Injection 'sc2_a_opd':
+    # observed in u3_goals.py.
+    'sc2_a_imm': True,
     # DSTF c: rassy's dstf/5 key 12 prints '++ rfar' (pool slot 95, after
     # '@ r0' .. '@ r1b1' for keys 8-b): the register-file entry that RFAR
     # (DSTF / second-bank 6, 'rfar') names, RFAR then stepped.  INFERRED
@@ -717,6 +920,16 @@ RULES = {
     # R06 := 0, then one '++ rfar' write per argument).  Injection
     # 'rfar_off': DSTF c is a register R0c again.
     'dstf_c_rfar': True,
+    # U3 third step (2026-11-27): the same entry as a SOURCE.  SC1F / SC2F
+    # c with WRBF clear reads A[rfar] and steps RFAR.  rassy prints the
+    # same '@ r0' .. '@ r1b1', '++ rfar' run of names in its source-select
+    # tables as in dstf/5 (asm/ptfdump.py pimmutil rassy --list: the run
+    # occurs three times), so HELD-SOURCE for the name by the parallel
+    # list, INFERRED that it is the argument register read with RFAR
+    # stepped, as the write.  Decided at suspend's 1c30 (the counted copy
+    # of the goal's arguments into its record, 1c2e having made RFAR 0).
+    # Injection 'src_c_rfar_off': SC1F c reads R0c again (raises).
+    'src_c_rfar': True,
     # The loop counter lc (R03, rassy's second-bank 3): MCF EM1 10 is
     # mc1's '-- lc' (pool slot 0116, HELD-SOURCE), R03 := R03 - 1; CNDF 6
     # is 'cond lc_one' (the short table's sixth) and CNDF 7 EM1 0d 'cond
@@ -956,6 +1169,11 @@ def alf_cond(latch, name):
         return v & M32 == 0
     if name == 'alf_sign':
         return bool(v >> 31 & 1)
+    if name == 'alf_high':
+        x, y = (b, a) if ALF_HIGH_REVERSED else (a, b)
+        if ALF_HIGH_SIGNED:
+            return _signed(x[1] & M32) > _signed(y[1] & M32)
+        return x[1] & M32 > y[1] & M32
     return a[1] & M32 == b[1] & M32
 
 
@@ -1010,6 +1228,8 @@ def _cnd7(pu, upc, x, a):
 def _cnd2(pu, upc, x, a):
     """CNDF 2: the word's ALU result is zero (RULES['cnd2_zero'])."""
     if pu.alu_seen is None or pu.alu_seen[2] is None:
+        if RULES['cnd_noalu_poison'] and pu.as1_seen is None:
+            return True if RULES['cnd_noalu_poison'] == 'zero' else POISON
         raise Unmodelled(upc, 'CNDF 2 with no ALU operation')
     z = pu.alu_seen[2] & M32 == 0
     return z if RULES['cnd2_zero'] else not z
@@ -1020,6 +1240,8 @@ def _cnd3(pu, upc, x, a):
     if not RULES['cnd3_sign']:
         raise Unmodelled(upc, 'CNDF 3 (rule off)')
     if pu.alu_seen is None or pu.alu_seen[2] is None:
+        if RULES['cnd_noalu_poison'] and pu.as1_seen is None:
+            return False if RULES['cnd_noalu_poison'] == 'zero' else POISON
         raise Unmodelled(upc, 'CNDF 3 with no ALU operation')
     return bool(pu.alu_seen[2] >> 31 & 1)
 
@@ -1052,7 +1274,14 @@ def em1_other_use(x):
         return True
     if field(x, 'SC2F') in (mekbn.SC2_EM1, mekbn.SC2_WIDE):
         return True
+    if RULES['long_em1_free'] and field(x, 'JMPF') in LONG_JMPF:
+        return False
     return mekbn.jk(x) not in (0, 2, 4) or field(x, 'JMPF') in (9, 0xd)
+
+
+# RULES['long_em1_free']: the page-relative JMPF kinds whose target rassy
+# prints with long/4 (upc & fc00 | EM2 << 4 | EM3): EM1 is not theirs
+LONG_JMPF = (3, 6, 7, 0xb, 0xe, 0xf)
 
 
 def em_jump_busy(x):
@@ -1113,6 +1342,7 @@ class PU:
         self.writes = []        # (upc, address, (tag, value))
         self.cycles = []        # one record per microcycle (README "Trace format")
         self._reads = []
+        self._rfar_step = []
         for z in RULES['zero_regs']:
             self.r[z] = (0, 0)
 
@@ -1145,6 +1375,16 @@ class PU:
             v = (0, field(x, imm))
             self._reads.append((imm, v))
             return v
+        if sel == 0xc and not bit(x, mekbn.WRB_BIT) and RULES['src_c_rfar']:
+            # RULES['src_c_rfar']: A[rfar], RFAR stepped
+            rfar = self.r.get(6)
+            if rfar is None or is_stale(rfar):
+                raise Unmodelled(upc, 'select c (++ rfar) read with RFAR unset')
+            if rfar[1] not in self.an:
+                raise Unmodelled(upc, 'read of A%02x (++ rfar), never set' % rfar[1])
+            self._reads.append(('A%02x' % rfar[1], self.an[rfar[1]]))
+            self._rfar_step.append((rfar[0], rfar[1] + 1))
+            return self.an[rfar[1]]
         f, n = self.sel_name(x, sel)
         store = {'W': self.w, 'A': self.an, 'R': self.r}[f]
         if n not in store:
@@ -1296,6 +1536,13 @@ class PU:
                 v = a[1] ^ b[1]
             elif op == 'add_with_one' and RULES['alu_with_one']:
                 v = a[1] + b[1] + (RULES['alu_with_one'] != 'plain')
+            elif op == 'reverse_sub' and RULES['alu_gset']:
+                v = b[1] - a[1] if RULES['alu_gset'] != 'reverse_sub_plain' else a[1] - b[1]
+            elif op == 'shift_right_32m' and RULES['alu_gset']:
+                n = 32 - (b[1] & 63) if RULES['alu_gset'] != 'shr_by_b' else b[1] & 63
+                v = (a[1] & M32) >> n if 0 <= n < 32 else 0
+            elif op == 'shift_left' and RULES['alu_gset'] and upc in GSET_SHIFT_WORDS:
+                v = (a[1] << (b[1] & 31)) if b[1] & 63 < 32 else 0
             else:
                 raise Unmodelled(upc, 'ALU operation %s' % op)
         self.alu_seen = (a, b, v)
@@ -1360,6 +1607,7 @@ class PU:
         self._upc = upc
         self._lc_dec = bool(bit(x, 18)) and field(x, 'EM1') == 0x10
         self._reads = []
+        self._rfar_step = []    # RULES['src_c_rfar']: RFAR after a '++ rfar' read
         old = dict(self.wr)
         new = {}            # phase-2 register -> value
         regw = []           # phase-1 register-file writes ((file, n), value)
@@ -1381,6 +1629,10 @@ class PU:
         elif field(x, 'CNDF') in (8, 0xa, 0xc) and cndf_free(x) and RULES['cnd8_s1']:
             # the S1 bus read for the condition alone ('read X', RULES['cnd8_s1'])
             self.s1_seen = self.read_sel(upc, x, sc1)
+        elif field(x, 'CNDF') == 7 and field(x, 'EM1') == 0x28 and cndf_free(x) \
+                and RULES['em1_28_s1_read'] and sc1:
+            # the same for 'cond tag0' (RULES['em1_28_s1_read'])
+            self.s1_seen = self.read_sel(upc, x, sc1)
         sc2, sd2 = field(x, 'SC2F'), field(x, 'SD2F')
         if sd2:
             if sc2 in (mekbn.SC2_EM1, mekbn.SC2_EM2, mekbn.SC2_WIDE):
@@ -1388,6 +1640,18 @@ class PU:
             elif sc2 == 1 and RULES['sc2f1_ir'] and (RULES['sc2f1_ir'] == 'ext_ir'
                                                 or not bit(x, mekbn.WRB_BIT)):
                 v = self.ir_s2(upc, x)
+            elif sc2 == 0xa and not bit(x, mekbn.WRB_BIT) and RULES['sc2_a_imm']:
+                # RULES['sc2_a_imm']: the immediate EM2 << 4 | EM1
+                v = (0, (field(x, 'EM2') << 4 | field(x, 'EM1')) & M32)
+            elif sc2 == 0xe and bit(x, mekbn.WRB_BIT) and RULES['sc2_e_em2']:
+                # RULES['sc2_e_em2']: the first-bank register R(10 | EM2)
+                if em2_busy(x) or field(x, 'EM2') > 0xf:
+                    raise Unmodelled(upc, 'SC2F e with EM2 %02x in use or over f' % field(x, 'EM2'))
+                n = 0x10 | field(x, 'EM2')
+                if n not in self.r:
+                    raise Unmodelled(upc, 'read of R%02x, never set' % n)
+                self._reads.append(('R%02x' % n, self.r[n]))
+                v = self.r[n]
             else:
                 v = self.read_sel(upc, x, sc2, bus=2)
             d = {1: 'YR', 2: MDR1, 3: MDR2}[sd2]
@@ -1404,7 +1668,13 @@ class PU:
             if res is UNKNOWN and (dst or d):
                 raise Unmodelled(upc, 'AS1F %d with AS2F %d: the result is written, its'
                                  ' source not decided' % mekbn.alu_in(x))
-            if dst:
+            if dst == 2 and RULES['adf2'] == 'pair':        # injection only
+                new[MDR1] = new[MAR1] = res
+            elif dst == 2 and RULES['adf2'] == 'none':     # injection only
+                pass
+            elif dst == 2 and RULES['adf2'] == 'yr':
+                new['YR'] = res     # RULES['adf2']: YR
+            elif dst:
                 if dst not in WNAME:
                     raise Unmodelled(upc, 'ADF %d' % dst)
                 if dst in new:
@@ -1419,6 +1689,11 @@ class PU:
         if bit(x, 18):
             if field(x, 'EM1') in MCF_FLAG_OPS:
                 name, val = MCF_FLAG_OPS[field(x, 'EM1')]
+                flagw[name] = val
+                mcf = field(x, 'EM1')
+            elif RULES['susp_flags'] and field(x, 'EM1') in SUSP_FLAG_OPS[RULES['susp_flags']]:
+                # the suspension flags (SUSP_FLAG_OPS, U3 third step)
+                name, val = SUSP_FLAG_OPS[RULES['susp_flags']][field(x, 'EM1')]
                 flagw[name] = val
                 mcf = field(x, 'EM1')
             elif field(x, 'EM1') == 0x01 and 0x01 in MCF_NAMED:
@@ -1549,6 +1824,12 @@ class PU:
             tdar = (cycle, self.tgt[col][self.as1_seen[0] & 63])
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in DEREF_SETUP:
             tdar = (cycle, self.deref_code(upc, x) << DEREF_SHIFT)
+        elif cnd == 7 and cndf_free(x) and field(x, 'EM1') == 0x28 and RULES['em1_28_s1_mrb'] \
+                and self.s1_seen is not None and not is_poison(self.s1_seen):
+            # RULES['em1_28_s1_mrb'] (U3 third step): the S1 value's tag bit 0
+            v = self.s1_seen
+            cond_new, cond_cycle = (STALE if is_stale(v) else bool(v[0] & 1)
+                                    and RULES['em1_28_s1_mrb'] is True), cycle
         elif cnd == 7 and mekbn.jk(x) == 0 and field(x, 'EM1') in COND_UNKNOWN:
             cond_new, cond_cycle = POISON, cycle
         elif cnd == 7 and cndf_free(x) and field(x, 'EM1') in FLAG_CONDS:
@@ -1610,7 +1891,8 @@ class PU:
                 kind, conditional = 'next', False
             else:
                 kind, target, conditional = 'call', upc & ~0x3ff | em & 0x3ff, False
-        elif jf == 8 and RULES['jmpf8_goto_if'] and not cnd:
+        elif jf == 8 and RULES['jmpf8_goto_if'] and (
+                not cnd or RULES['jmpf8_goto_cndf'] and cnd in JMPF8_GOTO_CNDF):
             # rassy jmpf/9 arm 8: 'goto' short 'if cond' (RULES['jmpf8_goto_if'])
             if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
                 raise Unmodelled(upc, 'JMPF 8 conditional goto with no usable condition')
@@ -1707,6 +1989,10 @@ class PU:
             nxt = None
         else:
             raise Unmodelled(upc, 'flow kind %s' % kind)
+        if self._rfar_step:
+            if len(self._rfar_step) > 1 or any(n == ('R', 6) for n, _ in regw):
+                raise Unmodelled(upc, '++ rfar read twice, or with RFAR written, in one word')
+            regw.append((('R', 6), self._rfar_step[0]))
         return {'cycle': len(self.trace), 'micro_pc': upc, 'microword': x,
                 'reg_reads': list(self._reads), 'wr': new, 'reg_writes': regw,
                 'mem_reads': memr, 'mem_writes': memw,
