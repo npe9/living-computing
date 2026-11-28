@@ -51,6 +51,9 @@ Read AGENTS.md at the repo root first. Rules, all binding:
 - Never delete by glob in stretch/bsv/.
 - The repo is public: no third-party documents without redistribution
   terms in git.
+- Behaviour-preserving means every `HALTREPORT_ALL` line identical, in
+  order, to the baseline log (`grep '^HALTREPORT_ALL'`). The bare
+  HALTREPORT lines covered only the tail -20 window (388 of 434 reports).
 - Commit BEFORE starting a suite run, so the .status head= is the commit
   being verified (a 2026-11-26 run recorded the commit before its change).
 - Commit on your worktree branch, one milestone per commit, message says
