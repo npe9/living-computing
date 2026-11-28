@@ -74,7 +74,13 @@ CCF_RASSY = {0x08: ('read', 6, 4, False), 0x09: ('read', 7, 4, False),
              # 0f 'cancel': no memory operation (INFERRED: the name only;
              # executed at 3494, read_variable's end, where the bit reading's
              # read ++ mar2 mdr2 is not used either way: NOT discriminated)
-             0x0f: ("cancel", 7, 5, False)}
+             0x0f: ("cancel", 7, 5, False),
+             # 04 'wait': no memory operation, nothing changed (INFERRED: the
+             # name; this simulator has no memory latency to wait out).
+             # 7 words of image 2 (201f, 202f, 215f, 2167, 408b, 4667, 466a);
+             # executed at 202f (start: R10 := MDR1 after 202d's pop, 3349).
+             # Injection 'ccf_wait_raise' (u3_goals.py): STOP at 202f.
+             0x04: ('wait', 6, 4, False)}
 CCF_NAMES = {0x04: 'wait', 0x05: 'undo', 0x06: 'reset_TRB', 0x07: 'read_TRB_top mdr1',
              0x0e: 'set_misc_command mdr1', 0x18: 'unify_write mar1 mdr1',
              0x19: 'unify_write mar2 mdr1', 0x1a: 'unify_write mar1 mdr2',
@@ -206,6 +212,20 @@ FLAG_CONDS.update({0x1e: 'MRP', 0x1f: 'COL'})
 # 04): the variable was reached through a shared pointer.  INFERRED (the
 # reading of what sw01 records); the names HELD-SOURCE.
 FLAG_CONDS.update({0x10: 'sw00', 0x11: 'sw01', 0x12: 'sw02'})
+# U3 second session (2026-11-27): EM1 1a is 'cond PMPF' (position 26 of
+# the same list, HELD-SOURCE), a flag the firmware sets and resets itself
+# (MCF_SUB_FLAGS: the entry vector's 2021 / 2022).  The name: PMP is the
+# held parameter file's "Pseudo Multi-PSI" (PIMM.PARAM 'pmp_ncas', "PMP
+# Network Comm. Area Size"), so PMPF reads as the Pseudo-Multi-PSI flag:
+# INFERENCE.  Fits the boot's two arms at 209f-20a7: set, crr (R15) is
+# read from the cell 10 + start's operand a (20a1-20a3), tested against 17
+# at 20a4-20a5 (not run), a per-PE reduction limit like the Pseudo PIM/m CSP's
+# "Reduction Limit" (pimmcsp next_candidate, PRINTED string); reset, crr
+# is 17 (20a6-20a7).  The CSP prints "$GO/PIMos <Start Address> ... = 2000
+# (Multi-PSI)" (pimmcsp csp_help_command, PRINTED): the cold start 2000,
+# whose path resets PMPF at 2014.  Executed at 209f (formed) and 20a1
+# (tested), and in proceed's 217c / 12e3 only under injections.
+FLAG_CONDS[0x1a] = 'PMPF'
 # CNDF 7 EM1 00-08: 'cond alf_zero' .. 'alf_less_zero' (positions 0-8,
 # HELD-SOURCE), the ALU flags latched by MCF set_alf (MCF_NAMED 01).  The
 # meaning of each latched flag against the ALU's inputs is not decided:
@@ -291,6 +311,20 @@ MCF_NAMED[0x01] = 'set_alf'
 # rf_unlock, which bracket the argument loads.
 MCF_NAMED[0x0e] = 'set_SUSPF'
 MCF_SUB = {(0x0a, 2): 'rf_lock', (0x02, 2): 'rf_unlock'}
+# U3 second session (2026-11-27): PMPF, key 26 of the same two
+# sub-switches (HELD-SOURCE: ptfdump.py pimmutil rassy --pairs: under mc2
+# key 2 'reset_' 21 exsw00 .. 25 slit_check, 26 PMPF, .. 31 COL; under key
+# a 'set_' the same numbers).  MCF EM1 02 / 0a with EM2 & 1f = 1a resets /
+# sets the flag that 'cond' position 26 reads (FLAG_CONDS 1a).  INFERRED
+# that the set / reset and the condition are one flag (rassy numbers both
+# lists alike).  The image's only PMPF writers (scan, image 2): 2014 and
+# 2021 reset, 2022 set (the entry vector 2000-2004: 2000 -> 200b .. 2014
+# reset, 2001 -> 2021 reset, 2003 -> 2022 set; no held word of either
+# image branches to 2001 or 2003), 68e2 reset.  Executed: 2021 (and 2022
+# in u3_goals.py's second run).  Only PMPF is admitted: the other keys
+# (21 exsw00 .. 31 COL, 20ac's reset_slit_check) are not run and raise.
+# Injection 'mcf_pmpf_off' (u3_goals.py): STOP at 2021.
+MCF_SUB_FLAGS = {(0x02, 0x1a): ('PMPF', False), (0x0a, 0x1a): ('PMPF', True)}
 
 
 class _Poison(object):
@@ -450,6 +484,23 @@ RULES = {
     # 1a + 4 and stops on memory never written).  A wide word whose EM1 is
     # non-zero and not a stamp raises (width UNKNOWN: 16 bits or 10).
     'sc2_wide': 'EM2:EM3',
+    # U3 second session: a wide word whose EM1 MCF consumes (bit 18) is
+    # EM2:EM3 too; EM1 is MCF's key there.  INFERRED (as the stamp case:
+    # EM1 belongs to another field).  6 words of image 2 (EM1 07 x2, 01
+    # x2, 08, 30); executed at 20a8 (YR := b8 with MCF EM1 07 reset_CGCF,
+    # then 20a9 MAR1 := b8).  Injection 'wide_mcf_off' (u3_goals.py):
+    # STOP at 20a8 in the boot.
+    'sc2_wide_mcf': True,
+    'mcf_sub_flags': True,
+    # U3 second session: ALU operation add_with_one (rassy's EM2 3) is
+    # a + b + 1.  INFERRED from the name (HELD-SOURCE, mekbn.RASSY_ALU)
+    # and decided at 3370, R1b's refill (3380 -> 336b-3375): the link it
+    # makes, {REFo, MAR1 + 16 + 1} with MAR1 at the record's cell 15, is
+    # the next record's cell 0, so the 8 records are 16-aligned and
+    # chained.  Injection 'with_one_plain' (a + b): the links fall one
+    # short (cell 15 of the next record) and the third pop's record is
+    # misaligned (u3_goals.py, observed in its header).
+    'alu_with_one': True,
     # A conditional JMPF 1 with EM bit 0 CLEAR is taken when COND holds:
     # the static agent's INFERRED polarity (pu_microcode_inference.md 6.3
     # item 4, "EM bit 0 = 0 ends if the condition holds"), now EXECUTED on
@@ -839,6 +890,11 @@ EM_IMM = True
 # the path run (4cc1 is not taken) and is recorded open.  Injections:
 # 'e_on_true' (e taken on COND), 'a_on_false'.
 CJUMP_TAKEN_ON = {0xb: True, 0xa: True, 0xe: False}
+# U3 second session: c, rassy's arm c ("goto short", 'if not cond',
+# the same constants as above: HELD-SOURCE).  Executed at 20a1 (start:
+# taken when PMPF is reset, to 20a6, crr := 17; not taken when set, 20a2
+# reads the reduction limit).  Injection 'c_on_true' (u3_goals.py).
+CJUMP_TAKEN_ON[0xc] = False
 
 # Conditions.  COND is formed by a word's CNDF and tested by a later
 # conditional word (thesis p.130: condition into the flag COND one step,
@@ -1137,7 +1193,8 @@ class PU:
         if sc2 == mekbn.SC2_EM2:
             return (0, field(x, 'EM2'))
         if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM2:EM3':
-            if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2):
+            if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2) \
+                    and not (RULES['sc2_wide_mcf'] and bit(x, 18)):
                 raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
                                  % field(x, 'EM1'))
             return (0, field(x, 'EM') & 0x3ff)
@@ -1237,6 +1294,8 @@ class PU:
                 v = a[1] | b[1]
             elif op == 'xor':
                 v = a[1] ^ b[1]
+            elif op == 'add_with_one' and RULES['alu_with_one']:
+                v = a[1] + b[1] + (RULES['alu_with_one'] != 'plain')
             else:
                 raise Unmodelled(upc, 'ALU operation %s' % op)
         self.alu_seen = (a, b, v)
@@ -1374,6 +1433,11 @@ class PU:
                     raise Unmodelled(upc, 'MCF -- lc with R03 unset or not known')
                 regw.append((('R', 3), (lc[0], (lc[1] - 1) & M32)))
                 mcf = 0x10
+            elif (field(x, 'EM1'), field(x, 'EM2') & 0x1f) in MCF_SUB_FLAGS \
+                    and RULES['mcf_sub_flags']:
+                name, val = MCF_SUB_FLAGS[(field(x, 'EM1'), field(x, 'EM2') & 0x1f)]
+                flagw[name] = val
+                mcf = field(x, 'EM1')
             elif (field(x, 'EM1'), field(x, 'EM2') & 0x1f) in MCF_SUB:
                 mcf = field(x, 'EM1')       # recorded only (MCF_SUB)
             elif field(x, 'EM1') == 0x20 and RULES['mcf_20_sp']:

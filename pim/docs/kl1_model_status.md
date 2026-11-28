@@ -123,8 +123,18 @@ empty) with R16 (ccc) started at 1; started at 0, the other open
 reading, it makes 1 pick and stops at `12e3`. The goal queue (R14, the
 records, R10, R1b) is written by held words only; R13 and W1f, read at
 the picks, are still the declared stand-in, as is the rest of the state
-before the first instruction (`ref/pu/README.md`, "U3"). This concerns neither
-`PimKL1B` nor `PimmCore`. The paragraph below is the bench model's state.
+before the first instruction (`ref/pu/README.md`, "U3"). *Second step,
+same day:* that state is now written by start's own held boot words
+(R1b's refill `3380`, `209f`-`20a8`, `20e7`-`210b`, `202d`-`2030`: 199
+words) instead of the stand-in (8 stand-ins before, 0 after); the boot
+queues a goal of its own, so the third pick dispatches it (firmware only,
+not compared), and R16 = 2 from `20a0`-`20a1` settles ccc as the queue's
+length + 1. The PMPF flag `209f` stopped on is found (rassy's
+`cond PMPF`, set / reset by the entry vector's `2022` / `2021`); which
+entry the held system takes is not, so the harness takes the reset
+(OURS) and pins the set as a second run (`ref/pu/README.md`, "U3, second
+step"). This concerns neither `PimKL1B` nor `PimmCore`. The paragraph
+below is the bench model's state.
 
 The model can execute a hand-assembled KL1-B program that builds heap
 cells and reads them back, and it can prove the deref path. It has a
