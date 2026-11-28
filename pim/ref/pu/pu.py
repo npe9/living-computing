@@ -240,6 +240,18 @@ FLAG_CONDS[0x1a] = 'PMPF'
 # (0841's alf_equal is overwritten at 0864).
 ALF_LATCHED = ('alf_zero',)
 GSET_SHIFT_WORDS = {0x4d3d}   # RULES['alu_gset']: where shift_left is modelled
+# U3d second step (2026-11-28): 4c28 too, the goal switch's test of the
+# slit-check cause register (4c27 XR := W1f; 4c28 W1f shift_left YR, CNDF 3
+# the sign, JMPF c): W1f is 0 from the boot (20a8) on the path run, so every
+# shift reading gives 0 and 4c28 goes to 4c2d: NOT discriminated (recorded).
+GSET_SHIFT_WORDS.add(0x4c28)
+# And 219c, proceed's run-out arm (217d's call 219b): 219b XR := 1, 219c
+# MAR1 := XR shift_left EM (4): the address 10 that 219e reads, in area
+# 5's 'Extended Control Registers (constant area)' (PIMM.PARAM, PRINTED),
+# a cell no held source gives: the 'crr_proceed' run stops at 219e's test
+# of it.  Discriminated only as an address (u3_goals 'crr_proceed' pins
+# 'cell 10'); injection 'gset_219c_off' (219c raising again): STOP 219c.
+GSET_SHIFT_WORDS.add(0x219c)
 # U3 third step (2026-11-27): alf_high (rassy position 7) is formed from the
 # latch as well: the ALU's first input above its second, unsigned (the
 # 'high' of a compare, the result of a - b taken without borrow and not
@@ -373,6 +385,12 @@ MCF_SUB[(0x02, 4)] = 'f_jump'
 # (tested), 3a3e (set).  Injection 'susp_flags_rassy' (the MCF lists'
 # pairing: 06 / 0e SUSPF, 07 / 0f CGCF).
 JMPF8_GOTO_CNDF = {0x2}       # RULES['jmpf8_goto_cndf']
+# U3d second step (2026-11-28): CNDF 3 too, by the same reading (rassy's
+# arm 8 is 'goto' short 'if cond' for every JMPF 8 word, HELD-SOURCE for
+# the kind; the timing 'prev' INFERRED).  Executed at 1d93 (the priority
+# builtin's step routine 1d92: 1d92's CNDF 3 tested, false, fall through
+# to 1d94).  Injection 'jmpf8_cndf3_off': STOP at 1d93 (the 'prio' run).
+JMPF8_GOTO_CNDF.add(0x3)
 SUSP_FLAG_OPS = {
     'usage': {0x07: ('SUSPF', False), 0x0f: ('SUSPF', True),
               0x06: ('CGCF', False), 0x0e: ('CGCF', True)},
@@ -387,6 +405,15 @@ FLAG_CONDS.update({0x13: 'CGCF', 0x14: 'SUSPF'})
 # 1c0e (to 1c21 when an interrupt is pending).  Injection (u3_goals.py)
 # 'interrupt_pending'.
 FLAG_CONDS[0x20] = 'interrupt'
+# U3d second step (2026-11-28): EM1 23 is 'cond csbrk' (position 35 of the
+# same rassy list, HELD-SOURCE: ... 32 interrupt, 33 interrupt_all, 34
+# trcmd, 35 csbrk, 36 ic_trap), read as the console-break flag (INFERENCE
+# from the name and from the word before it, 4cf6, which loads 70, the
+# Console Break Control Table's address in PIMM.PARAM's area 5 map,
+# 'A:000070 Console Break Control Table (constant area)', PRINTED).  A
+# hardware flag whose value is the harness's (OURS, as interrupt: no
+# console break set, false).  Formed at execute's slow path 4cf7.
+FLAG_CONDS[0x23] = 'csbrk'
 # U3 second session (2026-11-27): PMPF, key 26 of the same two
 # sub-switches (HELD-SOURCE: ptfdump.py pimmutil rassy --pairs: under mc2
 # key 2 'reset_' 21 exsw00 .. 25 slit_check, 26 PMPF, .. 31 COL; under key
@@ -567,6 +594,25 @@ RULES = {
     # then 20a9 MAR1 := b8).  Injection 'wide_mcf_off' (u3_goals.py):
     # STOP at 20a8 in the boot.
     'sc2_wide_mcf': True,
+    # U3d second step (2026-11-28): the same for a wide word whose EM1 the
+    # condition select consumes (CNDF 7, EM1 the condition's number, pu
+    # FLAG_CONDS): EM2:EM3.  INFERRED (as sc2_wide_mcf: EM1 belongs to
+    # another field).  Executed at 4cf6 (execute's slow path: MDR1 := 70,
+    # with COND := PMPF).  Injection 'wide_cndf7_off' (u3_goals.py).
+    'sc2_wide_cndf7': True,
+    # U3d second step (2026-11-28): a wide SC2F b word whose EM1 is not a
+    # stamp and is consumed by no other field (no TGIF 1/2, MCF, CNDF 7)
+    # reads the 10 bits EM2:EM3 too, EM1 ignored.  INFERENCE: the
+    # allocator-by-size rows 3331 / 3334 / 3337 / 333a carry EM1 3, 4, 5,
+    # 6 beside the same 1a0, each followed by a word stamping VECT3o ..
+    # VECT6o (the row's own size), so EM1 there names the row, not part
+    # of the value.  Executed at 3334 (suspend's many-variable path, 1d3a
+    # 'call 3334'), as the table base 1a0 that 3335 adds the size to (the
+    # run stops at that cell, 1a4, either way).  EM1 is free only with no
+    # MCF and CNDF not 7 (those words keep sc2_wide_mcf / sc2_wide_cndf7).
+    # Injections 'wide_em1_raise' (None: STOP at 3334) and 'wide_em1_16'
+    # (16, the whole EM: twovar reads cell 11a4 instead, MOVED).
+    'sc2_wide_em1': 10,
     'mcf_sub_flags': True,
     # U3 second session: ALU operation add_with_one (rassy's EM2 3) is
     # a + b + 1.  INFERRED from the name (HELD-SOURCE, mekbn.RASSY_ALU)
@@ -748,7 +794,7 @@ RULES = {
     # admitted only there (4cc2, interrupt_all; what bit 26 adds to the
     # condition is not decided).  Off (the injection 'jmpf8_flag_off'):
     # raises at 4cc2.
-    'jmpf8_flag': True,
+    'jmpf8_flag': 'goto',
     # JMPF 2 (4-bit; S10, open until now) is a case_branch with a short
     # base: target = (upc + EM3, EM3 signed as in JMPF 4) | TDAR.
     # INFERRED (U2, 2026-11-27, sixth session).  rassy's jmpf table
@@ -805,6 +851,16 @@ RULES = {
     # 2215 (proceed's dequeue: call 2250 unless the next goal's cell 14
     # equals R13, the current foster parent), not taken.
     'jmpf_f_call_ifnot': True,
+    # U3d second step (2026-11-28): JMPF d, an absolute call taken if NOT
+    # cond.  HELD-SOURCE (the kind): rassy's jmpf/9 arm d (@2b40-2b4b)
+    # names 'call', marks em1_not_free and em2_not_free and prints the
+    # target with vlong/2 (@32da), as arms 5 and 9; its 'pmi 49' operand
+    # (@2b41) is the 'if not cond' pool slot (arms c-f, CJUMP_TAKEN_ON's
+    # evidence).  INFERRED: the target is the whole EM, as JMPF 9's
+    # (RULES['jmpf9_vlong']).  Executed at proceed's 217d (crr exhausted,
+    # 217c's PMPF reset under the boot's entry): taken, to 219b.
+    # Injection 'jmpf_d_off' (u3_goals.py): STOP at 217d.
+    'jmpf_d_call_ifnot': True,
     # U3 (2026-11-27, first session): JMPF 8 in a word that forms no
     # condition of its own (outside jmpf8_setup / jmpf8_flag) is a short
     # goto taken if COND, COND as the word before left it.  HELD-SOURCE
@@ -1023,6 +1079,29 @@ RULES = {
     # rule): a guard fires, so the rule is needed, but NOT discriminated
     # (no rival reading of the multiway runs and is compared).
     'tdar_holds': True,
+    # U3d second step (2026-11-28): a JMPF 3 case_branch with no E-stage
+    # set-up takes the S stage's TDAR (setup.S_TDAR, and for ODPF 4 entries
+    # setup.S_TDAR_ODPF4), as JMPF 2's does.  INFERRED from the table it
+    # reaches: wait_atom's row 6 (an operand through REFo pointers to an
+    # unbound cell, 3978) has no set-up word, and 3979's JMPF 3 base 3940
+    # is 16 rows: with column 6 (7 - TDPF 1), UNDF's byte 16 lands on 3950,
+    # 'jump 3a38', inside the noting words 3a22-3a3f, the even bytes 0-10
+    # on 3a38 and the odd on 3a2c (tag bit 0, the MRB, as in the noting).
+    # Executed at 3979 (the two-variable suspend, U3d second step, path
+    # b).  Injection 'jmpf3_s_tdar_off' (raises again).
+    'jmpf3_s_tdar': True,
+    # U3d second step (2026-11-28): WRBF switches only selects 10-1f to the
+    # W bank; a select 0-f with WRBF set names R0-Rf as without it.
+    # INFERENCE: rassy's name lists give two banks of 16 only for 10-1f
+    # (cgp .. hp, wr10 .. wr1e, pstr) and the low names once (nop sr gr lc
+    # pc ir rfar rvfr); the static 'W06' writers 26b0 / 26b2 / 26b4 and
+    # 37ef / 37f1 are each followed by a DSTF c (++ rfar) word, R06's use;
+    # allocator row 3335 carries WRBF for its destination W1d while its
+    # sibling 334e reads R06 with WRBF clear.  Executed at 3335 (the
+    # twovar suspend's allocator: MDR2 := R06 = 3, then R03 := 3), and
+    # 4c12 / 4c27 (the slice: R0d, R0e, unchanged results).  Injection
+    # 'wrbf_low_w' (the W bank, as before): STOP at 3335 (W06 never set).
+    'wrbf_low_r': True,
     # AS1F 3 with AS2F not 0 (0802: 'as1_3 - MDR1'; the EM bits there are
     # the JMPF 3 base, not a constant, so RULES['as1f3_em2'] does not
     # apply): the AS1 source is not decided.  The result is UNKNOWN: a
@@ -1384,6 +1463,8 @@ class PU:
                     raise Unmodelled(self._upc, 'select d (WRBF) with EM1 %02x: not decided'
                                      ' (EM1 over f, or used by another field)' % field(x, 'EM1'))
                 return ('R', 0x10 | field(x, 'EM1'))
+            if sel < 0x10 and RULES['wrbf_low_r']:
+                return ('R', sel)
             return ('W', sel)
         if sel == 0xd and RULES['wsel_d_w_em1']:
             # RULES['wsel_d_w_em1']: the work register W(EM1)
@@ -1465,9 +1546,14 @@ class PU:
             return (0, field(x, 'EM2'))
         if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM2:EM3':
             if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2) \
-                    and not (RULES['sc2_wide_mcf'] and bit(x, 18)):
-                raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
-                                 % field(x, 'EM1'))
+                    and not (RULES['sc2_wide_mcf'] and bit(x, 18)) \
+                    and not (RULES['sc2_wide_cndf7'] and field(x, 'CNDF') == 7):
+                em1_free = not bit(x, 18) and field(x, 'CNDF') != 7
+                if RULES['sc2_wide_em1'] == 16 and em1_free:
+                    return (0, field(x, 'EM') & 0xffff)
+                if not (RULES['sc2_wide_em1'] and em1_free):
+                    raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
+                                     % field(x, 'EM1'))
             return (0, field(x, 'EM') & 0x3ff)
         if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM1:EM2':
             return (0, field(x, 'EM') >> 4)         # injection only
@@ -1900,8 +1986,8 @@ class PU:
             conditional = False
         if jf == 8 and RULES['jmpf8_setup'] and cnd == 7 and field(x, 'EM1') in DEREF_SETUP:
             pass                        # sequences as JMPF 0 (RULES['jmpf8_setup'])
-        elif jf == 8 and RULES['jmpf8_flag'] and cnd == 7 and field(x, 'EM1') in FLAG_CONDS:
-            pass                        # sequences as JMPF 0 (RULES['jmpf8_flag'])
+        elif jf == 8 and RULES['jmpf8_flag'] is True and cnd == 7 and field(x, 'EM1') in FLAG_CONDS:
+            pass                        # sequences as JMPF 0 (RULES['jmpf8_flag'], before U3d)
         elif jf == 9 and RULES['jmpf9_call_if']:
             # a conditional call, "if cond" (RULES['jmpf9_call_if']); only
             # the arm not taken is modelled
@@ -1914,6 +2000,14 @@ class PU:
                 kind, target, conditional = 'call', em, False   # RULES['jmpf9_vlong']
             else:
                 kind, conditional = 'next', False
+        elif jf == 0xd and RULES['jmpf_d_call_ifnot']:
+            # rassy jmpf/9 arm d: 'call', vlong (absolute), 'if not cond'
+            if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
+                raise Unmodelled(upc, 'JMPF d conditional call with no usable condition')
+            if bool(prev_cond):
+                kind, conditional = 'next', False
+            else:
+                kind, target, conditional = 'call', em, False
         elif jf == 0xf and RULES['jmpf_f_call_ifnot']:
             # rassy jmpf/9 arm f: 'call', long (page-relative), 'if not cond'
             if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
@@ -1923,7 +2017,8 @@ class PU:
             else:
                 kind, target, conditional = 'call', upc & ~0x3ff | em & 0x3ff, False
         elif jf == 8 and RULES['jmpf8_goto_if'] and (
-                not cnd or RULES['jmpf8_goto_cndf'] and cnd in JMPF8_GOTO_CNDF):
+                not cnd or RULES['jmpf8_goto_cndf'] and cnd in JMPF8_GOTO_CNDF
+                or RULES['jmpf8_flag'] == 'goto' and cnd == 7 and field(x, 'EM1') in FLAG_CONDS):
             # rassy jmpf/9 arm 8: 'goto' short 'if cond' (RULES['jmpf8_goto_if'])
             if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
                 raise Unmodelled(upc, 'JMPF 8 conditional goto with no usable condition')
@@ -1958,7 +2053,9 @@ class PU:
         if jf == 3:
             # S8 case_branch: base | the TGT byte's low 4 bits, set up by
             # the word just before (a CNDF 7, JMPF 0 word)
-            if tdar is None or not self._tdar_reaches(tdar, cycle):
+            if tdar is not None and tdar[0] == 'S' and RULES['jmpf3_s_tdar']:
+                pass                    # the S stage's TDAR (RULES['jmpf3_s_tdar'])
+            elif tdar is None or not self._tdar_reaches(tdar, cycle):
                 raise Unmodelled(upc, 'JMPF 3 case_branch without a set-up in the word before')
             if target & (63 if RULES['case_wide'] else 15) & tdar[1]:
                 raise Unmodelled(upc, 'JMPF 3 case_branch base %04x overlaps TDAR %02x'

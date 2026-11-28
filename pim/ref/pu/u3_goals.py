@@ -259,6 +259,37 @@ the observed point is the first STOP / FAIL line.
   wait_atom_own      unchanged (the operand is the constant): NOT
                      discriminated
   free_undeclared    FAIL 11 on stream (the given-back record's cell 0)
+  U3d second step (2026-11-28): main() also runs four compiled programs
+  to pinned stops (README "U3d, second step"): slice (crr out in execute:
+  the slow path and goal switch 4c11, stop at cell 33), crr_proceed
+  (crr out in proceed: stop at 219f, cell 10), twovar (a suspend on two
+  variables: the suspension-stack push, 1c60-1c65 -> 1d20 -> 1d3a ->
+  3334, stop at 3343, cell 1a4), prio (@priority: stop in
+  calculate_priority_from_minimum at 1d94, CNDF 1).  Existing injections
+  re-diffed against 1a4c11ba: 152 of 166 unchanged on append2 / suspend
+  / stream; the 14 that changed are listed in the README, each still
+  caught.  New (append2 / suspend / stream unchanged by all):
+  jmpf8_fall         slice MOVED (the fast path runs on, STOP 17 at 219f)
+  jmpf_d_off         crr_proceed STOP 16 at 217d; prio STOP at 1ddc
+  refill_undeclared  slice FAIL 4, crr_proceed FAIL 5 (refill writes)
+  wide_cndf7_off     slice STOP 15 at 4cf6
+  csbrk_set          slice STOP 15 at 4d03 (reads cell 70's value)
+  gset_219c_off      crr_proceed STOP 16 at 219c
+  gset_4c28_off      slice STOP 15 at 4c28 (needed; the value 0 is not
+                     discriminated)
+  alt_first_skip     twovar FAIL 6 (R04 {REFo, alt} against COD)
+  susp_push_undeclared  twovar FAIL 8 (heap 10000400)
+  jmpf3_s_tdar_off   twovar STOP 6 at 3979
+  tdar_odpf4_off     twovar STOP 6 at 3979
+  wide_em1_raise     twovar STOP 9 at 3334
+  wide_em1_16        twovar MOVED: reads cell 11a4 for 1a4 (same stop)
+  wrbf_low_w         twovar STOP 9 at 3335 (W06 never set)
+  jmpf8_cndf3_off    prio STOP at 1d93
+  prio_form_off      prio STOP at the builtin (no set-up form)
+  Owner decision (2026-11-28): append's 16th instruction counted, 16 of
+  16, on append2's first goal (APPEND16_PINNED: pick 2 reads only
+  firmware-written state).  reseed_r14: MOVED (0 of 16, FAIL at 8);
+  r13_harness: MOVED (16 of 16, pick residual R13).
 """
 import os
 import sys
@@ -318,10 +349,38 @@ POST_BOOT = {}                # injections: registers the harness rewrites after
 SUSP_STALE = (0x17, 0x18)
 # 'cond interrupt' (pu.FLAG_CONDS 20), read by suspend: OURS, false (a
 # single PE, nothing pending), as U2's interrupt_all.
-SUSP_FLAGS = {'interrupt': False}
+SUSP_FLAGS = {'interrupt': False, 'csbrk': False}
 AFTER_BOOT = []               # injections: rule changes made after the boot
 
 PINNED = dict(steps=41, matched=41, stop=None)
+# Owner decision (2026-11-28): append's 16th instruction counts here, as
+# 16 of 16.  The first append goal (the instructions between pick 1 and
+# pick 2, U2's append([a], [], Z): try_me_else .. proceed, 6644-6657)
+# matches pimm.py whole, its 16th instruction, proceed, included, and
+# that proceed's pick (pick 2) reads no state whose last writer is the
+# harness: only what the held words wrote after the 199-word held boot
+# (the provenance walk, RESIDUAL_PINNED[1] = []).  u2_append's standalone
+# pin stays at 15 of 16: it seeds the scheduler.  Still OURS for this
+# count: the driver clause (driver_cells), the boot entry (2021,
+# reset_PMPF, PMPF_ENTRY), and the parameter cell values b4 (PARAM_B4),
+# b6 (gseb) and b7 (GSESH).  Injections, observed: 'reseed_r14' (R14
+# rewritten by the harness): FAIL at 8, the provenance of pick 1, so the
+# goal never runs (the pin moves: 0 of 16); 'r13_harness' (R13 rewritten,
+# same value): all 16 still match, but pick 2 reads R13 last written by
+# the harness, pick_residual ['R13']: the pin moves on provenance alone.
+APPEND16_PINNED = dict(instructions=16, matched=16, first='try_me_else', last='proceed',
+                       pick=2, pick_residual=[])
+
+
+def append16_got(out):
+    """The first append goal: the instructions after pick 1's proceed up
+    to the proceed that makes pick 2."""
+    ok = out.get('ok_steps', [])
+    goal = [b for _k, b, pk in ok if pk == 1][1:] + [b for _k, b, pk in ok if pk == 2][:1]
+    res = out['residual'][1] if len(out['residual']) > 1 else None
+    return dict(instructions=len(goal), matched=len(goal), first=goal[0] if goal else None,
+                last=goal[-1] if goal else None, pick=2 if len(goal) and goal[-1] == 'proceed'
+                and out['picks'] >= 2 else None, pick_residual=res)
 PICKS_PINNED = 3              # 2 compared with pimm.py + the boot goal's (firmware only)
 BOOT_PINNED = {'2021': 1, '204b': 8, '3380': 132, '209f-20a8': 6, '20e7': 45, '202d-2030': 7}
 # With PMPF set (entry 2003's 2022): the boot takes 20a2, MAR1 := R05 +
@@ -385,6 +444,60 @@ STREAM_PROG_RESIDUAL_PINNED = ['R17', 'R18', 'R19', 'R1a', 'cell b4', 'cell b6',
                                'cell f2000000', 'cell f2000001', 'cell f2000002',
                                'cell f2000003', 'cell f3000000', 'cell f3000002']
 STREAM_PICK_RESIDUAL_PINNED = [[], [], []]
+# U3d second step, path (a) (README "U3d, second step"): both runs stop,
+# pinned, before b(A) runs, so neither has an answer to compare.
+# 'slice': 15 enqueue_goals (the 5th's refill 3380 declared, 141 words),
+# then execute meets crr 2: its slow path (31 words) is compared as the
+# requeue of the goal (cmp_execute_slice); the stop is cell 33.  The one
+# residual: cell 70 (4cf7-4d02's read, area 5's Console Break Control
+# Table, PIMM.PARAM PRINTED; its value meets nothing tested: csbrk, the
+# COND 4d02 tests, is a hardware flag, pu.FLAG_CONDS, OURS false).
+SLICE_PINNED = dict(steps=33, matched=16, slices=1, picks=0, words=417,
+                    stop=(16, 'cell 33'), residual=([], ['cell 70'], []))
+# 'crr_proceed': 11 enqueue_goals, an execute (crr 5: the fast path), three
+# proceeds that pick, the fourth meets crr 1 and stops at 219f, the test
+# of cell 10 that 219e read.
+CRRP_PINNED = dict(steps=26, matched=16, slices=0, picks=3, words=289,
+                   stop=(16, '219f: ALU input from a read of memory never written'),
+                   residual=([], [], [[], [], [], ['cell 10']]))
+# 'twovar' (path b): 9 instructions matched (the two notings, the second
+# pushing X on the suspension stack, declared), the suspend stops at
+# 3335 (W06); pimm.py's suspend hooks two distinct variable cells.
+TWOVAR_PINNED = dict(steps=18, matched=9, slices=0, picks=0, words=76,
+                     stop=(9, '3343: ALU input from a read of memory never written'
+                           ' (AS1F 6, AS2F 2)'),
+                     residual=([('suspend', ['cell 1a4', 'cell b4'])],
+                               ['R17', 'R18', 'R19', 'cell 1a4', 'cell b4', 'cell f2000000',
+                                'cell f2000001'], []))
+TWOVAR_PIMM_HOOKS = [2]
+# 'prio' (path c): two instructions matched, the stop inside the builtin.
+PRIO_WORDS = 17
+PRIO_PINNED = dict(steps=15, matched=2, slices=0, picks=0, words=PRIO_WORDS,
+                   stop=(2, '1d94: CNDF 1 (condition not known)'),
+                   residual=([], [], []))
+STOP_PINS = {'slice': lambda: SLICE_PINNED, 'crr_proceed': lambda: CRRP_PINNED,
+             'twovar': lambda: TWOVAR_PINNED, 'prio': lambda: PRIO_PINNED}
+
+
+def stop_got(out, n):
+    st = out['stop']
+    why = None
+    if st:
+        why = st[2] if st[2] == SLICE_STOP else st[3]
+        if why.startswith('219f: ALU input from a read of memory never written'):
+            why = '219f: ALU input from a read of memory never written'
+    return dict(steps=n, matched=out['matched'], slices=out['slices'], picks=out['picks'],
+                words=out['words'], stop=(st[0], why) if st else None,
+                residual=(out['susp_residual'], sorted(out['prog_residual']), out['residual']))
+
+
+def stop_moved(out, n, prog):
+    if prog == 'twovar' and out.get('pimm_hooks') != TWOVAR_PIMM_HOOKS:
+        return True
+    return (stop_got(out, n) != STOP_PINS[prog]() or bool(out['fail']) or bool(out['boot_stop'])
+            or out['boot_residual'] != BOOT_RESIDUAL_PINNED or out['boot_words'] != BOOT_PINNED)
+
+
 PROG_PINS = {'suspend': lambda: (SUSP_PINNED, SUSP_RESIDUAL_PINNED, SUSP_PROG_RESIDUAL_PINNED,
                                  SUSP_PICK_RESIDUAL_PINNED),
              'stream': lambda: (STREAM_PINNED, STREAM_RESIDUAL_PINNED,
@@ -518,6 +631,228 @@ STREAM_CELLS = [
 ]
 STREAM_LIST = [1]             # go([1], A, B): the input (OURS); A = B = [1]
 
+# U3d second step (2026-11-28), path (a): the reduction count run out.
+# crr (R15, rassy 'crr') is 17 after the boot (20a6-20a7, PMPF reset);
+# enqueue_goal takes 1 (4c02), execute 2 (4cc0: MDR1 - EM2), proceed 1
+# (216d).  Two programs, OURS sources compiled by the held PIMOS 3.6
+# compiler on pimm.py (u3d_compile.py re-makes and checks the cells):
+#
+# 'slice': go(A) :- b(A), a x 15.  The compiler enqueues the fifteen a's
+# and executes b(A), so execute meets crr 2: 4cc0 makes it 0 and 4cc1's
+# CNDF 3 (2 - 3 negative) is tested by 4cc2's JMPF 8 (RULES['jmpf8_flag']
+# 'goto'): execute's slow path, through the goal switch 4c11 (README "U3d,
+# second step").
+SLICE_SOURCE = """\
+:- module sl2.
+:- public go/1.
+go(A) :- b(A), a, a, a, a, a, a, a, a, a, a, a, a, a, a, a.
+a :- true | true.
+b(A) :- true | A = ok.
+"""
+SLICE_CELLS = [
+    (0x23, 0x63000012),  # 15  enqueue_goal 0, @35
+    (0x23, 0x63000011),  # 16  enqueue_goal 0, @35
+    (0x23, 0x63000010),  # 17  enqueue_goal 0, @35
+    (0x23, 0x6300000f),  # 18  enqueue_goal 0, @35
+    (0x23, 0x6300000e),  # 19  enqueue_goal 0, @35
+    (0x23, 0x6300000d),  # 20  enqueue_goal 0, @35
+    (0x23, 0x6300000c),  # 21  enqueue_goal 0, @35
+    (0x23, 0x6300000b),  # 22  enqueue_goal 0, @35
+    (0x23, 0x6300000a),  # 23  enqueue_goal 0, @35
+    (0x23, 0x63000009),  # 24  enqueue_goal 0, @35
+    (0x23, 0x63000008),  # 25  enqueue_goal 0, @35
+    (0x23, 0x63000007),  # 26  enqueue_goal 0, @35
+    (0x23, 0x63000006),  # 27  enqueue_goal 0, @35
+    (0x23, 0x63000005),  # 28  enqueue_goal 0, @35
+    (0x23, 0x63000004),  # 29  enqueue_goal 0, @35
+    (0x23, 0x61010008),  # 30  execute 1, @40
+    (0x02, 0x000107d2),  # 31  atom #107d2
+    (0x00, 0x00000000),  # 32  integer 0
+    (0x24, 0x00000021),  # 33  ; predicate head 00000021
+    (0x00, 0x00010000),  # 34  integer 65536
+    (0x23, 0x60000000),  # 35  proceed 0,0,0   ; no
+    (0x02, 0x000107d3),  # 36  atom #107d3
+    (0x00, 0x00000000),  # 37  integer 0
+    (0x24, 0x01000026),  # 38  ; predicate head 01000026
+    (0x00, 0x00020000),  # 39  integer 131072
+    (0x23, 0xc00100e7),  # 40  get_atom #100e7
+    (0x23, 0x60000000),  # 41  proceed 0,0,0   ; no
+]
+# 'crr_proceed': go(A) :- a x 11, b(A).  The compiler enqueues b(A) and ten
+# a's and executes the first a: crr is 5 at that execute (slow path not
+# taken), and runs out at the fourth proceed (216d: 1 - 1; 216e -> 217a;
+# 217c PMPF, 217d's JMPF d taken: call 219b), which reads cell 10 (219e),
+# in area 5's 'Extended Control Registers (constant area)' (PIMM.PARAM,
+# PRINTED): no held source gives it, so the run stops there, pinned.
+CRRP_SOURCE = """\
+:- module rl.
+:- public go/1.
+go(A) :- a, a, a, a, a, a, a, a, a, a, a, b(A).
+a :- true | true.
+b(A) :- true | A = ok.
+"""
+CRRP_CELLS = [
+    (0x23, 0x14010000),  # 15  set_value 1,0,0   ; c8_r
+    (0x23, 0x63010013),  # 16  enqueue_goal 1, @37
+    (0x23, 0x6300000d),  # 17  enqueue_goal 0, @32
+    (0x23, 0x6300000c),  # 18  enqueue_goal 0, @32
+    (0x23, 0x6300000b),  # 19  enqueue_goal 0, @32
+    (0x23, 0x6300000a),  # 20  enqueue_goal 0, @32
+    (0x23, 0x63000009),  # 21  enqueue_goal 0, @32
+    (0x23, 0x63000008),  # 22  enqueue_goal 0, @32
+    (0x23, 0x63000007),  # 23  enqueue_goal 0, @32
+    (0x23, 0x63000006),  # 24  enqueue_goal 0, @32
+    (0x23, 0x63000005),  # 25  enqueue_goal 0, @32
+    (0x23, 0x63000004),  # 26  enqueue_goal 0, @32
+    (0x23, 0x61000003),  # 27  execute 0, @32
+    (0x02, 0x000107d2),  # 28  atom #107d2
+    (0x00, 0x00000000),  # 29  integer 0
+    (0x24, 0x0000001e),  # 30  ; predicate head 0000001e
+    (0x00, 0x00010000),  # 31  integer 65536
+    (0x23, 0x60000000),  # 32  proceed 0,0,0   ; no
+    (0x02, 0x000107d3),  # 33  atom #107d3
+    (0x00, 0x00000000),  # 34  integer 0
+    (0x24, 0x01000023),  # 35  ; predicate head 01000023
+    (0x00, 0x00020000),  # 36  integer 131072
+    (0x23, 0xc00100e7),  # 37  get_atom #100e7
+    (0x23, 0x60000000),  # 38  proceed 0,0,0   ; no
+]
+
+
+# U3d second step, path (b): 'twovar', a goal whose guards wait on two
+# variables.  p(X, Y, A) runs first (the compiler executes the first body
+# goal, enqueues q), its first clause's wait_atom 0 notes X (first noting,
+# 3a38-3a3f: R18 := X, R17 := [b4] - 1), the second clause's wait_atom 1
+# notes Y (3a3c: R18 is not Y, 3a41-3a43: X pushed at [R17 + 1], R18 :=
+# Y), then suspend 3, @24: 1c08-1c10 fill the record, 1c60-1c65 find the
+# stack not empty (R17 = [b4]) and take the many-variable path, 1d20-1d21,
+# 1d3a 'call 3334', the allocator's size-4 row: 3334 MAR1 := R05 (4),
+# MDR1 := the wide 1a0 (pu.RULES['sc2_wide_em1']); 3335 MDR2 := R06 (3,
+# pu.RULES['wrbf_low_r']), MAR1 := W1d := {VECT4o, 1a4}; 3336 R03 := 3,
+# MDR1 := [1a4]; 3343 adds it: the pinned stop.  Cell 1a4 is the size-4
+# entry of a table at 1a0 in area 5's MPQ (A:000180, PIMM.PARAM's map,
+# PRINTED; the boot's heap-top routine reads 1a0 + 4a, cell 1ea, which
+# the harness gives, OURS): no held word the run executes writes it and no
+# held source gives its value.  q(X, _) would bind X = [] and wake p.
+TWOVAR_SOURCE = """\
+:- module mv.
+:- public go/1.
+go(A) :- p(X, Y, A), q(X, Y).
+p([], _, A) :- true | A = x.
+p(_, [], A) :- true | A = y.
+q(X, _) :- true | X = [].
+"""
+TWOVAR_CELLS = [
+    (0x23, 0x34020000),  # 15  put_value 2,0,0   ; r_r
+    (0x23, 0x13010000),  # 16  set_variable 1,0,0   ; c8_r
+    (0x23, 0x13020100),  # 17  set_variable 2,1,0   ; c8_r
+    (0x23, 0x63020013),  # 18  enqueue_goal 2, @39
+    (0x23, 0x61030003),  # 19  execute 3, @24
+    (0x02, 0x000113e2),  # 20  atom #113e2
+    (0x00, 0x00000000),  # 21  integer 0
+    (0x24, 0x03000016),  # 22  ; predicate head 03000016
+    (0x00, 0x000b0000),  # 23  integer 720896
+    (0x23, 0x68000003),  # 24  try_me_else 0, @29
+    (0x23, 0x80000000),  # 25  wait_atom #0
+    (0x23, 0x1d010000),  # 26  collect_value 1,0,0   ; r
+    (0x23, 0xc2011b3d),  # 27  get_atom 2, #11b3d
+    (0x23, 0x60000000),  # 28  proceed 0,0,0   ; no
+    (0x23, 0x68000003),  # 29  try_me_else 0, @34
+    (0x23, 0x81000000),  # 30  wait_atom 1, #0
+    (0x23, 0x1d000000),  # 31  collect_value 0,0,0   ; r
+    (0x23, 0xc2012171),  # 32  get_atom 2, #12171
+    (0x23, 0x60000000),  # 33  proceed 0,0,0   ; no
+    (0x23, 0x6903fff4),  # 34  suspend 3, @24
+    (0x02, 0x0001087b),  # 35  atom #1087b
+    (0x00, 0x00000000),  # 36  integer 0
+    (0x24, 0x02000025),  # 37  ; predicate head 02000025
+    (0x00, 0x00030000),  # 38  integer 196608
+    (0x23, 0x1d010000),  # 39  collect_value 1,0,0   ; r
+    (0x23, 0xba000000),  # 40  get_nil 0,0,0   ; r
+    (0x23, 0x60000000),  # 41  proceed 0,0,0   ; no
+]
+
+
+# U3d second step, path (c): 'prio', a goal of another priority by the
+# held compiler's own pragma: q(X)@priority(*, 100) compiles to
+# put_integer 3, 100; calculate_priority_from_minimum 3, 3 (a 22:ED
+# builtin cell); enqueue_goal_with_priority 3, @35 (pimm.py drops the
+# priority: one ready queue, i_enqueue_goal_with_priority).  The builtin
+# (entry 1dda; set-up OURS, setup.FORMS) runs 1dda-1de6: X's tag tested,
+# X compared with the wide 310 (X = 2000 takes 1def: W10 := 8, 1924,
+# read as an error exit, not followed), cells 9 and 10 of R13's record
+# read (the boot's foster parent, 20e7: {INT, ffffffff}, {INT, 0}, the
+# shoen's range), (max - min) shift_right_32m 20, then 'call 1d92', a
+# step routine: 1d93's JMPF 8 (CNDF 3, pu.JMPF8_GOTO_CNDF) falls through
+# and 1d94 forms CNDF 1, rassy's 'cond carry' (the short condition
+# table's first, HELD-SOURCE name), whose value for this ALU operation
+# (ALF 1) no rule decides: the pinned stop.  pimm.py's i_calculate_
+# priority_from_minimum has no shoen (Y = X, OURS): the result would not
+# be comparable as it stands.
+PRIO_SOURCE = """\
+:- module pr1.
+:- public go/1.
+go(A) :- p(X, A), q(X)@priority(*, 100).
+p(a, A) :- true | A = x.
+q(X) :- true | X = a.
+"""
+PRIO_CELLS = [
+    (0x23, 0x34010000),  # 15  put_value 1,0,0   ; r_r
+    (0x23, 0x31030064),  # 16  put_integer 3,0,100   ; r_c16
+    (0x22, 0xed030300),  # 17  calculate_priority_from_minimum 3,3,0   ; r_r
+    (0x23, 0x13010000),  # 18  set_variable 1,0,0   ; c8_r
+    (0x23, 0x6403000e),  # 19  enqueue_goal_with_priority 3, @35
+    (0x00, 0x01000000),  # 20  integer 16777216
+    (0x23, 0x61020003),  # 21  execute 2, @26
+    (0x02, 0x000113e2),  # 22  atom #113e2
+    (0x00, 0x00000000),  # 23  integer 0
+    (0x24, 0x02000018),  # 24  ; predicate head 02000018
+    (0x00, 0x00050000),  # 25  integer 327680
+    (0x23, 0x68000002),  # 26  try_me_else 0, @30
+    (0x23, 0x800107d2),  # 27  wait_atom #107d2
+    (0x23, 0xc1011b3d),  # 28  get_atom 1, #11b3d
+    (0x23, 0x60000000),  # 29  proceed 0,0,0   ; no
+    (0x23, 0x6902fffa),  # 30  suspend 2, @26
+    (0x02, 0x0001087b),  # 31  atom #1087b
+    (0x00, 0x00000000),  # 32  integer 0
+    (0x24, 0x01000021),  # 33  ; predicate head 01000021
+    (0x00, 0x00020000),  # 34  integer 131072
+    (0x23, 0xc00107d2),  # 35  get_atom #107d2
+    (0x23, 0x60000000),  # 36  proceed 0,0,0   ; no
+]
+
+
+def prio_cells(pc0):
+    return list(PRIO_CELLS)
+
+
+def twovar_cells(pc0):
+    return list(TWOVAR_CELLS)
+
+
+# The compiled programs u3d_compile.py re-makes from their sources (each
+# on a fresh load of the prompt checkpoint): (module, source, cells, the
+# answer pimm.py gives go(A) at two placements, as pimm.term prints an
+# atom of the checkpoint's table on a fresh machine: #100e7 is 'ok' and
+# #11b3d 'x', the atoms get_atom carries in the cells).
+COMPILED = (('sl2', 'SLICE_SOURCE', 'SLICE_CELLS', '#100e7'),
+            ('rl', 'CRRP_SOURCE', 'CRRP_CELLS', '#100e7'),
+            ('mv', 'TWOVAR_SOURCE', 'TWOVAR_CELLS', '#11b3d'),
+            ('pr1', 'PRIO_SOURCE', 'PRIO_CELLS', '#11b3d'))
+
+
+def slice_cells(pc0):
+    return list(SLICE_CELLS)
+
+
+def crrp_cells(pc0):
+    return list(CRRP_CELLS)
+
+
+def args_one_var(m, lst):
+    """go(A): A unbound (OURS input); the answer A = ok."""
+    return [m.new_var()]
+
 
 def stream_cells(pc0):
     """work::pc's code (STREAM_CELLS) at cell index pc0: position free."""
@@ -537,7 +872,9 @@ def args_stream(m, lst):
 PROGRAM_ARGS = args_append2
 PROGRAM_CODE = driver_cells
 PROGRAMS = {'append2': (args_append2, driver_cells), 'suspend': (args_suspend, driver_cells),
-            'stream': (args_stream, stream_cells)}
+            'stream': (args_stream, stream_cells), 'slice': (args_one_var, slice_cells),
+            'crr_proceed': (args_one_var, crrp_cells), 'twovar': (args_one_var, twovar_cells),
+            'prio': (args_one_var, prio_cells)}
 
 
 def pimm_run():
@@ -753,11 +1090,14 @@ def run(verbose=False, entry=None, prog=None):
            'dispatched': 0, 'empty': 0, 'boot_pick': 0, 'residual': [], 'boot': None,
            'boot_residual': None, 'boot_stop': None, 'boot_words': None,
            'prog_residual': set(), 'skipped': [], 'suspends': 0, 'wakes': 0,
-           'susp_residual': []}
+           'susp_residual': [], 'slices': 0,
+           'ok_steps': []}
     prov = Prov()
     prov.harness(p)
     FRESH.clear()
     INDIRECT.clear()
+    del REFILLS[:]
+    del SUSP_PUSHES[:]
     try:
         done = boot(p, m.hp, entry)
     except PU.Unmodelled as e:
@@ -796,6 +1136,11 @@ def run(verbose=False, entry=None, prog=None):
         print('FAIL boot: %s' % '; '.join(r16_bad))
         steps = []
     skip_to = 0
+    # pimm.py's suspends: how many variable cells each hooks (M lines with
+    # a HOOK tag; the twovar pin wants 2, two distinct variables)
+    out['pimm_hooks'] = [len({ln.split()[1] for ln in st[2] if ln.startswith('M ')
+                              and int(ln.split()[2][:2], 16) & ~1 == HOOKO & ~1})
+                         for st in steps if cell_name(p, st[1]) == 'suspend']
     for k, (pc, cellv, lines, after) in enumerate(steps):
         if k < skip_to:                             # declared: guard_to_alt
             out['skipped'].append((k, pc))
@@ -853,7 +1198,7 @@ def run(verbose=False, entry=None, prog=None):
         elif base in ('set_variable', 'set_marked_variable'):
             fails = cmp_set_variable(p, m, rn, lines, after, name, an0, mem0, r0)
         elif base == 'enqueue_goal':
-            fails = cmp_enqueue(p, m, rn, lines, after, prev_after, an0, mem0, r0, fw2pg, pg2fw)
+            fails = cmp_enqueue(p, m, rn, lines, after, prev_after, an0, mem0, r0, fw2pg, pg2fw, n0)
         elif base == 'proceed':
             out['picks'] += 1
             kind, fails = cmp_proceed(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw,
@@ -868,6 +1213,10 @@ def run(verbose=False, entry=None, prog=None):
                                       steps[k + 1][0] if k + 1 < len(steps) else None, n0)
             out[kind] += 1
             empty = kind
+        elif base == 'execute' and SLICE_SLOW in [u for u, _ in p.trace[n0:]]:
+            out['slices'] += 1
+            fails = cmp_execute_slice(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw, n0)
+            base = 'slice'
         elif any(ln.startswith('W ') for ln in lines):
             woken = [m.load + int(ln.split()[1]) for ln in lines if ln.startswith('W ')]
             out['wakes'] += len(woken)
@@ -878,6 +1227,8 @@ def run(verbose=False, entry=None, prog=None):
             fails = U2.compare(p, m, rn, rl, after, name, an0, mem0)
             if DECLARE_DEREF_REG and base in GUARD_OPS:
                 fails = declare_deref_reg(p, an0, fails)
+            if base in GUARD_OPS:
+                fails = declare_susp_push(p, r0, fails)
             if DECLARE_FRESH_MRB and base == 'put_reused_structure':
                 fails = declare_fresh_mrb(p, rn, lines, after, fails)
             if (DECLARE_FRESH_MRB and FRESH) or (DECLARE_READ_INDIRECT and INDIRECT):
@@ -889,13 +1240,14 @@ def run(verbose=False, entry=None, prog=None):
                 skip_to = j
             else:
                 fails += U2.compare_next_pc(p, m, pc, after, name, r04_0)
-        if base in ('enqueue_goal', 'proceed', 'suspend', 'wake'):
+        if base in ('enqueue_goal', 'proceed', 'suspend', 'wake', 'slice'):
             fails += r16_check(p, name, out['suspends'] - out['wakes'])
         if fails:
             out['fail'] = (k, pc, name, fails)
             print('FAIL %2d %5d %-22s %d words: %s' % (k, pc, name, nw, '; '.join(fails)))
             break
         out['matched'] += 1
+        out['ok_steps'].append((k, SU.base(name), out['picks']))
         print('ok   %2d %5d %-22s %d words%s' % (k, pc, name, nw,
                                                 ('  pick %d%s' % (out['picks'], {
                                                     'empty': ' (empty)', 'boot_pick': ' (the boot goal:'
@@ -915,6 +1267,20 @@ def run(verbose=False, entry=None, prog=None):
             p.r[0x14] = tuple(p.r[0x14])            # injection: the harness writes R14
             prov.reg[('R', 0x14)] = 'harness'
         prev_after = after
+        if base == 'slice':
+            # the firmware's next KL1 instruction is at cell 33 (R04, 4d01)
+            if SLICE_R04 in p.mem:              # the pin's claim: nothing wrote cell 33
+                out['fail'] = (k + 1, None, SLICE_STOP, ['cell 33 written: %s'
+                                                         % fmt(p.mem[SLICE_R04])])
+                print('FAIL    cell 33 was written (%s): the pin does not hold'
+                      % fmt(p.mem[SLICE_R04]))
+                break
+            out['stop'] = (k + 1, steps[k + 1][0] if k + 1 < len(steps) else None,
+                           SLICE_STOP, '4c15 ends with R04 = 33: the next KL1 instruction'
+                           ' is at cell 33, which no held source gives (pinned)')
+            print('STOP %2d %5s %-22s %s' % (k + 1, out['stop'][1], SLICE_STOP,
+                                             out['stop'][3]))
+            break
     print('scheduler state read at each pick whose last writer is the harness (OURS): %s'
           % '; '.join('pick %d %s' % (i + 1, ', '.join(r) or 'none')
                       for i, r in enumerate(out['residual'])))
@@ -987,6 +1353,18 @@ GUARD_OPS = ('wait_nil', 'wait_list', 'wait_atom', 'wait_integer', 'wait_value',
 DECLARE_GUARD_ALT = True      # injection 'guard_alt_undeclared'
 
 
+# U3d second step (2026-11-28): the same difference with nothing skipped,
+# where pimm.py's next instruction is the alternative itself (the guard
+# that notes is the clause's first: wait_atom 0 / wait_atom 1 of the
+# two-variable program, pimm.py's i_wait_atom on an unbound variable goes
+# to the alternative at once): the firmware's R04 is R11 ({REFo, label},
+# as 216a's try_me_else stamped it, HELD), the address pimm.py's; its tag
+# is not COD, so compare_next_pc would refuse it.  OURS.  Injection
+# 'alt_first_skip' (one skipped step needed, as before): FAIL at the
+# first wait_atom (R04 06:..., pimm.py {COD, ...}).
+ALT_FIRST_SKIP = 0
+
+
 def guard_to_alt(p, m, steps, k, r0):
     """The declared difference 'guard_to_alt' (U3 third step): on an
     unbound variable the firmware's guard notes it and fails to the
@@ -999,7 +1377,7 @@ def guard_to_alt(p, m, steps, k, r0):
     r04, r11 = p.r.get(R_PC), r0.get(0x11)
     if not r04 or PU.is_stale(r04) or r04 != r11 or r04 is r0.get(R_PC):
         return None
-    for j in range(k + 2, len(steps)):
+    for j in range(k + 1 + ALT_FIRST_SKIP, len(steps)):
         if m.load + steps[j][0] == r04[1]:
             break
         if [ln for ln in steps[j][2] if ln[:2] in ('R ', 'M ')]:
@@ -1116,7 +1494,7 @@ def same_link(fw, pg):
     return fw == pg or (fw == 'boot' and pg == 0)
 
 
-def cmp_enqueue(p, m, rn, lines, after, prev, an0, mem0, r0, fw2pg, pg2fw):
+def cmp_enqueue(p, m, rn, lines, after, prev, an0, mem0, r0, fw2pg, pg2fw, n0=None):
     fails = []
     g = after['rq']                       # pimm.py's new record: the queue's head
     rec = r0[0x10][1]                     # the firmware's: the record being built
@@ -1143,8 +1521,120 @@ def cmp_enqueue(p, m, rn, lines, after, prev, an0, mem0, r0, fw2pg, pg2fw):
         fails.append('R14 %s, want {HOOKo, %x}' % (fmt(p.r.get(0x14)), rec))
     if p.r.get(0x10) != (HOOKO, r0[0x1b][1]):
         fails.append('R10 %s, want the popped record {HOOKo, %x}' % (fmt(p.r.get(0x10)), r0[0x1b][1]))
-    fails += other_writes(p, mem0, {rec, rec + 12, rec + 13, rec + 14, rec + 15})
+    allowed, more = declare_refill(p, r0, mem0, n0)
+    fails += more
+    fails += other_writes(p, mem0, {rec, rec + 12, rec + 13, rec + 14, rec + 15} | allowed)
     fails += an_unchanged(p, an0, 'enqueue_goal')
+    return fails
+
+
+DECLARE_REFILL = True         # injection 'refill_undeclared' (U3d second step)
+
+
+def declare_refill(p, r0, mem0, n0):
+    """U3d second step: R1b ran out under the program and the held refill
+    3380 ran (4c0b's call in enqueue_goal, after 4c04 popped the last
+    record): it carves REFILL_RECORDS 16-cell records from R1f, as in the
+    boot.  pimm.py has no goal-record free list, so those cells are the
+    firmware's alone: declared, and checked to be the boot's pattern (R1f
+    advanced by 16 * REFILL_RECORDS, from the old R1f rounded as the boot;
+    the records chained through cell 0, nil-ended, from R1b's new head;
+    every other cell of a record zero).  Returns (cells, fails)."""
+    if not DECLARE_REFILL or R1B_REFILL not in [u for u, _ in p.trace[n0:]]:
+        return set(), []
+    lo, hi = r0[0x1f][1], p.r[0x1f][1]
+    fails = []
+    if hi - lo != 16 * REFILL_RECORDS:
+        fails.append('refill: R1f %x -> %x, want + %d' % (lo, hi, 16 * REFILL_RECORDS))
+    cells = set(range(lo, hi))
+    recs = [lo + 16 * k for k in range(REFILL_RECORDS)]
+    if p.r.get(0x1b, (0, None))[1] != lo:
+        fails.append('refill: R1b %s, want the first new record %x' % (fmt(p.r.get(0x1b)), lo))
+    for k, a in enumerate(recs):
+        link = p.mem.get(a)
+        if (k + 1 < len(recs) and (not isinstance(link, tuple) or link[1] != recs[k + 1])) \
+                or (k + 1 == len(recs) and link != NIL):
+            fails.append('refill: record %x cell 0 %s, not the chain' % (a, fmt(link)))
+        for c in range(1, 16):
+            if p.mem.get(a + c) != (pimm.INT, 0):
+                fails.append('refill: record %x cell %d %s' % (a, c, fmt(p.mem.get(a + c))))
+    REFILLS.append((lo, hi))
+    return cells, fails
+
+
+REFILLS = []                  # (old R1f, new R1f) of each refill met (run() empties it)
+
+
+# U3d second step: execute's slow path (4cc4 -> 4cd3 -> 4cf4 / 1c2c ->
+# 4cf6-4d02 -> 4d00-4d01 -> 4cd4 -> 4c11 -> 4c25-4c2e -> 4c13-4c15), taken
+# when crr runs out (4cc1's CNDF 3: crr - 4cc0's EM3 negative, tested by
+# 4cc2's JMPF 8, pu.RULES['jmpf8_flag'] 'goto').  What the held words do:
+# the running goal's record R10 becomes a ready goal (cell 0 {GOAL, n},
+# cells 1..n A0..An-1 by suspend's counted copy 1c2c, cell 12 {COD, the
+# label}, 13 R0e (4c27, pu.RULES['wrbf_low_r']; checked equal to R12, cpr,
+# as enqueue_goal's cell 13), 14 W1d (R13 as 4c12 loaded it), 15 the old
+# R14; 1c31 reads W15, left by the last enqueue_goal's 4c01, and 1c32
+# overwrites the MAR1 it makes, unread), R14 :=
+# {HOOKo, that record} (the queue's head), R10 := a fresh record off R1b,
+# R16 + 1, R15 := 4d01's crr + 1; then R04 := {INT, 33} (4d00-4d01: MDR2
+# := 0x32, R04 := MDR2 + 1, beside the boot goal's {COD, 34}: 2106-2108 put
+# 0x32 + 2 in its cell 12), and 4c15 ends: the next KL1 instruction is at
+# cell 33, which no held source gives (the boot module's code; PIMM.PARAM
+# names area 5's cells 0-3f 'Extended Control Registers (constant
+# area)', PRINTED).  pimm.py's execute goes on in the same goal; the
+# firmware's requeue is compared as an enqueue_goal of that goal (its
+# arguments pimm.py's argument registers, its code pimm.py's next
+# instruction) and the run stops there, pinned (SLICE_STOP).  Tried and
+# not kept: an OURS proceed at cell 33 meets crr 1 (4cd4 leaves 4cc0's 0,
+# 4d01 + 1: the slow path does not give a new quota) and so proceed's own
+# run-out arm, the 219e stop of 'crr_proceed' below: the quota's reload
+# is the code at 33's work (as the boot's, 20a6, from R05 + b0).
+SLICE_SLOW = 0x4cc4           # execute's slow path's first word
+SLICE_STOP = 'cell 33'        # the pinned stop's reason (no held code there)
+SLICE_R04 = 0x33
+
+
+def cmp_execute_slice(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw, n0):
+    """The slow path's writes against pimm.py's execute (declared: the
+    firmware requeues the goal, pimm.py runs on in it)."""
+    fails = []
+    rec = r0[0x10][1]
+    n = p.ir[1] >> 16 & 0xff                  # execute n, @label: the arity
+    want_code = (COD, m.load + after['next_pc']) if after.get('next_pc') is not None else None
+    if p.mem.get(rec) != (GOAL, n):
+        fails.append('slice: cell 0 %s, want {GOAL, %d}' % (fmt(p.mem.get(rec)), n))
+    rl = {int(ln.split()[1]): (int(ln.split()[2][:2], 16), int(ln.split()[2][2:], 16))
+          for ln in lines if ln.startswith('R ')}
+    for i in range(n):
+        pv = rl.get(i, after['reg'][i] if after.get('reg') else None)
+        if p.mem.get(rec + 1 + i) != an0.get(i) or not rn.same(p.mem.get(rec + 1 + i), pv,
+                                                                False, [], 'A%d' % i):
+            fails.append('slice: cell %d %s, A%d %s, pimm.py %s'
+                         % (1 + i, fmt(p.mem.get(rec + 1 + i)), i, fmt(an0.get(i)), fmt(pv)))
+    if p.mem.get(rec + 12) != want_code:
+        fails.append('slice: cell 12 %s, pimm.py\'s next instruction %s'
+                     % (fmt(p.mem.get(rec + 12)), fmt(want_code)))
+    if p.mem.get(rec + 13) != r0.get(0x12):
+        fails.append('slice: cell 13 %s, R12 (cpr) %s' % (fmt(p.mem.get(rec + 13)),
+                                                          fmt(r0.get(0x12))))
+    if p.mem.get(rec + 14) != r0.get(0x13):
+        fails.append('slice: cell 14 %s, R13 %s' % (fmt(p.mem.get(rec + 14)), fmt(r0.get(0x13))))
+    if p.mem.get(rec + 15) != r0[0x14]:
+        fails.append('slice: cell 15 %s, the old R14 %s' % (fmt(p.mem.get(rec + 15)), fmt(r0[0x14])))
+    if p.r.get(0x14) != (HOOKO, rec):
+        fails.append('slice: R14 %s, want {HOOKo, %x}' % (fmt(p.r.get(0x14)), rec))
+    if p.r.get(0x10, (0, None))[1] != r0[0x1b][1] or p.r[0x10][0] != HOOKO:
+        fails.append('slice: R10 %s, want the popped record {HOOKo, %x}'
+                     % (fmt(p.r.get(0x10)), r0[0x1b][1]))
+    if p.r.get(R_PC, (0, None))[1] != SLICE_R04:
+        fails.append('slice: R04 %s, want 33 (4d00-4d01)' % fmt(p.r.get(R_PC)))
+    if p.r.get(0x15, (0, None))[1] != (r0[0x15][1] - 2 + 1) & 0xffffffff:
+        fails.append('slice: R15 %s, want 4cc0\'s crr - 2, + 1 (4d01, 4cd4)' % fmt(p.r.get(0x15)))
+    fails += other_writes(p, mem0, {rec, rec + 12, rec + 13, rec + 14, rec + 15}
+                          | set(rec + 1 + i for i in range(n)))
+    fails += an_unchanged(p, an0, 'slice')
+    if not fails:
+        fw2pg[rec] = ('slice', after['next_pc'])
     return fails
 
 
@@ -1360,6 +1850,38 @@ DECLARE_ATOM_MRB = True       # injection 'atom_mrb_undeclared'
 WAKE_LOOP_REVERSED = False    # injection 'wake_loop_reversed' (the third step's loop)
 DECLARE_DEREF_REG = True      # injection 'deref_reg_undeclared'
 DEREF_REG_MARKED = True       # injection 'deref_reg_marked_off' (U3d)
+
+
+# U3d second step (2026-11-28), path (b): a guard noting a second
+# variable pushes the first one (R18, the cache) onto the suspension stack
+# (3a3c compares R18 with the new variable, 3a41-3a42: [R17 + 1] := R18,
+# R17 := R17 + 1; 3a43 R18 := the new one): memory pimm.py has no copy of
+# (its suspension list is a Python list, pimm.py's 'S' line).  Declared
+# (OURS, as 'free'): the one write at the old R17 + 1, holding the old R18,
+# within the stack from SSPB, with R17 moved there.  Injection
+# 'susp_push_undeclared': FAIL at the second variable's guard.
+DECLARE_SUSP_PUSH = True
+
+
+def declare_susp_push(p, r0, fails):
+    if not DECLARE_SUSP_PUSH:
+        return fails
+    r17, r18 = r0.get(0x17), r0.get(0x18)
+    if not r17 or PU.is_stale(r17) or not r18 or PU.is_stale(r18):
+        return fails
+    a = (r17[1] + 1) & 0xffffffff
+    if not (SSPB <= a < SSPB + 0x400) or p.mem.get(a) != r18 or p.r.get(0x17, (0, None))[1] != a:
+        return fails
+    tag = 'heap %x: firmware wrote ' % a
+    out = [f for f in fails if not f.startswith(tag)]
+    if len(out) < len(fails):
+        print('      declared: suspension stack [%x] := %s (the first noted variable;'
+              ' pimm.py keeps a list)' % (a, fmt(r18)))
+        SUSP_PUSHES.append(a)
+    return out
+
+
+SUSP_PUSHES = []
 
 
 def declare_deref_reg(p, an0, fails):
@@ -1636,6 +2158,23 @@ def _r13_harness():
 
 
 INJECT = {
+    # U3d second step (2026-11-28)
+    'jmpf8_fall': lambda: PU.RULES.update(jmpf8_flag=True),
+    'alt_first_skip': lambda: globals().update(ALT_FIRST_SKIP=1),
+    'wide_em1_raise': lambda: PU.RULES.update(sc2_wide_em1=None),
+    'wrbf_low_w': lambda: PU.RULES.update(wrbf_low_r=False),
+    'jmpf8_cndf3_off': lambda: PU.JMPF8_GOTO_CNDF.discard(3),
+    'prio_form_off': lambda: SU.FORMS.pop('calculate_priority_from_minimum'),
+    'wide_em1_16': lambda: PU.RULES.update(sc2_wide_em1=16),
+    'susp_push_undeclared': lambda: globals().update(DECLARE_SUSP_PUSH=False),
+    'jmpf3_s_tdar_off': lambda: PU.RULES.update(jmpf3_s_tdar=False),
+    'tdar_odpf4_off': lambda: setattr(SU, 'S_TDAR_ODPF4', False),
+    'jmpf_d_off': lambda: PU.RULES.update(jmpf_d_call_ifnot=False),
+    'refill_undeclared': lambda: globals().update(DECLARE_REFILL=False),
+    'wide_cndf7_off': lambda: PU.RULES.update(sc2_wide_cndf7=False),
+    'csbrk_set': lambda: SUSP_FLAGS.update(csbrk=True),
+    'gset_219c_off': lambda: PU.GSET_SHIFT_WORDS.discard(0x219c),
+    'gset_4c28_off': lambda: PU.GSET_SHIFT_WORDS.discard(0x4c28),
     'setv_addr_op': lambda: SU.FORMS.update(set_value=('y', 'arg_op')),
     'rec_poke': _poke_record,
     'rfar_off': lambda: PU.RULES.update(dstf_c_rfar=False),
@@ -1744,6 +2283,15 @@ def main(argv):
                                      out['dispatched'], out['boot_pick'], out['boot_words'],
                                      out['residual'], out['boot_residual'], PINNED, PICKS_PINNED,
                                      BOOT_PINNED, RESIDUAL_PINNED, BOOT_RESIDUAL_PINNED))
+    a16 = append16_got(out)
+    if a16 != APPEND16_PINNED:
+        moved = True
+        print('%s append\'s 16 of 16 moved: %s; pinned %s'
+              % ('MOVED' if inj else 'FAIL', a16, APPEND16_PINNED))
+    else:
+        print('append\'s 16th instruction: %d of %d (the first goal, %s .. %s, pick %d reads'
+              ' only firmware-written state)' % (a16['matched'], a16['instructions'],
+                                                  a16['first'], a16['last'], a16['pick']))
     bad = bool(moved or out['fail'] or out['stop'] or out['boot_stop'])
     print('--- the program suspend (U3 third step)')
     out2, n2 = run('-v' in argv, prog='suspend')
@@ -1765,12 +2313,29 @@ def main(argv):
                  out3['prog_residual'], out3['residual'], out3.get('answer'), STREAM_PINNED,
                  STREAM_RESIDUAL_PINNED, STREAM_PROG_RESIDUAL_PINNED, STREAM_PICK_RESIDUAL_PINNED))
     bad3 = bool(tmoved or out3['fail'] or out3['stop'] or out3['boot_stop'])
+    bad4 = {}
+    for prog, what in (('slice', 'execute\'s slow path, crr run out'),
+                       ('crr_proceed', 'proceed with crr run out'),
+                       ('twovar', 'a suspend on two variables'),
+                       ('prio', 'a goal of another priority')):
+        print('--- the program %s (U3d second step: %s; a pinned stop)' % (prog, what))
+        o4, n4 = run('-v' in argv, prog=prog)
+        bad4[prog] = stop_moved(o4, n4, prog)
+        if bad4[prog]:
+            print('%s the %s run moved: %s, fail %s; pinned %s'
+                  % ('MOVED' if inj else 'FAIL', prog, stop_got(o4, n4), o4['fail'],
+                     STOP_PINS[prog]()))
     if inj:
-        print('injection %s: append2 %s, suspend %s, stream %s'
+        print('injection %s: append2 %s, suspend %s, stream %s, slice %s, crr_proceed %s,'
+              ' twovar %s, prio %s'
               % (nm, 'MOVED' if bad else 'unchanged', 'MOVED' if bad2 else 'unchanged',
-                 'MOVED' if bad3 else 'unchanged'))
-        return 1 if bad or bad2 or bad3 else 0
-    if bad or bad2 or bad3:
+                 'MOVED' if bad3 else 'unchanged',
+                 'MOVED' if bad4['slice'] else 'unchanged',
+                 'MOVED' if bad4['crr_proceed'] else 'unchanged',
+                 'MOVED' if bad4['twovar'] else 'unchanged',
+                 'MOVED' if bad4['prio'] else 'unchanged'))
+        return 1 if bad or bad2 or bad3 or any(bad4.values()) else 0
+    if bad or bad2 or bad3 or any(bad4.values()):
         return 1
     # PMPF's other value (entry 2003's set_PMPF, 2022): the boot's crr arm
     # reads the reduction limit at R05 + b0, a parameter cell no harness

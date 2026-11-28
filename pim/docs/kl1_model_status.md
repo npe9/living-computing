@@ -133,7 +133,13 @@ length + 1. The PMPF flag `209f` stopped on is found (rassy's
 `cond PMPF`, set / reset by the entry vector's `2022` / `2021`); which
 entry the held system takes is not, so the harness takes the reset
 (OURS) and pins the set as a second run (`ref/pu/README.md`, "U3, second
-step"). *Third step, 2026-11-28:* suspend and resume run on the held
+step"). By owner decision (2026-11-28), append's 16th instruction counts
+there: append2's first goal matches `pimm.py` 16 of 16, and its `proceed`
+picks from state that only the held words wrote after the boot
+(`u3_goals.APPEND16_PINNED`). These parts of that count are still OURS:
+the driver clause, the boot entry choice (`2021`, reset_PMPF), and the
+parameter cells b4, b6 (gseb) and b7. The standalone `u2_append` pin
+stays at 15 of 16, because it seeds the scheduler. *Third step, 2026-11-28:* suspend and resume run on the held
 firmware. In a second program, `driver([], [], X, X, [], Z)`, the first
 `append` goal notes X in its guard (`3a3c`-`3a3f`). It then suspends
 through the held `suspend` (`1c08`-`1c81`: the record and X's hook,
@@ -152,7 +158,16 @@ producer's `get_bound_value` binds S and wakes both, and all three run
 to their ends. 64 of 68 instructions matched with 4 declared skips, 5
 picks (4 compared), and the answer A = B = [1], read out of the
 firmware's memory, is `pimm.py`'s (`ref/pu/README.md`, "U3d, first
-step"). This concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
+step"). *U3d, second step* (2026-11-28): four more compiled programs take
+the held paths U3 had not run, each to a pinned stop where no held source
+gives the next value. Crr runs out in `execute`: the slow path and the
+goal switch `4c11` requeue the goal (compared with `pimm.py`), and the run
+stops at cell 33. Crr runs out in `proceed`: the run stops at cell 10. A
+suspend on two variables pushes the first onto the suspension stack, takes
+the many-variable path to the allocator `3334`, and stops at cell 1a4. An
+`@priority` goal stops inside `calculate_priority_from_minimum` (`1d94`,
+the carry condition) (`ref/pu/README.md`, "U3d, second step"). This
+concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
 bench model's state.
 
 The model can execute a hand-assembled KL1-B program that builds heap

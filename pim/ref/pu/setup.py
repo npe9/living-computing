@@ -192,6 +192,15 @@ FORMS = {
     # 4c00 / 4c03.  The nano-code does not say where the label goes (DFF
     # 0, unlike the four DFF 1 label entries): not decided.
     'suspend': ('label', None),
+    # U3d second step (2026-11-28): calculate_priority_from_minimum x, y
+    # (a 22:ED builtin cell, entry 1dda, nano-code ACF 5, DFF 2: neither
+    # decided).  OURS: MDR1 = A[x], as put_value's y; support: 1dda tests
+    # MDR1 (CNDF 9), 1ddb reads opd9 (A[y]) and tests its tag for INTo,
+    # 1ddd keeps MDR1 in W12 and 1dde compares it with 310 (the range
+    # check, X = 100 passes, X = 2000 takes 1def).  Run in 'prio' (u3_goals,
+    # path c), stopping at 1d94.  Injection 'prio_form_off': STOP at the
+    # builtin ('no set-up form').
+    'calculate_priority_from_minimum': ('x', None),
 }
 ENQ_HEAD = {2: 'MAR2'}
 LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)
@@ -424,6 +433,12 @@ S_CHAIN_MATCH = True
 #   := W18, jump 0c60), each after its own call (0cd0, 0cd4, 0cda,
 #   0cdc).  Injection 'chain_odpf4_off' (raises again).
 S_CHAIN_ODPF4 = True
+#   S_TDAR_ODPF4 (U3d second step, 2026-11-28; INFERRED): an ODPF 4 entry
+#   reached through pointers loads TDAR as S_TDAR does (column 7 - TDPF,
+#   the dereferenced tag), for pu.RULES['jmpf3_s_tdar'].  Executed at
+#   wait_atom's 3979 (TDPF 1, column 6, UNDF -> 16, 3950 -> 3a38).
+#   Injection 'tdar_odpf4_off' (no TDAR: STOP at 3979).
+S_TDAR_ODPF4 = True
 # The injection 'chain_row_srp' (CHAIN_SRP_TRUE: the row from SRP true,
 # row 4 = 3310 for a REFx chain) changes nothing on the suspend program's
 # path: 3310's CNDF 9 (MDR2, the operand {REFx, X}, a REFo?) is false as
@@ -585,6 +600,8 @@ def setup(pu, name):
             pu.flags.update(MRP=srp, COL=col)
             if S_CHAIN_MAR1_PTR:
                 pu.wr[mekbn.MAR1] = last_pointer(pu.mem, own)
+            if not odpf6 and S_TDAR_ODPF4:
+                pu.tdar = ('S', pu.tgt[TDAR_COLUMN(nc['TDPF'])][data[0] & 63])
             pu.cond, pu.cond_cycle = own[0] == imm, 'S'
             return start | (4 | (0 if srp else 1) | (2 if col else 0)) << 2
         raise SStageUnknown('S-stage multiway set-up: %s tag %02x, TDPF %d (row entry UNKNOWN)'
