@@ -382,8 +382,11 @@ def main(argv):
         bad += 1
         print('STOP call 615e        at %s' % e)
     # The refill with an HP given (OURS): AS1F 3 runs at 3378 and the
-    # refill stops at 3365 on work register W0d, which nothing here sets
-    # (the first routine that would not run).
+    # refill stops at 3367, the carving loop (MAR1 := W1d and a stepping
+    # write in one word: 'step and a load meet in MAR1', not modelled).
+    # Until U3 (2026-11-27) it stopped at 3365 on "W0d"; since
+    # pu.RULES['wsel_d_em1'] that select is R1f, the heap pointer (3365
+    # MAR1 := {STRGx, R1f}, 3366 the same): the held-out test of the rule.
     total += 1
     p = PU.PU(CTX['fw'])
     p.ir = make_cell('set_variable', (2, 9, 0))
@@ -397,7 +400,7 @@ def main(argv):
         bad += 1
         print('FAIL refill with hp     ran to an end')
     except PU.Unmodelled as e:
-        good = e.upc == 0x3365 and 'W0d' in e.what
+        good = e.upc == 0x3367 and 'step and a load meet in MAR1' in e.what
         bad += not good
         words += e.words
         print('%s refill with hp     %d words, stops at %s'

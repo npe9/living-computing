@@ -146,7 +146,7 @@ window rungs):
 | U2e | clause selection and guards (`try_me_else`, `wait_*`) | U2 | `try_me_else` EXECUTED (`216a`: R11 = `{REFo, label}`, `pimm.py`'s `alt`) and `switch_on_non_list`'s list case, in a whole append run, then the first clause's body and `execute`, and the second reduction's `try_me_else`, the label branch of `switch_on_non_list` on nil (`2447`, JMPF 2) and `wait_nil`: 14 of 16 (sixth session); 15 of 16 with `get_value` (seventh session); stop at `proceed` |
 | U3a | suspend | U3 | not reached |
 | U3b | bind and resume | U3 | not reached |
-| U3c | several goals (the ready structure, goal switch) | U3 | not reached |
+| U3c | several goals (the ready structure, goal switch) | U3 | first step EXECUTED (2026-11-27, `ref/pu/u3_goals.py`): a driver clause (OURS input) enqueues two held `append/3` goals through the held `enqueue_goal` (`4c00`-`4c07`), and the held `proceed` takes them: 41 of 41 instructions match `pimm.py`, 3 picks compared (2 dispatching, 1 empty), the queue (R14, records, R10, R1b) written by held words only (a provenance check, injection `reseed_r14`). Not yet: the goal switch at `execute` (`4c11`), several priorities or shoen, the state before the first goal (a declared stand-in, `ref/pu/README.md` "U3"). Rules decided there: rassy's CCF table, select d with WRBF = R(10 \| EM1), JMPF 8 a short goto if COND, execute's MDR1 = R(10 \| EMO1) |
 | U3d | a compiled KL1 program to its answer | U3 | not reached |
 | U3e | PIMOS boot | U3 | not reached |
 | U4a | Bluespec PU in lockstep with `ref/pu/` | U4 | not reached |

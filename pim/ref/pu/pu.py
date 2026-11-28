@@ -61,6 +61,26 @@ class Trap(Unmodelled):
 
 
 TRAP_ILLEGAL = 0x6c21
+# rassy's ccf/2 table (RULES['ccf_rassy'], HELD-SOURCE): CCF -> (kind,
+# MAR, MDR, step) for the memory operations modelled; the other names
+# raise where a strobe bit is set.
+CCF_RASSY = {0x08: ('read', 6, 4, False), 0x09: ('read', 7, 4, False),
+             0x0a: ('read', 6, 5, False), 0x0b: ('read', 7, 5, False),
+             0x0c: ('read', 6, 4, True), 0x0d: ('read', 7, 5, True),
+             0x10: ('write', 6, 4, False), 0x11: ('write', 7, 4, False),
+             0x12: ('write', 6, 5, False), 0x13: ('write', 7, 5, False),
+             0x14: ('write', 6, 4, True), 0x15: ('write', 7, 5, True),
+             0x16: ('write', 6, 4, True), 0x17: ('write', 7, 5, True),    # 16, 17 write_stack
+             # 0f 'cancel': no memory operation (INFERRED: the name only;
+             # executed at 3494, read_variable's end, where the bit reading's
+             # read ++ mar2 mdr2 is not used either way: NOT discriminated)
+             0x0f: ("cancel", 7, 5, False)}
+CCF_NAMES = {0x04: 'wait', 0x05: 'undo', 0x06: 'reset_TRB', 0x07: 'read_TRB_top mdr1',
+             0x0e: 'set_misc_command mdr1', 0x18: 'unify_write mar1 mdr1',
+             0x19: 'unify_write mar2 mdr1', 0x1a: 'unify_write mar1 mdr2',
+             0x1b: 'unify_write mar2 mdr2', 0x1c: 'write_byte mar1 mdr1',
+             0x1d: 'exec_misc_read mar2 mdr2', 0x1e: 'write_hword mar1 mdr1',
+             0x1f: 'exec_misc_write mar2 mdr2'}
 SPECIAL_EM = 0x7fff     # S9: JMPF 1 with EM = 7fff, a special form (INFERRED, open)
 TGT_KL1 = 0x5300        # sysinit's KL1 tag table, 64 tags x 8 columns
 # set-up EM1 -> column by the ALU's AS1 input (the old rule): since U2's
@@ -336,6 +356,31 @@ RULES = {
     # A write stores the MDR as it stood before its own word (mekbn
     # WRITE_SAME_WORD False; section 16, VERIFIED on new_vector).
     'write_old_mdr': True,
+    # U3 (2026-11-27, first session): the memory operation is rassy's
+    # CCF value table (CCF_RASSY below), not the strobe bits read one by
+    # one.  HELD-SOURCE: ptfdump.py pimmutil rassy --list, ccf/2 (@1b5b),
+    # a 32-key switch on CCF (62..58); keys 0, 1, 2, 4, 5, 6, f name atoms
+    # (nop, wait_mdr1, wait_mdr2, wait, undo, reset_TRB, cancel), the
+    # others take one pool slot each through a relative 'pmi 29' operand
+    # (slot = cell + 2 + c16): 03 -> 0076 ... 0e -> 007e, 10 -> 007f ...
+    # 1f -> 008e, in the pool's order ', wait_mdr1 mdr2', 'read_TRB_top
+    # mdr1', 'read mar1 mdr1', 'read mar2 mdr1', 'read mar1 mdr2', 'read
+    # mar2 mdr2', 'read ++ mar1 mdr1', 'read ++ mar2 mdr2',
+    # 'set_misc_command mdr1', 'write mar1 mdr1' .. 'write mar2 mdr2',
+    # 'write ++ mar1 mdr1', 'write ++ mar2 mdr2', 'write_stack ++ mar1
+    # mdr1', 'write_stack ++ mar2 mdr2', then unify_write, write_byte,
+    # exec_misc_read, write_hword, exec_misc_write.  It agrees with the
+    # bit reading (61 read, 62 write, 60 step, 58 MAR2, 59 MDR2) on 08-0c
+    # and 10-14 and 17, and differs on 0d (read ++ mar2 MDR2), 15 (write
+    # ++ mar2 MDR2), 16 (write_stack ++ mar1 MDR1), 0e and 0f (not memory
+    # reads).  Decided at enqueue_goal's 4c05 / 4c06 (CCF 15): the cells
+    # 13 and 14 of the record get MDR2 = R12 and R13, loaded the word
+    # before (pseudo_pimm_microcode.md section 18 had left these two
+    # writes against the bit reading); proceed's 2213-2214 read them back
+    # as the priority and the foster parent.  'write_stack' is stored as
+    # 'write' (INFERRED: the name, not its difference, is known).  Off
+    # (the injection 'ccf_bits'): the bit reading.
+    'ccf_rassy': True,
     # MCF (bit 18) with EM1 = 20 steps the structure pointer R02 by one.
     # INFERRED, decided at 31c7 (write_integer: one word, MCF, EM1 20;
     # pimm.py i_write_integer _sp += 1; set_integer 3182 has neither and
@@ -574,6 +619,38 @@ RULES = {
     # 2215 (proceed's dequeue: call 2250 unless the next goal's cell 14
     # equals R13, the current foster parent), not taken.
     'jmpf_f_call_ifnot': True,
+    # U3 (2026-11-27, first session): JMPF 8 in a word that forms no
+    # condition of its own (outside jmpf8_setup / jmpf8_flag) is a short
+    # goto taken if COND, COND as the word before left it.  HELD-SOURCE
+    # for the kind: rassy's jmpf/9 arm 8 (@2afb) names 'goto' and formats
+    # its operand with short/3 (@7ef), as arm 4 (the relative JMPF 4,
+    # mekbn J4_SIGNED: upc + EM3, signed), and takes the pool slot 00af
+    # 'if cond' (CJUMP_TAKEN_ON's evidence).  INFERRED that COND is the
+    # previous word's (the cjump_time 'prev' rule).  Executed at 4c01
+    # (enqueue_goal): 4c00 forms COND := slit_check (CNDF 7 EM1 19,
+    # FLAG_CONDS), and 4c01 goes to 4c08 (XR := R16, YR := R0d, a shift:
+    # the priority-bit path, as execute's 4cc5) when it holds; with the
+    # flag clear it falls through to the trailer 4c02-4c07.  Off (the
+    # injection 'jmpf8_goto_off'): raises at 4c01.
+    'jmpf8_goto_if': True,
+    # Tension, recorded not resolved: rassy's arm 8 covers EVERY JMPF 8
+    # word, but 34a1 (jmpf8_setup) and 4cc2 (jmpf8_flag) still fall
+    # through unconditionally here; on the paths run their COND would
+    # have to be false for the two readings to agree.
+    # U3 (2026-11-27, first session): a register select d (SC1F, SC2F,
+    # DSTF) with WRBF set names the register-file entry R(10 | EM1), EM1
+    # 0-f, not a work register "W0d".  INFERRED from the image (no rassy
+    # arm read: sc1f/7's arm d sits with arms 8-b, not decoded here):
+    # the four such writers carry EM1 0, 9, b, 2 (21e4 after a call of
+    # 3349, the R1b pop, as 202f R10 := MDR1; 0d93 a list push shaped as
+    # 216c-216d), and at the words run no other field of the word uses
+    # EM1.  Decided at enqueue_goal's 4c01 (EM1 5): MAR1 := R15, so that
+    # 4c02 is R15 := R15 - 1 as proceed's 216d and execute's 4cc0 (before,
+    # "W0d" was never set and the run stopped).  Held-out, read not run:
+    # the refill's 3365 / 3366 (EM1 0f) take MAR1 := R1f, the heap
+    # pointer, the cells a refill would carve.  EM1 10-3f (census: 32 of
+    # 99 such words) raise.  Off (the injection 'wsel_d_off'): W0d again.
+    'wsel_d_em1': True,
     # DSTF c: rassy's dstf/5 key 12 prints '++ rfar' (pool slot 95, after
     # '@ r0' .. '@ r1b1' for keys 8-b): the register-file entry that RFAR
     # (DSTF / second-bank 6, 'rfar') names, RFAR then stepped.  INFERRED
@@ -973,6 +1050,12 @@ class PU:
 
     def sel_name(self, x, sel):
         if bit(x, mekbn.WRB_BIT):
+            if sel == 0xd and RULES['wsel_d_em1']:
+                # RULES['wsel_d_em1']: the register-file entry R(10 | EM1)
+                if field(x, 'EM1') > 0xf:
+                    raise Unmodelled(self._upc, 'select d (WRBF) with EM1 %02x: not decided'
+                                     % field(x, 'EM1'))
+                return ('R', 0x10 | field(x, 'EM1'))
             return ('W', sel)
         opd = RULES['opd_fields']
         if sel in opd:
@@ -1286,9 +1369,24 @@ class PU:
                 raise Unmodelled(upc, 'MCF with EM1 %02x' % field(x, 'EM1'))
         # memory (CCF): bit 61 read, 62 write, 60 step; 58 MAR2, 59 MDR2
         rd, wr = bit(x, mekbn.RD_BIT), bit(x, mekbn.MEM_BIT)
+        step = bit(x, mekbn.INC_BIT)
+        mar = MAR2 if bit(x, mekbn.MAR_SEL_BIT) else MAR1
+        mdr = MDR2 if bit(x, mekbn.MDR_SEL_BIT) else MDR1
+        if RULES['ccf_rassy'] and (rd or wr or step):
+            op = CCF_RASSY.get(field(x, 'CCF'))
+            if op is None:
+                raise Unmodelled(upc, 'CCF %02x (rassy %s): not modelled'
+                                 % (field(x, 'CCF'), CCF_NAMES.get(field(x, 'CCF'), '?')))
+            k, mar, mdr, step = op
+            rd, wr = k == 'read', k == 'write'
+            if k == 'cancel':
+                # what 'cancel' leaves in MAR2 / MDR2 (the bit reading's
+                # read ++ mar2 mdr2) is not known: STALE, so a path that
+                # depends on it fails loud
+                for r in (MAR2, MDR2):
+                    if r not in new:
+                        new[r] = STALE
         if rd or wr:
-            mar = MAR2 if bit(x, mekbn.MAR_SEL_BIT) else MAR1
-            mdr = MDR2 if bit(x, mekbn.MDR_SEL_BIT) else MDR1
             if old[mar] is None:
                 raise Unmodelled(upc, 'CCF: %s never set' % WNAME[mar])
             if is_stale(old[mar]):
@@ -1319,11 +1417,11 @@ class PU:
                     raise Unmodelled(upc, 'CCF: read data and a load meet in %s' % WNAME[mdr])
                 new[mdr] = self.mem.get(addr, POISON)
                 memr.append((addr, new[mdr]))
-            if bit(x, mekbn.INC_BIT):
+            if step:
                 if mar in new:
                     raise Unmodelled(upc, 'CCF: step and a load meet in %s' % WNAME[mar])
                 new[mar] = (old[mar][0], (addr + 1) & M32)
-        elif bit(x, mekbn.INC_BIT):
+        elif step:
             raise Unmodelled(upc, 'CCF: bit 60 without a strobe')
         # condition generation (from the old state) and use
         kind, target, falls = flow(upc, x)
@@ -1430,6 +1528,16 @@ class PU:
                 kind, conditional = 'next', False
             else:
                 kind, target, conditional = 'call', upc & ~0x3ff | em & 0x3ff, False
+        elif jf == 8 and RULES['jmpf8_goto_if'] and not cnd:
+            # rassy jmpf/9 arm 8: 'goto' short 'if cond' (RULES['jmpf8_goto_if'])
+            if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
+                raise Unmodelled(upc, 'JMPF 8 conditional goto with no usable condition')
+            if bool(prev_cond):
+                d = field(x, 'EM3')
+                kind, target = 'jump', upc + (d - 16 if mekbn.J4_SIGNED and d >= 8 else d)
+            else:
+                kind = 'next'
+            conditional = False
         elif jf in (8, 9, 0xd, 0xf):
             raise Unmodelled(upc, 'JMPF %x (bit 26 with this kind not decided)' % jf)
         if mekbn.jk(x) == 1 and em == SPECIAL_EM:

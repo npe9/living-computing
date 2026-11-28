@@ -148,12 +148,28 @@ FORMS = {
     # (the goal-record free list, never set: scheduler state the harness
     # does not hold; ref/pu/README.md "Next, for U2").
     'proceed': (None, None),
+    # U3 (2026-11-27, first session): enqueue_goal n, label (entry 4c00;
+    # nano-code DFF 1, ODPF 1, EMO1 b, ODSF 2).  INFERRED, two parts:
+    # (1) the label, pc + 2 + c16 as pimm.py's i_enqueue_goal, in MDR1,
+    # as try_me_else's: the four entries with DFF 1 (try_me_else,
+    # enqueue_goal, _external, _with_priority) are the ones whose operand
+    # is a label, and 4c00 copies MDR1 to W10 before 4c03 stamps it COD
+    # for the record's cell 12; (2) the pop of the goal-record list R1b
+    # (R(10 | EMO1), NANO_ODPF1) with its head in MAR2 for ODSF 2: 4c00
+    # reads [MAR2] into MDR1 and 4c04 makes R1b := that MDR1 (the next
+    # record) while 4c05 makes R10 := {HOOKo, old R1b}.  collect_list's
+    # ODSF 2 (read, not run) was read as MDR2 (docstring); the two do not
+    # agree on one destination, so ENQ_HEAD is kept apart from ODSF_MAR.
+    # Injections 'enq_head_mar1', 'enq_label_mdr2'.
+    'enqueue_goal': ('label', None),
 }
+ENQ_HEAD = {2: 'MAR2'}
 LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)
 # execute's MDR1 after the S stage: STALE (OURS; U2 eighth session, in
 # setup()).  The injection 'execute_mdr1_carried' keeps the previous
 # instruction's MDR1 instead.
 EXECUTE_MDR1_STALE = True
+EXECUTE_MDR1_EMO1 = True     # U3: MDR1 := R(10 | EMO1) (in setup())
 # Entries whose constant operand is the low 8 bits (format r_r_c8,
 # kl1_encoding.md): pu.RULES['sc2f1_ir'] raises where c8 and c16 differ.
 IR_C8 = ('put_reused_structure',)
@@ -350,6 +366,14 @@ def setup(pu, name):
         return start | code << ODPF3_SHIFT
     if mdr == 'label':
         pu.wr[mekbn.MDR1] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
+        if nc['ODPF'] == 1 and NANO_ODPF1:
+            # enqueue_goal (U3): the pop of R(10 | EMO1) = R1b, the head
+            # into ENQ_HEAD (ODSF 2), as NANO_ODPF1
+            reg = {'MAR1': mekbn.MAR1, 'MAR2': mekbn.MAR2,
+                   'MDR2': mekbn.MDR2}.get(ENQ_HEAD.get(nc['ODSF']))
+            if reg is None:
+                raise SStageUnknown('label set-up with a pop, ODSF %d: not run here' % nc['ODSF'])
+            pu.wr[reg] = (0, pu.r[0x10 | nc['EMO1']][1])
         return start
     if mdr == 'label_mdr2':
         reg = {'MDR1': mekbn.MDR1, 'MDR2': mekbn.MDR2}.get(LABEL_ODSF.get(nc['ODSF']))
@@ -357,10 +381,18 @@ def setup(pu, name):
             raise SStageUnknown('label set-up for %s with ODSF %d: not run here'
                                 % (name, nc['ODSF']))
         pu.wr[reg] = (0, (pu.pc + 2 + sx16(v)) & 0xffffffff)
-        if EXECUTE_MDR1_STALE and reg == mekbn.MDR2:
-            # what the S stage leaves in MDR1 is not decided (the entry's
-            # EMO1 is 5, rassy's crr = R15; not run): STALE, so 4cc0's
-            # R15 := MDR1 - EM2 (RULES['alu_sources']) is STALE too.  OURS.
+        if EXECUTE_MDR1_EMO1 and reg == mekbn.MDR2:
+            # U3 (2026-11-27): the S stage loads R(10 | EMO1) into MDR1, as
+            # NANO_ODPF1 reads R(10 | EMO1) for a pop and pu.RULES
+            # ['wsel_d_em1'] names R(10 | EM1).  INFERRED: execute's EMO1
+            # is 5, rassy's crr = R15, and 4cc0 then makes R15 := R15 - 1
+            # (MDR1 - EM2), as proceed's 216d and enqueue_goal's 4c02 do.
+            # A harness that does not hold R15 (u2_append) gets STALE, the
+            # old behaviour.  Injection 'execute_mdr1_stale' (STALE always).
+            pu.wr[mekbn.MDR1] = pu.r.get(0x10 | nc['EMO1'], _pu.STALE)
+        elif EXECUTE_MDR1_STALE and reg == mekbn.MDR2:
+            # what the S stage leaves in MDR1: STALE (before U3), so
+            # 4cc0's R15 := MDR1 - EM2 (RULES['alu_sources']) is STALE too.
             pu.wr[mekbn.MDR1] = _pu.STALE
         return start
     if mdr == 's_tag':

@@ -1174,6 +1174,12 @@ fits elsewhere; and `R14`'s new value passes through an unidentified
 ALU operation. If it holds, the newest goal of a priority runs first,
 which is what the reference model does by choice
 (`pimm_semantics.md`); this pass does not establish it.
+*2026-11-27 (U3, `ref/pu/README.md` "U3"): EXECUTED. The two writes
+against bit 59 are CCF 15, rassy's 'write ++ mar2 mdr2' (its `ccf/2`
+value table, HELD-SOURCE), so cells 13 and 14 get R12 and R13; and
+`proceed` takes the records back through cell 15 in a run where
+`enqueue_goal` made them (`ref/pu/u3_goals.py`, picks matching
+`pimm.py`'s newest-first order).*
 
 `proceed` (`216c`): the first two words are a push on the `1b` list
 (data `{VECT0x, old R1b}`, a write, `R1b` := the address) and `216e`
