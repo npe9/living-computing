@@ -89,6 +89,18 @@ run() {
   # consistent is that the failures had scrolled past the window.
   # Duplicating a FAIL that tail already showed costs a line; losing one
   # costs an afternoon.
+  # >>> AND EVERY HALT REPORT, TAGGED WITH ITS SECTION. <<<
+  # Under STRETCH_HALT_REPORT=1 each testbench prints
+  # "HALTREPORT cycles=N memreads=M" at its halt.  Behaviour-preserving
+  # changes were checked by diffing those lines between two suite logs,
+  # but only the ones inside the tail -20 window reached the log: 388
+  # of the reports, while 819 of 1207 sections showed none (found by the
+  # A5 part 4 agent, 2026-11-27; a +41-clock MCP bootstrap move would
+  # have passed the diff).  So repeat every one here as
+  #   HALTREPORT_ALL <section> | <the line>
+  # and compare runs with `grep '^HALTREPORT_ALL'`.  The untagged lines
+  # inside the tail are left as they were, so older logs still compare.
+  awk -v s="$name" '/HALTREPORT cycles=/ { print "HALTREPORT_ALL " s " | " $0 }' "$TMPOUT" 2>/dev/null || true
   nfail=$(grep -c '^FAIL' "$TMPOUT" 2>/dev/null || true)
   [ -z "$nfail" ] && nfail=0
   if [ "$nfail" -gt 0 ]; then
