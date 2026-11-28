@@ -854,6 +854,20 @@ RULES = {
     # 'wsel_d_off'): W0d again.  Census: 53 of the 99 select-d words
     # are admitted (EM1 0-f, no other EM1 consumer).
     'wsel_d_em1': True,
+    # U3d (2026-11-28): a register select d (DSTF, SC1F) with WRBF CLEAR
+    # names the work register W(EM1), EM1 10-1f, where pu.py read R0d
+    # before.  INFERRED.  Census of image 2 (scratch, every word): of the
+    # DSTF-d words with WRBF clear, 47 of 47 carry EM1 10-1d (34 admitted:
+    # no other EM1 consumer); of the SC1F-d words with WRBF clear, 151 of
+    # 152 carry EM1 10-1f (122 admitted; 32d2: EM1 09); with WRBF set, all
+    # 4 DSTF-d and 62 SC1F-d words carry EM1 0-f (wsel_d_em1).  So select
+    # d is a register named by EM1, the bank by WRBF.  Executed through
+    # this branch (every harness): 3894 (get_bound_value row 5: W18 :=
+    # MDR2, the value y, which 0c0a reads back as W18 after the call) and
+    # 3375 (the boot's refill: W1c, read into w2, unused).  Read, not
+    # run: 3888 / 388a (row 4), 0cf8 (W1d, which 3889 writes).  EM1 under
+    # 10 raises.  Off (the injection 'wsel_d_w_off'): R0d again.
+    'wsel_d_w_em1': True,
     # U3 third step (2026-11-27): a page-relative JMPF 3 / 6 / 7 / b / e / f
     # (rassy jmpf/9 prints their target with long/4, @32cd: upc & fc00 |
     # EM2 << 4 | EM3, HELD-SOURCE) leaves EM1 to the other fields:
@@ -1279,6 +1293,16 @@ def em1_other_use(x):
     return mekbn.jk(x) not in (0, 2, 4) or field(x, 'JMPF') in (9, 0xd)
 
 
+def em1_other_field(x):
+    """As em1_other_use, with the sequencing judged by em_jump_busy (a
+    return or a fall-through leaves the EM free): RULES['wsel_d_w_em1']."""
+    if field(x, 'TGIF') in (1, 2) or field(x, 'CNDF') == 7 or bit(x, 18):
+        return True
+    if field(x, 'SC2F') in (mekbn.SC2_EM1, mekbn.SC2_WIDE):
+        return True
+    return em_jump_busy(x)
+
+
 # RULES['long_em1_free']: the page-relative JMPF kinds whose target rassy
 # prints with long/4 (upc & fc00 | EM2 << 4 | EM3): EM1 is not theirs
 LONG_JMPF = (3, 6, 7, 0xb, 0xe, 0xf)
@@ -1361,6 +1385,13 @@ class PU:
                                      ' (EM1 over f, or used by another field)' % field(x, 'EM1'))
                 return ('R', 0x10 | field(x, 'EM1'))
             return ('W', sel)
+        if sel == 0xd and RULES['wsel_d_w_em1']:
+            # RULES['wsel_d_w_em1']: the work register W(EM1)
+            if not 0x10 <= field(x, 'EM1') <= 0x1f or em1_other_field(x):
+                raise Unmodelled(self._upc, 'select d (WRBF clear) with EM1 %02x: not decided'
+                                 ' (EM1 under 10 or over 1f, or used by another field)'
+                                 % field(x, 'EM1'))
+            return ('W', field(x, 'EM1'))
         opd = RULES['opd_fields']
         if sel in opd:
             return ('A', self.ir_field(opd[sel]))

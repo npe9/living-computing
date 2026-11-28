@@ -695,8 +695,11 @@ def switch_label_case():
 #     pending (slit_check) and no interrupt (interrupt_all), as on one PE
 #     with no GC request, message or signal (pimm.py has none either);
 #   - R0d, W1f (and, until the sixth session, R04: now A_STAGE_R04) as
-#     STALE (pu.STALE: values the harness does not know).  R0d is a scratch register (47 writers in image 2, none on
-#     the path run before execute); W1f is written at boot (20a8, W1f := 0,
+#     STALE (pu.STALE: values the harness does not know).  R0d was read as a scratch register (47 writers in image 2,
+#     none on the path run before execute: those are the DSTF-d words
+#     with WRBF clear, since U3d read as W(EM1), pu.RULES['wsel_d_w_em1'];
+#     4cc0's select d is SC2F, the EM3 immediate, and no word run reads
+#     R0d now; the STALE seed is kept, unread); W1f is written at boot (20a8, W1f := 0,
 #     read not run) and by proceed's 21a1-21fe; R04, rassy's 'pc', is the
 #     A stage's program counter, given since the sixth session as
 #     {COD, pc + 1} (A_STAGE_R04, below) and so no longer STALE.  On
