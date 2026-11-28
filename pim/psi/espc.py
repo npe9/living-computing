@@ -764,6 +764,9 @@ BUILTINS = {
     # the ESP manual's conversions (overview-e.tex 2833-2838, PRINTED)
     ('integer_to_floating_point', 2): ('6c', ('in', 'out')),
     ('floating_point_to_integer', 2): ('6d', ('in', 'out')),
+    # MENDELS (2026-11-27), KNOWN-PLAINTEXT (kl0_opcodes.tsv row 13:
+    # paragraph p_wshell.esp:181; the held microcode names it NUMB?)
+    ('number', 1): ('13', ('in',)),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,

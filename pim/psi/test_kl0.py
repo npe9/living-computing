@@ -334,8 +334,11 @@ class Table(unittest.TestCase):
         # 3f melt (KNOWN-PLAINTEXT on paragraph p_vwin.esp:63 and
         # p_MAIN.esp:407, 2026-11-27), 161 before MENDELS's blt 6c
         # integer_to_floating_point and 6d floating_point_to_integer
-        # (KNOWN-PLAINTEXT on paragraph c_bar_v.esp:249-253, 2026-11-27)
-        self.assertEqual(len(rows), 163)
+        # (KNOWN-PLAINTEXT on paragraph c_bar_v.esp:249-253, 2026-11-27),
+        # 163 before MENDELS's blt 13 number and e8 if_number (KNOWN-
+        # PLAINTEXT on paragraph p_wshell.esp:181 and p_tgraph.esp:46-47,
+        # 2026-11-27)
+        self.assertEqual(len(rows), 165)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1207,13 +1210,15 @@ class Step3iRows(unittest.TestCase):
         for x, n in ((A('a'), 1), (K.NIL, 1), (5, 1), (K.Str('ab'), 0), (K.Var(), 0)):
             self.assertEqual(run(cid, '$or$26', [x])[0], n, x)
         # as_pred.esp:421-422: an atom goes to get_atom_string/3, an integer
-        # to get_number_string/3, anything else fails
-        self.assertEqual(run(cid, '$or$27', [A('a'), K.Var()]), ('simpos', sym + 'get_atom_string/3'))
+        # to get_number_string/3, anything else fails.  MENDELS window
+        # mixins (2026-11-27): get_atom_string/3 is a kl0 model, so the
+        # atom's string comes back (it was refused as SIMPOS before)
+        self.assertEqual(run(cid, '$or$27', [A('a'), K.Var()]), (1, [A('a'), K.Str('a')]))
         self.assertEqual(run(cid, '$or$27', [5, K.Var()]), ('simpos', sym + 'get_number_string/3'))
         self.assertEqual(run(cid, '$or$27', [K.Str('ab'), K.Var()])[0], 0)
         # g_window.esp:146-149: e1 then blt 00 @709 on the same register
         cid = 'paragraph##g_window'
-        self.assertEqual(run(cid, '$or$12', [A('a'), K.Var()]), ('simpos', sym + 'get_atom_string/3'))
+        self.assertEqual(run(cid, '$or$12', [A('a'), K.Var()]), (1, [A('a'), K.Str('a')]))
         self.assertEqual(run(cid, '$or$12', [5, K.Var()]), ('simpos', sym + 'get_number_string/3'))
         self.assertEqual(run(cid, '$or$12', [K.Str('ab'), K.Var()])[0], 0)
         # X != 0 (bar2_h.esp:135 @574 `00 02`): the register named is read
