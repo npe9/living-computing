@@ -648,6 +648,36 @@ From the sweep, not from the documentation alone:
      replayed by test_mendels). Next: pmacs_window as an inferior. The
      save memory stays 65,536 words (`simpos/subsystems/window.md` §7
      records the evidence).
+   - **system window step (2026-11-27):** with pmacs_window as an
+     inferior (a window made with superior(S) makes its inferior form in
+     S at create/3, its text buffer drawn there; TM-125 p13-14 Table 1
+     superior(S), p16 activate/1; the mechanism OURS) and
+     with_superior_input_buffer acting on it, show_all_window/1 finishes:
+     the system window shows system_io's one message so far, field_tree's
+     "file not exist" error (screen `docs/simpos/screens/mendels_zone.png`,
+     the live run's the same). resume/0 returns and esp_go/3 runs
+     `exec(Class, kl1, _)`, which reads the phase back and calls the held
+     `phase/2` on `loaded_library(normal([mendel::example1, ...]))`.
+     phase/2 has clauses for `loaded_library(normal)` and
+     `loaded_library(abnormal)` only (mendelmain.esp:379-568; the
+     `phase(Class,_)` at :569 is the last body goal of the clause above
+     it, :568 ending in a comma), while the held PIMOS 4.0 `load:do`
+     answers `normal(Modules)` (pimos `src/library/unloader/load.kl1`:56
+     check_status(normal(_), ...)); only MENDELS's own no-file branch
+     answers a bare `normal` (mdl_comp.kl1:43-55). So phase/2 fails,
+     esp_control/2 fails, and call_esp/3's `repeat` would retry the same
+     message: create/1 and resume/0 again, over what the retry has undone
+     (OBSERVED before the stop was made: the stand-ins' menu items came
+     back unbound, because they keep pure data in slots, which the ESP
+     manual forbids, program-e.tex:1899). The run now stops where phase/2
+     fails (`mendels.watch_phase`, OURS):
+     `mendels: held mendel##mendel_main phase/2 has no clause for
+     {loaded_library,{normal,[...]}}`. That real MENDELS met this is
+     INFERENCE (the `::` reading is OURS); it suggests MENDELS was built
+     against a PIMOS whose load answered a bare `normal`. The PIMOS side
+     is unchanged (21 exchanges, the same strings; tape re-recorded live).
+     Open: making the stand-ins retry-safe (impure data in slots) before
+     any honest second pass.
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the

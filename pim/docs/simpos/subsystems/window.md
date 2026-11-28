@@ -1430,6 +1430,24 @@ Screens: `../screens/mendels_inferior_titles.png`,
 zone resume/0 shows). Not built: pmacs_window as an inferior (MENDELS's
 next stop, mendel_win.esp show_all_window/1's system_window).
 
+**Built 2026-11-27 for MENDELS (the system window step; `psi/README.md`
+"MENDELS").** pmacs_window as an inferior: a pmacs_window made with
+superior(S) (TM-125 p13-14 Table 1 makes it an initiation option of
+every window) makes at create/3 its inferior form, an inferior_io_form in
+S with the kept create options, whose input goes to S's buffer as coming
+from the pmacs_window when the class is a with_superior_input_buffer
+(MENDELS's mendel_pmacs, win_class.esp:18-24). Its text buffer is drawn
+in the form (the form takes the pane protocol's clear/1 and put_codes/2:
+the text wraps at the last column and scrolls up past the last row,
+INFERENCE from window_pane's look); geometry, life cycle, title and font
+are handed to it; get_superior/2 answers S. getl/2, read_with_prompt/3
+and set_input_buffer/2 on an inferior are refused loudly (keys from its
+own interpreter, the Pmacs screen: not stood in). The mechanism is OURS.
+Screens: `../screens/mendels_system_window.png` (the harness) and
+`../screens/mendels_zone.png` (MENDELS's zone with its system window).
+Not built: an inferior Pmacs window's own keyboard input and its Pmacs
+screen (mode line, echo line).
+
 **Save memory size: decided 2026-11-27, unchanged at 65,536 words.**
 The question: winfb's save memory (`psi/winfb.py` SAVE_WORDS,
 `bsv/WinFbBox.bsv`) holds 65,536 words, OURS, and the 1,280 x 944 base

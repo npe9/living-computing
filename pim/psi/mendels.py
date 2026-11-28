@@ -317,6 +317,59 @@ class PsiSide(FB.PsiSide):
         self.user_at = self.shell_at = None
         self.windows, self.getl, self.exchanges = set(), False, 0
         self.m, self.prog = m, prog
+        if PHASE_WATCH:
+            watch_phase(m)
+
+
+# The held phase/2 failing (OURS watch, 2026-11-27).  mendel_main's exec/3
+# runs `phase(Class, Current_phase)` (mendelmain.esp:262-268) on the phase
+# get_phase/2 read back; phase/2's clauses (mendelmain.esp:379-568) cover
+# loaded_library(normal) and loaded_library(abnormal) only (`phase(Class,_)`
+# at :569 is the last body goal of the compiled1 clause above it: :568 ends
+# in a comma), and the held PIMOS 4.0 load:do answers normal(Modules)
+# (pimos src/library/unloader/load.kl1:56 check_status(normal(_), ...);
+# MENDELS's own no-file branch, mdl_comp.kl1:43-55, answers the bare
+# `normal`), so loaded_library(normal([mendel::example1, ...])) matches no
+# clause.  exec/3, esp_go/3 and esp_control/2 then fail, and call_esp/3's
+# `repeat` (esp_device.esp:31-43) retries with Inst!message unchanged: the
+# whole of create/1 and resume/0 runs again (OBSERVED 2026-11-27 before
+# this watch: create_window/1's re-entry clause, mendel_win.esp:102-148).
+# That retry backtracks over everything create/1 and resume/0 bound, and
+# the stand-ins keep pure data in slots (menu items, text rows), which the
+# ESP manual forbids ("The slot can contain only atomic data and inpure
+# data. Pure data has its value released by backtracking", program-e.tex
+# :1899, PRINTED): their items come back unbound (OBSERVED: every menu of
+# the zone) and the second pass is not evidence about MENDELS.  So the run
+# stops where phase/2 fails, before anything is undone.
+PHASE_WATCH = True
+
+
+def watch_phase(m):
+    """m.fail wrapped: phase/2 of mendel##mendel_main failing as a whole
+    (the failure leaves it: the choice point taken is not one of its
+    clauses) is a refusal, raised before the unwind (OURS)."""
+    import bisect
+    orig, keys = m.fail, {}
+
+    def pred(pc):
+        code = pc[0] if pc else None
+        if not hasattr(code, 'preds'):
+            return None, None
+        ks = keys.get(code.id)
+        if ks is None:
+            ks = keys[code.id] = sorted(code.preds)
+        i = bisect.bisect_right(ks, pc[1]) - 1
+        return code.id, (code.preds[ks[i]].name if i >= 0 else None)
+
+    def fail():
+        here = pred(m.pc)
+        if here == ('mendel##mendel_main', 'phase'):
+            alt = pred(m.stack[-1].alt) if m.stack else (None, None)
+            if alt != here:
+                raise K.Refusal('mendels', 'held mendel##mendel_main phase/2 has no clause for %s '
+                                '(call_esp/3 would retry the same message)' % (K.resolve(m.x[1]),))
+        orig()
+    m.fail = fail
 
 
 def live(pkl, route='doc', answers=(), record=None):

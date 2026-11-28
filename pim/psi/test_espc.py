@@ -1992,7 +1992,12 @@ end.''', 'simpos')
         # assign_window/1 and resign_window/2 success, set_editor/2 and
         # show_buffer/1 refused at the unset interpreter (slot constant):
         # 1,558 rows, 841 / 247 / 453
-        self.assertEqual((len(rows), out), (1558, {'success': 841, 'failure': 247, 'refused': 453, 'exception': 16,
+        # MENDELS's system window (2026-11-27; row by row against 59939246,
+        # stand-ins swapped, the rest the same): 2 new inherited rows, no
+        # row changes outcome: pimos_window get_superior/2 success,
+        # get_inside_size/3 refused (a top pmacs_window's is not stood in):
+        # 1,560 rows, 842 / 247 / 454
+        self.assertEqual((len(rows), out), (1560, {'success': 842, 'failure': 247, 'refused': 454, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -2154,8 +2159,10 @@ end.''', 'simpos')
         # (2026-11-27, row by row against 9e08a35f): the 6 rows of
         # test_fep_census, here set_editor/2 and show_buffer/1 succeed too
         # (the recipe's window has an interpreter): 1,558 rows, 894 / 268 /
-        # 379; no other row changes outcome
-        self.assertEqual((len(rows), out), (1558, {'success': 894, 'failure': 268, 'refused': 379,
+        # 379; no other row changes outcome.  MENDELS's system window
+        # (2026-11-27, row by row against 59939246): the 2 rows of
+        # test_fep_census, the same outcomes: 1,560 rows, 895 / 268 / 380
+        self.assertEqual((len(rows), out), (1560, {'success': 895, 'failure': 268, 'refused': 380,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;
@@ -2393,8 +2400,8 @@ end.''', 'simpos')
             # M4/M6: 15 (test_fep_census)
             # window M10: 36 inherited methods; the Pmacs reconstruction
             # (2026-11-27): 30 (test_fep_census); MENDELS's getl/2: 1;
-            # MENDELS's method editor (2026-11-27): 6
-            self.assertEqual(len(fwd), 1558)
+            # MENDELS's method editor (2026-11-27): 6; its system window: 2
+            self.assertEqual(len(fwd), 1560)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
