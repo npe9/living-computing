@@ -39,11 +39,17 @@ answer, the packet MENDELS's no-file branch makes; psi/README.md "The
 load answer step"), so phase/2 succeeds; mdl_check reports the missing
 TEMP>compiler.msg in the system window, phase(top) waits in top_menu,
 and the mendel_title process writes to its permission(show) screen under
-the base, whose raise lifts the base whole: the run stops at save/7's
-winfb BADSAVE (75,520 words; window.md §7).  With the adapter off it
+the base, whose raise lifted the base whole (save/7's winfb BADSAVE,
+75,520 words; window.md §7) until the title raise step (2026-11-28): a
+restack now lifts a frame only over the part it changes (coordinator.esp
+lift_all_in/2, OURS; TM-225 p10), 4,564 words of the base, and the title
+screen shows " end" and "please return" and waits in its read
+(title.esp:57).  The stop: every process waits (STOP); screen
+docs/simpos/screens/mendels_title_raised.png.  With the adapter off it
 still stops at phase/2 (mendels.watch_phase, OURS; test_adapter_off).
-Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: the 21 exchanges
-and strings as before; the live screen equals the replay's.
+Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: 28 exchanges, the
+first 21 as before (PIMOS goes on to mdl_comp wt_message/1's directory
+requests, STRINGS_IO); the live screen equals the replay's.
 
 Mixins (the window mixins step) runs the mixins through two other held
 users on the coordinator, with the mouse: icotext's whole held class
@@ -239,7 +245,28 @@ then run again):
 (The earlier tables' `::` and watch rows named test_replay; the run now
 reaches those only with the adapter off.)
 
-Weak spots: the replay does not reach repeat's retry, freeze/melt's
+The title raise step (2026-11-28): test_frame_part and test_replay.
+Injections, OBSERVED 2026-11-28 (10, made by a scratch script from a
+backup, restored by copy and cmp, git diff clean; this whole file run on
+each, on the final file):
+
+| injection | failed |
+|---|---|
+| frames lifted whole (lifted_in/2 always lift/1) | test_frame_part, test_replay |
+| the part not grown by a frame's box | test_frame_part |
+| whole_below/4: no growth | NONE |
+| lift_in/2: the pane whole as the part | test_frame_part, test_replay |
+| lift_under/6: the whole screen cleared | test_frame_part, test_replay |
+| lift_under/6: Inner not drawn back | test_frame_part, test_replay |
+| save_under_below/7: nothing below | test_frame_part |
+| save_under_below/7: every window, not only those below | test_frame_part, test_replay |
+| lay/1 of a part: the frame's dots not drawn back | test_frame_part |
+| lift_in/2: a missed frame lifted whole | test_frame_part |
+
+whole_below/4 is a guard (NONE): a frame's box already holds every
+window below it, so no run here tells it apart.
+
+Weak spots (the load answer step): the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
 the unit tests carry them.  getl's line start is caught only by
 test_getl (the run's old answers are empty); is_object/2 and the title
@@ -1615,29 +1642,32 @@ end.
     # set dots), the largest save of the step and save memory after it.
     # The frames are OBSERVED equal to the whole lift's: the same scenario
     # run on master 7528e34e's stand-ins (every frame lifted whole) gives
-    # the same eight frames, its largest saves 74, 74, 1,521, 5,000, 5,000,
-    # 74, 0, 0 words
+    # the same ten frames, its largest saves 74, 74, 1,521, 0, 5,000,
+    # 5,000, 2,850, 0, 0, 0 words
     PART_STEPS = [
-        ('low', '13b696ffe520bf71', 238, 74, '[[0,0,74]]'),
-        ('low2', '762a1b050c59c74e', 483, 74, '[[0,0,74],[1,74,74]]'),
+        ('low2', '9c1dbe526eb4843b', 245, 74, '[[0,0,74]]'),
+        ('low', '762a1b050c59c74e', 483, 74, '[[0,0,74],[1,74,74]]'),
         ('top', 'a50ebe4d4fd71848', 8004, 1521, '[[0,0,74],[1,74,74],[2,148,1521]]'),
-        ('write', 'a50ebe4d4fd71848', 8004, 1521, '[[0,0,74],[1,74,74],[2,148,1521]]'),
-        ('raise', 'aa51b0acd982428f', 7256, 1521, '[[0,0,74],[2,148,74],[3,222,74]]'),
-        ('killtop', '7951bd8e4c2b950a', 4721, 74, '[[0,0,74],[2,148,74]]'),
-        ('killlow', 'b58441c2fdb7bc73', 8165, 0, '[[0,0,74]]'),
-        ('killlow2', '4d3b4c7ef03c9c5f', 7920, 0, '[]')]
+        ('far', 'be9817ee65acea38', 10086, 0, '[[0,0,74],[1,74,74],[2,148,1521]]'),
+        ('write', 'be9817ee65acea38', 10086, 1521, '[[0,0,74],[1,74,74],[2,148,1521]]'),
+        ('raise', '2d017d7307e6e224', 9348, 1521, '[[0,0,74],[1,74,74],[3,222,74]]'),
+        ('killtop', '68bb6be6b99ed8f9', 6813, 74, '[[0,0,74],[1,74,74]]'),
+        ('killlow', '0fdad858f4f5668f', 10245, 0, '[[0,0,74]]'),
+        ('killlow2', '2a468fdfcde2c0d2', 10000, 0, '[]'),
+        ('killfar', '4d3b4c7ef03c9c5f', 7920, 0, '[]')]
 
     def test_frame_part(self):
         # the title raise step: a restack lifts a frame (a mixin window,
         # save_memory's cut form) only over the part the restack changes
         # (coordinator.esp lift_all_in/2, window_pane.esp lift_in/2, lay/1;
         # TM-225 p10 "all or its hidden part"): two standard_io_windows
-        # under a temporary_superior_window (400 x 200, 5,000 words whole,
-        # its cut box over both 1,521), the first written while covered
+        # under a temporary_superior_window `top` (400 x 200, 5,000 words
+        # whole, its cut box over both 1,521), a second frame `far` above it
+        # that meets neither; the upper window `low` written while covered
         # (uncover/3) and raised (select_window/2: raise; the part is its
-        # rectangle grown to the frame's box), then all three killed; no
-        # save is larger than the frame's box, and every frame is the
-        # whole lift's
+        # rectangle grown to top's box, which holds low2, below low; far
+        # is missed, nothing lifted), then all four killed; no save is
+        # larger than top's box, and every frame is the whole lift's
         import fep_bridge as FB
         import windev
         import winfb
@@ -1664,14 +1694,16 @@ end.
             got.append((name, windev.pbm_sha256(d.frame)[:16], d.frame.count(),
                         max([((a[3] + 15) // 16) * a[4] for a in saves] or [0]),
                         str(K.resolve(m.get_slot(K.ClassRef('simpos##save_memory'), 'used')))))
-        low = make('simpos##standard_io_window', 300, 300, 20, 4)
-        self.assertEqual(len(send(low, 'write_line', K.Str('under'))), 1)
-        step('low')
         low2 = make('simpos##standard_io_window', 480, 380, 10, 2)
         self.assertEqual(len(send(low2, 'write_line', K.Str('two'))), 1)
         step('low2')
+        low = make('simpos##standard_io_window', 300, 300, 20, 4)
+        self.assertEqual(len(send(low, 'write_line', K.Str('under'))), 1)
+        step('low')
         top = make('simpos##temporary_superior_window', 250, 250, 400, 200)
         step('top')
+        far = make('simpos##temporary_superior_window', 760, 520, 300, 150)
+        step('far')
         self.assertEqual(len(send(low, 'write_line', K.Str('covered'))), 1)
         step('write')
         m.reset()
@@ -1683,6 +1715,8 @@ end.
         step('killlow')
         self.assertEqual(len(send(low2, 'kill')), 1)
         step('killlow2')
+        self.assertEqual(len(send(far, 'kill')), 1)
+        step('killfar')
         self.assertEqual(got, self.PART_STEPS)
 
     def test_title_shown(self):

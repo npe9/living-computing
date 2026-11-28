@@ -6075,7 +6075,111 @@ not needed on this path (phase/2 succeeds, call_esp/3's repeat is not
 retried). With a scratch compiler.msg placed in TEMP the run was refused
 by standard_input_file ("reader: a clause without its end"); which call
 of after_KL1compiler/0's read loop refused was not traced (not on the
-held run's path).
+held run's path). (Settled by the next step: option (b).)
+
+**The title raise step: a lift saves only the part (2026-11-28).** The
+lead's decision on the save memory question: option (b) of
+`../docs/simpos/subsystems/window.md` §7, a lift that saves only the
+part of each window that becomes hidden (TM-225 p10, PROSE: a hidden
+window's image, "all of it or its hidden part", is kept in a save area),
+as the frames already did when drawn (save_under/6). SAVE_WORDS (65,536),
+winfb's frozen format and bsv/WinFbBox.bsv are unchanged: only winfb's
+existing fill, save and restore are sent.
+
+The mechanism (OURS, every selector and body; labelled in the files):
+- `coordinator.esp` lift_all_in/2: a restack for a pane P (raise, HIDE,
+  kill, output to a covered window: peel/3, uncover/3, lowered/4) changes
+  dots only inside P's rectangle. A FRAME (a pane whose under is save
+  memory's cut form, `[cut, X, Y, W, H, Inner, Box]`, Box new in this
+  step) is lifted only over the PART: P's rectangle grown by every
+  frame's box (the device restores a save area whole) and by each
+  frame's overlap with the whole-lifted panes below it, one part for the
+  whole restack, so a pane lifted later sees under it only what is
+  lifted. Other panes (create/7) are lifted whole, as before.
+- `window_pane.esp` lift_in/2: the frame's own dots in the part saved,
+  what is under it there drawn back (`save_memory.esp` lift_under/6: the
+  part cleared, the box's area restored); `part` holds
+  `[Image, X, Y, W, H]`, or `[]` when the part misses the frame. lay/1
+  of such a frame recomputes its under, the cut form over the windows now
+  below it in the stack (save_under_below/7), and restores the image.
+
+**On MENDELS's path** the title screen (446 x 163 at (417, 390), a
+create/7 pane) lies under the base (a frame, its box the title screen's
+rectangle). The raise saves 4,564 words of the base (slot 2 at 9,128),
+the title screen's image (slot 1) and its new under (slot 0), each 4,564
+words: save memory's high-water mark over the run is 13,692 words (the
+whole lift, OBSERVED with master's stand-ins and save
+memory enlarged, reaches word 160,168). The base's new under is `[cut, 0, 0, 1280, 944, 0,
+none]` (nothing below it now); at the stop save memory holds one area,
+`[0, 0, 4564]`, the title screen's under. The frame is the same as the
+whole lift's, dot for dot (same sha256). Then title.esp show/1 runs on:
+" end", background/2 white, "please return", clear_buffer/1, and its
+`:read` (title.esp:57) waits. **The new stop:**
+
+    would suspend: no process is ready: <simpos##process> is suspended
+
+every process waiting: the title screen's read, the Top Menu's read
+(phase(top)), the FEP. Screen: `../docs/simpos/screens/mendels_title_raised.png`
+(the live run's the same, PNG byte for byte).
+
+**"please return" is not answered.** No held document scripts it:
+readme.e:33-39 (and readme.j's 起動 section) prescribe only the user
+path; manual.e/manual.j and install.e/install.j say nothing of the
+title screen. A RETURN justified only by the screen's own prompt would
+be ours, so the read is an honest stop.
+
+**PIMOS goes on.** With the PSI side no longer refused, the live run
+gives 7 more exchanges (21 -> 28; the first 21 identical): device 62
+closed; esp_device/3's set_MENDEL_directory (package.kl1:15-19, 134-145)
+and esp_utility directory_name("temp") (esp_util.kl1:30-50, answered
+`>sys>user>MENDELuser>TEMP>`) for mdl_comp.kl1 wt_message/1 (172-200),
+which deletes and writes TEMP>compiler.msg with load:do's messages
+after the load; the loader's device (42) closed. PIMOS is then idle and
+no file is written (OBSERVED: the runner's written files are empty;
+which request of del_file/3 or the open is left unanswered is not
+traced). So the ESP half's `compiler.msg not exist` came before the KL1
+half even began to write it. In the held code it is a race too
+(end_pipe/3 answers on load:do's Status, not on wt_message/1;
+INFERENCE), and here PIMOS's files are fep.py's, not the PSI's.
+
+**kl0's process order matters for this stop.** The title process runs
+only when the main process waits (kl0's scheduling, OURS). Had it run at
+esp_control/2's `:exit` (esp_device.esp:99-104, before resume/0), its
+screen would have been uncovered: no raise, no lift, " end" and "please
+return" written at once, and resume/0's zone drawn over it, its read
+waiting under the base, unselected.
+
+Tests: test_replay (the stop, the frame, the stack, save memory, the
+raise's three saves), test_frame_part (two standard_io_windows under a
+temporary_superior_window and a second frame beside it: write while
+covered, raise, four kills; each frame pinned and OBSERVED equal to
+master's whole lift, each save at most the frame's 1,521-word box, where
+the whole lift saves 5,000). The census is unchanged row by row (1,560
+rows; only fresh variables' numbers differ, against master's stand-ins).
+
+Injections, OBSERVED (`test_mendels.py` run whole for each, the file
+restored by copy and compared with cmp, `git diff` clean):
+
+| injection | failed |
+|---|---|
+| frames lifted whole (lifted_in/2 always lift/1) | test_frame_part, test_replay |
+| the part not grown by a frame's box | test_frame_part |
+| whole_below/4: no growth | NONE |
+| lift_in/2: the pane whole as the part | test_frame_part, test_replay |
+| lift_under/6: the whole screen cleared | test_frame_part, test_replay |
+| lift_under/6: Inner not drawn back | test_frame_part, test_replay |
+| save_under_below/7: nothing below | test_frame_part |
+| save_under_below/7: every window, not only those below | test_frame_part, test_replay |
+| lay/1 of a part: the frame's dots not drawn back | test_frame_part |
+| lift_in/2: a missed frame lifted whole | test_frame_part |
+
+whole_below/4 is a guard: a frame's box already holds every window below
+it (made over them by save_under/6, recomputed over them by
+save_under_below/7), so no run here tells it apart.
+
+Open: raising a frame ITSELF (selecting the base, say) still lifts it
+whole (coordinator raised/2), 75,520 words for the base. The RETURN at
+the title screen and the compiler.msg race above.
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
