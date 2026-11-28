@@ -5598,6 +5598,95 @@ was added:
 Labels after this step: 40 methods and models. 15 are
 RECONSTRUCTED-FROM-MANUAL, 20 INFERENCE, 3 OURS and 2 HELD-SOURCE.
 
+**The window mixins step (2026-11-27).** The run now goes past
+`:create(#base, ...)` and through most of mendel_main's create/1:
+mendel_window's whole zone (base and its panes), garnet_window, the
+library window, setting, graphic_mode, draw_graphics, graphic_select,
+marker_input, display, e_i_w_controler, object_editor, intercommunicate,
+**object_lib restore/1** (MENDELS's library read from the HELD tree.obj
+and tree.key: example1-3 are in its object tree), show_library,
+top_down, mdl_input, buffer, flat_data and flat_mdl. The new stop is in
+method_editor starting/1: med_window's title panes are
+standard_io_windows placed inside the base with `set_size/3`,
+`set_superior/2` and `set_position/3`, and this repository's
+standard_io_window is a top window only (no inferior form, no
+set_size/3). Nothing is shown yet (mendel_main shows the zone in
+resume/0, after create/1), so the run's last frame is the empty screen.
+Drawing the whole zone by hand also stops: the base is 1280 x 944 and its
+save area (75,520 words) is larger than winfb's save memory (65,536
+words, OURS, mirrored in `../bsv/WinFbBox.bsv`), so it is left alone.
+The tape is re-recorded live from a copy of the prompt checkpoint: the
+21 exchanges and the strings are unchanged.
+
+What was added:
+- **The window mixins** (`standin/basic_window.esp` and its
+  neighbours). TM-125 p8 names basic_window the base of every window;
+  inferior_window and temporary_window are it with no method of their
+  own. The mixins are labeled_sash (label, border and margin flags on, the
+  setters, get_border_width/2, get_label_height/2), as_input (read/2,
+  clear_buffer/1), as_superior (the inferiors, read/3 and read/6 of the
+  shared buffer), with_superior_input_buffer (input put in the
+  superior's buffer), with_shared_window (assign_window/1, a no-op),
+  as_menu (items in one column or several, a left click answers the
+  item_id, TM-125 p18), as_scrolling_menu (as_menu, no scrolling),
+  as_output (write/2, write_line/2-4, the text kept as rows),
+  as_markers (create_marker/2 and /7, get_marker_list/2). An inferior is
+  drawn inside its superior and cut at its superior's inside
+  (clip_inside/5). The composites, whose nature lists are INFERENCE from
+  their names and the held lists of window.md §1.5:
+  essential_scrolling_menu(_with_superior_input_buffer),
+  essential_window_with_superior_input_buffer, multi_column_menu(_with_
+  superior_input_buffer), temporary_multi_column_menu (TM-125 p8 lists
+  it), temporary_superior_window, temporary_standard_io_window,
+  standard_temporary_menu.
+- Smaller stand-ins: `array.esp` (create/3, put_at/3, get_at/3,
+  put_contents/2, get_contents/2: USAGE classes.tsv and MENDELS),
+  `operator_pool.esp` with standard_io_buffer get_parsing_operator/2 and
+  set_parsing_operator/2 (the pool kept, not consulted by the reader),
+  standard_input_file gett/4, list_index put_contents/2,
+  editor_text_buffer insert/2 and an unbound name given to create/4,
+  standard_io_window write_line/2, write_lines/2, erase_cursor/1 and
+  set_superior/2 (kept only), window_pane create_frame/8.
+- **kl0.py**: symbolizer get_atom_string/3 (held paragraph sends it,
+  as_pred.esp:421 and g_window.esp:148) and get_quoted_atom_string/3
+  (MENDELS system_io; the quoting OURS) as models.
+- **espc.py and kl0_opcodes.tsv**: number/1 is blt 13 and its
+  test-and-branch blt e8, both KNOWN-PLAINTEXT on held paragraph cells
+  (what_manipulator_shell @11a6 for p_wshell.esp:181; time_graph @a8
+  and @b2 for p_tgraph.esp:46-47). The held microcode's mnemonic table
+  names them NUMB? and jmpUNUM, so `asm/pu_sysinit.py`'s pin goes to
+  159 rows, 129 named. Paragraph goes from 1,710 to 1,717 predicates
+  compared and kappa2 from 15,113 to 15,115; no exact row is lost.
+- **The census reader** (`asm/simpos_census/esplex.py`): a backslash in
+  a quoted atom is an ordinary character (it still escapes in a
+  string). MEASURED over the 2,326 ESP files of the IFS archives: 10
+  files change, and in every one the old reading ran a quoted atom
+  ending in `\'` on past the clause (MENDELS mdl_ckutil.esp `'/\'`,
+  chal bool.esp `'/\'`, cal-esp's `'\'`, exreps pe_wind92.esp). MENDELS's
+  dropped items go from 18 to 17 and its refusals from 402 to 371.
+- **mendels.py**: the HELD files tree.obj and tree.key placed in
+  `>sys>user>MENDELuser>SYSTEM` (install.e's "Copied Files", `HELD_FILES`);
+  the archive has no tree.field, so field_tree's restore/2 takes its held
+  "file not exist" clause, whose system_io error/4 runs.
+
+One held pimfep row changes outcome: pimos_fep_superviser log_menu/2
+succeeds (standard_temporary_menu create/3 was not loaded): the census
+gives 838 / 247 / 450.
+
+`test_mendels.py` `Mixins` runs the mixins through two other held users
+on the coordinator with the mouse. The first is icotext: its whole held
+class kakari_super_window with the held command bar of ki_window.esp
+inside it, read by kkr_main.esp's held read_loop/1 (`exit` ends it). The
+second is disc: the held make_inter_menu/2 of disp_win.esp inside
+MENDELS's own held base, read by base's read/3. Screens:
+`../docs/simpos/screens/mendels_mixins_icotext.png` and
+`mendels_mixins_disc.png`.
+
+Labels of this step, counted from the files: 101 methods and models. 34
+are RECONSTRUCTED-FROM-MANUAL (TM-125 pp6-18 carry most of them: the
+initiation options, the sash flags, the superior, markers and menus;
+TM-112 p16 write_line), 43 INFERENCE and 24 OURS.
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window

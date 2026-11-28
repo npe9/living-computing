@@ -598,7 +598,8 @@ From the sweep, not from the documentation alone:
    install.e) asks no `package>>` at all. On that route, with the 601s
    and 620s carried to the PSI (`fep_bridge.BridgeFep`), the ESP half
    compiled by `espc.py` (the archive's 108 ESP files as the package
-   `mendel`; 18 items dropped by the parser, 402 predicates refused) and
+   `mendel`; 17 items dropped by the parser, 371 predicates refused, since
+   the window mixins step) and
    run on kl0:
    - the loader's "WAIT !" window, the package load (library_utility),
      `mendel_esp_device` io(0, "start");
@@ -616,19 +617,31 @@ From the sweep, not from the documentation alone:
      `mendel_window`'s create_window/1, which opens `font:kanji_16.font`
      (not held; test_11 substituted, OURS) and sizes its panes in floats
      (espc and kl0 now have blt 6c/6d, float constants and X/Y);
-   - it stops at `:create(#base, ...)`, MENDELS's own class whose natures
-     `labeled_sash`, `as_input`, `as_superior`, `inferior_window` and
-     `with_shared_window` are SIMPOS mixins whose code is not held
-     (`simpos/subsystems/window.md` §1.2-§1.3 has what WINCS's prose and
-     the held programs' usage say of them). The
-     stop comes at 7,075,533 PIM/m instructions, 21 exchanges (the same
-     PIMOS side; tape `psi/mendels_tapes/doc.json`, replayed by
-     test_mendels). Next: a stand-in for these window mixins (a
-     sash-split window with inferior panes), which is what all of
-     MENDELS's own windows (mendel_window, garnet_window,
-     library_window, ...) are built from. After them come
-     `multi_column_menu_with_superior_input_buffer` and
-     `essential_scrolling_menu_with_superior_input_buffer`.
+   - it went on to stop at `:create(#base, ...)`, MENDELS's own class
+     whose natures `labeled_sash`, `as_input`, `as_superior`,
+     `inferior_window` and `with_shared_window` are SIMPOS mixins whose
+     code is not held (`simpos/subsystems/window.md` §1.2-§1.3);
+   - **window mixins step (2026-11-27):** with those mixins and the
+     composites stood in (`psi/standin/basic_window.esp` and its
+     neighbours, labelled per method; also run through icotext's
+     kakari_super_window and disc's structure menu, screens
+     `docs/simpos/screens/mendels_mixins_*.png`), the ESP half makes
+     mendel_window's whole zone, garnet_window, the library window and
+     the editors, and reads its library from the HELD `tree.obj` and
+     `tree.key` (example1-3 are its objects; the archive has no
+     `tree.field`, so that restore takes MENDELS's own "file not exist"
+     path). It now stops in method_editor starting/1, at
+     `standard_io_window:set_size/3`: med_window places
+     standard_io_windows inside the base as inferiors, and this
+     repository's standard_io_window is a top window only. Nothing is
+     shown yet (mendel_main shows the zone in resume/0, after create/1).
+     The PIMOS side is unchanged (7,075,533 PIM/m instructions, 21
+     exchanges; tape `psi/mendels_tapes/doc.json`, replayed by
+     test_mendels). Next: standard_io_window as an inferior (set_size/3,
+     set_position/3, drawing inside a superior), then resume/0's
+     show_window/1. Showing the 1280 x 944 base also needs a save area
+     larger than winfb's 65,536 words (OURS, shared with
+     `bsv/WinFbBox.bsv`).
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the

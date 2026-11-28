@@ -1394,6 +1394,25 @@ Everything in this section is INFERENCE: a plan derived from the use counts abov
 
 Keep every unimplemented selector failing loud. The 56 UNSPECIFIED selectors (Appendix A) are the first candidates.
 
+**Built 2026-11-27 for MENDELS (the window mixins step; `psi/README.md`
+"MENDELS").** The §1.2 base and the §1.3 mixins, labelled per method in
+their files: basic_window (inferior_window and temporary_window are it,
+with no method of their own), labeled_sash, as_input, as_superior,
+with_superior_input_buffer, with_shared_window, as_menu,
+as_scrolling_menu, as_output and as_markers. The §1.6 composites
+essential_scrolling_menu(_with_superior_input_buffer),
+essential_window_with_superior_input_buffer,
+multi_column_menu(_with_superior_input_buffer),
+temporary_multi_column_menu, temporary_superior_window,
+temporary_standard_io_window and standard_temporary_menu are given
+nature lists INFERRED from their names and the §1.5 recipes. An inferior
+draws inside its superior and is cut at the superior's inside
+(INFERENCE; the screens of §1.5 show no overhang). Not built: as_graphics
+and as_scroll, and standard_io_window as an inferior (MENDELS's next
+stop). Screens: `../screens/mendels_mixins_icotext.png` (icotext's held
+kakari_super_window and command bar) and `../screens/mendels_mixins_disc.png`
+(disc's held menu inside MENDELS's held base).
+
 ---
 
 ## 8. Coverage
