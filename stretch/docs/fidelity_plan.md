@@ -1605,19 +1605,77 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
       scratch copy's. Every one keeps b62's memreads.
     - 29 lines: both. In 6 of them the budgets alone also move
       memreads. These are polling loops whose iteration count depends on
-      speed: the five MCP IPL runs, +2 to +6 (MCP's own bootstrap
-      6322913 → 6091661 budgets only → 6091680; its IOD-deck IPL 6748107
-      → 6510830), and `interval_timer_steps` 1031 → 1122, whose
-      BZXE / CB loops wait for the timer to step.
+      speed. `interval_timer_steps` 1031 → 1122: its BZXE / CB loops
+      wait for the timer to step (read in the deck). The five MCP IPL
+      runs, +2 to +6 (MCP's own bootstrap 6322913 → 6091661 budgets only
+      → 6091680; its IOD-deck IPL 6748107 → 6510830), are UNTRACED: only
+      the revert attributes them to the budgets, and which loop takes the
+      extra reads was not found.
     - `problem_1_7`: 272271 → 256272 (budgets: its 16000-pass CB-to-
       itself wait), memreads 32019 → 32022 (`branched`: BD / BE, $+.32).
-    - 53 CYCLES / MEMREADS pins re-pinned with a history comment in
-      `run_tests.sh`. The MCP stage 8 typed DTIME is back to 00:00:01.
-      Two deck headers (`ax4b_148_immediate_indexed`,
-      `ax4b_5b_immediate_unindexed`) were updated.
-    - The scratch copy has no `.git`, so its own verdict (RED: pins and
-      git-reading sections) is not used. Only its HALTREPORT_ALL lines
-      are.
+    - 58 pins (45 CYCLES, 13 MEMREADS) on 53 run lines re-pinned, each
+      with a history comment in `run_tests.sh`. The MCP stage 8 typed
+      DTIME is back to 00:00:01; the budgets-only scratch copy types
+      00:00:01 too, so the budgets moved it. Two deck headers
+      (`ax4b_148_immediate_indexed`, `ax4b_5b_immediate_unindexed`) were
+      updated.
+    - The scratch copy's own verdict was RED. Its non-pin FAILs were
+      inspected: the only one is that DTIME line.
+    - The re-pinned sections, b62 → final (cycles/memreads), and their
+      cause:
+      - A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD: 1567/138 → 1624/169; both (budgets alone 1549/138)
+      - BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL): 868/66 → 868/76; branched
+      - BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL): 866/63 → 866/73; branched
+      - BOX LEVEL RELEASE: THE VFL MULTIPLIER (p.3-16, p.3-18, p.48; MODEL): 945/67 → 945/77; branched
+      - COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP: 824/62 → 848/69; branched
+      - COMPLETES WITHOUT FETCH: address invalid, VFL/connective/FP: 562/38 → 550/40; both (budgets alone 550/38)
+      - COMPLETES WITHOUT FETCH: progressive with X0, VFL and connective: 283/20 → 271/22; both (budgets alone 271/20)
+      - DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION: 6164/581 → 6331/613; branched
+      - FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS: 311/27 → 311/33; branched
+      - FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS: 425/40 → 430/49; branched
+      - FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a): 1056/113 → 1104/128; branched
+      - IBOX-4 routine 1244 TEST 4, RUN: RNX no-ops for old and new names 1-31: 116210/6550 → 109428/6550; budget
+      - IBOX-4 routine 1256 TEST 1B LVS of all sixteen, ON THE MODEL (I562): 2927/166 → 2928/166; budget
+      - IBOX-4 routine 1256 TEST 2A LVE to an LV in 3 memories, ON THE MODEL: 364/26 → 367/26; budget
+      - IBOX-4 routine 1256 TEST 2B LVE through a second LVE, ON THE MODEL: 366/28 → 369/28; budget
+      - IBOX-4 routine 1256 TEST 2C LVE in IX/ACC to an LV in ACC/IX, ON THE MODEL: 311/24 → 313/24; budget
+      - IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, ON THE MODEL: 5946/462 → 5833/462; budget
+      - IBOX-4 routine 148 TEST 1B FP load, ON THE MODEL: 340/30 → 345/30; budget
+      - IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL (I4810: offsets): 408/39 → 412/39; budget
+      - IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL: 792/89 → 794/89; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 756/70 → 765/70; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 722/65 → 730/65; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 658/62 → 663/62; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 535/51 → 539/51; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4822: bits 0-2): 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4823: bits 3-5): 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4824: bits 6-8): 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 4 18-bit FP modification, ON THE MODEL: 309/29 → 313/29; budget
+      - IBOX-4 routine 148 TEST 5A P field 000, ON THE MODEL: 219/21 → 220/21; budget
+      - IBOX-4 routine 148 TEST 5B unindexed immediate walk, ON THE MODEL: 6834/512 → 6721/512; budget
+      - IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL: 4747/344 → 4655/344; budget
+      - IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL: 6386/453 → 6217/453; budget
+      - IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL: 13268/764 → 13300/764; budget
+      - IBOX-5 routine 1260 TEST 2 IA bits 0-17 hold a one, ON THE MODEL: 2057/153 → 2058/153; budget
+      - INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level: 550/46 → 550/60; branched
+      - INTERRUPTION RECOVERY: an I-box store run ahead is never made: 586/49 → 586/61; branched
+      - INTERRUPTION RECOVERY: what is given back runs again once: 611/60 → 611/70; branched
+      - Index indicators in program order: V-ICR after a pending progressive ST: 685/30 → 682/30; budget
+      - NEGATIVE EFFECTIVE ADDRESS: its magnitude is used: 858/70 → 859/72; both (budgets alone 859/70)
+      - RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0: 578/33 → 584/37; branched
+      - SIC PREFIXED TO BD STORES INTO A PROTECTED WORD: 378/31 → 378/40; branched
+      - THE SECOND INDEX modifies a VFL offset: MCP's octal conversion: 426/35 → 421/35; budget
+      - VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56): 711/47 → 715/49; branched
+      - VFL crossing store: a level fetching its second word waits for it: 259/18 → 263/20; branched
+      - VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ: 861/107 → 866/107; budget
+      - VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation: 1585/110 → 1612/120; branched
+      - VFL refill DF suppressed with the store (printed pp.22, 32): 1465/105 → 1497/115; branched
+      - printed p.72 lines 9-12: the machine-configuration clear loop: 405/49 → 399/49; budget
   - Checks:
     - `tests/run_branch_timing_test.sh`: 8 literal vectors, four observed
       injections (header of `StretchBranchTiming.bsv`).
