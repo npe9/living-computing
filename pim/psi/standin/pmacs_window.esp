@@ -118,7 +118,7 @@ attribute views := 1, other := 0, active := upper, click_x := 0, click_y := 0;
 % sets it to 1 after creating the window; meaning UNKNOWN.
 attribute activity := 0;
 
-% MENDELS's method editor (2026-11-28), OURS: the superior(S) create
+% MENDELS's method editor (2026-11-27), OURS: the superior(S) create
 % option kept (0: the screen).  A Pmacs window inside a superior is not
 % stood in: open/1 refuses to draw it (as a top window it would be a
 % false screen).
@@ -144,7 +144,7 @@ attribute permission := out;
 % Window M4, INTERPOLATED (body OURS) from the USAGE in the head comment.
 :get_interpreter(Window, I) :- I = Window!interpreter;
 
-% :set_editor(Window, Editor) -- MENDELS's method editor (2026-11-28),
+% :set_editor(Window, Editor) -- MENDELS's method editor (2026-11-27),
 % INTERPOLATED (selector and arguments USAGE MENDELS med_pmacs.esp:133
 % `:set_editor(Win, Editor)` after `:create(#med_pmacs_editor, Win,
 % InterP, Editor)`; cal-esp deb2.12/pmod.esp:108 hands its set_editor/2 to
@@ -159,7 +159,7 @@ attribute permission := out;
         :set_editor(Window!interpreter, Editor);
 
 % :assign_window(Window) and :resign_window(Window, Process) -- MENDELS's
-% method editor (2026-11-28), INTERPOLATED (selectors USAGE MENDELS
+% method editor (2026-11-27), INTERPOLATED (selectors USAGE MENDELS
 % med_ppmacs.esp:43 `:assign_window(Win)` in the editor's own process,
 % med_pmacs.esp:167 `:resign_window(Win, Win!input_process)`; the meaning
 % with_shared_window.esp's: the window taken over by a process; bodies
@@ -170,7 +170,7 @@ attribute permission := out;
 % LABEL: INFERENCE (the converse of assign_window/1; no-op OURS)
 :resign_window(Window, _);
 
-% :show_buffer(Window) -- MENDELS's method editor (2026-11-28),
+% :show_buffer(Window) -- MENDELS's method editor (2026-11-27),
 % INTERPOLATED (selector USAGE MENDELS med_pmacs.esp:266, 277; kappa2
 % pb/msm.esp:72, stwin.esp:47; cal-esp deb2.12/deb_cont.esp:103, after
 % output into the window's buffer; window.md §2.11 lists show_buffer/1;

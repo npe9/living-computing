@@ -50,7 +50,7 @@ attribute used := [];
         Class!used := Used;
 
 % :save_under(#save_memory, X, Y, W, H, Area) -- MENDELS's resume/0
-% (2026-11-28; selector and body OURS): what lies under a window about to
+% (2026-11-27; selector and body OURS): what lies under a window about to
 % be drawn at the rectangle, saved as save/6 would, but only the part
 % that holds other windows.  TM-225 p10 (PROSE, window.md §4.1): it is a
 % HIDDEN WINDOW's image, all of it or its hidden part, that is kept in a

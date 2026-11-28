@@ -155,7 +155,7 @@ class window_pane has
         Pane!cx := Pane!left, Pane!cy := Pane!top,
         Pane!title := Title,
         :cursor_aside(#coordinator),
-        % MENDELS's resume/0 (2026-11-28, OURS): only the part that holds
+        % MENDELS's resume/0 (2026-11-27, OURS): only the part that holds
         % other windows (save_memory.esp save_under/6)
         :save_under(#save_memory, Px, Py, W, H, Area),
         Pane!under := Area,
@@ -206,11 +206,11 @@ attribute under := 0, image := 0;
 % (save_memory.esp [Id, Base, Size]; 0: the pane is on the frame) and its
 % words a row.
 attribute surface := 0, pitch := 0;
-% MENDELS's title (2026-11-28), OURS: the inside shown inverted (yes after
+% MENDELS's title (2026-11-27), OURS: the inside shown inverted (yes after
 % invert/1, the window's background black): text is drawn white on black.
 attribute inverted := no;
 
-% :invert(Pane) -- MENDELS's title (2026-11-28; selector and body OURS):
+% :invert(Pane) -- MENDELS's title (2026-11-27; selector and body OURS):
 % the inside's dots inverted and the text drawn inverted from now on (a
 % second invert/1 turns it back).  standard_io_window.esp background/2.
 % INTERPOLATED (selector and body OURS): invert; basis above.
@@ -222,7 +222,7 @@ attribute inverted := no;
         cursor_on(Pane),
         :unpeel(#coordinator, Lifted);
 
-% :characters_in(Pane, Chars, Op, Font) -- MENDELS's title (2026-11-28;
+% :characters_in(Pane, Chars, Op, Font) -- MENDELS's title (2026-11-27;
 % selector OURS; the list's form PRINTED-INTERFACE TM-785 PDF p40,
 % draw_characters `[{Code, X, Y, W, H}, ...]`): each code's glyph of Font
 % (0: the pane's) made into a W x H box at (X, Y), the glyph's dots

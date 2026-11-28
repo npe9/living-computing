@@ -5688,7 +5688,7 @@ initiation options, the sash flags, the superior, markers and menus;
 TM-112 p16 write_line), 43 INFERENCE and 24 OURS.
 
 **The method editor step: standard_io_window as an inferior
-(2026-11-28).** The run goes past method_editor starting/1 and the rest
+(2026-11-27).** The run goes past method_editor starting/1 and the rest
 of mendel_main's create/1, through resume/0, and shows MENDELS's whole
 zone: EXTERN, LIBRARY (example1-3), TSL, the Top Menu, BIND,
 refresh/normal/full/name and the empty panes, over the title screen
@@ -5753,8 +5753,10 @@ What was added:
   mixin window's frame (window_pane create_frame/8) now saves the
   bounding box of the coordinator's windows and the status band that it
   covers, as `[cut, X, Y, W, H, Inner]` (restore and put_back clear the
-  rectangle, then draw Inner back). At the stop save memory holds two
-  areas of 4,564 words. The older panes (create/7, lay/1) still save the
+  rectangle, then draw Inner back; test_mendels test_cut_restore). At
+  the stop save memory holds two areas of 4,564 words: the title screen
+  window's own under-save and the base's cut box, that window's
+  rectangle. The older panes (create/7, lay/1) still save the
   whole rectangle, as the window M7 tests pin. SAVE_WORDS stays 65,536
   (`../docs/simpos/subsystems/window.md` §7 has the decision).
 
@@ -5773,7 +5775,8 @@ clear_buffer/3, pimos_window assign_window/1, resign_window/2,
 set_editor/2, show_buffer/1); no row changes outcome: 1,558 rows, 841 /
 247 / 453 (894 / 268 / 379 with the recipes).
 
-Labels of this step, counted from the files: 24 LABEL lines, 9
+Labels of this step, counted from the files: 24 LABEL lines added and
+1 removed (the old set_superior/2 "kept only" label, replaced), 9
 RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p15-16 the setters, getters,
 hide/clear_line, set_superior; TM-125 Table 1 set_inside_units; TM-785
 PDF p40 draw_characters) and 15 INFERENCE; and 3 methods OURS in
@@ -5781,8 +5784,9 @@ selector and body (save_memory save_under/6, window_pane invert/1 and
 characters_in/4). The forwarding clauses added to existing
 standard_io_window methods are marked OURS ("the inferior form") at each.
 
-Injections, OBSERVED (`test_mendels.py` run whole for each, the file
-restored by copy and compared):
+Injections, OBSERVED (19; `test_mendels.py` run whole for each, the
+file restored by copy and compared; the cut form's put_back/2 is not told
+apart, no test restacks under a mixin window):
 
 | injection | failed |
 |---|---|
@@ -5791,8 +5795,8 @@ restored by copy and compared):
 | source/2: the inferior form named, not the standard_io_window | test_med_click |
 | put_line/2: never back to row 0 | test_med_shown |
 | inferior form: what was written before not written again | test_med_shown |
-| save_under: the whole rectangle saved | test_replay |
-| save_under: the windows below ignored (only the band) | test_replay |
+| save_under: the whole rectangle saved | test_cut_restore, test_replay |
+| save_under: the windows below ignored (only the band) | test_cut_restore, test_replay |
 | background/2: text not drawn inverted | test_title_shown |
 | draw_characters/3: not magnified (factor 1) | test_title_shown |
 | interpreter: an atom datum not looked up as a key | test_replay |
@@ -5800,6 +5804,11 @@ restored by copy and compared):
 | pmacs_window inside a superior drawn as a top window | test_replay |
 | temporary_menu name/2 always fails | test_editor_link |
 | standard_editor clear_buffer/3 deletes nothing | test_editor_link |
+| set_size/3 before the superior: the size not kept | test_med_shown |
+| set_position/3 on the inferior form: position (0,0) | test_med_click, test_med_shown |
+| inferior form: label_flag not kept | test_med_shown |
+| cut restore: the part under not drawn back | test_cut_restore |
+| cut put_back: the part under not drawn back | NONE |
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

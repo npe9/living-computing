@@ -27,13 +27,13 @@ whole zone, garnet_window, the library window, the editors, object_lib
 restore/1 (the HELD tree.obj and tree.key: example1-3; test_library_
 restored), top_down, mdl_input, buffer, flat_data and flat_mdl,
 method_editor (its title panes, standard_io_windows placed inside the
-base: their inferior form, since 2026-11-28), the rest of create/1, and
+base: their inferior form, since 2026-11-27), the rest of create/1, and
 resume/0, which shows the whole zone over the title screen (frame
 pinned, docs/simpos/screens/mendels_zone.png); it stops at the last
 window of mendel_window show_all_window/1, system_window, a pmacs_window
 inside the base (`mendel##mendel_pmacs:not_stood_in/2`: the stand-in
 pmacs_window is a top window only).  Re-recorded live 2026-11-27 from a
-copy of PROMPT.pkl, twice, and 2026-11-28: the 21 exchanges and strings
+copy of PROMPT.pkl, three times: the 21 exchanges and strings
 as before, the stop and `where` new each time; the live screen equals
 the replay's.
 
@@ -119,9 +119,9 @@ before class Pieces existed, which none of them touches):
 
 Weak spot: set_superior/2 is not told apart (no held user here moves a
 window under another superior; med_window's standard_io_windows are made
-in their superior by create/3, 2026-11-28, so it is still not reached).
+in their superior by create/3, 2026-11-27, so it is still not reached).
 
-MethodEditor (the method editor step, 2026-11-28) runs held code outside
+MethodEditor (the method editor step, 2026-11-27) runs held code outside
 the run: the held set_window_attribute/4 (med_win.esp) placing two
 standard_io_windows made with med_win's create options inside MENDELS's
 held base, written before and after (put_line/2 twice) and clicked; the
@@ -130,7 +130,7 @@ dots, PNGs docs/simpos/screens/mendels_inferior_titles.png and
 mendels_title.png byte for byte.  test_editor_link sends the two small
 stand-ins whose effect the run does not show.
 
-The method editor step, OBSERVED 2026-11-28 (14, made in the working
+The method editor step, OBSERVED 2026-11-27 (19, made in the working
 tree by a scratch script, restored by copy and cmp; this whole file run
 on each, on the final file):
 
@@ -141,8 +141,8 @@ on each, on the final file):
 | source/2: the inferior form named, not the standard_io_window | test_med_click |
 | put_line/2: never back to row 0 | test_med_shown |
 | inferior form: what was written before not written again | test_med_shown |
-| save_under: the whole rectangle saved | test_replay |
-| save_under: the windows below ignored (only the band) | test_replay |
+| save_under: the whole rectangle saved | test_cut_restore, test_replay |
+| save_under: the windows below ignored (only the band) | test_cut_restore, test_replay |
 | background/2: text not drawn inverted | test_title_shown |
 | draw_characters/3: not magnified (factor 1) | test_title_shown |
 | interpreter: an atom datum not looked up as a key | test_replay |
@@ -150,9 +150,21 @@ on each, on the final file):
 | pmacs_window inside a superior drawn as a top window | test_replay |
 | temporary_menu name/2 always fails | test_editor_link |
 | standard_editor clear_buffer/3 deletes nothing | test_editor_link |
+| set_size/3 before the superior: the size not kept | test_med_shown |
+| set_position/3 on the inferior form: position (0,0) | test_med_click, test_med_shown |
+| inferior form: label_flag not kept | test_med_shown |
+| cut restore: the part under not drawn back | test_cut_restore |
+| cut put_back: the part under not drawn back | NONE |
 
 Weak spots: the title screen's label strip (a top standard_io_window
 ignores label_flag(off)) is pinned as drawn, not as SIMPOS draws it.
+The cut form's put_back/2 (a restack under a mixin window) is not told
+apart (NONE above): no test here restacks one.  The other forwarding
+clauses to the inferior form (deactivate, hide, kill, set_font,
+set_title, set_permission, read/2, clear_buffer/1, get_size/3,
+get_position/3) are not injected one by one; MENDELS's run sends only
+activate/1, put_line/2, clear_line/1, get_inside_size/3 and read through
+the base before the stop.
 
 Weak spots: the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
@@ -199,7 +211,7 @@ STRINGS_IO = [
 ]
 STOP = ('simpos: send mendel##mendel_pmacs:not_stood_in/2 (no primary in the held classes; '
         'stand-in ancestors simpos##with_superior_input_buffer simpos##pmacs_window)')
-# the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-28
+# the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-27
 # (the live run's screen is the same): MENDELS's whole zone shown by
 # resume/0, committed as docs/simpos/screens/mendels_zone.png
 ZONE = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_zone.png')
@@ -237,9 +249,11 @@ class Run(unittest.TestCase):
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), ZONE_FRAME)
         with open(ZONE, 'rb') as f:
             self.assertEqual(windev.png_bytes(fr), f.read())
-        # save memory (OBSERVED): two areas of 4,564 words, the parts of
-        # the title screen's window under the base (and under its frame),
-        # not the 75,520 words of the whole 1,280 x 944 rectangle
+        # save memory (OBSERVED): two areas of 4,564 words, the title
+        # screen window's own under-save (its whole rectangle, window_pane
+        # create/7) and the base's cut box, which is that window's
+        # rectangle (save_under/6), not the 75,520 words of the whole
+        # 1,280 x 944 rectangle
         used, c = [], K.deref(psi.m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))
         while isinstance(c, K.Cons):
             used.append(str(K.resolve(c.args[0])))
@@ -986,7 +1000,7 @@ end.
 
 
 class MethodEditor(unittest.TestCase):
-    """The standard_io_window inferior step (2026-11-28): a
+    """The standard_io_window inferior step (2026-11-27): a
     standard_io_window placed inside a superior (standin/
     standard_io_window.esp "THE INFERIOR FORM", inferior_io_form.esp), and
     MENDELS's title screen (title.esp), each run on the coordinator as
@@ -995,11 +1009,11 @@ class MethodEditor(unittest.TestCase):
     - med: two standard_io_windows made as MENDELS's method editor makes
       meth_title and junk_title (med_win.esp create_other/1's options,
       verbatim), placed inside MENDELS's HELD class base by the HELD
-      set_window_attribute/4 (med_win.esp:143-146, clause verbatim); junk
+      set_window_attribute/4 (med_win.esp:135-138, clause verbatim); junk
       written to before it gets its superior (as graph_sel.esp:31-34
       does); meth written as med_show.esp does (clear_line/1 then
       put_line/2, twice); then base's read/3, as med_window read/3
-      (med_win.esp:312-318) reads its panes;
+      (med_win.esp:319-325) reads its panes;
     - title: MENDELS's HELD class mendel_title (title.esp, whole), its
       start/1 run as esp_device.esp:99 runs it: the title screen drawn by
       its own process, which then waits on its stream.
@@ -1096,7 +1110,7 @@ end.
         return stop, m
 
     SCREENS = os.path.join(HERE, '..', 'docs', 'simpos', 'screens')
-    # frames: (sha256 of the PBM, set dots), OBSERVED 2026-11-28; committed
+    # frames: (sha256 of the PBM, set dots), OBSERVED 2026-11-27; committed
     # as docs/simpos/screens/mendels_inferior_titles.png, mendels_title.png
     MED_FRAME = ('747f94b0d8f2757ce7303fe46d510211b40909051ae46ca0cd95f5cd5fb69026', 109380)
     TITLE_FRAME = ('056bbe3e264fce99a5536cd379436791dd92c99f64c1875ccdc97808bc9f6a68', 158133)
@@ -1159,6 +1173,43 @@ end.
         self.assertEqual(len(send(ed, 'clear_buffer', buf, 2)), 1)
         ((n,),) = send(buf, 'end_of_buffer', K.Var())
         self.assertEqual(n, 2)
+
+    def test_cut_restore(self):
+        # save_memory save_under/6's cut form, which MENDELS's run does not
+        # reach (its base is not hidden before the stop): a mixin window
+        # (temporary_superior_window) drawn over a top standard_io_window
+        # saves only the part that holds it (one area the size of the low
+        # window's own under-save), and killed, clears its rectangle and
+        # draws that part back: the screen above the status band is as
+        # before (the band's box names the last window, OURS)
+        import fep_bridge as FB
+        import windev
+        m = FB.PsiSide().m
+        A = K.Atom
+
+        def send(obj, name, *args):
+            m.reset()
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(obj, name, list(args) + [obj])]
+
+        def make(cid, x, y, w, h):
+            m.reset()
+            opts = K.Cons(K.Vec([A('size'), w, h]), K.Cons(K.Vec([A('position'), x, y]), K.NIL))
+            ((_o, win),) = K.call_class_method(m, cid, 'create', [opts, K.Var()])
+            self.assertEqual(len(send(win, 'activate')), 1)
+            return win
+
+        def used():
+            return str(K.resolve(m.get_slot(K.ClassRef('simpos##save_memory'), 'used')))
+        fr = windev.device(m).frame
+        low = make('simpos##standard_io_window', 300, 300, 20, 4)
+        self.assertEqual(len(send(low, 'write_line', K.Str('under'))), 1)
+        before = list(fr.rows)
+        top = make('simpos##temporary_superior_window', 250, 250, 400, 200)
+        self.assertNotEqual(fr.rows[:944], before[:944])
+        self.assertEqual(used(), '[[0,0,74],[1,74,74]]')
+        self.assertEqual(len(send(top, 'kill')), 1)
+        self.assertEqual(fr.rows[:944], before[:944])
+        self.assertEqual(used(), '[[0,0,74]]')
 
     def test_title_shown(self):
         # the held mendel_title's screen: a standard_io_window, black

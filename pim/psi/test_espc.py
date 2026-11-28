@@ -1180,7 +1180,7 @@ class Standins(unittest.TestCase):
                 'as_superior', 'basic_window', 'essential_scrolling_menu',
                 'essential_scrolling_menu_with_superior_input_buffer',
                 'essential_window_with_superior_input_buffer', 'inferior_window', 'labeled_sash',
-                'inferior_io_form',     # the standard_io_window inferior step (2026-11-28)
+                'inferior_io_form',     # the standard_io_window inferior step (2026-11-27)
                 'multi_column_menu', 'multi_column_menu_with_superior_input_buffer', 'operator_pool',
                 'standard_temporary_menu', 'temporary_multi_column_menu',
                 'temporary_standard_io_window', 'temporary_superior_window', 'temporary_window',
@@ -1985,7 +1985,7 @@ end.''', 'simpos')
         # pimos_fep_superviser log_menu/2 succeeds (it refused at
         # standard_temporary_menu create/3, now stood in): 838 / 247 / 450;
         # no other row changes outcome
-        # MENDELS's method editor (2026-11-28; row by row against 9e08a35f,
+        # MENDELS's method editor (2026-11-27; row by row against 9e08a35f,
         # stand-ins swapped, the rest the same): 6 new inherited rows, no
         # row changes outcome: pimos_window_editor c:create/4 success,
         # clear_buffer/3 refused (unbound receiver); pimos_window
@@ -2151,7 +2151,7 @@ end.''', 'simpos')
         # 1,552 rows, 888 / 268 / 379.  MENDELS's window mixins (2026-11-27,
         # row by row against 14bfb013): log_menu/2 succeeds, as in
         # test_fep_census: 889 / 268 / 378.  MENDELS's method editor
-        # (2026-11-28, row by row against 9e08a35f): the 6 rows of
+        # (2026-11-27, row by row against 9e08a35f): the 6 rows of
         # test_fep_census, here set_editor/2 and show_buffer/1 succeed too
         # (the recipe's window has an interpreter): 1,558 rows, 894 / 268 /
         # 379; no other row changes outcome
@@ -2393,7 +2393,7 @@ end.''', 'simpos')
             # M4/M6: 15 (test_fep_census)
             # window M10: 36 inherited methods; the Pmacs reconstruction
             # (2026-11-27): 30 (test_fep_census); MENDELS's getl/2: 1;
-            # MENDELS's method editor (2026-11-28): 6
+            # MENDELS's method editor (2026-11-27): 6
             self.assertEqual(len(fwd), 1558)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)

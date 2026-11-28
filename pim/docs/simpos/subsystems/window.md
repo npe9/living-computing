@@ -1413,7 +1413,7 @@ stop). Screens: `../screens/mendels_mixins_icotext.png` (icotext's held
 kakari_super_window and command bar) and `../screens/mendels_mixins_disc.png`
 (disc's held menu inside MENDELS's held base).
 
-**Built 2026-11-28 for MENDELS (the method editor step; `psi/README.md`
+**Built 2026-11-27 for MENDELS (the method editor step; `psi/README.md`
 "MENDELS").** standard_io_window as an inferior: a window given a
 superior before it is drawn makes its inferior form (`inferior_io_form`,
 a name OURS: labeled_sash, as_output, as_input, inferior_window) and
@@ -1430,7 +1430,7 @@ Screens: `../screens/mendels_inferior_titles.png`,
 zone resume/0 shows). Not built: pmacs_window as an inferior (MENDELS's
 next stop, mendel_win.esp show_all_window/1's system_window).
 
-**Save memory size: decided 2026-11-28, unchanged at 65,536 words.**
+**Save memory size: decided 2026-11-27, unchanged at 65,536 words.**
 The question: winfb's save memory (`psi/winfb.py` SAVE_WORDS,
 `bsv/WinFbBox.bsv`) holds 65,536 words, OURS, and the 1,280 x 944 base
 of MENDELS needs 75,520 words to be saved whole. Evidence:
@@ -1445,7 +1445,8 @@ of MENDELS needs 75,520 words to be saved whole. Evidence:
   included. TM-225 saves windows' images, not the empty screen. With
   save_memory save_under/6 (a mixin window's frame saves only the
   bounding box of the windows and status band it covers) MENDELS's path
-  through resume/0 holds two areas of 4,564 words.
+  through resume/0 holds two areas of 4,564 words (the title screen
+  window's own under-save, and the base's cut box over it).
 - Raising it is a frozen-format change: save/restore carry a 16-bit
   base operand in the command stream, and the box's BRAM is at 156 of
   208 DP16KD (`../window_hardware_plan.md` §5.1; 131,072 words would

@@ -102,7 +102,7 @@ attribute yanks := [];
 :top_yank(Class, S) :- [S | _] = Class!yanks;
 
 % :create(#Class, Window, Interpreter, ^Editor) -- MENDELS's method editor
-% (2026-11-28), INTERPOLATED (selector and arguments USAGE: MENDELS
+% (2026-11-27), INTERPOLATED (selector and arguments USAGE: MENDELS
 % med_pmacs.esp:132 `:create(#med_pmacs_editor, Win, InterP, Editor)`,
 % cal-esp deb2.12/pmod.esp:34, disc system_data.esp:116, utter
 % Tour/WIN.esp:97, each an editor class of the program's own, heir of
@@ -128,7 +128,7 @@ attribute window := 0;
 :get_window(Editor, Window) :- Window = Editor!window;
 
 % :clear_buffer(Editor, Buffer, From) -- MENDELS's method editor
-% (2026-11-28), INTERPOLATED (selector and arguments USAGE MENDELS
+% (2026-11-27), INTERPOLATED (selector and arguments USAGE MENDELS
 % med_pmacs.esp:276 reset/1, kappa2 user_if/pb/inwin.esp:272 and
 % exwin.esp:68, always `(Editor, Buffer, 0)`; body OURS): Buffer's text
 % from position From to its end deleted (the third argument read as a

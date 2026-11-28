@@ -633,7 +633,7 @@ From the sweep, not from the documentation alone:
      path). It stopped in method_editor starting/1, at
      `standard_io_window:set_size/3` (standard_io_windows placed in the
      base as inferiors);
-   - **method editor step (2026-11-28):** with standard_io_window as an
+   - **method editor step (2026-11-27):** with standard_io_window as an
      inferior (its inferior form inside the superior, TM-125 PDF p15-16;
      the mechanism OURS), the title screen's methods (set_inside_units/3,
      background/2, draw_characters/3 of TM-785 PDF p40), the editor link

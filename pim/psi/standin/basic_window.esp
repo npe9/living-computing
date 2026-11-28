@@ -73,7 +73,7 @@
 %     position is put at the mouse when it is shown (TM-125 p6-7);
 % NOT STOOD IN (fail loud): dynamic natures (the create option nature(L),
 % e.g. MENDELS's nature([with_icon]), is ignored: OURS; since the
-% standard_io_window inferior step, 2026-11-28, with_superior_input_buffer
+% standard_io_window inferior step, 2026-11-27, with_superior_input_buffer
 % in it is acted on, options/2), scrolling, the save areas of inferiors.
 
 class basic_window has

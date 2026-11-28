@@ -98,7 +98,7 @@ attribute buffer := 0, prefix := none, done := 0;
 % INTERPOLATED (selector and body OURS): see the head comment.
 :set_buffer(I, B) :- I!buffer := B;
 
-% :set_editor(I, Editor) -- MENDELS's method editor (2026-11-28),
+% :set_editor(I, Editor) -- MENDELS's method editor (2026-11-27),
 % INTERPOLATED (selector and arguments USAGE disc system_data.esp:117,
 % utter Tour/WIN.esp:98, kappa2 pb/inwin.esp:475 `:set_editor(Int,
 % Editor)` after `:create(#X_editor, Window, Int, Editor)`; the slot
@@ -134,7 +134,7 @@ run(I, {data, D}) :- !, datum(I, D);
 run(I, X) :- input(I, X);
 
 datum(I, exit) :- !, input(I, exit);
-% MENDELS's method editor (2026-11-28): any other atom given by
+% MENDELS's method editor (2026-11-27): any other atom given by
 % input_data/2 is looked up as a key is (MENDELS med_pmacs.esp:345 gives
 % '$med_exit', which its editor's held command/3 binds to exit,
 % med_editor.esp:50).  LABEL: INFERENCE (from that held pair; OURS)

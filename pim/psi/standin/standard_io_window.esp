@@ -256,7 +256,7 @@ attribute name := 0;
 % MENDELS, OURS: erase_cursor/1's flag.
 attribute text_cursor := on;
 
-% THE INFERIOR FORM (2026-11-28, MENDELS's method editor; the mechanism
+% THE INFERIOR FORM (2026-11-27, MENDELS's method editor; the mechanism
 % OURS, standin/inferior_io_form.esp's head).  TM-125 PDF p15 (5.3, 1),
 % printed page 14) prints set_size/3 "set the size of window",
 % set_position/3 "set the position to the superior window" and
@@ -331,7 +331,7 @@ attribute text_cursor := on;
         Wd = P!iw, Ht = P!ih;
 :get_inside_size(W, Wd, Ht) :- inside_size(W, Wd, Ht);
 
-% MENDELS's title screen (2026-11-28; title.esp:73-95, run by the
+% MENDELS's title screen (2026-11-27; title.esp:73-95, run by the
 % mendel_title process while the method editor's process waits):
 % set_inside_units/3, background/2, draw_characters/3, putl/1.
 %

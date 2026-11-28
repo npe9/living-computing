@@ -7,7 +7,7 @@
 % the coordinator's stack, the login requester's and the shells'
 % windows, pinned by their tests).
 %
-% MENDELS (IFS No.61), 2026-11-28: med_window's title panes meth_title
+% MENDELS (IFS No.61), 2026-11-27: med_window's title panes meth_title
 % and junk_title (med_win.esp:24-39, create_other/1 :196-211) are
 % standard_io_windows made with no superior and then placed INSIDE
 % MENDELS's base by set_window_attribute/4 (:135-138): `:set_size(Win,W,
