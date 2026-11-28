@@ -14,7 +14,7 @@ stands in for the D/A/R/S stages the decode entry's nano-code drives.
     python3 ref/pu/measure.py             the counts behind the rules, pinned
     python3 ref/pu/u2_append.py [-v]      the U2 harness: append/3 whole (in run_tests.sh, ~3 s)
     python3 ref/pu/u2_append.py --inject NAME
-    python3 ref/pu/u3_goals.py [-v]       U3: a multi-goal program, the scheduler held (in run_tests.sh, ~3 s)
+    python3 ref/pu/u3_goals.py [-v]       U3: a multi-goal program, the boot and the scheduler held (in run_tests.sh, ~3 s)
     python3 ref/pu/u3_goals.py --inject NAME
 
 The microcode is third-party and stays out of git: it is read from
@@ -31,7 +31,12 @@ whole, 16 words; the stop is `proceed`, the last instruction: section
 multi-goal program whose goal queue is made by the firmware's own
 `enqueue_goal` and taken by its own `proceed`, 41 of 41 instructions
 matched, 3 scheduler picks compared with `pimm.py` (2 dispatching, 1
-empty), no mismatch. Append's own run stays at 15 of 16 (why: "U3").
+empty), no mismatch. **U3's second step** (2026-11-27, section "U3, second
+step"): the scheduler state is written by start's own boot words (199
+held words) instead of the `INITIAL` stand-in, 41 of 41 matched, 2 picks
+compared with `pimm.py` and the third the boot goal's (firmware only), no
+harness-written state read at any pick. Append's own run stays at 15 of 16
+(why: "U3").
 
 - 32 cases, all PASS (83 held microinstructions executed since U3; 80 before). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
@@ -412,6 +417,8 @@ initialisation, called from outside: `204b` (heap top into R1f), `2053`
 free list, and `2070`-`208d`, read not run, reads parameter pairs at
 `1a0 + aa`..`b2`: unexplained), `209f` (with `20bc` R07 := 0, read not run; since the eighth
 session R07 as an S1 source is the EM3 immediate, `pu.S1_IMM`), `20c2`, `20e7`, then R0e and R10.
+(Since U3's second step `u3_goals.py` runs `3380` (R1b's refill), `209f`-`20a8`,
+`20e7`-`210b` whole and `202d`-`2030`, section "U3, second step".)
 `execute_first_predicate` (`2032`) loads R04 (`pc`) with
 `{REFo, [1a0 + 4b]}`, PIMM.PARAM's `bmadr` "Boot Module Address" by its
 place (INFERRED); it stops at `2035` on MCF with EM1 08. Only `204b` is
@@ -588,7 +595,9 @@ arm's own end (the shift at `21b3`, a return or `21b5`'s priority
 search over the Goal Stack Entry Table at fixed cells `b6` / `b7`,
 PIMM.PARAM's gsesh / gseb by place: INFERENCE) is not run.
 
-What is left open on proceed's paths (updated by U3, section "U3"):
+What is left open on proceed's paths (updated by U3, section "U3"; the
+second step changes only the crr-exhausted item: PMPF is now given, so
+`crr_two` stops one word later, at `217d`'s JMPF d):
 
 - Now run (U3): proceed after `enqueue_goal` in one run, on records,
   R14, R10 and R1b the firmware wrote itself (`u3_goals.py`, 2
@@ -711,7 +720,8 @@ A0..An-1 (its R lines) and the freed record (declared, as U2's
 'free'); the other instructions through U2's `compare`.
 
 **What is not the firmware's: the state before the first instruction**
-(`u3_goals.INITIAL`, OURS; no instruction of the program writes these
+(*superseded by the second step*, which runs these boot words; kept as
+the first step's record) (`u3_goals.INITIAL`, OURS; no instruction of the program writes these
 before reading them). Each cites the held boot word that writes it, read
 not run: R1b's free records (linked through cell 0 as `216c` pushes)
 and the R10 the driver builds into (`202d`-`202f`); R14 = nil (the
@@ -752,8 +762,8 @@ injection in `u3_goals.py`, observed):
 | `RULES['jmpf8_goto_if']`: JMPF 8 in a word with no CNDF is a short goto (upc + signed EM3) taken if COND (the word before's) | HELD-SOURCE (the kind), INFERRED (the timing) | rassy `jmpf/9` arm 8 (@2afb): 'goto', `short/3`, the 'if cond' slot `00af`. At `4c01` COND is `4c00`'s slit_check (CNDF 7 EM1 19); taken, `4c08` (a priority-bit shift, as execute's `4cc5`). Tension recorded: rassy's arm covers `34a1` and `4cc2` too, which still fall through (`jmpf8_setup`, `jmpf8_flag`) | `jmpf8_goto_off`: STOP at `4c01`; `slit_pending` (the flag set): STOP at `4c08` (ALF shift, not modelled) |
 | `setup.FORMS['enqueue_goal']`: the label in MDR1 (DFF 1, as `try_me_else`); the pop of R1b (ODPF 1, EMO1 b) with its head in MAR2 (ODSF 2, `ENQ_HEAD`) | INFERRED | the four DFF 1 entries all take a label; `4c00` copies MDR1 to W10 and `4c03` stamps it COD into cell 12; `4c00` reads [MAR2], `4c04` R1b := it, `4c05` R10 := `{HOOKo, old R1b}`. collect_list's ODSF 2 (read, not run) was read as MDR2: kept apart | `enq_head_mar1`: STOP at `4c00` (MAR2 never set); `enq_label_mdr2`: STOP at `4c04` (STALE written); `enq_label_plus1`: FAIL at instruction 3 (cell 12 one past `pimm.py`'s code) |
 | `setup.EXECUTE_MDR1_EMO1`: execute's S stage puts R(10 \| EMO1) = R15 in MDR1 | INFERRED | EMO1 5 (rassy crr); `4cc0` R15 := MDR1 - 1, as `216d` and `4c02`. U2's run (no R15) keeps STALE | `execute_mdr1_stale`: STOP at the second pick, `216e` (crr STALE) |
-| `u3_goals.INITIAL` R16 = 1 | OPEN (two readings, both run) | R16 (rassy 'ccc') counts up at `4c06`-`4c07`, down at `2171`-`2172`; running out (`2173` -> `2174`) charges R15 to R13's record (`2177` calls `12e0`-`12ea`). Read as the queue's length: every R14 push in the image (census of the 21 R14 writers: `080c`-`080e`, `4c06`/`4c07`, `4c15`/`4c11`, `1f23`/`1f1b`) steps R16 too, `2170`'s empty test comes before the decrement, and the boot's `20a0`-`20a1` gives R16 = 0 with the R06 = 0 behind R14 = nil; then R16 = 0. Read as the foster parent's live goals (driver included): R16 = 1; a wake (`080e`) stepping R16 counts against it. The main run takes 1 (3 picks); a second pinned run takes 0 (`PINNED_R16_0`: 24 of 41, 1 pick, STOP at `12e3`). Undecided | `r16_zero`: STOP at the second pick, `12e3` (cond PMPF, a flag not given), as the second run |
-| `u3_goals.INITIAL` R15 = 17 | stand-in, cited `20a7` | crr: R15 - 1 at each enqueue, execute and proceed | `crr_two`: STOP at the first pick, `217c` (crr exhausted: PMPF) |
+| `u3_goals.INITIAL` R16 = 1 (*settled by the second step: R16 = 2 from `20a0`-`20a1`, the queue + 1*) | OPEN (two readings, both run) | R16 (rassy 'ccc') counts up at `4c06`-`4c07`, down at `2171`-`2172`; running out (`2173` -> `2174`) charges R15 to R13's record (`2177` calls `12e0`-`12ea`). Read as the queue's length: every R14 push in the image (census of the 21 R14 writers: `080c`-`080e`, `4c06`/`4c07`, `4c15`/`4c11`, `1f23`/`1f1b`) steps R16 too, `2170`'s empty test comes before the decrement, and the boot's `20a0`-`20a1` gives R16 = 0 with the R06 = 0 behind R14 = nil; then R16 = 0. Read as the foster parent's live goals (driver included): R16 = 1; a wake (`080e`) stepping R16 counts against it. The main run takes 1 (3 picks); a second pinned run takes 0 (`PINNED_R16_0`: 24 of 41, 1 pick, STOP at `12e3`). Undecided | `r16_zero`: STOP at the second pick, `12e3` (cond PMPF, a flag not given), as the second run |
+| `u3_goals.INITIAL` R15 = 17 (*run held since the second step: `20a6`-`20a7` under PMPF reset*) | stand-in, cited `20a7` | crr: R15 - 1 at each enqueue, execute and proceed | `crr_two`: STOP at the first pick, `217c` (crr exhausted: PMPF) |
 
 The comparison's own injections: `setv_addr_op` (set_value's
 cell address from the operand) FAILs at instruction 0 on the cell
@@ -773,3 +783,154 @@ outside set-up and flag words (HELD-SOURCE kind). Also met: R15 comes
 out of `enqueue_goal` with tag GOAL (`4c01`'s TGIF 3 stamps the S1 load
 into MAR1 as well as the ALU's `{GOAL, n}`); only its value is tested
 (`216d`-`216f`, set_alf), so the tag is not discriminated.
+
+## U3, second step: the boot held (2026-11-27, second session)
+
+**The scheduler state is the firmware's from the start.** `u3_goals.py`
+now runs start's own boot words before the driver (199 held words,
+pinned per routine) and the first step's `INITIAL` stand-in is gone:
+41 of 41 instructions executed and matched (173 held microinstructions),
+3 picks, 2 compared with `pimm.py` and the third the boot goal's
+(firmware only), no mismatch.
+
+What the boot runs (`u3_goals.boot`), and what each part writes:
+
+| Words | Writes | Replaces (first step's stand-in) |
+|---|---|---|
+| `2021` (entry `2001`'s word) | PMPF := reset | (the flag was not given: `209f` stopped) |
+| `204b`-`2052` | R1f (unchanged from U2) | |
+| `3380` -> `336b`-`3375` (R1b's refill, `2065`'s call) | 8 records of 16 cells carved from R1f, chained through cell 0, nil-ended; R1f += 80 | R1b's free list (NREC records) |
+| `209f`-`20a8` | R11 := `{INTo, 36}`; R16 := `{INTo, 2}`; R15 := `{INTo, 17}`; W1f := 0 | R16 = 1, R15 = 17, W1f = 0 |
+| `20e7`-`210b` (whole) | R13 := `{FPREC, record 0}` and its 16 cells; `[1a0 + 4f]` := R13; R12 := `{INTo, 0}`; R14 := `{HOOKo, record 1}`, the boot goal (`{GOAL, 0}`, code `{COD, 34}`, priority 0, parent R13, link nil); `[[b6]]` := R14 | R13, R12, R14 = nil |
+| `202d`-`2030` | R10 := record 2 (`3349`) | R10 |
+
+So 8 of 8 first-step stand-ins (5 `INITIAL` entries: R14, R12, R13, R15,
+R16; plus R1b's list, R10 and W1f) are now written by held words; 0
+remain. `boot_check` pins that R13, R14 and R10 are the refill's first
+three records and the other five stay on R1b. The walk over every pick
+finds no harness-written register or cell (the first step had R13 and
+W1f); what the harness still gives is listed under "Still OURS" below.
+
+**Held answers.** The boot's goal record means the firmware's queue is
+never empty under the program: after the two appends, the third
+`proceed` dispatches the boot goal (R04 := `{COD, 34}`, R10 := its
+record, R14 := nil), where `pimm.py`'s queue is empty (Q). The pick is
+counted apart and checked against the boot's own writes only; where the
+firmware's link or R14 is the boot record and `pimm.py`'s is 0, the
+compare takes it as the declared difference. The empty arm `21b2` is
+therefore no longer reached in U3 (it still runs in `u2_append.py`'s
+proceed side cases, empty queue with crr 8). R1b's refill links its
+records `{VECT0x, next}` (the first) and `{REFo, next}` (the rest:
+`3370`'s TGIF stamp); the first step's seed had VECT0x throughout.
+
+**PMPF (the open item (a)): found, partly.** HELD-SOURCE:
+- the name and number: rassy's condition list position 26 (`cond PMPF`,
+  CNDF 7 EM1 `1a`) and its flag tables `reset_PMPF` / `set_PMPF` 26
+  under MCF sub-switch keys 2 / a (`ptfdump.py pimmutil rassy --pairs`);
+- the writers, by a scan of image 2 (MCF EM1 02 / 0a with EM2 & 1f =
+  1a): `2014` and `2021` reset, `2022` set, `68e2` reset. The first three
+  are the firmware's entry vector `2000`-`2004`: `2000` jumps to `200b`
+  (cold start; `2014` resets PMPF on its way), `2001` to `2021` (reset),
+  `2003` to `2022` (set), both then `2023`; no held word of image 2 or
+  `syspsi` branches to `2001` or `2003` (flow-target scan), so the entry
+  is chosen from outside;
+- the CSP (Pseudo PIM/m `pimmcsp.ptf`, PRINTED strings): "$GO/PIMos
+  <Start Address> ... <Start Address> = 2000 (Multi-PSI) ... = 200
+  (Pseudo MPSI)", and `$GO` takes a "Micro Start Address" on the
+  Multi-PSI, a "KL1 Start Address" on the Pseudo MPSI.
+
+INFERENCE: PMPF is the Pseudo-Multi-PSI flag ("PMP" is PIMM.PARAM's own
+abbreviation, `pmp_ncas` "PMP Network Comm. Area Size"). Its two arms at
+`209f`-`20a7` fit: set, crr (R15) is read from the cell `10 +` start's
+operand a (a per-PE reduction limit, as the CSP's pseudo-PE scheduler
+prints "Reduction Limit = "); reset, crr := 17. NOT established: which
+entry the held system's Pseudo MPSI start takes (no held source names
+`2001` or `2003`). The harness takes the reset (`2021`; the Multi-PSI
+cold start `2000` resets too), OURS, and pins the other value as a
+second run: entered at `2003` (`2022`), the boot stops at `20a3`, the
+read whose address is start's operand (STALE).
+
+**R16 (the open item (b)): settled by held words.** `20a0` puts
+`{INTo, EM2}` = `{INTo, 2}` in XR (SC1F 6 is the EM2 immediate,
+`pu.S1_IMM`) and `20a1` moves it to R16; the same boot queues exactly
+one goal (`2104`). So R16 = the queue's length + 1: the goal about to
+run (the boot module's first goal; here the driver) counts. Checked
+after the boot and after every `enqueue_goal` and `proceed`
+(`r16_check`): it holds throughout. The first step's "queue length"
+reading (R16 = 0) is refuted, and the README's earlier "`20a0`-`20a1`
+gives R16 = 0" (read before `S1_IMM`) is withdrawn. The foster parent's
+record cell 3 is `{INTo, 2}` as well (`20ef`, the EM2 immediate):
+noted, not tested. The pinned R16 = 0 second run is retired; the
+injections `r16_zero` and `r16_plus1` (post-boot rewrites) FAIL at the
+boot check.
+
+**R13 and W1f (the open item (c)).** Both are now written by the boot
+(`20eb`, `20a8`); `RESIDUAL_PINNED` is empty at all three picks.
+
+**Still OURS** (each read by the boot or the program, from the walks):
+the entry choice (`2021`); the parameter cells `1a0 + 4a` (the heap top,
+`pimm.py`'s heap pointer as U2), `a0` (`{INT, 0}`, meaning not read) and
+`b6` (`GSEB`: PIMM.PARAM's `gseb` (10 : 16'B800) taken as area << 24 |
+address, INFERENCE on the encoding; the boot uses `[b6]` as an address,
+so `b6` holds the table base, where the first step's "b6 / b7 = gsesh /
+gseb by place" put the shift count first); start's cell and its operand
+A0 (STALE; `20a1` reads it, `20a6` overwrites what it fed); R0d (STALE,
+`3375`); which of start's calls run (2053's other refills, `2070`,
+`208e`, `209f`'s tail `20a9`-`20c0`, which reads cells `b8` / `ba`, and
+`20c2` are not run). Unchanged from U2 / the first step: the A stage,
+the driver's A0-A5, the cell lists R19 / R1a, `pimm.py`'s memory cells.
+
+Rules decided in this session (each in `pu.py`, its injection in
+`u3_goals.py`, observed):
+
+| Rule | Status | Evidence | Injection (observed) |
+|---|---|---|---|
+| `FLAG_CONDS[0x1a]` = PMPF | HELD-SOURCE (name, number); INFERRED (that it is the flag the MCF words write) | rassy position 26; formed at `209f`, tested at `20a1` | `pmpf_cond_off`: STOP in the boot, `209f` |
+| `MCF_SUB_FLAGS`: MCF EM1 02 / 0a with EM2 & 1f = 1a resets / sets PMPF (only key 1a admitted) | HELD-SOURCE (rassy sub-switches), INFERRED (one flag for both lists) | `2021` executed (and `2022` in the second run) | `mcf_pmpf_off`: STOP at `2021` |
+| `CJUMP_TAKEN_ON[0xc]` = False: JMPF c is "goto short if not cond" | HELD-SOURCE (rassy jmpf/9 arm c, the 'if not cond' slots) | `20a1`: taken under PMPF reset (to `20a6`) | `c_on_true`: STOP at `20a3`, as the second run |
+| `RULES['sc2_wide_mcf']`: a wide (SC2F b) word whose EM1 MCF consumes is EM2:EM3 | INFERRED (as the stamp case) | `20a8` (YR := b8, MCF EM1 07); 6 such words in image 2 | `wide_mcf_off`: STOP at `20a8` |
+| `RULES['alu_with_one']`: ALU add_with_one (rassy EM2 3) is a + b + 1 | INFERRED (the name, HELD-SOURCE) | `3370`: the refill's links land on the next record's cell 0 (16-aligned chain) | `with_one_plain` (a + b): FAIL at the boot check (R10 STALE, the list broken) |
+| `CCF_RASSY[0x04]` 'wait': no memory operation | INFERRED (the name) | `202f` (R10 := MDR1 after the pop); 7 words in image 2 | `ccf_wait_raise`: STOP at `202f` |
+
+Checks added, each discriminated: `boot_check` (`empty_int0`,
+`with_one_plain`, `r16_*`), `r16_check` (`r16_zero`, `r16_plus1`), the
+boot walk and the program walk (`r13_harness`: R13 at all three picks
+and in the program walk, no STOP or FAIL, caught by the pins only).
+
+**Injection shifts, re-diffed against a clean snapshot of c6c048bf**
+(every injection of `u3_goals.py`, `u2_append.py`, `check_pu.py` and
+`measure.py`, 111 runs before, 121 after): `check_pu.py` and
+`measure.py` unchanged; `u2_append.py` changes only in stop messages at
+the same words (`a_on_false`, `const_em3`: the side cases' `217c` stop
+is now "flag PMPF, value not given" instead of "condition UNKNOWN";
+`empty_fw_goal`, `empty_int0` likewise; `cjump_false`, `slit_pending`:
+`4cc6`'s JMPF c is now polarity-decided and stops on its STALE
+condition instead). In `u3_goals.py`: `ccf_bits` and `jmpf8_goto_off`
+now change their rule after the boot (same stops as before, `2250` and
+`4c01`); made before the boot they stop in it (`ccf_bits_boot` at
+`334e`, `jmpf8_goto_off_boot` at `3370`); `free_undeclared` FAILs at the
+first pick (was the second: the refill's cell 0 differs from the push's
+value); `crr_two` stops at `217d` (was `217c`); `empty_int0`, `r16_zero`
+FAIL at the boot check (were INITIAL edits); the R16 = 0 second run is
+gone. Every other injection is unchanged.
+
+**Append's pin stays at 15 of 16.** In U3 append's `proceed` runs at
+picks 2 and 3 on state written only by held words (the pick walk is
+empty), but `u2_append.py`'s standalone run still seeds the scheduler
+(`seed_proceed`, OURS) and is unchanged. Run after the boot, the
+standalone append's `proceed` would dispatch the boot goal while
+`pimm.py` ends (Q): a firmware-only pick, not a comparison. Whether that
+counts as the sixteenth instruction is left to the owner.
+
+**`pimm.py`'s `sp_single` for lists (the open item (d)): tried, not
+landed.** Setting `sp_single` in `wait_list` and `switch_on_non_list`
+from the list pointer's MRB (as `wait_vector` does) makes the `[b, c]`
+program match on the held firmware (52 of 52, 2 picks compared, the
+boot goal's pick; without it FAIL at instruction 12, `read_variable`,
+reg 4 LISTo against LISTx). But the full suite's `pimm lockstep shoen`
+then FAILs at part 0, trace line 185 (`R 3`: the changed reference
+model `04e0008047`, unmarked, against the Bluespec core's `05e0008047`): the
+Bluespec `PimmCore` implements the old rule and runs in lockstep with
+`pimm.py`. The change needs the core changed with it (outside this
+rung), so it was reverted; the patch is described here so the core's
+owner can take both together.
