@@ -6207,7 +6207,133 @@ race in the held code; that the real FEP served the directory); 1 OURS
 Open: raising a frame ITSELF (selecting the base, say) still lifts it
 whole (coordinator raised/2), 75,520 words for the base. The RETURN at
 the title screen. PIMOS's directory requests for the PSI's MENDELuser
-tree (the job abort). The compiler.msg order above.
+tree (the job abort). The compiler.msg order above. (The job abort and
+the order: settled by the next step.)
+
+**The FEP store step: PIMOS's files are the PSI's (2026-11-28).** On the
+real system PIM/m's FEP was the PSI, so PIMOS's files were SIMPOS's.
+Here they were two stores: fep.py answered every file request from the
+sweep runner's home files, which had no `>sys>user>MENDELuser>TEMP`. So
+del_file/3's 204 was answered 5 and PIMOS aborted the MENDELS job. Now a
+device PIMOS makes by 201-205 is the PSI's, as one made by 601 already
+was (`mendels.BRIDGED`; fep_bridge.BridgeFep's rule, by command code: no
+path is looked at). The held pimfep##pimos_file and pimos_directory
+(`../docs/fep_services.md` §6.2 and §7.9's addendum) answer it from the
+PSI's tree. The KL1 files are placed there as install.e's "Copied Files"
+places them (`mendels.row_files`: the doc route's mendel.exe,
+mendel.pac in KL1 and mdllibrary.exe in SYSTEM). Their codes are the
+bytes fep.py gave PIMOS (test_row_files), so PIMOS reads what it read
+before. The sweep's serve, listing and write services are no longer
+installed for this run. Devices opened before the checkpoint stay
+fep.py's: the syslog's 203, and 240, which the checkpoint asked once
+(OURS).
+
+What was added:
+- **`simpos_files.py`**, kl0 models of the SIMPOS methods the held
+  handlers send. Their selectors and argument order are the cells'
+  (OBSERVED by running the handlers; each docstring names the call site),
+  and the bodies are OURS. Directory: delete_with_wildcard/3 (matching
+  files moved to the directory's `deleted` list; `*` a wildcard, OURS),
+  expunge/1, parent_directory/5 (DirPath HELD-SOURCE cil ds_bep.esp:3116;
+  Dir and It INFERENCE from the held remove/2). binary_file: make_only/3
+  (fails on a taken name, INFERENCE from write_open/4's fallback),
+  open/3, accessor/2 (the file its own accessor; TR-524 App. A prints the
+  nature), request_data_size/2, write_data/2, write_next/1, close/1,
+  owner_name/2, update_user_name/2 (pmpsi), creation_date/2,
+  modification_date/2, link_counter/2 (1). date_time: get_string/3
+  (DD-Mon-YY and HH:MM:SS, the form PIMOS's reader takes, INFERENCE).
+  standard_input_file: getb/3, getl/2 (MENDELS mdl_check.esp:100) and
+  end_of_input/1 in two readings. A stream from which a term was read is
+  at its end when every term is read, as before; any other is at its end
+  when every character is read (OURS), so a fresh stream on an object
+  file is not parsed as terms. Stand-ins: standard_input_file `file/2`,
+  binary_file `full_pathname/2` (no host prefix, so PIMOS's console reads
+  `Load File : >sys>user>MENDEL>mendel.exe.1`; fep.py gave `PSI::`).
+  Labels: 23 models, each INTERPOLATED (selector HELD), in
+  `simpos_files.LABELS` (test_models_labelled).
+- **kl0's strings** (`Str`). Before, a 16-bit code of row 0x23 that has
+  no JIS letter (0x2321-0x232f, 0x233a-0x2340, 0x235b-0x2360,
+  0x237b-0x237e) was kept as its ASCII letter and read back as the row
+  0x21 punctuation: 0x2323 came back 0x2174. mendel.exe's bytes reached
+  PIMOS altered, and it refused them, `!ERROR! illegal unloaded file
+  (Checksum Error)` (OBSERVED). Such a code is now kept as its `<xxxx>`
+  token. A string also keeps its codes, as well as its text, and
+  set_string_element/3 changes one code in place. Before, a 4,001-
+  character getb answer, which the held fep_message_assembler copies
+  element by element, took about 15 s (MEASURED); the live run now takes
+  85 s, as before this step.
+
+**The run now.** PIMOS loads mendel.exe (all 76,098 bytes, through the
+held pimos_file), relinks, loads mdllibrary.exe and sends loaded_library.
+del_file/3's 204 on TEMP is answered 1. Its 231 of compiler.msg is
+answered 5 (no such file: pimos_directory delete/4's `\== []`), which
+PIMOS's `delete(FileNmS,_)` takes, and its 235 is answered 1.
+wt_message/1 then asks for the directory name again (devices 69-73) and
+write-opens TEMP>compiler.msg, putting the loader's four lines (276
+bytes) into the PSI's TEMP (test_replay reads them back).
+**The job no longer aborts**: PIMOS's console ends at `Relink Succeeded`,
+and the KL1 half waits for the ESP half's answer to loaded_library. The
+loader's stream (42) is not closed; before, the abort closed it. The PSI
+side is unchanged: the same stop (every process waits: the title
+screen's read, the Top Menu's read, the FEP) and the same frame
+(`../docs/simpos/screens/mendels_title_raised.png`; the live run's PNG is
+the same byte for byte). Tape re-recorded live from a copy of PROMPT.pkl:
+**28 -> 103 exchanges, none of the old ones identical** (the first now
+carries mendel.exe's 201). The string I/O has the same messages, but for
+69-73 and 42's close, interleaved differently (the file requests are
+exchanges too). `mendels.files_io` lists the file devices (FILES_IO in
+test_mendels).
+
+**"compiler.msg not exist" stays.** The ESP half opens TEMP>compiler.msg
+(mdl_check after_KL1compiler/0) in the exchange that delivers
+loaded_library (74). PIMOS's 204 comes at 82 and its 202 at 99, so the
+system window still says `ERR: error '"compiler.msg"' not exist`, and
+the file is there afterwards. In the held code, wt_message/1's write
+needs set_MENDEL_directory, two directory_name round trips, 204, 231 and
+235 before its 202, while end_pipe/3 (main.kl1:162-164) sends the answer
+as soon as load:do's Result is bound. So the write trails the answer by
+about eight FEP round trips. That the real system also showed "not
+exist" at this point is INFERENCE: the order here is still the
+bridge's (PIMOS runs only when the PSI asks for an exchange, OURS).
+
+Other users of fep.py: unchanged by construction. `ref/pimm` and
+`fep_bridge.BridgeFep.BRIDGED` are not edited, so the IFS sweep, the FEP
+emulator and the fep_bridge tapes keep their FEP; their outputs were
+diffed before and after (below).
+
+Injections, OBSERVED (12; `test_mendels.py` run whole for each, the
+file restored by copy and compared with cmp; the table is also in
+`test_mendels.py`'s header):
+
+| injection | failed |
+|---|---|
+| mendels.BRIDGED back to (601,) | test_routes, test_tape |
+| TEMP not in INSTALLED_DIRS | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_replay |
+| write_next/1 drops the data | test_replay, test_write_then_read |
+| delete_with_wildcard: every file matches | test_delete_and_expunge |
+| expunge/1 a no-op | test_delete_and_expunge, test_replay |
+| kl0 Str: ptfdump.ch's lossy letter for row 0x23 | test_object_bytes |
+| end_of_input/1: terms only | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_object_bytes, test_path_dialog, test_replay, test_write_then_read |
+| getb/3: N one less | the same seven |
+| link_counter/2 answers 2 | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_path_dialog, test_replay, test_write_then_read |
+| make_only/3: a taken name not refused | test_write_over_a_file_refuses |
+| row_files: text not home_bytes (a space added) | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_path_dialog, test_replay, test_row_files |
+| get_string/3: the month after | the same six as link_counter |
+
+The Str and row_files rows were NONE in a first form (the Str round trip
+was tested only through the live run; raw bytes equal home_bytes for the
+doc route's files). A round-trip check was added to test_object_bytes and
+the row_files injection changed.
+
+Labels of this step: 23 models INTERPOLATED (selector HELD, bodies OURS;
+3 of them with HELD-SOURCE witnesses: cil, kappa2, MENDELS); 3 INFERENCE
+(parent_directory's Dir and It, make_only failing on a taken name, the
+date form); OURS: the routing by code, the tree's placement of the
+archive's bytes, the two readings of end_of_input, the `deleted` list.
+
+Open: remove/3 and undelete/3 (a write over an existing file) are not
+stood in and refuse. The RETURN at the title screen. Raising a frame
+itself still lifts it whole.
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

@@ -42,6 +42,10 @@ instance
 
 % OURS representation (see the head comment).
 attribute name := 0, full_name := 0, parent := 0, entries := 0;
+% The FEP store step (2026-11-28, OURS): the files deleted and not yet
+% expunged, {Name, Node} as entries (psi/simpos_files.py: delete and
+% expunge, sent by the held pimfep##pimos_directory, are kl0 models).
+attribute deleted := 0;
 
 % :is_directory(Node) / :not_directory(Node) -- INTERPOLATED from the held
 % call sites: pimfep##pimos_file local remove/2 @1d7-1e3 (retrieve/4 then

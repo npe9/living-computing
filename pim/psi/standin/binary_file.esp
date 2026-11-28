@@ -29,6 +29,12 @@ attribute name := 0, version := 0, size := 0, full_name := 0, contents := 0;
 % Contents (TR-524 PDF p9: versions are assigned by the file system and
 % incremented every time a file is newly created).
 attribute directory := 0;
+% The FEP store step (2026-11-28, OURS): what the held pimfep##pimos_file's
+% write path keeps (psi/simpos_files.py: make_only/3, open/3, accessor/2,
+% request_data_size/2, write_data/2, write_next/1, close/1 are kl0
+% models): `opened` {Share, Mode} while open (0 when closed), `request`
+% the last request_data_size, `pending` the string write_data gave.
+attribute opened := 0, request := 0, pending := 0;
 
 % :is_directory(File) / :not_directory(File) -- INTERPOLATED from the held
 % call sites pimfep##pimos_file local remove/2 @1d7-1e3 and
@@ -47,5 +53,12 @@ attribute directory := 0;
 % :full_name(File, Name) -- INTERPOLATED (selector OURS): the absolute
 % pathname with its version, as retrieve/4 returns it (TR-524 PDF p9).
 :full_name(File, Name) :- Name = File!full_name;
+
+% :full_pathname(File, Name) -- the FEP store step (2026-11-28),
+% INTERPOLATED: the selector HELD, pimfep##pimos_file pathname/3 @14c
+% (PIMOS's 221, the reply {Id, 1, Name}).  LABEL: INTERPOLATED (selector
+% HELD; body OURS: the full name with its version and no host prefix, as
+% full_name/2)
+:full_pathname(File, Name) :- Name = File!full_name;
 
 end.

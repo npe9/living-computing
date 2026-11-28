@@ -34,10 +34,20 @@ instance
 
 % OURS representation (see above).
 attribute file := 0, position := 0;
+% The FEP store step (2026-11-28, OURS): the characters read by getb/3 and
+% getl/2 (kl0 models, psi/simpos_files.py, as end_of_input/1's character
+% reading).
+attribute chars := 0;
 
 % :close_input(In) -- INTERPOLATED from items_list/3 @181 (its last send to
 % the file): nothing to release here (OURS).
 :close_input(In);
+
+% :file(In, File) -- the FEP store step (2026-11-28), INTERPOLATED: the
+% selector HELD, pimfep##pimos_file local binary_file/3 @2b4-2b8 (for a
+% standard_input_file device, then full_pathname/2 of File: PIMOS's 221).
+% LABEL: INTERPOLATED (selector HELD; body OURS: the file it reads)
+:file(In, File) :- File = In!file;
 
 % :gett(In, Term, VarsIn, VarsOut) -- MENDELS (2026-11-27), INTERPOLATED:
 % the selector and the argument form are USAGE (docs/simpos/subsystems/

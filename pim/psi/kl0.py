@@ -233,45 +233,51 @@ class Flt:
 class Str:
     """A string.  TEXT is the elements as ptfdump.ch decodes their 16-bit
     JIS codes; TYPE the element type (16: OURS for every string here).
-    Strings are mutable (set_string_element/3)."""
-    __slots__ = ('text', 'type')
+    Strings are mutable (set_string_element/3).
+    The FEP store step (2026-11-28, OURS): a string is kept as its text or
+    as its codes, whichever was last given, and the other is made when it
+    is asked for; set_code() changes one element of the codes in place.
+    So a string written or read element by element (set_string_element/3
+    and string_element/3 over a file's 4,001-character getb answer, the
+    held fep_message_assembler) is not re-encoded at each element."""
+    __slots__ = ('_text', '_codes', 'type')
 
     def __init__(self, text, type=16):
-        self.text = text
+        self._text = text
+        self._codes = None
         self.type = type
+
+    @property
+    def text(self):
+        if self._text is None:
+            self._text = _encode(self._codes)
+        return self._text
+
+    @text.setter
+    def text(self, v):
+        self._text = v
+        self._codes = None
 
     def codes(self):
         """The elements as codes: the inverse of ptfdump.ch (a `<xxxx>`
-        token is one code; OURS where a literal '<' could be read so)."""
-        out, t, i = [], self.text, 0
-        while i < len(t):
-            c = t[i]
-            # step 3k: an element wider than 16 bits (a 32-bit string's
-            # 0xffffffff, written by set_string_element) is an 8-hex token
-            if c == "<" and t[i + 9:i + 10] == ">" and all(
-                    x in '0123456789abcdef' for x in t[i + 1:i + 9]):
-                out.append(int(t[i + 1:i + 9], 16))
-                i += 10
-                continue
-            if c == "<" and t[i + 5:i + 6] == ">" and all(
-                    x in '0123456789abcdef' for x in t[i + 1:i + 5]):
-                out.append(int(t[i + 1:i + 5], 16))
-                i += 6
-                continue
-            if c in _PUNCT_CODE:
-                out.append(0x2100 | _PUNCT_CODE[c])
-            elif '!' <= c <= '~':
-                out.append(0x2300 | ord(c))
-            else:
-                raise Refusal('built-in', 'string element %r has no code here' % c)
-            i += 1
-        return out
+        token is one code; OURS where a literal '<' could be read so).
+        A copy: changing it does not change the string."""
+        return list(self.code_list())
+
+    def code_list(self):
+        """The elements as codes, the string's own list: not to be changed
+        (set_code, set_codes change a string)."""
+        if self._codes is None:
+            self._codes = _decode(self._text)
+        return self._codes
+
+    def set_code(self, i, e):
+        self.code_list()[i] = e
+        self._text = None
 
     def set_codes(self, codes):
-        # step 3n: an element wider than 16 bits (a 32-bit string's) is
-        # written as the 8-hex token codes() reads; P.ch would give
-        # '<10000>' for 0x10000, which no reader takes back
-        self.text = ''.join(P.ch(x) if x <= 0xffff else '<%08x>' % x for x in codes)
+        self._codes = list(codes)
+        self._text = None
 
     # Python equality compares contents, for tests and tables only.  KL0's
     # unification and `==` do NOT use it: on the PSI two strings unify only
@@ -286,7 +292,57 @@ class Str:
         return 'string#%r' % self.text
 
 
+def _decode(t):
+    out, i = [], 0
+    while i < len(t):
+        c = t[i]
+        # step 3k: an element wider than 16 bits (a 32-bit string's
+        # 0xffffffff, written by set_string_element) is an 8-hex token
+        if c == "<" and t[i + 9:i + 10] == ">" and all(
+                x in '0123456789abcdef' for x in t[i + 1:i + 9]):
+            out.append(int(t[i + 1:i + 9], 16))
+            i += 10
+            continue
+        if c == "<" and t[i + 5:i + 6] == ">" and all(
+                x in '0123456789abcdef' for x in t[i + 1:i + 5]):
+            out.append(int(t[i + 1:i + 5], 16))
+            i += 6
+            continue
+        if c in _PUNCT_CODE:
+            out.append(0x2100 | _PUNCT_CODE[c])
+        elif '!' <= c <= '~':
+            out.append(0x2300 | ord(c))
+        else:
+            raise Refusal('built-in', 'string element %r has no code here' % c)
+        i += 1
+    return out
+
+
+def _encode(codes):
+    # step 3n: an element wider than 16 bits (a 32-bit string's) is
+    # written as the 8-hex token _decode reads; P.ch would give
+    # '<10000>' for 0x10000, which no reader takes back.
+    # The FEP store step (2026-11-28): a code whose ptfdump.ch letter
+    # reads back as another code is written as its `<xxxx>` token.  Row
+    # 0x23 outside the letters and digits (0x2321-0x232f, 0x233a-0x2340,
+    # 0x235b-0x2360, 0x237b-0x237e) has no JIS character and ch gave it
+    # the ASCII letter, which _decode reads as the row 0x21 punctuation:
+    # 0x2323 came back 0x2174 (OBSERVED in an object file's bytes,
+    # mendel.exe, which PIMOS then refused: "illegal unloaded file
+    # (Checksum Error)")
+    return ''.join(_letter(x) if x <= 0xffff else '<%08x>' % x for x in codes)
+
+
 _PUNCT_CODE = {v: k for k, v in P.PUNCT.items()}
+
+
+def _letter(x):
+    """ptfdump.ch of the 16-bit code X, or its `<xxxx>` token when that
+    letter would be read back (Str.codes) as another code."""
+    c = P.ch(x)
+    if len(c) == 1 and (0x2100 | _PUNCT_CODE[c] if c in _PUNCT_CODE else 0x2300 | ord(c)) != x:
+        return '<%04x>' % x
+    return c
 
 
 class ClassRef:
@@ -2671,7 +2727,7 @@ class Machine:
         if not isinstance(deref(self.x[a]), Str):
             return self.fail()
         s = self._str(self.x[a], 'string')
-        self.x[b] = len(s.codes())
+        self.x[b] = len(s.code_list())
         self.x[c] = s.type
         self.nxt(code, off)
 
@@ -2687,7 +2743,7 @@ class Machine:
 
     def op_string_element(self, code, off, a, b, c, v):
         s = self._str(self.x[a], 'string_element')
-        cs = s.codes()
+        cs = s.code_list()
         i = self._int(self.x[b], 'string_element')
         if not 0 <= i < len(cs):
             raise Refusal('built-in', 'string_element index %d of %d' % (i, len(cs)))
@@ -3127,7 +3183,7 @@ class Machine:
 
     def op_set_string_element(self, code, off, a, b, c, v):
         s = self._str(self.x[a], 'set_string_element')
-        cs = s.codes()
+        cs = s.code_list()
         i = self._int(self.x[b], 'set_string_element')
         e = self._int(self.x[c], 'set_string_element')
         if not 0 <= i < len(cs):
@@ -3142,8 +3198,7 @@ class Machine:
             if s.type != 32 or e < -0x80000000:
                 raise Refusal('built-in', 'set_string_element %d into a %d-bit string: unwitnessed' % (e, s.type))
             e &= 0xffffffff
-        cs[i] = e
-        s.set_codes(cs)
+        s.set_code(i, e)
         self.nxt(code, off)
 
     def _vec(self, t, what):
@@ -3432,6 +3487,10 @@ windev.install(SIMPOS_MODELS, sys.modules[__name__])
 # (standin/standard_io_buffer.esp)
 import mendels_simpos  # noqa: E402
 mendels_simpos.install(SIMPOS_MODELS, sys.modules[__name__])
+# the FEP store step (2026-11-28): the file-system methods the held
+# pimfep##pimos_directory and pimos_file send (psi/simpos_files.py)
+import simpos_files  # noqa: E402
+simpos_files.install(SIMPOS_MODELS, sys.modules[__name__])
 
 
 # -- census recipes (step 3f) ----------------------------------------------

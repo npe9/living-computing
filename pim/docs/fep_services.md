@@ -1361,3 +1361,44 @@ directory. Observed in the M4 run (tape
 
 fep.py's `STD_WINDOW` and window answers (§7.5) are not reached in such a
 run. They stay for fep.py-only runs (`ref/pimm/longrun_ipl.py --fep`).
+
+**The MENDELS run, since the FEP store step (2026-11-28).** `psi/mendels.py`
+bridges 201, 202, 203, 204 and 205 too (`mendels.BRIDGED`; the login and
+console tapes of `fep_bridge.py` keep 601 and 104 only). PIMOS's files and
+directories are then answered by the held `pimos_file` and
+`pimos_directory` of §6.2 from the PSI's file tree: one store, as on the
+real machine. The timer, 240 (asked once, before the checkpoint) and the
+shell's window stay `fep.py`'s, and so do the devices opened before the
+checkpoint (the syslog's 203; OURS). Below is what the held handlers were
+OBSERVED to send and answer. The SIMPOS methods are modelled in
+`psi/simpos_files.py` (selector and argument order from the cells, bodies
+OURS).
+- 204 `directory/10`: `:retrieve(#directory, D, Path, Full)`, then
+  `is_directory/1`. The answer is `{Id, 1}`, or `{Id, 5}` when there is no
+  such directory.
+- 231 `delete/4`: `:delete_with_wildcard(Dir, Wildcard, Deleted)`, then
+  `Deleted \== []` (blt 65), so a delete that matches nothing gets
+  `{Id, 5}`. 235 `expunge/3`: `:expunge(Dir)`, then `{Id, 1}`.
+- 202 `write_open/10`: `:parent_directory(#directory, Path, Dir, It,
+  DirPath)`, `:make_only(#binary_file, F, Path)`, `:open(F, shared,
+  suppress)` and `:accessor(F, A)`. A taken name goes to remove/2:
+  `:retrieve(#directory, X, It, _)`, `is_directory/1`, then `:remove(Dir,
+  It, _)`, which is not stood in and is refused loudly. 111 `putb/4`:
+  `request_data_size/2` (in bytes), `write_data/2` and `write_next/1` for
+  each piece of 1,984 characters.
+- 201 `read_open/10`: `check_file_size/1` (`retrieve/3`,
+  `not_directory/1`, and `size/2` of at least 1, so an empty file gets
+  `{Id, 5}`), then `:create(#standard_input_file, In, Path)`. 210
+  `getb/4`: `end_of_input/1`; if not at the end, a new string of Size
+  characters, `:getb(In, Buf, N)` and `{Id, 1, substring(Buf, 0, N)}`. At
+  the end the answer is `{Id, 2, ""}`. 220: `{Id, 1, 7}` or `{Id, 1, 8}`.
+- 221: `:file(In, F)` and `:full_pathname(F, P)`. The PSI's name has no
+  host prefix (`>sys>user>MENDEL>mendel.exe.1`, where fep.py's home files
+  gave `PSI::...`), so PIMOS's console now reads `Load File : >sys>...`.
+- 222: owner_name, update_user_name, creation_date and modification_date
+  (each followed by `get_string/3` of a date_time), link_counter, size,
+  and a 0 for RSize. They are joined by LFs, with no LF after the last
+  field. For mendel.exe that is `pmpsi\npmpsi\n20-May-93\n00:00:00\n
+  20-May-93\n00:00:00\n1\n76098\n0`. PIMOS's `attributes/6`
+  (`server/fep/file/file_dvcb.kl1`:637-672) reads a last field that has
+  no LF one digit short, which still gives 0 for "0".

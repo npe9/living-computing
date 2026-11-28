@@ -755,6 +755,41 @@ From the sweep, not from the documentation alone:
      the main process waits (OURS scheduling); had it run at `:exit`,
      before resume/0, its screen would have been uncovered, no raise at
      all, and its read would wait under the base unselected.
+   - **FEP store step (2026-11-28): one file store, the PSI's.** A
+     device PIMOS makes by 201-205 (read/write/append open, directory,
+     make_directory) is now the PSI's, as 601 already was
+     (`mendels.BRIDGED`; routed by command code, no path looked at), and
+     the held `pimfep##pimos_file` / `pimos_directory` answer it from the
+     PSI's tree (`docs/fep_services.md` §6.2's handlers). The KL1 files
+     are placed in that tree where install.e puts them (`mendels.
+     row_files`, the bytes fep.py gave, so the load is unchanged); the
+     SIMPOS methods the handlers send are kl0 models
+     (`psi/simpos_files.py`, selectors and argument order HELD, bodies
+     OURS). Two kl0 fixes were needed: a 16-bit code of row 0x23 with no
+     JIS letter (0x2323, ...) was read back as row 0x21 punctuation, so
+     mendel.exe came through altered and PIMOS refused it ("illegal
+     unloaded file (Checksum Error)", OBSERVED); and strings keep their
+     codes, so a 4,001-character getb is not re-encoded per element (about
+     15 s a getb before, MEASURED; the live run now takes 85 s, as
+     before the step). **Result:** PIMOS loads and relinks as before,
+     del_file/3's 204 on TEMP is answered 1 (231 of the missing
+     compiler.msg 5, which `delete(FileNmS,_)` takes; 235 1), and
+     wt_message/1 writes TEMP>compiler.msg (276 bytes, the loader's four
+     lines) into the PSI's TEMP. **The job no longer aborts**: PIMOS's
+     console ends at `Relink Succeeded`, the KL1 half waits for the ESP
+     half's next message. Stop and screen unchanged (every process
+     waits; `mendels_title_raised.png`, live = replay). Tape 28 -> 103
+     exchanges, none of the old ones identical (the first now carries
+     mendel.exe's 201): the string I/O is the same messages but for
+     69-73 (wt_message/1's second directory_name) and the loader
+     stream's close, which the abort used to cause. **compiler.msg not
+     exist stays:** the ESP half opens TEMP>compiler.msg in the exchange
+     that delivers loaded_library (74); PIMOS's 204 comes at 82 and its
+     202 at 99, after set_MENDEL_directory and directory_name round trips
+     that wt_message/1 needs first. So in the held code the write trails
+     the answer by about eight FEP round trips; that the real system,
+     too, showed "not exist" at that point is INFERENCE (the order here
+     is still the bridge's, OURS).
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the
