@@ -469,12 +469,14 @@ module mkStretchCore(StretchCore);
   // stream restarts and the Y buffers are refilled as for any successful
   // branch (Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41; the note on
   // ExecDone.branched).  branchTaken() is the one test every caller uses.
-  // UNDER AN INTERRUPTION (intPC valid) it also decides whether pcReg is
-  // replaced: a successful branch to EIA + 1 now replaces it with that
-  // address, where the address test left it alone.  Ref. Manual p.48:
-  // "the instruction counter can be replaced as the result of a successful
-  // branching operation" -- success, not a changed address, so this
-  // follows the manual.  No deck branches to EIA + 1.
+  // NOT UNDER AN INTERRUPTION (intPC valid): there the address test is
+  // kept.  The model computes a relative branch in the free instruction
+  // (C22-6578 Problem 1.7's "SIC, 2000.0; BR, 0", relative to the
+  // instruction counter, which p.48 says is not stepped) as the free
+  // instruction's own fall-through, and "not taken" is what leaves pcReg
+  // at the interrupted program.  With `branched` it replaced pcReg with
+  // EIA + 1 and decks/problem_1_7.strap never returned (observed in the
+  // suite, 2026-11-28).  The restart there is unconditional anyway.
   function Bool branchTaken(HWordAddr pc, InstrLen len, ExecDone o) =
     o.branched || (o.next != pc + ((len == Full) ? 2 : 1));
 
@@ -483,7 +485,7 @@ module mkStretchCore(StretchCore);
       HWordAddr next = o.next;
       Bool taken = branchTaken(pc, len, o);
       if (intPC matches tagged Valid .ip) begin
-        if (taken) pcReg <= next;   // "replaced as the result of a
+        if (next != pc + ((len == Full) ? 2 : 1)) pcReg <= next;   // "replaced as the result of a
                                     //  successful branching operation"
         intPC <= tagged Invalid;
         // Always a restart: the stream jumps back to the instruction

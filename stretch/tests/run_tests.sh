@@ -2630,9 +2630,15 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # vflImmIndexedSaving (an indexed immediate's indexing costs 1 clock, not
 # 2).  MEASURED on the merged tree with the saving forced to 0: 713;
 # with it: 711.  Every value check unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 711 -> 715.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program.sh ../decks/vfl_immediate_indexed.strap StretchVflImmIdxTb \
     "PC=443" \
-    "CYCLES=711+-0" \
+    "CYCLES=715+-0" \
     "RA:272=8" "RB:273=16" "RC:274=3" "RD:275=6" "RE:276=1024" \
     "RF:277=8" "RG:278=7" "RH:279=15" "RI:280=15" "RJ:281=15"
 
@@ -2653,19 +2659,37 @@ run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program
 # the manual says only that these instructions are "executed as a NO
 # OPERATION" (printed p.21, p.45), and Perf. Char. prints no time for a
 # no-op'd level (its NOOP tag bit, Vol. 1 printed A-8, PDF 67).
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 562 -> 550.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "COMPLETES WITHOUT FETCH: address invalid, VFL/connective/FP (printed p.21, p.45 item 16)" ./run_program.sh ../decks/cwf_address_invalid.strap StretchCwfAdTb \
     "PC=443" \
-    "CYCLES=562+-0"
+    "CYCLES=550+-0"
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 283 -> 271.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "COMPLETES WITHOUT FETCH: progressive with X0, VFL and connective (printed p.21)" ./run_program.sh ../decks/cwf_progressive_x0.strap StretchCwfProgX0Tb \
     "PC=407" \
-    "CYCLES=283+-0"
+    "CYCLES=271+-0"
 # MEMREADS 62 added 2026-11-18 (tests/gen_tb.py, the MBCU's read count):
 # the VflInt and Connective DF clauses, which no CYCLES shape could see,
 # each make it 63 when deleted alone (CYCLES stays 824).  Model behaviour.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 824 -> 848, MEMREADS 62 -> 69.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP (printed p.45 item 20)" ./run_program.sh ../decks/cwf_data_fetch_suppress.strap StretchCwfDfTb \
     "PC=4312" \
-    "CYCLES=824+-0" \
-    "MEMREADS=62" \
+    "CYCLES=848+-0" \
+    "MEMREADS=69" \
     "whigh:2241=3002399751580320"
 
 # A NEGATIVE EFFECTIVE ADDRESS IS USED BY ITS MAGNITUDE (RefMan printed
@@ -2689,9 +2713,15 @@ run "COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP (printed p.45 it
 # Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
 # with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
 # the pacer stall off) the deck gives 827 again, memreads unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 858 -> 859.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./run_program.sh ../decks/negative_effective_address.strap StretchNegEaTb \
     "PC=455" \
-    "CYCLES=858+-0" \
+    "CYCLES=859+-0" \
     "RA:768=72623859790382856" "RA2:780=2" "RB:769=55" "RC:770=7" "RK:771=12" \
     "RD:772=2251799813685248" "RE:773=24189255811072" \
     "RF:774=35184372088832" "RG:775=35184372088832" \
@@ -2729,10 +2759,16 @@ run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./
 # RE-PINNED 2026-11-26, CYCLES 6110 -> 6164 (fidelity_plan.md A3 (b) step 5):
 # the CV(BU) and DCV(B) cases now take Table 3's B-D s and u/8 from their
 # accumulator.  Cause MEASURED: sauStepCvtAcc := False gives 6110/581 again.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 6164 -> 6331, MEMREADS 581 -> 613.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" ./run_program.sh ../decks/cwf_df_fetch_type.strap StretchCwfDfTypeTb \
     "PC=5043" \
-    "CYCLES=6164+-0" \
-    "MEMREADS=581" \
+    "CYCLES=6331+-0" \
+    "MEMREADS=613" \
     "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
     "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
 
@@ -2756,10 +2792,16 @@ run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" 
 #   count not suppressed           RX3, RX5
 #   no AD beside EXE               RESAD, CYCLES 1564
 # CYCLES and MEMREADS are MODEL behaviour: no printed time for the no-op.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 1567 -> 1624, MEMREADS 138 -> 169.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD (printed p.21, p.39, p.52)" ./run_program.sh ../decks/branch_invalid_address.strap StretchBrInvTb \
     "PC=4387" \
-    "CYCLES=1567+-0" \
-    "MEMREADS=138" \
+    "CYCLES=1624+-0" \
+    "MEMREADS=169" \
     "RESAD:3136=0xef87000000000000" "RESFT:3137=0xffff800000000000" \
     "RESX:3138=0x0601000000000000" "RX3:3139=0x400000140000" \
     "RX4:3140=0x800000000000" "RX5:3141=0x400000040c04" "RSIC:3142=0" \
@@ -2777,10 +2819,16 @@ run "A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD (printed p.21, p.39, p
 #   post-branch state alone     PROTC 0, CYCLES 282, MEMREADS 24
 #   store never tested          RES 0, PROTB stored, CYCLES 348, MEMREADS 25
 # CYCLES and MEMREADS are MODEL behaviour.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 31 -> 40.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "SIC PREFIXED TO BD STORES INTO A PROTECTED WORD (printed p.31, p.49; MCP p.111)" ./run_program.sh ../decks/sic_bd_protected_store.strap StretchSicBdTb \
     "PC=4258" \
     "CYCLES=378+-0" \
-    "MEMREADS=31" \
+    "MEMREADS=40" \
     "RES:3136=0x4000000000000000" "PROTA:3137=0x0211200000000000" "PROTB:3138=0" \
     "PROTC:3139=0x0212600000000000"
 
@@ -2804,10 +2852,16 @@ run "SIC PREFIXED TO BD STORES INTO A PROTECTED WORD (printed p.31, p.49; MCP p.
 # after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
 # landing checked: the counter is the instruction right after the level.
 # Injection numbers above this note were observed at the old pin.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 1056 -> 1104, MEMREADS 113 -> 128.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_program.sh ../decks/fp_mplus_ds_not_df.strap StretchFpMpDsTb \
     "PC=4352" \
-    "CYCLES=1056+-0" \
-    "MEMREADS=113" \
+    "CYCLES=1104+-0" \
+    "MEMREADS=128" \
     "resdf:3328=0x2400000000000000" "resds:3329=0xd800000000000000" \
     "fw:3264=0x0028000000000000"
 
@@ -2883,10 +2937,16 @@ run "FP BOX LEVEL RELEASE: THE INTERLOCK HOLDS, A READ IS REFUSED BESIDE (plan ย
 # clocks opened (StretchCore liftHoldClocks): injection HA (real file,
 # exact inverse edit, cmp IDENTICAL) gives 426 back, every value check
 # passing (the landing is unchanged); HB moves nothing.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 425 -> 430, MEMREADS 40 -> 49.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS (printed p.48; MODEL)" ./run_program.sh ../decks/fp_box_interrupt_landing.strap StretchFpIntLandTb \
     "PC=4256" \
-    "CYCLES=425+-0" \
-    "MEMREADS=40" \
+    "CYCLES=430+-0" \
+    "MEMREADS=49" \
     "where_case2:3328=0x0213200000000000" "where1_case1:3329=0x0211400000000000" \
     "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" \
     "x10:26=0" "x11:27=0" "x12:28=0" "x14:30=0"
@@ -2907,10 +2967,16 @@ run "FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS (printed p.48; MODEL
 #   K1 deferIboxStores := False    wherea 4237, stwa 1, CYCLES 304,
 #                                  MEMREADS 26; "NOT recovered: an I-box
 #                                  store ran ahead" at 4235
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 27 -> 33.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS (p.3-20, p.3-24, Table A-2; MODEL)" ./run_program.sh ../decks/fp_box_hold_store.strap StretchFpHoldStoreTb \
     "PC=4252" \
     "CYCLES=311+-0" \
-    "MEMREADS=27" \
+    "MEMREADS=33" \
     "wherea:3328=0x0211600000000000" \
     "stwa:3329=0" "stwb:3330=0x0000200000000000" "stwc:3331=0" \
     "x7:23=0" "x8:24=0" "x9:25=0x0000200000000000"
@@ -2930,10 +2996,16 @@ run "FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS (p.3-20, p.3-24, Table A-2; MODEL
 #   IH (iboxHazard skipped beside a held level): zout 0x000aaaaaaaaaaaa0 only.
 #   Case L's two NOPs before DONEL's BD: with none, wherel 0 and x7 = x8 =
 #     0x0000200000000000 (docs/NEXT.md item 3; measured on the deck's draft).
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 63 -> 73.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/div_box_release.strap StretchDivBoxRelTb \
     "PC=4298" \
     "CYCLES=866+-0" \
-    "MEMREADS=63" \
+    "MEMREADS=73" \
     "wherel:3328=0x0211600000000000" "wheres:3329=0x0212e00000000000" \
     "stws:3330=0" "outl:3331=0x000aaaaaaaaaaaa0" "zout:3332=0" \
     "x7:23=0" "x8:24=0" "x9:25=0" "tout:3333=0x000aaaaaaaaaaaa0" "tmpt:3334=0"
@@ -2960,10 +3032,16 @@ run "BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program
 # construction); no atlas case supports or contradicts the move.
 # Every other pin of the deck (WHEREL, WHERES, STWS, OUTL, ZOUT, MEMREADS
 # 66, the trails) is unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 66 -> 76.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/dec_box_release.strap StretchDecBoxRelTb \
     "PC=4301" \
     "CYCLES=868+-0" \
-    "MEMREADS=66" \
+    "MEMREADS=76" \
     "wherel:3328=0x0211a00000000000" "wheres:3329=0x0213200000000000" \
     "stws:3330=0" "outl:3331=0x46" "zout:3332=0" \
     "x7:23=0" "x8:24=0" "x9:25=0" "tout:3333=0x46" "tmpt:3334=0"
@@ -2981,10 +3059,16 @@ run "BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL)" ./run_p
 #   K1 (deferIboxStores := False): wheres 0x0213600000000000, stws 0x0000200000000000,
 #     CYCLES 939, MEMREADS 65; case S not recovered.
 #   IH (iboxHazard skipped beside a held level): zout 0x1400000 only.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 67 -> 77.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "BOX LEVEL RELEASE: THE VFL MULTIPLIER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/vfl_box_release.strap StretchVflBoxRelTb \
     "PC=4302" \
     "CYCLES=945+-0" \
-    "MEMREADS=67" \
+    "MEMREADS=77" \
     "wherel:3328=0x0211a00000000000" "wheres:3329=0x0213200000000000" \
     "stws:3330=0" "outl:3331=0x1400000" "zout:3332=0" \
     "x7:23=0" "x8:24=0" "x9:25=0" "tout:3333=0x1400000" "tmpt:3334=0"
@@ -3009,10 +3093,16 @@ run "BOX LEVEL RELEASE: THE VFL MULTIPLIER (p.3-16, p.3-18, p.48; MODEL)" ./run_
 #   CYCLES 558 -> 550, MEMREADS 48 -> 46 with the divider's release
 #   (2026-11-23, plan ยง1c 5f stage 3): RDIV (releaseDivBox := False) gives
 #   558 / 48 back, values passing.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 46 -> 60.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_undo.strap StretchIntRecUndoTb \
     "PC=4267" \
     "CYCLES=550+-0" \
-    "MEMREADS=46" \
+    "MEMREADS=60" \
     "wherea:3328=0x0212600000000000" "whereb:3329=0x0213A00000000000" "wherec:3330=0x0214C00000000000" \
     "acca:3331=0" "x4:20=0x0348500000000000" \
     "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" "x10:26=0" "x11:27=0" "x12:28=0"
@@ -3053,10 +3143,16 @@ run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (P
 # branch was the head level in each, so the slot choice is untested; J7b
 # (rl_recover's restore dropped) fails la_branch_guess's X1 only
 # (0x1800000000000).
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 60 -> 70.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "INTERRUPTION RECOVERY: what is given back runs again once (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_resume.strap StretchIntRecResTb \
     "PC=4260" \
     "CYCLES=611+-0" \
-    "MEMREADS=60" \
+    "MEMREADS=70" \
     "accd:3328=0x0123456789ABCDE8" "cnt:3329=0x0000200000000000" "cnt2:3330=0x0000200000000000" "mark:3331=0x8000000000000000" \
     "x5:21=0x0000200000000000" "x1:17=0x0000200000000000" "x2:18=0x0000200000000000"
 
@@ -3091,10 +3187,16 @@ run "INTERRUPTION RECOVERY: what is given back runs again once (Perf. Char. p.3-
 #                                 effective address decks): UNREACHED
 #   K7 the full-look-ahead wait   nothing here; index_after_level CYCLES
 #      in rl_prepare dropped      2875 -> 2797 only (values pass)
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): MEMREADS 49 -> 61.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "INTERRUPTION RECOVERY: an I-box store run ahead is never made (Perf. Char. p.3-20, Table A-2)" ./run_program.sh ../decks/int_recovery_store.strap StretchIntRecStoreTb \
     "PC=4268" \
     "CYCLES=586+-0" \
-    "MEMREADS=49" \
+    "MEMREADS=61" \
     "whereg:3328=0x0211800000000000" "whereh:3329=0x0213400000000000" \
     "wherei:3332=0x0214c00000000000" \
     "stwg:3330=0" "stwh:3331=0" "stwi:3333=0" \
@@ -3113,9 +3215,15 @@ run "INTERRUPTION RECOVERY: an I-box store run ahead is never made (Perf. Char. 
 # item 7).  MEASURED with that mechanism removed (both halves): 447 again,
 # every value check unchanged.
 # RE-PINNED 2026-11-17: CYCLES 420 -> 426.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17) +5 and the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17) +1; injection C gives 425.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 426 -> 421.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "THE SECOND INDEX modifies a VFL offset: MCP's octal conversion (RefMan p.21)" ./run_program.sh ../decks/vfl_second_index.strap StretchVflSecondIdxTb \
     "PC=395" \
-    "CYCLES=426+-0" \
+    "CYCLES=421+-0" \
     "x3:19=2898558941422157824" \
     "x2:18=1512927999819776"
 
@@ -5037,7 +5145,13 @@ run "VFL time by operation: L, M+, K, *, / at (BU,64,8) (Perf. Char. Vol. 2 atla
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 889 again,
 # every value check unchanged.
-run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ" ./run_program.sh ../decks/vfl_pack_cross.strap StretchVflPackCrossTb "PC=2007" "CYCLES=861+-0" \
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 861 -> 866.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ" ./run_program.sh ../decks/vfl_pack_cross.strap StretchVflPackCrossTb "PC=2007" "CYCLES=866+-0" \
     "ANS_w0:1210=0xB07F0B12F1B2DF2B" "ANS_w1:1211=0x30F3B49F4B5FF5B6" "ANS_w2:1212=0x4F6B7BF7B81F8B9E" \
     "ANS_w3:1213=0xF9BA6FABB3FBBCCF" "ANS_w4:1214=0xCBD8FDBE5FEBFAFF"
 
@@ -5054,7 +5168,13 @@ run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ"
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 262 again,
 # every value check unchanged.
-run "VFL crossing store: a level fetching its second word waits for it" ./run_program.sh ../decks/vfl_store_cross_fetch.strap StretchVflStoreCrossFetchTb "PC=2019" "CYCLES=259+-0" \
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 259 -> 263.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "VFL crossing store: a level fetching its second word waits for it" ./run_program.sh ../decks/vfl_store_cross_fetch.strap StretchVflStoreCrossFetchTb "PC=2019" "CYCLES=263+-0" \
     "W0:1101=0x0000000000000003" "W1_second_word:1102=0xFFE1800000000000" \
     "W2_control:1103=0x0000000000000003" "W3_control:1104=0xFFE1800000000000"
 
@@ -5203,7 +5323,13 @@ run "VFL crossing store: STORE WAIT on its second word, an index register" ./run
 # Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
 # with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
 # the pacer stall off) the deck gives 1225 again, memreads unchanged.
-run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1585+-0" \
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 1585 -> 1612.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1612+-0" \
     "P1_PW0:1600=0xA5A5A5A5A5A5A5AF" "P1_PW1:1601=0xF5A5A5A5A5A5A5A5" "I1:1700=0" "D1:1705=0x8000000000000000" \
     "P2_UW0:1505=0xA5A5A5A5A5A5A5A0" "P2_UW1:1506=0x05A5A5A5A5A5A5A5" "I2:1701=0x20000000140" "D2:1706=0" \
     "I3:1702=0" "D3:1707=0x8000000000000000" "I4:1703=0" "D4:1708=0x8000000000000000" "X7_P4:1712=0x01905800000405DD" \
@@ -5280,7 +5406,13 @@ run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./
 # Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
 # with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
 # the pacer stall off) the deck gives 1155 again, memreads unchanged.
-run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1465+-0" \
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 1465 -> 1497.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1497+-0" \
     "I1:1700=0" "I2:1701=0" "I3:1702=0" "I4:1703=0" "I5:1704=0x80000009120" \
     "D1:1705=0x8000000000000000" "D2:1706=0x8000000000000000" "D3:1707=0x8000000000000000" "D4:1708=0x8000000000000000" "D5:1709=0" \
     "X7A:1710=0x0190580000040642" "X6A:1711=0x0190680000040642" "X5A:1712=0x0190480000040642" "X4A:1713=0x0190380000040642" "X3A:1714=0x01348000013405dc"
@@ -5296,7 +5428,13 @@ run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 687 again,
 # every value check unchanged.
-run "Index indicators in program order: V-ICR after a pending progressive ST" ./run_program.sh ../decks/vfl_index_ind_order.strap StretchVflIndexIndOrderTb "PC=2010" "CYCLES=685+-0" \
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 685 -> 682.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "Index indicators in program order: V-ICR after a pending progressive ST" ./run_program.sh ../decks/vfl_index_ind_order.strap StretchVflIndexIndOrderTb "PC=2010" "CYCLES=682+-0" \
     "ANS_w0:1210=0xFFFFFFFF00000000" "ANS_w1:1211=0" "ANS_w2:1212=0"
 run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
     "PC=2054" \
@@ -5331,9 +5469,15 @@ run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ..
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 421 again,
 # every value check unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 405 -> 399.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_program.sh ../decks/mcp_p72_clear_loop.strap StretchP72ClearTb \
     "PC=2053" \
-    "CYCLES=405+-0" \
+    "CYCLES=399+-0" \
     "clear_word0:1029=0x1000301100311200" \
     "clear_word1:1030=0x3213003314003415" \
     "clear_word2:1031=0x0035160036170037"
@@ -11826,12 +11970,18 @@ run "IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, bit-exact (jb_ax4b PDF pp
 # copy, OBSERVED (the deck's header has them):
 #   carryIndex leaves P = 4 unindexed     -> SERS, SEN 011103.00 (bit 0)
 #   immediateOperand drops EA bits 18-23  -> SERS, SEN 011147.00 (bit 18)
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 5946 -> 5833.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, ON THE MODEL (24 index bits)" ./run_program.sh ../decks/ax4b_148_immediate_indexed.strap StretchAx4b148ImmIdxTb \
     PC=1410 "SEN:712=0" \
     "X1:addrIndex(1)=0x590c00000000000" \
     "X2:addrIndex(2)=0x49c000000000000" \
     "X3:addrIndex(3)=0x10000000000" \
-    STEPS=2000000 CYCLES=5946+-0
+    STEPS=2000000 CYCLES=5833+-0
 
 run "IBOX-4 routine 148 TEST 5B unindexed immediate walk, bit-exact (jb_ax4b PDF pp.143-145, 191)" python3 verify_ax4b_5b_immediate_unindexed_listing.py
 # The unindexed companion of the block above (IBM's own, 2026-11-18):
@@ -11856,12 +12006,18 @@ run "IBOX-4 routine 148 TEST 5B unindexed immediate walk, bit-exact (jb_ax4b PDF
 #     each is caught by a sibling deck).
 #   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
 #   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 6834 -> 6721.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 5B unindexed immediate walk, ON THE MODEL (24 address bits through SVA)" ./run_program.sh ../decks/ax4b_5b_immediate_unindexed.strap StretchAx4b5BImmTb \
     PC=1410 "SEN:712=0" \
     "X1:addrIndex(1)=0x590c00000000000" \
     "X2:addrIndex(2)=0x48c400000000000" \
     "X3:addrIndex(3)=0x10000000000" \
-    STEPS=2000000 CYCLES=6834+-0
+    STEPS=2000000 CYCLES=6721+-0
 
 run "IBOX-4 routine 148 TEST 5A P field 000, bit-exact (jb_ax4b PDF p.142, 153)" python3 verify_ax4b_5a_p_field_000_listing.py
 # "L(BU),148K24($X1)" (11351.00 81 000000.20 50: I = 1, P = 0) with X1
@@ -11878,11 +12034,17 @@ run "IBOX-4 routine 148 TEST 5A P field 000, bit-exact (jb_ax4b PDF p.142, 153)"
 #     indexed by X0 and stores elsewhere.
 #   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
 #   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 219 -> 220.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 5A P field 000, ON THE MODEL (X0 written, X1 untouched)" ./run_program.sh ../decks/ax4b_5a_p_field_000.strap StretchAx4b5ATb \
     PC=1410 "SEN:712=0" \
     "X0:addrIndex(0)=0x29cbbe029cb80000" \
     "X1:addrIndex(1)=0" \
-    STEPS=2000000 CYCLES=219+-0
+    STEPS=2000000 CYCLES=220+-0
 
 run "IBOX-4 routine 148 TEST 5I I=0 ignores X0, bit-exact (jb_ax4b PDF pp.152-153)" python3 verify_ax4b_5i_prog_ix_x0_listing.py
 # X0 := 148XW4 (148K25's address); "L(BU),0" (I = 0) must load word 0,
@@ -11918,10 +12080,16 @@ run "IBOX-4 routine 148 TEST 4 18-bit FP modification, bit-exact (jb_ax4b PDF pp
 #     through 148XW3, "GATING SOME OF 19-23 SPUR."); both stop at L(N).
 #   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
 #   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 309 -> 313.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 4 18-bit FP modification, ON THE MODEL" ./run_program.sh ../decks/ax4b_4_fp_18bit.strap StretchAx4b4FpTb \
     PC=1410 "SEN:712=0" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=309+-0
+    STEPS=2000000 CYCLES=313+-0
 
 run "IBOX-4 routine 148 TEST 3 19-bit I-box modification, bit-exact (jb_ax4b PDF pp.139-140, 152-154, 190)" python3 verify_ax4b_3_halfword_19bit_listing.py
 # "LR,$X0,0($X1)" with X1 = 148DMP+.63: a half-word address uses bits
@@ -12026,21 +12194,39 @@ run "IBOX-4 routine 148 TEST 1B FP load, bit-exact (jb_ax4b PDF pp.121, 154, 190
 # L(U)/L(N) of I000, I00Z, BIT24.  Pins: 148ER1 0, X1 as the last
 # LX,$X1,$L left it (0x8000000000).  Injection: FP
 # loads always normalize -> FAIL SEN 007710.40, the L(U),BIT24 check.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 340 -> 345.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 1B FP load, ON THE MODEL" ./run_program.sh ../decks/ax4b_1b_fp_load.strap StretchAx4b1BTb \
     PC=1410 "SEN:712=0" "ER1:4858=0" "X1:addrIndex(1)=0x8000000000" \
-    STEPS=2000000 CYCLES=340+-0
+    STEPS=2000000 CYCLES=345+-0
 
 run "IBOX-4 routine 148 TEST 1C basic VFL, bit-exact (jb_ax4b PDF pp.122-125, 153-154, 190-191)" python3 verify_ax4b_1c_vfl_basic_listing.py
 # I4810: L(BU),BITn,k with n - k = 23 (offsets 1..64); I4814: L(B) sign
 # byte, lengths 16 and 32.  Injection: VFL offset forced to 0 -> I4810
 # FAIL SEN 007724.40 (offset 1); byte size always 8 -> I4814 FAIL SEN
 # 007770.00.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 408 -> 412.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL (I4810: offsets)" ./run_program.sh ../decks/ax4b_1c_vfl_basic.strap StretchAx4b1CI4810Tb \
     PC=1410 "SEN:712=0" "ER1:4858=0" "X1:addrIndex(1)=0x10000000000" \
-    STEPS=2000000 CYCLES=408+-0
+    STEPS=2000000 CYCLES=412+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 792 -> 794.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL (I4814: sign byte, lengths)" ./run_program.sh ../decks/ax4b_1c_vfl_basic.strap StretchAx4b1CI4814Tb \
     ENTRY=I4814 PC=1410 "SEN:712=0" "ER1:4858=0" "X1:addrIndex(1)=0xfffc00000000000" \
-    STEPS=2000000 CYCLES=792+-0
+    STEPS=2000000 CYCLES=794+-0
 
 run "IBOX-4 routine 148 TEST 2A right-half I of a full word, bit-exact (jb_ax4b PDF pp.125-130, 153-154, 190-191)" python3 verify_ax4b_2a_rhw_fullword_listing.py
 # X1 = BITk modifies length/BS/offset as one field (index bit 3 at
@@ -12050,18 +12236,42 @@ run "IBOX-4 routine 148 TEST 2A right-half I of a full word, bit-exact (jb_ax4b 
 # all four FAIL, I4817 at SEN 010067.40 (the bit-32 "NO CHANGE" check);
 # offset forced to 0 -> I4820 FAIL 010207.40, I4821 010235.40; byte
 # size always 8 -> I4819 FAIL 010161.40, I4820 010173.40.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 756 -> 765.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4817: bits 32-36)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4817Tb \
     PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x3fffc0000000ffff" \
-    STEPS=2000000 CYCLES=756+-0
+    STEPS=2000000 CYCLES=765+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 722 -> 730.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4819: bits 37-41)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4819Tb \
     ENTRY=I4819 PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x400000000001" \
-    STEPS=2000000 CYCLES=722+-0
+    STEPS=2000000 CYCLES=730+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 658 -> 663.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4820: bits 42-46)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4820Tb \
     ENTRY=I4820 PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x10000000000" \
-    STEPS=2000000 CYCLES=658+-0
+    STEPS=2000000 CYCLES=663+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 535 -> 539.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4821: bits 47-50)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4821Tb \
     ENTRY=I4821 PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x10000000000" \
-    STEPS=2000000 CYCLES=535+-0
+    STEPS=2000000 CYCLES=539+-0
 
 run "IBOX-4 routine 148 TEST 2B left-half I of a full word, bit-exact (jb_ax4b PDF pp.131-138, 153-154, 191)" python3 verify_ax4b_2b_lhw_fullword_listing.py
 # SVA puts 148K24's address + bit k into L(BU),0($X1), X1 = -(bit k):
@@ -12070,38 +12280,86 @@ run "IBOX-4 routine 148 TEST 2B left-half I of a full word, bit-exact (jb_ax4b P
 # eight FAIL (I4822 at bit 2, SEN 010313.40; the others at their first
 # block); I = 1..7 read X(I+8) -> all eight FAIL at their first block;
 # I = 0 indexed by X0 -> all eight FAIL halt.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4822: bits 0-2)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4822Tb \
     PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x24ba400000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4823: bits 3-5)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4823Tb \
     ENTRY=I4823 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x8ba400000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4824: bits 6-8)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4824Tb \
     ENTRY=I4824 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x53a400000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4825: bits 9-11)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4825Tb \
     ENTRY=I4825 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ca400000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4826: bits 12-14)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4826Tb \
     ENTRY=I4826 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4bc400000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4827: bits 15-17)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4827Tb \
     ENTRY=I4827 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba800000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4828: bits 18-20)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4828Tb \
     ENTRY=I4828 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba480000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 612 -> 618.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4829: bits 21-23)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4829Tb \
     ENTRY=I4829 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba410000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
-    STEPS=2000000 CYCLES=612+-0
+    STEPS=2000000 CYCLES=618+-0
 
 # ---- routine 1256, "LVE AND LVS CHECK." (2026-11-19) ----
 # IBM's only test of LVS and LVE in the corpus (jb_ax4b PDF pp.173-191).
@@ -12120,27 +12378,51 @@ run "IBOX-4 routine 1256 TEST 1A LVS of single registers, ON THE MODEL (I56 prol
 # LVS of all sixteen keeps each Xk's count and refill; a mask of X0
 # alone gives 0.  Injection: LVS writes the count too -> FAIL SEN
 # 0x53d600000000000.  (Mask reversal does NOT fail it: symmetric masks.)
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 2927 -> 2928.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 1256 TEST 1B LVS of all sixteen, ON THE MODEL (I562)" ./run_program.sh ../decks/ax4b_156_test1_lvs.strap StretchAx4b156T1BTb \
     ENTRY=I562 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x7fffffffff" \
     "X1:addrIndex(1)=0x7fffffffff" "X15:addrIndex(15)=0x1000000000000" \
-    STEPS=2000000 CYCLES=2927+-0
+    STEPS=2000000 CYCLES=2928+-0
 run "IBOX-4 routine 1256 TEST 2 (LVE), bit-exact (jb_ax4b PDF pp.182-191)" python3 verify_ax4b_156_test2_lve_listing.py
 # LVE.  Injections, one run each caught or more: wrong half-word taken
 # -> 2A-2E FAIL; chain not followed -> 2B, 2C FAIL; Full class given 19
 # bits -> 2D FAIL; found instruction not index-modified -> 2E FAIL;
 # result always to X0 -> 2F FAIL.  Details in the deck header.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 364 -> 367.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 1256 TEST 2A LVE to an LV in 3 memories, ON THE MODEL (I563)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I563Tb \
     PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x57fc00000000000" \
     "X1:addrIndex(1)=0x57fc03000001800" \
-    STEPS=2000000 CYCLES=364+-0
+    STEPS=2000000 CYCLES=367+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 366 -> 369.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 1256 TEST 2B LVE through a second LVE, ON THE MODEL (I567)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I567Tb \
     ENTRY=I567 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x57fc00000000000" \
     "X1:addrIndex(1)=0x57fc03000001800" \
-    STEPS=2000000 CYCLES=366+-0
+    STEPS=2000000 CYCLES=369+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 311 -> 313.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-4 routine 1256 TEST 2C LVE in IX/ACC to an LV in ACC/IX, ON THE MODEL (I5611)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I5611Tb \
     ENTRY=I5611 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x57fc00000000000" \
     "X1:addrIndex(1)=0x57fc03000001800" \
-    STEPS=2000000 CYCLES=311+-0
+    STEPS=2000000 CYCLES=313+-0
 run "IBOX-4 routine 1256 TEST 2D LVE width by class, ON THE MODEL (I5614)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I5614Tb \
     ENTRY=I5614 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0xffffc00000000000" \
     STEPS=2000000 CYCLES=442+-0
@@ -12168,10 +12450,16 @@ run "IBOX-5 routine 1260 prologue and TESTs 1A/1B (mask register), bit-exact (jb
 # Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
 # with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
 # the pacer stall off) the deck gives 4107 again, memreads unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 4747 -> 4655.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL (I60 prologue, I601)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1ATb \
     PC=1410 "SEN:712=0" "RET:710=0x60d8800" \
     "X0:addrIndex(0)=0x61c400000000000" "X1:addrIndex(1)=0x100000000000" \
-    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4747+-0
+    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4655+-0
 # Mask bits 48-63 are zeros.  Injection M2 (bit 55 writable) -> FAIL SEN
 # 0x625200000000000 (the entry printed "BIT 54": IBM's k-1 label); M1
 # does not move this run.
@@ -12180,10 +12468,16 @@ run "IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL (I60 pr
 # Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
 # with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
 # the pacer stall off) the deck gives 5426 again, memreads unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 6386 -> 6217.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL (I607)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1BTb \
     ENTRY=I607 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x629600000000000" \
     "X1:addrIndex(1)=0" "X2:addrIndex(2)=0x7fffff0000" \
-    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=6386+-0
+    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=6217+-0
 
 # ---- jb_ax5b routine 1260, TEST 1C (2026-11-19) ----
 # IBM's test that mask bits 20-47 can each be set to one and to zero
@@ -12201,12 +12495,18 @@ run "IBOX-5 routine 1260 TEST 1C (mask bits 20-47), bit-exact (jb_ax5b PDF pp.14
 # Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
 # with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
 # the pacer stall off) the deck gives 10326 again, memreads unchanged.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 13268 -> 13300.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL (I6011)" ./run_program.sh ../decks/ax5b_160_test1c_mask.strap StretchAx5b160T1CTb \
     PC=1410 "SEN:712=0" "I60DMP:9921=0xffffff8000000000" \
     "MASK:12=0xfffff33000000000" "X0:addrIndex(0)=0xffffff8000000000" \
     "X2:addrIndex(2)=0x20000" "X3:addrIndex(3)=0xa60800000000000" \
     "X4:addrIndex(4)=0x650600000000000" "X5:addrIndex(5)=0xa60000000010000" \
-    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=13268+-0
+    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=13300+-0
 
 # ---- jb_ax5b routine 1260, TEST 2 (2026-11-19) ----
 # IBM's walk of a single one through the interruption address register's
@@ -12216,10 +12516,16 @@ run "IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL (I6011)"
 run "IBOX-5 routine 1260 TEST 2 (IA register), bit-exact (jb_ax5b PDF pp.22-23, 114)" python3 verify_ax5b_160_test2_ia_listing.py
 # Injection (IA bit 9 dropped on a store) -> FAIL SEN 0x660c00000000000,
 # the "IA DATA FAILURE, BIT 9." entry.
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 2057 -> 2058.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
 run "IBOX-5 routine 1260 TEST 2 IA bits 0-17 hold a one, ON THE MODEL (I6041)" ./run_program.sh ../decks/ax5b_160_test2_ia.strap StretchAx5b160T2Tb \
     PC=1410 "SEN:712=0" "IA:2=0x400000000000" \
     "X1:addrIndex(1)=0x4800000000000" "X2:addrIndex(2)=0x6c00000000000" \
-    "X3:addrIndex(3)=0x400000000000" STEPS=2000000 CYCLES=2057+-0
+    "X3:addrIndex(3)=0x400000000000" STEPS=2000000 CYCLES=2058+-0
 
 # ---- THE IA REGISTER IS 18 BITS (2026-11-19) ----
 # Reference Manual printed p.35 (PDF p.38): "Bits 0-17 of location 2 form
@@ -12475,7 +12781,13 @@ run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" 
 #                                  entry for name 16 (CYCLES 56506)
 #   no no-op at all (False)     -> halts at PC 6832 = 006530.00, the table's
 #                                  first entry (CYCLES 316)
-run "IBOX-4 routine 1244 TEST 4, RUN: RNX no-ops for old and new names 1-31" ./run_program.sh ../decks/ibox4_rnx_run.strap StretchIbox4RnxRunTb PC=1410 STEPS=2000000 CYCLES=116210+-0
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 116210 -> 109428.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "IBOX-4 routine 1244 TEST 4, RUN: RNX no-ops for old and new names 1-31" ./run_program.sh ../decks/ibox4_rnx_run.strap StretchIbox4RnxRunTb PC=1410 STEPS=2000000 CYCLES=109428+-0
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
 run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
 run "EXIC: the pseudo-instruction counter, and the step sized by the subject's length" ./run_program.sh ../decks/exic_subject.strap StretchExicSubjTb \
@@ -15396,7 +15708,13 @@ run "C22-6578 Problem 1.8 -- RNX simulated" ./run_program.sh ../decks/problem_1_
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 585 again,
 # every value check unchanged.
-run "RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0 (printed p.27)" ./run_program.sh ../decks/rnx.strap StretchRnxTb PC=2034 CYCLES=578+-0 \
+# RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): CYCLES 578 -> 584.
+# Cause: see the split in fidelity_plan.md A7 part 2.
+# (`branched`: a successful branch to its own fall-through restarts the
+# fetch, Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41.  budgets: CB
+# Table 8, printed p.3-14, PDF 32, and the index-indicator Bind, Vol. 2
+# PDF 112; bsv/StretchBranchTiming.bsv.)
+run "RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0 (printed p.27)" ./run_program.sh ../decks/rnx.strap StretchRnxTb PC=2034 CYCLES=584+-0 \
     "old_name:1105=0x00014000002C04D2" "p1_x0:1250=0x0000C000001C0454" "p1_x1:1251=0x00024000004C11D7" \
     "p1_x2:1252=0x0001C00000340929" "p1_x3:1253=0x0000800000440D80" \
     "b2_x4_kept:1254=0x1000000140514" "b2_x0_kept:1255=0x4000000c0014" "b2_word_kept:1202=0x18000001c0515" \

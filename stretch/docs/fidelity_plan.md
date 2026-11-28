@@ -1531,9 +1531,17 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   - Built:
     - `ExecDone.branched` (StretchExecute): set wherever `next` is set to
       a branch target, cleared by IF suppression. StretchCore's
-      `branchTaken` = branched or a jump, used by `commitNext` (restart,
-      and pcReg under an interruption, Ref. Manual p.48), both I-box
-      budget sites and the guessed branch's resolution in rl_au_remove.
+      `branchTaken` = branched or a jump, used by `commitNext` (the
+      fetch restart), both I-box budget sites and the guessed branch's
+      resolution in rl_au_remove. NOT for pcReg under an interruption:
+      there the address test is kept. With `branched` there, C22-6578
+      Problem 1.7's free instruction "SIC, 2000.0; BR, 0" (the model
+      computes BR, 0 as the free instruction's fall-through) replaced
+      pcReg with EIA + 1 and the deck never returned: observed in the
+      first suite run, PC 2151 against 2218, `count_ran_out`, `anywh`,
+      `sic_self` wrong, step cap reached. Fixed before the final run;
+      the deck passes (cycles 272271 → 256272, its 16000-pass
+      CB-to-itself wait one clock a pass faster).
       The commit point's IF test stays on the address (a behaviour
       change, no deck; noted there).
     - `bsv/StretchBranchTiming.bsv`, `branchBudget`, charged by

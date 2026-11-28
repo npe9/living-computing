@@ -2339,7 +2339,11 @@ def judge8(res, S):
           " ready)", [r for r in g["_reports"] if r[0] == "32"], [("32", "00001"), ("32", "00110")])
     check("8: the job is announced as C22-6678-1 p.7 says (the JOB card's first eight"
           " characters typed), and then the spooler asks for cards (p.216 l.24)", text,
-          "SECOND 00:00:00 SERVICE THE CARD READER")
+          "SECOND 00:00:01 SERVICE THE CARD READER")
+    # RE-PINNED 2026-11-28 (fidelity_plan.md A7 part 2): "00:00:00" ->
+    # "00:00:01" again.  The model's clock moved with the branch timing
+    # (ExecDone.branched and StretchBranchTiming); the revert check is in
+    # fidelity_plan.md A7 part 2.
     # RE-PINNED 2026-11-27 (fidelity_plan.md A7): "00:00:01" -> "00:00:00".
     # The time MCP types (p.382 l.38 ,DTIME) is read off the model's clock,
     # and the clock counts model cycles.  Cause, measured: with A7's
