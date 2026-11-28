@@ -710,12 +710,23 @@ def switch_label_case():
 #     or FAIL the run, so their values are shown not to matter here.
 EXECUTE_FLAGS = {'slit_check': False, 'interrupt_all': False}
 EXECUTE_STALE = (('R', 0x0d), ('W', 0x1f))
+# U3d second step (2026-11-28): 4cc1's COND (CNDF 3: crr - EM3 of 4cc0
+# negative) is now tested, by 4cc2's JMPF 8 (pu.RULES['jmpf8_flag']
+# 'goto': crr run out takes execute's slow path 4cc4).  So execute needs
+# crr (R15), which the standalone run does not hold (U3's boot writes it
+# held, 20a6-20a7, crr := 17).  OURS: R15 = EXECUTE_CRR, not run out (as
+# PROCEED_CRR below); before, R15 reached execute STALE and fed only that
+# untested COND.  Injection 'execute_crr_stale' (R15 STALE again): STOP
+# at 10, 4cc2 (a JMPF 8 with no usable condition).
+EXECUTE_CRR = 8
 R_PC = 0x04             # rassy's second bank 4, 'pc'
 COD = 0x26              # kbn tag COD (the code-address tag 4cc2 stamps from EM2)
 
 
 def seed_execute(p):
     p.flags.update(EXECUTE_FLAGS)
+    if EXECUTE_CRR is not None:
+        p.r[0x15] = (pimm.INT, EXECUTE_CRR)
     for f, n in EXECUTE_STALE:
         {'R': p.r, 'W': p.w}[f][n] = PU.STALE
 
@@ -1295,6 +1306,7 @@ INJECT = {
     'cjump_same': lambda: PU.RULES.update(cjump_time='same'),
     'cjump_false': lambda: PU.CJUMP_TAKEN_ON.update({0xb: False}),
     'slit_pending': lambda: EXECUTE_FLAGS.update(slit_check=True),
+    'execute_crr_stale': lambda: globals().update(EXECUTE_CRR=None),
     'interrupt_pending': lambda: EXECUTE_FLAGS.update(interrupt_all=True),
     'flags_swapped': lambda: PU.FLAG_CONDS.update({0x19: 'interrupt_all', 0x21: 'slit_check'}),
     'as1f2_off': lambda: PU.RULES.update(alu_sources='old', as1f2_yr=False),

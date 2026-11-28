@@ -240,6 +240,18 @@ FLAG_CONDS[0x1a] = 'PMPF'
 # (0841's alf_equal is overwritten at 0864).
 ALF_LATCHED = ('alf_zero',)
 GSET_SHIFT_WORDS = {0x4d3d}   # RULES['alu_gset']: where shift_left is modelled
+# U3d second step (2026-11-28): 4c28 too, the goal switch's test of the
+# slit-check cause register (4c27 XR := W1f; 4c28 W1f shift_left YR, CNDF 3
+# the sign, JMPF c): W1f is 0 from the boot (20a8) on the path run, so every
+# shift reading gives 0 and 4c28 goes to 4c2d: NOT discriminated (recorded).
+GSET_SHIFT_WORDS.add(0x4c28)
+# And 219c, proceed's run-out arm (217d's call 219b): 219b XR := 1, 219c
+# MAR1 := XR shift_left EM (4): the address 10 that 219e reads, in area
+# 5's 'Extended Control Registers (constant area)' (PIMM.PARAM, PRINTED),
+# a cell no held source gives: the 'crr_proceed' run stops at 219e's test
+# of it.  Discriminated only as an address (u3_goals 'crr_proceed' pins
+# 'cell 10'); injection 'gset_219c_off' (219c raising again): STOP 219c.
+GSET_SHIFT_WORDS.add(0x219c)
 # U3 third step (2026-11-27): alf_high (rassy position 7) is formed from the
 # latch as well: the ALU's first input above its second, unsigned (the
 # 'high' of a compare, the result of a - b taken without borrow and not
@@ -387,6 +399,15 @@ FLAG_CONDS.update({0x13: 'CGCF', 0x14: 'SUSPF'})
 # 1c0e (to 1c21 when an interrupt is pending).  Injection (u3_goals.py)
 # 'interrupt_pending'.
 FLAG_CONDS[0x20] = 'interrupt'
+# U3d second step (2026-11-28): EM1 23 is 'cond csbrk' (position 35 of the
+# same rassy list, HELD-SOURCE: ... 32 interrupt, 33 interrupt_all, 34
+# trcmd, 35 csbrk, 36 ic_trap), read as the console-break flag (INFERENCE
+# from the name and from the word before it, 4cf6, which loads 70, the
+# Console Break Control Table's address in PIMM.PARAM's area 5 map,
+# 'A:000070 Console Break Control Table (constant area)', PRINTED).  A
+# hardware flag whose value is the harness's (OURS, as interrupt: no
+# console break set, false).  Formed at execute's slow path 4cf7.
+FLAG_CONDS[0x23] = 'csbrk'
 # U3 second session (2026-11-27): PMPF, key 26 of the same two
 # sub-switches (HELD-SOURCE: ptfdump.py pimmutil rassy --pairs: under mc2
 # key 2 'reset_' 21 exsw00 .. 25 slit_check, 26 PMPF, .. 31 COL; under key
@@ -567,6 +588,12 @@ RULES = {
     # then 20a9 MAR1 := b8).  Injection 'wide_mcf_off' (u3_goals.py):
     # STOP at 20a8 in the boot.
     'sc2_wide_mcf': True,
+    # U3d second step (2026-11-28): the same for a wide word whose EM1 the
+    # condition select consumes (CNDF 7, EM1 the condition's number, pu
+    # FLAG_CONDS): EM2:EM3.  INFERRED (as sc2_wide_mcf: EM1 belongs to
+    # another field).  Executed at 4cf6 (execute's slow path: MDR1 := 70,
+    # with COND := PMPF).  Injection 'wide_cndf7_off' (u3_goals.py).
+    'sc2_wide_cndf7': True,
     'mcf_sub_flags': True,
     # U3 second session: ALU operation add_with_one (rassy's EM2 3) is
     # a + b + 1.  INFERRED from the name (HELD-SOURCE, mekbn.RASSY_ALU)
@@ -748,7 +775,7 @@ RULES = {
     # admitted only there (4cc2, interrupt_all; what bit 26 adds to the
     # condition is not decided).  Off (the injection 'jmpf8_flag_off'):
     # raises at 4cc2.
-    'jmpf8_flag': True,
+    'jmpf8_flag': 'goto',
     # JMPF 2 (4-bit; S10, open until now) is a case_branch with a short
     # base: target = (upc + EM3, EM3 signed as in JMPF 4) | TDAR.
     # INFERRED (U2, 2026-11-27, sixth session).  rassy's jmpf table
@@ -805,6 +832,16 @@ RULES = {
     # 2215 (proceed's dequeue: call 2250 unless the next goal's cell 14
     # equals R13, the current foster parent), not taken.
     'jmpf_f_call_ifnot': True,
+    # U3d second step (2026-11-28): JMPF d, an absolute call taken if NOT
+    # cond.  HELD-SOURCE (the kind): rassy's jmpf/9 arm d (@2b40-2b4b)
+    # names 'call', marks em1_not_free and em2_not_free and prints the
+    # target with vlong/2 (@32da), as arms 5 and 9; its 'pmi 49' operand
+    # (@2b41) is the 'if not cond' pool slot (arms c-f, CJUMP_TAKEN_ON's
+    # evidence).  INFERRED: the target is the whole EM, as JMPF 9's
+    # (RULES['jmpf9_vlong']).  Executed at proceed's 217d (crr exhausted,
+    # 217c's PMPF reset under the boot's entry): taken, to 219b.
+    # Injection 'jmpf_d_off' (u3_goals.py): STOP at 217d.
+    'jmpf_d_call_ifnot': True,
     # U3 (2026-11-27, first session): JMPF 8 in a word that forms no
     # condition of its own (outside jmpf8_setup / jmpf8_flag) is a short
     # goto taken if COND, COND as the word before left it.  HELD-SOURCE
@@ -1465,7 +1502,8 @@ class PU:
             return (0, field(x, 'EM2'))
         if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM2:EM3':
             if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2) \
-                    and not (RULES['sc2_wide_mcf'] and bit(x, 18)):
+                    and not (RULES['sc2_wide_mcf'] and bit(x, 18)) \
+                    and not (RULES['sc2_wide_cndf7'] and field(x, 'CNDF') == 7):
                 raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
                                  % field(x, 'EM1'))
             return (0, field(x, 'EM') & 0x3ff)
@@ -1900,8 +1938,8 @@ class PU:
             conditional = False
         if jf == 8 and RULES['jmpf8_setup'] and cnd == 7 and field(x, 'EM1') in DEREF_SETUP:
             pass                        # sequences as JMPF 0 (RULES['jmpf8_setup'])
-        elif jf == 8 and RULES['jmpf8_flag'] and cnd == 7 and field(x, 'EM1') in FLAG_CONDS:
-            pass                        # sequences as JMPF 0 (RULES['jmpf8_flag'])
+        elif jf == 8 and RULES['jmpf8_flag'] is True and cnd == 7 and field(x, 'EM1') in FLAG_CONDS:
+            pass                        # sequences as JMPF 0 (RULES['jmpf8_flag'], before U3d)
         elif jf == 9 and RULES['jmpf9_call_if']:
             # a conditional call, "if cond" (RULES['jmpf9_call_if']); only
             # the arm not taken is modelled
@@ -1914,6 +1952,14 @@ class PU:
                 kind, target, conditional = 'call', em, False   # RULES['jmpf9_vlong']
             else:
                 kind, conditional = 'next', False
+        elif jf == 0xd and RULES['jmpf_d_call_ifnot']:
+            # rassy jmpf/9 arm d: 'call', vlong (absolute), 'if not cond'
+            if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
+                raise Unmodelled(upc, 'JMPF d conditional call with no usable condition')
+            if bool(prev_cond):
+                kind, conditional = 'next', False
+            else:
+                kind, target, conditional = 'call', em, False
         elif jf == 0xf and RULES['jmpf_f_call_ifnot']:
             # rassy jmpf/9 arm f: 'call', long (page-relative), 'if not cond'
             if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
@@ -1923,7 +1969,8 @@ class PU:
             else:
                 kind, target, conditional = 'call', upc & ~0x3ff | em & 0x3ff, False
         elif jf == 8 and RULES['jmpf8_goto_if'] and (
-                not cnd or RULES['jmpf8_goto_cndf'] and cnd in JMPF8_GOTO_CNDF):
+                not cnd or RULES['jmpf8_goto_cndf'] and cnd in JMPF8_GOTO_CNDF
+                or RULES['jmpf8_flag'] == 'goto' and cnd == 7 and field(x, 'EM1') in FLAG_CONDS):
             # rassy jmpf/9 arm 8: 'goto' short 'if cond' (RULES['jmpf8_goto_if'])
             if prev_cond is None or is_poison(prev_cond) or is_stale(prev_cond):
                 raise Unmodelled(upc, 'JMPF 8 conditional goto with no usable condition')
