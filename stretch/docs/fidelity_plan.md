@@ -1472,7 +1472,8 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   18 of 24.
 - **A7's exit is therefore not met as a whole.** Transmit meets it on
   PDF 106-107, except the two long ext_ext rows recorded above. CB 16/15
-  and BXL/BAL are still to do.
+  and BXL/BAL are still to do. (Part 2, below: CB and BXL meet it; BAL's
+  reason is recorded.)
 - Suite effect, against `b61.log` HALTREPORT_ALL:
   - 56 sections change, and only in `cycles=`. `memreads` is identical
     in every one.
@@ -1493,6 +1494,195 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   - Two non-CYCLES pins moved, with the same revert proof:
     - the STRAP II deck census, 886 → 888 (the two new decks);
     - `check_bss_mcp_go.py` stage 8's typed DTIME, 00:00:01 → 00:00:00.
+- **Branches BUILT 2026-11-28 (A7 part 2).**
+  - Terms, each read on the page image:
+    - Vol. 1 Table 8 (printed p.3-14, PDF 32): CB (Successful) 4.2 µs +
+      dec, CB (Unsuccessful) 3.6 µs + dec; dec = 0.6 µs (printed p.3-18,
+      PDF 36). 16 and 14 clocks. CBR rows 6.0-6.6 + dec; the SIC to EM /
+      SIC to XS columns add 2.4 / 3.0 µs to a taken CB only.
+    - Vol. 2 PDF 112 (printed 105), CONSEC = NONCON on every row: CB
+      4.82 / 4.52, ix 5.12 / 5.12 µs (16.07 / 15.07 / 17.07 / 17.07
+      clocks); BXL 4.52 / 2.26, ix 4.67 / 2.86 (15.07 / 7.53 / 15.57 /
+      9.53); BAL 19.78 / 7.20, ix 20.08 / 7.21 (65.93 / 24.00 / 66.93 /
+      24.03). PDF 111 (printed 104): "Consecutive" means each branch went
+      to the next instruction; the right four columns index the branch
+      address.
+    - Vol. 1 printed p.3-23 item 6 (PDF 41): "All successful branch
+      instructions require the fetch of new instructions" (1Y, 2Y
+      invalidated); item 7: CB and Bind for XF, XVLZ, XVZ, XVGZ, XCZ, XL,
+      XE, XH are "executed entirely within the I-box". p.3-24 (PDF 42): any
+      other conditional branch is guessed unsuccessful, four LA levels,
+      wrong-way recovery. p.3-18 (PDF 36): a successful branch's refill
+      delay "has been taken into account in the timing given".
+    - TR00.722 Fig. 8 (printed p.34, PDF 36) and p.35 (PDF 37): the CB's
+      branch-address fetch starts in its second cycle, so "the new
+      instruction word has arrived and been checked by the time the CB
+      instruction is completely executed". Fig. 10 (printed p.38, PDF
+      40) and p.39 (PDF 41): a Bind on a non-index indicator is a test
+      fetch and the four loads OP, F, ST, BR, five cycles; p.37 (PDF 39):
+      on an index indicator "we would not have to guess".
+    - Vol. 1 Tables 4-9 have no Bind row.
+  - The model, before: "taken" was read off the address (`next !=` the
+    fall-through), so a successful branch to the next instruction (all of
+    PDF 112's generated cells) counted as no branch: no restart, and a
+    guessed BAL was never recovered. CB was 15 either way (Table 8's 14 +
+    the dispatch clock), no branch-address index term, and every branch on
+    indicator a flat 6 cycles ("Blosk fig.10").
+  - Built:
+    - `ExecDone.branched` (StretchExecute): set wherever `next` is set to
+      a branch target, cleared by IF suppression. StretchCore's
+      `branchTaken` = branched or a jump, used by `commitNext` (the
+      fetch restart), both I-box budget sites and the guessed branch's
+      resolution in rl_au_remove. NOT for pcReg under an interruption:
+      there the address test is kept. With `branched` there, C22-6578
+      Problem 1.7's free instruction "SIC, 2000.0; BR, 0" (the model
+      computes BR, 0 as the free instruction's fall-through) replaced
+      pcReg with EIA + 1 and the deck never returned: observed in the
+      first suite run, PC 2151 against 2218, `count_ran_out`, `anywh`,
+      `sic_self` wrong, step cap reached. Fixed before the final run;
+      the deck passes (cycles 272271 → 256272, its 16000-pass
+      CB-to-itself wait one clock a pass faster).
+      The commit point's IF test stays on the address (a behaviour
+      change, no deck; noted there).
+    - `bsv/StretchBranchTiming.bsv`, `branchBudget`, charged by
+      `iboxBudget` for CB (refill 0) and index-indicator Bind:
+      - CB not taken 14 (Table 8); taken 16 counted FROM the dispatch
+        clock, budget 15 (RECONSTRUCTION of which clock overlaps, from
+        TR00.722 p.35; the 16 is Table 8's and the page's).
+      - branch-address index + 2 not taken (PDF 112's own columns; p.3-18's
+        0.6 µs a indexing is about VFL and is cited as consistent only);
+        taken, max(not taken, taken) (RECONSTRUCTION; it gives the page's
+        +1 taken).
+      - BXL: FIT to PDF 112's four cells, nothing held out. Not taken 6
+        (Table 7's NOP, 1.2 + dec, CHOSEN as the analogy), taken 15 from
+        the dispatch clock (Table 7's B, 3.6 + dec, + the dispatch clock;
+        no source says why this differs from CB's), the same index term
+        and floor. The old 6 cycles were Fig. 10's four-level load, which
+        an index-indicator branch does not make.
+  - Atlas PDF 102-115, own build dir, before → after (within 1 / within
+    3 / median):
+    - PDF 112: 4 / 18 / −2.05 → 20 / 20 / −0.05. CB all 16 cells
+      −0.05; BXL −0.05, −0.52, −0.55, −0.52.
+    - PDF 106, 107, 109 unchanged in every count; every cell moved by
+      0.0009 clock a copy, the nine taken count branches that close
+      GENER's loop (one clock each, 16 → 15 budget + dispatch).
+    - All 156: 74 / 117 / −1.05 → 90 / 119 / −0.73.
+    - `--selftest` all ok; check 4 now reads 16.0000 a successful CB
+      (it was 15.0000, the consecutive-target artifact; atlas_oracle.md
+      item 5 corrected).
+  - Left, recorded and not modelled:
+    - **BAL / BZAL (4 cells, −11 not taken, −50 taken).** No page
+      decomposes the 24 clocks not taken or the 42 a wrong guess adds,
+      and PDF 112 does not spell out its ARITH RESULT IND environment.
+      Part of the old −52 was the consecutive-target artifact (no recovery
+      ever ran); with `branched`, recovery runs and the model gives 16
+      taken, 13 not taken. The guess load (`2 * 6`), the branch level's
+      E-box charge (`2 * 6`) and rl_recover's 12 are unsourced and left.
+    - CBR (16 cells, not generated: the refill word is not described)
+      keeps budgetClocks' Table 8 rows.
+    - A SIC-wrapped CB / Bind keeps the old charge (`Sic` = 2 +
+      iboxCycles); Table 8's SIC columns have no atlas cell.
+    - The NONCON columns (40 cells) are not generated; the page prints
+      them equal to CONSEC.
+    - PDF 109's effective-address columns: effective minus direct is
+      not uniform (LX +0.60 µs; LV +0.45 / +0.60 / +0.60; SX +0.15 / +0.30
+      / +0.61; SV +0.01 / 0 / +0.60; V+, V+C, V+CR, KV, RCZ ≈ +0.60; R
+      +0.01 / +0.01 / +0.61), so a flat index term is not what the page
+      prints. Not changed here; a separate milestone (A8's index fetch).
+  - Suite effect, GREEN on `3ab1787b` (`s2.log`), against `b62.log`
+    HALTREPORT_ALL: 249 lines change, plus the new deck. Split by a
+    second full suite in a scratch copy of the same tree with only
+    `branched` reverted (`False ||` in `branchTaken`), so every line has
+    a measured cause:
+    - 124 lines: `branched` alone. The scratch copy gives exactly the
+      b62 cycles and memreads. These are the decks with a successful
+      branch to its own fall-through, mostly the diagnostics' `BBZ, bit,
+      $+1.0` (set a bit to zero) and `BD, $+.32` / `BE, $+.32`. Each now
+      restarts the fetch (p.3-23 item 6), which is why memreads move:
+      153 of the 249 lines change memreads, and all but 6 of those are
+      here or in "both".
+    - 96 lines: the budgets alone, and the final count equals the
+      scratch copy's. Every one keeps b62's memreads.
+    - 29 lines: both. In 6 of them the budgets alone also move
+      memreads. These are polling loops whose iteration count depends on
+      speed. `interval_timer_steps` 1031 → 1122: its BZXE / CB loops
+      wait for the timer to step (read in the deck). The five MCP IPL
+      runs, +2 to +6 (MCP's own bootstrap 6322913 → 6091661 budgets only
+      → 6091680; its IOD-deck IPL 6748107 → 6510830), are UNTRACED: only
+      the revert attributes them to the budgets, and which loop takes the
+      extra reads was not found.
+    - `problem_1_7`: 272271 → 256272 (budgets: its 16000-pass CB-to-
+      itself wait), memreads 32019 → 32022 (`branched`: BD / BE, $+.32).
+    - 58 pins (45 CYCLES, 13 MEMREADS) on 53 run lines re-pinned, each
+      with a history comment in `run_tests.sh`. The MCP stage 8 typed
+      DTIME is back to 00:00:01; the budgets-only scratch copy types
+      00:00:01 too, so the budgets moved it. Two deck headers
+      (`ax4b_148_immediate_indexed`, `ax4b_5b_immediate_unindexed`) were
+      updated.
+    - The scratch copy's own verdict was RED. Its non-pin FAILs were
+      inspected: the only one is that DTIME line.
+    - The re-pinned sections, b62 → final (cycles/memreads), and their
+      cause:
+      - A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD: 1567/138 → 1624/169; both (budgets alone 1549/138)
+      - BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL): 868/66 → 868/76; branched
+      - BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL): 866/63 → 866/73; branched
+      - BOX LEVEL RELEASE: THE VFL MULTIPLIER (p.3-16, p.3-18, p.48; MODEL): 945/67 → 945/77; branched
+      - COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP: 824/62 → 848/69; branched
+      - COMPLETES WITHOUT FETCH: address invalid, VFL/connective/FP: 562/38 → 550/40; both (budgets alone 550/38)
+      - COMPLETES WITHOUT FETCH: progressive with X0, VFL and connective: 283/20 → 271/22; both (budgets alone 271/20)
+      - DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION: 6164/581 → 6331/613; branched
+      - FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS: 311/27 → 311/33; branched
+      - FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS: 425/40 → 430/49; branched
+      - FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a): 1056/113 → 1104/128; branched
+      - IBOX-4 routine 1244 TEST 4, RUN: RNX no-ops for old and new names 1-31: 116210/6550 → 109428/6550; budget
+      - IBOX-4 routine 1256 TEST 1B LVS of all sixteen, ON THE MODEL (I562): 2927/166 → 2928/166; budget
+      - IBOX-4 routine 1256 TEST 2A LVE to an LV in 3 memories, ON THE MODEL: 364/26 → 367/26; budget
+      - IBOX-4 routine 1256 TEST 2B LVE through a second LVE, ON THE MODEL: 366/28 → 369/28; budget
+      - IBOX-4 routine 1256 TEST 2C LVE in IX/ACC to an LV in ACC/IX, ON THE MODEL: 311/24 → 313/24; budget
+      - IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, ON THE MODEL: 5946/462 → 5833/462; budget
+      - IBOX-4 routine 148 TEST 1B FP load, ON THE MODEL: 340/30 → 345/30; budget
+      - IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL (I4810: offsets): 408/39 → 412/39; budget
+      - IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL: 792/89 → 794/89; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 756/70 → 765/70; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 722/65 → 730/65; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 658/62 → 663/62; budget
+      - IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL: 535/51 → 539/51; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4822: bits 0-2): 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4823: bits 3-5): 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4824: bits 6-8): 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL: 612/57 → 618/57; budget
+      - IBOX-4 routine 148 TEST 4 18-bit FP modification, ON THE MODEL: 309/29 → 313/29; budget
+      - IBOX-4 routine 148 TEST 5A P field 000, ON THE MODEL: 219/21 → 220/21; budget
+      - IBOX-4 routine 148 TEST 5B unindexed immediate walk, ON THE MODEL: 6834/512 → 6721/512; budget
+      - IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL: 4747/344 → 4655/344; budget
+      - IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL: 6386/453 → 6217/453; budget
+      - IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL: 13268/764 → 13300/764; budget
+      - IBOX-5 routine 1260 TEST 2 IA bits 0-17 hold a one, ON THE MODEL: 2057/153 → 2058/153; budget
+      - INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level: 550/46 → 550/60; branched
+      - INTERRUPTION RECOVERY: an I-box store run ahead is never made: 586/49 → 586/61; branched
+      - INTERRUPTION RECOVERY: what is given back runs again once: 611/60 → 611/70; branched
+      - Index indicators in program order: V-ICR after a pending progressive ST: 685/30 → 682/30; budget
+      - NEGATIVE EFFECTIVE ADDRESS: its magnitude is used: 858/70 → 859/72; both (budgets alone 859/70)
+      - RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0: 578/33 → 584/37; branched
+      - SIC PREFIXED TO BD STORES INTO A PROTECTED WORD: 378/31 → 378/40; branched
+      - THE SECOND INDEX modifies a VFL offset: MCP's octal conversion: 426/35 → 421/35; budget
+      - VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56): 711/47 → 715/49; branched
+      - VFL crossing store: a level fetching its second word waits for it: 259/18 → 263/20; branched
+      - VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ: 861/107 → 866/107; budget
+      - VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation: 1585/110 → 1612/120; branched
+      - VFL refill DF suppressed with the store (printed pp.22, 32): 1465/105 → 1497/115; branched
+      - printed p.72 lines 9-12: the machine-configuration clear loop: 405/49 → 399/49; budget
+  - Checks:
+    - `tests/run_branch_timing_test.sh`: 8 literal vectors, four observed
+      injections (header of `StretchBranchTiming.bsv`).
+    - `decks/branch_time_cb_bxl.strap`: every term end to end, each taken
+      branch to the next instruction; CYCLES 269 pinned. With `branched`
+      dropped it gives 243 (observed; −26, accounted term by term at the
+      run in `run_tests.sh`).
 
 ## Phase 4: the I-box as the pages draw it
 

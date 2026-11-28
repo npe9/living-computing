@@ -29,6 +29,7 @@ import StretchLookAhead::*;  // mkLookAhead
 import StretchLaParts::*;    // laParts: Table A-2's levels of an instruction
 import StretchTiming::*;     // iboxCycles/eboxClocks/budgetClocks
 import StretchXmitTiming::*; // xmitFirstBudget: a transmit's time, by destination
+import StretchBranchTiming::*; // branchBudget: CB and index-indicator branches (A7 part 2)
 
 interface StretchCore;
   // step() advances the core exactly one clock: every rule in
@@ -183,12 +184,22 @@ module mkStretchCore(StretchCore);
   // (StretchXmitTiming.xmitFirstBudget: Table 9's fixed part and the first
   // word's loop, fidelity_plan.md A7, 2026-11-27); its later words are
   // paced in mkXmitBox while `ibusy` stands still (the note on `ib`).
+  // A COUNT AND BRANCH (not CBR) and A BRANCH ON AN INDEX INDICATOR are
+  // charged StretchBranchTiming.branchBudget (fidelity_plan.md A7 part 2,
+  // 2026-11-28: Table 8's 16 / 14 clocks, PDF 112's branch-address index
+  // and the fitted BXL times); `tk` is ExecDone.branched (branchTaken).
+  // A SIC-wrapped one keeps budgetClocks (Table 8's SIC columns have no
+  // atlas cell; recorded open in fidelity_plan.md A7).
   // Everything else, SWAP included, keeps budgetClocks.
-  function Bit#(16) iboxBudget(DecodedInstr d, Bool tk, ExecDone o) =
-    case (o.xmitTiming) matches
-      tagged Valid .t: return xmitFirstBudget(t);
-      default:         return budgetClocks(d, tk);
-    endcase;
+  function Bit#(16) iboxBudget(DecodedInstr d, Bool tk, ExecDone o);
+    Bit#(16) r = budgetClocks(d, tk);
+    if (o.xmitTiming matches tagged Valid .t) r = xmitFirstBudget(t);
+    else if (d matches tagged CountBranch .x &&& x.refill == 0)
+      r = branchBudget(BtCountBranch, x.idx == 1, tk);
+    else if (d matches tagged BranchInd .x &&& indexIndicator(x.indNum))
+      r = branchBudget(BtIndexIndicator, x.idx == 1, tk);
+    return r;
+  endfunction
 
   // ---- The interruption mechanism (Ref. Manual p.48) ----
   // Valid while THE ONE instruction at the effective interruption
@@ -452,11 +463,29 @@ module mkStretchCore(StretchCore);
   // ordered, even though two plain assignments could.  So the question
   // "did the instruction stream jump?" has to be answered in the same
   // place as "where does it go next?", which is where it belonged.
-  function Action commitNext(HWordAddr pc, InstrLen len, HWordAddr next);
+  //
+  // A SUCCESSFUL BRANCH TO THE NEXT INSTRUCTION IS A BRANCH (A7 part 2,
+  // 2026-11-28): `taken` is ExecDone.branched as well as a jump, so the
+  // stream restarts and the Y buffers are refilled as for any successful
+  // branch (Perf. Char. Vol. 1 printed p.3-23 item 6, PDF 41; the note on
+  // ExecDone.branched).  branchTaken() is the one test every caller uses.
+  // NOT UNDER AN INTERRUPTION (intPC valid): there the address test is
+  // kept.  The model computes a relative branch in the free instruction
+  // (C22-6578 Problem 1.7's "SIC, 2000.0; BR, 0", relative to the
+  // instruction counter, which p.48 says is not stepped) as the free
+  // instruction's own fall-through, and "not taken" is what leaves pcReg
+  // at the interrupted program.  With `branched` it replaced pcReg with
+  // EIA + 1 and decks/problem_1_7.strap never returned (observed in the
+  // suite, 2026-11-28).  The restart there is unconditional anyway.
+  function Bool branchTaken(HWordAddr pc, InstrLen len, ExecDone o) =
+    o.branched || (o.next != pc + ((len == Full) ? 2 : 1));
+
+  function Action commitNext(HWordAddr pc, InstrLen len, ExecDone o);
     action
-      Bool taken = (next != pc + ((len == Full) ? 2 : 1));
+      HWordAddr next = o.next;
+      Bool taken = branchTaken(pc, len, o);
       if (intPC matches tagged Valid .ip) begin
-        if (taken) pcReg <= next;   // "replaced as the result of a
+        if (next != pc + ((len == Full) ? 2 : 1)) pcReg <= next;   // "replaced as the result of a
                                     //  successful branching operation"
         intPC <= tagged Invalid;
         // Always a restart: the stream jumps back to the instruction
@@ -555,7 +584,7 @@ module mkStretchCore(StretchCore);
       let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox, intIC);
       startClk <= clk;
       if (r matches tagged Valid .o) begin
-        commitNext(pc, len, o.next);
+        commitNext(pc, len, o);
         pendingIdxWrite <= o.idxWrite;
         pendingTailWrite <= o.tailWrite;
         ioPending <= o.ioStart;
@@ -569,7 +598,7 @@ module mkStretchCore(StretchCore);
         // prints only when a swap actually starts.
         if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
           $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
-        Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
+        Bool taken = branchTaken(pc, len, o);
         ibusy <= iboxBudget(di, taken, o);   // completed in the dispatch clock
         return tuple2(True, isHalt(di, o.next, pc));
       end else
@@ -1972,14 +2001,14 @@ module mkStretchCore(StretchCore);
         charged = True;
         chargeFp = isFpInstr(hdi);
       end else begin
-        commitNext(pc, len, o.next);
+        commitNext(pc, len, o);
         // An I-box store that read its word first (SV, SC, SR, SVA, SIC)
         // completes here: held in a store level, or counted as made.
         if (iboxStoreWord(di) matches tagged Valid .w) begin
           if (storeNeedsLevel) holdStoreInLevel(pc, len, di, w);
           else storeSeq <= storeSeq + 1;
         end
-        Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
+        Bool taken = branchTaken(pc, len, o);
         Bit#(32) elapsed = clk - startClk;
         // A stepped add's unit time replaces the row's byte term here as
         // well (the note on the other branch); `elapsed` already holds it.
@@ -2019,7 +2048,7 @@ module mkStretchCore(StretchCore);
       // The guessed branch, now with final indicators (a branch never
       // waits on an operand, so the result is here).
       let o = validValue(r);
-      Bool taken = (o.next != h.pc + ((h.len == Full) ? 2 : 1));
+      Bool taken = branchTaken(h.pc, h.len, o);
       guessPending <= False;
       if (taken) begin
         // Wrong guess: cancel every younger level, recover next clock.
@@ -2028,9 +2057,10 @@ module mkStretchCore(StretchCore);
         // as they are now, and the instruction unit may have changed them
         // running ahead (MCP printed p.362 lines 41-42, "BAE,JTABL(JX1)"
         // then "CBH,JX1,ZLOOK4"; decks/la_guess_target_index.strap).
-        // `taken` above is still read off that recomputed address, so a
-        // recomputed address equal to the fall-through would read as not
-        // taken.  No program is known to do that.
+        // `taken` is ExecDone.branched since A7 part 2 (2026-11-28): the
+        // E-box's test of the indicator, not the address it recomputed, so
+        // a successful branch whose target is the fall-through (Vol. 2
+        // PDF 112's CONSEC columns, GENER's BAL) is recovered too.
         la.cancelAll();
         recover <= tagged Valid h.target;
         recoverSlot <= la.head();
@@ -2258,7 +2288,10 @@ module mkStretchCore(StretchCore);
       // program keeps running and its own check fails, instead of
       // silently stepping the counter.
       $display("StretchCore: interruption instruction at %0d is E-box class -- not implemented", pc);
-      commitNext(pc, len, pc + ((len == Full) ? 2 : 1));
+      commitNext(pc, len, ExecDone{next: pc + ((len == Full) ? 2 : 1), idxWrite: tagged Invalid,
+                                   ioStart: tagged Invalid, xmitStart: tagged Invalid,
+                                   xmitTiming: tagged Invalid, tailWrite: tagged Invalid,
+                                   branched: False});
     end
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
       if (la.count() < 4 && !progressivePending) begin

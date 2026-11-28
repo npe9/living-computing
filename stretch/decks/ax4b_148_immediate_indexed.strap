@@ -63,7 +63,8 @@
 ! RESULT ON THE MODEL, 2026-11-18 (dc5331e + this deck): PASSES -- halts
 ! at SSW (PC 1410, half-words), SEN = 0, $X1 = BIT23's address 013103.00
 ! with count 0, $X2 = entry 23 (011160.00), $X3's value = BIT23's (.01).
-! CYCLES 5946 is MODEL BEHAVIOUR; no time is printed.  IBM's listing and
+! CYCLES 5833 (5946 before A7 part 2, 2026-11-28: the branch timing) is
+! MODEL BEHAVIOUR; no time is printed.  IBM's listing and
 ! the model AGREE: no finding against the model.
 !
 ! INJECTIONS, each in a scratch copy of bsv/ (the worktree untouched),
