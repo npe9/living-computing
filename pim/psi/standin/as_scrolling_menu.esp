@@ -1,0 +1,21 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `as_scrolling_menu`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3: "variable-length
+% (scrollable) menu", USAGE video fdd_utility, esp.wmv@155).  MENDELS (IFS
+% No.61), 2026-11-27: a nature of its temporary_turn_menu and
+% inferior_turn_menu (win_class.esp:27-35, 108-116), which send it menu
+% methods (clear_items/1, object_editor) although neither lists as_menu.
+%
+% THE NATURE LIST IS INFERENCE: every held list that names
+% as_scrolling_menu leaves as_menu out (MENDELS's two; the video's
+% fdd_utility_file_menu, window.md §1.5), and TM-125 p10 says every menu
+% inherits as_menu; so this mixin brings as_menu.  The scrolling itself
+% (a menu longer than its window) is not stood in: as_menu.esp draws the
+% items that fit, from the first.
+
+class as_scrolling_menu has
+
+nature
+        as_menu;
+
+end.

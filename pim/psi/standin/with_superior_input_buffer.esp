@@ -1,0 +1,29 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `with_superior_input_buffer`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class body is lost (docs/simpos/subsystems/window.md §0.3, §1.3).
+% MENDELS (IFS No.61), 2026-11-27: a nature of its `graphic`,
+% `mendel_pmacs` and `inferior_turn_menu` (win_class.esp) and of the
+% composites its panes are made of (multi_column_menu_with_superior_
+% input_buffer.esp, essential_scrolling_menu_with_superior_input_buffer.
+% esp, essential_window_with_superior_input_buffer.esp); 78 held
+% application classes have it (window.md §1.3).
+%
+% THE MANUALS: TM-125 p11 (4.2, 3)) with_superior_input_buffer "the class
+% for supplying the function to share the input buffer with its own
+% superior window"; TM-115 p40, p42 (PROSE): input made through such a
+% window can be read from a superior window.
+% It has no method of its own here: an attribute (the first in the
+% inheritance order wins, psi/librarian.py build) tells
+% basic_window.esp delivered/5 to put the window's input in its
+% superior's buffer, so a selector of a class after it in a nature list
+% (mendel_pmacs: pmacs_window) is never shadowed.
+
+class with_superior_input_buffer has
+
+instance
+
+% RECONSTRUCTED-FROM-MANUAL (TM-125 p11; the slot OURS): the input goes to
+% the superior's buffer.
+attribute input_to := superior;
+
+end.

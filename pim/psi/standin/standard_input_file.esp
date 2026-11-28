@@ -39,6 +39,16 @@ attribute file := 0, position := 0;
 % the file): nothing to release here (OURS).
 :close_input(In);
 
+% :gett(In, Term, VarsIn, VarsOut) -- MENDELS (2026-11-27), INTERPOLATED:
+% the selector and the argument form are USAGE (docs/simpos/subsystems/
+% window.md §2.4: `(S, ^Term, VarsIn, VarsOut)`, a term with a
+% variable-name table, cal-esp control.esp:245; MENDELS cpro_sys.esp:104
+% `:gett(Class!current_see_obj, X, _, _)`, its library files); the body
+% OURS: the term of gett/2, the table passed through unchanged (the
+% variable names are not kept by this reader, psi/esp_reader.py).
+% LABEL: INFERENCE (the form USAGE; the table not kept, OURS)
+:gett(In, Term, Vars, Vars) :- :gett(In, Term);
+
 local
 
 file_of(Source, File) :- string(Source, _, _), !, :retrieve(#directory, File, Source);

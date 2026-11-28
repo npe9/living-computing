@@ -1,0 +1,25 @@
+% SCAFFOLDING stand-in for SIMPOS's class `inferior_window`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.2).  MENDELS (IFS
+% No.61), 2026-11-27: the base class of MENDELS's own `base`, `graphic`
+% and `inferior_turn_menu` (win_class.esp) and of the composites its panes
+% are made of.  `inferior_window` is the last nature in 110 of 132 held
+% uses (window.md §1.2); WINCS calls it 階層ウィンドウ, a hierarchical
+% window, and requires one of inferior_window, popup_window and
+% temporary_window (WINCS p5, p7-8, PROSE).
+%
+% THE NATURE LIST IS INFERENCE: TM-125 p8 (4.2) has as_inferior "the
+% function as a sub window.  All the window class which is defined by the
+% user must inherit this class" and basic_window "Every window must
+% inherit this class"; WINCS's inferior_window plays the role of TM-125's
+% user_window (window.md §1.2).  as_inferior is not stood in: the body,
+% sub-windows included, is basic_window.esp's.  It has no method of its
+% own.
+
+class inferior_window has
+
+nature
+        as_inferior,
+        basic_window;
+
+end.

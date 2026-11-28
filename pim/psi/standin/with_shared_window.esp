@@ -1,0 +1,27 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `with_shared_window`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3).  MENDELS (IFS
+% No.61), 2026-11-27: the last nature of MENDELS's `base` (win_class.esp),
+% and the create option nature([with_shared_window]) of its panes
+% (mendel_win.esp); 11 held application classes have it (window.md §1.3).
+%
+% WHAT IS KNOWN: the name, read as WINCS's プロセス間共有, "shared between
+% processes" (INFERENCE, window.md §1.3), and one held behaviour: cil
+% calls :assign_window(W) before set_title, activate and deactivate of
+% such a window (cil/src/ms_cfm.esp:118-128, USAGE).  INFERENCE: a window
+% is registered to the process that made it (TM-125 p18 kill/1), and a
+% shared one is taken over by the process that assigns it.  These
+% stand-ins keep no window per process (OURS), so the assignment changes
+% nothing.
+
+class with_shared_window has
+
+instance
+
+% INTERPOLATED (selector USAGE cil ms_cfm.esp:118-128; body OURS): the
+% window assigned to the sending process; nothing to do here (see the
+% head).
+% LABEL: INFERENCE (the meaning from the name and cil's use; no-op OURS)
+:assign_window(W);
+
+end.

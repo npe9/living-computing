@@ -550,7 +550,15 @@ class Structure(unittest.TestCase):
         # are compared (3 exact); 6 'held uses an unwitnessed opcode'
         # rows (6c) change class (4 compared, 2 '$or$ of a refused
         # predicate'); one new compiled-only row (below)
-        self.assertEqual((c['pred compared'], c['pred exact']), (1710, 281))
+        # MENDELS's window mixins (2026-11-27; row by row against
+        # 14bfb013): number/1 (blt 13, witnessed here at p_wshell.esp:181)
+        # and its test-and-branch blt e8 (p_tgraph.esp:46-47) are rows:
+        # 1,710 -> 1,717 compared, 281 exact.  time_graph get_time_data/2,
+        # go/2 and make_data_list/6 and what_manipulator_shell extend/3
+        # and history_exe/4 compile (refused before); their $or$s are
+        # compared (2 'held uses an unwitnessed opcode' -> 1 other, 1
+        # moves and environment); no exact row lost
+        self.assertEqual((c['pred compared'], c['pred exact']), (1717, 281))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         # 0 -> 1 with the temporary_menu step: receiver send/3 compiles
@@ -1001,7 +1009,11 @@ end.'''
         # rows), and one such row is compared (other); one 'other' ->
         # clause order; two new rows under an
         # inlined ->
-        self.assertEqual((c['pred compared'], c['pred exact']), (15113, 1782))
+        # MENDELS's window mixins (2026-11-27; row by row against
+        # 14bfb013): number/1 (blt 13) is a row: kappaFMP_editor and
+        # kappaFMP_editor2 get_number/3 compile (refused -> moves and
+        # environment): 15,115 compared, 1,782 exact; no other row changes
+        self.assertEqual((c['pred compared'], c['pred exact']), (15115, 1782))
         # 116 -> 119 with MENDELS's built-ins: check_index_conditions/9.11#1
         # and check_search_index_value/11.11#2 ($or$ of a refused predicate
         # before) and the new #3; 119 -> 123 with the temporary_menu step:
@@ -1127,7 +1139,7 @@ class Standins(unittest.TestCase):
         return e.exception.cause, e.exception.detail
 
     def test_compiled_whole(self):
-        self.assertEqual(sorted(t.id for t in self.ts), [
+        self.assertEqual(sorted(t.id for t in self.ts), sorted([
             'simpos##abort_handler', 'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_event_handler',     # MENDELS (2026-11-27)
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
@@ -1160,7 +1172,18 @@ class Standins(unittest.TestCase):
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##tcpip_network_subsystem', 'simpos##temporary_menu', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
-            'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
+            'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'] + [
+            # MENDELS's window mixins (2026-11-27, psi/README.md MENDELS):
+            # the mixins, composites, menus and helpers its start-up reaches
+            'simpos##' + n for n in (
+                'array', 'as_input', 'as_markers', 'as_menu', 'as_output', 'as_scrolling_menu',
+                'as_superior', 'basic_window', 'essential_scrolling_menu',
+                'essential_scrolling_menu_with_superior_input_buffer',
+                'essential_window_with_superior_input_buffer', 'inferior_window', 'labeled_sash',
+                'multi_column_menu', 'multi_column_menu_with_superior_input_buffer', 'operator_pool',
+                'standard_temporary_menu', 'temporary_multi_column_menu',
+                'temporary_standard_io_window', 'temporary_superior_window', 'temporary_window',
+                'with_shared_window', 'with_superior_input_buffer')]))
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
         # predicates espc refuses; every other stand-in compiles whole
         # (e_string's and name's sorts, refused at partition/4's
@@ -1226,8 +1249,9 @@ class Standins(unittest.TestCase):
                 with self.subTest(cls=t.id, method=p.name):
                     self.assertTrue(re.search(r'RECONSTRUCTED-\s*FROM-\s*MANUAL|INFERENCE|OURS', text))
                     self.assertIn('`%s/' % p.name, doc)
-        # 39 since MENDELS's getl/2 (2026-11-27)
-        self.assertEqual(n, 39)     # the methods whose block cites pmacs.md
+        # 39 since MENDELS's getl/2 (2026-11-27); 40 since MENDELS's
+        # editor_text_buffer insert/2 (window mixins, 2026-11-27)
+        self.assertEqual(n, 40)     # the methods whose block cites pmacs.md
 
     def test_source_check_labels(self):
         # docs/simpos/source_check_2026-11-24.md §5, applied 2026-11-25:
@@ -1955,8 +1979,12 @@ end.''', 'simpos')
         # 451.  pimfep_message_log dump_log/1, sorted_log/1 and
         # sorted_log_string/1 now wait in getl/2 (refused 'would suspend',
         # 'simpos' before); scsi reset/1-3 reach a slot constant (refused
-        # 'opcode' before: blt 3e freeze and 3f melt are rows now)
-        self.assertEqual((len(rows), out), (1552, {'success': 837, 'failure': 247, 'refused': 451, 'exception': 16,
+        # 'opcode' before: blt 3e freeze and 3f melt are rows now).
+        # MENDELS's window mixins (2026-11-27; row by row against 14bfb013):
+        # pimos_fep_superviser log_menu/2 succeeds (it refused at
+        # standard_temporary_menu create/3, now stood in): 838 / 247 / 450;
+        # no other row changes outcome
+        self.assertEqual((len(rows), out), (1552, {'success': 838, 'failure': 247, 'refused': 450, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -2110,8 +2138,10 @@ end.''', 'simpos')
         # write_file/4 at the unbound pathname): 888 / 268 / 378.
         # MENDELS (2026-11-27, row by row): the rows of test_fep_census;
         # pimos_window getl/2 is refused at the census process's suspend:
-        # 1,552 rows, 888 / 268 / 379
-        self.assertEqual((len(rows), out), (1552, {'success': 888, 'failure': 268, 'refused': 379,
+        # 1,552 rows, 888 / 268 / 379.  MENDELS's window mixins (2026-11-27,
+        # row by row against 14bfb013): log_menu/2 succeeds, as in
+        # test_fep_census: 889 / 268 / 378
+        self.assertEqual((len(rows), out), (1552, {'success': 889, 'failure': 268, 'refused': 378,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         # step 3l: 107 -> 110, as in test_fep_census; step 3n: 111, get_title/3;

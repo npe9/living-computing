@@ -1,0 +1,30 @@
+% SCAFFOLDING stand-in for SIMPOS's class `temporary_multi_column_menu`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class is lost (docs/simpos/subsystems/window.md §0.3, §1.6, the
+% single-select menus).  TM-125 p8 (4.1) lists it as a stand-alone class:
+% "the class for making the single select multi column temporary menu".
+% MENDELS (IFS No.61), 2026-11-27: a slot of its graphic_select, made
+% with two empty columns (graph_sel.esp:15-16).
+%
+% THE NATURE LIST IS INFERENCE: no composite's list is printed (window.md
+% §1.6).  From TM-125 p8-12 (every menu inherits as_menu; as_multiple_
+% column; as_single_select; a menu takes mouse input; temporary_window
+% the base class, p6-7) and the held temporary menus' lists (MENDELS
+% temporary_turn_menu, win_class.esp:27-35: labeled_sash,
+% as_scrolling_menu, as_single_select, as_mouse_input, temporary_window).
+% Only the menu's layout and the frame are stood in (as_menu.esp,
+% basic_window.esp); its reading (read/2 with abort when the mouse leaves,
+% as temporary_menu.esp's) is not, and a send to it is refused loudly.
+% It has no method of its own.
+
+class temporary_multi_column_menu has
+
+nature
+        labeled_sash,
+        as_menu,
+        as_multiple_column,
+        as_single_select,
+        as_mouse_input,
+        temporary_window;
+
+end.

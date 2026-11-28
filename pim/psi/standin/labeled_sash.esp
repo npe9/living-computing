@@ -1,0 +1,80 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `labeled_sash`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3).  MENDELS (IFS
+% No.61), 2026-11-27: the first nature of MENDELS's `base`, `graphic` and
+% `inferior_turn_menu` (win_class.esp), and of 29 held application
+% classes (window.md §1.3; paragraph's time_graph_window, icotext's
+% kakari_super_window).
+%
+% THE MANUAL: TM-125 p9 (4.2, 1) primitive classes): labeled_sash "the
+% class for making a window which has border, margins and label"; sash
+% "border and margins"; with_border, with_label, with_margin; Figure 5
+% (the border, the label strip "This is Label", the margins inside the
+% border, the window inside); p15-16 (5.3, 3) Border/Label/Margins):
+% set_border_width/2 (default 2 dots), set_title/2 "set the string
+% displayed as the label", set_margins/5; Table 1 title(String) (blank),
+% margins 1 dot.
+% THE HELD CALL SITES (USAGE): set_label_flag/2, set_border_flag/2,
+% set_margin_flag/2 `(W, on|off)` and the create options of the same
+% names (MENDELS mendel_win.esp:272, 306-307, 425-426, 482-483, 720-721;
+% window.md §3.2), set_label_font/2 (icotext kkr_super_win.esp:28).
+% The sizes and the look are basic_window.esp's (OURS, see its head).
+% Each method is labelled.
+
+class labeled_sash has
+
+instance
+
+% the sash's flags, on (TM-125 p9: a labeled_sash has a border, margins
+% and a label); an attribute is the first in the inheritance order
+% (psi/librarian.py build), so these win over inferior_window's off.  The
+% title (blank, TM-125 Table 1; TM-115 p41: with_label provides the slot
+% `title`).
+attribute label_flag := on, border_flag := on, margin_flag := on, title := 0;
+
+% INTERPOLATED (selector and arguments USAGE, see the head; body OURS):
+% the label strip on or off, the window drawn again.
+% LABEL: INFERENCE (the flag, USAGE MENDELS; the label TM-125 p9, Figure 5)
+:set_label_flag(W, F) :- W!label_flag := F, :redraw(W);
+
+% INTERPOLATED (selector and arguments USAGE, see the head; body OURS):
+% the border on or off.
+% LABEL: INFERENCE (the flag, USAGE MENDELS; the border TM-125 p15)
+:set_border_flag(W, F) :- W!border_flag := F, :redraw(W);
+
+% INTERPOLATED (selector and arguments USAGE, see the head; body OURS):
+% the margins on or off.
+% LABEL: INFERENCE (the flag, USAGE MENDELS; the margins TM-125 Table 1)
+:set_margin_flag(W, F) :- W!margin_flag := F, :redraw(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): the label's string, drawn again.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15 set_title/2; the body OURS)
+:set_title(W, T) :- W!title := T, :redraw(W);
+
+% INTERPOLATED (selector USAGE icotext kkr_super_win.esp:28, window.md
+% §2.14; body OURS): the label's font, drawn with from the next draw.
+% LABEL: INFERENCE (a font object, USAGE)
+:set_label_font(W, F) :- W!label_font := F, :redraw(W);
+
+% INTERPOLATED (selector USAGE MENDELS graph_mode.esp:57, the setter
+% set_border_width/2 PRINTED-INTERFACE TM-125 p15 (default 2 dots); body
+% OURS): the border's width in dots, 0 when it is off.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15 the default 2 dots; the
+% getter's name USAGE)
+:get_border_width(W, 2) :- W!border_flag == on, !;
+:get_border_width(_, 0);
+
+% INTERPOLATED (selector USAGE MENDELS graph_mode.esp:58, window.md §2.2;
+% body OURS): the label strip's height in dots (basic_window.esp's look:
+% the label font's line plus 4), 0 when it is off.
+% LABEL: OURS (the strip's height)
+:get_label_height(W, H) :- W!label_flag == on, !, label_cell(W!label_font, Ch), H = Ch + 4;
+:get_label_height(_, 0);
+
+local
+
+label_cell(0, Ch) :- !, :default_font(#bitmap_display, _, _, Ch);
+label_cell(F, Ch) :- Ch = F!height;
+
+end.

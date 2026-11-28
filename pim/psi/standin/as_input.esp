@@ -1,0 +1,37 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `as_input`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3).  MENDELS (IFS
+% No.61), 2026-11-27: a nature of MENDELS's `base` (win_class.esp) and of
+% 44 held application classes (window.md §1.3).
+%
+% THE MANUAL: TM-125 p11 (4.2, 3) input control) as_input "the class for
+% supplying the function of input from keyboard"; p18 (5.6) read/2 "read
+% a character (or mouse click, term, etc.).  If there is no input, the
+% process will be kept waiting"; the code is the character's code from
+% the keyboard, the mouse code from the mouse, a menu's item_id.
+% The input buffer and its events are basic_window.esp's (OURS, see
+% its head): a key typed in the selected top window, a click, and an
+% inferior's input when it shares the buffer.  Each method is labelled.
+
+class as_input has
+
+instance
+
+% :read(W, ^Code) -- INTERPOLATED (selector and arguments PRINTED-INTERFACE
+% TM-125 p18; body OURS): the next input's data; with none, the process
+% waits.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p18 5.6; the buffer OURS)
+:read(W, Code) :- :get(W!buffer, {_, Code, _, _, _});
+
+% :clear_buffer(W) -- INTERPOLATED (selector USAGE MENDELS mendel_win.esp:
+% 1115 before read/3, window.md §2.7 "discard pending input"; body OURS):
+% the inputs waiting in the window's buffer dropped.
+% LABEL: INFERENCE (discard pending input, USAGE; the body OURS)
+:clear_buffer(W) :- drained(W!buffer);
+
+local
+
+drained(S) :- :try_to_get(S, _), !, drained(S);
+drained(_);
+
+end.

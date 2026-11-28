@@ -1,0 +1,272 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `as_menu`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3, §2.9).  MENDELS
+% (IFS No.61), 2026-11-27: the menu part of the composites its panes are
+% made of (multi_column_menu_with_superior_input_buffer.esp,
+% essential_scrolling_menu_with_superior_input_buffer.esp), inside its
+% `base`.  Seven held application classes name as_menu as a nature
+% (window.md §1.3).  temporary_menu.esp is a separate stand-in (on the
+% coordinator's pop-up); this one is a menu that is an inferior window.
+%
+% THE MANUALS:
+%   - TM-125 p12 (4.2, 4)): as_menu "the class for making the menu window.
+%     Every menu window must inherit this class"; as_multiple_column "the
+%     class for making the multi column menu"; as_single_select;
+%     as_on_off_menu "the item with type of on_off is reversed when
+%     selected"; as_scrolling_menu (held, window.md §1.3);
+%   - TM-125 p7 (2.7): a menu takes mouse input only, and is sized by its
+%     item count and its longest item;
+%   - TM-125 p14: items_list(Items), each item {item_string, item_type,
+%     item_id, documentation}; p15 add_item/3 (Position 0..n), add_item/4
+%     for a column of a multi-column menu, delete_item/2 by item_string;
+%     p18 (5.6, 5)) "by the selection of menu item the item_id associated
+%     to that item will be returned as code".
+% THE HELD CALL SITES (USAGE, window.md §2.9, §3.3): a multi-column menu's
+% items_list is a list of columns, each a list of items (MENDELS
+% mendel_win.esp:296-299, icotext ki_window.esp:71-78, TR-046 p27's system
+% menu); a fifth field on/off (MENDELS, window.md §3.3); `no_select` a
+% line that cannot be chosen; clear_items/1 (MENDELS mendel_win.esp:131,
+% cal-esp deb2.12/create.esp:544), set_item_status/3 and get_item_status/3
+% (MENDELS mendel_win.esp:145-148, 1060; knov ap.esp:199),
+% retrieve_all_items/2 (MENDELS turn_down.esp:55; kwic searchMan.esp:311),
+% add_items/3 (window.md §2.9).
+%
+% THE LOOK, OURS: the items in the window's font (0: the device's
+% default; MENDELS's kanji_16 is not held and is test_11, mendels.py
+% SUBSTITUTE_FONTS), one font line plus 2 dots a row (as menu_pane.esp);
+% a column of a multi-column menu as wide as its longest item plus one
+% cell each side, the columns side by side from the left, each item
+% centred in its column; a single-column menu's items one cell from the
+% left; an item whose status is on reversed (exclusive_or over its row;
+% TM-125 p12 as_on_off_menu, INFERENCE that MENDELS's on/off status, the
+% phase it is in, is shown so); items past the inside not drawn (no
+% scrolling).  A left click on an item that can be chosen gives its
+% item_id as the input (basic_window.esp delivered/5), to the
+% superior's buffer when the menu shares it.
+% NOT STOOD IN (fail loud): scrolling, add_item/4, the documentation on
+% the status line, retrieve_item/3, change_item/3.
+
+class as_menu has
+
+instance
+
+% OURS representation: the window is a menu (basic_window.esp asks);
+% the on/off status set by set_item_status/3 ([[Id, Status], ...]).
+attribute menu := yes, item_status := [];
+
+% INTERPOLATED (selector OURS): the inside size of the items (TM-125 p7,
+% see the head), for a menu made with no size (basic_window.esp
+% create/3).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p7: sized by the item count and
+% the longest item; the dots OURS)
+:natural_size(W, Iw, Ih) :-
+        cell(W, _, Cw, Ch),
+        columns(W!items, Cs),
+        widths(Cs, Cw, Ws),
+        sum(Ws, 0, Iw),
+        most(Cs, 0, N),
+        Ih = N * (Ch + 2);
+
+% INTERPOLATED (selector OURS): the items drawn in the inside, while the
+% top window's pane is uncovered (basic_window.esp contents/1).
+% LABEL: OURS (the look, see the head)
+:draw_items(W) :-
+        :inside_rectangle(W, X, Y, Iw, Ih),
+        cell(W, Id, Cw, Ch),
+        columns(W!items, Cs),
+        layout(Cs, Cw, Iw, Ws),
+        one(Cs, One),
+        :clip_inside(W, _, _, R, B),
+        drawn_columns(W, Cs, Ws, One, Id, Cw, Ch, X, Y, R, B);
+
+% INTERPOLATED (selector OURS): a left click at the device's (X, Y): the
+% item there, if it can be chosen, gives its item_id as the input (TM-125
+% p18 5)), else nothing.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p18: the item_id returned as
+% code; no_select USAGE; the hit test OURS)
+:item_clicked(W, X, Y) :-
+        :inside_rectangle(W, IX, IY, Iw, _),
+        cell(W, _, Cw, Ch),
+        columns(W!items, Cs),
+        layout(Cs, Cw, Iw, Ws),
+        column_at(Ws, X - IX, 0, C),
+        quotient(Y - IY, Ch + 2, 0, R),
+        nth(Cs, C, Column), nth(Column, R, Item),
+        vector_element(Item, 1, Type), Type \== no_select, !,
+        vector_element(Item, 2, Id),
+        :delivered(W, Id, 'mouse#l', X - IX, Y - IY);
+:item_clicked(_, _, _);
+
+% INTERPOLATED (selector USAGE, see the head; body OURS): every item
+% removed (and its status).
+% LABEL: INFERENCE (USAGE MENDELS, cal-esp; the body OURS)
+:clear_items(W) :- W!items := [], W!item_status := [], :redraw(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): Item inserted at Position (0..n) of a single-column menu.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15 add_item/3; the body OURS)
+:add_item(W, Item, Position) :-
+        inserted(W!items, [Item], Position, Is), W!items := Is, :redraw(W);
+
+% INTERPOLATED (selector USAGE window.md §2.9; body OURS): the items of a
+% list inserted at Position, in their order.
+% LABEL: INFERENCE (add_item/3 for a list, USAGE; the body OURS)
+:add_items(W, Items, Position) :-
+        inserted(W!items, Items, Position, Is), W!items := Is, :redraw(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): the first item whose item_string is String removed.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15 delete_item/2; the body OURS)
+:delete_item(W, String) :-
+        without_label(W!items, String, Is), W!items := Is, :redraw(W);
+
+% INTERPOLATED (selector and arguments USAGE `(M, Id, on|off)`, see the
+% head; body OURS): the item's status, drawn reversed when on.
+% LABEL: INFERENCE (on/off of an item by its id, USAGE; reversed TM-125 p12
+% as_on_off_menu)
+:set_item_status(W, Id, Status) :-
+        without_key(W!item_status, Id, Ss),
+        W!item_status := [[Id, Status] | Ss],
+        :redraw(W);
+
+% INTERPOLATED (selector and arguments USAGE MENDELS mendel_win.esp:1060;
+% body OURS): the status set, else the item's fifth field, else off.
+% LABEL: INFERENCE (USAGE; the default off OURS)
+:get_item_status(W, Id, Status) :- status_of(W, Id, Status);
+
+% INTERPOLATED (selector USAGE, see the head; body OURS): the item vectors
+% as given (a single-column menu's list).
+% LABEL: INFERENCE (USAGE MENDELS turn_down.esp, kwic; the status not
+% merged in, OURS)
+:retrieve_all_items(W, Items) :- Items = W!items;
+
+local
+
+cell(W, Id, Cw, Ch) :- W!font == 0, !, :default_font(#bitmap_display, Id, Cw, Ch);
+cell(W, Id, Cw, Ch) :- F = W!font, Id = F!id, Cw = F!width, Ch = F!height;
+
+% a multi-column menu's items are columns (lists); a single-column menu's
+% are items (vectors): one column
+columns([], [[]]) :- !;
+columns([X | R], [X | R]) :- list(X), !;
+columns(Is, [Is]);
+
+list([]);
+list([_ | _]);
+
+one([_], yes) :- !;
+one(_, no);
+
+% each column's natural width: its longest item plus one cell each side
+widths([], _, []);
+widths([C | Cs], Cw, [W | Ws]) :-
+        longest(C, 0, N), W = (N + 2) * Cw,
+        widths(Cs, Cw, Ws);
+
+% the widths drawn: a single column the whole inside, else the natural
+layout([C], Cw, Iw, [Iw]) :- !;
+layout(Cs, Cw, _, Ws) :- widths(Cs, Cw, Ws);
+
+longest([], N, N);
+longest([I | Is], N0, N) :- vector_element(I, 0, S), string(S, K, _), K > N0, !,
+        longest(Is, K, N);
+longest([_ | Is], N0, N) :- longest(Is, N0, N);
+
+sum([], S, S);
+sum([W | Ws], S0, S) :- sum(Ws, S0 + W, S);
+
+most([], N, N);
+most([C | Cs], N0, N) :- count(C, 0, K), K > N0, !, most(Cs, K, N);
+most([_ | Cs], N0, N) :- most(Cs, N0, N);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+drawn_columns(_, [], _, _, _, _, _, _, _, _, _) :- !;
+drawn_columns(_, _, [], _, _, _, _, _, _, _, _) :- !;
+drawn_columns(_, _, _, _, _, _, _, X, _, R, _) :- X >= R, !;
+drawn_columns(W, [C | Cs], [Wd | Ws], One, Id, Cw, Ch, X, Y, R, B) :-
+        low(X + Wd, R, Xr),
+        drawn_items(W, C, One, Id, Cw, Ch, X, Xr, Y, B),
+        drawn_columns(W, Cs, Ws, One, Id, Cw, Ch, X + Wd, Y, R, B);
+
+low(A, B, A) :- A =< B, !;
+low(_, B, B);
+
+drawn_items(_, [], _, _, _, _, _, _, _, _) :- !;
+drawn_items(_, _, _, _, _, Ch, _, _, Y, B) :- Y + Ch + 2 > B, !;
+drawn_items(W, [I | Is], One, Id, Cw, Ch, X, R, Y, B) :-
+        vector_element(I, 0, S),
+        string(S, N, _),
+        text_x(One, X, R, N, Cw, Tx),
+        glyphs(S, 0, N, Id, Cw, Tx, Y + 1, R),
+        vector_element(I, 2, Key),
+        reversed_if_on(W, I, Key, X, Y, R - X, Ch + 2),
+        drawn_items(W, Is, One, Id, Cw, Ch, X, R, Y + Ch + 2, B);
+
+% a single column's text one cell from the left; a multi-column menu's
+% centred in its column
+text_x(yes, X, _, _, Cw, X + Cw) :- !;
+text_x(_, X, R, N, Cw, Tx) :- Tx = X + (R - X - N * Cw) / 2;
+
+glyphs(_, I, N, _, _, _, _, _) :- I >= N, !;
+glyphs(_, _, _, _, Cw, X, _, R) :- X + Cw > R, !;
+glyphs(S, I, N, Id, Cw, X, Y, R) :-
+        string_element(S, I, C),
+        :glyph(#bitmap_display, Id, C, X, Y, copy),
+        glyphs(S, I + 1, N, Id, Cw, X + Cw, Y, R);
+
+reversed_if_on(W, I, Key, X, Y, Wd, Ht) :- unbound(Key), !;
+reversed_if_on(W, I, Key, X, Y, Wd, Ht) :- status_of_item(W, I, Key, on), !,
+        :fill(#bitmap_display, X, Y, Wd, Ht, exclusive_or);
+reversed_if_on(_, _, _, _, _, _, _);
+
+status_of(W, Id, S) :- key_of(W!item_status, Id, S), !;
+status_of(W, Id, S) :- columns(W!items, Cs), find(Cs, Id, I), !, fifth(I, S);
+status_of(_, _, off);
+
+status_of_item(W, _, Key, S) :- key_of(W!item_status, Key, S), !;
+status_of_item(_, I, _, S) :- fifth(I, S);
+
+fifth(I, S) :- size_of(I, N), N >= 5, !, vector_element(I, 4, S);
+fifth(_, off);
+
+size_of(V, N) :- stack_vector(V, N), !;
+size_of(V, N) :- heap_vector(V, N);
+
+find([C | _], Id, I) :- find_in(C, Id, I), !;
+find([_ | Cs], Id, I) :- find(Cs, Id, I);
+
+find_in([I | _], Id, I) :- vector_element(I, 2, K), bound(K), K == Id, !;
+find_in([_ | Is], Id, I) :- find_in(Is, Id, I);
+
+key_of([[K, S] | _], Id, S) :- K == Id, !;
+key_of([_ | R], Id, S) :- key_of(R, Id, S);
+
+column_at([W | _], X, C, C) :- X >= 0, X < W, !;
+column_at([W | Ws], X, C0, C) :- X >= W, column_at(Ws, X - W, C0 + 1, C);
+
+% D / Q by subtraction (as menu_pane.esp's)
+quotient(D, _, _, _) :- D < 0, !, fail;
+quotient(D, Q, R, R) :- D < Q, !;
+quotient(D, Q, R0, R) :- quotient(D - Q, Q, R0 + 1, R);
+
+nth([X | _], 0, X) :- !;
+nth([_ | R], N, X) :- N > 0, nth(R, N - 1, X);
+
+inserted(L, Xs, 0, R) :- !, appended(Xs, L, R);
+inserted([X | L], Xs, N, [X | R]) :- N > 0, inserted(L, Xs, N - 1, R);
+inserted([], Xs, _, Xs);
+
+appended([], L, L);
+appended([X | R], L, [X | S]) :- appended(R, L, S);
+
+without_label([], _, []);
+without_label([I | Is], S, Is) :- vector_element(I, 0, L), equal_string(L, S), !;
+without_label([I | Is], S, [I | R]) :- without_label(Is, S, R);
+
+without_key([], _, []);
+without_key([[K, _] | R], K, R) :- !;
+without_key([X | R], K, [X | S]) :- without_key(R, K, S);
+
+end.

@@ -26,4 +26,24 @@ instance
 % OURS representation: the text written and the read position in it.
 attribute text := 0, position := 0;
 
+% MENDELS (2026-11-27): the operator pool (0 until asked for).
+attribute operators := 0;
+
+% :get_parsing_operator(B, ^Pool) -- INTERPOLATED (selector and arguments
+% USAGE MENDELS extern.esp:99-102, flat_data.esp:50-60 (the pool then
+% receives add_operator/4), io_win.esp:151-154 (get, add, then
+% set_parsing_operator/2); window.md §2.4 "operator pool for gett",
+% INFERENCE; docs/simpos/subsystems/gaps.md G7; body OURS): the buffer's
+% operator pool, made empty the first time (operator_pool.esp).  The
+% reader of gett/2 (psi/mendels_simpos.py) does not consult it: a term
+% that needs an added operator is refused there, loudly.
+% LABEL: INFERENCE (the pool read for gett, USAGE; the pool OURS)
+:get_parsing_operator(B, P) :- B!operators \== 0, !, P = B!operators;
+:get_parsing_operator(B, P) :- :create(#operator_pool, P), B!operators := P;
+
+% :set_parsing_operator(B, Pool) -- INTERPOLATED (selector and arguments
+% USAGE MENDELS io_win.esp:154, window.md §2.4; body OURS): the pool kept.
+% LABEL: INFERENCE (USAGE; the body OURS)
+:set_parsing_operator(B, P) :- B!operators := P;
+
 end.

@@ -191,8 +191,8 @@ CHECKPOINT_PASSWORD = ''
 
 # The PSI's directories that MENDELS's installation makes (install.e
 # Step 1, its "Directory Structure"; readme.e:18-28): HELD placement.
-# They are made empty (OURS): nothing on the run's path reads a file in
-# them yet; the path window checks that the user directory and its four
+# They are made empty (OURS), but for the held files HELD_FILES places in
+# SYSTEM (below); the path window checks that the user directory and its four
 # subdirectories exist (init_path.esp check_pathname2/3, get_sysDIRs/3)
 INSTALLED_DIRS = ['>sys>user>MENDEL', '>sys>user>MENDEL>ESP', '>sys>user>MENDEL>KL1',
                   '>sys>user>MENDELuser', '>sys>user>MENDELuser>PARTS',
@@ -232,6 +232,52 @@ def substitute_font(m, name, held_font):
     m.set_slot(d, 'entries', K.Cons(K.Vec([K.Str(name), f]), m.get_slot(d, 'entries')))
 
 
+# The archive's user-defined files, placed as install.e's "Copied Files"
+# says (HELD placement, install.e Step 2: "example*.kl1, *.med, *.mdl,
+# *.save ( DIR PARTS )", "tree.* ( DIR SYSTEM )"); the MENDEL user
+# directory is the one USER_LINES types.  Their text is HELD (the
+# archive's bytes, ASCII, newline 0x0a), made 16-bit JIS words as the
+# PSI's text files are (simpos_fs.codes_of; OURS: the archive is a Unix
+# copy, so the PSI's own words are not held).  object_lib restore/1
+# reads tree.obj and tree.key at start-up (object_lib.esp:29-31, 321-325;
+# obj_tree.esp:1011-1020: example1-3 are its library's objects).  The
+# archive has no tree.field, so field_tree restore/2 takes its "file not
+# exist" clause (field_tree.esp:446-447): HELD absence, not ours
+USER_DIR = '>sys>user>MENDELuser'
+# Only tree.* is placed so far: nothing on the run's path reads PARTS
+# yet, and the example files' text is not checked to be plain ASCII.
+HELD_FILES = [('mendels/tree.obj', 'SYSTEM'), ('mendels/tree.key', 'SYSTEM')]
+
+
+def text_codes(raw):
+    """The 16-bit JIS words of ASCII text RAW (espc.jis_code; 0x000a a
+    newline, as simpos_fs.codes_of measured on login.com)."""
+    return [0x0a if ch == '\n' else espc.jis_code(ch) for ch in raw.decode('ascii')]
+
+
+def install_held_files(m):
+    """HELD_FILES entered in the MENDEL user directory (above)."""
+    import ifs_sweep as X
+    files = X.archive(ARCHIVE)
+    root = m.get_slot(K.ClassRef('simpos##directory'), 'root')
+    for name, sub in HELD_FILES:
+        d = root
+        for part in (USER_DIR + '>' + sub).strip('>').split('>'):
+            d = dict(_entries(m, d))[part]
+        base = name.rsplit('/', 1)[1]
+        raw = files[name]
+        f = K.make_instance(m, 'simpos##binary_file')
+        m.set_slot(f, 'name', K.Str(base))
+        m.set_slot(f, 'version', 1)
+        m.set_slot(f, 'size', len(raw))
+        m.set_slot(f, 'full_name', K.Str('%s>%s>%s.1' % (USER_DIR, sub, base)))
+        m.set_slot(f, 'directory', d)
+        s = K.Str('')
+        s.set_codes(text_codes(raw))
+        m.set_slot(f, 'contents', s)
+        m.set_slot(d, 'entries', K.Cons(K.Vec([K.Str(base), f]), m.get_slot(d, 'entries')))
+
+
 class PsiSide(FB.PsiSide):
     """fep_bridge's PSI side (the boot program, the held front end on two
     streams, the coordinator), no login typed, the package `mendel`
@@ -253,6 +299,7 @@ class PsiSide(FB.PsiSide):
             FS.EMPTY_DIRS = saved
         for name, held_font in SUBSTITUTE_FONTS:
             substitute_font(m, name, held_font)
+        install_held_files(m)
         m.reset()
         U = K.ClassRef('simpos##user')
         for _ in m.solve_send(U, 'register', [K.Str(FS.USER), K.Str(CHECKPOINT_PASSWORD),

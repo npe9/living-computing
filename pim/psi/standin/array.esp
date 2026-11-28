@@ -1,0 +1,85 @@
+% SCAFFOLDING stand-in for SIMPOS's class `array`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no body of it is printed
+% or held.  MENDELS (IFS No.61), 2026-11-27: its top_down, data_port and
+% data_meth keep records in arrays of 2 to 7 elements.
+%
+% THE INTERFACE is USAGE: docs/simpos/required/classes.tsv row `array`
+% (5 programs: fuzclust, gog-esp, kappa2, knov, sum) lists c:create/3 and
+% get_at/3, get_contents/2, put_at/3, put_contents/2.  The argument order
+% is MENDELS's: `:create(#array, Array, 5)` (top_down.esp:154, the size
+% last), `:put_at(Array, Data, 4)` and `:get_at(Array, Data, 4)` (the
+% value, then an index from 0: :157, :280, where the record's fifth
+% element is index 4 of put_contents' list, :156), `:put_contents(Array,
+% [..5 elements..])` and `:get_contents(Array, [Name, Type, X, Y, Data])`
+% (:156, :305: the whole array as a list).  The bodies are OURS: the
+% elements a heap vector, each 0 until put (OURS: what an element holds
+% before it is put is UNSPECIFIED); an index outside the array, or a list
+% of another length, fails.
+
+class array has
+
+% INTERPOLATED (selector and arguments USAGE, above; body OURS).
+% LABEL: INFERENCE (the form from MENDELS's calls; the vector OURS)
+:create(Class, A, Size) :-
+        integer(Size), 0 < Size,
+        :new(Class, A),
+        new_heap_vector(V, Size),
+        zeros(V, 0, Size),
+        A!elements := V;
+
+local
+
+zeros(_, N, N) :- !;
+zeros(V, I, N) :- set_vector_element(V, I, 0), zeros(V, I + 1, N);
+
+instance
+
+% OURS representation: the elements, a heap vector.
+attribute elements := 0;
+
+% INTERPOLATED (selector USAGE, classes.tsv; arguments MENDELS
+% top_down.esp:157; body OURS): the element at Index := Value.
+% LABEL: INFERENCE (as create/3)
+:put_at(A, Value, Index) :-
+        inside(A!elements, Index),
+        set_vector_element(A!elements, Index, Value);
+
+% INTERPOLATED (selector USAGE, classes.tsv; arguments MENDELS
+% top_down.esp:213, :280; body OURS): Value the element at Index.
+% LABEL: INFERENCE (as create/3)
+:get_at(A, Value, Index) :-
+        inside(A!elements, Index),
+        vector_element(A!elements, Index, Value);
+
+% INTERPOLATED (selector USAGE, classes.tsv; arguments MENDELS
+% top_down.esp:156; body OURS): every element, from a list as long as
+% the array.
+% LABEL: INFERENCE (as create/3)
+:put_contents(A, List) :-
+        V = A!elements,
+        heap_vector(V, N),
+        length_of(List, 0, N),
+        put_all(List, V, 0);
+
+% INTERPOLATED (selector USAGE, classes.tsv; arguments MENDELS
+% top_down.esp:305; body OURS): the elements as a list, first first.
+% LABEL: INFERENCE (as create/3)
+:get_contents(A, List) :-
+        V = A!elements,
+        heap_vector(V, N),
+        get_all(V, 0, N, List);
+
+local
+
+inside(V, I) :- integer(I), heap_vector(V, N), 0 =< I, I < N;
+
+length_of([], N, N);
+length_of([_ | R], I, N) :- length_of(R, I + 1, N);
+
+put_all([], _, _);
+put_all([X | R], V, I) :- set_vector_element(V, I, X), put_all(R, V, I + 1);
+
+get_all(_, N, N, []) :- !;
+get_all(V, I, N, [X | R]) :- vector_element(V, I, X), get_all(V, I + 1, N, R);
+
+end.

@@ -1,0 +1,38 @@
+% SCAFFOLDING stand-in for SIMPOS's class
+% `multi_column_menu_with_superior_input_buffer`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: the class is lost
+% (docs/simpos/subsystems/window.md §0.3, §1.6, the single-select menus).
+% MENDELS (IFS No.61), 2026-11-27: eight of its panes, the command bars
+% inside its `base` (mendel_win.esp create_port_title/6, create_parts_
+% title/7, create_tsl_title/6, create_phase_window/6, create_bind_title/6,
+% create_graphic_title/7; its own parts_title, win_class.esp:80-84);
+% garnet_win.esp four more; icotext's command bar (ki_window.esp:69-78).
+%
+% THE NATURE LIST IS INFERENCE: no composite's list is printed (window.md
+% §1.6).  From the name (window.md §1.6 prefixes: multi_column ->
+% as_multiple_column, _with_superior_input_buffer -> that mixin), TM-125
+% p8-12 (multi_column_menu: "the multi column menu", a single-select
+% menu; every menu inherits as_menu; a menu takes mouse input), and the
+% held menu panes' own lists (cal-esp sccmds.esp:8: sash, as_menu,
+% as_single_select, as_mouse_input, with_superior_input_buffer,
+% inferior_window; TM-115 p42 font_multiple_select_multi_column_menu:
+% sash, with_superior_input_buffer, as_multiple_column, as_multiple_select,
+% as_mouse_input, user_window).  labeled_sash, not sash: MENDELS and
+% icotext give each one label_flag(off), so it has a label by default
+% (INFERENCE).  as_multiple_column, as_single_select and as_mouse_input
+% are not stood in: as_menu.esp lays a list of columns out side by side
+% and takes a left click (basic_window.esp), and a send that only they
+% would answer is refused loudly.  It has no method of its own.
+
+class multi_column_menu_with_superior_input_buffer has
+
+nature
+        labeled_sash,
+        with_superior_input_buffer,
+        as_menu,
+        as_multiple_column,
+        as_single_select,
+        as_mouse_input,
+        inferior_window;
+
+end.

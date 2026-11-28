@@ -1,0 +1,133 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `as_superior`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3).  MENDELS (IFS
+% No.61), 2026-11-27: a nature of MENDELS's `base` (win_class.esp), the
+% frame whose inferiors are all of MENDELS's panes (mendel_win.esp
+% create_all_window/1), and of 46 held application classes (window.md
+% §1.3; icotext's kakari_super_window, kkr_super_win.esp, has the same
+% list as base but with_icon and as_mouse_input).
+%
+% THE MANUALS:
+%   - TM-125 p8 (4.2): as_superior "the class for supplying the function as
+%     superior window.  If the user want to use the sub windows, The window
+%     must inherit this class"; as_relation "the class for managing the
+%     allocation of the sub windows in the superior window.  This class is
+%     inherited by the class as_superior"; p11 with_superior_input_buffer
+%     "to share the input buffer with its own superior window";
+%   - TM-115 p27, p105 (PROSE, subsystems/notes/tm115.md): the editor's
+%     top-level loop reads every input through one superior window "in a
+%     single instruction", together with the window or menu it came from
+%     (the read's name and form not printed there);
+%   - WINCS p5 (PRINTED fact): as_superior 子ウィンドウを持つための機能,
+%     "the function for having child windows".
+% THE HELD CALL SITES (USAGE): read/3 `:read(Superior, ^Source, ^Data)`
+% (MENDELS mendel_win.esp:1116 read_window/2; icotext kkr_main.esp:96
+% read_loop/1, kei_main.esp:130); input_data/6 `(Superior, Source, Data,
+% Code, X, Y)` (MENDELS win_class.esp:61, 73, 85 has_been_deexposed/1;
+% cal-esp cal2.12/ctree.esp:153); read/6 `(W, ^S, ^D, ^C, ^X, ^Y)` (cal-esp
+% cal2.12/cpwindow.esp:124, its doc comment :130-137, TRANSLATION: S the
+% window actually input to, D the key entered, C the command entered, X, Y
+% the coordinates).
+% The input buffer and its events {Source, Data, Code, X, Y} are
+% basic_window.esp's (OURS, see its head).  Each method is labelled.
+
+class as_superior has
+
+instance
+
+% OURS representation: the window has inferiors (basic_window.esp asks
+% before sending them), every inferior made in it in creation order, and
+% the shown ones in the order they were shown (the last on top).
+attribute has_inferiors := yes, inferiors := [], shown_inferiors := [];
+
+% INTERPOLATED (selector and body OURS) from TM-125 p8 as_relation: W
+% made in this superior (basic_window.esp create/3).
+% LABEL: OURS (the allocation's representation)
+:add_inferior(S, W) :- appended(S!inferiors, [W], Is), S!inferiors := Is;
+
+% INTERPOLATED (selector and body OURS): W killed.
+% LABEL: OURS
+:remove_inferior(S, W) :-
+        without(S!inferiors, W, Is), S!inferiors := Is,
+        without(S!shown_inferiors, W, Ss), S!shown_inferiors := Ss;
+
+% INTERPOLATED (selector and body OURS): W shown in this superior (TM-125
+% p16 activate: "scheduled to be displayed on the superior window"), on
+% top of the others when it was not shown.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; the list OURS)
+:inferior_shown(S, W) :- member(W, S!shown_inferiors), !;
+:inferior_shown(S, W) :- appended(S!shown_inferiors, [W], Ss),
+        S!shown_inferiors := Ss;
+
+% INTERPOLATED (selector and body OURS): W off this superior's schedule
+% (TM-125 p16 deactivate).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; the list OURS)
+:inferior_hidden(S, W) :- without(S!shown_inferiors, W, Ss),
+        S!shown_inferiors := Ss;
+
+% INTERPOLATED (selector and body OURS): W put on top of its shown
+% siblings (TM-125 p16 show).
+% LABEL: INFERENCE (show puts it above the siblings: MENDELS
+% change_title/3; the list OURS)
+:inferior_raised(S, W) :- without(S!shown_inferiors, W, Ss),
+        appended(Ss, [W], Ts), S!shown_inferiors := Ts;
+
+% INTERPOLATED (selector and body OURS): the shown inferiors drawn, the
+% first shown first (basic_window.esp drawn/1), while the top window's
+% pane is uncovered.
+% LABEL: OURS (the drawing order)
+:draw_inferiors(S) :- drawn_all(S!shown_inferiors);
+
+% INTERPOLATED (selector and body OURS): the topmost shown inferior whose
+% rectangle holds the device's (X, Y), else fail.
+% LABEL: OURS (the hit test)
+:inferior_at(S, X, Y, I) :- reversed(S!shown_inferiors, [], Rs), hit(Rs, X, Y, I);
+
+% :read(S, ^Source, ^Data) -- INTERPOLATED (selector and arguments USAGE,
+% see the head; meaning PROSE TM-115 p27, p105; body OURS): the next
+% input made in this window or in an inferior that shares its buffer:
+% the window it was made in and the data (a menu's item_id, a key's
+% code, the mouse code: TM-125 p18 1)-5)).  With none, the process waits
+% (TM-125 p18 read/2).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-115 p27, p105: read through the
+% superior with the window it came from; TM-125 p18 the codes; the form
+% USAGE MENDELS, icotext)
+:read(S, Source, Data) :- :get(S!buffer, {Source, Data, _, _, _});
+
+% :read(S, ^Source, ^Data, ^Code, ^X, ^Y) -- INTERPOLATED (selector and
+% arguments USAGE cal-esp cpwindow.esp:124-137, see the head; body OURS):
+% read/3 with the code and the dot.
+% LABEL: INFERENCE (the arguments from cal's doc comment, TRANSLATION)
+:read(S, Source, Data, Code, X, Y) :- :get(S!buffer, {Source, Data, Code, X, Y});
+
+% :input_data(S, Source, Data, Code, X, Y) -- INTERPOLATED (selector and
+% arguments USAGE, see the head; body OURS): an input put in this
+% superior's buffer as if made in Source (MENDELS's deexpose notifiers put
+% `exit` from parts_title, so its read_window/2 leaves the parts phase).
+% LABEL: INFERENCE (the meaning from MENDELS win_class.esp:61 and cal
+% ctree.esp:153; the body OURS)
+:input_data(S, Source, Data, Code, X, Y) :- :put(S!buffer, {Source, Data, Code, X, Y});
+
+local
+
+drawn_all([]);
+drawn_all([W | Ws]) :- :drawn(W), drawn_all(Ws);
+
+hit([I | _], X, Y, I) :- :outer_rectangle(I, IX, IY, W, H),
+        X >= IX, Y >= IY, X < IX + W, Y < IY + H, !;
+hit([_ | Is], X, Y, I) :- hit(Is, X, Y, I);
+
+member(X, [Y | _]) :- X == Y, !;
+member(X, [_ | R]) :- member(X, R);
+
+appended([], L, L);
+appended([X | R], L, [X | S]) :- appended(R, L, S);
+
+reversed([], R, R);
+reversed([X | L], R0, R) :- reversed(L, [X | R0], R);
+
+without([], _, []);
+without([X | R], W, R) :- X == W, !;
+without([X | R], W, [X | T]) :- without(R, W, T);
+
+end.

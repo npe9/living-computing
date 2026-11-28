@@ -1,0 +1,58 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `as_markers`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3, §2.6).  MENDELS
+% (IFS No.61), 2026-11-27: a nature of its `graphic` (win_class.esp) and
+% of the screen pane (essential_window_with_superior_input_buffer.esp);
+% its marker_input makes a 1 x 1 box marker on each (marker.esp:45-56); a
+% nature of 7 held programs' classes (window.md §1.3).
+%
+% THE MANUALS: TM-125 p10 (4.2, 2)) as_markers "the class for suppling
+% the function to have markers in the window"; p17 (5.5, 3) markers):
+% create_marker/2 `(Window, ^Marker)`, draw_marker/2, erase_marker/2,
+% move_marker/4, set_marker_type/3 (box or line), set_marker_size/4,
+% get_marker_list/2 "return the list of all markers the window have".
+% create_marker/7 `(W, X, Y, Width, Height, Type, ^M)` is MENDELS's form
+% (marker.esp:48, 55) and the CESP substitute's (linguist
+% with_marker.esp:21-25, window.md §2.6), as standard_io_window.esp's.
+% The marker object is marker.esp's (window M8).  Only the making and the
+% list are stood in: drawing a marker in an inferior window
+% (draw_marker/2, erase_marker/2, move_marker/4) is not, and a send to it
+% is refused loudly.
+
+class as_markers has
+
+instance
+
+% OURS representation: the window's markers, in the order made.
+attribute markers := [];
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p17; body
+% OURS): a 16 x 16 box at (0, 0), not drawn (as standard_io_window.esp's).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p17 create_marker/2; the size
+% OURS)
+:create_marker(W, M) :- :create_marker(W, 0, 0, 16, 16, box, M);
+
+% INTERPOLATED (selector and arguments USAGE MENDELS marker.esp:48, see
+% the head; body OURS): a marker of Type (box or line, TM-125 p17) at (X,
+% Y) of Width x Height, not drawn.
+% LABEL: INFERENCE (the arguments from MENDELS and CESP's form; the types
+% TM-125 p17)
+:create_marker(W, X, Y, Wd, Ht, Type, M) :- marker_type(Type), !,
+        :create(#marker, W, X, Y, Wd, Ht, Type, M),
+        appended(W!markers, [M], Ms),
+        W!markers := Ms;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p17; body
+% OURS): the window's markers, in the order made.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p17 get_marker_list/2)
+:get_marker_list(W, Ms) :- Ms = W!markers;
+
+local
+
+marker_type(box);
+marker_type(line);
+
+appended([], L, L);
+appended([X | R], L, [X | S]) :- appended(R, L, S);
+
+end.

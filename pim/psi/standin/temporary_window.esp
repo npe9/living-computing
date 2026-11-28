@@ -1,0 +1,36 @@
+% SCAFFOLDING stand-in for SIMPOS's class `temporary_window`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.2).  MENDELS (IFS
+% No.61), 2026-11-27: the base class of its temporary_scroll and
+% temporary_turn_menu (swindow.esp, win_class.esp), the library window's
+% pop-up text windows (lib_win.esp:136-137); the last nature in 11 of 11
+% held uses (window.md §1.2).
+%
+% THE MANUALS: TM-125 p6-7 (2.6 Temporary Window): it appears at the mouse
+% cursor and disappears when the cursor goes out of it; it is taken off
+% the screen, not hidden, when no longer needed; it is never hidden by an
+% ordinary window; it saves the image it covers; p9 (4.2)
+% as_temporary_window "the function as temporary window"; WINCS p5, p7-8
+% (one of the three base classes).
+% THE NATURE LIST IS INFERENCE, as inferior_window.esp's: the body is
+% basic_window.esp's.  The attribute below puts a temporary window made
+% with no position at the mouse when it is shown (TM-125 p6-7,
+% basic_window.esp at_mouse/1); its frame pane saves what it covers and
+% restores it when it is taken off (window_pane.esp, TM-125 p6-7).
+% NOT STOOD IN: the disappearing when the mouse leaves (a temporary_menu
+% does, temporary_menu.esp; for a temporary window no held run reaches
+% it), never hidden by an ordinary window.
+
+class temporary_window has
+
+nature
+        as_temporary_window,
+        basic_window;
+
+instance
+
+% RECONSTRUCTED-FROM-MANUAL (TM-125 p6-7: it appears at the mouse cursor;
+% the slot OURS)
+attribute at_mouse := yes;
+
+end.

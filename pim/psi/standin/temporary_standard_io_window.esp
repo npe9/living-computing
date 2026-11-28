@@ -1,0 +1,22 @@
+% SCAFFOLDING stand-in for SIMPOS's class `temporary_standard_io_window`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class is lost (docs/simpos/subsystems/window.md §0.3, §1.6 text
+% I/O; §2.14: 2 held programs, create/3).  MENDELS (IFS No.61),
+% 2026-11-27: the slot help_tsl_operator of its mendel_editor (and
+% med_editor), made when the editor is (editor_com.esp:13-26,
+% med_editor.esp:13-26): a "TSL operators" help text that pf11 shows
+% (editor_com.esp:88-90).
+%
+% THE NATURE LIST IS INFERENCE (window.md §1.6: temporary_ names the base
+% class, TM-125 p6-7 a temporary window; standard_io_window the text
+% I/O): this stand-in is standard_io_window.esp's window, whose methods
+% it inherits (erase_cursor/1 among them, added for MENDELS); it has no
+% method of its own.  The temporary behaviour (at the mouse, gone when the mouse
+% leaves, TM-125 p6-7) is not stood in.
+
+class temporary_standard_io_window has
+
+nature
+        standard_io_window;
+
+end.
