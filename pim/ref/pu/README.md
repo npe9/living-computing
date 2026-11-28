@@ -921,3 +921,16 @@ empty), but `u2_append.py`'s standalone run still seeds the scheduler
 standalone append's `proceed` would dispatch the boot goal while
 `pimm.py` ends (Q): a firmware-only pick, not a comparison. Whether that
 counts as the sixteenth instruction is left to the owner.
+
+**`pimm.py`'s `sp_single` for lists (the open item (d)): tried, not
+landed.** Setting `sp_single` in `wait_list` and `switch_on_non_list`
+from the list pointer's MRB (as `wait_vector` does) makes the `[b, c]`
+program match on the held firmware (52 of 52, 2 picks compared, the
+boot goal's pick; without it FAIL at instruction 12, `read_variable`,
+reg 4 LISTo against LISTx). But the full suite's `pimm lockstep shoen`
+then FAILs at part 0, trace line 185 (`R 3`: the changed reference
+model `04e0008047`, unmarked, against the Bluespec core's `05e0008047`): the
+Bluespec `PimmCore` implements the old rule and runs in lockstep with
+`pimm.py`. The change needs the core changed with it (outside this
+rung), so it was reverted; the patch is described here so the core's
+owner can take both together.
