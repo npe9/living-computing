@@ -12145,17 +12145,27 @@ run "IBOX-4 routine 1256 TEST 2F LVE loads only J's register, ON THE MODEL (I561
 run "IBOX-5 routine 1260 prologue and TESTs 1A/1B (mask register), bit-exact (jb_ax5b PDF pp.8-13, 114)" python3 verify_ax5b_160_test1ab_mask_listing.py
 # Mask bits 0-19 are ones.  Injection M1 (bit 7 not forced to one) ->
 # FAIL SEN 0x616800000000000 (the BIT 07 entry); M2 does not move this run.
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 4107 -> 4747.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 4107 again, memreads unchanged.
 run "IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL (I60 prologue, I601)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1ATb \
     PC=1410 "SEN:712=0" "RET:710=0x60d8800" \
     "X0:addrIndex(0)=0x61c400000000000" "X1:addrIndex(1)=0x100000000000" \
-    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4107+-0
+    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4747+-0
 # Mask bits 48-63 are zeros.  Injection M2 (bit 55 writable) -> FAIL SEN
 # 0x625200000000000 (the entry printed "BIT 54": IBM's k-1 label); M1
 # does not move this run.
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 5426 -> 6386.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 5426 again, memreads unchanged.
 run "IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL (I607)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1BTb \
     ENTRY=I607 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x629600000000000" \
     "X1:addrIndex(1)=0" "X2:addrIndex(2)=0x7fffff0000" \
-    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=5426+-0
+    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=6386+-0
 
 # ---- jb_ax5b routine 1260, TEST 1C (2026-11-19) ----
 # IBM's test that mask bits 20-47 can each be set to one and to zero
@@ -12168,12 +12178,17 @@ run "IBOX-5 routine 1260 TEST 1C (mask bits 20-47), bit-exact (jb_ax5b PDF pp.14
 # Injection M1 (mask bit 30 not settable) -> FAIL SEN 0x640a00000000000
 # (the "MASK BIT 30 TO ONE" entry); M2 (bit 26 not settable) -> FAIL SEN
 # 0x65a000000000000 ("MASK REG BIT 26 TO ONE"), I60DMP all ones.
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 10326 -> 13268.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 10326 again, memreads unchanged.
 run "IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL (I6011)" ./run_program.sh ../decks/ax5b_160_test1c_mask.strap StretchAx5b160T1CTb \
     PC=1410 "SEN:712=0" "I60DMP:9921=0xffffff8000000000" \
     "MASK:12=0xfffff33000000000" "X0:addrIndex(0)=0xffffff8000000000" \
     "X2:addrIndex(2)=0x20000" "X3:addrIndex(3)=0xa60800000000000" \
     "X4:addrIndex(4)=0x650600000000000" "X5:addrIndex(5)=0xa60000000010000" \
-    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=10326+-0
+    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=13268+-0
 
 # ---- jb_ax5b routine 1260, TEST 2 (2026-11-19) ----
 # IBM's walk of a single one through the interruption address register's

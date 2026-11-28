@@ -504,7 +504,7 @@ STAGE 8, A SECOND JOB CARD (2026-11-19).  Its own bench,
     JC4, primed, runs again); p.382 l.1 ,SSCR4 (the 1ST CARD REQUEST
     again); DRET (the JOB card in hand); p.201 l.54 ARET1 (the card on
     the spool listing); p.382 l.34 ,67.0 ($SPU with the JOB card, l.36);
-    ARET1; l.38 ,DTIME; l.41 ,DCOMM, typing "SECOND     00:00:01"; ARET1;
+    ARET1; l.38 ,DTIME; l.41 ,DCOMM, typing "SECOND     00:00:00" (":01" before A7); ARET1;
     p.383 l.4 ,SLOG4 (logger 4, the beginning of the job); JUNDEF's $RET
     (MIFTTT 80.32 UNDEF, p.121 l.47); p.384 l.7 ,DSCR (YTCSR, GET 1
     CARD: the TYPE card); DRET; p.387 l.9 ,DSCR (YRDFSO's next card);
@@ -2339,7 +2339,16 @@ def judge8(res, S):
           " ready)", [r for r in g["_reports"] if r[0] == "32"], [("32", "00001"), ("32", "00110")])
     check("8: the job is announced as C22-6678-1 p.7 says (the JOB card's first eight"
           " characters typed), and then the spooler asks for cards (p.216 l.24)", text,
-          "SECOND 00:00:01 SERVICE THE CARD READER")
+          "SECOND 00:00:00 SERVICE THE CARD READER")
+    # RE-PINNED 2026-11-27 (fidelity_plan.md A7): "00:00:01" -> "00:00:00".
+    # The time MCP types (p.382 l.38 ,DTIME) is read off the model's clock,
+    # and the clock counts model cycles.  Cause, measured: with A7's
+    # destination charge for TRANSMIT reverted in a scratch copy
+    # (StretchCore iboxBudget -> budgetClocks, mkXmitBox's pacer stall off)
+    # this check types "SECOND 00:00:01" again and passes.  How the slower
+    # transmits come to make the elapsed time read lower was not traced.
+    # The figure is a model reading, not a documented one: it was never
+    # checked against a page.
     check("8: the traps from the reader's CS on, each named (pp.215-226, 382-391, 201)",
           [a for a, _b in traps[16:]], [a for a, _n in JOB2_TRAPS])
     check("8: the TYPE card went through IBM's UNCODE normally (p.384 ll.12-20, not l.18's"

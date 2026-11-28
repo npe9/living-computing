@@ -1404,8 +1404,8 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
 - Transmit. DIAGNOSED 2026-11-23 (`atlas_oracle.md` "furthest off"
   2, which gives the change with a citation for each term). Per word,
   charge by destination: 10 clocks to core or internal, 14 to index
-  storage (Table 9; PDF 107). The model now charges the source read
-  instead (2 from index storage, 10 or 17 from core). Fixed cost:
+  storage (Table 9; PDF 107). Until A7 was built (below), the model charged
+  the source read instead (2 from index storage, 10 or 17 from core). Fixed cost:
   F = 38 / 32 clocks for T, F − 2 for TI, where the model has 15. The
   generator's I-BOX TO I-BOX block is fixed (18.0 → 19.0), and
   `--selftest` check 0b now covers the transmit generator.
@@ -1467,8 +1467,32 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
     - `decks/transmit_time_to_core.strap` and
       `decks/transmit_time_to_index.strap`, one per direction, CYCLES
       pinned.
-- PDF 109 and 112 (CB, BXL, BAL) are not touched by this step. Their
-  cells are unchanged.
+- PDF 109 (the index instructions) and PDF 112 (CB, BXL, BAL) did not
+  move in this step. PDF 109 has 53 of 85 cells within 3, and PDF 112 has
+  18 of 24.
+- **A7's exit is therefore not met as a whole.** Transmit meets it on
+  PDF 106-107, except the two long ext_ext rows recorded above. CB 16/15
+  and BXL/BAL are still to do.
+- Suite effect, against `b61.log` HALTREPORT_ALL:
+  - 56 sections change, and only in `cycles=`. `memreads` is identical
+    in every one.
+  - Every changed section executes T, TI or TB.
+  - In a scratch copy with the A7 charge reverted, 50 of the 56
+    sections were rerun and each gave its b61 count exactly:
+    - every deck whose pin moved;
+    - the five MCP IPL runs and the four p.17-19 IOCD runs;
+    - the seven loader runs and the problem decks;
+    - three of the nine JA memory-test runs: BP6A B3 and B4, and BB6B
+      CHECK.
+  - The other six JA runs (BP6A A3, A4 and LOOP; BM6A UPPER and PASS;
+    BB6B PASS) were not rerun, because of their length. Each JA program
+    executes TI, and their memreads are unchanged.
+  - `problem_1_2`, which only SWAPs, is unchanged.
+  - MCP's own bootstrap moved 6321488 → 6322913 (+1425). Its IOD-deck
+    IPL moved +13615. MCP's report checks pass.
+  - Two non-CYCLES pins moved, with the same revert proof:
+    - the STRAP II deck census, 886 → 888 (the two new decks);
+    - `check_bss_mcp_go.py` stage 8's typed DTIME, 00:00:01 → 00:00:00.
 
 ## Phase 4: the I-box as the pages draw it
 
