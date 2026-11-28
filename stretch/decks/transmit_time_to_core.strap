@@ -1,0 +1,37 @@
+! transmit_time_to_core.strap -- a TRANSMIT's time is set by where the
+! words GO (docs/fidelity_plan.md A7, 2026-11-27).
+!
+! FIVE WORDS FROM INDEX STORAGE ($2-$6, words 18-22) TO CORE, immediate
+! count.  Perf. Char. Vol. 1 Table 9 (printed p.3-14, PDF 32), T (XS ->
+! EM): loop 3.0 us = 10 clocks a word, the same as EM -> EM; Vol. 2 PDF
+! 107 (printed 100) measures I-BOX TO EXTERNAL at 10.05 clocks a word.
+! The model charged the SOURCE read until A7: 2 clocks a word from index
+! storage.  Its sibling transmit_time_to_index.strap moves five words the
+! other way, core to index storage, where Table 9's loop is 4.2 us = 14
+! clocks.  Between them, a model that charges the source (2 here, 10
+! there) and one that charges the destination (10 here, 14 there) cannot
+! give the same pair of counts.
+!
+! THE CYCLES PIN (tests/run_tests.sh) is the model's count for the whole
+! deck, a model pin.  The transmit's part is bsv/StretchXmitTiming.bsv's
+! charge, F + 5 L with F = 36 (TI into core) and L = 10.  Injections and
+! their observed results are in run_tests.sh at the run.
+
+        SLC, (8)2000.0
+START   LVI, $X2, 11         ! something to move: value fields 11-15
+        LVI, $X3, 12
+        LVI, $X4, 13
+        LVI, $X5, 14
+        LVI, $X6, 15
+        TI, 5, 18.0, DST         ! $2-$6 to DST..DST+4
+        BEW, $
+
+        SLC, (8)3000.0
+DST     DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)AAAAAAAAAAAAAAAA   ! the fence: not written
+
+        END, START

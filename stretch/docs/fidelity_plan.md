@@ -1412,6 +1412,63 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
 - CB 16/15 clocks, and BXL/BAL.
 - Exit: PDF 102-112 meet the rule, or the BAL environment the page
   does not spell out is recorded as the reason.
+- **Transmit BUILT 2026-11-27.**
+  - Page check, every term re-read on the page images: Vol. 1 Table 9
+    (printed p.3-14, PDF 32) and its continuation (p.3-15, PDF 33);
+    p.3-18 (PDF 36) for the 0.6 µs decode; Vol. 2 PDF 105-107; Blosk
+    Fig. 9 (printed p.36, PDF 38) and pp.35, 37 (PDF 37, 39). The fits were
+    recomputed from `atlas_data.py`, not read off the diagnosis: PDF 107
+    T slopes 10.03-10.05 to EXTERNAL/INTERNAL and 14.06 to I-BOX, fixed
+    38.15-38.21 and 32.13-32.17; PDF 106 TI 10.05 / 14.06, fixed 36.15 /
+    30.19. They agree with the diagnosis. One correction: "the first
+    cycle fetches the index word that contains the count" is on Blosk
+    printed p.**35** (PDF 37), not p.36. Fig. 9 itself is on p.36.
+  - Model: `bsv/StretchXmitTiming.bsv` holds the constants,
+    `xmitFirstBudget` (F + the first word's loop − the dispatch clock) and
+    `mkXmitPacer`. `mkXmitBox` (`StretchIBox.bsv`) is `rl_xmit`'s old body
+    and registers. It now holds each word after the first to its own
+    destination's loop: the read is issued at the start of the period and
+    the write is held until the period ends. The Transmit arm records
+    `ExecDone.xmitTiming`, the first destination and whether the count is
+    immediate, before it writes. StretchCore's `iboxBudget` charges it at
+    both commit sites. SWAP is unchanged. F's 20 / 24 remainder is FIT.
+  - Atlas PDF 102-115, own build dir (`build-atlas`), before → after:
+    - all 156 cells: within 1, 29 → 74; within 3, 71 → 117.
+    - T (PDF 107, 30 cells): median −48.35 → −0.52; within 1, 0 → 28;
+      within 3, 0 → 29.
+    - TI (PDF 106, 17 cells): median −31.55 → −0.55; within 1 and 3, 0 → 17.
+    - No PDF 108-115 cell moved (TSV diff: 0 of 109).
+    - The model is exactly F + nL on every generated column. The −0.5
+      median is the page's fractional fixed part (38.19 against the
+      model's 38).
+  - Left on PDF 106-107:
+    - T 50WD and 100WD EXT→EXT, −2.48 and −4.92. The page's slope is
+      10.05 clocks (3.015 µs), and Table 9 prints 3.0 µs = 10. No
+      integer loop fits both, and Table 9 is kept.
+    - The 30 INTERNAL-operand cells are not generated. Their per-word
+      figures (22 / 18 on PDF 107, 24 in Table 9) are not modelled, so
+      an IR source is charged as EM.
+    - PDF 106's flat TI columns are still unexplained.
+  - L is a floor, not a fixed rate. Where a read takes longer than the
+    loop, the memory sets the rate. Probe, 2026-11-27, with scratch decks
+    and not pinned: TI,10 from 10000₈ to 50000₈ (GENER's placement)
+    halts at 154 clocks. To 50001₈ it halts at 217, which is 7 more a
+    word, so 17 a word. Destination word k shares a unit with source
+    word k+1, and the read waits out the write's cycle (`memCycleClocks`
+    7). The 7030 overlaps this (Fig. 9's next fetch at c12), and the
+    model does not. It is left OPEN for A11a, the memory cycle.
+  - The fitted remainder holds Table 9's "LA dr". After a real drain
+    outside GENER's back-to-back sequence it double-charges. Blosk p.37
+    says the words go through look-ahead store levels and a final IC
+    level, which the model does not do.
+  - Checks:
+    - `tests/run_xmit_timing_test.sh`: 12 charge vectors plus the pacer
+      clock by clock, with four observed injections.
+    - `decks/transmit_time_to_core.strap` and
+      `decks/transmit_time_to_index.strap`, one per direction, CYCLES
+      pinned.
+- PDF 109 and 112 (CB, BXL, BAL) are not touched by this step. Their
+  cells are unchanged.
 
 ## Phase 4: the I-box as the pages draw it
 

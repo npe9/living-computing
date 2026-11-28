@@ -10569,6 +10569,31 @@ run "PAU STEPPING (*+ chained; Table 2 add terms, literal; the termination)" "$T
 # progressive indexing = 6 levels (Buchholz printed p.246, PDF 271).
 # Injections and their observed failure sets: bsv/StretchLaParts.bsv.
 run "LOOK-AHEAD LEVELS PER INSTRUCTION (Table A-2 E-box sheet; literal)" "$TESTS_DIR/run_laparts_test.sh"
+# 2026-11-27 (fidelity_plan.md A7): a TRANSMIT's time by DESTINATION --
+# Table 9's loop, 10 clocks to core or an internal register and 14 to
+# index storage (Perf. Char. Vol. 1 printed p.3-14, PDF 32), and the fixed
+# part F, 38 / 32 for T and F - 2 for TI (Vol. 2 PDF 106-107); 12 literal
+# vectors over T and TI into core, $L and index storage and both edges of
+# 16-31, then the pacer clock by clock.  Injections and their observed
+# failure sets: bsv/StretchXmitTiming.bsv.
+run "TRANSMIT TIME BY DESTINATION (Table 9; PDF 106-107; literal)" "$TESTS_DIR/run_xmit_timing_test.sh"
+# The same rule end to end, one deck per direction (fidelity_plan.md A7,
+# 2026-11-27): five words index storage -> core, then core -> index
+# storage, both TI.  CYCLES are model pins.  The transmit's part is F + 5L =
+# 36 + 50 into core and 30 + 70 into index storage.
+# INJECTION, observed 2026-11-27: mkXmitBox's pacer stall disabled
+# (`False && !x.swap && !pacer.due`, i.e. each word at its READ's time as
+# before A7): to_core 167 -> 135 (-32 = 4 words x (10 - 2)), to_index 129 ->
+# 113 (-16 = 4 x (14 - 10)); the data checks still pass.  Reverted by the
+# inverse patch.
+# Absolute path: this block sits after `cd "$BSV_DIR"`.
+run "TRANSMIT TIME, INDEX STORAGE TO CORE (Table 9 XS->EM, 10 clocks a word)" "$TESTS_DIR/run_program.sh" "$TESTS_DIR/../decks/transmit_time_to_core.strap" StretchXmitTimeCoreTb \
+    "CYCLES=167+-0" "PC=2055" \
+    "D0:1536=0x1600000000000" "D1:1537=0x1800000000000" "D2:1538=0x1A00000000000" \
+    "D3:1539=0x1C00000000000" "D4:1540=0x1E00000000000" "FENCE:1541=0xAAAAAAAAAAAAAAAA"
+run "TRANSMIT TIME, CORE TO INDEX STORAGE (Table 9 EM->XS, 14 clocks a word)" "$TESTS_DIR/run_program.sh" "$TESTS_DIR/../decks/transmit_time_to_index.strap" StretchXmitTimeIdxTb \
+    "CYCLES=129+-0" "PC=2050" \
+    "X2:18=0x11" "X3:19=0x22" "X4:20=0x33" "X5:21=0x44" "X6:22=0x55" "X7:23=0x0"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
