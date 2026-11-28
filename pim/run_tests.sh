@@ -37,7 +37,7 @@ echo "=== held KL1 microprogram executed (ref/pu, rung U1 of docs/pu_microcode_p
 python3 ref/pu/check_pu.py
 echo "=== held KL1 microprogram on a whole program (ref/pu/u2_append.py, rung U2: furthest point, not reached) ==="
 python3 ref/pu/u2_append.py
-echo "=== held KL1 microprogram on a multi-goal program, the boot and the scheduler held (ref/pu/u3_goals.py, rung U3 second step) ==="
+echo "=== held KL1 microprogram on a multi-goal program, the boot and the scheduler held (ref/pu/u3_goals.py, rung U3 second and third steps, U3d first step: a compiled program to its answer) ==="
 python3 ref/pu/u3_goals.py
 
 echo "=== PSI side: the Librarian's loader, .ptf templates to class objects (TM-388 cases, known plaintext) ==="

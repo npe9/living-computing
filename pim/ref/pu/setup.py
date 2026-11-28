@@ -102,6 +102,13 @@ FORMS = {
     # the path run: 34a0 overwrites MDR1 before anything reads it.
     # EXECUTED in append (read_variable 3 and 4 match pimm.py).
     'read_variable': (None, 'sp'),
+    # U3d (2026-11-28): read_variable_without_deref x (entry 345a, the
+    # compiled stream program's consumer and producer, cells 28-29): the
+    # element's address R02 in MAR1, as read_variable.  OURS (pimm.py's
+    # i_read_variable_without_deref: read_variable's data movement), with
+    # support: 345a reads R02 and fetches [MAR1] itself, as read_variable's
+    # 34a0 does.  Injection 'rvwd_form_arg': MAR1 := R10 + x instead.
+    'read_variable_without_deref': (None, 'sp'),
     # the tag-test entries (entries with a tag immediate): the S stage
     # below.  (form, the operand register's field)
     'switch_on_non_list': ('s_tag', 'x'),
@@ -119,6 +126,21 @@ FORMS = {
     # immediate ATOMo): the S-stage test on x, pimm.py's i_wait_nil
     # (g_word(x)).  OURS (the operand field, pimm.py's reading).
     'wait_nil': ('s_tag', 'x'),
+    # U3d (2026-11-28): wait_atom a (entry 3960, ODPF 6, tag immediate
+    # ATOMo; the opcode byte 80 | register, the low 24 bits the atom, as
+    # get_atom's c0 | register): the S-stage test on the register the
+    # opcode names, and MDR2 := the atom (S_CONST 'a24', as get_atom).
+    # OURS (pimm.py's i_wait_atom reading), with support: 3960 forms
+    # MDR1 - MDR2, the operand against the constant, before its branch.
+    # Injection 'wait_atom_own' (MDR2 the operand, S_MDR2_OWN's reading).
+    'wait_atom': ('s_tag', 'op'),
+    # U3d: get_nil x (entry 3820, ODPF 6, tag immediate UNDF): the S-stage
+    # test on x, as get_value's; 3820 makes MDR2 := nil itself and 3821
+    # binds the cell (MAR1, S_ENTRY).  OURS (pimm.py's i_get_nil:
+    # unify(reg[x], nil)), with support: rows 0-3 write {ATOMo, 0} or
+    # {ATOMx, 0} through MAR1, the variable cell.  Injection
+    # 'get_nil_form_y' (the y field, 0 here).
+    'get_nil': ('s_tag', 'x'),
     # get_value x, y (entry 38a0, ODPF 6, tag immediate UNDF): the S-stage
     # test on x; the routine reads y itself (38a0, 38b2: MDR2 and MAR2
     # := opda, SD1F 3).  OURS (pimm.py's i_get_value unify(reg[x],
@@ -207,10 +229,24 @@ IR_C8 = ('put_reused_structure',)
 # Injections: 'odpf3_entry' (start at the entry whatever the tag),
 # 'odpf3_bits10' (the code in bits 1-0).
 ODPF3_SHIFT = 2
+# S_TDAR_ODPF3 (U3d, 2026-11-28; INFERRED): S_TDAR's multiway set-up holds
+# for the ODPF 3 start too: TDAR := the TGT byte of the dereferenced
+# operand's tag, column 7 - TDPF.  Decided at put_reused_structure on a
+# SHARED list (the stream program's consumer, A0 = {LISTx, cell}: 31ec's
+# CNDF 7 EM1 29, the MRB, keeps 31ed from ending, so the structure is not
+# reused): 31ee calls 31a1, whose case_branch (JMPF 2, base 31a0) reads
+# TDAR.  put_reused_structure's TDPF is 4, column 3, S_TDAR's column for
+# switch_on_non_vector; its bytes give 31a0's rows by size: LISTo/x 4 ->
+# 31a4 (MAR1 := R1a, the two-cell list, jump 332b), VECT1 8 -> 31a8 (R19,
+# one cell), VECT2 a -> 31aa (R1a), VECT3 c -> 31ac, VECT4 e -> 31ae
+# (3334, the four-cell allocator), VECT0 6 -> 31a6 (6c21, an error): the
+# structure's size class.  Injection 'tdar_odpf3_off' (no TDAR: raises
+# at 31a1).
+S_TDAR_ODPF3 = True
 # get_atom's constant: the atom number, the instruction's low 24 bits, put
 # in MDR2 by the S stage with no tag (the routine stamps it: 3800 ATOMo,
 # 3804 ATOMx).  OURS: that the S stage leaves the constant in MDR2.
-S_CONST = {'get_atom': 'a24', 'get_bound_value': 'y'}
+S_CONST = {'get_atom': 'a24', 'get_bound_value': 'y', 'wait_atom': 'a24'}
 
 # The S stage's tag mechanisms (Nakashima's thesis pp.134-137, DOCUMENTED:
 # (1) the tag of an operand compared with the entry's tag immediate into
@@ -357,10 +393,43 @@ S_CHAIN_ROW = True
 #   Injection 'chain_mar1_bare' (the bare address): FAILs at the
 #   instruction (A0 rewritten untagged).
 S_CHAIN_MAR1_PTR = True
+#   S_CHAIN_MATCH (U3d, 2026-11-28; INFERRED): on the immediate's side,
+#   an ODPF 6 operand reached through pointers with an MRB on in the chain
+#   (SRP false) takes row 1 | COL << 1, the chain code of S_CHAIN_ROW, not
+#   the entry.  Decided at the stream program's resumed consumer:
+#   switch_on_non_list on {REFx, S}, S bound to a list, takes 3304 (A0 :=
+#   {LISTx, cell}: the list re-stamped shared, then 3301), where the entry
+#   (3300, COND false) jumps to 3305-3309 and puts S's cell, which the
+#   other consumer still holds, on the R19 free list.  With SRP true, for
+#   switch_on_non_list and wait_nil the two readings agree: row 0 with
+#   COND false and row 2 both free the one cell the single reference
+#   reached (3300 -> 3305 / 3308 -> 3305; 3981 frees MAR1, 3988-3989 MAR2
+#   = the same cell), so S_ENTRY stands there.  OPEN TENSION: for get_nil
+#   (3828), get_bound_value (3888) and get_value (38a8) row 2 first calls
+#   0cf1 / 0cf0 (a pointer cell pushed on R19), where the entry's row 0
+#   does not; the stream run takes row 0 through a REFo at get_nil
+#   (instructions 32, 49, 66) and get_bound_value (41, 58), and pimm.py
+#   frees nothing: NOT discriminated.
+#   Read, not run: row 1 of get_nil (3824, {ATOMx, 0}) and wait_nil (3984).
+#   Injection 'chain_match_off' (the entry, as before).
+S_CHAIN_MATCH = True
+#   S_CHAIN_ODPF4 (U3d, 2026-11-28; INFERRED): the same rows for an
+#   ODPF 4 entry reached through pointers on another tag (get_bound_value
+#   x, y with x a REFx to a hooked variable: the compiled stream
+#   program's producer binding the stream two consumers wait on).  The
+#   32 words behind 3880 are 8 rows of 4 as behind 3300: rows 0-3 bind
+#   the variable ([MAR1] := MDR2; rows 2-3 first push the cell on R19
+#   through 0cf1-0cf9, as switch_on_non_list's row 2 frees it; rows 1 and
+#   3 go on to 0c08), rows 4-7 hand the pair to the unifier (0c0a: MDR2
+#   := W18, jump 0c60), each after its own call (0cd0, 0cd4, 0cda,
+#   0cdc).  Injection 'chain_odpf4_off' (raises again).
+S_CHAIN_ODPF4 = True
 # The injection 'chain_row_srp' (CHAIN_SRP_TRUE: the row from SRP true,
-# row 4 = 3310 for a REFx chain) changes nothing on the path run: 3310's
-# CNDF 9 (MDR2, the operand {REFx, X}, a REFo?) is false as 3314's CNDF 3
-# with no ALU (pu.RULES['cnd_noalu_poison'] 'zero'): WEAK, recorded.
+# row 4 = 3310 for a REFx chain) changes nothing on the suspend program's
+# path: 3310's CNDF 9 (MDR2, the operand {REFx, X}, a REFo?) is false as
+# 3314's CNDF 3 with no ALU (pu.RULES['cnd_noalu_poison'] 'zero').  Since
+# U3d it STOPs the stream program at 24 (get_bound_value row 4 for 5,
+# 0c74): discriminated there.
 CHAIN_SRP_TRUE = False
 
 
@@ -429,6 +498,9 @@ def setup(pu, name):
         if last is not None:
             pu.wr[mekbn.MAR1] = (0, last)
         code = 0 if data[0] & ~1 == imm & ~1 else 1
+        if S_TDAR_ODPF3:
+            # S_TDAR_ODPF3 (U3d, below): TDAR from the TGT, as ODPF 6
+            pu.tdar = ('S', pu.tgt[TDAR_COLUMN(nc['TDPF'])][data[0] & 63])
         if ODPF3_SHIFT is None:         # injection: the entry whatever the tag
             return start
         return start | code << ODPF3_SHIFT
@@ -491,6 +563,12 @@ def setup(pu, name):
             return start | pu.tgt[nc['TDPF']][data[0] & 63] << 2
         if data[0] == imm:
             pu.cond, pu.cond_cycle = own[0] == imm, 'S'
+            if odpf6 and S_CHAIN_MATCH and last is not None and S_ENTRY == 0:
+                # S_CHAIN_MATCH (U3d, below): a chain with an MRB on
+                srp, col = chain_reports(pu.mem, own, data)
+                if not srp:
+                    pu.flags.update(MRP=srp, COL=col)
+                    return start | (1 | (2 if col else 0)) << 2
             return start + S_ENTRY
         if odpf6 and data[0] & ~1 != imm & ~1 and last is None and not data[0] & 1:
             # S_OTHER_ROW: another tag, held directly, MRB off: chain 0
@@ -498,7 +576,8 @@ def setup(pu, name):
             if S_OTHER_ROW is None:
                 return start
             return start | S_OTHER_ROW << 2
-        if odpf6 and S_CHAIN_ROW and data[0] & ~1 != imm & ~1 and last is not None:
+        if (odpf6 or nc['ODPF'] == 4 and S_CHAIN_ODPF4) and S_CHAIN_ROW \
+                and data[0] & ~1 != imm & ~1 and last is not None:
             # S_CHAIN_ROW (U3 third step, above): through pointers
             srp, col = chain_reports(pu.mem, own, data)
             if CHAIN_SRP_TRUE:          # injection 'chain_row_srp'

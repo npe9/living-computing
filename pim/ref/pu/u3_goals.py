@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""U3, second and third steps: a multi-goal KL1 program on ICOT's held microcode
+"""U3, second and third steps and U3d's first: KL1 programs on ICOT's held microcode
 (ref/pu/pu.py), started by the firmware's own boot words and run through
 the firmware's own enqueue_goal and proceed, against ref/pimm/pimm.py at
 every scheduler pick.
@@ -62,7 +62,8 @@ What is still OURS, each item:
     (PARAM_A0) and b6 (GSEB, PIMM.PARAM's gseb (10 : 16'B800) written as
     area << 24 | address: the encoding is INFERENCE); start's instruction
     cell (START_CELL) and its operand a, A0 (STALE; no longer read since
-    the third step: 20a1's SC2F a is the immediate b0); R0d (STALE, read by 3375); which calls of
+    the third step: 20a1's SC2F a is the immediate b0); W1c (STALE, read by 3375;
+    R0d until U3d, when select d with WRBF clear became W(EM1)); which calls of
     start run (2053's other refills and 2070 / 208e, 209f's tail, 20c2 are
     not run) and in what order;
   - the A stage: each instruction cell and its address from pimm.py's
@@ -76,7 +77,7 @@ What is still OURS, each item:
 The walks (Prov.reads, pinned): at each pick, the R / W registers and
 memory cells proceed's words read whose last writer is the harness: none
 at any of the three picks (RESIDUAL_PINNED; the first step had R13 and
-W1f).  Over the boot's words (R, W and A): A0, R0d, cells 1ea (1a0 + 4a),
+W1f).  Over the boot's words (R, W and A): A0, W1c (R0d before U3d), cells 1ea (1a0 + 4a),
 a0 and b6 (BOOT_RESIDUAL_PINNED).  Over every other instruction (R04 and
 pimm.py's cells declared apart): R19 and two of its seeded cells
 (f2000000-1), and the cells 0, 123 and 124 (34a2, read_variable's pre-read
@@ -131,8 +132,10 @@ Compared, per instruction (pimm.py's trace split at its I lines):
 Exit 0 when every instruction executed matched, the furthest point, the
 picks, the boot's word counts and the three walks are as pinned, and the
 second run (entered at 2003: set_PMPF, 2022) stops where pinned: at 20a3,
-the read of the reduction limit at 10 + start's operand a (STALE); 1
-otherwise.
+the read of the reduction limit at 10 + start's operand a (STALE); and
+(U3d) the programs 'suspend' and 'stream' are as pinned (SUSP_PINNED,
+STREAM_PINNED and their residuals), stream's answer read from the
+firmware's memory equal to pimm.py's; 1 otherwise.
 
 Observed 2026-11-27 (U3 second session): the boot 199 held words; 41 of
 41 instructions executed and matched, 173 held microinstructions; 3 picks,
@@ -221,6 +224,41 @@ the observed point is the first STOP / FAIL line.
   double_hook_undeclared  FAIL 12: X hooked twice by pimm.py
   atom_mrb_undeclared  FAIL 16: X {ATOMx, 0} against {ATOMo, 0}
   deref_reg_undeclared  FAIL 19: A0 := nil, pimm.py no write
+  U3d first step (2026-11-28): main() also runs the program 'stream'
+  (STREAM_CELLS, compiled by the held PIMOS 3.6 compiler from
+  STREAM_SOURCE, re-made by ref/pu/u3d_compile.py; README "U3d, first
+  step"): go([1], A, B), 64 of 68 matched + 4 declared skips, 407 held
+  words, 5 picks (4 compared), 2 suspends, 1 bind waking 2, answer A = B
+  = [1] = pimm.py's.  Every append2 / suspend result above is unchanged
+  but for the boot residual W1c (was R0d) and double_hook_undeclared's
+  message ("once per goal").  The existing injections' stream results
+  are in the README; chain_row_srp, unchanged on suspend, STOPs stream at
+  24 (0c74: row 4 instead of 5 at get_bound_value), so it is no longer
+  WEAK.  New, observed on stream (append2 / suspend unchanged unless said):
+  rvwd_form_arg      FAIL 19 (reg 2)
+  get_nil_form_y     STOP 32, 0d22 (MAR1 STALE)
+  chain_odpf4_off    STOP 24 (S stage row UNKNOWN for ODPF 4)
+  wsel_d_w_off       STOP 24, 0c0a (W18 never set); append2 and suspend
+                     MOVED (boot residual R0d)
+  chain_match_off    FAIL 35 (A0, and S's cell freed)
+  tdar_odpf3_off     STOP 38, 31a1 (case_branch without a set-up)
+  w1c_unset          STOP in the boot, 3375 (all three programs)
+  guard_alt_retry_off  FAIL 8 (R04)
+  chain_link_nil     FAIL 16 (cell 15 nil, want the old hook)
+  waiters_raw        FAIL 11; suspend MOVED too (X hooked twice)
+  wake_loop_reversed FAIL 24 (woken records' links)
+  read_indirect_undeclared  FAIL 37
+  read_indirect_carried_off FAIL 42 (put_value's copy)
+  fresh_mrb_undeclared      FAIL 38
+  fresh_mrb_carried_off     FAIL 41 (get_bound_value's copy)
+  sp_set_reused_off  FAIL 38 (sp)
+  deref_reg_marked_off  FAIL 35
+  setvar_form_op     FAIL 1 (set_marked_variable's record cell)
+  answer_poke        FAIL at the answer (A1 = [2])
+  wait_atom_plus1    FAIL 31 (R04)
+  wait_atom_own      unchanged (the operand is the constant): NOT
+                     discriminated
+  free_undeclared    FAIL 11 on stream (the given-back record's cell 0)
 """
 import os
 import sys
@@ -296,7 +334,7 @@ PINNED_PMPF_SET = '20a4'
 # last writer is the harness, in order of the picks (Prov.reads).
 RESIDUAL_PINNED = [[], [], []]
 # The same walk over the boot's words.
-BOOT_RESIDUAL_PINNED = ['R0d', 'cell 1ea', 'cell a0', 'cell b6']
+BOOT_RESIDUAL_PINNED = ['W1c', 'cell 1ea', 'cell a0', 'cell b6']
 # And over every other instruction's words (pimm.py's cells, the memory
 # stand-in, and R04, the A stage's, left out).
 PROG_RESIDUAL_PINNED = ['R19', 'cell 0', 'cell 123', 'cell 124', 'cell f2000000',
@@ -323,6 +361,36 @@ SUSP_PROG_RESIDUAL_PINNED = ['R17', 'R18', 'R19', 'cell b4', 'cell b6', 'cell b7
 SUSP_PICK_RESIDUAL_PINNED = [[], [], []]
 
 
+# U3d first step (2026-11-28): the program 'stream', go([1], A, B) of the
+# compiled module work::pc (STREAM_CELLS): c(S, A) suspends on S, c(S, B)
+# suspends on S too (the second waiter: 1c73, 1c82-1c86), g([1], S) binds
+# S and wakes both (get_bound_value, 3894 -> 0c0a -> 0c60 ... 4d1a), runs
+# on to its end, then the two consumers run to theirs, then the boot goal.
+# 68 pimm.py instructions: 64 executed and matched, 4 skipped as declared
+# (guard_to_alt, the try_me_else between switch and wait_atom included:
+# RETRY_SAME_ALT); 5 picks, 4 compared with pimm.py and the boot goal's;
+# 2 suspends, 2 goals woken by one bind; the answer A = B = [1] read out
+# of the firmware's memory equals pimm.py's.
+STREAM_PINNED = dict(steps=68, matched=64, skipped=4, stop=None, picks=5, dispatched=4,
+                     boot_pick=1, suspends=2, wakes=2)
+# The first suspend reads A01, go's A (the program's input, OURS, as the
+# driver's arguments), and b4; the wake b6 / b7, as in 'suspend'.
+STREAM_RESIDUAL_PINNED = [('suspend', ['A01', 'cell b4']), ('suspend', ['cell b4']),
+                          ('wake (get_bound_value)', ['cell b6', 'cell b7'])]
+# R17 / R18 (SUSP_STALE), the seeded free lists R19 and R1a
+# (check_pu.seed_lists: R1a since the consumers' put_reused_structure
+# takes two-cell lists from it) and their cells' links, and the three
+# parameter cells.
+STREAM_PROG_RESIDUAL_PINNED = ['R17', 'R18', 'R19', 'R1a', 'cell b4', 'cell b6', 'cell b7',
+                               'cell f2000000', 'cell f2000001', 'cell f2000002',
+                               'cell f2000003', 'cell f3000000', 'cell f3000002']
+STREAM_PICK_RESIDUAL_PINNED = [[], [], []]
+PROG_PINS = {'suspend': lambda: (SUSP_PINNED, SUSP_RESIDUAL_PINNED, SUSP_PROG_RESIDUAL_PINNED,
+                                 SUSP_PICK_RESIDUAL_PINNED),
+             'stream': lambda: (STREAM_PINNED, STREAM_RESIDUAL_PINNED,
+                                STREAM_PROG_RESIDUAL_PINNED, STREAM_PICK_RESIDUAL_PINNED)}
+
+
 def susp_got(out, n):
     return dict(steps=n, matched=out['matched'], skipped=len(out['skipped']),
                 stop=out['stop'][0] if out['stop'] else None, picks=out['picks'],
@@ -330,11 +398,12 @@ def susp_got(out, n):
                 suspends=out['suspends'], wakes=out['wakes'])
 
 
-def susp_moved(out, n):
-    return (susp_got(out, n) != SUSP_PINNED or out['susp_residual'] != SUSP_RESIDUAL_PINNED
-            or out['prog_residual'] != SUSP_PROG_RESIDUAL_PINNED
-            or out['residual'] != SUSP_PICK_RESIDUAL_PINNED
-            or out['boot_residual'] != BOOT_RESIDUAL_PINNED or out['boot_words'] != BOOT_PINNED)
+def susp_moved(out, n, prog='suspend'):
+    pin, sres, pres, kres = PROG_PINS[prog]()
+    return (susp_got(out, n) != pin or out['susp_residual'] != sres
+            or out['prog_residual'] != pres or out['residual'] != kres
+            or out['boot_residual'] != BOOT_RESIDUAL_PINNED or out['boot_words'] != BOOT_PINNED
+            or (prog in ANSWER_ARGS and not out.get('answer')))
 
 
 RESEED = None                 # injection 'reseed_r14': the step after which R14 is re-written
@@ -373,8 +442,102 @@ def args_suspend(m, lst):
     return [pimm.NIL, pimm.NIL, xr, xr, pimm.NIL, m.new_var()]
 
 
+# U3d first step (2026-11-28): a compiled KL1 program, a producer and two
+# consumers of one stream.  The source is OURS (STREAM_SOURCE, 7 lines);
+# the code is the HELD compiler's: PIMOS 3.6's KL1 compiler
+# (library/compiler, run on pimm.py from the prompt checkpoint, as R7 /
+# R8 compile: lines 'compile', '!package work', 'pc', '!exit'; answered
+# 'Compile Succeeded : pc', '"work:: pc" Loaded') made module work::pc,
+# whose cells 15-61 (the three predicates' code, after the descriptor
+# and go/3's head) are STREAM_CELLS, as ref/pu/u3d_compile.py prints and
+# checks them (out of the suite: it needs the 1.1 GB checkpoint).  The
+# compiler's choices, none of them ours: g and c compile to the same
+# code; go's body enqueues g(L, S) and c(S, B) and executes c(S, A) (the
+# first goal executed, the others enqueued in order); S is made by
+# set_marked_variable (it is passed to three goals).  The cells hold no
+# absolute address (labels are relative): placed at any cell they run
+# the same (u3d_compile.py runs them on pimm.py at two placements).
+STREAM_SOURCE = """\
+:- module pc.
+:- public go/3.
+go(L, A, B) :- c(S, A), c(S, B), g(L, S).
+g([], S) :- S = [].
+g([X|L], S) :- S = [X|S1], g(L, S1).
+c([], R) :- R = [].
+c([X|S], R) :- R = [X|R1], c(S, R1).
+"""
+STREAM_FIRST = 15             # the module offset of STREAM_CELLS[0], go/3's code
+STREAM_CELLS = [
+    (0x23, 0x14010000),   # 15  set_value 1,0,0
+    (0x23, 0x15020000),   # 16  set_marked_variable 2,0,0
+    (0x23, 0x63020007),   # 17  enqueue_goal 2, @26
+    (0x23, 0x14010000),   # 18  set_value 1,0,0
+    (0x23, 0x14020200),   # 19  set_value 2,2,0
+    (0x23, 0x63020018),   # 20  enqueue_goal 2, @46
+    (0x23, 0x61020017),   # 21  execute 2, @46
+    (0x02, 0x000108c0),   # 22  atom #108c0
+    (0x00, 0x00000000),   # 23  integer 0
+    (0x24, 0x02000018),   # 24  predicate head
+    (0x00, 0x00100000),   # 25  integer 1048576
+    (0x23, 0x6800000d),   # 26  try_me_else 0, @41
+    (0x23, 0x2a000008),   # 27  switch_on_non_list 0,0,8
+    (0x23, 0xa7020000),   # 28  read_variable_without_deref 2,0,0
+    (0x23, 0xa7030000),   # 29  read_variable_without_deref 3,0,0
+    (0x23, 0x2f060002),   # 30  put_reused_structure 6,0,2
+    (0x23, 0x25020000),   # 31  write_value 2,0,0
+    (0x23, 0x24050000),   # 32  write_variable 5,0,0
+    (0x23, 0xbd010600),   # 33  get_bound_value 1,6,0
+    (0x23, 0x34000300),   # 34  put_value 0,3,0
+    (0x23, 0x34010500),   # 35  put_value 1,5,0
+    (0x23, 0x6102fff4),   # 36  execute 2, @26
+    (0x23, 0x68000002),   # 37  try_me_else 0, @41
+    (0x23, 0x80000000),   # 38  wait_atom #0
+    (0x23, 0xba010000),   # 39  get_nil 1,0,0
+    (0x23, 0x60000000),   # 40  proceed 0,0,0
+    (0x23, 0x6902ffef),   # 41  suspend 2, @26
+    (0x02, 0x000100c2),   # 42  atom #100c2
+    (0x00, 0x00000000),   # 43  integer 0
+    (0x24, 0x0200002c),   # 44  predicate head
+    (0x00, 0x00100000),   # 45  integer 1048576
+    (0x23, 0x6800000d),   # 46  try_me_else 0, @61
+    (0x23, 0x2a000008),   # 47  switch_on_non_list 0,0,8
+    (0x23, 0xa7020000),   # 48  read_variable_without_deref 2,0,0
+    (0x23, 0xa7030000),   # 49  read_variable_without_deref 3,0,0
+    (0x23, 0x2f060002),   # 50  put_reused_structure 6,0,2
+    (0x23, 0x25020000),   # 51  write_value 2,0,0
+    (0x23, 0x24050000),   # 52  write_variable 5,0,0
+    (0x23, 0xbd010600),   # 53  get_bound_value 1,6,0
+    (0x23, 0x34000300),   # 54  put_value 0,3,0
+    (0x23, 0x34010500),   # 55  put_value 1,5,0
+    (0x23, 0x6102fff4),   # 56  execute 2, @46
+    (0x23, 0x68000002),   # 57  try_me_else 0, @61
+    (0x23, 0x80000000),   # 58  wait_atom #0
+    (0x23, 0xba010000),   # 59  get_nil 1,0,0
+    (0x23, 0x60000000),   # 60  proceed 0,0,0
+    (0x23, 0x6902ffef),   # 61  suspend 2, @46
+]
+STREAM_LIST = [1]             # go([1], A, B): the input (OURS); A = B = [1]
+
+
+def stream_cells(pc0):
+    """work::pc's code (STREAM_CELLS) at cell index pc0: position free."""
+    return list(STREAM_CELLS)
+
+
+def args_stream(m, lst):
+    """go([1], A, B) (U3d, OURS input): the list of integers, A and B
+    unbound, each held once (REFo)."""
+    c = m.alloc(2 * len(STREAM_LIST))
+    for i, v in enumerate(STREAM_LIST):
+        m.mem[c + 2 * i] = (pimm.INT, v)
+        m.mem[c + 2 * i + 1] = (pimm.LIST, c + 2 * i + 2) if i + 1 < len(STREAM_LIST) else pimm.NIL
+    return [(pimm.LIST, c), m.new_var(), m.new_var()]
+
+
 PROGRAM_ARGS = args_append2
-PROGRAMS = {'append2': (args_append2,), 'suspend': (args_suspend,)}
+PROGRAM_CODE = driver_cells
+PROGRAMS = {'append2': (args_append2, driver_cells), 'suspend': (args_suspend, driver_cells),
+            'stream': (args_stream, stream_cells)}
 
 
 def pimm_run():
@@ -382,10 +545,10 @@ def pimm_run():
     state at the first instruction, steps): each step (pc, cell, lines,
     after), lines the instruction's R / M / A / G / Q lines."""
     m = pimm.Machine()
-    code = driver_cells(0)
+    code = PROGRAM_CODE(0)
     a = m.alloc(len(code))
     pc0 = a - m.load
-    for i, w in enumerate(driver_cells(pc0)):
+    for i, w in enumerate(PROGRAM_CODE(pc0)):
         m.mem[a + i] = w
 
     def lst(atoms):
@@ -506,6 +669,12 @@ def boot(p, hp, entry=None):
     p.mem[0xb6] = (pimm.INT, GSEB)
     p.mem[0xb4] = PARAM_B4
     p.mem[0xb7] = (pimm.INT, GSESH)
+    # U3d: the refill's 3375 reads W1c (select d, EM1 1c: RULES
+    # ['wsel_d_w_em1'], where R0d was read before) into the latch w2,
+    # which nothing after it uses: OURS, STALE (a value not known).
+    # Injection 'w1c_unset': STOP in the boot at 3375.
+    if W1C_STALE:
+        p.w[0x1c] = PU.STALE
     done = []
     p.step(PMPF_ENTRY if entry is None else entry)  # the entry's flag word (OURS: which)
     done.append(('%04x PMPF' % (PMPF_ENTRY if entry is None else entry), 1))
@@ -517,6 +686,7 @@ def boot(p, hp, entry=None):
     return done
 
 
+W1C_STALE = True              # injection 'w1c_unset'
 REFILL_RECORDS = 8            # 3380's records (observed); the boot pops 3 (R13, R14, R10)
 
 
@@ -571,7 +741,8 @@ def r16_check(p, what, susp=0):
 
 
 def run(verbose=False, entry=None, prog=None):
-    globals().update(PROGRAM_ARGS=PROGRAMS[prog or 'append2'][0])
+    globals().update(PROGRAM_ARGS=PROGRAMS[prog or 'append2'][0],
+                     PROGRAM_CODE=PROGRAMS[prog or 'append2'][1])
     m, s0, steps, pc0 = pimm_run()
     p = PU.PU()
     p.mem.update(s0['mem'])
@@ -585,6 +756,8 @@ def run(verbose=False, entry=None, prog=None):
            'susp_residual': []}
     prov = Prov()
     prov.harness(p)
+    FRESH.clear()
+    INDIRECT.clear()
     try:
         done = boot(p, m.hp, entry)
     except PU.Unmodelled as e:
@@ -634,7 +807,10 @@ def run(verbose=False, entry=None, prog=None):
         prov.reg[('R', R_PC)] = 'harness'
         r04_0 = p.r.get(R_PC)
         after['next_pc'] = steps[k + 1][0] if k + 1 < len(steps) else None
-        after['sp_moved'] = after.get('sp') != prev_after.get('sp')
+        # put_reused_structure always sets sp (U3d: the new cells can lie
+        # where the old sp pointed, so a compare of the values misses it)
+        after['sp_moved'] = after.get('sp') != prev_after.get('sp') or \
+            (SP_SET_REUSED and cell_name(p, cellv) == 'put_reused_structure')
         after['r02_0'] = p.r.get(SU.R_SP)
         name = '?'
         n0 = len(p.trace)
@@ -674,6 +850,8 @@ def run(verbose=False, entry=None, prog=None):
         rl = [ln for ln in lines if ln[:2] in ('R ', 'M ')]
         if base == 'set_value':
             fails = cmp_set_value(p, rn, lines, an0, mem0, r0)
+        elif base in ('set_variable', 'set_marked_variable'):
+            fails = cmp_set_variable(p, m, rn, lines, after, name, an0, mem0, r0)
         elif base == 'enqueue_goal':
             fails = cmp_enqueue(p, m, rn, lines, after, prev_after, an0, mem0, r0, fw2pg, pg2fw)
         elif base == 'proceed':
@@ -700,6 +878,12 @@ def run(verbose=False, entry=None, prog=None):
             fails = U2.compare(p, m, rn, rl, after, name, an0, mem0)
             if DECLARE_DEREF_REG and base in GUARD_OPS:
                 fails = declare_deref_reg(p, an0, fails)
+            if DECLARE_FRESH_MRB and base == 'put_reused_structure':
+                fails = declare_fresh_mrb(p, rn, lines, after, fails)
+            if (DECLARE_FRESH_MRB and FRESH) or (DECLARE_READ_INDIRECT and INDIRECT):
+                fails = carried_fresh_mrb(p, rn, fails)
+            if DECLARE_READ_INDIRECT and base in ('read_variable', 'read_variable_without_deref'):
+                fails = declare_read_indirect(p, m, rn, lines, after, mem0, fails)
             j = guard_to_alt(p, m, steps, k, r0) if DECLARE_GUARD_ALT else None
             if j is not None:
                 skip_to = j
@@ -747,7 +931,55 @@ def run(verbose=False, entry=None, prog=None):
           % (out['matched'], len(steps), out['words'], out['picks'], out['dispatched'],
              out['empty'], out['boot_pick'], '' if not out['stop']
              else '; first stop: instruction %d (%d %s)' % out['stop'][:3]))
+    if prog in ANSWER_ARGS and not out['stop'] and not out['fail'] and steps:
+        # the answer (U3d): each output argument read out of the firmware's
+        # memory (fw_term) against pimm.py's (Machine.term)
+        if ANSWER_POKE is not None:
+            w = s0['reg'][1]
+            while w[0] & ~1 == pimm.REF:            # A's list, in the firmware's memory
+                w = p.mem.get(w[1])
+            ANSWER_CELL[0] = w[1]
+            ANSWER_POKE(p)                          # injection 'answer_poke'
+        got = [fw_term(p.mem, s0['reg'][i]) for i in ANSWER_ARGS[prog]]
+        want = [m.term(s0['reg'][i]) for i in ANSWER_ARGS[prog]]
+        out['answer'] = (got, want)
+        print('answer: firmware %s, pimm.py %s%s' % (
+            ', '.join('A%d = %r' % (i, t) for i, t in zip(ANSWER_ARGS[prog], got)),
+            ', '.join('A%d = %r' % (i, t) for i, t in zip(ANSWER_ARGS[prog], want)),
+            '' if got == want else ': FAIL'))
+        if got != want:
+            out['fail'] = (len(steps), None, 'answer', ['answer %r, pimm.py %r' % (got, want)])
     return out, len(steps)
+
+
+# U3d: the arguments whose terms are the program's answer (go's A and B)
+ANSWER_ARGS = {'stream': (1, 2)}
+ANSWER_POKE = None            # injection 'answer_poke'
+
+
+def fw_term(mem, w, depth=0):
+    """A term read out of the firmware's memory (U3d), as pimm.py's
+    Machine.term reads its own: REF chains followed (any MRB), an
+    integer, nil as [], a list as a Python list (or ('|', car, cdr)), an
+    unbound or hooked variable as None, anything else as its tag and
+    value."""
+    n = 0
+    while w and w[0] & ~1 == pimm.REF and n < 64:
+        c = mem.get(w[1])
+        if c is None or c[0] == pimm.UNDF or c[0] & ~1 == HOOKO:
+            return None
+        w, n = c, n + 1
+    if not w or depth > 64:
+        return ('?', w)
+    t = w[0] & ~1
+    if t == pimm.INT:
+        return w[1] - (1 << 32) if w[1] >> 31 else w[1]
+    if t == pimm.ATOM:
+        return [] if w[1] == 0 else ('ATOM', w[1])
+    if t == pimm.LIST:
+        car, cdr = fw_term(mem, mem.get(w[1]), depth + 1), fw_term(mem, mem.get(w[1] + 1), depth + 1)
+        return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
+    return ('tag %02x' % w[0], w[1])
 
 
 GUARD_OPS = ('wait_nil', 'wait_list', 'wait_atom', 'wait_integer', 'wait_value', 'wait',
@@ -775,9 +1007,22 @@ def guard_to_alt(p, m, steps, k, r0):
     else:
         return None
     for i in range(k + 1, j):
-        if cell_name(p, steps[i][1]) not in GUARD_OPS:
+        nm = cell_name(p, steps[i][1])
+        if nm == 'try_me_else' and RETRY_SAME_ALT and m.load + steps[i][3].get('alt', -1) == r04[1]:
+            continue          # U3d: the next clause's try_me_else, to the same alternative
+        if nm not in GUARD_OPS:
             return None
     return j
+
+
+# U3d (the stream program): the compiled code puts a try_me_else between
+# the switch and the next guard (cells 37 / 57: the second clause's,
+# whose alternative is the same suspend, @41 / @61).  pimm.py runs it on
+# the way (it writes nothing, its alt unchanged); the firmware, already
+# at the alternative, never sees it.  Declared as part of guard_to_alt
+# when that try_me_else's alternative is the firmware's R04.  Injection
+# 'guard_alt_retry_off': FAIL at the first suspend's switch.
+RETRY_SAME_ALT = True
 
 
 def cell_name(p, cell):
@@ -824,6 +1069,28 @@ def cmp_set_value(p, rn, lines, an0, mem0, r0):
     if [ln for ln in lines if ln[:2] in ('R ', 'M ')]:
         fails.append('set_value: pimm.py wrote %s' % lines)
     return fails
+
+
+def cmp_set_variable(p, m, rn, lines, after, name, an0, mem0, r0):
+    """set_variable / set_marked_variable x, y (U3d): pimm.py's A line
+    (argv[x], a reference to a new variable) against the record's cell
+    R10 + x, which pairs the two new variable cells under the renaming;
+    then its M line (the variable, UNDF) and R line (register y, the same
+    reference) as u2_append.compare, the record cell accounted for."""
+    x = p.ir_field('x')
+    cell = r0[0x10][1] + x
+    al = [ln.split() for ln in lines if ln.startswith('A ')]
+    if len(al) != 1 or int(al[0][1]) != x:
+        return ['%s: pimm.py A lines %s' % (name, al)]
+    pv = (int(al[0][2][:2], 16), int(al[0][2][2:], 16))
+    fails = []
+    if not rn.same(p.mem.get(cell), pv, False, [], 'argv'):
+        fails.append('cell R10+%d (%x): firmware %s, pimm.py argv[%d] %s'
+                     % (x, cell, fmt(p.mem.get(cell)), x, fmt(pv)))
+    mem1 = dict(mem0)
+    mem1[cell] = p.mem.get(cell)
+    rl = [ln for ln in lines if ln[:2] in ('R ', 'M ')]
+    return fails + U2.compare(p, m, rn, rl, after, name, an0, mem1)
 
 
 BOOTREC = None                # the boot's goal record (2104-210b), set by run()
@@ -957,6 +1224,8 @@ def cmp_pick(p, m, rn, lines, after, an0, fw2pg, pg2fw, next_pc, n0):
 
 
 HOOKX = 0x0b
+SUSP_CHAIN_LINK = True        # injection 'chain_link_nil' (U3d: cell 15 always nil)
+SUSP_WAITERS_ONCE = True      # injection 'waiters_raw' (U3d: pimm.py's hook list as it is)
 DECLARE_DOUBLE_HOOK = True    # injection 'double_hook_undeclared'
 
 
@@ -1019,22 +1288,43 @@ def cmp_suspend(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw, next_pc, n0
     if p.mem.get(rec + 12) != (COD, m.mem[g + G_CODE][1]):
         fails.append('cell 12 %s, pimm.py code {COD, %x}' % (fmt(p.mem.get(rec + 12)),
                                                               m.mem[g + G_CODE][1]))
-    for c, want, what in ((13, r0.get(0x12), 'R12'), (14, r0.get(0x13), 'R13'), (15, NIL, 'nil')):
+    vars_ = sorted(a for a, w in ml.items() if w[0] & ~1 == pimm.HOOK)
+    # cell 15: nil for the first waiter (1c70-1c81); for a variable other
+    # goals already wait on (U3d: 1c66's tag case takes 1c73 on HOOKx,
+    # 1c82-1c83 write cell 15 := the variable's old hook, 1c86 / 1c81 the
+    # variable := {HOOKx, record}) the old hook, so the waiters are a chain
+    # of goal records through cell 15, newest first
+    old = [mem0.get(rn.p2f.get(v, v)) for v in vars_]
+    link = old[0] if (len(old) == 1 and old[0] and old[0][0] & ~1 == HOOKO
+                      and SUSP_CHAIN_LINK) else NIL
+    for c, want, what in ((13, r0.get(0x12), 'R12'), (14, r0.get(0x13), 'R13'),
+                          (15, link, 'nil' if link == NIL else 'the old hook')):
         if p.mem.get(rec + c) != want:
             fails.append('cell %d %s, want %s %s (firmware only)' % (c, fmt(p.mem.get(rec + c)),
                                                                      what, fmt(want)))
-    vars_ = sorted(a for a, w in ml.items() if w[0] & ~1 == pimm.HOOK)
     if not vars_:
         fails.append('pimm.py hooks no variable')
     allowed = set(range(rec, rec + 1 + n)) | {rec + 12, rec + 13, rec + 14, rec + 15}
     for v in vars_:
-        allowed.add(v)
+        fva = rn.p2f.get(v, v)            # the firmware's cell for pimm.py's variable
+        allowed.add(fva)
         waiters = hook_goals(m, v, ml)
-        if not waiters or set(waiters) != {g}:
-            fails.append('pimm.py variable %x: waiters %r, want only %x' % (v, waiters, g))
-        elif len(waiters) > 1 and not DECLARE_DOUBLE_HOOK:
-            fails.append('pimm.py variable %x hooked %d times, the firmware once'
+        # pimm.py's waiters, each once, newest first, against the
+        # firmware's chain (the variable's hook, then each record's cell
+        # 15), records named as pimm.py's (fw2pg, this goal's rec -> g)
+        fwch, w = [], p.mem.get(fva)
+        while w and w[0] & ~1 == HOOKO and len(fwch) < 64:
+            fwch.append(g if w[1] == rec else fw2pg.get(w[1], ('unmapped', w[1])))
+            w = p.mem.get(w[1] + 15)
+        once = list(dict.fromkeys(waiters or []))
+        if not waiters or waiters[0] != g:
+            fails.append('pimm.py variable %x: waiters %r, want %x first' % (v, waiters, g))
+        elif len(waiters) > len(once) and not DECLARE_DOUBLE_HOOK:
+            fails.append('pimm.py variable %x hooked %d times, the firmware once per goal'
                          % (v, len(waiters)))
+        elif fwch != (once if SUSP_WAITERS_ONCE else waiters) or w != NIL:
+            fails.append('variable %x: the firmware\'s waiters %r (end %s), pimm.py\'s %r'
+                         % (v, fwch, fmt(w), once))
         # the hook's MRB is the noting reference's (1c66 forms tag0 of R18,
         # the noted pointer; 1c80 writes {HOOKo, record} and leaves on a
         # clear MRB, 1c81 rewrites {HOOKx, record}): pimm.py's argument
@@ -1042,16 +1332,20 @@ def cmp_suspend(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw, next_pc, n0
         refs = [w for w in (m.mem[g + G_ARGS + i] for i in range(n))
                 if w[0] & ~1 == pimm.REF and w[1] == v]
         want = (HOOKO | (refs[0][0] & 1) if refs else None, rec)
-        if p.mem.get(v) != want:
+        if p.mem.get(fva) != want:
             fails.append('variable %x: %s, want {HOOK%s, %x} (the noted reference\'s MRB)'
-                         % (v, fmt(p.mem.get(v)), 'x' if want[0] == HOOKX else 'o', rec))
+                         % (v, fmt(p.mem.get(fva)), 'x' if want[0] == HOOKX else 'o', rec))
     # the record 1c09 popped goes back on R1b (2209 -> 339f): no net allocation
     pop = r0.get(0x1b)
     if not pop or not p.r.get(0x1b) or p.r[0x1b][1] != pop[1]:
         fails.append('R1b %s, want the record given back %s' % (fmt(p.r.get(0x1b)), fmt(pop)))
     else:
         allowed.add(pop[1])
-        if p.mem.get(pop[1]) != mem0.get(pop[1]):
+        # its cell 0 as it was, or restamped {VECT0x, the same link} (U3d:
+        # 339f's push writes VECT0x; a record fresh from 3380's refill has
+        # {REFo, next} there, as proceed's freed record: DECLARE_FREE)
+        c0, c00 = p.mem.get(pop[1]), mem0.get(pop[1])
+        if c0 != c00 and not (DECLARE_FREE and c00 and c0 == (VECT0X, c00[1])):
             fails.append('record %x given back: cell 0 %s, was %s'
                          % (pop[1], fmt(p.mem.get(pop[1])), fmt(mem0.get(pop[1]))))
     fails += other_writes(p, mem0, allowed)
@@ -1063,7 +1357,9 @@ def cmp_suspend(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw, next_pc, n0
 
 
 DECLARE_ATOM_MRB = True       # injection 'atom_mrb_undeclared'
+WAKE_LOOP_REVERSED = False    # injection 'wake_loop_reversed' (the third step's loop)
 DECLARE_DEREF_REG = True      # injection 'deref_reg_undeclared'
+DEREF_REG_MARKED = True       # injection 'deref_reg_marked_off' (U3d)
 
 
 def declare_deref_reg(p, an0, fails):
@@ -1080,13 +1376,139 @@ def declare_deref_reg(p, an0, fails):
         i = int(f.split()[1].rstrip(':')) if f.startswith('reg ') and f.endswith(
             'pimm.py no write') else None
         if i is not None:
-            w, n = an0.get(i), 0
+            w, n, on = an0.get(i), 0, False
             while w and w[0] & ~1 == pimm.REF and n < 16:
+                on = on or bool(w[0] & 1)
                 w, n = p.mem.get(w[1]), n + 1
             v = p.an.get(i)
-            if n and w and v and v == (w[0] & ~1, w[1]) and w[0] not in check_pu.POINTER_TAGS:
+            # U3d: or MRB on when a reference on the way had it on (pimm.py's
+            # deref marks the result so; the firmware's 3304 re-stamps a list
+            # reached through a REFx LISTx)
+            if n and w and v and (v == (w[0] & ~1, w[1]) and w[0] not in check_pu.POINTER_TAGS
+                                  or DEREF_REG_MARKED and on and v == (w[0] | 1, w[1])):
                 print('      declared: A%d := %s, the end of its chain (pimm.py keeps the'
                       ' reference)' % (i, fmt(v)))
+                continue
+        out.append(f)
+    return out
+
+
+DECLARE_READ_INDIRECT = True  # injection 'read_indirect_undeclared' (U3d)
+DECLARE_FRESH_MRB = True      # injection 'fresh_mrb_undeclared' (U3d)
+SP_SET_REUSED = True          # injection 'sp_set_reused_off' (U3d)
+CARRY_FRESH_MRB = True        # injection 'fresh_mrb_carried_off' (U3d)
+CARRY_READ_INDIRECT = True    # injection 'read_indirect_carried_off' (U3d)
+
+
+FRESH = set()                 # firmware structures declared 'mrb' (run() empties it)
+
+
+INDIRECT = set()              # firmware cells a register refers to by 'read_indirect'
+
+
+def carried_fresh_mrb(p, rn, fails):
+    """The declared differences carried by a copy (U3d).  'mrb': a later
+    register or cell that holds a pointer to a structure declared at its
+    put_reused_structure (FRESH) differs from pimm.py's in the MRB alone
+    (firmware off, pimm.py on).  'read_indirect': one that holds the
+    firmware's reference to a cell of INDIRECT, where pimm.py holds what
+    that cell holds."""
+    out = []
+    for f in fails:
+        w = f.replace(',', '').split()
+        if ('firmware' in w and 'pimm.py' in w and w[0] in ('reg', 'heap')
+                and 'write' not in w):
+            try:
+                fv = w[w.index('firmware') + 1].split(':')
+                pv = w[w.index('pimm.py') + 1].split(':')
+                fv, pv = (int(fv[0], 16), int(fv[1], 16)), (int(pv[0], 16), int(pv[1], 16))
+            except (ValueError, IndexError):
+                fv = pv = None
+            if CARRY_FRESH_MRB and fv and fv[1] in FRESH and pv == (fv[0] | 1, rn.f2p.get(fv[1])):
+                print('      declared: %s %s holds %s, pimm.py %s (mrb, carried)'
+                      % (w[0], w[1].rstrip(':'), fmt(fv), fmt(pv)))
+                continue
+            if CARRY_READ_INDIRECT and fv and fv[0] & ~1 == pimm.REF and fv[1] in INDIRECT \
+                    and rn.same(p.mem.get(fv[1]), pv, False, [], 'carried'):
+                print('      declared: %s %s holds %s, pimm.py %s (read_indirect, carried)'
+                      % (w[0], w[1].rstrip(':'), fmt(fv), fmt(pv)))
+                continue
+        out.append(f)
+    return out
+
+
+def declare_fresh_mrb(p, rn, lines, after, fails):
+    """The declared difference 'mrb' of U1 (check_pu.py: put_list,
+    put_vector_N), met in put_reused_structure (U3d): on a structure it
+    may not reuse (the stream program's consumer, A0 a LISTx: 31ec-31ed
+    do not end) the firmware takes new cells (31ee -> 31a1 -> 31a4, the
+    R1a list) and gives x the new structure MRB off, a single reference;
+    pimm.py's i_put_reused_structure takes new cells always and marks
+    the pointer MRB on.  Drops 'reg x' when the two differ only in the MRB
+    and the firmware's cells are new to the renaming (then its z cells are
+    paired with pimm.py's z), and
+    the sp compare the unpaired cells made fail, if R02 now pairs."""
+    x = p.ir_field('x')
+    out, paired = [], False
+    for f in fails:
+        if f.startswith('reg %d: firmware ' % x):
+            fv = p.an.get(x)
+            pv = [ln.split()[2] for ln in lines if ln.startswith('R %d ' % x)]
+            pv = (int(pv[0][:2], 16), int(pv[0][2:], 16)) if pv else None
+            if fv and pv and fv[0] in check_pu.POINTER_TAGS and not fv[0] & 1 \
+                    and pv[0] == fv[0] | 1 and fv[1] not in rn.f2p and pv[1] not in rn.p2f:
+                for k in range(p.ir_field('z')):      # the z new cells, cell by cell
+                    rn.pair(fv[1] + k, pv[1] + k)
+                FRESH.add(fv[1])
+                paired = True
+                print('      declared: A%d := %s, MRB off, pimm.py %s (mrb)' % (x, fmt(fv), fmt(pv)))
+                continue
+        out.append(f)
+    if paired:
+        r02 = p.r.get(SU.R_SP)
+        out = [f for f in out if not (f.startswith('sp: ') and '->' not in f and r02
+                                      and rn.f2p.get(r02[1]) == after.get('sp'))]
+    return out
+
+
+def declare_read_indirect(p, m, rn, lines, after, mem0, fails):
+    """The declared difference 'read_indirect' (U3d): reading an element
+    of a structure write_variable built.  There the firmware's element is
+    {REF, a new cell} and pimm.py's the variable itself (U1's declared
+    'indirect', u2_append.declare_indirect, which pairs the new cell with
+    pimm.py's element).  So, read from a shared structure (reached through
+    a REFx), the firmware's register is a reference to the cell paired
+    with pimm.py's element, and the element itself is re-stamped MRB on in
+    place (a shared reference now held twice); pimm.py's register is what
+    that cell holds (pimm.py's taken; it marks pointers only, and writes
+    no cell).  Drops 'reg x' when the firmware's register is {REF / REFx,
+    c}, c paired with the element pimm.py read (its sp before the
+    instruction) and c's content the same as pimm.py's value; and 'heap a'
+    when a held {REF, c} (the firmware's element) and only its MRB was
+    turned on."""
+    el = after.get('sp')
+    el = el - 1 if el is not None else None
+    fel = rn.p2f.get(el, el)              # the firmware cell paired with it: the new cell
+    out = []
+    for f in fails:
+        w = f.split()
+        if f.startswith('reg ') and ': firmware ' in f and 'pimm.py no write' not in f:
+            i = int(w[1].rstrip(':'))
+            fv = p.an.get(i)
+            pv = [ln.split()[2] for ln in lines if ln.startswith('R %d ' % i)]
+            pv = (int(pv[0][:2], 16), int(pv[0][2:], 16)) if pv else None
+            if fv and fv[0] & ~1 == pimm.REF and el is not None and rn.f2p.get(fv[1]) == el \
+                    and pv and rn.same(p.mem.get(fv[1]), pv, False, [], 'read'):
+                print('      declared: A%d := %s, a reference to the cell pimm.py\'s element is'
+                      ' (read_indirect)' % (i, fmt(fv)))
+                INDIRECT.add(fv[1])
+                continue
+        if f.startswith('heap ') and 'pimm.py no write' in f:
+            a = int(w[1].rstrip(':'), 16)
+            old, new = mem0.get(a), p.mem.get(a)
+            if old and new and old[0] & ~1 == pimm.REF and old[1] == fel \
+                    and new == (old[0] | 1, old[1]):
+                print('      declared: element %x re-stamped %s (read_indirect)' % (a, fmt(new)))
                 continue
         out.append(f)
     return out
@@ -1116,8 +1538,9 @@ def cmp_wake(p, m, rn, lines, woken, an0, mem0, r0, fw2pg, pg2fw):
     for a, pv in sorted(ml.items()):
         if a in own:
             continue
-        allowed.add(a)
-        fv = p.mem.get(a)
+        fa = rn.p2f.get(a, a)             # the firmware's cell (U3d: a renamed variable)
+        allowed.add(fa)
+        fv = p.mem.get(fa)
         if rn.same(fv, pv, False, [], 'heap'):
             continue
         if DECLARE_ATOM_MRB and fv and pv and fv[0] == pv[0] | 1 and pv[0] not in check_pu.POINTER_TAGS \
@@ -1125,7 +1548,10 @@ def cmp_wake(p, m, rn, lines, woken, an0, mem0, r0, fw2pg, pg2fw):
             continue
         fails.append('heap %x: firmware %s, pimm.py %s' % (a, fmt(fv), fmt(pv)))
     head = r0.get(0x14)
-    for g in reversed(woken):             # the last woken is the head
+    # each woken record pushed in pimm.py's W order, so the last woken is
+    # the head and each record's link is the one woken before it (U3d:
+    # the loop ran reversed, right for one waiter only)
+    for g in (reversed(woken) if WAKE_LOOP_REVERSED else woken):
         if g not in pg2fw:
             fails.append('pimm.py wakes record %x, which no suspend made' % g)
             continue
@@ -1145,6 +1571,29 @@ def cmp_wake(p, m, rn, lines, woken, an0, mem0, r0, fw2pg, pg2fw):
     fails += other_writes(p, mem0, allowed)
     fails += an_unchanged(p, an0, 'wake')
     return fails
+
+
+def _wait_atom_plus1():
+    """Injection 'wait_atom_plus1' (U3d): wait_atom's MDR2 the atom + 1."""
+    s = SU.setup
+
+    def setup(pu, name):
+        start = s(pu, name)
+        if SU.base(name) == 'wait_atom':
+            w = pu.wr[SU.mekbn.MDR2]
+            pu.wr[SU.mekbn.MDR2] = (w[0], w[1] + 1)
+        return start
+    SU.setup = setup
+
+
+def _answer_poke(p):
+    """Injection 'answer_poke' (U3d): one firmware-written cell of the
+    answer changed after the run, the car of A's list (2 for 1)."""
+    a = ANSWER_CELL[0]
+    p.mem[a] = (pimm.INT, 2)
+
+
+ANSWER_CELL = [None]          # set by run(): the firmware cell of A's first element
 
 
 def _reseed():
@@ -1248,6 +1697,28 @@ INJECT = {
     'double_hook_undeclared': lambda: globals().update(DECLARE_DOUBLE_HOOK=False),
     'atom_mrb_undeclared': lambda: globals().update(DECLARE_ATOM_MRB=False),
     'deref_reg_undeclared': lambda: globals().update(DECLARE_DEREF_REG=False),
+    # U3d first step: the stream program's rules and declarations
+    'rvwd_form_arg': lambda: SU.FORMS.update(read_variable_without_deref=(None, 'arg_x')),
+    'wait_atom_own': lambda: SU.S_CONST.pop('wait_atom'),
+    'get_nil_form_y': lambda: SU.FORMS.update(get_nil=('s_tag', 'y')),
+    'chain_odpf4_off': lambda: setattr(SU, 'S_CHAIN_ODPF4', False),
+    'wsel_d_w_off': lambda: PU.RULES.update(wsel_d_w_em1=False),
+    'chain_match_off': lambda: setattr(SU, 'S_CHAIN_MATCH', False),
+    'tdar_odpf3_off': lambda: setattr(SU, 'S_TDAR_ODPF3', False),
+    'w1c_unset': lambda: globals().update(W1C_STALE=False),
+    'guard_alt_retry_off': lambda: globals().update(RETRY_SAME_ALT=False),
+    'chain_link_nil': lambda: globals().update(SUSP_CHAIN_LINK=False),
+    'waiters_raw': lambda: globals().update(SUSP_WAITERS_ONCE=False),
+    'wake_loop_reversed': lambda: globals().update(WAKE_LOOP_REVERSED=True),
+    'read_indirect_undeclared': lambda: globals().update(DECLARE_READ_INDIRECT=False),
+    'fresh_mrb_undeclared': lambda: globals().update(DECLARE_FRESH_MRB=False),
+    'sp_set_reused_off': lambda: globals().update(SP_SET_REUSED=False),
+    'deref_reg_marked_off': lambda: globals().update(DEREF_REG_MARKED=False),
+    'answer_poke': lambda: globals().update(ANSWER_POKE=_answer_poke),
+    'wait_atom_plus1': lambda: _wait_atom_plus1(),
+    'fresh_mrb_carried_off': lambda: globals().update(CARRY_FRESH_MRB=False),
+    'read_indirect_carried_off': lambda: globals().update(CARRY_READ_INDIRECT=False),
+    'setvar_form_op': lambda: SU.FORMS.update(set_marked_variable=(None, 'arg_op')),
 }
 
 
@@ -1284,11 +1755,22 @@ def main(argv):
                  out2['prog_residual'], out2['residual'], SUSP_PINNED, SUSP_RESIDUAL_PINNED,
                  SUSP_PROG_RESIDUAL_PINNED, SUSP_PICK_RESIDUAL_PINNED))
     bad2 = bool(smoved or out2['fail'] or out2['stop'] or out2['boot_stop'])
+    print('--- the program stream (U3d, a compiled program: work::pc go([1], A, B))')
+    out3, n3 = run('-v' in argv, prog='stream')
+    tmoved = susp_moved(out3, n3, 'stream')
+    if tmoved:
+        print('%s the stream run moved: %s, suspend / wake residual %s, program residual %s,'
+              ' pick residual %s, answer %s; pinned %s, %s, %s, %s'
+              % ('MOVED' if inj else 'FAIL', susp_got(out3, n3), out3['susp_residual'],
+                 out3['prog_residual'], out3['residual'], out3.get('answer'), STREAM_PINNED,
+                 STREAM_RESIDUAL_PINNED, STREAM_PROG_RESIDUAL_PINNED, STREAM_PICK_RESIDUAL_PINNED))
+    bad3 = bool(tmoved or out3['fail'] or out3['stop'] or out3['boot_stop'])
     if inj:
-        print('injection %s: append2 %s, suspend %s' % (nm, 'MOVED' if bad else 'unchanged',
-                                                        'MOVED' if bad2 else 'unchanged'))
-        return 1 if bad or bad2 else 0
-    if bad or bad2:
+        print('injection %s: append2 %s, suspend %s, stream %s'
+              % (nm, 'MOVED' if bad else 'unchanged', 'MOVED' if bad2 else 'unchanged',
+                 'MOVED' if bad3 else 'unchanged'))
+        return 1 if bad or bad2 or bad3 else 0
+    if bad or bad2 or bad3:
         return 1
     # PMPF's other value (entry 2003's set_PMPF, 2022): the boot's crr arm
     # reads the reduction limit at R05 + b0, a parameter cell no harness

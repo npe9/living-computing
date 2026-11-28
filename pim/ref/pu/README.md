@@ -40,7 +40,12 @@ harness-written state read at any pick. Append's own run stays at 15 of 16
 step"): suspend and resume on held routines. In a second program a goal
 suspends on an unbound variable, another binds it and wakes it, and it
 runs to its end: 22 of 23 instructions matched with 1 declared skip, and
-4 picks, 3 compared with `pimm.py`.
+4 picks, 3 compared with `pimm.py`. **U3d's first step** (2026-11-28,
+section "U3d, first step"): a program compiled by the held PIMOS
+compiler (a producer and two consumers of one stream) runs to its
+answer, `pimm.py`'s: 64 of 68 instructions matched with 4 declared
+skips, 5 picks (4 compared), 2 suspends on one variable and one bind
+waking both.
 
 - 32 cases, all PASS (83 held microinstructions executed since U3; 80 before). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
@@ -879,7 +884,7 @@ address, INFERENCE on the encoding; the boot uses `[b6]` as an address,
 so `b6` holds the table base, where the first step's "b6 / b7 = gsesh /
 gseb by place" put the shift count first); start's cell and its operand
 A0 (STALE; `20a1` reads it, `20a6` overwrites what it fed); R0d (STALE,
-`3375`); which of start's calls run (2053's other refills, `2070`,
+`3375`; since U3d W1c, `3375`'s select d read as W(EM1)); which of start's calls run (2053's other refills, `2070`,
 `208e`, `209f`'s tail `20a9`-`20c0`, which reads cells `b8` / `ba`, and
 `20c2` are not run). Unchanged from U2 / the first step: the A stage,
 the driver's A0-A5, the cell lists R19 / R1a, `pimm.py`'s memory cells.
@@ -1105,3 +1110,212 @@ A0 is no longer read by the boot.
   W1f's bit);
 - a wake of several goals;
 - `sp_single` (not needed by this program).
+
+## U3d, first step: a compiled KL1 program to its answer (2026-11-28)
+
+**A program compiled by the held PIMOS compiler runs on the held firmware
+to its answer, and the answer is `pimm.py`'s.** The program is a producer
+and two consumers of one stream (`u3_goals.STREAM_SOURCE`, 7 lines, OURS):
+
+    :- module pc.
+    :- public go/3.
+    go(L, A, B) :- c(S, A), c(S, B), g(L, S).
+    g([], S) :- S = [].
+    g([X|L], S) :- S = [X|S1], g(L, S1).
+    c([], R) :- R = [].
+    c([X|S], R) :- R = [X|R1], c(S, R1).
+
+It was chosen because it is the smallest program that needs what U3 had
+not run: a second goal suspending on a variable another goal already
+waits on, and one bind waking two goals. nrev was rejected: its compiled
+body is `enqueue_goal append; execute nrev`, and with a newest-first queue
+each `append` is picked only after its input is bound, so it never
+suspends (seen on `pimm.py`).
+
+**The code is the compiler's, not ours.** PIMOS 3.6's KL1 compiler
+(`library/compiler`) ran on `pimm.py` from the prompt checkpoint with
+the lines `compile`, `!package work`, `pc`, `!exit`, as R7 / R8 compile.
+It answered `Compile Succeeded : pc` and `"work:: pc" Loaded`. The module
+`work::pc` has 62 cells. Its cells 15-61, the code of the three
+predicates, are pinned as `u3_goals.STREAM_CELLS`, 47 cells with their
+disassembly. The descriptor (cells 0-14) is left out: it holds an
+absolute pointer.
+
+`ref/pu/u3d_compile.py PROMPT.pkl` makes them again and checks them. It is
+out of the suite because it needs the 1.1 GB checkpoint (md5
+`75c7b1c62509fdf1d6926b0719f10dc5`); it takes 30 s and 0.97 M `pimm.py`
+instructions. It checks the cells are position free: `go([1], A, B)` and
+`go([1, 2], A, B)` at two placements give the same answer and the same
+counts. Observed: PASS.
+
+The compiler made three choices of its own:
+
+- `g` and `c` compile to the same code;
+- `go`'s body enqueues `g(L, S)`, then `c(S, B)`, and executes `c(S, A)`;
+- `S` is made by `set_marked_variable`.
+
+**The run** (`u3_goals.py`, third program, `go([1], A, B)` after the
+199-word boot):
+
+- **The consumers suspend.** `c(S, A)` suspends on S (`1c70`-`1c81`, as in
+  U3's third step). Then `c(S, B)`, dispatched by that suspend, notes S,
+  which is now `{HOOKx, record}`, and suspends too. This is new held
+  code: `1c66`'s tag case takes `1c73` on the HOOK, and `1c82`-`1c83`
+  write the new record's cell 15 := the variable's old hook. `1c86` /
+  `1c81` then write S := `{HOOKx, new record}`. So the waiters are a chain
+  of goal records linked through cell 15, newest first: the ready
+  queue's own link. No new rule was needed for this.
+- **The producer binds S and wakes both.** `g([1], S)` runs, and its
+  `get_bound_value 1,6` binds S to `[1|S1]` (67 words: `3894` row 5,
+  `0cd4`, `0c0a` -> `0c60`, the unifier, then the wake path `4d1a`-`4d1e`
+  twice). The two woken records go on R14 in the order `pimm.py` gives:
+  the oldest waiter is the head. No new rule was needed for the wake
+  order either.
+- **To the end.** The producer runs on to its end. Then the two
+  consumers run, one after the other, to theirs. The second takes the
+  stream the first has re-stamped. Then the boot goal runs.
+
+**Counts** (`STREAM_PINNED`):
+
+- instructions: 68 on `pimm.py`, 64 executed and matched, 4 skipped as
+  declared (`guard_to_alt`);
+- 407 held microinstructions after the boot;
+- 5 picks, 4 compared with `pimm.py`, and the boot goal's;
+- 2 suspends, and 1 bind that wakes 2 goals;
+- the answer, read out of the firmware's memory by `fw_term`:
+  `A = [1], B = [1]`, `pimm.py`'s.
+
+The append2 and suspend runs are unchanged (41 of 41, 22 of 23 + 1),
+except their boot residual (R0d -> W1c, below).
+
+**Rules decided in this step** (`pu.py` / `setup.py`; the observed
+injection result follows each one, from `--inject`, on the stream run):
+
+| Rule | Label | Decided at | Injection: observed |
+|---|---|---|---|
+| `pu.RULES['wsel_d_w_em1']`: select d (DSTF, SC1F) with WRBF clear names W(EM1), EM1 10-1f; EM1 under 10, or EM1 used by another field (`pu.em1_other_field`), raises | INFERRED (census) | `3894` (W18 := MDR2, the value; `0c0a` reads W18 back after the call), `3375` (boot: W1c, read into w2 and unused) | `wsel_d_w_off` (R0d again): STOP 24 at `0c0a` (W18 never set); append2 and suspend MOVED (boot residual) |
+| `setup.S_CHAIN_ODPF4`: S_CHAIN_ROW's rows (4 \| (SRP false) \| COL << 1) for an ODPF 4 entry reached through pointers on another tag | INFERRED | `get_bound_value` on `{REFx, S}`, S hooked: row 5 (`3894`) | `chain_odpf4_off`: STOP 24 (row UNKNOWN) |
+| `setup.S_CHAIN_MATCH`: on the immediate's side, an ODPF 6 operand reached through a chain with an MRB on takes row 1 \| COL << 1 | INFERRED | the resumed consumer's `switch_on_non_list` on `{REFx, S}`, S a list: `3304` (A0 := `{LISTx, cell}`) | `chain_match_off`: FAIL 35 (the entry `3300` -> `3305`-`3309` frees S's cell, which the other consumer still holds) |
+| `setup.S_TDAR_ODPF3`: the ODPF 3 start loads TDAR from the TGT, column 7 - TDPF, as S_TDAR | INFERRED | `put_reused_structure` on a shared list: `31ee` -> `31a1`'s case_branch -> `31a4` (the R1a pair list) | `tdar_odpf3_off`: STOP 38 at `31a1` |
+| `FORMS['read_variable_without_deref']` = read_variable's (MAR1 := R02) | OURS (`pimm.py`'s reading), support `345a` | `345a` | `rvwd_form_arg`: FAIL 19 |
+| `FORMS['wait_atom']` (the register in the opcode's low 5 bits), `S_CONST` MDR2 := the atom | OURS, support `3960` (MDR1 - MDR2) | `3960` | `wait_atom_plus1`: FAIL 31 (R04); `wait_atom_own`: unchanged (the operand is the constant here): NOT discriminated |
+| `FORMS['get_nil']` (x) | OURS, support rows `3820`-`382e` | `3820` | `get_nil_form_y`: STOP 32 at `0d22` |
+| `u3_goals` boot: W1c STALE | OURS (stand-in, replaces R0d) | `3375` | `w1c_unset`: STOP in the boot at `3375` (all three runs) |
+
+For `wsel_d_w_em1`, the census of image 2 is as follows (scratch, every
+word):
+
+- **DSTF-d words with WRBF clear:** 47 of 47 carry EM1 10-1d (34 of them
+  admitted by `em1_other_field`).
+- **SC1F-d words with WRBF clear:** 151 of 152 carry EM1 10-1f (122
+  admitted). The exception is `32d2`, EM1 09.
+- **With WRBF set:** all 4 DSTF-d words and all 62 SC1F-d words carry
+  EM1 0-f (`wsel_d_em1`).
+
+Two words are executed through the new branch: `3375` and `3894`. Read,
+not run: `3888` (row 2's W18 :=) and `0cf8` (W1d, which `3889` writes).
+
+No word now reads R0d on any path run: `4cc0`'s select d is SC2F, the
+EM3 immediate. The "47 writers" of R0d that `u2_append` counted are
+these DSTF-d words.
+
+**Declarations and checks in `u3_goals.py`** (observed):
+
+- `guard_to_alt` now also skips the next clause's `try_me_else` when its
+  alternative is the firmware's R04 (`RETRY_SAME_ALT`; the compiled code
+  puts one between the switch and `wait_atom`). `guard_alt_retry_off`:
+  FAIL 8.
+- `cmp_suspend` takes a variable with waiters already. Cell 15 must be
+  the variable's old hook (`chain_link_nil`: FAIL 16). The firmware's
+  chain, followed through cell 15, must be `pimm.py`'s hook list with
+  each goal once (`waiters_raw`: FAIL 11; it also moves `suspend`, whose
+  `pimm.py` hooks X twice).
+- `cmp_suspend` also checks the variable through the address renaming,
+  and declares a given-back record's cell 0 restamped `{VECT0x, the same
+  link}`, as proceed's freed record. `free_undeclared` now FAILs at 11.
+- `cmp_wake`: the woken records are walked in `pimm.py`'s W order. The
+  third step's loop ran reversed, which is right for one waiter only
+  (`wake_loop_reversed`: FAIL 24). The heap is compared through the
+  renaming.
+- `cmp_set_variable`: `set_marked_variable`'s record cell against
+  `pimm.py`'s argv, which pairs the new variable cells (`setvar_form_op`:
+  FAIL 1).
+- **Declared: `read_indirect`.** U1's `indirect` (`write_variable`'s
+  `{REF, new cell}`) met again by a reader of a shared structure. The
+  firmware's register is `{REFx, new cell}` and the element is re-stamped
+  MRB on in place; `pimm.py` takes the value. `read_indirect_undeclared`:
+  FAIL 37. It is carried by copies (`put_value`):
+  `read_indirect_carried_off`: FAIL 42.
+- **Declared: `mrb`.** U1's declaration, met in `put_reused_structure`
+  on a shared list. The firmware takes two new cells and gives x the
+  pointer MRB off; `pimm.py` gives it MRB on. The two structures' cells
+  are paired one by one. `fresh_mrb_undeclared`: FAIL 38. It is carried
+  by copies: `fresh_mrb_carried_off`: FAIL 41.
+- `put_reused_structure` always sets sp (`SP_SET_REUSED`): the new cells
+  lay where the old sp pointed. `sp_set_reused_off`: FAIL 38.
+- `deref_reg` also accepts the end MRB on when the chain had an MRB on
+  (`pimm.py`'s deref marks so; `3304`). `deref_reg_marked_off`: FAIL 35.
+- The answer: `answer_poke` (the car of A's list 2 after the run): FAIL
+  at the answer.
+
+**Provenance.** The pick walks are empty (`STREAM_PICK_RESIDUAL_PINNED`).
+What the suspends and the wake read last written by the harness
+(`STREAM_RESIDUAL_PINNED`):
+
+- the first suspend reads A01, `go`'s A (the program's input, OURS, as
+  the driver's arguments), and `b4`;
+- the second suspend reads `b4`;
+- the wake reads `b6` and `b7`.
+
+The rest of the program reads (`STREAM_PROG_RESIDUAL_PINNED`):
+
+- R17 and R18 (STALE);
+- R19 and R1a, and the seeded cells `f2000000`-`f2000003`, `f3000000` and
+  `f3000002` (`check_pu.seed_lists`). R1a is new: the consumers'
+  `put_reused_structure` takes pairs from it;
+- `b4`, `b6` and `b7`.
+
+The boot residual is now W1c (was R0d) for all three runs.
+
+**Open tension, recorded:**
+
+- `S_CHAIN_MATCH` is applied only when SRP is false. With SRP true,
+  `switch_on_non_list` and `wait_nil` free the same cell whether row 0
+  (COND false) or row 2 is taken. For `get_nil` (`3828`),
+  `get_bound_value` (`3888`) and `get_value` (`38a8`), however, row 2
+  first calls `0cf1` / `0cf0`, a walk that frees a pointer cell.
+- The stream run takes row 0 through a REFo at `get_nil` (instructions
+  32, 49, 66) and at `get_bound_value` (41, 58). `pimm.py` frees nothing,
+  so this is NOT discriminated.
+
+**Re-diff of the existing injections** against a clean 3901e926 snapshot:
+the outputs of `check_pu.py`, `u2_append.py`
+and `u3_goals.py` under the 145 injections that existed, compared by
+content (the new stream section cut, R0d -> W1c in the boot residual
+normalised): 140 unchanged, 5 changed, each still caught:
+
+- `u2_append em1_29_off`: was STOP 4 at `31a1` (case_branch without a
+  set-up), now FAIL 6 at `write_variable` (`S_TDAR_ODPF3` gives `31a1`
+  its set-up);
+- `u2_append em_imm_off`: the 216d stops now say "select d with EM1 01
+  not decided" (was "R0d never set"); the append run stops at 10, `4cc0`
+  (EM1 19 then used by another field), where it stopped at 15;
+- `u3_goals chain_row_srp`: append2 and suspend unchanged, stream STOP
+  24 at `0c74` (row 4 for row 5): no longer WEAK;
+- `u3_goals double_hook_undeclared`: the message only ("once per goal");
+- `u3_goals with_one_plain`: still FAIL at the boot check; R10 now reads
+  `{HOOKo, e000804f}` where it read STALE.
+
+On stream, 49 of the 55 existing `u3_goals` injections move it; 6 leave
+it unchanged (`alf_high_signed`, `atom_mrb_undeclared`, `enq_head_mar1`,
+`rec_poke`, `reverse_sub_plain`, `shr_by_b`), each already caught on
+append2 or suspend, or recorded weak there.
+
+**Not reached** (the program does not need them):
+
+- `execute`'s slit check `4cc5` and the goal switch `4c11`: no event is
+  pending on one PE, and the flags are not forced;
+- the many-variable suspend (`1d20`-`1d61`, the 4-cell allocator `3334`);
+- a woken goal of another priority (`4d1f`-`4d23`);
+- `sp_single`: the consumers read a shared stream, met as the declared
+  differences above, and `pimm.py` and PimmCore are unchanged.

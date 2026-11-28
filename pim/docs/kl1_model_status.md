@@ -141,8 +141,18 @@ matched with `pimm.py`'s suspended record). The second goal binds X in
 `get_value` and wakes the first through held code (`4d1a`-`4d1e`: the
 GSET entry by priority, a push on R14). The woken goal runs to its end:
 22 of 23 instructions matched with 1 declared skip, and 4 picks, 3
-compared with `pimm.py` (`ref/pu/README.md`, "U3, third step"). This
-concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
+compared with `pimm.py` (`ref/pu/README.md`, "U3, third step"). *U3d, first
+step, 2026-11-28:* a program compiled by ICOT's own compiler runs on the
+held firmware to its answer. PIMOS 3.6's KL1 compiler, run on `pimm.py`,
+compiled a producer and two consumers of one stream (`go(L, A, B) :-
+c(S, A), c(S, B), g(L, S)`, source OURS). Its code then ran on the
+firmware as `go([1], A, B)`: both consumers suspend on S (the second on a
+variable already hooked, a chain of goal records through cell 15), the
+producer's `get_bound_value` binds S and wakes both, and all three run
+to their ends. 64 of 68 instructions matched with 4 declared skips, 5
+picks (4 compared), and the answer A = B = [1], read out of the
+firmware's memory, is `pimm.py`'s (`ref/pu/README.md`, "U3d, first
+step"). This concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
 bench model's state.
 
 The model can execute a hand-assembled KL1-B program that builds heap
