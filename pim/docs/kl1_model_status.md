@@ -133,8 +133,17 @@ length + 1. The PMPF flag `209f` stopped on is found (rassy's
 `cond PMPF`, set / reset by the entry vector's `2022` / `2021`); which
 entry the held system takes is not, so the harness takes the reset
 (OURS) and pins the set as a second run (`ref/pu/README.md`, "U3, second
-step"). This concerns neither `PimKL1B` nor `PimmCore`. The paragraph
-below is the bench model's state.
+step"). *Third step, 2026-11-28:* suspend and resume run on the held
+firmware. In a second program, `driver([], [], X, X, [], Z)`, the first
+`append` goal notes X in its guard (`3a3c`-`3a3f`). It then suspends
+through the held `suspend` (`1c08`-`1c81`: the record and X's hook,
+matched with `pimm.py`'s suspended record). The second goal binds X in
+`get_value` and wakes the first through held code (`4d1a`-`4d1e`: the
+GSET entry by priority, a push on R14). The woken goal runs to its end:
+22 of 23 instructions matched with 1 declared skip, and 4 picks, 3
+compared with `pimm.py` (`ref/pu/README.md`, "U3, third step"). This
+concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
+bench model's state.
 
 The model can execute a hand-assembled KL1-B program that builds heap
 cells and reads them back, and it can prove the deref path. It has a

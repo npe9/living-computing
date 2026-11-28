@@ -36,7 +36,11 @@ step"): the scheduler state is written by start's own boot words (199
 held words) instead of the `INITIAL` stand-in, 41 of 41 matched, 2 picks
 compared with `pimm.py` and the third the boot goal's (firmware only), no
 harness-written state read at any pick. Append's own run stays at 15 of 16
-(why: "U3").
+(why: "U3"). **U3's third step** (2026-11-28, section "U3, third
+step"): suspend and resume on held routines. In a second program a goal
+suspends on an unbound variable, another binds it and wakes it, and it
+runs to its end: 22 of 23 instructions matched with 1 declared skip, and
+4 picks, 3 compared with `pimm.py`.
 
 - 32 cases, all PASS (83 held microinstructions executed since U3; 80 before). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
@@ -934,3 +938,170 @@ Bluespec `PimmCore` implements the old rule and runs in lockstep with
 `pimm.py`. The change needs the core changed with it (outside this
 rung), so it was reverted; the patch is described here so the core's
 owner can take both together.
+
+## U3, third step: suspend and resume held (2026-11-28)
+
+**A goal suspends, is woken by a binding and runs to its end, all on
+held micro-routines.** `u3_goals.py` runs a second program, `suspend`:
+the driver clause `driver([], [], X, X, [], Z)` (OURS input) enqueues
+`append(X, [], Z)` and `append([], [], X)`. The first suspends on the
+unbound X, the second binds X to nil and wakes it, the woken goal runs
+to its end, then the boot goal. Of `pimm.py`'s 23 instructions, 22 are
+executed and matched, and 1 is skipped as a declared difference
+(`guard_to_alt`, below). That is 225 held microinstructions after the
+boot's 199. There are 4 picks: 3 compared with `pimm.py` (the first goal,
+the second at the suspend, and the woken goal at the second goal's
+`proceed`) and the boot goal's (firmware only). `main()` pins it as a
+second run (`SUSP_PINNED`). The `append2` run is unchanged: 41 of 41,
+173 words.
+
+**The held path, routine by routine.**
+
+- **Noting (inside `switch_on_non_list`).** The S stage's
+  through-pointer row 5 (`3314`; `setup.S_CHAIN_ROW` from Fig. 3-23's
+  two chain reports) runs `2447` -> `2444` -> `24b1` -> `3a34` -> `3a33`
+  -> `3a3c`-`3a3f`. This is the first noting: R18 (sst) := `{REFx, X}`,
+  R17 (ssp) := `[b4] - 1` (sspb - 1, the empty stack), and SUSPF is set.
+  R04 := R11, the alternative. That is the `suspend` instruction (6658).
+- **`suspend`** (`1c08`-`1c81`, 54 words). It re-uses the running goal's
+  record R10:
+  - cell 0 `{GOAL, 3}`;
+  - cells 1-3 are A0-A2, copied by the counted `1c2c`-`1c32` loop on
+    `++ rfar`;
+  - cell 12 `{COD, label}`, cell 13 R12, cell 14 R13, cell 15 nil.
+
+  `1c60`-`1c66` compare sspb with ssp and take the single-waiter case.
+  `1c70`-`1c81` write X := `{HOOKx, record}`, whose MRB is that of the
+  noted reference (`1c66`'s tag0 of R18, tested at `1c80`). The record
+  `1c09` popped goes back on R1b (`2209` -> `339f`). Then the pick
+  (`220a`-`2224`) dispatches `append([], [], X)`.
+- **The wake (`get_value`, 48 words).** `0867` -> `0a5c`-`0a5e` bind X to
+  `{ATOMx, 0}`. `0a24` -> `0b20`-`0b23` walk the waiters. `4d1a`-`4d1e`
+  find the GSET entry of the woken goal's priority (its cell 13) and of
+  the current one (R12) through `4d38`/`4d3a`. With `[b6]` gseb and `[b7]`
+  gsesh this is entry `[b6] + (prio >> [b7]) << 2`. The two are equal
+  (priority 0), so the record is pushed on R14 (cell 15 := the old R14,
+  the boot record). The next `proceed` dispatches it (pick 3).
+- **The resumed goal.** It runs `try_me_else` and `switch_on_non_list`
+  (row 5 again, now on nil through the REFx: COND false at `2440`, to the
+  label), then `wait_nil`, `get_value` and `proceed` (pick 4: the boot
+  goal).
+
+**Compared, and declared** (`u3_goals.cmp_suspend`, `cmp_wake`,
+`cmp_pick`):
+
+- **The suspension record**, projected on `pimm.py`'s structure, cell by
+  cell. Its arity, arguments and code (G_ARGN, G_ARGS, G_CODE) are
+  compared against the firmware's cells 0, 1-3 and 12. X is checked as
+  `{HOOK, record}`, with the MRB of the goal's argument, against
+  `pimm.py`'s hook chain, every entry of which is the goal. Nothing else
+  may be written, and R1b must be given back.
+- **Declared at the suspend.** `pimm.py` writes a new record, its status
+  and link cells, and one hook cell per noting. It notes X twice
+  (`switch_on_non_list`, then `wait_nil`); the firmware notes it once
+  (`double_hook_undeclared` FAILs). The firmware's cells 13-15 are checked
+  against its own registers.
+- **Declared: `guard_to_alt`.** The firmware's guard fails to the
+  alternative at once (R04 = R11). `pimm.py` jumps to the label and fails
+  the next guard on the same variable. Each `pimm.py` step skipped is a
+  guard that writes nothing (`guard_alt_undeclared` FAILs).
+- **The wake.** Every `pimm.py` M line except the woken record's own
+  cells is compared. The woken record must head R14, its link must be the
+  old R14 (`same_link`: the boot record where `pimm.py`'s queue is empty),
+  and A0-An-1 must be unchanged.
+  - Declared: `pimm.py`'s status cell, and the MRB of the bound atom. The
+    firmware writes `{ATOMx, 0}` through a REFx; `pimm.py` keeps an MRB on
+    pointers only (`atom_mrb_undeclared` FAILs).
+- **Declared: `deref_reg`.** A guard that dereferenced its register
+  leaves the end of the chain there, MRB off. The resumed
+  `switch_on_non_list` writes A0 := `{ATOMo, 0}`, where `pimm.py` keeps
+  the REF (`deref_reg_undeclared` FAILs).
+- **R16 (ccc)** is checked after the boot, at every `enqueue_goal`,
+  `proceed`, `suspend` and wake. It now counts the queue + 1 + the goals
+  suspended: suspend's held path leaves the count alone (R16 = 3 with one
+  goal queued), read as ccc counting live goals (INFERRED;
+  `r16_queue_only` FAILs at the suspend).
+
+**Provenance.** The pick walks are empty at picks 1-3. What the suspend
+and the wake read whose last writer is the harness is pinned
+(`SUSP_RESIDUAL_PINNED`):
+- the suspend reads cell `b4`;
+- the wake reads cells `b6` and `b7`.
+
+Every other instruction of the program reads R17, R18, R19, `b4`, `b6`
+and `b7` (`SUSP_PROG_RESIDUAL_PINNED`):
+- **R17 and R18** are STALE (OURS, `SUSP_STALE`). No boot word writes
+  them. `3a33`/`3a3c` read them before `3a3e`/`3a3f` write them, and
+  nothing tests `3a3c`'s STALE compare.
+- **R19** is `check_pu.seed_lists`' cell list, read by `wait_nil`'s
+  `3980` as in U2.
+- **The parameter cells are OURS values:**
+  - `b4` = sspb (PIMM.PARAM `(10 : 16'400)` as area << 24 | address,
+    INFERENCE on the encoding). It is discriminated: `sspb_zero` makes
+    ssp `ffffffff` and takes the many-variable path, stopping at `3334`.
+  - `b7` = gsesh (`16'18`). It is not discriminated, because the priority
+    is 0.
+
+The A file's provenance is now tracked too (`Prov.commit`).
+
+**Rules decided in this step** (`pu.py` / `setup.py`; the observed
+injection result follows each one, from `--inject`):
+
+| Rule | Label | Decided at | Injection: observed |
+|---|---|---|---|
+| `setup.S_CHAIN_ROW`: row 4 \| (SRP false) \| COL << 1 | INFERRED (reports DOCUMENTED, Fig. 3-23) | `3314` (rows 5) | `chain_row_off`: STOP 10 (row UNKNOWN); `chain_row_srp`: unchanged (WEAK: 3310's CNDF 9 is false too) |
+| `setup.S_CHAIN_MAR1_PTR`: MAR1 = the last pointer, tagged | INFERRED | `24b1`, `3a34` | `chain_mar1_bare`: FAIL 10 (A0 untagged) |
+| `cnd_noalu_poison` 'zero': CNDF 2 / 3 with no ALU are zero true / sign false | INFERRED | `3314` -> `2440` (resumed switch) | `cnd_noalu_poison`: STOP 19 at `2440`; `cnd_noalu_raise`: STOP 10 at `3314` |
+| `MCF_SUB[(02, 4)]` f_jump, no state | HELD-SOURCE (name) | `3a34` | `f_jump_raise`: STOP 10 at `3a34` |
+| `SUSP_FLAG_OPS` 'usage': MCF 07 / 0f reset / set SUSPF, 06 / 0e CGCF; conds 13 CGCF, 14 SUSPF | INFERRED (rassy's lists pair them the other way) | `3a3e`, `1c60`, `1c0f` | `susp_flags_rassy`: STOP 10 at `3a41` (STALE) |
+| `FLAG_CONDS[20]` interrupt, false (OURS value) | HELD-SOURCE (name) | `1c0d` (JMPF b) | `interrupt_pending`: STOP 12 at `1c18` |
+| `jmpf8_goto_cndf`: JMPF 8 goto if COND in a CNDF 2 word | INFERRED | `3a3c` | `jmpf8_cndf_off`: STOP 10 at `3a3c` |
+| `sc2_a_imm`: SC2F a (WRBF clear) = EM2 << 4 \| EM1 | HELD-SOURCE (consumes EM1 and EM2), INFERRED (layout, census) | `3a3c` (b4) | `sc2_a_opd`: suspend STOP 12 at `3334` (ssp = ffffffff); append2 MOVED (boot residual gains A00) |
+| `ALF_LATCHED` alf_high: a above b, unsigned | INFERRED (name) | `1c2e`/`1c2f`, `1c64` | `alf_high_reversed`: STOP 12 at `1c36`; `alf_high_signed`: unchanged (sspb positive) |
+| `src_c_rfar`: SC1F/SC2F c reads A[rfar], RFAR stepped | HELD-SOURCE (name list), INFERRED | `1c30` | `src_c_rfar_off`: STOP 12 at `1c30` |
+| `em1_28_s1_mrb` / `em1_28_s1_read`: cond tag0 = the S1 value's tag bit 0 (read for the condition alone) | HELD-SOURCE ('cond tag0'), INFERRED (S1) | `1c0e`, `1c66` -> `1c80` | `em1_28_false`: FAIL 12 (X `{HOOKo, record}`); `em1_28_read_off`: STOP 12 at `1c66` |
+| `long_em1_free`: JMPF 3/6/7/b/e/f leave EM1 free (long/4) | HELD-SOURCE | `4d1b` | `long_em1_busy`: STOP 16 at `4d1b` |
+| `adf2` 'yr': ADF 2 is YR | INFERRED | `4d1b`-`4d1e` | `adf2_none`: STOP 16 at `4d20` (the GSET path: SC2F b with CNDF 9's EM1, width UNKNOWN); `adf2_pair`: STOP 16 at `4d3e` |
+| `sc2_e_em2`: SC2F e (WRBF) = R(10 \| EM2) | HELD-SOURCE (names, em2_not_free), INFERRED | `4d1c` | `sc2_e_off`: STOP 16 at `4d1c` |
+| `alu_gset`: reverse_sub b - a, shift_right_32m by 32 - b, shift_left (at `4d3d`) | HELD-SOURCE (names), INFERRED | `4d3b`-`4d3d` | `gset_ops_off`: STOP 16 at `4d3b`; `reverse_sub_plain`, `shr_by_b`: unchanged (priority 0, not discriminated) |
+
+**Declarations and checks** (`u3_goals.py`, observed): `guard_alt_undeclared`
+FAIL 10 (R04 against `pimm.py`'s next instruction); `double_hook_undeclared`
+FAIL 12; `atom_mrb_undeclared` FAIL 16; `deref_reg_undeclared` FAIL 19;
+`r16_queue_only` FAIL 12 (R16 3, queue 1 + 1); `sspb_zero` STOP 12 at
+`3334` (the many-variable path). 24 of the 28 new injections move the
+suspend run; the 4 that do not (`alf_high_signed`, `chain_row_srp`,
+`reverse_sub_plain`, `shr_by_b`) are recorded as not discriminated.
+Every new injection leaves `append2` unchanged except `sc2_a_opd`.
+
+**Existing injections re-diffed** against a clean 03fb0ffd snapshot (all
+145 outputs of `check_pu`, `u2_append`, `u3_goals`, `measure`):
+`check_pu` and `measure` are unchanged. In `u2_append`, `cnd2_nonzero`
+and `deref_tgt_col5` now FAIL where they stopped on 'MCF with EM1 02'
+(f_jump), and `interrupt_pending` stops at `1c31` (was `1c2f`).
+`mcf_unknown_raise` also turns `susp_flags` off, and is otherwise
+unchanged. In `u3_goals`, the append2 part of every output is unchanged
+except `c_on_true`, which stops at `20a4` (was `20a3`; `sc2_a_imm`), and
+the wording of the R16 lines ('+ 0 suspended'). Each output now also
+carries the suspend run.
+
+**Tried and withdrawn.**
+- **A signed `alf_high`.** It was needed while `3a3c`'s SC2F a read A0
+  (R17 = `[X] - 1` = `ffffffff`); `sc2_a_imm` made it unnecessary.
+- **SC2F b with an EM1 condition (CNDF 9).** It was met at `4d20`, on the
+  GSET path that `adf2` 'yr' no longer takes.
+- **The boot's 4-cell refill (`3384`) and a step/load rule at `3367`.**
+  They were needed only by the many-variable path (`1d3a`).
+
+**The PMPF-set run** now stops at `20a4`: `20a1`'s SC2F a gives b0, and
+`20a3` reads parameter cell b0, the reduction limit, which no harness
+gives. Before, it stopped at `20a3` on start's operand a. Start's operand
+A0 is no longer read by the boot.
+
+**Not reached:**
+- the many-variable path (`1d20`-`1d61`: the suspension stack walked from
+  sspb, a MHOOK record per variable, the 4-cell allocator `3334`);
+- a woken goal of another priority (`4d1f`-`4d23`, the GSET entry and
+  W1f's bit);
+- a wake of several goals;
+- `sp_single` (not needed by this program).
