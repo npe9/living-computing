@@ -391,6 +391,16 @@ a_on_false 14, as1f2_off 15, as1f3_open_raise 15, cjump_false 14,
 cjump_same 14, cnd2_nonzero 13, cnd3_off 15, cnd8_off 15, e_mdr2_col 1,
 e_on_true 1, interrupt_pending 13, jmpf9_off 14, mcf08_raise 15,
 mcf_unknown_raise 15, slit_pending 13.
+U3 (2026-11-27, first session), the rules pu.RULES['ccf_rassy'],
+['wsel_d_em1'], ['jmpf8_goto_if'] and setup.EXECUTE_MDR1_EMO1: this run
+and every injection above unchanged (diffed against a clean snapshot),
+except where a failing side case now stops one word later, after
+2222's CCF 0d (read ++ mar2 MDR2): cjump_same, e_mdr2_col, e_on_true
+and lc_new STOP at 222d (an ALU input read from memory never written)
+where they stopped at 222b (MAR2 never set), the same cases failing;
+odpf3_bits10 STOPs at 31f3 (a STALE condition) where it stopped at 31a3
+(4 of 16 either way).  execute_mdr1_carried is now a no-op (execute's
+MDR1 is R15's value, STALE here: u2 holds no R15).
 """
 import os
 import sys
