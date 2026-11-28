@@ -202,6 +202,41 @@ attribute name := 0;
         W!history := [Line | W!history],
         drawn_line(W, Line);
 
+% MENDELS (2026-11-27): write_line/2 and write_lines/2, INTERPOLATED (the
+% selectors PRINTED-INTERFACE TM-112 p16, window.md §2.3; USAGE MENDELS
+% graph_sel.esp:32-33 on a standard_io_window made with no superior; the
+% bodies OURS): the string at the cursor, no newline after it (a key#lf
+% in it breaks the line, window_pane.esp put_string/2), kept with the
+% transcript's lines (OURS: a line written in parts is kept in parts).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-112 p16; the body OURS)
+:write_line(W, S) :-
+        W!transcript := [S | W!transcript],
+        W!history := [S | W!history],
+        drawn_string(W, S);
+% INTERPOLATED (selector PRINTED-INTERFACE TM-112 p16; body as write_line/2)
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-112 p16, TM-134 p70; as write_line/2)
+:write_lines(W, S) :- :write_line(W, S);
+
+% MENDELS (2026-11-27): erase_cursor/1, INTERPOLATED (selector USAGE
+% graph_sel.esp:34, window.md §2.3; body OURS): kept; the block cursor is
+% drawn only while the window is selected (window_pane.esp).
+% LABEL: INFERENCE (the name; kept, OURS)
+:erase_cursor(W) :- W!text_cursor := off;
+
+% MENDELS, OURS: erase_cursor/1's flag.
+attribute text_cursor := on;
+
+% MENDELS (2026-11-27): set_superior/2, INTERPOLATED (selector and
+% arguments PRINTED-INTERFACE TM-125 p15 "set the superior window"; USAGE
+% MENDELS graph_sel.esp:152; body OURS): kept, not acted on: this stand-in
+% draws every standard_io_window as a top window (its superior(..) create
+% option is not acted on either).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15; kept only, OURS)
+:set_superior(W, S) :- W!superior := S;
+
+% MENDELS, OURS: the superior set (0: none).
+attribute superior := 0;
+
 % :read(W, Code) -- step 3m, INTERPOLATED (body OURS) from read/4 @f3
 % and read_password/3: the next character code (see above); with none,
 % the process waits.
@@ -899,6 +934,9 @@ reselect(_);
 
 drawn_line(W, Line) :- W!pane \== 0, !, :put_string(W!pane, Line), :new_line(W!pane);
 drawn_line(_, _);
+
+drawn_string(W, S) :- W!pane \== 0, !, :put_string(W!pane, S);
+drawn_string(_, _);
 
 drawn_code(W, 13) :- W!pane \== 0, !, :new_line(W!pane);
 drawn_code(_, C) :- rubout(C), !;

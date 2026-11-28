@@ -1,0 +1,25 @@
+% SCAFFOLDING stand-in for SIMPOS's class `multi_column_menu`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost (docs/simpos/subsystems/window.md §0.3, §1.6, the single-select
+% menus).  TM-125 p8 (4.1) lists it as a stand-alone class: "the class
+% for making the single select multi column menu".  MENDELS (IFS No.61),
+% 2026-11-27: the title bar of its method editor (med_win.esp:4-17, made
+% with nature([with_superior_input_buffer, with_shared_window]), which
+% basic_window.esp does not act on).
+%
+% THE NATURE LIST IS INFERENCE: that of
+% multi_column_menu_with_superior_input_buffer.esp (whose head has the
+% sources) without with_superior_input_buffer, which the name leaves
+% out.  It has no method of its own.
+
+class multi_column_menu has
+
+nature
+        labeled_sash,
+        as_menu,
+        as_multiple_column,
+        as_single_select,
+        as_mouse_input,
+        inferior_window;
+
+end.

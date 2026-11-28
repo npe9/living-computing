@@ -100,7 +100,21 @@ attribute first := '$$void';
         Index!first := '$$void',
         put_pairs(List, Index);
 
+% INTERPOLATED from: the selector put_contents/2 (classes.tsv; MENDELS
+% edit_pool.esp:95-98 `:put_contents(Class!inports, [])` on a
+% monogyny_list_index, 2026-11-27): replaces the contents by the objects
+% of List, each under the key 0 (OURS: what key a keyless object has is
+% UNSPECIFIED; MENDELS only empties).
+% LABEL: INFERENCE (replace, as put_contents_with_key/2; the key OURS)
+:put_contents(Index, List) :-
+        Index!first := '$$void',
+        put_objects(List, Index);
+
 local
+put_objects([], _) :- !;
+put_objects([Object|L], Index) :-
+        :add_at(Index, Object, 0),
+        put_objects(L, Index);
 % Step 3n: an entry is a heap vector (new_heap_vector/2, set_vector_element/3:
 % not undone on backtracking, kl0_opcodes.tsv blt 19, 28), as the chain's
 % links already are (set_first/2).  Until step 3n it was the term

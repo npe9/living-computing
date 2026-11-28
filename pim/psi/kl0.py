@@ -1052,6 +1052,42 @@ class Machine:
                           'symbolizer enter_atom/3 on %r' % (s,))
         return self.proceed() if self.unify(self.x[0], Atom(s.text)) else self.fail()
 
+    def symbolizer_get_atom_string(self):
+        """:get_atom_string(#symbolizer, Atom, ^String) -- the converse of
+        enter_atom/3 (TR-283 p18 Table 4, atom <-> string conversion).
+        INTERPOLATED: the selector, and the order (the atom in, the string
+        out), from held object code beside its source: paragraph
+        as_draw_predicate $or$27 @1015 (as_pred.esp:421-422 `atom(Atom),!,
+        :get_atom_string(#symbolizer,Atom,P1)`) and g_window $or$12 @70d
+        (g_window.esp:146-149), both kl0_opcodes.tsv row 00's witnesses;
+        and MENDELS cpro_sys.esp:69-70, 158-159 (`:get_atom_string(
+        #symbolizer,File,File_name), :create(#standard_input_file,Object,
+        File_name)`).  The string is the atom's
+        text (OURS, as enter_atom/3's)."""
+        a = deref(self.x[0])
+        if not isinstance(a, Atom):
+            raise Refusal('unbound argument' if isinstance(a, Var) else 'built-in',
+                          'symbolizer get_atom_string/3 on %r' % (a,))
+        return self.proceed() if self.unify(self.x[1], Str(a.name)) else self.fail()
+
+    def symbolizer_get_quoted_atom_string(self):
+        """:get_quoted_atom_string(#symbolizer, Atom, ^String) -- as
+        get_atom_string/3, quoted as a term writer would read it back.
+        INTERPOLATED: the selector and order from MENDELS system_io.esp
+        to_string/2 (`atom(A), :get_quoted_atom_string(#symbolizer,A,S)`,
+        a message's data).  INFERENCE from the name: an atom that is not a
+        plain name (a lower-case letter, then letters, digits and `_`) is
+        put in single quotes, a quote in it doubled (the Edinburgh
+        convention: OURS, no SIMPOS text says)."""
+        a = deref(self.x[0])
+        if not isinstance(a, Atom):
+            raise Refusal('unbound argument' if isinstance(a, Var) else 'built-in',
+                          'symbolizer get_quoted_atom_string/3 on %r' % (a,))
+        n = a.name
+        plain = n[:1].islower() and all(c.isalnum() or c == '_' for c in n) and n.isascii()
+        text = n if plain or n == '[]' else "'" + n.replace("'", "''") + "'"
+        return self.proceed() if self.unify(self.x[1], Str(text)) else self.fail()
+
     def process_suspend(self):
         """:suspend(Process, Reason), refused (step 3g, OURS).  The printed
         body (TM-100 Fig. 3.1, standin/process.esp) is not run: kl0 runs
@@ -2131,6 +2167,19 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    def op_if_number(self, code, off, a, b, c, v):
+        # blt e8 (MENDELS window mixins, 2026-11-27): as e1 with number/1's
+        # test (paragraph p_tgraph.esp:46-47 @a8, @b2; the held microcode's
+        # jmpUNUM)
+        if b:
+            raise Refusal('operand', '%s @%x: blt e8 %02x %02x %02x: only a zero second byte is witnessed'
+                          % (code.id, off, a, b, c))
+        x = deref(self.x[a])
+        if (isinstance(x, int) and not isinstance(x, bool)) or isinstance(x, Flt):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_if_atom(self, code, off, a, b, c, v):
         # blt e0 (step 3i): as e1 with atom/1's test (paragraph as_pred.esp
         # :419 and :421); [] counts as an atom (NIL is an Atom: INFERENCE)
@@ -2685,6 +2734,15 @@ class Machine:
     def op_integer(self, code, off, a, b, c, v):
         t = deref(self.x[a])
         self.nxt(code, off) if isinstance(t, int) and not isinstance(t, bool) else self.fail()
+
+    def op_number(self, code, off, a, b, c, v):
+        # MENDELS (2026-11-27): blt 13, KNOWN-PLAINTEXT (kl0_opcodes.tsv:
+        # paragraph p_wshell.esp:181 @11a6; the held microcode's table names
+        # it NUMB?); an integer or a float
+        if b or c:
+            raise Refusal('operand', 'number second/third byte %02x %02x: unwitnessed' % (b, c))
+        t = deref(self.x[a])
+        self.nxt(code, off) if (isinstance(t, int) and not isinstance(t, bool)) or isinstance(t, Flt) else self.fail()
 
     def op_atom(self, code, off, a, b, c, v):
         # blt 00 (step 3i): g_window.esp:148 @709 (A0), bar2_h.esp:135 @574 (A2)
@@ -3311,6 +3369,8 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'check_info', 3): Machine.library_check_info,
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
+    ('simpos##symbolizer', 'class', 'get_atom_string', 3): Machine.symbolizer_get_atom_string,
+    ('simpos##symbolizer', 'class', 'get_quoted_atom_string', 3): Machine.symbolizer_get_quoted_atom_string,
     ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
     ('simpos##process', 'instance', 'exterminate', 1): Machine.process_exterminate,
     ('simpos##world', 'instance', 'root_path', 3): Machine.world_root_path,

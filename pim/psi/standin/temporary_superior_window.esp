@@ -1,0 +1,29 @@
+% SCAFFOLDING stand-in for SIMPOS's class `temporary_superior_window`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class is lost (docs/simpos/subsystems/window.md §0.3, §1.6, the
+% superiors).  MENDELS (IFS No.61), 2026-11-27: the "graphic window" frame
+% of its graphic_mode (graph_mode.esp:8-12, a superior to which the
+% screen pane is moved, :54-65) and the attribute check box of its
+% graphic_select (graph_sel.esp:23-27).
+%
+% THE NATURE LIST IS INFERENCE: no composite's list is printed (window.md
+% §1.6).  From the name (temporary_ the base class temporary_window,
+% TM-125 p6-7; superior_window "the window which can have the
+% sub-windows", TM-125 p8 4.1) and the held superiors' lists (TM-115 p41
+% font_superior_window: as_input_buffer, as_superior, user_window; WINCS
+% my_window1: with_margin, with_label, with_border, as_superior,
+% as_input_buffer, inferior_window; window.md §1.5).  labeled_sash: MENDELS
+% gives it a title and margin_flag(off), and reads its border width and
+% label height (graph_mode.esp:57-58).  as_input_buffer is not stood in:
+% an inferior that shares its buffer puts its input in this window's
+% (basic_window.esp delivered/5).  It has no method of its own.
+
+class temporary_superior_window has
+
+nature
+        labeled_sash,
+        as_superior,
+        as_input_buffer,
+        temporary_window;
+
+end.

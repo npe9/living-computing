@@ -167,6 +167,13 @@ MEMBERS = {
     'disc_system_data': ('ifs/natural-lang/simpos/disc.tar.Z', 'system_data.esp', None),
     'disc_util': ('ifs/natural-lang/simpos/disc.tar.Z', 'util.esp', None),
     'euod_def': ('ifs/solver-prover/simpos/euod.tar.Z', 'DEF/def.esp', None),
+    # MENDELS's window mixins (2026-11-27, psi/test_mendels.py Mixins):
+    # icotext's dependency-analysis window and its command bar, disc's
+    # structure candidate menu
+    'icotext_kkr_super_win': ('ifs/natural-lang/simpos/icotext.tar.Z', 'src/kkr_super_win.esp', None),
+    'icotext_kkr_main': ('ifs/natural-lang/simpos/icotext.tar.Z', 'src/kkr_main.esp', None),
+    'icotext_ki_window': ('ifs/natural-lang/simpos/icotext.tar.Z', 'src/ki_window.esp', None),
+    'disc_disp_win': ('ifs/natural-lang/simpos/disc.tar.Z', 'disp_win.esp', None),
 }
 
 

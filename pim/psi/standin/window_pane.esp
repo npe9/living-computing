@@ -126,6 +126,39 @@ class window_pane has
         :surface(#bitmap_display, frame);
 :create_surface(_, _, _, _, _) :- :graphics_refused(#window_pane, bitmap_memory);
 
+% :create_frame(#window_pane, X, Y, W, H, Font, Sash, Pane) -- MENDELS's
+% window mixins (2026-11-27; selector and body OURS): the pane of a
+% top-level window made of the mixin stand-ins (basic_window.esp), its
+% outer rectangle W x H dots at (X, Y), kept on the screen, and Sash
+% [Border, Label, Margin, Title]: a 2-dot border when Border is on (TM-125
+% p15, the default border width), a label strip with Title in Font (0: the
+% device's default) and a rule under it when Label is on (as create/7's),
+% a 1-dot margin inside when Margin is on (TM-125 p14 Table 1); the
+% inside is what is left (left, top, iw, ih).  The dots under it are saved
+% and it is drawn at once, as create/7's.  It has no text cells (cols =
+% rows = 0, so no block cursor is drawn); the windows' own stand-ins draw
+% in it.
+% INTERPOLATED (selector and body OURS): create_frame; basis above.
+% LABEL: OURS (the look of basic_window.esp)
+:create_frame(Class, X, Y, W, H, Font, [Border, Label, Margin, Title], Pane) :-
+        :new(Class, Pane),
+        metrics(Font, Id, Cw, Ch),
+        Pane!font := Id, Pane!cw := Cw, Pane!ch := Ch,
+        Pane!w := W, Pane!h := H,
+        :get_size(#bitmap_display, Sw, Sh),
+        on_screen(X, W, Sw, Px), on_screen(Y, H, Sh, Py),
+        Pane!x := Px, Pane!y := Py,
+        flag_dots(Border, 2, B), flag_dots(Margin, 1, M),
+        flag_dots(Label, Ch + 4, L),
+        Pane!left := Px + B + M, Pane!top := Py + B + L + M,
+        Pane!iw := W - B - B - M - M, Pane!ih := H - B - B - L - M - M,
+        Pane!cx := Pane!left, Pane!cy := Pane!top,
+        Pane!title := Title,
+        :cursor_aside(#coordinator),
+        :save(#save_memory, Px, Py, W, H, Area),
+        Pane!under := Area,
+        framed(Pane, B, L, Title);
+
 % :cell_of(#window_pane, Font, Cw, Ch) -- window M8's stops (selector and
 % body OURS): the cell of Font (0: the device's default), as create/7
 % lays it out.
@@ -1186,6 +1219,35 @@ frame(Pane) :-
               Pane!h - 4, reset),
         :fill(#bitmap_display, Pane!x + 2, Pane!y + Pane!ch + 4,
               Pane!w - 4, 1, set);
+
+% create_frame/8 (OURS): the dots a flag stands for; the frame drawn
+flag_dots(on, D, D) :- !;
+flag_dots(_, _, 0);
+
+framed(Pane, 0, L, Title) :- !,
+        :fill(#bitmap_display, Pane!x, Pane!y, Pane!w, Pane!h, reset),
+        frame_label(Pane, 0, L, Title);
+framed(Pane, B, L, Title) :-
+        :fill(#bitmap_display, Pane!x, Pane!y, Pane!w, Pane!h, set),
+        :fill(#bitmap_display, Pane!x + B, Pane!y + B, Pane!w - B - B,
+              Pane!h - B - B, reset),
+        frame_label(Pane, B, L, Title);
+
+frame_label(_, _, 0, _) :- !;
+frame_label(Pane, B, _, Title) :-
+        :fill(#bitmap_display, Pane!x + B, Pane!y + B + Pane!ch + 2,
+              Pane!w - B - B, 1, set),
+        string(Title, N, _), !,
+        frame_title(Pane, Title, 0, N, Pane!x + B + 1, Pane!y + B + 1,
+                    Pane!x + Pane!w - B);
+frame_label(_, _, _, _);
+
+frame_title(_, _, I, N, _, _, _) :- I >= N, !;
+frame_title(Pane, _, _, _, X, _, R) :- X + Pane!cw > R, !;
+frame_title(Pane, T, I, N, X, Y, R) :-
+        string_element(T, I, C),
+        :glyph(#bitmap_display, Pane!font, C, X, Y, copy),
+        frame_title(Pane, T, I + 1, N, X + Pane!cw, Y, R);
 
 label(Pane, Title) :-
         string(Title, N, _), !,

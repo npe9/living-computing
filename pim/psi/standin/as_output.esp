@@ -1,0 +1,174 @@
+% SCAFFOLDING stand-in for SIMPOS's mixin `as_output`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.3, §2.3).  MENDELS
+% (IFS No.61), 2026-11-27: the text output of the panes inside its `base`
+% made of essential_window_with_superior_input_buffer.esp (garnet_win.esp
+% create_garnet_key_title/6 writes "UNDEFINE KEYWORD"; directory.esp
+% writes the directory window) and of its `graphic` (win_class.esp); a
+% nature of 10 held programs' classes (window.md §1.3).
+%
+% THE MANUALS: TM-125 p10 (4.2, 2) output control) as_output "the class
+% for supplying the function of output", as_cursor the cursor "which
+% shows the position where the output is done"; p16 (5.5, 1) text output):
+% write/2 "output the Character to the cursor position and put the cursor
+% one character forward", move_cursor/3 "move the cursor to the position
+% of (X,Y)", clear_line/1 "delete the characters between the cursor
+% position and the end of line"; TM-112 p16 write_line/2 and write_lines/2
+% (window.md §2.3, PRINTED-INTERFACE).
+% THE HELD CALL SITES (USAGE, window.md §2.3): write_line/3 `(W, Row,
+% String)` (MENDELS garnet_win.esp:423; fuzclust matrix.clu:298; knov
+% cg.esp:307), move_cursor/3 then write_line/3 (MENDELS directory.esp:
+% 31-32), write_lines/2 with key#lf (graph_sel.esp:33), clear/1.
+%
+% THE LOOK AND THE REPRESENTATION, OURS: the inside is a grid of the
+% window's font's cells (0: the device's default; TM-125 Table 1's units
+% are 1 dot, window.md §2.3 says text coordinates are cells: INFERENCE);
+% the text kept row by row ([[Row, Codes], ...]) so the pane is drawn
+% again whole; a write past the last column is not drawn (no wrap); the
+% glyphs opaque (copy).  key#lf (10) in write_lines/2 starts the next
+% row at column 0; 13 (key#cr) goes to column 0.
+% NOT STOOD IN (fail loud): scroll/2, insert/2, delete/2, open_rows/3,
+% move_rows/4, the text cursor drawn.
+
+class as_output has
+
+instance
+
+% OURS representation: the window has text (basic_window.esp asks);
+% the rows written ([[Row, Codes], ...], Codes a list of character codes
+% from column 0); the cursor's cell.
+attribute output := yes, text_rows := [], col := 0, row := 0;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): one character at the cursor, which moves one forward.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16 write/2; the body OURS)
+:write(W, 13) :- !, W!col := 0;
+:write(W, 10) :- !, W!col := 0, W!row := W!row + 1;
+:write(W, C) :- put_codes(W, [C]);
+
+% INTERPOLATED (selector PRINTED-INTERFACE TM-112 p16, window.md §2.3; body
+% OURS): a string at the cursor, which moves past it.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-112 p16; the body OURS)
+:write_line(W, S) :- codes(S, Cs), put_codes(W, Cs);
+
+% INTERPOLATED (selector and arguments USAGE `(W, Row, String)`, see the
+% head; body OURS): the string at the start of row Row (the cursor there
+% first, then past it).
+% LABEL: INFERENCE (Row the text row, column 0: USAGE MENDELS garnet_win.esp
+% :423, knov; the body OURS)
+:write_line(W, Row, S) :- W!row := Row, W!col := 0, :write_line(W, S);
+
+% INTERPOLATED (selector and arguments USAGE `(W, Row, Col, String)`,
+% window.md §2.3; body OURS): the string at (Col, Row).
+% LABEL: INFERENCE (USAGE knov eg.esp:62; the body OURS)
+:write_line(W, Row, Col, S) :- W!row := Row, W!col := Col, :write_line(W, S);
+
+% INTERPOLATED (selector PRINTED-INTERFACE TM-112 p16, PRINTED TM-134 p70,
+% window.md §2.3; body OURS): a string whose key#lf codes break the line.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-112 p16, TM-134 p70; the body OURS)
+:write_lines(W, S) :- codes(S, Cs), lines(W, Cs, []);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): the cursor to column X, row Y.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16 move_cursor/3; cells
+% INFERENCE, see the head)
+:move_cursor(W, X, Y) :- W!col := X, W!row := Y;
+
+% INTERPOLATED (selector PRINTED-INTERFACE TM-125 p16; body OURS): the
+% characters from the cursor to the end of the line deleted.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16 clear_line/1; the body OURS)
+:clear_line(W) :-
+        row_codes(W!text_rows, W!row, Cs),
+        first(Cs, W!col, Ks),
+        set_row(W, W!row, Ks);
+
+% INTERPOLATED (selector USAGE (35), window.md §2.3; body OURS): every
+% row cleared and the cursor home.
+% LABEL: INFERENCE (clear and home, window.md §2.3; the body OURS)
+:clear(W) :- W!text_rows := [], W!col := 0, W!row := 0, :redraw(W);
+
+% INTERPOLATED (selector OURS): the rows drawn in the inside, while the
+% top window's pane is uncovered (basic_window.esp contents/1).
+% LABEL: OURS (the look, see the head)
+:draw_text(W) :-
+        :clip_inside(W, X, Y, R, B),
+        cell(W, Id, Cw, Ch),
+        drawn_rows(W!text_rows, Id, Cw, Ch, X, Y, R, B);
+
+local
+
+cell(W, Id, Cw, Ch) :- W!font == 0, !, :default_font(#bitmap_display, Id, Cw, Ch);
+cell(W, Id, Cw, Ch) :- F = W!font, Id = F!id, Cw = F!width, Ch = F!height;
+
+% a string's codes, as a list
+codes(S, Cs) :- string(S, N, _), codes(S, 0, N, Cs);
+codes(_, I, N, []) :- I >= N, !;
+codes(S, I, N, [C | Cs]) :- string_element(S, I, C), codes(S, I + 1, N, Cs);
+
+lines(W, [], Acc) :- !, reversed(Acc, [], Cs), put_codes(W, Cs);
+lines(W, [10 | Cs], Acc) :- !,
+        reversed(Acc, [], Ks), put_codes(W, Ks),
+        W!col := 0, W!row := W!row + 1,
+        lines(W, Cs, []);
+lines(W, [C | Cs], Acc) :- lines(W, Cs, [C | Acc]);
+
+% the codes put at the cursor in its row, the cursor moved past them
+put_codes(W, Cs) :-
+        row_codes(W!text_rows, W!row, Old),
+        padded(Old, W!col, P),
+        count(Cs, 0, N),
+        first(P, W!col, Pre),
+        drop(P, W!col + N, Post),
+        appended(Pre, Cs, A),
+        appended(A, Post, New),
+        W!col := W!col + N,
+        set_row(W, W!row, New);
+
+set_row(W, Row, Cs) :-
+        without_key(W!text_rows, Row, Rs),
+        W!text_rows := [[Row, Cs] | Rs],
+        :redraw(W);
+
+row_codes([[R, Cs] | _], Row, Cs) :- R == Row, !;
+row_codes([_ | Rs], Row, Cs) :- row_codes(Rs, Row, Cs);
+row_codes([], _, []);
+
+% Old padded with spaces to N codes (kept whole if longer)
+padded(Old, N, Old) :- count(Old, 0, K), K >= N, !;
+padded(Old, N, P) :- appended(Old, [32], O1), padded(O1, N, P);
+
+first(_, 0, []) :- !;
+first([], _, []) :- !;
+first([C | Cs], N, [C | Ks]) :- first(Cs, N - 1, Ks);
+
+drop(L, 0, L) :- !;
+drop([], _, []) :- !;
+drop([_ | L], N, R) :- drop(L, N - 1, R);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+appended([], L, L);
+appended([X | R], L, [X | S]) :- appended(R, L, S);
+
+reversed([], R, R);
+reversed([X | L], R0, R) :- reversed(L, [X | R0], R);
+
+without_key([], _, []);
+without_key([[K, _] | R], K, R) :- !;
+without_key([X | R], K, [X | S]) :- without_key(R, K, S);
+
+drawn_rows([], _, _, _, _, _, _, _);
+drawn_rows([[Row, Cs] | Rs], Id, Cw, Ch, X, Y, R, B) :-
+        Ty = Y + Row * Ch,
+        row_glyphs(Cs, Id, Cw, Ch, X, Ty, R, B),
+        drawn_rows(Rs, Id, Cw, Ch, X, Y, R, B);
+
+row_glyphs(_, _, _, Ch, _, Y, _, B) :- Y + Ch > B, !;
+row_glyphs([], _, _, _, _, _, _, _) :- !;
+row_glyphs(_, _, Cw, _, X, _, R, _) :- X + Cw > R, !;
+row_glyphs([C | Cs], Id, Cw, Ch, X, Y, R, B) :-
+        :glyph(#bitmap_display, Id, C, X, Y, copy),
+        row_glyphs(Cs, Id, Cw, Ch, X + Cw, Y, R, B);
+
+end.

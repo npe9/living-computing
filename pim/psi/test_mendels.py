@@ -21,11 +21,26 @@ and sends loaded_library(normal([mendel::example1, ...])); the ESP side
 reads it and goes on into mendel_main's create/1: the mendel_title
 process, its `Change phase ?` temporary_menu (stood in since 2026-11-27),
 mendel_window's create_window/1 (font:kanji_16.font substituted, its
-float sizes), and stops at `:create(#base, ...)`, MENDELS's class whose
-natures are SIMPOS window mixins not held (labeled_sash, as_input,
-as_superior, inferior_window, with_shared_window).  Re-recorded live
-2026-11-27 from a copy of PROMPT.pkl: the exchanges and strings as
-before, the stop and `where` new.
+float sizes), `:create(#base, ...)` (MENDELS's class whose natures are
+the SIMPOS window mixins, stood in since the window mixins step), the
+whole zone, garnet_window, the library window, the editors, object_lib
+restore/1 (the HELD tree.obj and tree.key: example1-3; test_library_
+restored), top_down, mdl_input, buffer, flat_data and flat_mdl, and
+stops in method_editor starting/1 at standard_io_window set_size/3
+(med_window's title panes are standard_io_windows inside the base; the
+stand-in is a top window only).  Re-recorded live 2026-11-27 from a copy
+of PROMPT.pkl, twice: the 21 exchanges and strings as before, the stop
+and `where` new each time.
+
+Mixins (the window mixins step) runs the mixins through two other held
+users on the coordinator, with the mouse: icotext's whole held class
+kakari_super_window and ki_window.esp's held command bar
+(multi_column_menu_with_superior_input_buffer) read by kkr_main.esp's
+held read_loop/1; disc's held make_inter_menu/2 (essential_scrolling_
+menu_with_superior_input_buffer) inside MENDELS's held base, read by
+base's read/3.  Frames pinned by sha256 and set dots, PNGs
+docs/simpos/screens/mendels_mixins_icotext.png and _disc.png byte for
+byte.
 
 Injections, OBSERVED 2026-11-27 (24, each made in the working tree by a
 scratch script, restored by copy, cmp and md5 clean; this whole file run
@@ -79,6 +94,27 @@ injections (mendel_window's sizes are not drawn before the stop at
 `#base`), and test_euod_leave none (an unanswered read leaves the same
 calls and no pane): the unit tests and test_disc_loop carry them.
 
+The window mixins step, OBSERVED 2026-11-27 (10, made and restored the
+same way by a scratch script, cmp clean; this whole file and
+test_kl0.py run on each, kl0's failures marked; the first six were run
+before class Pieces existed, which none of them touches):
+
+| injection | failed |
+|---|---|
+| with_superior_input_buffer: input kept in the window's own buffer | test_disc_pick, test_icotext_exit |
+| as_superior read/3: source and data swapped | test_disc_pick, test_icotext_exit |
+| labeled_sash: label off by default | test_disc_pick, test_disc_shown, test_icotext_exit, test_icotext_shown |
+| basic_window set_superior/2 a no-op | NONE |
+| no clipping (an inferior drawn past its superior) | test_icotext_shown |
+| kl0 get_atom_string/3 answers the atom, not a string | test_atom (kl0), test_library_restored, test_replay |
+| kl0 op_number: an atom is a number | test_number |
+| array get_at/3: the index off by one | test_array, test_replay |
+| mendels.py: tree.obj not placed | test_library_restored |
+| esplex: a backslash escapes in a quoted atom again | test_package, test_replay |
+
+Weak spot: set_superior/2 is not told apart (no held user here moves a
+window under another superior; med_window does, after the stop).
+
 Weak spots: the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
 the unit tests carry them.  getl's line start is caught only by
@@ -122,8 +158,7 @@ STRINGS_IO = [
     ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
     ('<', 56, 1, '>sys>user>MENDELuser>SYSTEM>'),
 ]
-STOP = ('simpos: send mendel##base:create/3 (not in the held classes; ancestors simpos##labeled_sash '
-        'simpos##as_input simpos##as_superior simpos##inferior_window simpos##with_shared_window)')
+STOP = 'simpos: send simpos##standard_io_window:set_size/3 (not in the stand-in)'
 
 
 def load_tape():
@@ -145,10 +180,29 @@ class Run(unittest.TestCase):
         stop, psi, left = mendels.replay(TAPE)
         self.assertEqual('%s: %s' % (stop.cause, stop.detail), STOP)
         self.assertEqual(left, [])
-        self.assertEqual(psi.where(7), ['mendel##mendel_window @2be', 'mendel##mendel_window @2c0',
-                                        'mendel##mendel_window @29c', 'mendel##mendel_window @1d9',
-                                        'mendel##mendel_window @19b', 'mendel##mendel_window @58',
-                                        'mendel##mendel_main @c7'])
+        self.assertEqual(psi.where(7), ['mendel##med_window @124', 'mendel##med_window @126',
+                                        'mendel##med_window @91', 'mendel##med_window @29',
+                                        'mendel##method_editor @110', 'mendel##method_editor @22',
+                                        'mendel##mendel_main @11b'])
+
+    def test_library_restored(self):
+        # object_lib restore/1 (object_lib.esp:29-31, 321-325) read the
+        # HELD tree.obj and tree.key placed in >sys>user>MENDELuser>SYSTEM
+        # (mendels.HELD_FILES): the object tree holds example1-3 and the
+        # key tree's restore/2 took its first clause (change_net/2 set
+        # net1); the archive has no tree.field, so field_tree restore/2
+        # took its "file not exist" clause and holds nothing
+        stop, psi, left = mendels.replay(TAPE)
+        m = psi.m
+
+        def slot(cid, name):
+            return K.resolve(m.get_slot(K.ClassRef('mendel##' + cid), name))
+        data = repr(slot('object_tree', 'mendel##object_tree$tree_data'))
+        for name in ('example1', 'example2', 'example3'):
+            self.assertIn(name, data)
+        self.assertEqual(slot('key_tree', 'mendel##key_tree$current_net'), K.Atom('net1'))
+        self.assertEqual(K.deref(m.get_slot(K.ClassRef('mendel##field_tree'),
+                                            'mendel##field_tree$tree_data')), 0)
 
     def test_path_dialog(self):
         # init_path.esp's dialog after the path is typed, before y: the
@@ -170,17 +224,20 @@ class Run(unittest.TestCase):
 class Compile(unittest.TestCase):
     def test_package(self):
         # the archive's ESP half, its 108 .esp/.es files, as one package
-        # (install.e Step 5-6): 18
-        # items the parser drops (mdl_ckpred, mdl_cksyn, mdl_ckutil,
-        # mendelmain :476 `****`, obj_editor, tsl_input), no class refused
-        # whole, 402 predicates refused (1,122 before the built-ins,
-        # repeat and components of 2026-11-27, 689 before vectors of up to
-        # 255 elements and floats, the temporary_menu step)
+        # (install.e Step 5-6): 17
+        # items the parser drops (mdl_ckpred, mdl_cksyn, mendelmain :476
+        # `****`, obj_editor, tsl_input), no class refused whole, 371
+        # predicates refused (1,122 before the built-ins, repeat and
+        # components of 2026-11-27, 689 before vectors of up to 255
+        # elements and floats, the temporary_menu step; 18 dropped and 402
+        # refused before the window mixins step: mdl_ckutil.esp's `'/\'`
+        # read as a quoted atom (asm/simpos_census/esplex.py) and number/1,
+        # blt 13)
         self.assertEqual(len(mendels.esp_sources()), 108)
         ts, rep = mendels.compile_package()
-        self.assertEqual(len(rep['dropped']), 18)
+        self.assertEqual(len(rep['dropped']), 17)
         self.assertEqual(rep['failed'], {})
-        self.assertEqual(len(rep['refused']), 402)
+        self.assertEqual(len(rep['refused']), 371)
         ids = {t.id for t in ts}
         for c in ('mendel##mendel_esp_device', 'mendel##mendel_loader', 'mendel##esp_utility',
                   'mendel##mendel_path', 'mendel##mendel_main'):
@@ -651,6 +708,220 @@ end."""
         self.assertEqual(K.resolve(m.get_slot(M, 'alive')), K.Atom('no'))
         send(M, 'clear_items')
         self.assertEqual(labels(), [])
+
+
+class Pieces(unittest.TestCase):
+    """The smaller pieces of the window mixins step that no run above
+    tells apart."""
+
+    def test_number(self):
+        # number/1 (blt 13, kl0_opcodes.tsv): an integer or a float, not an
+        # atom or a variable
+        t = compile_one('''class nb has
+:n(C, X, yes) :- number(X), !;
+:n(C, _, no);
+:f(C, X, R) :- integer_to_floating_point(X, F), :n(C, F, R);
+end.''')
+        self.assertEqual(t.refusals, [])
+        self.assertIn('13 ', espc.listing(t))
+        m = K.Machine(espc.library([t]))
+        for x, want in ((3, 'yes'), (K.Atom('a'), 'no'), (K.Var(), 'no')):
+            (r,) = K.call_class_method(m, 'user##nb', 'n', [x, K.Var()])
+            self.assertEqual(K.resolve(r[1]), K.Atom(want))
+        (r,) = K.call_class_method(m, 'user##nb', 'f', [2, K.Var()])
+        self.assertEqual(K.resolve(r[1]), K.Atom('yes'))
+
+    def test_array(self):
+        # array (standin/array.esp): put_at/3 and get_at/3 (value, then
+        # index from 0), put_contents/2 and get_contents/2
+        m = mendels.PsiSide().m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##array', 'create', [K.Var(), 3])
+        A = K.deref(r[0])
+
+        def send(name, *args):
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(A, name, list(args) + [A])]
+        send('put_contents', K.Cons(10, K.Cons(11, K.Cons(12, K.NIL))))
+        self.assertEqual(send('get_at', K.Var(), 0), [[10, 0]])
+        self.assertEqual(send('get_at', K.Var(), 2), [[12, 2]])
+        send('put_at', 99, 1)
+        self.assertEqual(repr(send('get_contents', K.Var())[0][0]), '[10,99,12]')
+        self.assertEqual(send('get_at', K.Var(), 3), [])
+
+
+class Mixins(unittest.TestCase):
+    """The window mixins (labeled_sash, as_input, as_superior,
+    inferior_window, with_shared_window, with_superior_input_buffer and
+    the composite menus: standin/basic_window.esp and its neighbours)
+    through two other held users, run whole on the coordinator with the
+    mouse, as Menus's are:
+
+    - icotext (IFS natural-lang): the HELD class kakari_super_window
+      (kkr_super_win.esp, whole: with_icon, labeled_sash, as_superior,
+      as_input, as_mouse_input, inferior_window) made by its own
+      create_window/3; inside it the HELD command bar of ki_window.esp
+      create_comand_win/2 (a multi_column_menu_with_superior_input_buffer,
+      clause verbatim); read by the HELD read_loop/1 of kkr_main.esp
+      (clause verbatim), whose `exit` ends it;
+    - disc (IFS natural-lang): the HELD make_inter_menu/2 of disp_win.esp
+      (clause verbatim: an essential_scrolling_menu_with_superior_input_
+      buffer filling its superior, titled " No."), inside MENDELS's own
+      HELD class base (win_class.esp:38-47), read by base's read/3.
+
+    The harness classes (tm_kkr, tm_disc2, and kakari_main, which
+    kakari_super_window's after-demon of activate/1 sends to) are OURS."""
+    # OURS harness round icotext's held clauses (%s: create_comand_win/2,
+    # then read_loop/1)
+    KKR = """class tm_kkr has
+nature as_program;
+attribute calls := [], super_win;
+:note(Class, X) :- Class!calls := [X | Class!calls];
+:exit(Class) :- :note(#tm_kkr, exit);
+%s
+instance
+:goal(P) :-
+        Class = #tm_kkr,
+        :create(#font, "font:kanji_16.font", Font),
+        :create_window(#kakari_super_window, Font, Super),
+        Class!super_win := Super,
+        create_comand_win(Super, Comand),
+        :activate(Super),
+        :activate(Comand),
+        :note(#tm_kkr, shown),
+        :read_loop(Class);
+local
+%s
+end.
+class kakari_main has
+:select_kakari_structure(Class) :- :note(#tm_kkr, select);
+end."""
+    # OURS harness round disc's held make_inter_menu/2 (%s), under
+    # MENDELS's held base (%s)
+    DISC = """class tm_disc2 has
+nature as_program;
+attribute calls := [], inter_menup, inter_menuw, font;
+:note(Class, X) :- Class!calls := [X | Class!calls];
+instance
+:goal(P) :-
+        Class = #tm_disc2,
+        :create(#font, "font:kanji_16.font", Font),
+        Class!font := Font,
+        :create(#base, [size(400, 300), position(100, 100), title("MENDELS base")], Base),
+        Class!inter_menup := Base,
+        make_inter_menu(Class, Base),
+        Menu = Class!inter_menuw,
+        :add_items(Menu, [{"1", common, one, _}, {"2", common, two, _}], 1),
+        :activate(Base),
+        :activate(Menu),
+        :note(#tm_disc2, shown),
+        :read(Base, Win, Data),
+        (Win == Menu, !, :note(#tm_disc2, {menu, Data}) ; :note(#tm_disc2, {other, Data}));
+local
+%s
+end.
+%s"""
+
+    @staticmethod
+    def held_lines(name, first, last, head):
+        import held
+        lines = held.member_text(name).splitlines()[first - 1:last]
+        assert lines[0].strip().startswith(head), lines[0]
+        return espc.esplex.decode('\n'.join(lines).encode('latin-1'))[0]
+
+    def run_prog(self, prog, *batches):
+        import fep_bridge as FB
+        import held
+        psi = FB.PsiSide()
+        m = psi.m
+        if prog == 'kkr':
+            srcs = [espc.esplex.decode(held.member_text('icotext_kkr_super_win').encode('latin-1'))[0],
+                    self.KKR % (self.held_lines('icotext_kkr_main', 93, 107, ':read_loop('),
+                                self.held_lines('icotext_ki_window', 68, 79, 'create_comand_win('))]
+        else:
+            import ifs_sweep as X
+            base = espc.esplex.decode(X.archive(mendels.ARCHIVE)['mendels/win_class.esp'])[0]
+            base = base[base.index('class base has'):]
+            base = base[:base.index('end.') + 4]
+            srcs = [self.DISC % (self.held_lines('disc_disp_win', 318, 324, 'make_inter_menu('), base)]
+        for src in srcs:
+            ts, failed = espc.compile_text(src, 'simpos')
+            self.assertEqual(failed, {})
+            for t in ts:
+                m.lib.add(t)
+        psi.user = [FB.mouse('rr', *FB.MENU_AT), FB.mouse('l', *FB.LOGIN_ITEM_AT)]
+
+        def start(mm):
+            mendels.substitute_font(mm, 'kanji_16.font', 'test_11.font')
+            C = K.ClassRef('simpos##coordinator')
+            item = K.Vec([FB.jstr('TM'), K.Atom('tm_' + prog)])
+            mm.set_slot(C, 'menu', K.Cons(K.Cons(item, K.NIL), mm.get_slot(C, 'menu')))
+            return [K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), FB.jstr('TM')])]
+        rest = [start] + [list(b) for b in batches]
+
+        def exchange(out):
+            if rest and not psi.shell:
+                b = rest.pop(0)
+                psi.shell, psi.getl = list(b(m) if callable(b) else b), True
+            return []
+        stop = psi.run(exchange)
+        return stop, m
+
+    def calls(self, m, cls):
+        return Menus.calls(m, cls)
+
+    SCREENS = os.path.join(HERE, '..', 'docs', 'simpos', 'screens')
+    # frames: (sha256 of the PBM, set dots), OBSERVED 2026-11-27; the
+    # shown frames committed as docs/simpos/screens/mendels_mixins_*.png
+    KKR_FRAME = ('9068ca553a3a4b7e9e081d27c6a2de593a054653db9a7810dbbe03b86085f558', 112499)
+    DISC_FRAME = ('8d2c3a03f81546c9ce29782204c977c0ecca31f6974fa65bc21a2b856d948eeb', 108737)
+
+    def frame(self, m):
+        import windev
+        fr = windev.device(m).frame
+        return (windev.pbm_sha256(fr), fr.count()), windev.png_bytes(fr)
+
+    def test_icotext_shown(self):
+        # kakari_super_window (its held create_window/3: size, position,
+        # label font, title) with the held command bar inside it at
+        # (0, 190), 1200 wide, cut at the superior's inside; the bar's
+        # label off, its 14 one-item columns centred (the kanji items drawn
+        # as boxes: font:kanji_16.font is test_11.font, no kanji); the
+        # after-demon of activate/1 ran (select)
+        stop, m = self.run_prog('kkr')
+        self.assertEqual(stop.cause, 'would suspend')
+        self.assertEqual(self.calls(m, 'tm_kkr'), ['shown', 'select'])
+        got, png = self.frame(m)
+        self.assertEqual(got, self.KKR_FRAME)
+        with open(os.path.join(self.SCREENS, 'mendels_mixins_icotext.png'), 'rb') as f:
+            self.assertEqual(png, f.read())
+
+    def test_icotext_exit(self):
+        # a left click on `exit`: the bar's input goes to its superior's
+        # buffer (with_superior_input_buffer), the held read_loop reads it
+        # with read/3 (as_superior) and calls exit/1
+        stop, m = self.run_prog('kkr', [Menus.left(705, 271)])
+        self.assertEqual(self.calls(m, 'tm_kkr'), ['exit', 'shown', 'select'])
+
+    def test_disc_shown(self):
+        # MENDELS's base (labeled_sash, as_input, as_superior,
+        # inferior_window, with_shared_window) with disc's menu filling
+        # its inside: the menu's title " No." in its label strip, its
+        # no_select line blank, the two items added
+        stop, m = self.run_prog('disc2')
+        self.assertEqual(stop.cause, 'would suspend')
+        self.assertEqual(self.calls(m, 'tm_disc2'), ['shown'])
+        got, png = self.frame(m)
+        self.assertEqual(got, self.DISC_FRAME)
+        with open(os.path.join(self.SCREENS, 'mendels_mixins_disc.png'), 'rb') as f:
+            self.assertEqual(png, f.read())
+
+    def test_disc_pick(self):
+        # a left click on the no_select line does nothing; on "2": base's
+        # read/3 answers the menu and its item_id
+        stop, m = self.run_prog('disc2', [Menus.left(122, 149)])
+        self.assertEqual(self.calls(m, 'tm_disc2'), ['shown'])
+        stop, m = self.run_prog('disc2', [Menus.left(122, 181)])
+        self.assertEqual(self.calls(m, 'tm_disc2'), ['{menu,two}', 'shown'])
 
 
 def read(text):

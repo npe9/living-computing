@@ -87,7 +87,14 @@ nature as_resource, with_lock;
 % INTERPOLATED (body OURS): basis above.
 attribute pool := [], count := 0;
 
-% INTERPOLATED (body OURS): see THE BUFFER POOL above.
+% INTERPOLATED (body OURS): see THE BUFFER POOL above.  MENDELS
+% (2026-11-27): a Name left unbound (swindow.esp:89 init/1, which kills
+% the buffer by that name later, :124) is given a new name, `buffer-<n>`
+% with n the pool's count after it (INFERENCE that the pool names it;
+% the form OURS).
+:create(Class, Buffer, Name, Size) :- unbound(Name), !,
+        fresh_name(Class, Class!count + 1, Name),
+        :create(Class, Buffer, Name, Size);
 :create(Class, _, Name, _) :- pooled(Class!pool, Name, _), !, fail;
 :create(Class, Buffer, Name, _) :-
         :new_buffer(Class, Name, Buffer),
@@ -141,6 +148,13 @@ attribute name := "", text := [], length := 0, point := 0, region := 0,
         changed(B, P),
         B!text := New,
         grown(B, 1, P);
+
+% :insert(B, Code) -- MENDELS (2026-11-27): INTERPOLATED (selector USAGE
+% MENDELS swindow.esp:92, 111, 249 `:insert(Buffer, key#lf)`,
+% editor_com.esp:74 `:insert(Buffer, Code)`; pmacs.md §2 has insert/2 on
+% standard_editor; body OURS): one code at the point, as insert_code/2.
+% LABEL: INFERENCE (a code at the point, from the held calls)
+:insert(B, Code) :- :insert_code(B, Code);
 
 % INTERPOLATED from getl_from_buffer/3 @423 and after attention/1 @303
 % (USAGE): the position after the last code.
@@ -337,6 +351,32 @@ attribute mark := none, path := 0;
 local
 
 % window M10: the pool (OURS, see THE BUFFER POOL)
+% a name not in the pool, "buffer-<n>" from n up (OURS, see create/4)
+fresh_name(Class, N, Name) :-
+        digits(N, [], Ds),
+        appended([98, 117, 102, 102, 101, 114, 45], Ds, Cs),
+        string_of(Cs, S),
+        not_pooled(Class, N, S, Name);
+
+not_pooled(Class, N, S, Name) :- pooled(Class!pool, S, _), !,
+        fresh_name(Class, N + 1, Name);
+not_pooled(_, _, S, S);
+
+digits(N, Ds, [D | Ds]) :- N < 10, !, value(N + 48, D);
+digits(N, Ds0, Ds) :- value(N / 10, Q), value(N - Q * 10 + 48, D),
+        digits(Q, [D | Ds0], Ds);
+
+string_of(Cs, S) :- count_codes(Cs, 0, N), new_string(S, N, 16), set_codes(Cs, S, 0);
+
+count_codes([], N, N);
+count_codes([_ | R], N0, N) :- count_codes(R, N0 + 1, N);
+
+appended([], L, L);
+appended([X | R], L, [X | S]) :- appended(R, L, S);
+
+set_codes([], _, _);
+set_codes([C | Cs], S, I) :- set_string_element(S, I, C), set_codes(Cs, S, I + 1);
+
 pooled([B | _], Name, B) :- N = B!name, equal_string(N, Name), !;
 pooled([_ | Bs], Name, B) :- pooled(Bs, Name, B);
 

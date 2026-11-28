@@ -214,7 +214,17 @@ def tokenize(text):
                         j += 2
                         continue
                     break
-                if text[j] == '\\' and j + 1 < n:
+                # a backslash escapes the next character in a string; in a
+                # quoted atom it is a character like any other (2026-11-27,
+                # INFERENCE from held source the PSI compiled, MEASURED over
+                # the 2,326 ESP files of the IFS archives: the reading
+                # changes the tokens of 10, and in each the old one ran a
+                # quoted atom ending `\'` on past the clause: MENDELS
+                # mdl_ckutil.esp:276 `'/\'`, chal bool.esp:9 `'/\'`, cal-esp
+                # ccwindow.esp:129, control.esp:495, deb_cont.esp:438 `'\'`
+                # (the operator \, fy 300), exreps pe_wind92.esp:38 `'\'`,
+                # and four more of the same kind)
+                if c == '"' and text[j] == '\\' and j + 1 < n:
                     buf.append(text[j:j + 2])
                     j += 2
                     continue

@@ -1,0 +1,24 @@
+% SCAFFOLDING stand-in for SIMPOS's class `essential_scrolling_menu`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class is lost (docs/simpos/subsystems/window.md §0.3, §1.6, the
+% scrolling menus).  MENDELS (IFS No.61), 2026-11-27: the variable editor
+% of its method editor (med_win.esp:40-45, 213-218), made with
+% nature([with_superior_input_buffer, with_shared_window]) (TM-125's
+% create option that adds classes; not acted on here: basic_window.esp's
+% head) and placed inside the `base` later.
+%
+% THE NATURE LIST IS INFERENCE: that of
+% essential_scrolling_menu_with_superior_input_buffer.esp (whose head
+% has the sources) without with_superior_input_buffer, which the name
+% leaves out.  It has no method of its own.
+
+class essential_scrolling_menu has
+
+nature
+        labeled_sash,
+        as_scrolling_menu,
+        as_single_select,
+        as_mouse_input,
+        inferior_window;
+
+end.

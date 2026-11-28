@@ -1,0 +1,36 @@
+% SCAFFOLDING stand-in for SIMPOS's class
+% `essential_window_with_superior_input_buffer`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: the class is lost
+% (docs/simpos/subsystems/window.md §0.3, §1.6, the plain windows).
+% MENDELS (IFS No.61), 2026-11-27: its directory window and the nature of
+% its parts_tree_window (mendel_win.esp create_dir_window/6, win_class.esp:
+% 63-74), panes inside its `base`; garnet_win.esp three more.
+%
+% THE NATURE LIST IS INFERENCE: no composite's list is printed (window.md
+% §1.6).  From the name (essential_ a window without the extras,
+% _with_superior_input_buffer that mixin) and the printed recipe of an
+% ordinary text and graphics window (TM-125 p20, the measurement window,
+% PRINTED: labeled_sash, as_scroll, as_output, as_graphics, as_markers,
+% as_input, as_mouse_input, user_window; WINCS my_window2, window.md
+% §1.5), with inferior_window for user_window (WINCS).  MENDELS gives each
+% one label_flag(off), so it has a label by default (INFERENCE).  The
+% frame, the text output and the markers' list are stood in
+% (basic_window.esp, labeled_sash.esp, as_input.esp, as_output.esp,
+% as_markers.esp); graphics and scrolling (as_graphics, as_scroll) are
+% not, and a send only they would answer is refused loudly.  It has no
+% method of its own.
+
+class essential_window_with_superior_input_buffer has
+
+nature
+        labeled_sash,
+        with_superior_input_buffer,
+        as_scroll,
+        as_output,
+        as_graphics,
+        as_markers,
+        as_input,
+        as_mouse_input,
+        inferior_window;
+
+end.

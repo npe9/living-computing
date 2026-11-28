@@ -1,0 +1,51 @@
+% SCAFFOLDING, OURS: the operator pool of a text buffer, compiled by
+% psi/espc.py into the package `simpos`.  `operator_pool` is NOT a known
+% SIMPOS class name: the class of the object get_parsing_operator/2
+% answers is not printed or held (docs/simpos/subsystems/gaps.md G7).
+% MENDELS (IFS No.61), 2026-11-27: its e_i_w_controler and flat_data add
+% operators to a buffer's pool (extern.esp:99-102 `:add_operator(Pool,
+% (!), xf, 200)`, flat_data.esp:56-60), its io_win removes them
+% (io_win.esp:168-170).  The arguments of add_operator/4 are those of the
+% ESP declaration add_operator(Op, Type, Priority) (docs/simpos/layers/
+% ESP.md §1, PRINTED in the ESP manual), with the pool first.
+
+class operator_pool has
+
+% INTERPOLATED (selector and body OURS): an empty pool.
+% LABEL: OURS
+:create(Class, P) :- :new(Class, P);
+
+instance
+
+% OURS representation: the operators added, newest first ([[Op, Type,
+% Priority], ...]).
+attribute operators := [];
+
+% INTERPOLATED (selector and arguments USAGE MENDELS extern.esp:100-102;
+% the three after the pool as the ESP declaration's, docs/simpos/layers/
+% ESP.md; body OURS): Op added with Type and Priority, replacing Op's
+% entry of the same Type.
+% LABEL: INFERENCE (from the ESP declaration's arguments; kept only, OURS)
+:add_operator(P, Op, Type, Prio) :-
+        without(P!operators, Op, Type, Os),
+        P!operators := [[Op, Type, Prio] | Os];
+
+% INTERPOLATED (selector and arguments USAGE MENDELS io_win.esp:168-170
+% `:remove_operator(Op_pool, Op)`, the ESP declaration remove_operator;
+% body OURS): every entry of Op removed.
+% LABEL: INFERENCE (as add_operator/4)
+:remove_operator(P, Op) :-
+        all_without(P!operators, Op, Os),
+        P!operators := Os;
+
+local
+
+all_without([], _, []);
+all_without([[O, _, _] | R], Op, S) :- O == Op, !, all_without(R, Op, S);
+all_without([X | R], Op, [X | S]) :- all_without(R, Op, S);
+
+without([], _, _, []);
+without([[O, T, _] | R], Op, Type, R) :- O == Op, T == Type, !;
+without([X | R], Op, Type, [X | S]) :- without(R, Op, Type, S);
+
+end.

@@ -1,0 +1,610 @@
+% SCAFFOLDING stand-in for SIMPOS's class `basic_window`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class body
+% is lost (docs/simpos/subsystems/window.md §0.3, §1.2).  TM-125 p8 (4.2,
+% 1) primitive classes) names it: basic_window "the class supplying the
+% function as a window.  Every window must inherit this class".  No held
+% program names it; here it is the body that the base classes
+% inferior_window.esp and temporary_window.esp (the stand-ins) inherit.
+% MENDELS (IFS No.61), 2026-11-27: under MENDELS's own `base`
+% (win_class.esp: labeled_sash, as_input, as_superior, inferior_window,
+% with_shared_window), the frame every MENDELS window is built on, under
+% the menus and panes in it (the composites multi_column_menu_with_
+% superior_input_buffer.esp, essential_scrolling_menu_with_superior_
+% input_buffer.esp, essential_window_with_superior_input_buffer.esp), and
+% under its temporary windows (temporary_scroll, swindow.esp).
+%
+% THE MANUALS (each method's LABEL names what it rests on):
+%   - TM-125 ("The Concepts and Facilities of SIMPOS Window System", 1985;
+%     docs/simpos/printed/listings/tm0125_p13.esp, tm0125_p08_classes.txt):
+%     p13-14 create/3 and Table 1, the initiation options and defaults:
+%     superior(S) (default the screen), position(X,Y) in the superior
+%     (default (0,0)), size(W,H) (default the superior's inside size),
+%     title(String) (blank), margins 1 dot, units 1 dot; p15
+%     set_size/3, set_position/3, set_superior/2; p16 activate/1 (the
+%     window "is scheduled to be displayed on the superior window"),
+%     show/1, deactivate/1 (the image is kept), hide/1; p18 kill/1;
+%     p8 (4.2) as_inferior: "the function as a sub window"; as_inside "the
+%     inside area is the part of window which does not include the
+%     border, label, and the margins" (Figure 5);
+%   - TM-115 (1985, PSI editor; subsystems/notes/tm115.md): p27, p105 a
+%     top-level loop reads each input through the superior "together with
+%     the window or menu it came from"; p111 a click on a window not
+%     selected only selects it;
+%   - WINCS (PSI-II window class generator, window.md §1.2): one of
+%     inferior_window, popup_window, temporary_window is required.
+% THE HELD CALL SITES (USAGE), cited at each method: MENDELS
+% (mendel_win.esp, win_class.esp), icotext (kkr_super_win.esp,
+% kkr_main.esp, ki_window.esp), disc (disp_win.esp), cal-esp, kappa2.
+%
+% THE REPRESENTATION AND THE LOOK, OURS:
+%   - a window's rectangle (x, y, w, h) is outer, in its superior's inside
+%     (TM-125 p14: the position is in the superior); the screen is
+%     superior 0;
+%   - a window whose superior is the screen is drawn as a frame pane
+%     (window_pane.esp create_frame/8) on the coordinator's stack, so it is
+%     restacked, saved and restored as the other windows are; an inferior
+%     is drawn inside its top window's pane (each draw under the
+%     coordinator's uncover/unpeel), clipped to its own rectangle; an
+%     inferior taken off (deactivate, hide, kill) is erased by drawing its
+%     superior's inside again: the superior's own contents, then its
+%     shown inferiors in the order they were shown (OURS: the PSI's save
+%     areas per inferior, TM-225 p10, are not modelled);
+%   - the sash (TM-125 Figure 5): the border 2 dots (TM-125 p15), the label
+%     strip one line of the label font plus 4 dots with a rule under it
+%     (window_pane.esp's look), the margins 1 dot (Table 1), each drawn
+%     when its flag is on; the flags are off here and on in labeled_sash
+%     (labeled_sash.esp: an attribute is the first in the inheritance
+%     order, psi/librarian.py build);
+%   - input: each window has an input buffer (a stream) of events {Source,
+%     Data, Code, X, Y}; a window with with_superior_input_buffer puts its
+%     input in its superior's (TM-125 p11, with_superior_input_buffer:
+%     "to share the input buffer with its own superior window"); read/3
+%     (as_superior.esp) answers Source and Data, read/2 (as_input.esp) Data;
+%   - the mouse (the coordinator's events): a left click on a top window
+%     already selected goes to the inferior under it, deepest first (OURS;
+%     TM-115 p111: the click selects a window not selected); a menu
+%     (as_menu.esp) answers the item's item_id, any other window the code
+%     'mouse#l' with the dot inside it;
+%   - a top window is selected when it is activated (OURS: so the first
+%     click reaches its panes);
+%   - colours (PSI-II, window.md §3.7) are kept, not drawn: the device is
+%     1-bit (winfb.py).
+%   - a temporary window (temporary_window.esp: at_mouse yes) made with no
+%     position is put at the mouse when it is shown (TM-125 p6-7);
+% NOT STOOD IN (fail loud): dynamic natures (the create option nature(L),
+% e.g. MENDELS's nature([with_icon]), is ignored: OURS), scrolling, the save areas of inferiors.
+
+class basic_window has
+
+% :create(#Class, Initiation, ^W) -- INTERPOLATED (selector, arguments
+% and options PRINTED-INTERFACE TM-125 p13-14 Table 1; body OURS): the
+% window made and laid out in its superior, not shown (TM-125 p13: shown
+% by activate).  A size not given is the superior's inside size (Table 1)
+% or, for a menu, the size of its items (TM-125 p7: a menu is sized by its
+% items); a position not given is (0, 0).  It is entered in its
+% superior's inferiors (as_superior.esp add_inferior/2).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p13-14, Table 1; p7 a menu
+% sized by its items; label_flag, border_flag, margin_flag, permission,
+% font, label_font, items_list USAGE MENDELS mendel_win.esp:263-470; the
+% body OURS)
+:create(Class, Options, W) :-
+        :new(Class, W),
+        :create(#stream, B),
+        W!buffer := B,
+        W!options := Options,
+        options(W, Options),
+        sized(W),
+        entered(W);
+
+instance
+
+% OURS representation (see the head): the superior (0: the screen), the
+% outer rectangle in the superior's inside, whether a size was given, the
+% title, fonts (0: the device's default), the output permission, the
+% initiation options kept, shown (1) or not (0), killed, the top window's
+% pane (0: not drawn), its number on the status band, the input buffer,
+% whose buffer the input goes to (self, or superior: with_superior_input_
+% buffer.esp), a menu (yes: as_menu.esp) or not, the items given
+% (as_menu.esp), the shown inferiors (as_superior.esp keeps them), the
+% colour pairs and colours set ([[N, P], ...], [[N, Kind], ...]), the
+% inside units set (0: none), whether the text cursor is shown.
+attribute superior := 0, x := 0, y := 0, w := 0, h := 0, sized := no,
+          title := 0, font := 0, label_font := 0, permission := out,
+          options := [], active := 0, killed := 0, pane := 0, number := 0,
+          buffer := 0, input_to := self, menu := no, items := [],
+          colors := [], color_pairs := [], units := 0, cursor := on,
+          placed := no;
+% put at the mouse when shown with no position (temporary_window.esp: yes)
+attribute at_mouse := no;
+% the sash flags, off without the sash mixins (labeled_sash.esp: on);
+% whether the window has inferiors (as_superior.esp: yes)
+attribute label_flag := off, border_flag := off, margin_flag := off,
+          has_inferiors := no;
+% whether the window has text (as_output.esp: yes)
+attribute output := no;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): activate, scheduled for display on the superior: a top window
+% drawn as a pane on the coordinator's stack and selected, an inferior
+% drawn in its superior's inside when the superior is shown.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; the drawing OURS)
+:activate(W) :- W!killed == 0, W!active := 1, shown(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): show, as activate, and put above its siblings (MENDELS
+% change_title/3 shows one title over another at the same place,
+% mendel_win.esp:1046-1095).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16 "show the window on the
+% screen"; above the siblings INFERENCE from MENDELS change_title/3)
+:show(W) :- W!killed == 0, W!active := 1, raised(W), shown(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): deactivate, off the screen schedule, kept (activate draws it
+% again).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; the body OURS)
+:deactivate(W) :- taken_off(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
+% OURS): hide, as deactivate (no window list below a superior: OURS).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; as deactivate OURS)
+:hide(W) :- taken_off(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p18; body
+% OURS): kill, off the screen and out of its superior's inferiors.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p18 5.7; the body OURS)
+:kill(W) :- taken_off(W), W!killed := 1, left(W);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-115 p50, p64
+% get_size/3, window.md §2.1; body OURS): the outer size.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-115 p64; the body OURS)
+:get_size(W, Wd, Ht) :- Wd = W!w, Ht = W!h;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-115 p64,
+% window.md §2.1; body OURS): the position in the superior.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-115 p64, TM-125 p15 "the position to
+% the superior window"; the body OURS)
+:get_position(W, X, Y) :- X = W!x, Y = W!y;
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): set_size, drawn again where it is shown.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15; the body OURS)
+:set_size(W, Wd, Ht) :- moved(W, W!x, W!y, Wd, Ht);
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): set_position, in the superior's coordinates.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15; the body OURS)
+:set_position(W, X, Y) :- moved(W, X, Y, W!w, W!h);
+
+% INTERPOLATED (selector USAGE, window.md §2.1 reshape/5 (W,X,Y,Wd,Ht),
+% cal-esp cal2.12/cpwindow.esp:85, icotext kkr_super_win.esp:43-77; body
+% OURS): move and resize at once.
+% LABEL: INFERENCE (set_position and set_size at once, USAGE; the body
+% OURS)
+:reshape(W, X, Y, Wd, Ht) :- moved(W, X, Y, Wd, Ht);
+
+% INTERPOLATED (selector USAGE window.md §2.1, SCREENSHOT IPSJ 36239 p5;
+% meaning PROSE TM-125 p8 as_inside, Figure 5; body OURS): the inside
+% size, the outer size less the border, label and margins that are on.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p8 as_inside and Figure 5; the
+% sizes of the parts OURS, see the head)
+:get_inside_size(W, Iw, Ih) :-
+        insets(W, L, T, R, B),
+        Iw = W!w - L - R, Ih = W!h - T - B;
+
+% INTERPOLATED (selector USAGE window.md §2.14, MENDELS mendel_win.esp:309,
+% icotext ki_window.esp:216; body OURS): the font for the window's text
+% and items, drawn from the next draw.
+% LABEL: INFERENCE (a font object, USAGE; drawn with it OURS)
+:set_font(W, F) :- W!font := F, again(W);
+
+% INTERPOLATED (selector USAGE window.md §2.2 (W,out|show|...), the four
+% permissions TM-125 p6; body OURS): kept (an inferior draws in its top
+% window's pane, which is drawn with `out`, coordinator.esp).
+% LABEL: INFERENCE (kept; the permission of the top window's pane OURS)
+:set_permission(W, P) :- W!permission := P;
+
+% INTERPOLATED (selector USAGE MENDELS mendel_win.esp:440, 702, 724;
+% window.md §2.3 the text cursor; body OURS): the text cursor not shown
+% (a window of these stand-ins draws no text cursor).
+% LABEL: INFERENCE (the name; kept, OURS)
+:erase_cursor(W) :- W!cursor := off;
+
+% INTERPOLATED (selector USAGE window.md §2.1 set_inside_units/3, MENDELS
+% mendel_win.esp:723; PROSE TM-115 p41 "sets the inside units of the
+% window to the values (1,1)"; body OURS): kept; the stand-ins' inside
+% coordinates are dots (TM-125 Table 1's default).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 Table 1 units, TM-115 p41; kept
+% only, OURS)
+:set_inside_units(W, UX, UY) :- W!units := [UX, UY];
+
+% INTERPOLATED (selector USAGE window.md §2.1 get_inside_units/3, MENDELS
+% setting.esp; body OURS): the units set, else 1 dot each (TM-125 Table 1
+% "the inside units ... 1 dot"; TM-115 p41's font_13 cell is the 1.0
+% VARIANT, window.md §2.1).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 Table 1, the default; the body
+% OURS)
+:get_inside_units(W, UX, UY) :- W!units = [UX, UY], !;
+:get_inside_units(_, 1, 1);
+
+% INTERPOLATED (selector USAGE MENDELS mendel_win.esp:273, 724-729
+% `(W, No, Pair)`, window.md §3.7 PSI-II colour; body OURS): the colour
+% pair of number N kept, not drawn (1-bit device).
+% LABEL: INFERENCE (PSI-II colour, window.md §3.7; kept only, OURS)
+:set_color_pair(W, N, P) :- without_key(W!color_pairs, N, Ps),
+        W!color_pairs := [[N, P] | Ps];
+
+% INTERPOLATED (selector USAGE MENDELS mendel_win.esp:274 `(Base, 6,
+% label)`; body OURS): the colour of a part of the window kept, not drawn.
+% LABEL: INFERENCE (PSI-II colour; kept only, OURS)
+:set_color(W, N, Part) :- without_key(W!colors, Part, Cs),
+        W!colors := [[Part, N] | Cs];
+
+% INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p15; body
+% OURS): the window moved to another superior (MENDELS graph_mode.esp:65
+% moves its screen pane into the "graphic window" frame), taken off the
+% screen first and kept at its position, now in the new superior.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15 "set the superior window";
+% taken off first OURS)
+:set_superior(W, S) :- W!superior == S, !;
+:set_superior(W, S) :-
+        taken_off(W),
+        left(W),
+        W!superior := S,
+        entered(W);
+
+% INTERPOLATED (selector PRINTED-INTERFACE TM-125 p15 set_superior/2;
+% get_superior/2 UNSPECIFIED, window.md §2.1; body OURS): the superior (0:
+% the screen).
+% LABEL: INFERENCE (the reading of set_superior/2's slot; OURS)
+:get_superior(W, S) :- S = W!superior;
+
+% INTERPOLATED (selector USAGE MENDELS mendel_win.esp:1117 after read/3,
+% `check_integer(nil, nil)` failing; owner as_mouse_input INFERENCE; body
+% OURS): the mouse cursor's dot in the window's inside, or nil, nil when
+% the cursor is not on the window.
+% LABEL: INFERENCE (from MENDELS read_window/2 and check_integer/2; the
+% inside coordinates OURS)
+:get_mouse_dot_position(W, X, Y) :-
+        C = #coordinator,
+        inside_origin(W, AX, AY), !,
+        mouse_in(W, C!mouse_x - AX, C!mouse_y - AY, X, Y);
+:get_mouse_dot_position(_, nil, nil);
+
+% THE COORDINATOR'S SIDE (selectors and bodies OURS, as
+% standard_io_window.esp's: coordinator.esp sends these to the windows on
+% its stack, which are the top windows).
+% INTERPOLATED (selector and body OURS): selected; nothing to draw (no
+% text cursor).
+% LABEL: OURS (the coordinator protocol, window.md §2.12)
+:selected(W);
+% INTERPOLATED (selector and body OURS): deselect_window.
+% LABEL: OURS (the coordinator protocol)
+:deselect_window(W);
+% INTERPOLATED (selector and body OURS): has_been_selected, the default
+% primary of the select notifier's callback (window.md §2.12).
+% LABEL: OURS (the coordinator protocol)
+:has_been_selected(W);
+% INTERPOLATED (selector and body OURS): has_been_reshaped (window.md
+% §2.12); the manipulator's reshape has moved the rectangle already.
+% LABEL: OURS (the coordinator protocol)
+:has_been_reshaped(W);
+% INTERPOLATED (selector USAGE MENDELS med_win.esp:165-168, `object(CkWin,
+% _,_), :name(CkWin,_)`: the method editor's windows are made again only
+% when this fails; body OURS): the window's title, failing once the
+% window is killed.
+% LABEL: INFERENCE (a live window answers, from MENDELS's test; the title
+% OURS)
+:name(W, N) :- W!killed == 0, N = W!title;
+% INTERPOLATED (selector and body OURS): status_name, the status band's
+% `<class>/<n>` (status_band.esp).
+% LABEL: OURS (the status band)
+:status_name(W, "basic_window", N) :- N = W!number;
+% INTERPOLATED (selector and body OURS): contains, the coordinator's hit
+% test.
+% LABEL: OURS (the coordinator protocol)
+:contains(W, X, Y) :- W!pane \== 0, :contains(W!pane, X, Y);
+% INTERPOLATED (selector and body OURS): typed, a key given to the
+% selected window: its input (TM-125 p18 1) "the character code will be
+% returned").
+% LABEL: OURS (the coordinator protocol)
+:typed(W, Code) :- delivered(W, Code, Code, nil, nil);
+% INTERPOLATED (selector and body OURS): left_click, the left button on a
+% selected top window: to the window under it, deepest first (see the
+% head).
+% LABEL: OURS (the coordinator protocol)
+:left_click(W, X, Y) :- under(W, X, Y, U), !, :clicked(U, X, Y);
+:left_click(_, _, _);
+% INTERPOLATED (selector and body OURS): right_click, nothing bound.
+% LABEL: OURS (the coordinator protocol)
+:right_click(W, X, Y);
+
+% :clicked(W, X, Y) -- OURS (selector and body): a left click at the
+% device's (X, Y) on W, its deepest shown window there: a menu's item
+% (as_menu.esp item_clicked/3), or the code 'mouse#l' (TM-125 p18 2), the
+% mouse codes) with the dot in W's inside.
+% INTERPOLATED (selector and body OURS): see above.
+% LABEL: OURS (the item_id as input is TM-125 p18; the routing OURS)
+:clicked(W, X, Y) :- W!menu == yes, !, :item_clicked(W, X, Y);
+:clicked(W, X, Y) :-
+        inside_origin(W, AX, AY),
+        delivered(W, 'mouse#l', 'mouse#l', X - AX, Y - AY);
+
+% :delivered(W, Data, Code, X, Y) -- OURS (selector and body): an input
+% made in W joins the buffer it goes to: W's, or its superior's when W
+% shares the superior's (with_superior_input_buffer.esp), as
+% {W, Data, Code, X, Y}.
+% INTERPOLATED (selector and body OURS): see the head, "input".
+% LABEL: OURS (the superior buffer from the mixin name, INFERENCE)
+:delivered(W, Data, Code, X, Y) :- delivered(W, Data, Code, X, Y);
+
+% :drawn(W) -- OURS (selector and body): an inferior drawn whole, with
+% its shown inferiors, while its top window's pane is uncovered
+% (as_superior.esp draw_inferiors/1 sends it).
+% INTERPOLATED (selector and body OURS): see the head.
+% LABEL: OURS
+:drawn(W) :- whole(W);
+
+% :redraw(W) -- OURS (selector and body): W drawn again where it is
+% shown after a change (the sash flags, labeled_sash.esp; the items,
+% as_menu.esp): a shown top window's pane made again (its sash may have
+% changed), an inferior drawn whole.
+% INTERPOLATED (selector and body OURS): see the head.
+% LABEL: OURS
+:redraw(W) :- W!superior == 0, W!pane \== 0, !, moved(W, W!x, W!y, W!w, W!h);
+:redraw(W) :- again(W);
+
+% :outer_rectangle(W, X, Y, Wd, Ht) -- OURS (selector and body): the
+% device's rectangle of a window on the screen.
+% INTERPOLATED (selector and body OURS): see the head.
+% LABEL: OURS
+:outer_rectangle(W, X, Y, Wd, Ht) :- outer_origin(W, X, Y), Wd = W!w, Ht = W!h;
+
+% :inside_rectangle(W, X, Y, Iw, Ih) -- OURS (selector and body): the
+% device's rectangle of the inside of a window on the screen.
+% INTERPOLATED (selector and body OURS): see the head.
+% LABEL: OURS
+:inside_rectangle(W, X, Y, Iw, Ih) :- inside_origin(W, X, Y),
+        :get_inside_size(W, Iw, Ih);
+
+% :clip_inside(W, X0, Y0, X1, Y1) -- OURS (selector and body): the part of
+% W's inside that shows, from (X0, Y0) up to (X1, Y1) exclusive: a top
+% window's whole inside; an inferior's inside cut to its superior's
+% (TM-125 p8 4.1: a superior window "can have the sub-windows"; that a
+% sub-window is cut at its superior's inside is INFERENCE, the screens of
+% window.md §1.5 show none overhanging).  Only the right and bottom edges
+% are cut here (OURS: no held user places an inferior at a negative
+% position).
+% INTERPOLATED (selector and body OURS): see above.
+% LABEL: INFERENCE (a sub-window cut at its superior; the cut OURS)
+:clip_inside(W, X0, Y0, X1, Y1) :-
+        :inside_rectangle(W, X0, Y0, Iw, Ih),
+        cut(W, X0 + Iw, Y0 + Ih, X1, Y1);
+
+
+local
+
+% the initiation list (TM-125 p14 Table 1; the other options USAGE, see
+% create/3; any other option is not used here: OURS)
+options(_, []) :- !;
+options(W, [{superior, S} | Os]) :- !, W!superior := S, options(W, Os);
+options(W, [{position, X, Y} | Os]) :- !,
+        W!x := X, W!y := Y, W!placed := yes, options(W, Os);
+options(W, [{size, Wd, Ht} | Os]) :- !,
+        W!w := Wd, W!h := Ht, W!sized := yes, options(W, Os);
+options(W, [{title, T} | Os]) :- !, W!title := T, options(W, Os);
+options(W, [{label_flag, F} | Os]) :- !, W!label_flag := F, options(W, Os);
+options(W, [{border_flag, F} | Os]) :- !, W!border_flag := F, options(W, Os);
+options(W, [{margin_flag, F} | Os]) :- !, W!margin_flag := F, options(W, Os);
+options(W, [{permission, P} | Os]) :- !, W!permission := P, options(W, Os);
+options(W, [{font, F} | Os]) :- !, W!font := F, options(W, Os);
+options(W, [{label_font, F} | Os]) :- !, W!label_font := F, options(W, Os);
+options(W, [{items_list, L} | Os]) :- !, W!items := L, options(W, Os);
+options(W, [_ | Os]) :- options(W, Os);
+
+% the size not given: a menu's items' (as_menu.esp natural_size/3), else
+% the superior's inside (TM-125 Table 1), the screen's for a top window
+sized(W) :- W!sized == yes, !;
+sized(W) :- W!menu == yes, !,
+        :natural_size(W, Iw, Ih),
+        insets(W, L, T, R, B),
+        W!w := Iw + L + R, W!h := Ih + T + B;
+sized(W) :- W!superior == 0, !,
+        :get_size(#bitmap_display, Sw, Sh),
+        W!w := Sw - W!x, W!h := Sh - W!y;
+sized(W) :-
+        :get_inside_size(W!superior, Iw, Ih),
+        W!w := Iw - W!x, W!h := Ih - W!y;
+
+entered(W) :- W!superior == 0, !;
+entered(W) :- :add_inferior(W!superior, W);
+
+left(W) :- W!superior == 0, !;
+left(W) :- :remove_inferior(W!superior, W);
+
+% the border, label and margin in dots (see the head)
+insets(W, L, T, R, B) :-
+        flag(W!border_flag, 2, Bo), flag(W!margin_flag, 1, M),
+        label_height(W, Lh),
+        L = Bo + M, R = Bo + M, T = Bo + Lh + M, B = Bo + M;
+
+flag(on, D, D) :- !;
+flag(_, _, 0);
+
+label_height(W, 0) :- W!label_flag \== on, !;
+label_height(W, H) :- font_cell(W!label_font, _, _, Ch), H = Ch + 4;
+
+font_cell(0, Id, Cw, Ch) :- !, :default_font(#bitmap_display, Id, Cw, Ch);
+font_cell(F, Id, Cw, Ch) :- Id = F!id, Cw = F!width, Ch = F!height;
+
+% on the screen: a top window with its pane, an inferior shown in a
+% superior on the screen
+on_screen(W) :- W!superior == 0, !, W!pane \== 0;
+on_screen(W) :- W!active == 1, on_screen(W!superior);
+
+% the top window's pane
+top_pane(W, P) :- W!superior == 0, !, P = W!pane, P \== 0;
+top_pane(W, P) :- top_pane(W!superior, P);
+
+% the device's dot of W's outer top-left and of its inside's top-left
+outer_origin(W, X, Y) :- W!superior == 0, !, P = W!pane, P \== 0,
+        X = P!x, Y = P!y;
+outer_origin(W, X, Y) :- inside_origin(W!superior, SX, SY),
+        X = SX + W!x, Y = SY + W!y;
+
+inside_origin(W, X, Y) :- W!superior == 0, !, P = W!pane, P \== 0,
+        X = P!left, Y = P!top;
+inside_origin(W, X, Y) :- outer_origin(W, OX, OY),
+        insets(W, L, T, _, _),
+        X = OX + L, Y = OY + T;
+
+mouse_in(W, X, Y, X, Y) :- X >= 0, Y >= 0,
+        :get_inside_size(W, Iw, Ih), X < Iw, Y < Ih, !;
+mouse_in(_, _, _, nil, nil);
+
+% shown: a top window's pane made (once), entered on the coordinator's
+% stack and selected, its inferiors drawn in it; an inferior drawn
+shown(W) :- W!superior == 0, W!pane \== 0, !;
+shown(W) :- W!superior == 0, !,
+        at_mouse(W),
+        :create_frame(#window_pane, W!x, W!y, W!w, W!h, W!label_font,
+                      [W!border_flag, W!label_flag, W!margin_flag, W!title], P),
+        W!pane := P,
+        :add_window(#coordinator, W, N),
+        W!number := N,
+        contents(W),
+        :select_window(#coordinator, W);
+shown(W) :- :inferior_shown(W!superior, W), again(W);
+
+% a temporary window with no position at the mouse (TM-125 p6-7); the
+% frame pane keeps it on the screen
+at_mouse(W) :- W!at_mouse == yes, W!placed == no, !,
+        C = #coordinator, W!x := C!mouse_x, W!y := C!mouse_y;
+at_mouse(_);
+
+% drawn again where it is shown: a top window's inside, an inferior whole
+again(W) :- not_on_screen(W), !;
+again(W) :- W!superior == 0, !,
+        P = W!pane,
+        :uncover(#coordinator, P, Lifted),
+        :fill(#bitmap_display, P!left, P!top, P!iw, P!ih, reset),
+        contents(W),
+        :unpeel(#coordinator, Lifted);
+again(W) :-
+        top_pane(W, P),
+        :uncover(#coordinator, P, Lifted),
+        whole(W),
+        :unpeel(#coordinator, Lifted);
+
+not_on_screen(W) :- on_screen(W), !, fail;
+not_on_screen(_);
+
+% an inferior's frame and contents (its rectangle cleared, the border, the
+% label, the inside)
+whole(W) :-
+        outer_origin(W, X, Y),
+        cut(W, X + W!w, Y + W!h, X1, Y1),
+        cut_fill(X, Y, W!w, W!h, X1, Y1, reset),
+        border(W, X, Y, X1, Y1),
+        label(W, X, Y, X1, Y1),
+        contents(W);
+
+border(W, X, Y, X1, Y1) :- W!border_flag == on, !,
+        cut_fill(X, Y, W!w, W!h, X1, Y1, set),
+        cut_fill(X + 2, Y + 2, W!w - 4, W!h - 4, X1, Y1, reset);
+border(_, _, _, _, _);
+
+label(W, X, Y, X1, Y1) :- W!label_flag == on, !,
+        flag(W!border_flag, 2, Bo),
+        font_cell(W!label_font, Id, Cw, Ch),
+        cut_fill(X + Bo, Y + Bo + Ch + 2, W!w - Bo - Bo, 1, X1, Y1, set),
+        low(X + W!w - Bo, X1, R),
+        title_codes(W!title, Id, Cw, Ch, X + Bo + 1, Y + Bo + 1, R, Y1);
+label(_, _, _, _, _);
+
+% (X1, Y1) cut to the shown part of W's superior's inside (clip_inside/5)
+cut(W, X1, Y1, X1, Y1) :- W!superior == 0, !;
+cut(W, X1, Y1, CX, CY) :-
+        :clip_inside(W!superior, _, _, SX, SY),
+        low(X1, SX, CX),
+        low(Y1, SY, CY);
+
+low(A, B, A) :- A =< B, !;
+low(_, B, B);
+
+% a fill of the rectangle up to (X1, Y1) exclusive
+cut_fill(X, Y, Wd, Ht, X1, Y1, Op) :-
+        low(X + Wd, X1, R), low(Y + Ht, Y1, B),
+        X < R, Y < B, !,
+        :fill(#bitmap_display, X, Y, R - X, B - Y, Op);
+cut_fill(_, _, _, _, _, _, _);
+
+title_codes(_, _, _, Ch, _, Y, _, B) :- Y + Ch > B, !;
+title_codes(T, Id, Cw, Ch, X, Y, R, _) :- string(T, N, _), !,
+        glyphs(T, 0, N, Id, Cw, X, Y, R);
+title_codes(_, _, _, _, _, _, _, _);
+
+glyphs(_, I, N, _, _, _, _, _) :- I >= N, !;
+glyphs(_, _, _, _, Cw, X, _, R) :- X + Cw > R, !;
+glyphs(T, I, N, Id, Cw, X, Y, R) :-
+        string_element(T, I, C),
+        :glyph(#bitmap_display, Id, C, X, Y, copy),
+        glyphs(T, I + 1, N, Id, Cw, X + Cw, Y, R);
+
+% the inside: a menu's items (as_menu.esp draw_items/1) or a window's text
+% (as_output.esp draw_text/1), then the shown inferiors in the order they
+% were shown (as_superior.esp)
+contents(W) :- W!menu == yes, !, :draw_items(W), inferiors_drawn(W);
+contents(W) :- W!output == yes, !, :draw_text(W), inferiors_drawn(W);
+contents(W) :- inferiors_drawn(W);
+
+inferiors_drawn(W) :- W!has_inferiors == yes, !, :draw_inferiors(W);
+inferiors_drawn(_);
+
+% off the screen: a top window's pane through the coordinator's stack; an
+% inferior's superior drawn again
+taken_off(W) :- W!active == 0, W!pane == 0, !;
+taken_off(W) :- W!superior == 0, !,
+        W!active := 0,
+        erased(W);
+taken_off(W) :-
+        W!active := 0,
+        :inferior_hidden(W!superior, W),
+        again(W!superior);
+
+erased(W) :- W!pane == 0, !;
+erased(W) :- :take_off(#coordinator, W), W!pane := 0,
+        :remove_window(#coordinator, W);
+
+% moved or resized: a shown top window is made again there; an inferior's
+% superior drawn again
+moved(W, X, Y, Wd, Ht) :- W!superior == 0, W!pane \== 0, !,
+        erased(W),
+        W!x := X, W!y := Y, W!w := Wd, W!h := Ht,
+        shown(W);
+moved(W, X, Y, Wd, Ht) :- W!superior == 0, !,
+        W!x := X, W!y := Y, W!w := Wd, W!h := Ht;
+moved(W, X, Y, Wd, Ht) :-
+        W!x := X, W!y := Y, W!w := Wd, W!h := Ht,
+        again(W!superior);
+
+% the shown window under the device's (X, Y): the deepest inferior first
+under(W, X, Y, U) :- W!has_inferiors == yes, :inferior_at(W, X, Y, I), !,
+        under(I, X, Y, U);
+under(W, _, _, W);
+
+delivered(W, Data, Code, X, Y) :-
+        owner_of_buffer(W, O),
+        :put(O!buffer, {W, Data, Code, X, Y});
+
+owner_of_buffer(W, O) :- W!input_to == superior, W!superior \== 0, !,
+        owner_of_buffer(W!superior, O);
+owner_of_buffer(W, W);
+
+raised(W) :- W!superior == 0, !;
+raised(W) :- :inferior_raised(W!superior, W);
+
+without_key([], _, []);
+without_key([[K, _] | R], K, R) :- !;
+without_key([X | R], K, [X | S]) :- without_key(R, K, S);
+
+end.

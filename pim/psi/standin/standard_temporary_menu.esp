@@ -1,0 +1,17 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_temporary_menu`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% the class is lost (docs/simpos/subsystems/window.md §0.3, §1.6, the
+% single-select menus).  MENDELS (IFS No.61), 2026-11-27: the slot
+% tmp_menu of its e_i_w_controler, made with no items (extern.esp:7-8).
+%
+% THE NATURE LIST IS INFERENCE (window.md §1.6: standard_ the complete,
+% labelled, bordered form of a ready-made class): this stand-in is
+% temporary_menu.esp's menu (TM-125 p8: "the single select single column
+% temporary menu"), whose methods it inherits; it has none of its own.
+
+class standard_temporary_menu has
+
+nature
+        temporary_menu;
+
+end.
