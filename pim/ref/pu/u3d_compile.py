@@ -21,8 +21,16 @@ as r7_sieve.py catches it.  Checked:
     cells further on) give A = B = the list, the same instruction count
     at both, and 2 suspends and one bind waking 2 goals for [1].
 
-Ends 'u3d compile: PASS' when all hold (about 30 s: 10 s to load the
-checkpoint, 20 s of compile, 0.9 M pimm.py instructions).
+U3d second step (2026-11-28): the same for the four programs of
+u3_goals.COMPILED (slice, crr_proceed, twovar, prio), each compiled on a
+fresh load of the checkpoint (atoms the compiler interns must not depend
+on an earlier compile): the window's answer, cells 15.. equal to the
+pinned ones, and go(A) at two placements giving pimm.py's answer with the
+same instruction count.
+
+Ends 'u3d compile: PASS' when all hold (about 30 s for the stream program:
+10 s to load the checkpoint, 20 s of compile, 0.9 M pimm.py instructions;
+about 2 minutes more for the other four).
 """
 import os
 import sys
@@ -49,11 +57,11 @@ class Count:
             self.instructions += 1
 
 
-def compile_module(path):
+def compile_module(path, mod='pc', source=None):
     m, loaded, _info, kind = ls.load(path)
     assert kind == 'prompt'
     m.ahead = False
-    ls.longrun.add_home_file('pc.kl1', U3.STREAM_SOURCE.encode('ascii'))
+    ls.longrun.add_home_file(mod + '.kl1', (source or U3.STREAM_SOURCE).encode('ascii'))
     made, builtin = [], m.builtin
 
     def watching(name, ops, f, **kw):
@@ -66,7 +74,8 @@ def compile_module(path):
         return builtin(name, ops, f, **kw)
     m.builtin = watching
     sink = Count()
-    _ops, _events, stop, dev = ls.play(m, loaded, kind, LINES, sink)
+    lines = LINES if mod == 'pc' else ['compile', '!package work', mod, '!exit']
+    _ops, _events, stop, dev = ls.play(m, loaded, kind, lines, sink)
     window = ''.join(t for _d, t in dev.log)
     print('compile: %d instructions; stop %s' % (sink.instructions, stop))
     if not made:
@@ -95,6 +104,46 @@ def run_go(cells, items, pad):
                ln.split()[2][2:4] == '69')
     woken = [ln for ln in m.tr if ln.startswith('W ')]
     return m.term(A), m.term(B), steps, susp, len(woken)
+
+
+def run_go1(cells, pad):
+    """go(A) on a fresh pimm.Machine, the cells pad cells on."""
+    m = pimm.Machine()
+    if pad:
+        m.alloc(pad)
+    a = m.alloc(len(cells))
+    for i, w in enumerate(cells):
+        m.mem[a + i] = w
+    A = m.new_var()
+    m.tr = []
+    steps = m.run(a - m.load, [A])
+    return m.term(A), steps
+
+
+def check_compiled(path):
+    ok = True
+    for mod, src, cname, answer in U3.COMPILED:
+        window, cells = compile_module(path, mod, getattr(U3, src))
+        for want in ('Compile Succeeded : %s' % mod, '"work:: %s" Loaded' % mod):
+            if want not in window:
+                print('FAIL %s: the window lacks %r' % (mod, want))
+                ok = False
+        if cells is None:
+            print('FAIL %s: no module made' % mod)
+            ok = False
+            continue
+        pinned = list(getattr(U3, cname))
+        got = cells[U3.STREAM_FIRST:]
+        if got != pinned:
+            print('FAIL %s: cells %d.. differ from u3_goals.%s (module of %d cells)'
+                  % (mod, U3.STREAM_FIRST, cname, len(cells)))
+            ok = False
+        runs = [run_go1(pinned, pad) for pad in (0, 37)]
+        print('%s: %d cells; go(A) at two placements: %r' % (mod, len(cells), runs))
+        if runs[0] != runs[1] or runs[0][0] != answer:
+            print('FAIL %s: go(A) %r, want %r at both placements' % (mod, runs, answer))
+            ok = False
+    return ok
 
 
 def main(argv):
@@ -127,6 +176,7 @@ def main(argv):
         if items == [1] and runs[0][3:] != (2, 2):
             print('FAIL: go([1], A, B): %d suspends, %d woken; want 2, 2' % runs[0][3:])
             ok = False
+    ok = check_compiled(argv[1]) and ok
     print('u3d compile: %s' % ('PASS' if ok else 'FAIL'))
     return 0 if ok else 1
 

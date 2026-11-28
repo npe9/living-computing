@@ -385,6 +385,12 @@ MCF_SUB[(0x02, 4)] = 'f_jump'
 # (tested), 3a3e (set).  Injection 'susp_flags_rassy' (the MCF lists'
 # pairing: 06 / 0e SUSPF, 07 / 0f CGCF).
 JMPF8_GOTO_CNDF = {0x2}       # RULES['jmpf8_goto_cndf']
+# U3d second step (2026-11-28): CNDF 3 too, by the same reading (rassy's
+# arm 8 is 'goto' short 'if cond' for every JMPF 8 word, HELD-SOURCE for
+# the kind; the timing 'prev' INFERRED).  Executed at 1d93 (the priority
+# builtin's step routine 1d92: 1d92's CNDF 3 tested, false, fall through
+# to 1d94).  Injection 'jmpf8_cndf3_off': STOP at 1d93 (the 'prio' run).
+JMPF8_GOTO_CNDF.add(0x3)
 SUSP_FLAG_OPS = {
     'usage': {0x07: ('SUSPF', False), 0x0f: ('SUSPF', True),
               0x06: ('CGCF', False), 0x0e: ('CGCF', True)},
@@ -601,9 +607,11 @@ RULES = {
     # 6 beside the same 1a0, each followed by a word stamping VECT3o ..
     # VECT6o (the row's own size), so EM1 there names the row, not part
     # of the value.  Executed at 3334 (suspend's many-variable path, 1d3a
-    # 'call 3334'); NOT discriminated there: 3335 overwrites MDR2 (W06)
-    # before anything reads it.  Injections 'wide_em1_raise' (None: STOP
-    # at 3334) and 'wide_em1_16' (16, the whole EM: unchanged, recorded).
+    # 'call 3334'), as the table base 1a0 that 3335 adds the size to (the
+    # run stops at that cell, 1a4, either way).  EM1 is free only with no
+    # MCF and CNDF not 7 (those words keep sc2_wide_mcf / sc2_wide_cndf7).
+    # Injections 'wide_em1_raise' (None: STOP at 3334) and 'wide_em1_16'
+    # (16, the whole EM: twovar reads cell 11a4 instead, MOVED).
     'sc2_wide_em1': 10,
     'mcf_sub_flags': True,
     # U3 second session: ALU operation add_with_one (rassy's EM2 3) is
@@ -1082,6 +1090,18 @@ RULES = {
     # Executed at 3979 (the two-variable suspend, U3d second step, path
     # b).  Injection 'jmpf3_s_tdar_off' (raises again).
     'jmpf3_s_tdar': True,
+    # U3d second step (2026-11-28): WRBF switches only selects 10-1f to the
+    # W bank; a select 0-f with WRBF set names R0-Rf as without it.
+    # INFERENCE: rassy's name lists give two banks of 16 only for 10-1f
+    # (cgp .. hp, wr10 .. wr1e, pstr) and the low names once (nop sr gr lc
+    # pc ir rfar rvfr); the static 'W06' writers 26b0 / 26b2 / 26b4 and
+    # 37ef / 37f1 are each followed by a DSTF c (++ rfar) word, R06's use;
+    # allocator row 3335 carries WRBF for its destination W1d while its
+    # sibling 334e reads R06 with WRBF clear.  Executed at 3335 (the
+    # twovar suspend's allocator: MDR2 := R06 = 3, then R03 := 3), and
+    # 4c12 / 4c27 (the slice: R0d, R0e, unchanged results).  Injection
+    # 'wrbf_low_w' (the W bank, as before): STOP at 3335 (W06 never set).
+    'wrbf_low_r': True,
     # AS1F 3 with AS2F not 0 (0802: 'as1_3 - MDR1'; the EM bits there are
     # the JMPF 3 base, not a constant, so RULES['as1f3_em2'] does not
     # apply): the AS1 source is not decided.  The result is UNKNOWN: a
@@ -1443,6 +1463,8 @@ class PU:
                     raise Unmodelled(self._upc, 'select d (WRBF) with EM1 %02x: not decided'
                                      ' (EM1 over f, or used by another field)' % field(x, 'EM1'))
                 return ('R', 0x10 | field(x, 'EM1'))
+            if sel < 0x10 and RULES['wrbf_low_r']:
+                return ('R', sel)
             return ('W', sel)
         if sel == 0xd and RULES['wsel_d_w_em1']:
             # RULES['wsel_d_w_em1']: the work register W(EM1)
@@ -1526,9 +1548,10 @@ class PU:
             if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2) \
                     and not (RULES['sc2_wide_mcf'] and bit(x, 18)) \
                     and not (RULES['sc2_wide_cndf7'] and field(x, 'CNDF') == 7):
-                if RULES['sc2_wide_em1'] == 16:
+                em1_free = not bit(x, 18) and field(x, 'CNDF') != 7
+                if RULES['sc2_wide_em1'] == 16 and em1_free:
                     return (0, field(x, 'EM') & 0xffff)
-                if not RULES['sc2_wide_em1']:
+                if not (RULES['sc2_wide_em1'] and em1_free):
                     raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
                                      % field(x, 'EM1'))
             return (0, field(x, 'EM') & 0x3ff)

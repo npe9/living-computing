@@ -1319,3 +1319,159 @@ append2 or suspend, or recorded weak there.
 - a woken goal of another priority (`4d1f`-`4d23`);
 - `sp_single`: the consumers read a shared stream, met as the declared
   differences above, and `pimm.py` and PimmCore are unchanged.
+
+## U3d, second step: the held paths U3 had not run (2026-11-28)
+
+Three paths that the first step did not reach, each driven by a program
+compiled by the held PIMOS 3.6 compiler on `pimm.py`. The sources are
+OURS. `u3d_compile.py` re-makes each program's cells, each on a fresh
+load of the prompt checkpoint, and checks them; the runs are in
+`u3_goals.py`. **None of the three runs to its end.** Each stops,
+pinned, at the first word that no held source or decided rule carries
+further. No scheduler state is seeded. The stops:
+
+| path | program (`u3_goals`) | held words executed | pinned stop |
+|---|---|---|---|
+| (a) crr run out in `execute` | `slice`: `go(A) :- b(A), a` x 15 | 15 `enqueue_goal`s (the 5th's refill `4c0b` -> `3380`, 141 words, declared), then `execute` at crr 2: `4cc0`-`4cc2`, `4cc4`, `4cd3`, `4cf4`, `1c2c`-`1c32`, `4cf6`-`4cf7`, `4d02`, `4d00`-`4d01`, `4cd4`, the goal switch `4c11`-`4c12`, `4c25`-`4c2e`, `4c13`-`4c15` (31 words) | cell 33: `4c15` ends with R04 = 33 (`4d00`-`4d01`) and nothing writes that cell or gives it |
+| (a) crr run out in `proceed` | `crr_proceed`: `go(A) :- a` x 11`, b(A)` | 3 proceeds that pick; the 4th at crr 1: `216d`-`217d`, `217d`'s JMPF d calls `219b`, `219c` makes 10, and `219e` reads it | `219f`: cell 10 (area 5's Extended Control Registers, constant area) was never written |
+| (b) suspend on two variables | `twovar`: `p([], _, A)`, `p(_, [], A)`, `q(X, _)` | the first `wait_atom` notes X (`3978`-`3979` -> `3950` -> `3a38`-`3a3f`); the second notes Y and pushes X onto the suspension stack (`3a3c`, `3a41`-`3a43`, `[10000400] := X`, declared); then `suspend` runs `1c08`-`1c10` and `1c60`-`1c65` (stack not empty), the many-variable path `1d20`-`1d21`, `1d3a` "call 3334", and the allocator `3334`-`3336` | `3343`: cell 1a4 (size 4 in a table at 1a0, area 5's MPQ) was never written |
+| (c) another priority | `prio`: `q(X)@priority(*, 100)` | `put_integer`, then the builtin `calculate_priority_from_minimum` (entry `1dda`): `1dda`-`1de6` (range check, cells 9 and 10 of R13's record, the shoen's range, written by the boot), "call 1d92", `1d92`-`1d93` | `1d94`: CNDF 1, rassy's "cond carry", whose value for that ALU operation no rule gives |
+
+Of the words the brief names, these ran: `4c11` and `3334`, plus
+`1d20`-`1d21` and `1d3a` of `1d20`-`1d61`. These did not: `4cc5`,
+`1d22`-`1d61` and `4d1f`-`4d23`.
+
+- `4cc5`, execute's slit-check arm, is reached only with slit_check set.
+  Seven held words set it (`W1f |= mask` with `set_slit_check`, all EM2
+  19). On the paths run, `21a1` sits behind cell 10 (the `crr_proceed`
+  stop), and `4d25` sits behind (c), the wake of another priority's goal.
+  The flag is not poked.
+- `1d22`-`1d61` lie behind cell 1a4.
+- `4d1f`-`4d23` lie behind `1d94`: `prio`'s q never runs.
+
+**Answers.** No run reaches `b(A)` or the clause bodies, so none has an
+answer to compare. `u3d_compile.py` checks `pimm.py`'s own answers
+(slice and crr_proceed: A = ok; twovar and prio: A = x) at two
+placements. `twovar` checks that `pimm.py`'s suspend hooks two distinct
+variable cells (`TWOVAR_PIMM_HOOKS`). The pinned runs check that the
+firmware's writes up to the stop are `pimm.py`'s, or declared.
+
+**(a), what execute's slow path does.** Under the goto reading of JMPF 8
+(below), `execute` with crr below 3 (4cc0's EM2 2 taken off, 4cc1's CNDF
+3) leaves the fast path. The running goal's record R10 becomes a ready
+goal:
+
+- cell 0 is {GOAL, n};
+- cells 1..n are A0..An-1, copied by suspend's counted copy `1c2c`;
+- cell 12 is {COD, label};
+- cell 13 is R0e, checked equal to R12;
+- cell 14 is R13;
+- cell 15 is the old R14.
+
+R14 becomes {HOOKo, record}, R10 a fresh record off R1b, R16 + 1, and
+R15 4cc0's 0 plus 1. Then R04 := {INT, 33}. `cmp_execute_slice` compares
+all of this with `pimm.py`'s execute, which runs on in the same goal, as
+the requeue of that goal.
+
+The slow path gives no new quota: an OURS proceed tried at cell 33 met
+crr 1, and so proceed's own run-out arm. The reload is the work of the
+code at 33, as the boot's is (`20a6`, from R05 + b0).
+
+`4cf6`-`4d02` read cell 70, the Console Break Control Table, for the
+csbrk flag (`pu.FLAG_CONDS[0x23]`, OURS false). It is the run's one
+residual, and its value meets nothing tested.
+
+`1c31` reads W15, left by the last `enqueue_goal`'s `4c01`. `1c32`
+overwrites the MAR1 that read makes, unread. A program with no enqueue
+before its run-out execute stops at `1c31`: W15 is never written.
+
+**(b), the suspension stack.** The second noting compares R18, the cache,
+with the new variable. When they differ it pushes R18 at R17 + 1 and
+moves R17 there. That cell is in area 5's suspension stack (A:000400,
+PIMM.PARAM's map; SSPB), which `pimm.py` keeps as a Python list. The
+write is declared (`declare_susp_push`, OURS), only for exactly that
+cell and value.
+
+`1c64` then finds R17 = [b4]: the stack is not empty, so suspend takes
+the many-variable path. `1d3a` calls the allocator's size-4 row `3334`:
+MAR1 := R05 (4), MDR1 := 1a0, MDR2 := R06 (3). `3335` makes W1d :=
+{VECT4o, 1a4}, `3336` makes lc := 3, and MDR1 := [1a4]. The boot's
+heap-top routine reads the same table at 1a0 + 4a (cell 1ea, given by
+the harness, OURS). The table's size-4 entry has no source.
+
+**(c), the pragma.** The held compiler compiles `@priority(*, 100)` to
+`put_integer 3, 100; calculate_priority_from_minimum 3, 3;
+enqueue_goal_with_priority 3, @35`. `pimm.py` drops the priority: it has
+one ready queue, and its `calculate_priority_from_minimum` has no shoen
+(Y = X, OURS). The firmware's builtin reads the shoen's range from the
+foster parent's record, cells 9 and 10, held from the boot: {INT,
+ffffffff} and {INT, 0}. It scales max - min (shift_right_32m 20) and
+calls the step routine `1d92`, which stops at CNDF 1 (carry).
+
+X = 2000 instead takes `1def` (W10 := 8, `1924`), read as the range
+check's error exit (310) and not followed.
+
+**New rules.** Each was run under its injection, with the observed
+result below.
+
+| rule | label | where executed | injection: observed |
+|---|---|---|---|
+| `RULES['jmpf8_flag']` = goto (JMPF 8 in a flag word: short goto if cond) | kind HELD-SOURCE (rassy jmpf/9 arm 8); in flag words INFERENCE (fall-through lets crr go negative without bound in an execute chain) | `4cc2` | `jmpf8_fall`: slice MOVED (the fast path runs on; STOP 17 at `219f`) |
+| `RULES['jmpf_d_call_ifnot']` (JMPF d: call vlong if not cond) | kind HELD-SOURCE (rassy arm d, vlong, pmi 49 'if not cond'); timing INFERENCE | `217d`, `1ddc` | `jmpf_d_off`: crr_proceed STOP 16 at `217d`, prio STOP at `1ddc` |
+| `RULES['sc2_wide_cndf7']` (wide SC2F b with CNDF 7: EM2:EM3) | INFERENCE | `4cf6` | `wide_cndf7_off`: slice STOP 15 at `4cf6` |
+| `FLAG_CONDS[0x23]` csbrk | name HELD-SOURCE (rassy cond position 35); meaning INFERENCE; value OURS (false) | `4cf7` | `csbrk_set`: slice STOP 15 at `4d03` (cell 70's value read) |
+| shift_left at `4c28` (GSET_SHIFT_WORDS) | INFERENCE | `4c28` | `gset_4c28_off`: slice STOP 15 at `4c28`; the value (W1f = 0) is NOT discriminated |
+| shift_left at `219c` | INFERENCE | `219c` | `gset_219c_off`: crr_proceed STOP 16 at `219c` |
+| `declare_refill` (the R1b refill `4c0b` -> `3380` checked and declared) | OURS | the 5th `enqueue_goal` | `refill_undeclared`: slice FAIL 4, crr_proceed FAIL 5 |
+| `cmp_execute_slice` (the slow path compared as a requeue) | OURS | slice, instruction 15 | caught by the existing injections that move slice (see the re-diff) |
+| `u2_append.EXECUTE_CRR` = 8 | OURS (a crr seed) | U2's `execute` | `execute_crr_stale`: STOP 10 at `4cc2` |
+| `RULES['jmpf3_s_tdar']` (JMPF 3 takes the S stage's TDAR) | INFERENCE (the 3940 table lands UNDF on the noting `3a38`) | `3979` | `jmpf3_s_tdar_off`: twovar STOP 6 at `3979` |
+| `setup.S_TDAR_ODPF4` (ODPF 4 chain rows load TDAR) | INFERENCE | `3978` | `tdar_odpf4_off`: twovar STOP 6 at `3979` |
+| `guard_to_alt` with nothing skipped (`ALT_FIRST_SKIP` 0) | OURS (declared difference) | twovar's two `wait_atom`s | `alt_first_skip`: twovar FAIL 6 (R04 {REFo, alt}) |
+| `declare_susp_push` (the suspension-stack push) | OURS (declared) | `3a42` | `susp_push_undeclared`: twovar FAIL 8 (heap 10000400) |
+| `RULES['sc2_wide_em1']` (a free EM1 in a wide word ignored) | INFERENCE (rows `3331`-`333a`: EM1 3-6 beside the same 1a0) | `3334` | `wide_em1_raise`: twovar STOP 9 at `3334`; `wide_em1_16`: twovar MOVED (reads cell 11a4) |
+| `RULES['wrbf_low_r']` (WRBF switches only selects 10-1f) | INFERENCE (rassy's name lists; the `++ rfar` pattern after the static 'W06' writers) | `3335`, `4c12`, `4c27` | `wrbf_low_w`: twovar STOP 9 at `3335` (W06) |
+| `JMPF8_GOTO_CNDF` + 3 | kind HELD-SOURCE (arm 8); timing INFERENCE | `1d93` | `jmpf8_cndf3_off`: prio STOP at `1d93` |
+| `setup.FORMS` calculate_priority_from_minimum ('x', None) | OURS (nano-code ACF 5, DFF 2 undecided) | `1dda` | `prio_form_off`: prio STOP at the builtin |
+
+**Residuals pinned** (last writer the harness, read on the path):
+
+- slice: cell 70 (program walk);
+- crr_proceed: cell 10 (the 4th pick's walk);
+- twovar: suspend cells 1a4 and b4; program R17, R18, R19, 1a4, b4,
+  f2000000, f2000001;
+- prio: none.
+
+The boot residual (W1c, cells 1ea, a0, b6) is unchanged.
+
+**The u2_append seed.** `u2_append`'s `execute` now needs crr, which its
+standalone run does not hold. `EXECUTE_CRR = 8` is an OURS seed of R15,
+named here because it stands beside the owner's "never seed scheduler
+state". Without it, `execute_crr_stale` stops at 10, `4cc2`. U2's pin is
+unchanged.
+
+**Re-diff of the existing injections** against a clean 1a4c11ba snapshot.
+The outputs of `check_pu.py`, `u2_append.py` and `u3_goals.py` were
+compared by content under the 166 injections that existed, with the four
+new programs' sections cut. 152 are unchanged. 14 changed, and each is
+still caught:
+
+- `u2_append cjump_same`: `execute` now passes, since crr is given; the
+  proceed side cases still FAIL.
+- `u2_append cnd3_off`: now STOP 10 at `4cc1`, where it passed (stronger).
+- `u2_append execute_mdr1`: STOP 10 at `1c31` (W15), where it FAILed on R04.
+- `u2_append interrupt_pending`: the same STOP at `22a5`, now reported by
+  CNDF 7 (the wide immediate before it is read).
+- `u3_goals crr_two`: STOP 8 at `219f`, cell 10 (was `217d`).
+- `u3_goals susp_flags_rassy`, `sc2_a_opd`, `sspb_zero`: STOP at `3343`,
+  cell 1a4 (were `3331` / `3334`, the wide immediate).
+- `u3_goals alf_high_reversed`: STOP at `1c36` reads R05 (was W05).
+- `u3_goals interrupt_pending`: suspend now passes `1c18`, whose wide
+  immediate is read. It moves twovar only.
+- `u3_goals adf2_none`, `sc2_e_off`: FAIL at 16, where they stopped.
+- `u3_goals execute_mdr1_stale`: STOP 19 at `4cc2` (stronger).
+- `u3_goals wsel_d_off`: `enqueue_goal` passes (R0d by `wrbf_low_r`);
+  STOP at 8 in proceed, and stream STOP 6 at `4cc2`.
+
+Of the existing `u3_goals` injections, 25 also move one or more of the
+new programs (the re-diff's summary, scratch).

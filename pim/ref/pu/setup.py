@@ -192,6 +192,15 @@ FORMS = {
     # 4c00 / 4c03.  The nano-code does not say where the label goes (DFF
     # 0, unlike the four DFF 1 label entries): not decided.
     'suspend': ('label', None),
+    # U3d second step (2026-11-28): calculate_priority_from_minimum x, y
+    # (a 22:ED builtin cell, entry 1dda, nano-code ACF 5, DFF 2: neither
+    # decided).  OURS: MDR1 = A[x], as put_value's y; support: 1dda tests
+    # MDR1 (CNDF 9), 1ddb reads opd9 (A[y]) and tests its tag for INTo,
+    # 1ddd keeps MDR1 in W12 and 1dde compares it with 310 (the range
+    # check, X = 100 passes, X = 2000 takes 1def).  Run in 'prio' (u3_goals,
+    # path c), stopping at 1d94.  Injection 'prio_form_off': STOP at the
+    # builtin ('no set-up form').
+    'calculate_priority_from_minimum': ('x', None),
 }
 ENQ_HEAD = {2: 'MAR2'}
 LABEL_ODSF = {2: 'MDR2'}    # 'label_mdr2': ODSF -> register (an injection changes it)

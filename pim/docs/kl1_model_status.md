@@ -152,7 +152,16 @@ producer's `get_bound_value` binds S and wakes both, and all three run
 to their ends. 64 of 68 instructions matched with 4 declared skips, 5
 picks (4 compared), and the answer A = B = [1], read out of the
 firmware's memory, is `pimm.py`'s (`ref/pu/README.md`, "U3d, first
-step"). This concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
+step"). *U3d, second step* (2026-11-28): four more compiled programs take
+the held paths U3 had not run, each to a pinned stop where no held source
+gives the next value. Crr runs out in `execute`: the slow path and the
+goal switch `4c11` requeue the goal (compared with `pimm.py`), and the run
+stops at cell 33. Crr runs out in `proceed`: the run stops at cell 10. A
+suspend on two variables pushes the first onto the suspension stack, takes
+the many-variable path to the allocator `3334`, and stops at cell 1a4. An
+`@priority` goal stops inside `calculate_priority_from_minimum` (`1d94`,
+the carry condition) (`ref/pu/README.md`, "U3d, second step"). This
+concerns neither `PimKL1B` nor `PimmCore`. The paragraph below is the
 bench model's state.
 
 The model can execute a hand-assembled KL1-B program that builds heap

@@ -259,6 +259,33 @@ the observed point is the first STOP / FAIL line.
   wait_atom_own      unchanged (the operand is the constant): NOT
                      discriminated
   free_undeclared    FAIL 11 on stream (the given-back record's cell 0)
+  U3d second step (2026-11-28): main() also runs four compiled programs
+  to pinned stops (README "U3d, second step"): slice (crr out in execute:
+  the slow path and goal switch 4c11, stop at cell 33), crr_proceed
+  (crr out in proceed: stop at 219f, cell 10), twovar (a suspend on two
+  variables: the suspension-stack push, 1c60-1c65 -> 1d20 -> 1d3a ->
+  3334, stop at 3343, cell 1a4), prio (@priority: stop in
+  calculate_priority_from_minimum at 1d94, CNDF 1).  Existing injections
+  re-diffed against 1a4c11ba: 152 of 166 unchanged on append2 / suspend
+  / stream; the 14 that changed are listed in the README, each still
+  caught.  New (append2 / suspend / stream unchanged by all):
+  jmpf8_fall         slice MOVED (the fast path runs on, STOP 17 at 219f)
+  jmpf_d_off         crr_proceed STOP 16 at 217d; prio STOP at 1ddc
+  refill_undeclared  slice FAIL 4, crr_proceed FAIL 5 (refill writes)
+  wide_cndf7_off     slice STOP 15 at 4cf6
+  csbrk_set          slice STOP 15 at 4d03 (reads cell 70's value)
+  gset_219c_off      crr_proceed STOP 16 at 219c
+  gset_4c28_off      slice STOP 15 at 4c28 (needed; the value 0 is not
+                     discriminated)
+  alt_first_skip     twovar FAIL 6 (R04 {REFo, alt} against COD)
+  susp_push_undeclared  twovar FAIL 8 (heap 10000400)
+  jmpf3_s_tdar_off   twovar STOP 6 at 3979
+  tdar_odpf4_off     twovar STOP 6 at 3979
+  wide_em1_raise     twovar STOP 9 at 3334
+  wide_em1_16        twovar MOVED: reads cell 11a4 for 1a4 (same stop)
+  wrbf_low_w         twovar STOP 9 at 3335 (W06 never set)
+  jmpf8_cndf3_off    prio STOP at 1d93
+  prio_form_off      prio STOP at the builtin (no set-up form)
 """
 import os
 import sys
@@ -404,15 +431,17 @@ CRRP_PINNED = dict(steps=26, matched=16, slices=0, picks=3, words=289,
 # 'twovar' (path b): 9 instructions matched (the two notings, the second
 # pushing X on the suspension stack, declared), the suspend stops at
 # 3335 (W06); pimm.py's suspend hooks two distinct variable cells.
-TWOVAR_PINNED = dict(steps=18, matched=9, slices=0, picks=0, words=74,
-                     stop=(9, '3335: read of W06, never set'),
-                     residual=([('suspend', ['cell b4'])],
-                               ['R17', 'R18', 'R19', 'cell b4', 'cell f2000000',
+TWOVAR_PINNED = dict(steps=18, matched=9, slices=0, picks=0, words=76,
+                     stop=(9, '3343: ALU input from a read of memory never written'
+                           ' (AS1F 6, AS2F 2)'),
+                     residual=([('suspend', ['cell 1a4', 'cell b4'])],
+                               ['R17', 'R18', 'R19', 'cell 1a4', 'cell b4', 'cell f2000000',
                                 'cell f2000001'], []))
 TWOVAR_PIMM_HOOKS = [2]
-# 'prio' (path c): two instructions matched, the stop at the builtin's set-up.
-PRIO_PINNED = dict(steps=15, matched=2, slices=0, picks=0, words=2,
-                   stop=(2, "'no set-up form for calculate_priority_from_minimum'"),
+# 'prio' (path c): two instructions matched, the stop inside the builtin.
+PRIO_WORDS = 17
+PRIO_PINNED = dict(steps=15, matched=2, slices=0, picks=0, words=PRIO_WORDS,
+                   stop=(2, '1d94: CNDF 1 (condition not known)'),
                    residual=([], [], []))
 STOP_PINS = {'slice': lambda: SLICE_PINNED, 'crr_proceed': lambda: CRRP_PINNED,
              'twovar': lambda: TWOVAR_PINNED, 'prio': lambda: PRIO_PINNED}
@@ -431,7 +460,7 @@ def stop_got(out, n):
 
 
 def stop_moved(out, n, prog):
-    if prog == 'twovar' and out['pimm_hooks'] != TWOVAR_PIMM_HOOKS:
+    if prog == 'twovar' and out.get('pimm_hooks') != TWOVAR_PIMM_HOOKS:
         return True
     return (stop_got(out, n) != STOP_PINS[prog]() or bool(out['fail']) or bool(out['boot_stop'])
             or out['boot_residual'] != BOOT_RESIDUAL_PINNED or out['boot_words'] != BOOT_PINNED)
@@ -582,7 +611,7 @@ STREAM_LIST = [1]             # go([1], A, B): the input (OURS); A = B = [1]
 # 'goto'): execute's slow path, through the goal switch 4c11 (README "U3d,
 # second step").
 SLICE_SOURCE = """\
-:- module sl.
+:- module sl2.
 :- public go/1.
 go(A) :- b(A), a, a, a, a, a, a, a, a, a, a, a, a, a, a, a.
 a :- true | true.
@@ -618,7 +647,7 @@ SLICE_CELLS = [
     (0x23, 0x60000000),  # 41  proceed 0,0,0   ; no
 ]
 # 'crr_proceed': go(A) :- a x 11, b(A).  The compiler enqueues b(A) and ten
-# a's and executes the eleventh a: crr is 5 at that execute (slow path not
+# a's and executes the first a: crr is 5 at that execute (slow path not
 # taken), and runs out at the fourth proceed (216d: 1 - 1; 216e -> 217a;
 # 217c PMPF, 217d's JMPF d taken: call 219b), which reads cell 10 (219e),
 # in area 5's 'Extended Control Registers (constant area)' (PIMM.PARAM,
@@ -665,10 +694,14 @@ CRRP_CELLS = [
 # notes Y (3a3c: R18 is not Y, 3a41-3a43: X pushed at [R17 + 1], R18 :=
 # Y), then suspend 3, @24: 1c08-1c10 fill the record, 1c60-1c65 find the
 # stack not empty (R17 = [b4]) and take the many-variable path, 1d20-1d21,
-# 1d3a 'call 3334', the allocator's size-4 row; 3334 reads the wide 1a0
-# (pu.RULES['sc2_wide_em1']) and 3335 reads W06, which no word the run
-# executes writes (13 static writers, 1211 .. 5753, none on the boot or
-# any path run): the pinned stop.  q(X, _) would bind X = [] and wake p.
+# 1d3a 'call 3334', the allocator's size-4 row: 3334 MAR1 := R05 (4),
+# MDR1 := the wide 1a0 (pu.RULES['sc2_wide_em1']); 3335 MDR2 := R06 (3,
+# pu.RULES['wrbf_low_r']), MAR1 := W1d := {VECT4o, 1a4}; 3336 R03 := 3,
+# MDR1 := [1a4]; 3343 adds it: the pinned stop.  Cell 1a4 is the size-4
+# entry of a table at 1a0 in area 5's MPQ (A:000180, PIMM.PARAM's map,
+# PRINTED; the boot's heap-top routine reads 1a0 + 4a, cell 1ea, which
+# the harness gives, OURS): no held word the run executes writes it and no
+# held source gives its value.  q(X, _) would bind X = [] and wake p.
 TWOVAR_SOURCE = """\
 :- module mv.
 :- public go/1.
@@ -712,15 +745,18 @@ TWOVAR_CELLS = [
 # held compiler's own pragma: q(X)@priority(*, 100) compiles to
 # put_integer 3, 100; calculate_priority_from_minimum 3, 3 (a 22:ED
 # builtin cell); enqueue_goal_with_priority 3, @35 (pimm.py drops the
-# priority: one ready queue, i_enqueue_goal_with_priority).  The firmware
-# stops at the builtin: its entry 1dda has nano-code ACF 5, DFF 2, an
-# operand set-up no harness form models (setup.FORMS has none): pinned.
-# What a scratch form ('x', None) showed (not kept): 1dda-1de5 test X's
-# tag, compare X with the wide 310 (X = 2000 takes 1def: W10 := 8, 1924,
-# read as an error exit, not followed), read cells 9 and 10 of R13's
-# record (the boot's foster parent, 20e7: {INT, ffffffff}, {INT, 0}, the
-# range), (max - min) shift_right_32m 20, then call 1d92, a step loop
-# whose JMPF 8 at 1d93 (not a flag word) and CNDF 1 (1927) are undecided.
+# priority: one ready queue, i_enqueue_goal_with_priority).  The builtin
+# (entry 1dda; set-up OURS, setup.FORMS) runs 1dda-1de6: X's tag tested,
+# X compared with the wide 310 (X = 2000 takes 1def: W10 := 8, 1924,
+# read as an error exit, not followed), cells 9 and 10 of R13's record
+# read (the boot's foster parent, 20e7: {INT, ffffffff}, {INT, 0}, the
+# shoen's range), (max - min) shift_right_32m 20, then 'call 1d92', a
+# step routine: 1d93's JMPF 8 (CNDF 3, pu.JMPF8_GOTO_CNDF) falls through
+# and 1d94 forms CNDF 1, rassy's 'cond carry' (the short condition
+# table's first, HELD-SOURCE name), whose value for this ALU operation
+# (ALF 1) no rule decides: the pinned stop.  pimm.py's i_calculate_
+# priority_from_minimum has no shoen (Y = X, OURS): the result would not
+# be comparable as it stands.
 PRIO_SOURCE = """\
 :- module pr1.
 :- public go/1.
@@ -760,6 +796,17 @@ def prio_cells(pc0):
 
 def twovar_cells(pc0):
     return list(TWOVAR_CELLS)
+
+
+# The compiled programs u3d_compile.py re-makes from their sources (each
+# on a fresh load of the prompt checkpoint): (module, source, cells, the
+# answer pimm.py gives go(A) at two placements, as pimm.term prints an
+# atom of the checkpoint's table on a fresh machine: #100e7 is 'ok' and
+# #11b3d 'x', the atoms get_atom carries in the cells).
+COMPILED = (('sl2', 'SLICE_SOURCE', 'SLICE_CELLS', '#100e7'),
+            ('rl', 'CRRP_SOURCE', 'CRRP_CELLS', '#100e7'),
+            ('mv', 'TWOVAR_SOURCE', 'TWOVAR_CELLS', '#11b3d'),
+            ('pr1', 'PRIO_SOURCE', 'PRIO_CELLS', '#11b3d'))
 
 
 def slice_cells(pc0):
@@ -1188,6 +1235,12 @@ def run(verbose=False, entry=None, prog=None):
         prev_after = after
         if base == 'slice':
             # the firmware's next KL1 instruction is at cell 33 (R04, 4d01)
+            if SLICE_R04 in p.mem:              # the pin's claim: nothing wrote cell 33
+                out['fail'] = (k + 1, None, SLICE_STOP, ['cell 33 written: %s'
+                                                         % fmt(p.mem[SLICE_R04])])
+                print('FAIL    cell 33 was written (%s): the pin does not hold'
+                      % fmt(p.mem[SLICE_R04]))
+                break
             out['stop'] = (k + 1, steps[k + 1][0] if k + 1 < len(steps) else None,
                            SLICE_STOP, '4c15 ends with R04 = 33: the next KL1 instruction'
                            ' is at cell 33, which no held source gives (pinned)')
@@ -1484,7 +1537,10 @@ REFILLS = []                  # (old R1f, new R1f) of each refill met (run() emp
 # 4cc2's JMPF 8, pu.RULES['jmpf8_flag'] 'goto').  What the held words do:
 # the running goal's record R10 becomes a ready goal (cell 0 {GOAL, n},
 # cells 1..n A0..An-1 by suspend's counted copy 1c2c, cell 12 {COD, the
-# label}, 13 W0e, 14 W1d (R13 as 4c12 loaded it), 15 the old R14), R14 :=
+# label}, 13 R0e (4c27, pu.RULES['wrbf_low_r']; checked equal to R12, cpr,
+# as enqueue_goal's cell 13), 14 W1d (R13 as 4c12 loaded it), 15 the old
+# R14; 1c31 reads W15, left by the last enqueue_goal's 4c01, and 1c32
+# overwrites the MAR1 it makes, unread), R14 :=
 # {HOOKo, that record} (the queue's head), R10 := a fresh record off R1b,
 # R16 + 1, R15 := 4d01's crr + 1; then R04 := {INT, 33} (4d00-4d01: MDR2
 # := 0x32, R04 := MDR2 + 1, beside the boot goal's {COD, 34}: 2106-2108 put
@@ -1524,6 +1580,9 @@ def cmp_execute_slice(p, m, rn, lines, after, an0, mem0, r0, fw2pg, pg2fw, n0):
     if p.mem.get(rec + 12) != want_code:
         fails.append('slice: cell 12 %s, pimm.py\'s next instruction %s'
                      % (fmt(p.mem.get(rec + 12)), fmt(want_code)))
+    if p.mem.get(rec + 13) != r0.get(0x12):
+        fails.append('slice: cell 13 %s, R12 (cpr) %s' % (fmt(p.mem.get(rec + 13)),
+                                                          fmt(r0.get(0x12))))
     if p.mem.get(rec + 14) != r0.get(0x13):
         fails.append('slice: cell 14 %s, R13 %s' % (fmt(p.mem.get(rec + 14)), fmt(r0.get(0x13))))
     if p.mem.get(rec + 15) != r0[0x14]:
@@ -2069,6 +2128,9 @@ INJECT = {
     'jmpf8_fall': lambda: PU.RULES.update(jmpf8_flag=True),
     'alt_first_skip': lambda: globals().update(ALT_FIRST_SKIP=1),
     'wide_em1_raise': lambda: PU.RULES.update(sc2_wide_em1=None),
+    'wrbf_low_w': lambda: PU.RULES.update(wrbf_low_r=False),
+    'jmpf8_cndf3_off': lambda: PU.JMPF8_GOTO_CNDF.discard(3),
+    'prio_form_off': lambda: SU.FORMS.pop('calculate_priority_from_minimum'),
     'wide_em1_16': lambda: PU.RULES.update(sc2_wide_em1=16),
     'susp_push_undeclared': lambda: globals().update(DECLARE_SUSP_PUSH=False),
     'jmpf3_s_tdar_off': lambda: PU.RULES.update(jmpf3_s_tdar=False),
