@@ -194,27 +194,27 @@
  "result": {
   "route": "doc",
   "answers": [],
-  "stop": "simpos: send simpos##standard_io_window:set_size/3 (not in the stand-in)",
+  "stop": "simpos: send mendel##mendel_pmacs:not_stood_in/2 (no primary in the held classes; stand-in ancestors simpos##with_superior_input_buffer simpos##pmacs_window)",
   "where": [
-   "mendel##med_window @124",
-   "mendel##med_window @126",
-   "mendel##med_window @91",
-   "mendel##med_window @29",
-   "mendel##method_editor @110",
-   "mendel##method_editor @22",
-   "mendel##mendel_main @11b",
-   "mendel##mendel_esp_device @f9",
+   "simpos##pmacs_window @497",
+   "mendel##mendel_window @910",
+   "mendel##mendel_window @5f",
+   "mendel##mendel_main @16e",
+   "mendel##mendel_esp_device @101",
    "mendel##mendel_esp_device @61",
    "mendel##mendel_esp_device @38",
    "mendel##mendel_esp_device:io/4 @4",
-   "pimfep##as_pimos_string_io_device @7f"
+   "pimfep##as_pimos_string_io_device @7f",
+   "pimfep##as_pimos_string_io_device @52",
+   "pimfep##as_pimos_device @145",
+   "pimfep##as_pimos_device @228"
   ],
   "window": "Shell>>  The value of task: package is mendel . \nShell>>  The value of task: directory is \">sys>user>MENDEL>KL1\" . \nShell>>  The value of task: home is \">sys>user>MENDEL>KL1\" . \nShell>> Load File : PSI::>sys>user>MENDEL>mendel.exe.1\n\"mendel:: graph\" Loaded\n\"mendel:: net\" Loaded\n\"mendel:: execute_main\" Loaded\n\"mendel:: tableau_main\" Loaded\n\"mendel:: esp_utility\" Loaded\n\"mendel:: mendel_package\" Loaded\n\"mendel:: mdl_compiler\" Loaded\n\"mendel:: decomp\" Loaded\n\"mendel:: mendel\" Loaded\n\"mendel:: fmnet\" Loaded\n\"mendel:: common\" Loaded\n\"mendel:: mlib\" Loaded\n\"mendel:: interface\" Loaded\n\"mendel:: scc\" Loaded\n\"mendel:: prim\" Loaded\n\"mendel:: fmparts\" Loaded\nLoad Succeeded\nShell>> \"mendel:: graph\" Updated\n\"mendel:: net\" Updated\n\"mendel:: execute_main\" Updated\n\"mendel:: tableau_main\" Updated\n\"mendel:: esp_utility\" Updated\n\"mendel:: mendel_package\" Updated\n\"mendel:: mdl_compiler\" Updated\n\"mendel:: decomp\" Updated\n\"mendel:: mendel\" Updated\n\"mendel:: scc\" Updated\n\"mendel:: prim\" Updated\nRelink Succeeded\nShell>> ",
   "instructions": 7075533,
   "exchanges": 21,
   "screen": {
-   "sha256": "7c4fb950382bc7a490a0f20cfc2cc275015fcb982a8431a91d6c368d985f0095",
-   "dots": 100517
+   "sha256": "faa2075799907713f2042a1a794ccd1d4e492dbea1b2919e89baac99bee0bf0c",
+   "dots": 145611
   }
  }
 }

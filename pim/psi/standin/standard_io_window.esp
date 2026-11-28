@@ -153,6 +153,8 @@ attribute permission := out;
 % PRINTED-INTERFACE TM-125 p16 (window.md §2.1); the body OURS, as pmacs_window's (off the screen,
 % kept; activate/1 draws it again): kill/1's without the kill
 % LABEL: RECONSTRUCTED-FROM-MANUAL (the selector, TM-125 p16; the body OURS)
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:deactivate(W) :- inner(W, I), !, W!active := 0, :deactivate(I);
 :deactivate(W) :- W!active := 0, erased(W), :remove_window(#coordinator, W);
 
 % MENDELS (2026-11-27): the window's name, distinct from its title
@@ -173,33 +175,50 @@ attribute name := 0;
 :name(W, N) :- W!name \== 0, N = W!name;
 
 % INTERPOLATED (body OURS) from initiate/1 @c2.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_font(W, F) :- inner(W, I), !, W!font := F, :set_font(I, F);
 :set_font(W, F) :- W!font := F;
 
 % INTERPOLATED (body OURS) from initiate/1 @c6.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_label_font(W, F) :- inner(W, I), !, W!label_font := F, :set_label_font(I, F);
 :set_label_font(W, F) :- W!label_font := F;
 
 % INTERPOLATED (body OURS) from initiate/1 @cc.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_title(W, T) :- inner(W, I), !, W!title := T, :set_title(I, T);
 :set_title(W, T) :- W!title := T, drawn_title(W);
 
 % INTERPOLATED (body OURS) from initiate/1 @d7.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:activate(W) :- inner(W, I), !, W!active := 1, :activate(I);
 :activate(W) :- W!active := 1, open(W);
 
 % INTERPOLATED (body OURS) from read/4 @e8: clear empties the transcript.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:clear(W) :- inner(W, I), !, W!transcript := [], :clear(I);
 :clear(W) :- W!transcript := [], drawn(W, clear);
 
 % INTERPOLATED (body OURS) from read/4 @eb: show marks the window shown;
 % step 3m: it selects the window (window.md §4.1, TM-225 p10-11: showing
 % a window "changes the selected window"; that show/1 always does is
 % OURS).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:show(W) :- inner(W, I), !, W!shown := 1, W!active := 1, :show(I);
 :show(W) :-
         W!shown := 1, open(W),
         :select_window(#coordinator, W);
 
 % :putl(W, Line) -- INTERPOLATED (body OURS) from read/4 @ef: the line
 % joins the transcript (and, step 3m, the history).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:putl(W, Line) :- inner(W, I), !,
+        W!transcript := [Line | W!transcript], W!history := [Line | W!history],
+        :put_line(I, Line);
 :putl(W, Line) :-
         W!transcript := [Line | W!transcript],
         W!history := [Line | W!history],
+        W!written := [{line, Line} | W!written],
         drawn_line(W, Line);
 
 % MENDELS (2026-11-27): write_line/2 and write_lines/2, INTERPOLATED (the
@@ -209,30 +228,176 @@ attribute name := 0;
 % in it breaks the line, window_pane.esp put_string/2), kept with the
 % transcript's lines (OURS: a line written in parts is kept in parts).
 % LABEL: RECONSTRUCTED-FROM-MANUAL (TM-112 p16; the body OURS)
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:write_line(W, S) :- inner(W, I), !,
+        W!transcript := [S | W!transcript], W!history := [S | W!history],
+        :write_line(I, S);
 :write_line(W, S) :-
         W!transcript := [S | W!transcript],
         W!history := [S | W!history],
+        W!written := [{string, S} | W!written],
         drawn_string(W, S);
 % INTERPOLATED (selector PRINTED-INTERFACE TM-112 p16; body as write_line/2)
 % LABEL: RECONSTRUCTED-FROM-MANUAL (TM-112 p16, TM-134 p70; as write_line/2)
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:write_lines(W, S) :- inner(W, I), !,
+        W!transcript := [S | W!transcript], W!history := [S | W!history],
+        :write_lines(I, S);
 :write_lines(W, S) :- :write_line(W, S);
 
 % MENDELS (2026-11-27): erase_cursor/1, INTERPOLATED (selector USAGE
 % graph_sel.esp:34, window.md §2.3; body OURS): kept; the block cursor is
 % drawn only while the window is selected (window_pane.esp).
 % LABEL: INFERENCE (the name; kept, OURS)
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:erase_cursor(W) :- inner(W, I), !, W!text_cursor := off, :erase_cursor(I);
 :erase_cursor(W) :- W!text_cursor := off;
 
 % MENDELS, OURS: erase_cursor/1's flag.
 attribute text_cursor := on;
 
-% MENDELS (2026-11-27): set_superior/2, INTERPOLATED (selector and
-% arguments PRINTED-INTERFACE TM-125 p15 "set the superior window"; USAGE
-% MENDELS graph_sel.esp:152; body OURS): kept, not acted on: this stand-in
-% draws every standard_io_window as a top window (its superior(..) create
-% option is not acted on either).
-% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p15; kept only, OURS)
-:set_superior(W, S) :- W!superior := S;
+% THE INFERIOR FORM (2026-11-28, MENDELS's method editor; the mechanism
+% OURS, standin/inferior_io_form.esp's head).  TM-125 PDF p15 (5.3, 1),
+% printed page 14) prints set_size/3 "set the size of window",
+% set_position/3 "set the position to the superior window" and
+% set_superior/2 "set the superior window"; PDF p16 (5.4) activate/1:
+% "scheduled to be displayed on the superior window".  MENDELS places two
+% standard_io_windows made with no superior inside its base with
+% set_size/3, set_superior/2, set_position/3 (med_win.esp:135-138), and
+% graphic_select puts one, written to before, inside a
+% temporary_superior_window (graph_sel.esp:28-34, 152).  This stand-in's
+% window is a top window (a pane on the coordinator's stack), so a window
+% given a superior makes its inferior form, an inferior_io_form in that
+% superior, and from then on hands it its geometry (set_size,
+% set_position, get_size, get_position, get_inside_size), life cycle
+% (activate, show, deactivate, hide, kill), text (clear, clear_line,
+% put_line, putl, write_line, write_lines; what was written before is
+% written to it again, in order), fonts, title, cursor, permission and
+% input (read/2, clear_buffer/1).  Anything else that would draw it as a
+% top window, or read its own stream, is refused loudly (open/1,
+% pane_of/2, next_code/2: the no-method sends not_stood_in/2 and
+% graphics_refused/2).
+%
+% :set_superior(W, S) -- INTERPOLATED (selector and arguments
+% PRINTED-INTERFACE TM-125 PDF p15; USAGE MENDELS med_win.esp:137,
+% graph_sel.esp:152; body OURS): a window not shown yet becomes an
+% inferior of S (S 0, the screen: it stays a top window); one with an
+% inferior form moves it to S; a top window already drawn is refused (not
+% stood in).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p15-16; the form OURS)
+:set_superior(W, S) :- inner(W, I), !, W!superior := S, :set_superior(I, S);
+:set_superior(W, 0) :- !, W!superior := 0;
+:set_superior(W, S) :- W!pane == 0, W!killed == 0, !,
+        W!superior := S, inferior_made(W, S);
+:set_superior(W, _) :- :not_stood_in(W, set_superior_of_a_drawn_window);
+
+% :set_size(W, Width, Height) -- INTERPOLATED (selector and arguments
+% PRINTED-INTERFACE TM-125 PDF p15; the units dots, TM-125 Table 1's
+% default (window.md §2.1); USAGE MENDELS med_win.esp:136, before
+% set_superior/2; body OURS): the inferior form's size; a top window not
+% drawn yet keeps it as the create option size(Width, Height) in dots
+% (cell_size/3 fits the cells); a drawn top window is refused (not stood
+% in).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p15; the body OURS)
+:set_size(W, Wd, Ht) :- inner(W, I), !, :set_size(I, Wd, Ht);
+:set_size(W, Wd, Ht) :- W!pane == 0, !, options(W, Os), W!options := [{size, Wd, Ht} | Os];
+:set_size(W, _, _) :- :not_stood_in(W, set_size_of_a_drawn_window);
+
+% :set_position(W, X, Y) -- INTERPOLATED (selector and arguments
+% PRINTED-INTERFACE TM-125 PDF p15 "the position to the superior window";
+% USAGE MENDELS med_win.esp:138; body OURS): as set_size/3, the position.
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p15; the body OURS)
+:set_position(W, X, Y) :- inner(W, I), !, :set_position(I, X, Y);
+:set_position(W, X, Y) :- W!pane == 0, !, options(W, Os), W!options := [{position, X, Y} | Os];
+:set_position(W, _, _) :- :not_stood_in(W, set_position_of_a_drawn_window);
+
+% INTERPOLATED (selectors PRINTED-INTERFACE TM-115 p64 get_size/3,
+% get_position/3; get_inside_size/3 USAGE window.md §2.1, MENDELS
+% med_show.esp:111; bodies OURS): the inferior form's; a top window's is
+% not stood in (refused loudly).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-115 p64; handed to the form, OURS)
+:get_size(W, Wd, Ht) :- inner(W, I), !, :get_size(I, Wd, Ht);
+:get_size(W, _, _) :- :not_stood_in(W, get_size_of_a_top_window);
+% INTERPOLATED (see the block above: the selector held, the body OURS)
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-115 p64; handed to the form, OURS)
+:get_position(W, X, Y) :- inner(W, I), !, :get_position(I, X, Y);
+:get_position(W, _, _) :- :not_stood_in(W, get_position_of_a_top_window);
+% INTERPOLATED (see the block above: the selector held, the body OURS)
+% LABEL: INFERENCE (USAGE; handed to the form, OURS)
+:get_inside_size(W, Wd, Ht) :- inner(W, I), !, :get_inside_size(I, Wd, Ht);
+% a top window (MENDELS title.esp:89, the title screen): its pane's inside
+% in dots once drawn, else the inside its size option gives (OURS)
+:get_inside_size(W, Wd, Ht) :- P = W!pane, P \== 0, P!surface == 0, !,
+        Wd = P!iw, Ht = P!ih;
+:get_inside_size(W, Wd, Ht) :- inside_size(W, Wd, Ht);
+
+% MENDELS's title screen (2026-11-28; title.esp:73-95, run by the
+% mendel_title process while the method editor's process waits):
+% set_inside_units/3, background/2, draw_characters/3, putl/1.
+%
+% :set_inside_units(W, UX, UY) -- INTERPOLATED (selector and arguments
+% USAGE window.md §2.1; MENDELS title.esp:80 `(Screen, 1, 1)`; body OURS):
+% this stand-in's drawing coordinates are dots, so 1 x 1 is kept; other
+% units are not stood in (refused loudly).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 Table 1, the inside units 1 dot;
+% kept, OURS)
+:set_inside_units(W, UX, UY) :- inner(W, I), !, :set_inside_units(I, UX, UY);
+:set_inside_units(W, 1, 1) :- !, W!units := [1, 1];
+:set_inside_units(W, _, _) :- :not_stood_in(W, inside_units_other_than_dots);
+
+% :background(W, black|white) -- INTERPOLATED (selector and arguments
+% USAGE window.md §2.2, paragraph p_wshell.esp:74-78, MENDELS
+% title.esp:49, 53; "with black, text is drawn white on black",
+% SCREENSHOT esp.wmv@118, window.md §2.2; body OURS): the inside's dots
+% inverted when the colour changes (window_pane.esp invert/1), the text
+% drawn white on black while black.
+% LABEL: INFERENCE (from the screenshot; inverting what is there OURS)
+:background(W, _) :- inner(W, _), !, :not_stood_in(W, background_of_an_inferior);
+:background(W, C) :- W!background == C, !;
+:background(W, C) :- colour(C), !, W!background := C, pane_of(W, P), :invert(P);
+:background(W, C) :- :graphics_refused(W, C);
+
+% :draw_characters(W, [{Code, X, Y, Width, Height}, ...], Op) --
+% INTERPOLATED (selector USAGE MENDELS title.esp:98; the list's form and
+% draw_characters/4 `(W, List, Op, Font)` PRINTED-INTERFACE TM-785 PDF
+% p40 (data/2's test vector); /3 taken as /4 in the window's font, OURS;
+% body OURS): each character drawn into its box (window_pane.esp
+% characters_in/4: whole-number magnification, Op set only).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-785 PDF p40, the arguments; the
+% magnification OURS)
+:draw_characters(W, Cs, Op) :- pane_of(W, P), :characters_in(P, Cs, Op, W!font);
+
+% :putl(W) -- INTERPOLATED (selector USAGE MENDELS title.esp:54, window.md
+% §2.14 `putl/1` 20 uses; body OURS): a newline, as putl/2 of "".
+% LABEL: INFERENCE (putl/2 without the string)
+:putl(W) :- :putl(W, "");
+
+% OURS: the inside units set ([] none) and the background colour.
+attribute units := [], background := white;
+
+% INTERPOLATED (selectors and arguments PRINTED-INTERFACE TM-125 PDF p16
+% hide/1 and clear_line/1; put_line/2 USAGE MENDELS med_show.esp:118, see
+% inferior_io_form.esp; bodies OURS): the inferior form's; a top
+% window's is not stood in (refused loudly).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p16; handed to the form, OURS)
+:hide(W) :- inner(W, I), !, W!active := 0, :hide(I);
+:hide(W) :- :not_stood_in(W, hide_of_a_top_window);
+% INTERPOLATED (see the block above: the selector held, the body OURS)
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p16; handed to the form, OURS)
+:clear_line(W) :- inner(W, I), !, :clear_line(I);
+:clear_line(W) :- :not_stood_in(W, clear_line_of_a_top_window);
+% INTERPOLATED (see the block above: the selector held, the body OURS)
+% LABEL: INFERENCE (USAGE; handed to the form, OURS)
+:put_line(W, S) :- inner(W, I), !,
+        W!transcript := [S | W!transcript], W!history := [S | W!history],
+        :put_line(I, S);
+:put_line(W, _) :- :not_stood_in(W, put_line_of_a_top_window);
+
+% OURS: what was written, newest first ({line, S} putl/2, {string, S}
+% write_line/2), written again to an inferior form when it is made.
+attribute written := [];
+% OURS: the inferior form (0: none, a top window).
+attribute inner := 0;
 
 % MENDELS, OURS: the superior set (0: none).
 attribute superior := 0;
@@ -240,6 +405,8 @@ attribute superior := 0;
 % :read(W, Code) -- step 3m, INTERPOLATED (body OURS) from read/4 @f3
 % and read_password/3: the next character code (see above); with none,
 % the process waits.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:read(W, Code) :- inner(W, I), !, :read(I, Code);
 :read(W, Code) :- next_code(W, Code);
 
 % :getl(W, Line) -- step 3m, INTERPOLATED (body OURS) from read/4 @100,
@@ -267,9 +434,13 @@ attribute superior := 0;
 
 % step 3m, INTERPOLATED (body OURS) from wait/1 @16a: discard the pending
 % input (window.md §2.7 "discard pending input", USAGE).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:clear_buffer(W) :- inner(W, I), !, W!pending := [], :clear_buffer(I);
 :clear_buffer(W) :- W!pending := [];
 
 % step 3m, INTERPOLATED (body OURS) from exit_program/1 @28e.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:kill(W) :- inner(W, I), !, W!killed := 1, W!active := 0, :kill(I);
 :kill(W) :-
         W!killed := 1, W!active := 0, erased(W),
         :remove_window(#coordinator, W);
@@ -323,6 +494,8 @@ attribute superior := 0;
 % DISPB3.ESP:377) and the four permissions of TM-125 p6 and the ATTRIBUTE
 % dialogue (out, wait, show, notify; TM-125 p7 Fig. 4): fails on any
 % other.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_permission(W, P) :- inner(W, I), !, W!permission := P, :set_permission(I, P);
 :set_permission(W, P) :- permission_name(P), W!permission := P;
 
 % :has_been_selected(W) -- window M7, INTERPOLATED (body OURS): the
@@ -445,6 +618,8 @@ attribute superior := 0;
 :restore_image(W, S, X, Y, Wd, Ht) :- pane_of(W, P), :restore_image_in(P, S, X, Y, Wd, Ht);
 % INTERPOLATED (selector: window.md section 2.2, cited above; body OURS):
 % get_label_height.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:get_label_height(W, H) :- inner(W, I), !, :get_label_height(I, H);
 :get_label_height(W, H) :- pane_of(W, P), value(P!ch + 2, H);
 % Window M8's stops, step 2 (2026-11-26), READING DOTS BACK on the device's
 % read (the 2026-11-26 extension, OURS, owner-approved; window_pane.esp
@@ -656,6 +831,8 @@ local
 
 % the window's own queue first, then the window's own input stream (M7:
 % the keys the coordinator gave it while it was selected, typed/2)
+% the inferior form's input is its own (read/2 is handed to it)
+next_code(W, _) :- W!inner \== 0, !, :not_stood_in(W, getl_of_an_inferior);
 next_code(W, Code) :- pop(W!pending, Code, Rest), !, W!pending := Rest;
 next_code(W, Code) :-
         :get(W!input, Code),
@@ -671,6 +848,8 @@ echo(W, Code) :- W!echo == on, !, W!history := [Code | W!history],
 echo(_, _);
 
 % window M3/M5 (OURS, see the head comment): the pane, made once
+% an inferior form is never drawn as a top window (THE INFERIOR FORM)
+open(W) :- W!inner \== 0, !, :not_stood_in(W, open_of_an_inferior);
 open(W) :- P = W!pane, P \== 0, P!surface == 0, !;
 open(W) :-
         cell_size(W, Cols, Rows),
@@ -749,6 +928,7 @@ cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
 value(V, V);
 
 % window M8 (OURS, see "Window M8" above)
+pane_of(W, _) :- W!inner \== 0, !, :graphics_refused(W, inferior);
 pane_of(W, P) :- P = W!pane, P \== 0, !;
 % window M8's stops, step 3 (OURS): a window drawn on before it is shown
 % draws into a surface pane (window_pane.esp create_surface/5), its inside
@@ -963,5 +1143,54 @@ count([_ | R], N0, N) :- count(R, N0 + 1, N);
 
 fill([], _, _);
 fill([C | R], S, I) :- set_string_element(S, I, C), fill(R, S, I + 1);
+
+% THE INFERIOR FORM (OURS, see above)
+inner(W, I) :- I = W!inner, I \== 0;
+
+% the create options (none: [])
+options(W, []) :- unbound(W!options), !;
+options(W, Os) :- Os = W!options;
+
+% the form made in S: the kept create options, the size and position
+% (set_size/3, set_position/3 or the options, in dots), the fonts, the
+% cursor; what was written is written to it again, oldest first
+inferior_made(W, S) :-
+        options(W, Os),
+        kept(Os, Ks),
+        fonts(W, Ks, Fs),
+        :create(#inferior_io_form, [{superior, S} | Fs], I),
+        I!outer := W,
+        W!inner := I,
+        cursor(W, I),
+        reverse(W!written, [], Ws),
+        rewritten(I, Ws);
+
+kept([], []) :- !;
+kept([{K, V} | Os], [{K, V} | Ks]) :- kept_key(K), !, kept(Os, Ks);
+kept([{size, Wd, Ht} | Os], [{size, Wd, Ht} | Ks]) :- integer(Wd), integer(Ht), !, kept(Os, Ks);
+kept([{position, X, Y} | Os], [{position, X, Y} | Ks]) :- integer(X), integer(Y), !, kept(Os, Ks);
+kept([_ | Os], Ks) :- kept(Os, Ks);
+
+colour(black);
+colour(white);
+
+kept_key(label_flag);
+kept_key(border_flag);
+kept_key(margin_flag);
+kept_key(permission);
+kept_key(title);
+kept_key(nature);
+
+fonts(W, Ks, [{font, F} | Fs]) :- F = W!font, F \== 0, !, label_fonts(W, Ks, Fs);
+fonts(W, Ks, Fs) :- label_fonts(W, Ks, Fs);
+label_fonts(W, Ks, [{label_font, F} | Ks]) :- F = W!label_font, F \== 0, !;
+label_fonts(_, Ks, Ks);
+
+cursor(W, I) :- W!text_cursor == off, !, :erase_cursor(I);
+cursor(_, _);
+
+rewritten(_, []);
+rewritten(I, [{line, S} | Ws]) :- :put_line(I, S), rewritten(I, Ws);
+rewritten(I, [{string, S} | Ws]) :- :write_line(I, S), rewritten(I, Ws);
 
 end.

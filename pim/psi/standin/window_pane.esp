@@ -155,7 +155,9 @@ class window_pane has
         Pane!cx := Pane!left, Pane!cy := Pane!top,
         Pane!title := Title,
         :cursor_aside(#coordinator),
-        :save(#save_memory, Px, Py, W, H, Area),
+        % MENDELS's resume/0 (2026-11-28, OURS): only the part that holds
+        % other windows (save_memory.esp save_under/6)
+        :save_under(#save_memory, Px, Py, W, H, Area),
         Pane!under := Area,
         framed(Pane, B, L, Title);
 
@@ -204,6 +206,37 @@ attribute under := 0, image := 0;
 % (save_memory.esp [Id, Base, Size]; 0: the pane is on the frame) and its
 % words a row.
 attribute surface := 0, pitch := 0;
+% MENDELS's title (2026-11-28), OURS: the inside shown inverted (yes after
+% invert/1, the window's background black): text is drawn white on black.
+attribute inverted := no;
+
+% :invert(Pane) -- MENDELS's title (2026-11-28; selector and body OURS):
+% the inside's dots inverted and the text drawn inverted from now on (a
+% second invert/1 turns it back).  standard_io_window.esp background/2.
+% INTERPOLATED (selector and body OURS): invert; basis above.
+:invert(Pane) :-
+        :uncover(#coordinator, Pane, Lifted),
+        cursor_off(Pane),
+        :fill(#bitmap_display, Pane!left, Pane!top, Pane!iw, Pane!ih, exclusive_or),
+        flipped(Pane!inverted, F), Pane!inverted := F,
+        cursor_on(Pane),
+        :unpeel(#coordinator, Lifted);
+
+% :characters_in(Pane, Chars, Op, Font) -- MENDELS's title (2026-11-28;
+% selector OURS; the list's form PRINTED-INTERFACE TM-785 PDF p40,
+% draw_characters `[{Code, X, Y, W, H}, ...]`): each code's glyph of Font
+% (0: the pane's) made into a W x H box at (X, Y), the glyph's dots
+% repeated floor(W / cell width) by floor(H / cell height) times (nearest
+% dot, magnify_in/10, OURS), drawn opaque at the box's top-left; on an
+% inverted pane the box is inverted after.  Op `set` only (MENDELS
+% title.esp:98); another op, or a box that leaves the inside, refuses
+% loudly.
+% INTERPOLATED (selector and body OURS): characters_in; basis above.
+:characters_in(_, [], _, _) :- !;
+:characters_in(Pane, [{C, X, Y, W, H} | Cs], set, Font) :- !,
+        character(Pane, C, X, Y, W, H, Font),
+        :characters_in(Pane, Cs, set, Font);
+:characters_in(Pane, _, Op, _) :- :graphics_refused(Pane, Op);
 
 % :aim(Pane) -- window M8's stops, step 3 (selector and body OURS): the
 % device's surfaces set to the pane's: its area, or the frame.
@@ -368,7 +401,8 @@ attribute surface := 0, pitch := 0;
 :clear(Pane) :-
         :uncover(#coordinator, Pane, Lifted),
         cursor_off(Pane),
-        :fill(#bitmap_display, Pane!left, Pane!top, Pane!iw, Pane!ih, reset),
+        blank_op(Pane, Op),
+        :fill(#bitmap_display, Pane!left, Pane!top, Pane!iw, Pane!ih, Op),
         Pane!col := 0, Pane!row := 0,
         Pane!cx := Pane!left, Pane!cy := Pane!top,
         cursor_on(Pane),
@@ -1288,7 +1322,8 @@ put_char(Pane, C) :-
         newline(Pane),
         put_char(Pane, C);
 put_char(Pane, C) :-
-        :glyph(#bitmap_display, Pane!font, C, Pane!cx, Pane!cy, copy),
+        text_op(Pane, Op),
+        :glyph(#bitmap_display, Pane!font, C, Pane!cx, Pane!cy, Op),
         Pane!col := Pane!col + 1, Pane!cx := Pane!cx + Pane!cw;
 
 % rub_out/1's cell: the one before the cursor
@@ -1308,8 +1343,34 @@ newline(Pane) :-
 newline(Pane) :-
         :copy(#bitmap_display, Pane!left, Pane!top + Pane!ch,
               Pane!iw, Pane!ih - Pane!ch, Pane!left, Pane!top, copy),
+        blank_op(Pane, Op),
         :fill(#bitmap_display, Pane!left, Pane!top + Pane!ih - Pane!ch,
-              Pane!iw, Pane!ch, reset);
+              Pane!iw, Pane!ch, Op);
+
+% MENDELS's title (OURS): text and blank dots on an inverted pane
+text_op(Pane, reverse) :- Pane!inverted == yes, !;
+text_op(_, copy);
+blank_op(Pane, set) :- Pane!inverted == yes, !;
+blank_op(_, reset);
+flipped(yes, no) :- !;
+flipped(_, yes);
+
+character(Pane, C, X, Y, W, H, Font) :-
+        font_of(Pane, Font, _, Cw, Ch),
+        value(W / Cw, A), value(H / Ch, E), A >= 1, E >= 1,
+        :create_surface(#window_pane, Cw, Ch, Font, Q),
+        new_string(S, 1, 16), set_string_element(S, 0, C),
+        :string_in(Q, 0, 0, S, 0, copy),
+        :magnify_in(Pane, Q, 0, 0, Cw, Ch, X, Y, A, E),
+        :free(Q),
+        inverted_box(Pane, X, Y, A * Cw, E * Ch), !;
+character(Pane, _, _, _, _, _, _) :- :graphics_refused(Pane, characters);
+
+inverted_box(Pane, X, Y, W, H) :- Pane!inverted == yes, !,
+        :uncover(#coordinator, Pane, Lifted),
+        :fill(#bitmap_display, Pane!left + X, Pane!top + Y, W, H, exclusive_or),
+        :unpeel(#coordinator, Lifted);
+inverted_box(_, _, _, _, _);
 
 % the block cursor: drawn by exclusive_or, so drawing it twice erases it
 cursor_off(Pane) :- Pane!cursor == on, !, block(Pane), Pane!cursor := off;

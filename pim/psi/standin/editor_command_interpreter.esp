@@ -98,6 +98,15 @@ attribute buffer := 0, prefix := none, done := 0;
 % INTERPOLATED (selector and body OURS): see the head comment.
 :set_buffer(I, B) :- I!buffer := B;
 
+% :set_editor(I, Editor) -- MENDELS's method editor (2026-11-28),
+% INTERPOLATED (selector and arguments USAGE disc system_data.esp:117,
+% utter Tour/WIN.esp:98, kappa2 pb/inwin.esp:475 `:set_editor(Int,
+% Editor)` after `:create(#X_editor, Window, Int, Editor)`; the slot
+% `editor` HELD, cal-esp deb2.12/pmod.esp:35 `Interpreter!editor :=
+% Editor`; body OURS): the commands are Editor's from the next key.
+% LABEL: INFERENCE (from the held senders; the slot HELD)
+:set_editor(I, Editor) :- I!editor := Editor;
+
 % :next_input(I, X) -- pmacs.md §4.5 (2026-11-27), OURS selector: the
 % next input, waited for (the window's read_with_prompt/3 reads its line
 % this way, inside the command that sent it); a window's datum is X's
@@ -125,6 +134,11 @@ run(I, {data, D}) :- !, datum(I, D);
 run(I, X) :- input(I, X);
 
 datum(I, exit) :- !, input(I, exit);
+% MENDELS's method editor (2026-11-28): any other atom given by
+% input_data/2 is looked up as a key is (MENDELS med_pmacs.esp:345 gives
+% '$med_exit', which its editor's held command/3 binds to exit,
+% med_editor.esp:50).  LABEL: INFERENCE (from that held pair; OURS)
+datum(I, D) :- atom(D), !, input(I, D);
 datum(I, Request) :- request(I, Request, Request!selector);
 
 % window M10: the binding tables (see the head comment)

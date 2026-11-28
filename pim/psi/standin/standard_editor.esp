@@ -101,6 +101,20 @@ attribute yanks := [];
 % INTERPOLATED (selector and body OURS): see THE YANK BUFFER above.
 :top_yank(Class, S) :- [S | _] = Class!yanks;
 
+% :create(#Class, Window, Interpreter, ^Editor) -- MENDELS's method editor
+% (2026-11-28), INTERPOLATED (selector and arguments USAGE: MENDELS
+% med_pmacs.esp:132 `:create(#med_pmacs_editor, Win, InterP, Editor)`,
+% cal-esp deb2.12/pmod.esp:34, disc system_data.esp:116, utter
+% Tour/WIN.esp:97, each an editor class of the program's own, heir of
+% standard_editor, for a pmacs_window and its interpreter; window.md
+% §2.14 counts 18 sends of c:create/4 to standard_editor; body OURS): a
+% new editor of Class for Window.  The interpreter is not kept (the held
+% senders give the editor to it by set_editor/2 or its slot).
+% LABEL: INFERENCE (from the held senders; the body OURS)
+:create(Class, Window, _, Editor) :-
+        :new(Class, Editor),
+        Editor!window := Window;
+
 instance
 
 % INTERPOLATED: the representation (OURS; see above).
@@ -112,6 +126,17 @@ attribute window := 0;
 % (`:get_window(Editor,Window)`, then window methods on Window); the held
 % compiled sends in pimfep##pimos_window_editor (21 methods, 2026-11-24).
 :get_window(Editor, Window) :- Window = Editor!window;
+
+% :clear_buffer(Editor, Buffer, From) -- MENDELS's method editor
+% (2026-11-28), INTERPOLATED (selector and arguments USAGE MENDELS
+% med_pmacs.esp:276 reset/1, kappa2 user_if/pb/inwin.esp:272 and
+% exwin.esp:68, always `(Editor, Buffer, 0)`; body OURS): Buffer's text
+% from position From to its end deleted (the third argument read as a
+% position: INFERENCE, every held sender passes 0, so the whole text).
+% LABEL: INFERENCE (from the held senders; the body OURS)
+:clear_buffer(Editor, B, From) :-
+        :end_of_buffer(B, E),
+        :delete(B, From, E);
 
 % :carriage_return(Editor) -- window M4 (2026-11-25), INTERPOLATED (body
 % INFERENCE) from: pimfep##pimos_window_editor's held before- and

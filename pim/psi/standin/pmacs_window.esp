@@ -118,6 +118,12 @@ attribute views := 1, other := 0, active := upper, click_x := 0, click_y := 0;
 % sets it to 1 after creating the window; meaning UNKNOWN.
 attribute activity := 0;
 
+% MENDELS's method editor (2026-11-28), OURS: the superior(S) create
+% option kept (0: the screen).  A Pmacs window inside a superior is not
+% stood in: open/1 refuses to draw it (as a top window it would be a
+% false screen).
+attribute superior := 0;
+
 % Window M7, the output permission (as standard_io_window.esp's; `out`
 % unless set_permission/2 sets another: OURS).
 attribute permission := out;
@@ -137,6 +143,41 @@ attribute permission := out;
 
 % Window M4, INTERPOLATED (body OURS) from the USAGE in the head comment.
 :get_interpreter(Window, I) :- I = Window!interpreter;
+
+% :set_editor(Window, Editor) -- MENDELS's method editor (2026-11-28),
+% INTERPOLATED (selector and arguments USAGE MENDELS med_pmacs.esp:133
+% `:set_editor(Win, Editor)` after `:create(#med_pmacs_editor, Win,
+% InterP, Editor)`; cal-esp deb2.12/pmod.esp:108 hands its set_editor/2 to
+% its pmacs_window; body OURS): Editor becomes the window's editor and its
+% interpreter's (the held senders also set the interpreter's: disc
+% system_data.esp:117 and utter Tour/WIN.esp:98 `:set_editor(Int,
+% Editor)`, cal-esp pmod.esp:35 `Interpreter!editor := Editor`), so the
+% keys typed in the window run Editor's command table.
+% LABEL: INFERENCE (from the held senders; the body OURS)
+:set_editor(Window, Editor) :-
+        Window!editor := Editor,
+        :set_editor(Window!interpreter, Editor);
+
+% :assign_window(Window) and :resign_window(Window, Process) -- MENDELS's
+% method editor (2026-11-28), INTERPOLATED (selectors USAGE MENDELS
+% med_ppmacs.esp:43 `:assign_window(Win)` in the editor's own process,
+% med_pmacs.esp:167 `:resign_window(Win, Win!input_process)`; the meaning
+% with_shared_window.esp's: the window taken over by a process; bodies
+% OURS): these stand-ins keep no window per process, so nothing changes.
+% LABEL: INFERENCE (as with_shared_window.esp's assign_window/1; no-op OURS)
+:assign_window(Window);
+% INTERPOLATED (selector USAGE MENDELS med_pmacs.esp:167; body OURS)
+% LABEL: INFERENCE (the converse of assign_window/1; no-op OURS)
+:resign_window(Window, _);
+
+% :show_buffer(Window) -- MENDELS's method editor (2026-11-28),
+% INTERPOLATED (selector USAGE MENDELS med_pmacs.esp:266, 277; kappa2
+% pb/msm.esp:72, stwin.esp:47; cal-esp deb2.12/deb_cont.esp:103, after
+% output into the window's buffer; window.md §2.11 lists show_buffer/1;
+% body OURS): the buffer shown again where the window is drawn (as
+% refresh/1).
+% LABEL: INFERENCE (from the held senders; as refresh/1, OURS)
+:show_buffer(Window) :- :refresh(Window);
 
 % Window M4, INTERPOLATED (body OURS) from the USAGE in the head comment.
 % Window M10: the datum joins the input as the heap vector {data, Data}
@@ -507,6 +548,7 @@ option(Window, {size, {ch, C}, {ch, R}}) :- !,
 option(Window, {size, W, H}) :- integer(W), integer(H), !,
         Window!width := W, Window!height := H, text_fits(Window, W, H);
 option(Window, {status_window, S}) :- !, Window!status := S;
+option(Window, {superior, S}) :- !, Window!superior := S;
 option(_, _);
 
 echoed(Window) :- D = Window!display, D \== 0, !, :message(D, Window!echo);
@@ -545,6 +587,8 @@ permission_name(notify);
 % new/2 alone, as kl0's census makes them) is not drawn, and activate/1,
 % show/1 and flash/1 do nothing on it, as before M4 (OURS).
 open(Window) :- Window!pane \== 0, !;
+open(Window) :- Window!superior \== 0, !,
+        :not_stood_in(Window, pmacs_window_inside_a_superior);
 open(Window) :- Window!interpreter == 0, !;
 open(Window) :-
         pane(Window),
