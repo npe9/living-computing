@@ -724,7 +724,8 @@ From the sweep, not from the documentation alone:
      The title screen then shows `loading... end` and `please return`
      and waits in its `:read` (title.esp:57). **Stop:** every process
      waits (`would suspend: no process is ready`): the title read, the
-     Top Menu's read and the FEP; screen
+     Top Menu's read and the FEP, and PIMOS has aborted the MENDELS job
+     (below); screen
      `docs/simpos/screens/mendels_title_raised.png` (live = replay). The
      RETURN is not typed: no held document asks for it (readme.e/.j
      prescribe only the user path; manual.e/.j and install.e/.j say
@@ -734,13 +735,22 @@ From the sweep, not from the documentation alone:
      set_MENDEL_directory and directory_name("temp") (answered
      `>sys>user>MENDELuser>TEMP>`) for mdl_comp.kl1 wt_message/1, which
      writes load:do's messages to TEMP>compiler.msg after the load, and
-     the loader's stream closed; then PIMOS is idle and nothing has been
-     written (OBSERVED: the runner's written files are empty; which file
-     request of del_file/1 or the open is left unanswered is not traced).
-     So the ESP half's `compiler.msg not exist` came before the KL1 half
-     even began to write it, a race that exists in the held code too
-     (end_pipe/3 answers on load:do's Status, not on wt_message/1;
-     INFERENCE), and PIMOS's files are fep.py's, not the PSI's, here.
+     the loader's stream closed; then del_file/3 asks PIMOS's file
+     service for the directory `>sys>user>MENDELuser>TEMP`, the runner's
+     FEP (fep.py's home files, not the PSI's file system) answers
+     `abnormal`, and PIMOS aborts the job (OBSERVED on its console:
+     `Unification failure ... normal([delete("compiler.msg",D),...]) /
+     abnormal`, `Job 4 was aborted .`). So the KL1 half is dead at the
+     stop; on the real system PIM's FEP was the PSI, which has that
+     directory (install.e Step 1): our harness's gap, next on the PIMOS
+     side. The ESP half read compiler.msg before the KL1 half began to
+     write it: a race in the held code (end_pipe/3, main.kl1:162-164,
+     waits only on load:do's Result), and here also the bridge's order
+     (PIMOS runs only when the PSI asks for an exchange, OURS), so the
+     earlier `compiler.msg not exist` line may not be the real system's.
+     Past the read (read, not run): title.esp:58's `:hide` of a top
+     standard_io_window is refused by the stand-in
+     (standard_io_window.esp:384).
      kl0's order matters for this stop: the title process runs only when
      the main process waits (OURS scheduling); had it run at `:exit`,
      before resume/0, its screen would have been uncovered, no raise at

@@ -1483,8 +1483,8 @@ coordinator raises a covered `show` window before the write (TM-225 p11
 ③; coordinator.esp uncover/3's held_back/3, then select_window, raise,
 lift_all), lifting the base whole: save/7 of slot
 2, 1,280 x 944 at (0,0), at base 9,128 (two areas of 4,564 words
-already in use), refused as winfb BADSAVE. This is MENDELS's current
-stop. Still undecided, two ways on: (a) save memory on the board's SDRAM
+already in use), refused as winfb BADSAVE. This was MENDELS's stop
+until the title raise step (decided below). Two ways on were open: (a) save memory on the board's SDRAM
 with the frozen-format change (above); (b) a lift that saves only the
 hidden part of the covered window, the overlap with the window raised
 (TM-225 p10 "all or its hidden part"), which would keep this case at the
@@ -1496,9 +1496,8 @@ raise step; `psi/README.md`).** A restack for a pane P (raise, HIDE,
 kill, output to a covered window) changes dots only inside P's
 rectangle, so a frame (a pane whose under is save memory's cut form,
 create_frame/8) is lifted only over the PART: P's rectangle, grown by
-each frame's box (the device restores a save area whole) and by its
-overlap with any whole-lifted pane below it, one part for the whole
-restack (coordinator.esp lift_all_in/2). window_pane.esp lift_in/2 saves
+each frame's box (the device restores a save area whole; a frame's box
+holds every window below it), one part for the whole restack (coordinator.esp lift_all_in/2). window_pane.esp lift_in/2 saves
 the frame's own dots in the part and draws back what is under it there
 (save_memory.esp lift_under/6: the part cleared, the box's area drawn
 back); lay/1 recomputes the frame's under as the cut form over the

@@ -49,7 +49,9 @@ docs/simpos/screens/mendels_title_raised.png.  With the adapter off it
 still stops at phase/2 (mendels.watch_phase, OURS; test_adapter_off).
 Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: 28 exchanges, the
 first 21 as before (PIMOS goes on to mdl_comp wt_message/1's directory
-requests, STRINGS_IO); the live screen equals the replay's.
+requests, STRINGS_IO, then aborts the MENDELS job when the runner's FEP
+answers the TEMP directory abnormal, test_tape); the live screen equals
+the replay's.
 
 Mixins (the window mixins step) runs the mixins through two other held
 users on the coordinator, with the mouse: icotext's whole held class
@@ -246,7 +248,7 @@ then run again):
 reaches those only with the adapter off.)
 
 The title raise step (2026-11-28): test_frame_part and test_replay.
-Injections, OBSERVED 2026-11-28 (10, made by a scratch script from a
+Injections, OBSERVED 2026-11-28 (9, made by a scratch script from a
 backup, restored by copy and cmp, git diff clean; this whole file run on
 each, on the final file):
 
@@ -254,7 +256,6 @@ each, on the final file):
 |---|---|
 | frames lifted whole (lifted_in/2 always lift/1) | test_frame_part, test_replay |
 | the part not grown by a frame's box | test_frame_part |
-| whole_below/4: no growth | NONE |
 | lift_in/2: the pane whole as the part | test_frame_part, test_replay |
 | lift_under/6: the whole screen cleared | test_frame_part, test_replay |
 | lift_under/6: Inner not drawn back | test_frame_part, test_replay |
@@ -263,8 +264,9 @@ each, on the final file):
 | lay/1 of a part: the frame's dots not drawn back | test_frame_part |
 | lift_in/2: a missed frame lifted whole | test_frame_part |
 
-whole_below/4 is a guard (NONE): a frame's box already holds every
-window below it, so no run here tells it apart.
+(A tenth, whole_below/4, NONE, is removed: a frame's box already holds
+every window below it, so growing the part by the overlaps with the
+whole-lifted panes below added nothing.)
 
 Weak spots (the load answer step): the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
@@ -322,8 +324,6 @@ STRINGS_IO = [
     ('close', 42), ('<', 66, 1, '>sys>user>MENDELuser>TEMP>'),
 ]
 STOP = 'would suspend: no process is ready: <simpos##process> is suspended'
-# the stop of the load answer step (2026-11-28), before the title raise
-STOP_BADSAVE = 'simpos: bitmap_display save/7: winfb status 4'
 EXCHANGES = 28
 # the stop before the load adapter (2026-11-27), which the run still gives
 # with mendels.LOAD_ADAPTER off (test_adapter_off)
@@ -338,12 +338,13 @@ STOP_NO_ADAPTER = ('mendels: held mendel##mendel_main phase/2 has no clause for 
 LOAD_ANSWER_PACKET = ('00000032000000000000026c00000002ffffffff0000002c00000000'
                       '236c236f23612364236523642132236c236923622372236123722379214a'
                       '236e236f2372236d2361236c214b')
-# the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-28
-# (the live run's screen is the same, PNG byte for byte): MENDELS's whole
-# zone, its system window with two messages, committed as
-# docs/simpos/screens/mendels_zone.png
+# the load answer step's last frame (sha256 8bc53327..., 151,723 dots),
+# OBSERVED 2026-11-28 (the live run's the same, PNG byte for byte):
+# MENDELS's whole zone, its system window with two messages, the title
+# screen under the base, committed as docs/simpos/screens/mendels_zone.png;
+# since the title raise step test_replay checks that the stop's frame
+# differs from it only in the title screen's rectangle and the status band
 ZONE = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_zone.png')
-ZONE_FRAME = ('8bc533270609bf46346276d88c386f5a488821558d5f0f89541df3d3a1999cde', 151723)
 # since the title raise step (2026-11-28): the replay's last frame, the
 # zone with the title screen raised over the base, " end" and "please
 # return" written (OBSERVED; the live run's the same, PNG byte for byte,
@@ -365,6 +366,14 @@ class Run(unittest.TestCase):
         self.assertEqual(mendels.strings_io(tape), STRINGS_IO)
         self.assertEqual(tape['result']['stop'], STOP)
         self.assertEqual(len(tape['exchanges']), EXCHANGES)
+        # PIMOS's console at the end (OBSERVED): mdl_comp.kl1 del_file/3's
+        # directory request for >sys>user>MENDELuser>TEMP answered
+        # abnormal by the runner's FEP, so its normal(...) pattern fails
+        # and the MENDELS job is aborted
+        self.assertTrue(tape['result']['window'].endswith(
+            'Shell>>  Unification failure occurred !! \n  [ Job#4, Node#0, PE#0 ]\n'
+            '  Term1        : normal([delete("compiler.msg",D),expunge(C)],B,A) \n'
+            '  Term2        : abnormal \nShell>>  Job 4 was aborted . \n'))
 
     def test_replay(self):
         # the PSI side, fed the tape: every packet it sends is the live
@@ -401,6 +410,16 @@ class Run(unittest.TestCase):
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), RAISED_FRAME)
         with open(RAISED, 'rb') as f:
             self.assertEqual(windev.png_bytes(fr), f.read())
+        # and it is the load answer step's last frame (ZONE, the zone with
+        # the title screen under the base) but for the title screen's
+        # rectangle and the status band's window name (rows 950-967): the
+        # raise changed nothing else
+        with open(ZONE, 'rb') as f:
+            zone = windev.png_rows(f.read())
+        now = windev.png_rows(windev.png_bytes(fr))
+        title = ((1 << 446) - 1) << (1280 - 417 - 446)
+        changed = [y for y in range(1024) if (zone[y] ^ now[y]) & ~(title if 390 <= y < 553 else 0)]
+        self.assertEqual((changed[0], changed[-1], len(changed)), (950, 967, 18))
         # the stack: the title screen on top, its under its own 4,564
         # words; the base under it, its under the cut form with nothing
         # under it (the title screen has left it)

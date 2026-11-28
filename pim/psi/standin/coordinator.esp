@@ -680,10 +680,9 @@ lift_all([U | Us]) :- :lift(U!pane), lift_all(Us);
 % window.md §4.1): a hidden window's image, "all of it or its hidden
 % part", is saved.  The part is one box for the whole restack, top-down:
 % P's rectangle, grown by each frame's box (save_memory's restore draws a
-% save area back whole) and by the overlap of each frame with every
-% whole-lifted pane below it (whose whole save would otherwise take in the
-% frame's dots), so every pane lifted later sees under it only what is
-% lifted.
+% save area back whole).  A frame's box holds every window below it
+% (save_under/6 made it over them, save_under_below/7 remakes it over
+% them), so a pane lifted later sees under the part only what is lifted.
 lift_all_in(Us, P) :-
         value(P!x + P!w, X1), value(P!y + P!h, Y1),
         part_of(Us, [P!x, P!y, X1, Y1], Part),
@@ -699,23 +698,8 @@ part_of([], B, B);
 part_of([U | Us], B0, B) :- Q = U!pane, framed(Q), !,
         Q!under = [cut, _, _, _, _, _, Box],
         grown_by(Box, B0, B1),
-        whole_below(Us, Q, B1, B2),
-        part_of(Us, B2, B);
+        part_of(Us, B1, B);
 part_of([_ | Us], B0, B) :- part_of(Us, B0, B);
-
-% the overlaps of the frame Q with the panes below it lifted whole
-whole_below([], _, B, B);
-whole_below([V | Vs], Q, B0, B) :- R = V!pane, R \== 0, not_framed(R),
-        met(R, Q, M), !, grown_by(M, B0, B1), whole_below(Vs, Q, B1, B);
-whole_below([_ | Vs], Q, B0, B) :- whole_below(Vs, Q, B0, B);
-
-not_framed(Q) :- framed(Q), !, fail;
-not_framed(_);
-
-met(R, Q, [L, T, X1, Y1]) :-
-        larger(R!x, Q!x, L), larger(R!y, Q!y, T),
-        smaller(R!x + R!w, Q!x + Q!w, X1), smaller(R!y + R!h, Q!y + Q!h, Y1),
-        L < X1, T < Y1;
 
 grown_by(none, B, B) :- !;
 grown_by([L, T, R, D], [L0, T0, R0, D0], [L1, T1, R1, D1]) :-
