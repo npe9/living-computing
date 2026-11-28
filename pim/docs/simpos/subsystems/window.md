@@ -1480,7 +1480,8 @@ the size goes to SDRAM with the format change, citing TM-225 p10.
 to its title screen, a standard_io_window made with `permission(show)`
 (title.esp create_screen/1, show/1) that now lies under the base. The
 coordinator raises a covered `show` window before the write (TM-225 p11
-③; coordinator.esp held_back/3), lifting the base whole: save/7 of slot
+③; coordinator.esp uncover/3's held_back/3, then select_window, raise,
+lift_all), lifting the base whole: save/7 of slot
 2, 1,280 x 944 at (0,0), at base 9,128 (two areas of 4,564 words
 already in use), refused as winfb BADSAVE. This is MENDELS's current
 stop. Still undecided, two ways on: (a) save memory on the board's SDRAM

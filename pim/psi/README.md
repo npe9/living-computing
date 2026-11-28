@@ -5954,7 +5954,9 @@ Answer, from the held sources:
 - **HELD and OBSERVED: the PIMOS we run answers `normal(Loaded)`.** The
   held 4.0 source, src/library/loader/modtbl.kl1:274-277 check_flush
   (`Status = normal(Loaded)`, the `Package::Module` list), which load.kl1
-  :57 check_status matches; the 3.6 objects run here give the same.
+  :57 check_status matches; the PIMOS 3.6 objects this repository runs
+  (pimosobj.tar.Z object/pimm_*360E.sav, `ref/pimm/longrun_ipl.py`:302-320)
+  give the same, OBSERVED.
 - **Searched, nothing reduces it:** every `:- module load` and every
   load:do caller in pimos.tar.Z and the 348 IFS/ICOT archives (the only
   other `load` module is strtgysh's unrelated vload.kl1:5); MENDELS's
@@ -5990,8 +5992,8 @@ missing from our tree and no path is wrong.
 
 **The run now** takes phase/2's `loaded_library(normal)` clause: mdl_check
 after_KL1compiler/0 opens TEMP>compiler.msg, which the distribution does
-not have (readme.e: TEMP "no files"; a scratch run with a file placed
-there took open_file/3's first clause instead), so mdl_check open_file/3
+not have (readme.e: TEMP "no files"; in a scratch run with a file placed
+there the file was found and read instead, so the path is right), so mdl_check open_file/3
 reports it: the system window's second line, `ERR: error '"compiler.msg"'
 not exist` ("error" is message_type/2's catch-all message_string/2,
 mdl_ckutil.esp:197, since `file` has no entry). phase(top) then waits in
@@ -6000,7 +6002,9 @@ the mendel_title process (the order is kl0's scheduling, OURS): sent
 "exit" by esp_control/2, it writes " end" to its screen (title.esp
 show/1), a standard_io_window created with `permission(show)` and now
 under the base. The coordinator raises a covered `show` window before the
-write (TM-225 p11 (3); coordinator.esp held_back/3) and so lifts the base
+write (TM-225 p11 (3); OBSERVED chain: window_pane put_string, coordinator
+uncover/3, held_back/3, select_window, raise, lift_all, window_pane
+lift/1, save_memory save/6) and so lifts the base
 whole. **The new stop:**
 
     simpos: bitmap_display save/7: winfb status 4
@@ -6068,10 +6072,10 @@ not test_replay: the run reaches them only with the adapter off.)
 
 Open: the save memory decision above. Making the stand-ins retry-safe is
 not needed on this path (phase/2 succeeds, call_esp/3's repeat is not
-retried). A scratch compiler.msg placed in TEMP is read by
-standard_input_file and refused ("reader: a clause without its end"):
-after_KL1compiler/0's getl/end_of_input path is not right yet for plain
-text lines (not on the held run's path).
+retried). With a scratch compiler.msg placed in TEMP the run was refused
+by standard_input_file ("reader: a clause without its end"); which call
+of after_KL1compiler/0's read loop refused was not traced (not on the
+held run's path).
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
