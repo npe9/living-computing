@@ -72,7 +72,9 @@
 %   - a temporary window (temporary_window.esp: at_mouse yes) made with no
 %     position is put at the mouse when it is shown (TM-125 p6-7);
 % NOT STOOD IN (fail loud): dynamic natures (the create option nature(L),
-% e.g. MENDELS's nature([with_icon]), is ignored: OURS), scrolling, the save areas of inferiors.
+% e.g. MENDELS's nature([with_icon]), is ignored: OURS; since the
+% standard_io_window inferior step, 2026-11-27, with_superior_input_buffer
+% in it is acted on, options/2), scrolling, the save areas of inferiors.
 
 class basic_window has
 
@@ -122,6 +124,10 @@ attribute label_flag := off, border_flag := off, margin_flag := off,
           has_inferiors := no;
 % whether the window has text (as_output.esp: yes)
 attribute output := no;
+% the window named as the input's source (0: this window itself): the
+% standard_io_window whose inferior form this window is
+% (inferior_io_form.esp, OURS)
+attribute outer := 0;
 
 % INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
 % OURS): activate, scheduled for display on the superior: a top window
@@ -399,7 +405,22 @@ options(W, [{permission, P} | Os]) :- !, W!permission := P, options(W, Os);
 options(W, [{font, F} | Os]) :- !, W!font := F, options(W, Os);
 options(W, [{label_font, F} | Os]) :- !, W!label_font := F, options(W, Os);
 options(W, [{items_list, L} | Os]) :- !, W!items := L, options(W, Os);
+% ('nature' quoted: espscan reads `{nature,` as the keyword, OURS finding)
+options(W, [{'nature', L} | Os]) :- !, natures(W, L), options(W, Os);
 options(W, [_ | Os]) :- options(W, Os);
+
+% the create option nature(L) (USAGE window.md §1.3 and the option table:
+% `nature([with_superior_input_buffer, ...])`, MENDELS med_win.esp:9-46,
+% mendel_win.esp; 206 sites): of the natures named, only
+% with_superior_input_buffer is acted on, as its mixin would (input put in
+% the superior's buffer, TM-125 p11); the others are ignored as before.
+% LABEL: INFERENCE (that the option mixes the nature in at run time is
+% window.md's gap G29; acting on this one only OURS)
+natures(_, L) :- unbound(L), !;
+natures(_, []) :- !;
+natures(W, [with_superior_input_buffer | L]) :- !,
+        W!input_to := superior, natures(W, L);
+natures(W, [_ | L]) :- natures(W, L);
 
 % the size not given: a menu's items' (as_menu.esp natural_size/3), else
 % the superior's inside (TM-125 Table 1), the screen's for a top window
@@ -594,7 +615,13 @@ under(W, _, _, W);
 
 delivered(W, Data, Code, X, Y) :-
         owner_of_buffer(W, O),
-        :put(O!buffer, {W, Data, Code, X, Y});
+        source(W, S),
+        :put(O!buffer, {S, Data, Code, X, Y});
+
+% the source an input is read as coming from: the standard_io_window of
+% an inferior form (inferior_io_form.esp), else the window (OURS)
+source(W, S) :- W!outer \== 0, !, S = W!outer;
+source(W, W);
 
 owner_of_buffer(W, O) :- W!input_to == superior, W!superior \== 0, !,
         owner_of_buffer(W!superior, O);

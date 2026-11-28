@@ -134,6 +134,14 @@ attribute alive := yes;
 % OURS)
 :kill(M) :- taken_down(M), M!alive := no;
 
+% INTERPOLATED (selector USAGE MENDELS med_comm.esp:74-77 create/1,
+% `object(CkWin,_,_), :name(CkWin,_)`: the menus are made again only when
+% this fails, as med_win.esp's test (basic_window.esp name/2); body OURS):
+% the menu's title, failing once it is killed.
+% LABEL: INFERENCE (a live window answers, from MENDELS's test; the title
+% OURS)
+:name(M, N) :- M!alive == yes, N = M!title;
+
 % INTERPOLATED (selector and arguments PRINTED-INTERFACE TM-125 p16; body
 % OURS): set_title, the label's title from the next show.
 % LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p16; the body OURS)

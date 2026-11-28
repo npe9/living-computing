@@ -630,18 +630,24 @@ From the sweep, not from the documentation alone:
      the editors, and reads its library from the HELD `tree.obj` and
      `tree.key` (example1-3 are its objects; the archive has no
      `tree.field`, so that restore takes MENDELS's own "file not exist"
-     path). It now stops in method_editor starting/1, at
-     `standard_io_window:set_size/3`: med_window places
-     standard_io_windows inside the base as inferiors, and this
-     repository's standard_io_window is a top window only. Nothing is
-     shown yet (mendel_main shows the zone in resume/0, after create/1).
-     The PIMOS side is unchanged (7,075,533 PIM/m instructions, 21
-     exchanges; tape `psi/mendels_tapes/doc.json`, replayed by
-     test_mendels). Next: standard_io_window as an inferior (set_size/3,
-     set_position/3, drawing inside a superior), then resume/0's
-     show_window/1. Showing the 1280 x 944 base also needs a save area
-     larger than winfb's 65,536 words (OURS, shared with
-     `bsv/WinFbBox.bsv`).
+     path). It stopped in method_editor starting/1, at
+     `standard_io_window:set_size/3` (standard_io_windows placed in the
+     base as inferiors);
+   - **method editor step (2026-11-27):** with standard_io_window as an
+     inferior (its inferior form inside the superior, TM-125 PDF p15-16;
+     the mechanism OURS), the title screen's methods (set_inside_units/3,
+     background/2, draw_characters/3 of TM-785 PDF p40), the editor link
+     (set_editor/2 and its neighbours) and save memory saving only what
+     lies under a window (TM-225 p10), the ESP half finishes create/1 and
+     resume/0 shows the whole zone over the title screen (screen
+     `docs/simpos/screens/mendels_zone.png`). It now stops at the last
+     window of mendel_window show_all_window/1, `system_window`, a
+     pmacs_window inside the base: this repository's pmacs_window is a
+     top window only (`mendel##mendel_pmacs:not_stood_in/2`). The PIMOS
+     side is unchanged (21 exchanges; tape `psi/mendels_tapes/doc.json`,
+     replayed by test_mendels). Next: pmacs_window as an inferior. The
+     save memory stays 65,536 words (`simpos/subsystems/window.md` §7
+     records the evidence).
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the

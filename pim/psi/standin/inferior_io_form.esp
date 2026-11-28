@@ -1,0 +1,77 @@
+% SCAFFOLDING, OURS: the inferior form of a standard_io_window, compiled
+% by psi/espc.py into the package `simpos`.  `inferior_io_form` is NOT a
+% SIMPOS class name (as save_memory.esp is not): SIMPOS's
+% standard_io_window is lost, a composite of "10 natures, which expand to
+% 40 classes" (TM-181 p3, window.md §1.6), and this repository's
+% standard_io_window.esp stands in for it as a TOP window only (a pane on
+% the coordinator's stack, the login requester's and the shells'
+% windows, pinned by their tests).
+%
+% MENDELS (IFS No.61), 2026-11-27: med_window's title panes meth_title
+% and junk_title (med_win.esp:24-39, create_other/1 :196-211) are
+% standard_io_windows made with no superior and then placed INSIDE
+% MENDELS's base by set_window_attribute/4 (:135-138): `:set_size(Win,W,
+% H)`, `:set_superior(Win,Base)`, `:set_position(Win,X,Y)`; med_show.esp
+% writes them with `:clear_line/1` and `:put_line/2` (:104-118, :404-
+% 426).  TM-125 PDF p15 (5.3, 1), printed page 14) prints those setters: set_size "set the size
+% of window", set_position "set the position to the superior window",
+% set_superior "set the superior window"; PDF p16 (5.4) activate: "scheduled
+% to be displayed on the superior window".  So a standard_io_window can
+% be an inferior; this stand-in cannot draw one.
+%
+% THE FORM (OURS): when a standard_io_window is given a superior
+% (standard_io_window.esp set_superior/2), it makes an instance of this
+% class in that superior, with its kept create options (label_flag,
+% border_flag, margin_flag, permission, title, nature) and its size and
+% position, and from then on hands its geometry, life cycle, text output
+% and input to it (standard_io_window.esp, "the inferior form").  This
+% class is the mixins' inferior (basic_window.esp and its neighbours, the
+% window mixins step), so it is drawn in its superior, cut at the
+% superior's inside, restacked and erased as they are; an input made in
+% it is read as coming from the standard_io_window (basic_window.esp
+% source/2, the attribute `outer`), so a superior's read/3 names the
+% window the program made (MENDELS med_win.esp read/3 :319-325 compares
+% it with meth_title and junk_title).
+%
+% THE NATURE LIST IS OURS: labeled_sash (a standard_io_window has a label
+% by default: the top form draws one; MENDELS turns it off with
+% label_flag(off)), as_output (text: TM-125 p16), as_input (read/2,
+% TM-125 p18), inferior_window.  with_superior_input_buffer is not in it:
+% MENDELS gives it as nature([with_superior_input_buffer, ...]), acted on
+% by basic_window.esp options/2.
+
+class inferior_io_form has
+
+nature
+        labeled_sash,
+        as_output,
+        as_input,
+        inferior_window;
+
+instance
+
+% :put_line(W, String) -- INTERPOLATED (selector USAGE: MENDELS
+% med_show.esp:113-118, 404-426 on a standard_io_window inferior, kwic-esp
+% windows.esp:148 on an essential_temporary_window; window.md §2.3 "write
+% a line"; body OURS): the string written at the cursor, then the cursor
+% to column 0 of the next row; past the inside's last whole row, back to
+% row 0.  INFERENCE from MENDELS, which writes its one-row titles with
+% clear_line/1 then put_line/2, again and again: the title shows only if
+% the next put_line comes back to the row (a scroll would leave the row
+% empty, writing on would leave clear_line/1 nothing to clear).
+% LABEL: INFERENCE (from MENDELS med_show.esp's use; the wrap OURS)
+:put_line(W, S) :- :write_line(W, S), next_row(W);
+
+local
+
+next_row(W) :-
+        :get_inside_size(W, _, Ih),
+        cell_height(W, Ch),
+        (W!row + 2) * Ch =< Ih, !,
+        W!col := 0, W!row := W!row + 1;
+next_row(W) :- W!col := 0, W!row := 0;
+
+cell_height(W, Ch) :- W!font == 0, !, :default_font(#bitmap_display, _, _, Ch);
+cell_height(W, Ch) :- F = W!font, Ch = F!height;
+
+end.

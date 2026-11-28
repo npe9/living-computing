@@ -1413,6 +1413,50 @@ stop). Screens: `../screens/mendels_mixins_icotext.png` (icotext's held
 kakari_super_window and command bar) and `../screens/mendels_mixins_disc.png`
 (disc's held menu inside MENDELS's held base).
 
+**Built 2026-11-27 for MENDELS (the method editor step; `psi/README.md`
+"MENDELS").** standard_io_window as an inferior: a window given a
+superior before it is drawn makes its inferior form (`inferior_io_form`,
+a name OURS: labeled_sash, as_output, as_input, inferior_window) and
+hands it its geometry (set_size/3, set_position/3, get_size/3,
+get_position/3, get_inside_size/3), life cycle, text (put_line/2,
+clear_line/1 and the rest), fonts and input; the create option
+`nature([with_superior_input_buffer, ...])` routes its input to the
+superior's buffer, named as the window the program made. TM-125 PDF
+p15-16 prints the setters and "scheduled to be displayed on the superior
+window"; the mechanism is OURS. Also set_inside_units/3, background/2
+and draw_characters/3 (TM-785 PDF p40) for MENDELS's title screen.
+Screens: `../screens/mendels_inferior_titles.png`,
+`../screens/mendels_title.png`, `../screens/mendels_zone.png` (the whole
+zone resume/0 shows). Not built: pmacs_window as an inferior (MENDELS's
+next stop, mendel_win.esp show_all_window/1's system_window).
+
+**Save memory size: decided 2026-11-27, unchanged at 65,536 words.**
+The question: winfb's save memory (`psi/winfb.py` SAVE_WORDS,
+`bsv/WinFbBox.bsv`) holds 65,536 words, OURS, and the 1,280 x 944 base
+of MENDELS needs 75,520 words to be saved whole. Evidence:
+- TM-225 p10 (`listings/TM-225_p08-11_window.txt`): PSI's bitmap memory
+  is "several to several tens of times" the frame memory, and a hidden
+  window's image (all or its hidden part) is saved there. The frame is
+  1,280 x 1,024 = 81,920 words, so the source supports a save memory
+  larger than 65,536 words; no held document gives its size
+  (`../m8_stops.md`; the held bmm_size 07FF does not convert to one).
+- The 75,520-word need came from this repository's accounting (window
+  M7, OURS): a window saved the whole rectangle under it, empty screen
+  included. TM-225 saves windows' images, not the empty screen. With
+  save_memory save_under/6 (a mixin window's frame saves only the
+  bounding box of the windows and status band it covers) MENDELS's path
+  through resume/0 holds two areas of 4,564 words (the title screen
+  window's own under-save, and the base's cut box over it).
+- Raising it is a frozen-format change: save/restore carry a 16-bit
+  base operand in the command stream, and the box's BRAM is at 156 of
+  208 DP16KD (`../window_hardware_plan.md` §5.1; 131,072 words would
+  need 64 more), so a larger save memory
+  belongs with the board's SDRAM (H8).
+Decision: unchanged, since MENDELS's path does not need it. The first
+real need will be the base itself hidden or lifted whole (75,520
+words; e.g. under a full-screen window or the system menu's moves); then
+the size goes to SDRAM with the format change, citing TM-225 p10.
+
 ---
 
 ## 8. Coverage

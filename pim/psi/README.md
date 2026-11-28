@@ -5687,6 +5687,129 @@ are RECONSTRUCTED-FROM-MANUAL (TM-125 pp6-18 carry most of them: the
 initiation options, the sash flags, the superior, markers and menus;
 TM-112 p16 write_line), 43 INFERENCE and 24 OURS.
 
+**The method editor step: standard_io_window as an inferior
+(2026-11-27).** The run goes past method_editor starting/1 and the rest
+of mendel_main's create/1, through resume/0, and shows MENDELS's whole
+zone: EXTERN, LIBRARY (example1-3), TSL, the Top Menu, BIND,
+refresh/normal/full/name and the empty panes, over the title screen
+(`../docs/simpos/screens/mendels_zone.png`, pinned by test_mendels's
+test_replay; the live run's screen is the same). The new stop is the
+last window of mendel_window show_all_window/1 (mendel_win.esp:789-805):
+`:activate(Class!system_window)`, a pmacs_window (MENDELS's
+mendel_pmacs) made with a superior, the base. This repository's
+pmacs_window is a top window only, so its open/1 refuses it:
+`simpos: send mendel##mendel_pmacs:not_stood_in/2 (no primary in the
+held classes; stand-in ancestors simpos##with_superior_input_buffer
+simpos##pmacs_window)`. The 21 exchanges and their strings are
+unchanged; the tape is re-recorded live from a copy of the prompt
+checkpoint.
+
+What was added:
+- **The inferior form** (`standin/inferior_io_form.esp`, a class name
+  that is OURS, and "THE INFERIOR FORM" in `standin/standard_io_window.esp`).
+  TM-125 PDF p15 prints set_size/3, set_position/3 ("the position to the
+  superior window") and set_superior/2; PDF p16 activate/1 "scheduled to
+  be displayed on the superior window". MENDELS makes med_window's
+  meth_title and junk_title with no superior and places them in the base
+  with the held set_window_attribute/4 (med_win.esp:135-138). Here a
+  standard_io_window not yet drawn that is given a superior makes an
+  inferior_io_form (labeled_sash, as_output, as_input, inferior_window)
+  in it, with its kept create options, size, position, fonts and cursor,
+  writes to it again what was written before (oldest first), and hands
+  it from then on its geometry, life cycle, text, fonts, title,
+  permission and input. Whatever would draw it as a top window or read
+  its own stream is refused loudly. put_line/2 writes a line and comes
+  back to row 0 past the last whole row (INFERENCE from med_show.esp,
+  which writes its one-row titles with clear_line/1 then put_line/2,
+  again and again).
+- **with_superior_input_buffer as a create option**
+  (`standin/basic_window.esp` options/2): MENDELS gives
+  `nature([with_superior_input_buffer, ...])` to a standard_io_window.
+  The input of an inferior form is put in its superior's buffer as
+  coming from the standard_io_window the program made (the attribute
+  `outer`), so base's read/3 names meth_title (med_win.esp read/3
+  :319-325 compares it). The spelling `{'nature', L}` is needed because
+  espscan reads `{nature,` as the keyword (OURS finding).
+- **The title screen** (held title.esp, its own process):
+  standard_io_window set_inside_units/3 (1,1 only; TM-125 Table 1),
+  background/2 (the inside inverted, the text drawn white on black;
+  window_pane invert/1, OURS), draw_characters/3 (TM-785 PDF p40
+  `[{Code,X,Y,W,H}]`, Op, Font: each character magnified into its box by
+  whole numbers, Op `set` only; window_pane characters_in/4, OURS), putl/1.
+- **The editor link**: pmacs_window set_editor/2, assign_window/1,
+  resign_window/2 (no-ops, as with_shared_window), show_buffer/1 (as
+  refresh/1) and the option `superior(S)` kept;
+  editor_command_interpreter set_editor/2 and an atom given as data
+  looked up as a key (MENDELS's '$med_exit', med_pmacs.esp:345, bound in
+  med_editor.esp:50); standard_editor c:create/4 and clear_buffer/3;
+  temporary_menu name/2 (MENDELS med_comm.esp:74-77).
+- **Save memory: only the part under a window that holds other windows**
+  (`standin/save_memory.esp` save_under/6). resume/0 shows the base,
+  1,280 x 944; saving the whole rectangle under it (75,520 words) is
+  more than winfb's save memory (65,536 words), and the run stopped at
+  winfb status 4 (BADSAVE). TM-225 p10 (`../docs/simpos/subsystems/
+  listings/TM-225_p08-11_window.txt`) says a hidden window's image is
+  saved, all or its hidden part; an empty screen is not a window, so a
+  mixin window's frame (window_pane create_frame/8) now saves the
+  bounding box of the coordinator's windows and the status band that it
+  covers, as `[cut, X, Y, W, H, Inner]` (restore and put_back clear the
+  rectangle, then draw Inner back; test_mendels test_cut_restore). At
+  the stop save memory holds two areas of 4,564 words: the title screen
+  window's own under-save and the base's cut box, that window's
+  rectangle. The older panes (create/7, lay/1) still save the
+  whole rectangle, as the window M7 tests pin. SAVE_WORDS stays 65,536
+  (`../docs/simpos/subsystems/window.md` §7 has the decision).
+
+Two harnesses in `test_mendels.py` `MethodEditor` run the held code
+outside the run: the held set_window_attribute/4 placing two
+standard_io_windows made with med_win's options inside MENDELS's held
+base, written and clicked (screen
+`../docs/simpos/screens/mendels_inferior_titles.png`), and the held
+mendel_title whole (`mendels_title.png`). Known gaps, OURS: a top
+standard_io_window ignores label_flag(off) and font() (the title screen
+shows a label strip); its default size 40 x 10 cells is OURS (TM-125's
+default is the screen); draw_characters/3 magnifies by whole numbers.
+
+The census gains 6 inherited rows (pimos_window_editor c:create/4 and
+clear_buffer/3, pimos_window assign_window/1, resign_window/2,
+set_editor/2, show_buffer/1); no row changes outcome: 1,558 rows, 841 /
+247 / 453 (894 / 268 / 379 with the recipes).
+
+Labels of this step, counted from the files: 24 LABEL lines added and
+1 removed (the old set_superior/2 "kept only" label, replaced), 9
+RECONSTRUCTED-FROM-MANUAL (TM-125 PDF p15-16 the setters, getters,
+hide/clear_line, set_superior; TM-125 Table 1 set_inside_units; TM-785
+PDF p40 draw_characters) and 15 INFERENCE; and 3 methods OURS in
+selector and body (save_memory save_under/6, window_pane invert/1 and
+characters_in/4). The forwarding clauses added to existing
+standard_io_window methods are marked OURS ("the inferior form") at each.
+
+Injections, OBSERVED (19; `test_mendels.py` run whole for each, the
+file restored by copy and compared; the cut form's put_back/2 is not told
+apart, no test restacks under a mixin window):
+
+| injection | failed |
+|---|---|
+| set_superior: no inferior form (kept only) | test_med_click, test_med_shown, test_replay |
+| nature option: with_superior_input_buffer ignored | test_med_click |
+| source/2: the inferior form named, not the standard_io_window | test_med_click |
+| put_line/2: never back to row 0 | test_med_shown |
+| inferior form: what was written before not written again | test_med_shown |
+| save_under: the whole rectangle saved | test_cut_restore, test_replay |
+| save_under: the windows below ignored (only the band) | test_cut_restore, test_replay |
+| background/2: text not drawn inverted | test_title_shown |
+| draw_characters/3: not magnified (factor 1) | test_title_shown |
+| interpreter: an atom datum not looked up as a key | test_replay |
+| pmacs_window set_editor/2: the interpreter keeps its editor | test_library_restored, test_replay |
+| pmacs_window inside a superior drawn as a top window | test_replay |
+| temporary_menu name/2 always fails | test_editor_link |
+| standard_editor clear_buffer/3 deletes nothing | test_editor_link |
+| set_size/3 before the superior: the size not kept | test_med_shown |
+| set_position/3 on the inferior form: position (0,0) | test_med_click, test_med_shown |
+| inferior form: label_flag not kept | test_med_shown |
+| cut restore: the part under not drawn back | test_cut_restore |
+| cut put_back: the part under not drawn back | NONE |
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window

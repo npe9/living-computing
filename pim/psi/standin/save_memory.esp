@@ -49,10 +49,41 @@ attribute used := [];
         insert(Class!used, [Id, Base, Size], Used),
         Class!used := Used;
 
+% :save_under(#save_memory, X, Y, W, H, Area) -- MENDELS's resume/0
+% (2026-11-27; selector and body OURS): what lies under a window about to
+% be drawn at the rectangle, saved as save/6 would, but only the part
+% that holds other windows.  TM-225 p10 (PROSE, window.md §4.1): it is a
+% HIDDEN WINDOW's image, all of it or its hidden part, that is kept in a
+% save area; the screen behind the windows is not a window's image
+% (INFERENCE: it is the empty screen, drawn back by clearing).  So the
+% saved rectangle is the bounding box of the rectangle's overlaps with
+% the windows on the screen (the coordinator's stack, their panes on the
+% frame and not lifted) and with the status band (the frame's rows 944 to
+% 1,023, status_band.esp: drawn, so kept, OURS).  Area is save/6's when
+% the box is the whole rectangle, else [cut, X, Y, W, H, Inner] (Inner the
+% box's save/6 area, or 0 when nothing lies under it); restore/2 and
+% put_back/2 clear the rectangle and draw Inner back.  Used for the frame
+% of a mixin window (window_pane.esp create_frame/8, basic_window.esp)
+% only: the older panes (window_pane.esp create/7, and lay/1 on every
+% restack) still save the whole rectangle, as the window M7 tests pin
+% (OURS; bringing them over is open).  Until this step
+% the whole rectangle was saved: MENDELS's base, 1,280 x 944, needs
+% 75,520 words that way, more than the device's 65,536
+% (docs/simpos/subsystems/window.md §7, the save-memory decision).
+% INTERPOLATED (selector and body OURS): save_under; basis above.
+:save_under(Class, X, Y, W, H, Area) :-
+        C = #coordinator,
+        boxed(C!windows, X, Y, X + W, Y + H, none, Box),
+        band(X, Y, X + W, Y + H, Box, Box1),
+        under_area(Class, X, Y, W, H, Box1, Area);
+
 % :restore(#save_memory, Area) -- OURS (selector and body): the saved dots
 % drawn back where they were (copy), and the area freed.
 % INTERPOLATED (selector and body OURS): restore; basis above and in the
 % head comment.
+:restore(Class, [cut, X, Y, W, H, Inner]) :- !,
+        :fill(#bitmap_display, X, Y, W, H, reset),
+        restored_inner(Class, Inner);
 :restore(Class, [Id, Base, Size]) :-
         :restore(#bitmap_display, Id, copy),
         without(Class!used, Id, Used),
@@ -73,6 +104,9 @@ attribute used := [];
 % use (window_pane.esp move_to/3 draws it back twice).
 % INTERPOLATED (selector and body OURS): put_back; basis above and in the
 % head comment.
+:put_back(Class, [cut, X, Y, W, H, Inner]) :- !,
+        :fill(#bitmap_display, X, Y, W, H, reset),
+        put_back_inner(Class, Inner);
 :put_back(Class, [Id, _, _]) :-
         :restore(#bitmap_display, Id, copy);
 
@@ -126,5 +160,43 @@ insert([X | R], A, [X | T]) :- insert(R, A, T);
 without([], _, []);
 without([[I, _, _] | R], I, R) :- !;
 without([X | R], I, [X | T]) :- without(R, I, T);
+
+% save_under/6's box (OURS, see there): none, or [X0, Y0, X1, Y1]
+boxed([], _, _, _, _, B, B);
+boxed([Win | Ws], X0, Y0, X1, Y1, B0, B) :-
+        P = Win!pane, P \== 0, P!image == 0, P!surface == 0, !,
+        met(P!x, P!y, P!x + P!w, P!y + P!h, X0, Y0, X1, Y1, B0, B1),
+        boxed(Ws, X0, Y0, X1, Y1, B1, B);
+boxed([_ | Ws], X0, Y0, X1, Y1, B0, B) :- boxed(Ws, X0, Y0, X1, Y1, B0, B);
+
+band(X0, Y0, X1, Y1, B0, B) :- met(0, 944, 1280, 1024, X0, Y0, X1, Y1, B0, B);
+
+% the box B0 grown by the overlap of two rectangles, if they overlap
+met(AX0, AY0, AX1, AY1, X0, Y0, X1, Y1, B0, B) :-
+        high(AX0, X0, L), high(AY0, Y0, T), lower(AX1, X1, R), lower(AY1, Y1, D),
+        L < R, T < D, !, grown(B0, L, T, R, D, B);
+met(_, _, _, _, _, _, _, _, B, B);
+
+grown(none, L, T, R, D, [L, T, R, D]) :- !;
+grown([L0, T0, R0, D0], L, T, R, D, [L1, T1, R1, D1]) :-
+        lower(L0, L, L1), lower(T0, T, T1), high(R0, R, R1), high(D0, D, D1);
+
+high(A, B, A) :- A >= B, !;
+high(_, B, B);
+lower(A, B, A) :- A =< B, !;
+lower(_, B, B);
+
+under_area(_, X, Y, W, H, none, [cut, X, Y, W, H, 0]) :- !;
+under_area(Class, X, Y, W, H, [L, T, R, D], Area) :-
+        value(X + W, XW), value(Y + H, YH),
+        L == X, T == Y, R == XW, D == YH, !,
+        :save(Class, X, Y, W, H, Area);
+under_area(Class, X, Y, W, H, [L, T, R, D], [cut, X, Y, W, H, Inner]) :-
+        :save(Class, L, T, R - L, D - T, Inner);
+
+restored_inner(_, 0) :- !;
+restored_inner(Class, Inner) :- :restore(Class, Inner);
+put_back_inner(_, 0) :- !;
+put_back_inner(Class, Inner) :- :put_back(Class, Inner);
 
 end.
