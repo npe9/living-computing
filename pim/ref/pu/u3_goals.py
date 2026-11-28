@@ -42,17 +42,31 @@ What is OURS (the stand-ins), each item:
     {ATOMo, R06} as its link at 210a-210b, R06 = 0 at that point:
     INFERENCE); R12 = {INT, 0} (2102); R13 = {FPREC, root record} (20eb);
     R15 = {INT, 17} (20a6-20a7, one arm of the PMPF test at 209f); W1f =
-    0 (20a8); R16 = {INT, 1}: rassy's 'ccc', which enqueue_goal counts up
-    (4c06-4c07) and proceed's dequeue down (2171-2172), and whose running
-    out (2173 falling to 2174) charges crr to the foster parent's record
-    (2177 calls 12e0-12ea: R13's cell += R15, R15 := 0).  INFERENCE: the
-    count of the foster parent's live goals, so 1 for the driver itself
-    (pimm.py counts a spawned goal of a shoen the same way, counted());
-    the boot's 20a0-20a1 R16 := {INTo, R06} is read, not run.  With 0
-    (injection 'r16_zero') the second pick runs out at 2174 and stops
-    at 12e3 (CNDF 7 EM1 1a, rassy's 'cond PMPF', a flag not given);
+    0 (20a8); R16 = {INT, 1}, an OPEN choice (QUEUE_COUNT, below);
     the cell free lists and R1f as u2_append.py;
   - memory: pimm.py's cells at the same addresses.
+
+QUEUE_COUNT, R16's start value, OPEN.  R16 is rassy's 'ccc'.  Held words
+count it up at enqueue_goal (4c06-4c07) and down at proceed's dequeue
+(2171-2172); running out (2173 falling to 2174) pops a record into R10
+and charges crr to the foster parent's record (2177 calls 12e0-12ea:
+R13's cell += R15, R15 := 0), then 2178 onward (read, not run).  Two
+readings:
+  - the length of R14's queue: every R14 push in the image steps R16 too
+    (census of the 21 R14 writers: 080c-080e, a record with cells 12-15
+    pushed in the unifier, R16 + 1 at 080e; 4c06 / 4c07; execute's goal
+    switch 4c15 / 4c11; 1f23 with 1f1b), and 2170's empty test comes
+    before 2171's decrement.  Then the empty queue starts at R16 = 0, as
+    the boot's 20a0-20a1 R16 := {INTo, R06} with the R06 = 0 that gives
+    R14 = nil.  Under it the second pick (the last queued goal) takes
+    2174 and stops at 12e3 ('cond PMPF', no value; past it 12e4 reads a
+    cell of R13's record, which no stand-in holds);
+  - the count of the foster parent's live goals, the running driver
+    included: R16 = 1, and all three picks run.  A wake (080e) stepping
+    R16 counts against it.
+The main run takes R16 = 1 (3 picks); the second run below takes R16 = 0
+and is pinned at its stop (PINNED_R16_0).  Which one is the machine's is
+not decided here.
 
 Compared, per instruction (pimm.py's trace split at its I lines):
   - set_value x, y: pimm.py's A line (argv[x]) against the firmware's
@@ -84,7 +98,9 @@ PINNED and the picks compared are PICKS_PINNED; 1 otherwise.
 
 Observed 2026-11-27 (U3 first session): 41 of 41 instructions executed
 and matched, 162 held microinstructions; 3 picks compared (2 dispatching,
-1 empty), no mismatch.
+1 empty), no mismatch (R16 = 1).  With R16 = 0: 24 of 41, 1 pick, STOP
+at the second pick, 12e3.  Residual OURS state read at the picks
+(RESIDUAL_PINNED): R13 and W1f.
 Injections (in-process, no file edited), observed (each alone; every
 other check unchanged up to the first stop or FAIL):
   reseed_r14         FAIL at 8 (the first pick): provenance, R14 last
@@ -101,8 +117,16 @@ other check unchanged up to the first stop or FAIL):
   free_undeclared    FAIL at 24 (the second pick): the freed record's
                      cell 0 (at the first pick it is rewritten unchanged)
   slit_pending       STOP at 3, 4c08 (the JMPF 8 goto taken; ALF shift)
-  r16_zero           STOP at 24, 12e3 (ccc run out: cond PMPF)
+  r16_zero           STOP at 24, 12e3 (ccc run out: cond PMPF); the same
+                     as the pinned second run
   crr_two            STOP at 8, 217c (crr run out: cond PMPF)
+  setv_addr_op       FAIL at 0: set_value's cell compare (R10 + 1 empty,
+                     the cell written at R10 + 4)
+  rec_poke           FAIL at 3: enqueue_goal's argument compare (cell 2
+                     rewritten by the harness before the enqueue)
+  rfar_off           FAIL at 8: the pick's A-register compare (A0, A2)
+  empty_int0         FAIL at 3: the link compare (R14 {INT, 0}, not nil;
+                     the empty pick's own compare is not reached)
 """
 import os
 import sys
@@ -134,6 +158,16 @@ INITIAL = {0x14: NIL, 0x12: (pimm.INT, 0), 0x13: (FPREC, ROOT),
 
 PINNED = dict(steps=41, matched=41, stop=None)
 PICKS_PINNED = 3              # 2 dispatching + the empty one
+# With R16 = 0 (QUEUE_COUNT): 1 pick, then the second proceed runs out of
+# R16 at 2173, takes 2174-2177 and stops at 12e3 (cond PMPF, no value).
+PINNED_R16_0 = dict(steps=41, matched=24, stop=24)
+# At each pick, the registers (and goal-record cells) proceed's words read
+# whose last writer is the harness, in order of the picks (Prov.reads):
+# the residual OURS state under the scheduler.  R13 (the foster parent:
+# read at 2173 / 2213, compared with the record's cell 14) and W1f (read
+# at 2224 and the empty arm's 21b2; also by 4c00 and 4cc1 outside
+# proceed) are written by no held word of the run.
+RESIDUAL_PINNED = [['R13', 'W1f'], ['R13', 'W1f'], ['W1f']]
 
 RESEED = None                 # injection 'reseed_r14': the step after which R14 is re-written
 DECLARE_FREE = True
@@ -213,17 +247,45 @@ class Prov:
 
     def harness(self, p):
         for n in p.r:
-            self.reg[n] = 'harness'
+            self.reg[('R', n)] = 'harness'
+        for n in p.w:
+            self.reg[('W', n)] = 'harness'
         for a in p.mem:
             self.mem[a] = 'harness'
 
     def firmware(self, p, n0):
         for c in p.cycles[n0:]:
+            self.commit(c)
+
+    def commit(self, c):
+        for (f, n), _v in c['reg_writes']:
+            if f in ('R', 'W'):
+                self.reg[(f, n)] = 'firmware'
+        for a, _v in c['mem_writes']:
+            self.mem[a] = 'firmware'
+
+    def reads(self, p, n0):
+        """Walk the words run since n0 in order: every register-file entry
+        (R, W) a word read, and every goal-record cell it read, whose last
+        writer was the harness.  Run before firmware(n0)."""
+        reg, mem = dict(self.reg), dict(self.mem)
+        res = set()
+        for c in p.cycles[n0:]:
+            for nm, _v in c['reg_reads']:
+                if nm[:1] in ('R', 'W') and len(nm) == 3:
+                    key = (nm[0], int(nm[1:], 16))
+                    if reg.get(key, 'harness') != 'firmware':
+                        res.add('%s%02x' % key)
+            for a, _v in c['mem_reads']:
+                if (GRECS <= a < GRECS + 16 * NREC or REC0 <= a < REC0 + 16) \
+                        and mem.get(a, 'harness') != 'firmware':
+                    res.add('cell %x' % a)
             for (f, n), _v in c['reg_writes']:
-                if f == 'R':
-                    self.reg[n] = 'firmware'
+                if f in ('R', 'W'):
+                    reg[(f, n)] = 'firmware'
             for a, _v in c['mem_writes']:
-                self.mem[a] = 'firmware'
+                mem[a] = 'firmware'
+        return res
 
 
 def other_writes(p, mem0, allowed):
@@ -260,12 +322,12 @@ def run(verbose=False):
         rn.f2p[a] = rn.p2f[a] = a
     fw2pg, pg2fw = {}, {}                           # goal records: firmware <-> pimm.py
     out = {'done': 0, 'matched': 0, 'words': 0, 'stop': None, 'fail': None, 'picks': 0,
-           'dispatched': 0, 'empty': 0}
+           'dispatched': 0, 'empty': 0, 'residual': []}
     prev_after = s0
     for k, (pc, cellv, lines, after) in enumerate(steps):
         p.ir, p.pc = cellv, m.load + pc
         p.r[R_PC] = (COD, (m.load + pc + 1) & 0xffffffff)
-        prov.reg[R_PC] = 'harness'
+        prov.reg[('R', R_PC)] = 'harness'
         r04_0 = p.r.get(R_PC)
         after['next_pc'] = steps[k + 1][0] if k + 1 < len(steps) else None
         after['sp_moved'] = after.get('sp') != prev_after.get('sp')
@@ -284,6 +346,8 @@ def run(verbose=False):
             stop = str(e)
         nw = len(p.trace) - n0
         out['words'] += nw
+        if base == 'proceed':
+            out['residual'].append(sorted(prov.reads(p, n0)))
         prov.firmware(p, n0)
         empty = base == 'proceed' and not any(ln.startswith('G ') for ln in lines)
         if stop and not (empty and stop.startswith('%04x:' % U2.EMPTY_STOP)):
@@ -319,10 +383,16 @@ def run(verbose=False):
             (g1, f1), (g2, f2) = list(pg2fw.items())     # injection: the map crossed
             pg2fw.update({g1: f2, g2: f1})
             fw2pg.update({f1: g2, f2: g1})
+        if POKE is not None and k == POKE[0]:
+            p.mem[p.r[0x10][1] + POKE[1]] = POKE[2]
+            prov.mem[p.r[0x10][1] + POKE[1]] = 'harness'
         if RESEED is not None and k == RESEED:
             p.r[0x14] = tuple(p.r[0x14])            # injection: the harness writes R14
-            prov.reg[0x14] = 'harness'
+            prov.reg[('R', 0x14)] = 'harness'
         prev_after = after
+    print('scheduler state read at each pick whose last writer is the harness (OURS): %s'
+          % '; '.join('pick %d %s' % (i + 1, ', '.join(r) or 'none')
+                      for i, r in enumerate(out['residual'])))
     print('%d of %d instructions executed and matched, %d held microinstructions; '
           '%d picks compared (%d dispatching, %d empty)%s'
           % (out['matched'], len(steps), out['words'], out['picks'], out['dispatched'],
@@ -335,9 +405,9 @@ def check_provenance(p, prov):
     """At proceed's entry: R14, and every cell of R14's head record that
     proceed reads, last written by a held word."""
     bad = []
-    if prov.reg.get(0x14) != 'firmware':
+    if prov.reg.get(('R', 0x14)) != 'firmware':
         bad.append('provenance: R14 %s last written by the %s' % (fmt(p.r.get(0x14)),
-                                                                  prov.reg.get(0x14)))
+                                                                  prov.reg.get(('R', 0x14))))
     h = p.r.get(0x14)
     if h and h[0] == HOOKO:
         n = p.mem.get(h[1], (0, 0))[1]
@@ -482,7 +552,19 @@ def _ccf_bits():
     PU.RULES.update(ccf_rassy=False)
 
 
+def _poke_record():
+    # the harness writes the record's cell 2 before the first enqueue_goal
+    globals().update(POKE=(2, 2, (pimm.INT, 0xbad)))
+
+
+POKE = None                   # injection 'rec_poke': (before step k, cell, value)
+
+
 INJECT = {
+    'setv_addr_op': lambda: SU.FORMS.update(set_value=('y', 'arg_op')),
+    'rec_poke': _poke_record,
+    'rfar_off': lambda: PU.RULES.update(dstf_c_rfar=False),
+    'empty_int0': lambda: INITIAL.update({0x14: (pimm.INT, 0)}),
     'reseed_r14': _reseed,
     'ccf_bits': _ccf_bits,
     'jmpf8_goto_off': lambda: PU.RULES.update(jmpf8_goto_if=False),
@@ -506,11 +588,28 @@ def main(argv):
         print('injected: %s' % nm)
     out, n = run('-v' in argv)
     got = dict(steps=n, matched=out['matched'], stop=out['stop'][0] if out['stop'] else None)
-    if '--inject' not in argv and (got != PINNED or out['picks'] != PICKS_PINNED):
-        print('FAIL the furthest point moved: %s, %d picks; pinned %s, %d picks (update PINNED)'
-              % (got, out['picks'], PINNED, PICKS_PINNED))
+    if '--inject' not in argv and (got != PINNED or out['picks'] != PICKS_PINNED
+                                   or out['residual'] != RESIDUAL_PINNED):
+        print('FAIL the furthest point moved: %s, %d picks, residual %s; pinned %s, %d picks,'
+              ' residual %s (update PINNED)' % (got, out['picks'], out['residual'], PINNED,
+                                                PICKS_PINNED, RESIDUAL_PINNED))
         return 1
-    return 1 if out['fail'] or out['stop'] else 0
+    if '--inject' in argv:
+        return 1 if out['fail'] or out['stop'] else 0
+    if out['fail'] or out['stop']:
+        return 1
+    # The other reading of R16 (QUEUE_COUNT, module docstring): the same
+    # program with R16 = 0, its furthest point pinned (a STOP, not a FAIL).
+    print('--- the same run with R16 = 0 (R16 read as the length of R14\'s queue)')
+    INITIAL[0x16] = (pimm.INT, 0)
+    out0, n0 = run(False)
+    got0 = dict(steps=n0, matched=out0['matched'], stop=out0['stop'][0] if out0['stop'] else None)
+    if out0['fail'] or got0 != PINNED_R16_0 or out0['picks'] != 1 \
+            or not out0['stop'][3].startswith('12e3:'):
+        print('FAIL the R16 = 0 run moved: %s, %d picks; pinned %s, 1 pick, STOP at 12e3'
+              % (got0, out0['picks'], PINNED_R16_0))
+        return 1
+    return 0
 
 
 if __name__ == '__main__':

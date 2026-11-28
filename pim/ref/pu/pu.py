@@ -648,8 +648,15 @@ RULES = {
     # 4c02 is R15 := R15 - 1 as proceed's 216d and execute's 4cc0 (before,
     # "W0d" was never set and the run stopped).  Held-out, read not run:
     # the refill's 3365 / 3366 (EM1 0f) take MAR1 := R1f, the heap
-    # pointer, the cells a refill would carve.  EM1 10-3f (census: 32 of
-    # 99 such words) raise.  Off (the injection 'wsel_d_off'): W0d again.
+    # pointer, the cells a refill would carve.  EM1 10-3f raise, and so
+    # does a word where another field also
+    # consumes EM1 (em1_other_use: TGIF 1 / 2, CNDF 7, MCF, an EM1 or wide
+    # S2 immediate, an EM jump target).  Counter-evidence kept: of the 99
+    # words, 14 also use EM1 elsewhere (0517, 0ab4-0abc, 1989, 357c, 3c39,
+    # 4172, 4c5f, 63d6, 75a4, 79c9 by CNDF 7 / MCF / SC2F 8), where the
+    # reading would double-use the field.  Off (the injection
+    # 'wsel_d_off'): W0d again.  Census: 53 of the 99 select-d words
+    # are admitted (EM1 0-f, no other EM1 consumer).
     'wsel_d_em1': True,
     # DSTF c: rassy's dstf/5 key 12 prints '++ rfar' (pool slot 95, after
     # '@ r0' .. '@ r1b1' for keys 8-b): the register-file entry that RFAR
@@ -981,6 +988,17 @@ COND_RULES = {9: _cnd_tag_eq('EM1'), 0xb: _cnd_tag_eq('EM2'), 5: _cnd5, 7: _cnd7
               0xc: _cnd_s1_tag_eq('EM1', 62)}
 
 
+def em1_other_use(x):
+    """Another field of the word consumes EM1 (RULES['wsel_d_em1'] is
+    admitted only where none does): a TGIF 1 / 2 stamp, CNDF 7, MCF, an
+    EM1 / wide S2 immediate, or a jump whose target is in the EM."""
+    if field(x, 'TGIF') in (1, 2) or field(x, 'CNDF') == 7 or bit(x, 18):
+        return True
+    if field(x, 'SC2F') in (mekbn.SC2_EM1, mekbn.SC2_WIDE):
+        return True
+    return mekbn.jk(x) not in (0, 2, 4) or field(x, 'JMPF') in (9, 0xd)
+
+
 def em_jump_busy(x):
     """Does the word's sequencing use EM1/EM2 (a target in the EM bits)?
     JMPF 0 / 8 none; JMPF 1 only when it jumps (mekbn.J1_JUMP); JMPF 4
@@ -1052,9 +1070,9 @@ class PU:
         if bit(x, mekbn.WRB_BIT):
             if sel == 0xd and RULES['wsel_d_em1']:
                 # RULES['wsel_d_em1']: the register-file entry R(10 | EM1)
-                if field(x, 'EM1') > 0xf:
+                if field(x, 'EM1') > 0xf or em1_other_use(x):
                     raise Unmodelled(self._upc, 'select d (WRBF) with EM1 %02x: not decided'
-                                     % field(x, 'EM1'))
+                                     ' (EM1 over f, or used by another field)' % field(x, 'EM1'))
                 return ('R', 0x10 | field(x, 'EM1'))
             return ('W', sel)
         opd = RULES['opd_fields']

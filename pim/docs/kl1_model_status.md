@@ -119,9 +119,11 @@ first step) has a driver clause enqueue two goals of the IPL image's
 `append/3` through the held `enqueue_goal` (`4c00`-`4c07`) and the held
 `proceed` (`216c`-`2224`) take them, 41 of 41 instructions matched with
 `ref/pimm/pimm.py` and 3 scheduler picks compared (2 dispatching, 1
-empty). The goal queue (R14, the records, R10, R1b) is written by held
-words only; the machine state before the first instruction is a
-declared stand-in (`ref/pu/README.md`, "U3"). This concerns neither
+empty) with R16 (ccc) started at 1; started at 0, the other open
+reading, it makes 1 pick and stops at `12e3`. The goal queue (R14, the
+records, R10, R1b) is written by held words only; R13 and W1f, read at
+the picks, are still the declared stand-in, as is the rest of the state
+before the first instruction (`ref/pu/README.md`, "U3"). This concerns neither
 `PimKL1B` nor `PimmCore`. The paragraph below is the bench model's state.
 
 The model can execute a hand-assembled KL1-B program that builds heap

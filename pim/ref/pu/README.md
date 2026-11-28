@@ -33,7 +33,7 @@ multi-goal program whose goal queue is made by the firmware's own
 matched, 3 scheduler picks compared with `pimm.py` (2 dispatching, 1
 empty), no mismatch. Append's own run stays at 15 of 16 (why: "U3").
 
-- 32 cases, all PASS (80 held microinstructions executed). The 32nd
+- 32 cases, all PASS (83 held microinstructions executed since U3; 80 before). The 32nd
   is a held `case_branch` (`2d3e` set-up, `2d3f` JMPF 3: tags 08/0a/04
   land on `2d40`/`2d43`/`2d4e`, base | the `5300` column-2 byte). Since the
   first 28: a held call word (`scsi_init`'s `615e` calls `3320`; the
@@ -535,6 +535,8 @@ The stand-in (`u2_append.seed_proceed`, OURS), each item:
 - R15 (crr) and R16 (ccc): 8, so the budget branches fall to the
   dispatch. That they are reduction / switch budgets is INFERENCE from
   the decrements; the cases where they run out are not compared.
+  (U3 reads R16 further: a queue length or a live-goal count, OPEN;
+  section "U3".)
 - R12 and R13: the current priority and foster parent. Every queued
   goal carries R13 in cell 14 (one shoen). `parent_other` (another
   parent): 13 STOPs at `2250`, the other-shoen path, not modelled.
@@ -693,7 +695,14 @@ finished record on R1b, takes R14's head, and R14 := its cell 15. At
 every pick the harness checks that R14 and every record cell `proceed`
 reads were last written by a held word (`Prov`); the injection
 `reseed_r14` (the harness rewrites R14, same value, after the second
-enqueue) FAILs at the first pick on that check alone. Compared per
+enqueue) FAILs at the first pick on that check alone. It also walks
+every register (R, W) and record cell each pick's words read, in order,
+and pins those whose last writer is the harness (`RESIDUAL_PINNED`, the
+OURS state still under the scheduler): R13 and W1f at picks 1 and 2,
+W1f at the empty pick. R13 (the foster parent, read at `2173` and
+`2213`) and W1f (`2224`, `21b2`) are written by no held word of the
+run; everything else `proceed` reads, R14, R10, R1b, R12, R15, R16 and
+the record cells included, was last written by held words. Compared per
 instruction: `set_value`'s cell against `pimm.py`'s argv line;
 `enqueue_goal`'s record against `pimm.py`'s new record (arity, every
 argument under the renaming, code, link mapped record to record, R14,
@@ -709,10 +718,18 @@ and the R10 the driver builds into (`202d`-`202f`); R14 = nil (the
 boot's first record gets `{ATOMo, R06}` as link at `210a`-`210b`, R06 =
 0 there: INFERENCE); R12 = `{INT, 0}` (`2102`); R13 = `{FPREC, root}`
 (`20eb`); R15 = `{INT, 17}` (`20a6`-`20a7`, one arm of `209f`'s PMPF
-test); W1f = 0 (`20a8`); R16 = 1 (INFERENCE below). Plus U2's stand-ins
+test); W1f = 0 (`20a8`); R16 = 1 (an OPEN choice, below). R14 = nil and R16 pull against each
+other: the boot's R06 = 0 that gives R14 = nil also gives R16 = 0 at
+`20a0`-`20a1`. Plus U2's stand-ins
 (the A stage, the first goal switch, the cell free lists, memory). The
 empty pick's nil is the initial R14, carried by the firmware: `4c07`
 put it in the first record's cell 15 and `2216` took it back.
+
+**What it does not run.** None of the six "not yet run on proceed's
+paths" items runs in the main run: crr exhausted (`217c`), the
+other-parent call (`2250`), R16 exhausted (`2174`-), the 4c08 shift,
+interrupts, arities over 11. The first four are reached only under
+injections or the R16 = 0 run, and stop there.
 
 **Why append's own pin stays at 15 of 16.** Run alone, append's
 `proceed` reads R1b, R14, R15, R16, R12 and R13 that only the stand-in
@@ -730,15 +747,21 @@ injection in `u3_goals.py`, observed):
 
 | Rule | Status | Evidence | Injection (observed) |
 |---|---|---|---|
-| `RULES['ccf_rassy']`: the memory operation is rassy's CCF value table (`CCF_RASSY`), not the strobe bits one by one | HELD-SOURCE | rassy `ccf/2` (@1b5b), a 32-key switch on CCF (bits 62..58; `set_up_ccf/2` @c44: the word's high half >> 26 & 1f); each key's relative `pmi 29` operand resolved (slot = cell + 2 + c16) to pool slots `0076`-`008e`: 08-0b read mar1/2 mdr1/2, 0c read ++ mar1 mdr1, **0d read ++ mar2 mdr2**, 10-13 write, 14 write ++ mar1 mdr1, **15 write ++ mar2 mdr2**, **16 write_stack ++ mar1 mdr1**, 17 write_stack ++ mar2 mdr2, 0e set_misc_command, 0f cancel, 18-1f unify_write .. exec_misc_write. It agrees with the bit reading except on 0d, 15, 16, 0e and 0f. Decided at `4c05`/`4c06` (CCF 15): cells 13 and 14 get R12 and R13 (the conflict section 18 of `pseudo_pimm_microcode.md` left open). `write_stack` stored as `write` (INFERRED). 0f 'cancel' leaves MAR2 / MDR2 STALE (`3494`, read_variable's end, uses neither: NOT discriminated); 0e and 18-1f raise | `ccf_bits`: STOP at `2250` at the first pick (cell 14 holds R1b's link, not R13: the other-parent call) |
-| `RULES['wsel_d_em1']`: a select d (SC1F / SC2F / DSTF) with WRBF set is R(10 \| EM1), EM1 0-f | INFERRED (from the image) | the 4 such writers carry EM1 0, 9, b, 2 (`21e4` R10 after a `3349` pop, as `202f`); at `4c01` (EM1 5) MAR1 := R15, so `4c02` is R15 := R15 - 1 as `216d` and `4cc0`. Held-out: the refill `3365`/`3366` (EM1 f) take MAR1 := R1f, the heap pointer; `check_pu.py`'s refill cases now stop at `3367` (a stepping write that also loads MAR1), re-pinned. EM1 10-3f (32 of 99 words) raise. rassy's `sc1f/7` arm d not decoded | `wsel_d_off`: STOP at `4c01` (W0d never set) |
+| `RULES['ccf_rassy']`: the memory operation is rassy's CCF value table (`CCF_RASSY`), not the strobe bits one by one | HELD-SOURCE | rassy `ccf/2` (@1b5b), a 32-key switch on CCF (bits 62..58; `set_up_ccf/2` @c44: the word's high half >> 26 & 1f); each key's relative `pmi 29` operand resolved (slot = cell + 2 + c16) to pool slots `0076`-`008e`: 08-0b read mar1/2 mdr1/2, 0c read ++ mar1 mdr1, **0d read ++ mar2 mdr2**, 10-13 write, 14 write ++ mar1 mdr1, **15 write ++ mar2 mdr2**, **16 write_stack ++ mar1 mdr1**, 17 write_stack ++ mar2 mdr2, 0e set_misc_command, 0f cancel, 18-1f unify_write .. exec_misc_write. It agrees with the bit reading except on 0d, 15, 16, 0e and 0f. Of those, only 15 is discriminated by execution (`ccf_bits`); 0d, 16, 0e and 0f are changed on the held source alone (0d runs at `2222` in failing U2 side cases only; 16 at `3367` is not reached). Decided at `4c05`/`4c06` (CCF 15): cells 13 and 14 get R12 and R13 (the conflict section 18 of `pseudo_pimm_microcode.md` left open). `write_stack` stored as `write` (INFERRED). 0f 'cancel' leaves MAR2 / MDR2 STALE (`3494`, read_variable's end, uses neither: NOT discriminated); 0e and 18-1f raise | `ccf_bits`: STOP at `2250` at the first pick (cell 14 holds R1b's link, not R13: the other-parent call) |
+| `RULES['wsel_d_em1']`: a select d (SC1F / SC2F / DSTF) with WRBF set is R(10 \| EM1), EM1 0-f | INFERRED (from the image) | the 4 such writers carry EM1 0, 9, b, 2 (`21e4` R10 after a `3349` pop, as `202f`); at `4c01` (EM1 5) MAR1 := R15, so `4c02` is R15 := R15 - 1 as `216d` and `4cc0`. Held-out: the refill `3365`/`3366` (EM1 f) take MAR1 := R1f, the heap pointer; `check_pu.py`'s refill cases now stop at `3367` (a stepping write that also loads MAR1), re-pinned. EM1 10-3f raise, and so does a word whose other fields also consume EM1 (`em1_other_use`): 53 of the 99 select-d words are admitted; 14 use EM1 elsewhere too (`0517`, `0ab4`-`0abc`, `1989`, `357c`, `3c39`, `4172`, `4c5f`, `63d6`, `75a4`, `79c9`), counter-evidence kept. rassy's `sc1f/7` arm d not decoded | `wsel_d_off`: STOP at `4c01` (W0d never set) |
 | `RULES['jmpf8_goto_if']`: JMPF 8 in a word with no CNDF is a short goto (upc + signed EM3) taken if COND (the word before's) | HELD-SOURCE (the kind), INFERRED (the timing) | rassy `jmpf/9` arm 8 (@2afb): 'goto', `short/3`, the 'if cond' slot `00af`. At `4c01` COND is `4c00`'s slit_check (CNDF 7 EM1 19); taken, `4c08` (a priority-bit shift, as execute's `4cc5`). Tension recorded: rassy's arm covers `34a1` and `4cc2` too, which still fall through (`jmpf8_setup`, `jmpf8_flag`) | `jmpf8_goto_off`: STOP at `4c01`; `slit_pending` (the flag set): STOP at `4c08` (ALF shift, not modelled) |
 | `setup.FORMS['enqueue_goal']`: the label in MDR1 (DFF 1, as `try_me_else`); the pop of R1b (ODPF 1, EMO1 b) with its head in MAR2 (ODSF 2, `ENQ_HEAD`) | INFERRED | the four DFF 1 entries all take a label; `4c00` copies MDR1 to W10 and `4c03` stamps it COD into cell 12; `4c00` reads [MAR2], `4c04` R1b := it, `4c05` R10 := `{HOOKo, old R1b}`. collect_list's ODSF 2 (read, not run) was read as MDR2: kept apart | `enq_head_mar1`: STOP at `4c00` (MAR2 never set); `enq_label_mdr2`: STOP at `4c04` (STALE written); `enq_label_plus1`: FAIL at instruction 3 (cell 12 one past `pimm.py`'s code) |
 | `setup.EXECUTE_MDR1_EMO1`: execute's S stage puts R(10 \| EMO1) = R15 in MDR1 | INFERRED | EMO1 5 (rassy crr); `4cc0` R15 := MDR1 - 1, as `216d` and `4c02`. U2's run (no R15) keeps STALE | `execute_mdr1_stale`: STOP at the second pick, `216e` (crr STALE) |
-| `u3_goals.INITIAL` R16 = 1 | INFERENCE | R16 (rassy 'ccc') counts up at `4c06`-`4c07`, down at `2171`-`2172`; running out (`2173` -> `2174`) charges R15 to R13's record (`2177` calls `12e0`-`12ea`): read as the foster parent's live goals, the driver itself one | `r16_zero`: STOP at the second pick, `12e3` (cond PMPF, a flag not given) |
+| `u3_goals.INITIAL` R16 = 1 | OPEN (two readings, both run) | R16 (rassy 'ccc') counts up at `4c06`-`4c07`, down at `2171`-`2172`; running out (`2173` -> `2174`) charges R15 to R13's record (`2177` calls `12e0`-`12ea`). Read as the queue's length: every R14 push in the image (census of the 21 R14 writers: `080c`-`080e`, `4c06`/`4c07`, `4c15`/`4c11`, `1f23`/`1f1b`) steps R16 too, `2170`'s empty test comes before the decrement, and the boot's `20a0`-`20a1` gives R16 = 0 with the R06 = 0 behind R14 = nil; then R16 = 0. Read as the foster parent's live goals (driver included): R16 = 1; a wake (`080e`) stepping R16 counts against it. The main run takes 1 (3 picks); a second pinned run takes 0 (`PINNED_R16_0`: 24 of 41, 1 pick, STOP at `12e3`). Undecided | `r16_zero`: STOP at the second pick, `12e3` (cond PMPF, a flag not given), as the second run |
 | `u3_goals.INITIAL` R15 = 17 | stand-in, cited `20a7` | crr: R15 - 1 at each enqueue, execute and proceed | `crr_two`: STOP at the first pick, `217c` (crr exhausted: PMPF) |
 
-The comparison's own injections: `pg_swap` (the record map crossed
+The comparison's own injections: `setv_addr_op` (set_value's
+cell address from the operand) FAILs at instruction 0 on the cell
+compare; `rec_poke` (the harness rewrites a record cell before the
+enqueue) at 3 on the argument compare; `rfar_off` (U2's) at the first
+pick on A0 and A2; `empty_int0` (initial R14 `{INT, 0}`) at 3 on the
+link compare (the empty pick's own compare is therefore discriminated
+only by the pinned stop `21b3`); `pg_swap` (the record map crossed
 after the second enqueue) FAILs at the first pick on R10 and R14;
 `free_undeclared` (the freed record's write not declared) FAILs at the
 second pick (at the first, the pushed record's cell 0 is rewritten with
