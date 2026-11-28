@@ -1589,6 +1589,35 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
       / +0.61; SV +0.01 / 0 / +0.60; V+, V+C, V+CR, KV, RCZ ≈ +0.60; R
       +0.01 / +0.01 / +0.61), so a flat index term is not what the page
       prints. Not changed here; a separate milestone (A8's index fetch).
+  - Suite effect, GREEN on `3ab1787b` (`s2.log`), against `b62.log`
+    HALTREPORT_ALL: 249 lines change, plus the new deck. Split by a
+    second full suite in a scratch copy of the same tree with only
+    `branched` reverted (`False ||` in `branchTaken`), so every line has
+    a measured cause:
+    - 124 lines: `branched` alone. The scratch copy gives exactly the
+      b62 cycles and memreads. These are the decks with a successful
+      branch to its own fall-through, mostly the diagnostics' `BBZ, bit,
+      $+1.0` (set a bit to zero) and `BD, $+.32` / `BE, $+.32`. Each now
+      restarts the fetch (p.3-23 item 6), which is why memreads move:
+      153 of the 249 lines change memreads, and all but 6 of those are
+      here or in "both".
+    - 96 lines: the budgets alone, and the final count equals the
+      scratch copy's. Every one keeps b62's memreads.
+    - 29 lines: both. In 6 of them the budgets alone also move
+      memreads. These are polling loops whose iteration count depends on
+      speed: the five MCP IPL runs, +2 to +6 (MCP's own bootstrap
+      6322913 → 6091661 budgets only → 6091680; its IOD-deck IPL 6748107
+      → 6510830), and `interval_timer_steps` 1031 → 1122, whose
+      BZXE / CB loops wait for the timer to step.
+    - `problem_1_7`: 272271 → 256272 (budgets: its 16000-pass CB-to-
+      itself wait), memreads 32019 → 32022 (`branched`: BD / BE, $+.32).
+    - 53 CYCLES / MEMREADS pins re-pinned with a history comment in
+      `run_tests.sh`. The MCP stage 8 typed DTIME is back to 00:00:01.
+      Two deck headers (`ax4b_148_immediate_indexed`,
+      `ax4b_5b_immediate_unindexed`) were updated.
+    - The scratch copy has no `.git`, so its own verdict (RED: pins and
+      git-reading sections) is not used. Only its HALTREPORT_ALL lines
+      are.
   - Checks:
     - `tests/run_branch_timing_test.sh`: 8 literal vectors, four observed
       injections (header of `StretchBranchTiming.bsv`).
