@@ -401,19 +401,38 @@ SLICE_PINNED = dict(steps=33, matched=16, slices=1, picks=0, words=417,
 CRRP_PINNED = dict(steps=26, matched=16, slices=0, picks=3, words=289,
                    stop=(16, '219f: ALU input from a read of memory never written'),
                    residual=([], [], [[], [], [], ['cell 10']]))
-STOP_PINS = {'slice': lambda: SLICE_PINNED, 'crr_proceed': lambda: CRRP_PINNED}
+# 'twovar' (path b): 9 instructions matched (the two notings, the second
+# pushing X on the suspension stack, declared), the suspend stops at
+# 3335 (W06); pimm.py's suspend hooks two distinct variable cells.
+TWOVAR_PINNED = dict(steps=18, matched=9, slices=0, picks=0, words=74,
+                     stop=(9, '3335: read of W06, never set'),
+                     residual=([('suspend', ['cell b4'])],
+                               ['R17', 'R18', 'R19', 'cell b4', 'cell f2000000',
+                                'cell f2000001'], []))
+TWOVAR_PIMM_HOOKS = [2]
+# 'prio' (path c): two instructions matched, the stop at the builtin's set-up.
+PRIO_PINNED = dict(steps=15, matched=2, slices=0, picks=0, words=2,
+                   stop=(2, "'no set-up form for calculate_priority_from_minimum'"),
+                   residual=([], [], []))
+STOP_PINS = {'slice': lambda: SLICE_PINNED, 'crr_proceed': lambda: CRRP_PINNED,
+             'twovar': lambda: TWOVAR_PINNED, 'prio': lambda: PRIO_PINNED}
 
 
 def stop_got(out, n):
     st = out['stop']
+    why = None
+    if st:
+        why = st[2] if st[2] == SLICE_STOP else st[3]
+        if why.startswith('219f: ALU input from a read of memory never written'):
+            why = '219f: ALU input from a read of memory never written'
     return dict(steps=n, matched=out['matched'], slices=out['slices'], picks=out['picks'],
-                words=out['words'],
-                stop=(st[0], st[2] if st[2] == SLICE_STOP else st[3][:len(
-                    '219f: ALU input from a read of memory never written')]) if st else None,
+                words=out['words'], stop=(st[0], why) if st else None,
                 residual=(out['susp_residual'], sorted(out['prog_residual']), out['residual']))
 
 
 def stop_moved(out, n, prog):
+    if prog == 'twovar' and out['pimm_hooks'] != TWOVAR_PIMM_HOOKS:
+        return True
     return (stop_got(out, n) != STOP_PINS[prog]() or bool(out['fail']) or bool(out['boot_stop'])
             or out['boot_residual'] != BOOT_RESIDUAL_PINNED or out['boot_words'] != BOOT_PINNED)
 
@@ -639,6 +658,110 @@ CRRP_CELLS = [
 ]
 
 
+# U3d second step, path (b): 'twovar', a goal whose guards wait on two
+# variables.  p(X, Y, A) runs first (the compiler executes the first body
+# goal, enqueues q), its first clause's wait_atom 0 notes X (first noting,
+# 3a38-3a3f: R18 := X, R17 := [b4] - 1), the second clause's wait_atom 1
+# notes Y (3a3c: R18 is not Y, 3a41-3a43: X pushed at [R17 + 1], R18 :=
+# Y), then suspend 3, @24: 1c08-1c10 fill the record, 1c60-1c65 find the
+# stack not empty (R17 = [b4]) and take the many-variable path, 1d20-1d21,
+# 1d3a 'call 3334', the allocator's size-4 row; 3334 reads the wide 1a0
+# (pu.RULES['sc2_wide_em1']) and 3335 reads W06, which no word the run
+# executes writes (13 static writers, 1211 .. 5753, none on the boot or
+# any path run): the pinned stop.  q(X, _) would bind X = [] and wake p.
+TWOVAR_SOURCE = """\
+:- module mv.
+:- public go/1.
+go(A) :- p(X, Y, A), q(X, Y).
+p([], _, A) :- true | A = x.
+p(_, [], A) :- true | A = y.
+q(X, _) :- true | X = [].
+"""
+TWOVAR_CELLS = [
+    (0x23, 0x34020000),  # 15  put_value 2,0,0   ; r_r
+    (0x23, 0x13010000),  # 16  set_variable 1,0,0   ; c8_r
+    (0x23, 0x13020100),  # 17  set_variable 2,1,0   ; c8_r
+    (0x23, 0x63020013),  # 18  enqueue_goal 2, @39
+    (0x23, 0x61030003),  # 19  execute 3, @24
+    (0x02, 0x000113e2),  # 20  atom #113e2
+    (0x00, 0x00000000),  # 21  integer 0
+    (0x24, 0x03000016),  # 22  ; predicate head 03000016
+    (0x00, 0x000b0000),  # 23  integer 720896
+    (0x23, 0x68000003),  # 24  try_me_else 0, @29
+    (0x23, 0x80000000),  # 25  wait_atom #0
+    (0x23, 0x1d010000),  # 26  collect_value 1,0,0   ; r
+    (0x23, 0xc2011b3d),  # 27  get_atom 2, #11b3d
+    (0x23, 0x60000000),  # 28  proceed 0,0,0   ; no
+    (0x23, 0x68000003),  # 29  try_me_else 0, @34
+    (0x23, 0x81000000),  # 30  wait_atom 1, #0
+    (0x23, 0x1d000000),  # 31  collect_value 0,0,0   ; r
+    (0x23, 0xc2012171),  # 32  get_atom 2, #12171
+    (0x23, 0x60000000),  # 33  proceed 0,0,0   ; no
+    (0x23, 0x6903fff4),  # 34  suspend 3, @24
+    (0x02, 0x0001087b),  # 35  atom #1087b
+    (0x00, 0x00000000),  # 36  integer 0
+    (0x24, 0x02000025),  # 37  ; predicate head 02000025
+    (0x00, 0x00030000),  # 38  integer 196608
+    (0x23, 0x1d010000),  # 39  collect_value 1,0,0   ; r
+    (0x23, 0xba000000),  # 40  get_nil 0,0,0   ; r
+    (0x23, 0x60000000),  # 41  proceed 0,0,0   ; no
+]
+
+
+# U3d second step, path (c): 'prio', a goal of another priority by the
+# held compiler's own pragma: q(X)@priority(*, 100) compiles to
+# put_integer 3, 100; calculate_priority_from_minimum 3, 3 (a 22:ED
+# builtin cell); enqueue_goal_with_priority 3, @35 (pimm.py drops the
+# priority: one ready queue, i_enqueue_goal_with_priority).  The firmware
+# stops at the builtin: its entry 1dda has nano-code ACF 5, DFF 2, an
+# operand set-up no harness form models (setup.FORMS has none): pinned.
+# What a scratch form ('x', None) showed (not kept): 1dda-1de5 test X's
+# tag, compare X with the wide 310 (X = 2000 takes 1def: W10 := 8, 1924,
+# read as an error exit, not followed), read cells 9 and 10 of R13's
+# record (the boot's foster parent, 20e7: {INT, ffffffff}, {INT, 0}, the
+# range), (max - min) shift_right_32m 20, then call 1d92, a step loop
+# whose JMPF 8 at 1d93 (not a flag word) and CNDF 1 (1927) are undecided.
+PRIO_SOURCE = """\
+:- module pr1.
+:- public go/1.
+go(A) :- p(X, A), q(X)@priority(*, 100).
+p(a, A) :- true | A = x.
+q(X) :- true | X = a.
+"""
+PRIO_CELLS = [
+    (0x23, 0x34010000),  # 15  put_value 1,0,0   ; r_r
+    (0x23, 0x31030064),  # 16  put_integer 3,0,100   ; r_c16
+    (0x22, 0xed030300),  # 17  calculate_priority_from_minimum 3,3,0   ; r_r
+    (0x23, 0x13010000),  # 18  set_variable 1,0,0   ; c8_r
+    (0x23, 0x6403000e),  # 19  enqueue_goal_with_priority 3, @35
+    (0x00, 0x01000000),  # 20  integer 16777216
+    (0x23, 0x61020003),  # 21  execute 2, @26
+    (0x02, 0x000113e2),  # 22  atom #113e2
+    (0x00, 0x00000000),  # 23  integer 0
+    (0x24, 0x02000018),  # 24  ; predicate head 02000018
+    (0x00, 0x00050000),  # 25  integer 327680
+    (0x23, 0x68000002),  # 26  try_me_else 0, @30
+    (0x23, 0x800107d2),  # 27  wait_atom #107d2
+    (0x23, 0xc1011b3d),  # 28  get_atom 1, #11b3d
+    (0x23, 0x60000000),  # 29  proceed 0,0,0   ; no
+    (0x23, 0x6902fffa),  # 30  suspend 2, @26
+    (0x02, 0x0001087b),  # 31  atom #1087b
+    (0x00, 0x00000000),  # 32  integer 0
+    (0x24, 0x01000021),  # 33  ; predicate head 01000021
+    (0x00, 0x00020000),  # 34  integer 131072
+    (0x23, 0xc00107d2),  # 35  get_atom #107d2
+    (0x23, 0x60000000),  # 36  proceed 0,0,0   ; no
+]
+
+
+def prio_cells(pc0):
+    return list(PRIO_CELLS)
+
+
+def twovar_cells(pc0):
+    return list(TWOVAR_CELLS)
+
+
 def slice_cells(pc0):
     return list(SLICE_CELLS)
 
@@ -671,7 +794,8 @@ PROGRAM_ARGS = args_append2
 PROGRAM_CODE = driver_cells
 PROGRAMS = {'append2': (args_append2, driver_cells), 'suspend': (args_suspend, driver_cells),
             'stream': (args_stream, stream_cells), 'slice': (args_one_var, slice_cells),
-            'crr_proceed': (args_one_var, crrp_cells)}
+            'crr_proceed': (args_one_var, crrp_cells), 'twovar': (args_one_var, twovar_cells),
+            'prio': (args_one_var, prio_cells)}
 
 
 def pimm_run():
@@ -893,6 +1017,7 @@ def run(verbose=False, entry=None, prog=None):
     FRESH.clear()
     INDIRECT.clear()
     del REFILLS[:]
+    del SUSP_PUSHES[:]
     try:
         done = boot(p, m.hp, entry)
     except PU.Unmodelled as e:
@@ -931,6 +1056,11 @@ def run(verbose=False, entry=None, prog=None):
         print('FAIL boot: %s' % '; '.join(r16_bad))
         steps = []
     skip_to = 0
+    # pimm.py's suspends: how many variable cells each hooks (M lines with
+    # a HOOK tag; the twovar pin wants 2, two distinct variables)
+    out['pimm_hooks'] = [len({ln.split()[1] for ln in st[2] if ln.startswith('M ')
+                              and int(ln.split()[2][:2], 16) & ~1 == HOOKO & ~1})
+                         for st in steps if cell_name(p, st[1]) == 'suspend']
     for k, (pc, cellv, lines, after) in enumerate(steps):
         if k < skip_to:                             # declared: guard_to_alt
             out['skipped'].append((k, pc))
@@ -1017,6 +1147,8 @@ def run(verbose=False, entry=None, prog=None):
             fails = U2.compare(p, m, rn, rl, after, name, an0, mem0)
             if DECLARE_DEREF_REG and base in GUARD_OPS:
                 fails = declare_deref_reg(p, an0, fails)
+            if base in GUARD_OPS:
+                fails = declare_susp_push(p, r0, fails)
             if DECLARE_FRESH_MRB and base == 'put_reused_structure':
                 fails = declare_fresh_mrb(p, rn, lines, after, fails)
             if (DECLARE_FRESH_MRB and FRESH) or (DECLARE_READ_INDIRECT and INDIRECT):
@@ -1134,6 +1266,18 @@ GUARD_OPS = ('wait_nil', 'wait_list', 'wait_atom', 'wait_integer', 'wait_value',
 DECLARE_GUARD_ALT = True      # injection 'guard_alt_undeclared'
 
 
+# U3d second step (2026-11-28): the same difference with nothing skipped,
+# where pimm.py's next instruction is the alternative itself (the guard
+# that notes is the clause's first: wait_atom 0 / wait_atom 1 of the
+# two-variable program, pimm.py's i_wait_atom on an unbound variable goes
+# to the alternative at once): the firmware's R04 is R11 ({REFo, label},
+# as 216a's try_me_else stamped it, HELD), the address pimm.py's; its tag
+# is not COD, so compare_next_pc would refuse it.  OURS.  Injection
+# 'alt_first_skip' (one skipped step needed, as before): FAIL at the
+# first wait_atom (R04 06:..., pimm.py {COD, ...}).
+ALT_FIRST_SKIP = 0
+
+
 def guard_to_alt(p, m, steps, k, r0):
     """The declared difference 'guard_to_alt' (U3 third step): on an
     unbound variable the firmware's guard notes it and fails to the
@@ -1146,7 +1290,7 @@ def guard_to_alt(p, m, steps, k, r0):
     r04, r11 = p.r.get(R_PC), r0.get(0x11)
     if not r04 or PU.is_stale(r04) or r04 != r11 or r04 is r0.get(R_PC):
         return None
-    for j in range(k + 2, len(steps)):
+    for j in range(k + 1 + ALT_FIRST_SKIP, len(steps)):
         if m.load + steps[j][0] == r04[1]:
             break
         if [ln for ln in steps[j][2] if ln[:2] in ('R ', 'M ')]:
@@ -1615,6 +1759,38 @@ DECLARE_DEREF_REG = True      # injection 'deref_reg_undeclared'
 DEREF_REG_MARKED = True       # injection 'deref_reg_marked_off' (U3d)
 
 
+# U3d second step (2026-11-28), path (b): a guard noting a second
+# variable pushes the first one (R18, the cache) onto the suspension stack
+# (3a3c compares R18 with the new variable, 3a41-3a42: [R17 + 1] := R18,
+# R17 := R17 + 1; 3a43 R18 := the new one): memory pimm.py has no copy of
+# (its suspension list is a Python list, pimm.py's 'S' line).  Declared
+# (OURS, as 'free'): the one write at the old R17 + 1, holding the old R18,
+# within the stack from SSPB, with R17 moved there.  Injection
+# 'susp_push_undeclared': FAIL at the second variable's guard.
+DECLARE_SUSP_PUSH = True
+
+
+def declare_susp_push(p, r0, fails):
+    if not DECLARE_SUSP_PUSH:
+        return fails
+    r17, r18 = r0.get(0x17), r0.get(0x18)
+    if not r17 or PU.is_stale(r17) or not r18 or PU.is_stale(r18):
+        return fails
+    a = (r17[1] + 1) & 0xffffffff
+    if not (SSPB <= a < SSPB + 0x400) or p.mem.get(a) != r18 or p.r.get(0x17, (0, None))[1] != a:
+        return fails
+    tag = 'heap %x: firmware wrote ' % a
+    out = [f for f in fails if not f.startswith(tag)]
+    if len(out) < len(fails):
+        print('      declared: suspension stack [%x] := %s (the first noted variable;'
+              ' pimm.py keeps a list)' % (a, fmt(r18)))
+        SUSP_PUSHES.append(a)
+    return out
+
+
+SUSP_PUSHES = []
+
+
 def declare_deref_reg(p, an0, fails):
     """The declared difference 'deref_reg' (U3 third step): a guard
     that dereferenced its argument register leaves the value it reached
@@ -1891,6 +2067,12 @@ def _r13_harness():
 INJECT = {
     # U3d second step (2026-11-28)
     'jmpf8_fall': lambda: PU.RULES.update(jmpf8_flag=True),
+    'alt_first_skip': lambda: globals().update(ALT_FIRST_SKIP=1),
+    'wide_em1_raise': lambda: PU.RULES.update(sc2_wide_em1=None),
+    'wide_em1_16': lambda: PU.RULES.update(sc2_wide_em1=16),
+    'susp_push_undeclared': lambda: globals().update(DECLARE_SUSP_PUSH=False),
+    'jmpf3_s_tdar_off': lambda: PU.RULES.update(jmpf3_s_tdar=False),
+    'tdar_odpf4_off': lambda: setattr(SU, 'S_TDAR_ODPF4', False),
     'jmpf_d_off': lambda: PU.RULES.update(jmpf_d_call_ifnot=False),
     'refill_undeclared': lambda: globals().update(DECLARE_REFILL=False),
     'wide_cndf7_off': lambda: PU.RULES.update(sc2_wide_cndf7=False),
@@ -2028,7 +2210,9 @@ def main(argv):
     bad3 = bool(tmoved or out3['fail'] or out3['stop'] or out3['boot_stop'])
     bad4 = {}
     for prog, what in (('slice', 'execute\'s slow path, crr run out'),
-                       ('crr_proceed', 'proceed with crr run out')):
+                       ('crr_proceed', 'proceed with crr run out'),
+                       ('twovar', 'a suspend on two variables'),
+                       ('prio', 'a goal of another priority')):
         print('--- the program %s (U3d second step: %s; a pinned stop)' % (prog, what))
         o4, n4 = run('-v' in argv, prog=prog)
         bad4[prog] = stop_moved(o4, n4, prog)
@@ -2037,11 +2221,14 @@ def main(argv):
                   % ('MOVED' if inj else 'FAIL', prog, stop_got(o4, n4), o4['fail'],
                      STOP_PINS[prog]()))
     if inj:
-        print('injection %s: append2 %s, suspend %s, stream %s, slice %s, crr_proceed %s'
+        print('injection %s: append2 %s, suspend %s, stream %s, slice %s, crr_proceed %s,'
+              ' twovar %s, prio %s'
               % (nm, 'MOVED' if bad else 'unchanged', 'MOVED' if bad2 else 'unchanged',
                  'MOVED' if bad3 else 'unchanged',
                  'MOVED' if bad4['slice'] else 'unchanged',
-                 'MOVED' if bad4['crr_proceed'] else 'unchanged'))
+                 'MOVED' if bad4['crr_proceed'] else 'unchanged',
+                 'MOVED' if bad4['twovar'] else 'unchanged',
+                 'MOVED' if bad4['prio'] else 'unchanged'))
         return 1 if bad or bad2 or bad3 or any(bad4.values()) else 0
     if bad or bad2 or bad3 or any(bad4.values()):
         return 1

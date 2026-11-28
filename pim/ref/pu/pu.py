@@ -594,6 +594,17 @@ RULES = {
     # another field).  Executed at 4cf6 (execute's slow path: MDR1 := 70,
     # with COND := PMPF).  Injection 'wide_cndf7_off' (u3_goals.py).
     'sc2_wide_cndf7': True,
+    # U3d second step (2026-11-28): a wide SC2F b word whose EM1 is not a
+    # stamp and is consumed by no other field (no TGIF 1/2, MCF, CNDF 7)
+    # reads the 10 bits EM2:EM3 too, EM1 ignored.  INFERENCE: the
+    # allocator-by-size rows 3331 / 3334 / 3337 / 333a carry EM1 3, 4, 5,
+    # 6 beside the same 1a0, each followed by a word stamping VECT3o ..
+    # VECT6o (the row's own size), so EM1 there names the row, not part
+    # of the value.  Executed at 3334 (suspend's many-variable path, 1d3a
+    # 'call 3334'); NOT discriminated there: 3335 overwrites MDR2 (W06)
+    # before anything reads it.  Injections 'wide_em1_raise' (None: STOP
+    # at 3334) and 'wide_em1_16' (16, the whole EM: unchanged, recorded).
+    'sc2_wide_em1': 10,
     'mcf_sub_flags': True,
     # U3 second session: ALU operation add_with_one (rassy's EM2 3) is
     # a + b + 1.  INFERRED from the name (HELD-SOURCE, mekbn.RASSY_ALU)
@@ -1060,6 +1071,17 @@ RULES = {
     # rule): a guard fires, so the rule is needed, but NOT discriminated
     # (no rival reading of the multiway runs and is compared).
     'tdar_holds': True,
+    # U3d second step (2026-11-28): a JMPF 3 case_branch with no E-stage
+    # set-up takes the S stage's TDAR (setup.S_TDAR, and for ODPF 4 entries
+    # setup.S_TDAR_ODPF4), as JMPF 2's does.  INFERRED from the table it
+    # reaches: wait_atom's row 6 (an operand through REFo pointers to an
+    # unbound cell, 3978) has no set-up word, and 3979's JMPF 3 base 3940
+    # is 16 rows: with column 6 (7 - TDPF 1), UNDF's byte 16 lands on 3950,
+    # 'jump 3a38', inside the noting words 3a22-3a3f, the even bytes 0-10
+    # on 3a38 and the odd on 3a2c (tag bit 0, the MRB, as in the noting).
+    # Executed at 3979 (the two-variable suspend, U3d second step, path
+    # b).  Injection 'jmpf3_s_tdar_off' (raises again).
+    'jmpf3_s_tdar': True,
     # AS1F 3 with AS2F not 0 (0802: 'as1_3 - MDR1'; the EM bits there are
     # the JMPF 3 base, not a constant, so RULES['as1f3_em2'] does not
     # apply): the AS1 source is not decided.  The result is UNKNOWN: a
@@ -1504,8 +1526,11 @@ class PU:
             if field(x, 'EM1') and field(x, 'TGIF') not in (1, 2) \
                     and not (RULES['sc2_wide_mcf'] and bit(x, 18)) \
                     and not (RULES['sc2_wide_cndf7'] and field(x, 'CNDF') == 7):
-                raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
-                                 % field(x, 'EM1'))
+                if RULES['sc2_wide_em1'] == 16:
+                    return (0, field(x, 'EM') & 0xffff)
+                if not RULES['sc2_wide_em1']:
+                    raise Unmodelled(upc, 'SC2F b with EM1 %02x not a stamp (width UNKNOWN)'
+                                     % field(x, 'EM1'))
             return (0, field(x, 'EM') & 0x3ff)
         if sc2 == mekbn.SC2_WIDE and RULES['sc2_wide'] == 'EM1:EM2':
             return (0, field(x, 'EM') >> 4)         # injection only
@@ -2005,7 +2030,9 @@ class PU:
         if jf == 3:
             # S8 case_branch: base | the TGT byte's low 4 bits, set up by
             # the word just before (a CNDF 7, JMPF 0 word)
-            if tdar is None or not self._tdar_reaches(tdar, cycle):
+            if tdar is not None and tdar[0] == 'S' and RULES['jmpf3_s_tdar']:
+                pass                    # the S stage's TDAR (RULES['jmpf3_s_tdar'])
+            elif tdar is None or not self._tdar_reaches(tdar, cycle):
                 raise Unmodelled(upc, 'JMPF 3 case_branch without a set-up in the word before')
             if target & (63 if RULES['case_wide'] else 15) & tdar[1]:
                 raise Unmodelled(upc, 'JMPF 3 case_branch base %04x overlaps TDAR %02x'
