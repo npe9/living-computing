@@ -678,6 +678,38 @@ From the sweep, not from the documentation alone:
      is unchanged (21 exchanges, the same strings; tape re-recorded live).
      Open: making the stand-ins retry-safe (impure data in slots) before
      any honest second pass.
+   - **load answer step (2026-11-28): phase/2 settled.** The PIMOS
+     Manual V3.0 (November 1991, pimosman Eman/e-proginfo.tex:494-497,
+     PRINTED) says load:do/4 answers the atom `normal` (unload:do/5
+     beside it `normal(FullPathName)`), MENDELS names PIMOS 3.0
+     (install.e:22-24), and its KL1 half reduces `normal(X)` to `normal`
+     itself for compile1 and save_library (main.kl1:116-120, 135-139)
+     but passes load's Status on as it is (:140-144). The PIMOS run here
+     answers `normal(Loaded)` (held 4.0 src/library/loader/modtbl.kl1:
+     274-277). No held source reduces it (every load module and load:do
+     caller in pimos and the IFS/ICOT archives, MENDELS, the manuals). A
+     version mismatch, recorded; that PIMOS 3.0's loader matched its
+     manual is INFERENCE. Fixed by an OURS adapter on the PSI side
+     (`mendels.adapt_load_answer`): exactly that string becomes the
+     packet MENDELS's own no-file branch makes PIMOS send,
+     `io(0, "loaded_library(normal)")` (OBSERVED byte for byte in a live
+     run without mdllibrary.exe); anything else is refused; the tape
+     keeps PIMOS's string. field_tree's "file not exist" is held
+     behaviour: no tree.field in the archive or in readme.e:198-202's
+     SYSTEM listing, and field_tree save/2 writes none for an empty tree
+     (field_tree.esp:639-640). With phase/2 passing (and `{}` in heads
+     and `X = {}` made the empty vector, pmi 30, KNOWN-PLAINTEXT, which
+     mdl_ckutil message_type/2 needs to end), the system window adds
+     `ERR: error '"compiler.msg"' not exist` (TEMP is empty, readme.e),
+     the Top Menu waits for a pick, and the mendel_title process, told to
+     exit, writes to its `permission(show)` screen under the base; the
+     coordinator raises it and lifts the base whole. **Stop:**
+     `simpos: bitmap_display save/7: winfb status 4`: 75,520 words over
+     save memory's 65,536, the need `simpos/subsystems/window.md` §7
+     predicted. Open decision: save memory on SDRAM (format change) or a
+     lift that saves only the hidden part (TM-225 p10). The PIMOS side is
+     unchanged (21 exchanges; tape re-recorded live; live screen =
+     replay, `docs/simpos/screens/mendels_zone.png`).
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the

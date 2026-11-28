@@ -344,8 +344,10 @@ PINNED = {'header': (20480, 8286, 20480),
                # 157, 128 before blt 13 number and e8 if_number (MENDELS
                # window mixins step, 2026-11-27): the table names them
                # NUMB? (a hit) and jmpUNUM (no hit: the e0-eb names start
-               # jmpU, as e0 and e1's do)
-               'kl0': (159, 129, 52, 64),
+               # jmpU, as e0 and e1's do); 160, 130 since pmi 30
+               # get_vector_0 (MENDELS, 2026-11-28): the table names it
+               # GVCT0 (beside GVCT1, GVCT2 and PVCT0 at b0)
+               'kl0': (160, 130, 53, 64),
                'kl1': (205, 179, 57, 55),
                'anchors': ['ALLOC', 'PROC', 'GLIST', 'PLIST', 'ADD', 'SUB', 'AND', 'OR']},
  'pointers': {'5000-503f code': (110, 12, 1.3, 3, 0.7),

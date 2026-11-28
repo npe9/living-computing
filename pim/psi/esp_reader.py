@@ -21,7 +21,8 @@ held login files' clause syntax (shell.md §4.2.2) and nothing more:
 read_terms(text) -> [term, ...] with kl0 terms (Atom, int, Str, Var,
 Cons, Vec).  A syntax error raises ValueError.
 
-MENDELS (2026-11-27): the infix `::` (200, xfx, OURS priority), see INFIX.
+MENDELS (2026-11-27): the infix `::` (200, xfx, OURS priority; not an ESP
+system operator), see INFIX.
 
 Step 3o (2026-11-26), for the debugger's goals (standin/debugger.esp):
   - the prefix `:` of a method call, `:f(R, A, ...)` read as {':', {f, R,
@@ -49,8 +50,12 @@ TOKEN = re.compile(r'''
 INFIX = {':-': (1200, 'xfx'), ',': (1000, 'xfy'), ':=': (700, 'xfx'),
          # MENDELS (2026-11-27): `Package::Module`, in the terms PIMOS's KL1
          # half writes for the ESP half (main.kl1's loaded_library(normal(
-         # [mendel::example1, ...])), OBSERVED on the bridged run), which
-         # SIMPOS's reader must have read.  Its priority OURS
+         # [mendel::example1, ...])), OBSERVED on the bridged run).  OURS:
+         # the ESP manual's system operators (program-e.tex:7816-7850) have
+         # no `::`, so SIMPOS's reader most likely did not read it; since
+         # 2026-11-28 the run reaches it only with mendels.LOAD_ADAPTER off
+         # (the adapter gives the ESP half loaded_library(normal), the
+         # PIMOS V3.0 manual's answer).  Its priority OURS
          '::': (200, 'xfx')}
 
 

@@ -32,11 +32,18 @@ resume/0, which shows the whole zone over the title screen, its system
 window (a pmacs_window inside the base, since 2026-11-27) with
 field_tree's "file not exist" message (frame pinned, docs/simpos/
 screens/mendels_zone.png); then esp_go/3, whose exec/3 calls the held
-phase/2 on loaded_library(normal([...])), which no clause matches: the
-run stops there (mendels.watch_phase, OURS), before call_esp/3's repeat
-retries the same message.  Re-recorded live 2026-11-27 from a copy of
-PROMPT.pkl, four times: the 21 exchanges and strings as before, the stop
-and `where` new each time; the live screen equals the replay's.
+phase/2.  Since the load answer step (2026-11-28) the PSI is given
+loaded_library(normal) in place of PIMOS's loaded_library(normal([...]))
+(mendels.adapt_load_answer, OURS: the PIMOS V3.0 manual's load:do/4
+answer, the packet MENDELS's no-file branch makes; psi/README.md "The
+load answer step"), so phase/2 succeeds; mdl_check reports the missing
+TEMP>compiler.msg in the system window, phase(top) waits in top_menu,
+and the mendel_title process writes to its permission(show) screen under
+the base, whose raise lifts the base whole: the run stops at save/7's
+winfb BADSAVE (75,520 words; window.md §7).  With the adapter off it
+still stops at phase/2 (mendels.watch_phase, OURS; test_adapter_off).
+Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: the 21 exchanges
+and strings as before; the live screen equals the replay's.
 
 Mixins (the window mixins step) runs the mixins through two other held
 users on the coordinator, with the mouse: icotext's whole held class
@@ -209,6 +216,29 @@ kill, set_title, set_size, set_position, get_size and get_position of
 the inferior pmacs_window are not injected one by one (MENDELS's run
 sends create, set_font and activate before the stop).
 
+The load answer step (2026-11-28): test_adapter_off, test_load_adapter,
+test_adapter_refusal_stops, test_empty_vector (pmi 30) and
+test_ch_string_string.  Injections, OBSERVED 2026-11-28 (10, made by a
+scratch script from a backup, restored by copy and cmp; this whole file
+run on each; * NONE until test_empty_vector gained a one-element vector,
+then run again):
+
+| injection | failed |
+|---|---|
+| espc: `{}` got as the atom (no pmi 30) | test_empty_vector, test_library_restored, test_replay |
+| kl0 get_vector_0 always fails | test_empty_vector, test_replay |
+| kl0 get_vector_0 matches any vector * | test_empty_vector |
+| mendels: LOAD_ADAPTER off | test_adapter_refusal_stops, test_replay |
+| adapter answers loaded_library(abnormal) | test_load_adapter, test_replay |
+| adapter passes an unknown loaded_library string (no refusal) | test_adapter_refusal_stops, test_load_adapter |
+| get_ch_string_string: the bare text | test_ch_string_string, test_replay |
+| get_ch_string_string not modelled | test_ch_string_string, test_replay |
+| esp_reader: `::` not an operator | test_adapter_off, test_reader_package_colon |
+| mendels.py: the phase/2 watch off | test_adapter_off |
+
+(The earlier tables' `::` and watch rows named test_replay; the run now
+reaches those only with the adapter off.)
+
 Weak spots: the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
 the unit tests carry them.  getl's line start is caught only by
@@ -252,15 +282,26 @@ STRINGS_IO = [
     ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
     ('<', 56, 1, '>sys>user>MENDELuser>SYSTEM>'),
 ]
-STOP = ('mendels: held mendel##mendel_main phase/2 has no clause for {loaded_library,{normal,'
-        '[{::,mendel,example1},{::,mendel,example2},{::,mendel,example3}]}} '
-        '(call_esp/3 would retry the same message)')
-# the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-27
+STOP = 'simpos: bitmap_display save/7: winfb status 4'
+# the stop before the load adapter (2026-11-27), which the run still gives
+# with mendels.LOAD_ADAPTER off (test_adapter_off)
+STOP_NO_ADAPTER = ('mendels: held mendel##mendel_main phase/2 has no clause for {loaded_library,{normal,'
+                   '[{::,mendel,example1},{::,mendel,example2},{::,mendel,example3}]}} '
+                   '(call_esp/3 would retry the same message)')
+# the packet the load adapter puts in the PSI in place of PIMOS's
+# io(0, "loaded_library(normal([mendel:: example1,...]))") to device 50:
+# OBSERVED byte for byte 2026-11-28 as the packet PIMOS itself sends when
+# MENDELS's held no-file branch answers (a live run with no mdllibrary.exe
+# served; mdl_comp.kl1:43-54 `Result = normal`)
+LOAD_ANSWER_PACKET = ('00000032000000000000026c00000002ffffffff0000002c00000000'
+                      '236c236f23612364236523642132236c236923622372236123722379214a'
+                      '236e236f2372236d2361236c214b')
+# the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-28
 # (the live run's screen is the same, PNG byte for byte): MENDELS's whole
-# zone shown by resume/0, the system window with it since the system
-# window step, committed as docs/simpos/screens/mendels_zone.png
+# zone, its system window with two messages, committed as
+# docs/simpos/screens/mendels_zone.png
 ZONE = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_zone.png')
-ZONE_FRAME = ('0479626820faf704a605492c4e861acbd08cea2961a27b10c7716232c045069d', 150737)
+ZONE_FRAME = ('8bc533270609bf46346276d88c386f5a488821558d5f0f89541df3d3a1999cde', 151723)
 
 
 def load_tape():
@@ -282,19 +323,33 @@ class Run(unittest.TestCase):
         stop, psi, left = mendels.replay(TAPE)
         self.assertEqual('%s: %s' % (stop.cause, stop.detail), STOP)
         self.assertEqual(left, [])
-        # the watch (mendels.watch_phase) stops at phase/2's failure,
-        # before the unwind: exec/3 (@23b) under esp_go/3 (@155) under
-        # esp_control/2's loaded_library clause, past resume/0
-        self.assertEqual(psi.where(5), ['mendel##mendel_main @4ec', 'mendel##mendel_main @23b',
-                                        'mendel##mendel_main @155', 'mendel##mendel_esp_device @61',
-                                        'mendel##mendel_esp_device @38'])
-        # the zone as resume/0 left it: every pane of show_all_window/1
-        # (mendel_win.esp), the last the system window, the Pmacs window
-        # inside the base (bottom right, its inferior form), which shows
-        # system_io's one message so far, field_tree restore/2's "file not
-        # exist" error (field_tree.esp:446-447), a line longer than a row;
-        # under the base, the title screen's window (its part only saved,
-        # save_memory save_under/6)
+        # since the load adapter (2026-11-28): phase/2 takes its
+        # loaded_library(normal) clause; mdl_check after_KL1compiler/0
+        # finds no TEMP>compiler.msg (readme.e: TEMP "no files") and says
+        # so in the system window; phase(top) waits in top_menu's read; the
+        # mendel_title process, sent "exit", writes " end" to its screen
+        # (title.esp show/1), a permission(show) window under the base, so
+        # the coordinator raises it (TM-225 p11 (3); coordinator.esp
+        # held_back/3) and lifts the base whole: save/7 of id 2, the base's
+        # 1,280 x 944 at (0,0), at base 9128, which save memory (65,536
+        # words) cannot hold
+        self.assertEqual(psi.where(12), [
+            'simpos##save_memory @40', 'simpos##save_memory @42', 'simpos##window_pane @2bb',
+            'simpos##coordinator @7d3', 'simpos##coordinator @841', 'simpos##coordinator @9a',
+            'simpos##coordinator @b6f', 'simpos##coordinator @1eb', 'simpos##window_pane @376',
+            'mendel##mendel_title @6d', 'mendel##mendel_title:goal/1 @4', 'simpos##as_program @73'])
+        self.assertEqual([K.resolve(psi.m.x[i]) for i in (0, 3, 4, 5)], [2, 1280, 944, 9128])
+        # the adapter changed one packet, into the no-file branch's
+        self.assertEqual([n.hex() for _r, n in psi.adapted], [LOAD_ANSWER_PACKET])
+        # the zone as the stop leaves it: every pane of show_all_window/1
+        # (mendel_win.esp), the last the system window (a Pmacs window
+        # inside the base, bottom right), which shows system_io's two
+        # messages: field_tree restore/2's "file not exist" error
+        # (field_tree.esp:446-447) and mdl_check open_file/3's
+        # (mdl_check.esp:131-134; `error` from message_type/2's catch-all
+        # message_string/2, mdl_ckutil.esp:197; "compiler.msg" by symbolizer
+        # get_ch_string_string/3); under the base, the title screen's
+        # window (its part only saved, save_memory save_under/6)
         import windev
         fr = windev.device(psi.m).frame
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), ZONE_FRAME)
@@ -342,9 +397,62 @@ class Run(unittest.TestCase):
 
     @unittest.skipUnless(os.environ.get('MENDELS_LIVE'), 'MENDELS_LIVE=PROMPT.pkl runs PIMOS (~80 s)')
     def test_live(self):
-        result, _psi, _pim = mendels.live(os.environ['MENDELS_LIVE'], record=None)
+        result, psi, _pim = mendels.live(os.environ['MENDELS_LIVE'], record=None)
         self.assertEqual(result['stop'], STOP)
         self.assertEqual(result['exchanges'], 21)
+        self.assertEqual([n.hex() for _r, n in psi.adapted], [LOAD_ANSWER_PACKET])
+        import windev
+        with open(ZONE, 'rb') as f:
+            self.assertEqual(windev.png_bytes(windev.device(psi.m).frame), f.read())
+
+    def test_adapter_off(self):
+        # mendels.LOAD_ADAPTER off: the PSI is given PIMOS's own string,
+        # loaded_library(normal([mendel:: example1, ...])), which the held
+        # phase/2 has no clause for (the stop before 2026-11-28)
+        saved = mendels.LOAD_ADAPTER
+        mendels.LOAD_ADAPTER = False
+        try:
+            stop, psi, left = mendels.replay(TAPE)
+        finally:
+            mendels.LOAD_ADAPTER = saved
+        self.assertEqual('%s: %s' % (stop.cause, stop.detail), STOP_NO_ADAPTER)
+        self.assertEqual(psi.adapted, [])
+
+    def test_load_adapter(self):
+        # mendels.adapt_load_answer: PIMOS's io with normal(Modules) made
+        # the no-file branch's packet byte for byte; the two strings
+        # phase/2 has clauses for and every other packet passed as they
+        # are; any other loaded_library string refused loudly
+        import fep_bridge as FB
+        tape = load_tape()
+        ios = [bytes.fromhex(h) for e in tape['exchanges'] for h in e['to_psi']
+               if FB.show(bytes.fromhex(h))[2] == 620]
+        changed = [(r, mendels.adapt_load_answer(r)) for r in ios]
+        self.assertEqual([n.hex() for r, n in changed if n != r], [LOAD_ANSWER_PACKET])
+
+        def io(text):
+            return bytes.fromhex('0000003200000000') + FB.fepm.pack_message([620, 0, FB.fepm.jis(text)])
+        for text in ('loaded_library(normal)', 'loaded_library(abnormal)', 'start', 'normal([a:: b])'):
+            self.assertEqual(mendels.adapt_load_answer(io(text)), io(text))
+        self.assertEqual(mendels.adapt_load_answer(io('loaded_library(normal([p:: m]))')).hex(),
+                         LOAD_ANSWER_PACKET)
+        for text in ('loaded_library(normal(x))', 'loaded_library(usage)',
+                     'loaded_library(normal([p:: m]),x)'):
+            with self.assertRaises(K.Refusal):
+                mendels.adapt_load_answer(io(text))
+
+    def test_adapter_refusal_stops(self):
+        # a loaded_library string the adapter does not know ends the run
+        # with its refusal (the tape's string made normal(x))
+        import fep_bridge as FB
+        tape = load_tape()
+        bad = bytes.fromhex('0000003200000000') + FB.fepm.pack_message(
+            [620, 0, FB.fepm.jis('loaded_library(normal(x))')])
+        for e in tape['exchanges']:
+            e['to_psi'] = [bad.hex() if '236c236f2361236423652364' in h else h for h in e['to_psi']]
+        stop, psi, left = mendels.replay(TAPE, tape=tape)
+        self.assertEqual('%s: %s' % (stop.cause, stop.detail),
+                         "mendels: load answer not adapted: 'loaded_library(normal(x))'")
 
 
 class Compile(unittest.TestCase):
@@ -380,6 +488,54 @@ end.''')
         m = K.Machine(espc.library([t]))
         (r,) = K.call_class_method(m, 'user##rp', 'loop', [3, K.Var()])
         self.assertEqual(K.resolve(r[1]), 3)
+
+    def test_empty_vector(self):
+        # `{}` in a head and in `X = {}` is the empty vector, pmi 30
+        # get_vector_0 (KNOWN-PLAINTEXT: sancho1.esp:60, BCMLOGSEQ.ESP:541),
+        # as when put (pmi b0): the shape of MENDELS mdl_ckutil.esp:150-160
+        # message_type/2, which ends only because atom({}) is false and
+        # the head `message_type({},"")` matches (a step limit guards it)
+        t = compile_one('''class ev has
+:mt(C, T, S) :- message_type(T, S);
+:isatom(C) :- X = {}, atom(X);
+:h(C, X, Y) :- h1(X, Y);
+local
+h1({}, empty);
+h1(_, other);
+message_type(T, S) :-
+        ( T = {_, N}, M = 1 ; atom(T), N = {}, M = 2 ),
+        !,
+        message_type(N, S0),
+        S = [M | S0];
+message_type({}, []);
+end.''')
+        self.assertEqual(t.refusals, [])
+        m = K.Machine(espc.library([t]), max_steps=100_000)
+        (r,) = K.call_class_method(m, 'user##ev', 'mt', [K.Atom('file'), K.Var()])
+        self.assertEqual(str(K.resolve(r[1])), '[2]')
+        (r,) = K.call_class_method(m, 'user##ev', 'mt', [K.Vec([K.Atom('a'), K.Atom('b')]), K.Var()])
+        self.assertEqual(str(K.resolve(r[1])), '[1,2]')
+        self.assertEqual(K.call_class_method(m, 'user##ev', 'isatom', []), [])
+        r = K.call_class_method(m, 'user##ev', 'h', [K.Vec([]), K.Var()])
+        self.assertEqual(K.resolve(r[0][1]), K.Atom('empty'))
+        # a vector with elements is not {} (the head's first clause skipped)
+        r = K.call_class_method(m, 'user##ev', 'h', [K.Vec([K.Atom('a')]), K.Var()])
+        self.assertEqual([K.resolve(x[1]) for x in r], [K.Atom('other')])
+        r = K.call_class_method(m, 'user##ev', 'h', [K.Var(), K.Var()])
+        self.assertIsInstance(K.deref(r[0][0]), K.Vec)
+        self.assertEqual(K.deref(r[0][0]).args, [])
+
+    def test_ch_string_string(self):
+        # symbolizer get_ch_string_string/3 (kl0 model, INFERENCE): a
+        # string datum written in double quotes, a quote doubled
+        t = compile_one('''class cs has
+:w(C, S, T) :- :get_ch_string_string(#symbolizer, S, T);
+end.''')
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##cs', 'w', [K.Str('compiler.msg'), K.Var()])
+        self.assertEqual(K.deref(r[1]).text, '"compiler.msg"')
+        (r,) = K.call_class_method(m, 'user##cs', 'w', [K.Str('a"b'), K.Var()])
+        self.assertEqual(K.deref(r[1]).text, '"a""b"')
 
     def test_freeze_melt(self):
         # freeze/2 and melt/2 (blt 3e, 3f; ESP manual program-e.tex

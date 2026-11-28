@@ -194,27 +194,27 @@
  "result": {
   "route": "doc",
   "answers": [],
-  "stop": "mendels: held mendel##mendel_main phase/2 has no clause for {loaded_library,{normal,[{::,mendel,example1},{::,mendel,example2},{::,mendel,example3}]}} (call_esp/3 would retry the same message)",
+  "stop": "simpos: bitmap_display save/7: winfb status 4",
   "where": [
-   "mendel##mendel_main @4ec",
-   "mendel##mendel_main @23b",
-   "mendel##mendel_main @155",
-   "mendel##mendel_esp_device @61",
-   "mendel##mendel_esp_device @38",
-   "mendel##mendel_esp_device:io/4 @4",
-   "pimfep##as_pimos_string_io_device @7f",
-   "pimfep##as_pimos_string_io_device @52",
-   "pimfep##as_pimos_device @145",
-   "pimfep##as_pimos_device @228",
-   "pimfep##as_pimos_device @210",
-   "mendel##mendel_esp_device:goal/1 @4"
+   "simpos##save_memory @40",
+   "simpos##save_memory @42",
+   "simpos##window_pane @2bb",
+   "simpos##coordinator @7d3",
+   "simpos##coordinator @841",
+   "simpos##coordinator @9a",
+   "simpos##coordinator @b6f",
+   "simpos##coordinator @1eb",
+   "simpos##window_pane @376",
+   "mendel##mendel_title @6d",
+   "mendel##mendel_title:goal/1 @4",
+   "simpos##as_program @73"
   ],
   "window": "Shell>>  The value of task: package is mendel . \nShell>>  The value of task: directory is \">sys>user>MENDEL>KL1\" . \nShell>>  The value of task: home is \">sys>user>MENDEL>KL1\" . \nShell>> Load File : PSI::>sys>user>MENDEL>mendel.exe.1\n\"mendel:: graph\" Loaded\n\"mendel:: net\" Loaded\n\"mendel:: execute_main\" Loaded\n\"mendel:: tableau_main\" Loaded\n\"mendel:: esp_utility\" Loaded\n\"mendel:: mendel_package\" Loaded\n\"mendel:: mdl_compiler\" Loaded\n\"mendel:: decomp\" Loaded\n\"mendel:: mendel\" Loaded\n\"mendel:: fmnet\" Loaded\n\"mendel:: common\" Loaded\n\"mendel:: mlib\" Loaded\n\"mendel:: interface\" Loaded\n\"mendel:: scc\" Loaded\n\"mendel:: prim\" Loaded\n\"mendel:: fmparts\" Loaded\nLoad Succeeded\nShell>> \"mendel:: graph\" Updated\n\"mendel:: net\" Updated\n\"mendel:: execute_main\" Updated\n\"mendel:: tableau_main\" Updated\n\"mendel:: esp_utility\" Updated\n\"mendel:: mendel_package\" Updated\n\"mendel:: mdl_compiler\" Updated\n\"mendel:: decomp\" Updated\n\"mendel:: mendel\" Updated\n\"mendel:: scc\" Updated\n\"mendel:: prim\" Updated\nRelink Succeeded\nShell>> ",
   "instructions": 7075533,
   "exchanges": 21,
   "screen": {
-   "sha256": "0479626820faf704a605492c4e861acbd08cea2961a27b10c7716232c045069d",
-   "dots": 150737
+   "sha256": "8bc533270609bf46346276d88c386f5a488821558d5f0f89541df3d3a1999cde",
+   "dots": 151723
   }
  }
 }

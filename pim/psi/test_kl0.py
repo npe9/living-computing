@@ -337,8 +337,10 @@ class Table(unittest.TestCase):
         # (KNOWN-PLAINTEXT on paragraph c_bar_v.esp:249-253, 2026-11-27),
         # 163 before MENDELS's blt 13 number and e8 if_number (KNOWN-
         # PLAINTEXT on paragraph p_wshell.esp:181 and p_tgraph.esp:46-47,
-        # 2026-11-27)
-        self.assertEqual(len(rows), 165)
+        # 2026-11-27), 165 before MENDELS's pmi 30 get_vector_0
+        # (KNOWN-PLAINTEXT on utter sancho1.esp:60 and kappa2
+        # BCMLOGSEQ.ESP:541, 2026-11-28)
+        self.assertEqual(len(rows), 166)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run

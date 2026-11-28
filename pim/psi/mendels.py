@@ -319,6 +319,74 @@ class PsiSide(FB.PsiSide):
         self.m, self.prog = m, prog
         if PHASE_WATCH:
             watch_phase(m)
+        self.adapted = []
+
+    def run(self, exchange):
+        """fep_bridge's run, PIMOS's packets passed through
+        adapt_load_answer (below) on their way into the PSI: the tape
+        keeps what PIMOS sent"""
+        def adapted(from_psi):
+            out = []
+            for raw in exchange(from_psi):
+                new = adapt_load_answer(raw) if LOAD_ADAPTER else raw
+                if new != raw:
+                    self.adapted.append((raw, new))
+                out.append(new)
+            return out
+        return super().run(adapted)
+
+
+# The load answer adapted (OURS adapter, 2026-11-28).  The KL1 half's
+# call_KL1/2 for load_library passes load:do/4's Status on as it is
+# (main.kl1:140-144: `Message = loaded_library(Result)`), while for
+# compile1 and save_library it reduces normal(X) to a bare `normal` itself
+# (main.kl1:116-120, 135-139).  The ESP half's phase/2 has clauses for
+# loaded_library(normal) and loaded_library(abnormal) only
+# (mendelmain.esp:382-389).  The PIMOS manual (V3.0, November 1991,
+# pimosman Eman/e-proginfo.tex:494-497, PRINTED) says of load:do/4: "The
+# atom normal will be returned in the argument Status if the loading
+# completes normally, and the atom abnormal will be returned otherwise"
+# (unload:do/5 beside it, :504-507, "normal(FullPathName)"), and install.e
+# :22-24 names PIMOS 3.0 as MENDELS's OS.  The PIMOS this repository runs
+# (pimosobj's 3.6 objects; the held 4.0 source, src/library/loader/
+# modtbl.kl1:274-277 check_flush) answers normal(Loaded), the module list:
+# OBSERVED here, `loaded_library(normal([mendel:: example1,...]))`.  No
+# held source reduces it (searched: every `:- module load` and every
+# caller of load:do in pimos.tar.Z and the 348 IFS/ICOT archives, the only
+# other being strtgysh's unrelated vload.kl1; MENDELS's KL1 and ESP
+# halves; the V3.0 English manual read; man15.ps and man30.j.ps, IFS
+# manuals/pimos, searched as PostScript strings only, no load:do/4 entry
+# found).  So it is a version mismatch between MENDELS (written to the
+# V3.0 manual) and the loader we run; that PIMOS 3.0's loader itself
+# answered a bare `normal` is INFERENCE (its code is not held).  The
+# adapter puts in the PSI, in place of exactly that string, the string
+# MENDELS's own held no-file branch makes PIMOS send (mdl_comp.kl1:43-54,
+# `Result = normal`; OBSERVED byte for byte 2026-11-28 by a live run with
+# no mdllibrary.exe: io(0, "loaded_library(normal)")).  Any other
+# loaded_library(...) string is refused loudly.  The tape keeps PIMOS's
+# own string (the adapter runs after the exchange)
+LOAD_ADAPTER = True
+LOAD_ANSWER = 'loaded_library(normal)'
+
+
+def adapt_load_answer(raw):
+    """RAW, a packet from PIMOS; an io (620) whose string is
+    loaded_library(normal([Package:: Module, ...])) -> the same io with
+    LOAD_ANSWER; any other loaded_library string but LOAD_ANSWER and
+    loaded_library(abnormal) refused; every other packet as it is"""
+    import re
+    import struct
+    p = FB.show(raw)
+    if p[2] != 620 or not isinstance(p[4], bytes):
+        return raw
+    text = FB.fepm.unjis(p[4])
+    if not text.startswith('loaded_library('):
+        return raw
+    if text in (LOAD_ANSWER, 'loaded_library(abnormal)'):
+        return raw
+    if not re.fullmatch(r'loaded_library\(normal\(\[(\w+:: \w+)(,\w+:: \w+)*\]\)\)', text):
+        raise K.Refusal('mendels', 'load answer not adapted: %r' % text)
+    return struct.pack('>ii', p[0], p[1]) + FB.fepm.pack_message([620, p[3], FB.fepm.jis(LOAD_ANSWER)])
 
 
 # The held phase/2 failing (OURS watch, 2026-11-27).  mendel_main's exec/3

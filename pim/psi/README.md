@@ -5930,6 +5930,149 @@ window inside a superior has no keyboard input of its own and no Pmacs
 screen (mode line, echo line). reshape/5 and set_text_size/3 on an
 inferior pmacs_window set only its own slots (not handed to the form).
 
+**The load answer step: phase/2 settled (2026-11-28).** The question
+the system window step left: why the held phase/2 (mendelmain.esp:
+382-389) has clauses for `loaded_library(normal)` and
+`loaded_library(abnormal)` only, while PIMOS sends
+`loaded_library(normal([mendel:: example1, ...]))`.
+
+Answer, from the held sources:
+- **PRINTED: the PIMOS manual says load:do/4 answers a bare `normal`.**
+  PIMOS Manual V3.0, November 1991 (pimosman.tar.Z, Eman/e-cover1.tex),
+  Eman/e-proginfo.tex:494-497: "The atom normal will be returned in the
+  argument Status if the loading completes normally, and the atom
+  abnormal will be returned otherwise". unload:do/5 beside it (:504-507)
+  is documented as `normal(FullPathName)`, so the difference is the
+  manual's, not a shorthand.
+- **HELD: MENDELS names PIMOS 3.0.** install.e:22-24 ("OS Version: SIMPOS
+  7.1, PIMOS 3.0"), dated 1992-07-17.
+- **HELD: MENDELS's KL1 half reduces `normal(X)` to `normal` everywhere
+  but here.** main.kl1:116-120 (compile1) and :135-139 (save_library)
+  turn `normal(SaveObjNmL)` into a bare `normal` before the ESP half;
+  :140-144 (load_library) passes load:do's Status as it is, matching the
+  manual's bare atom.
+- **HELD and OBSERVED: the PIMOS we run answers `normal(Loaded)`.** The
+  held 4.0 source, src/library/loader/modtbl.kl1:274-277 check_flush
+  (`Status = normal(Loaded)`, the `Package::Module` list), which load.kl1
+  :57 check_status matches; the 3.6 objects run here give the same.
+- **Searched, nothing reduces it:** every `:- module load` and every
+  load:do caller in pimos.tar.Z and the 348 IFS/ICOT archives (the only
+  other `load` module is strtgysh's unrelated vload.kl1:5); MENDELS's
+  KL1 and ESP halves; the V3.0 manual (read); man15.ps and man30.j.ps
+  (IFS manuals/pimos) searched as PostScript strings only.
+
+So it is a version mismatch: MENDELS was written to the V3.0 manual's
+load:do/4, and the loader we run returns the module list. That PIMOS
+3.0's own loader answered a bare `normal` is INFERENCE (its code is not
+held). Note too that `::` is not an ESP system operator (program-e.tex:
+7816-7850), so SIMPOS's reader most likely could not have read the term
+PIMOS sends at all.
+
+**The fix, an OURS adapter** (`mendels.adapt_load_answer`,
+`LOAD_ADAPTER`): on the PSI side, after the exchange (the tape keeps
+PIMOS's own string) and before `:io/4`, an io (620) whose string is
+exactly `loaded_library(normal([Package:: Module, ...]))` is replaced by
+the packet MENDELS's own held no-file branch makes PIMOS send
+(mdl_comp.kl1:43-54 `Result = normal`), `io(0, "loaded_library(normal)")`,
+OBSERVED byte for byte by a live run with no mdllibrary.exe served and
+pinned in test_mendels (`LOAD_ANSWER_PACKET`). Any other
+`loaded_library(...)` string is refused loudly. The held KL1 and ESP code
+is not edited. The no-file route is not the main line: it departs from
+install.e:60 and readme.e:200, which place mdllibrary.exe in SYSTEM.
+
+**field_tree's "file not exist" is held behaviour.** The archive has no
+`tree.field`, readme.e:198-202 lists SYSTEM as mdllibrary.exe, tree.key
+and tree.obj only, and field_tree save/2 writes no file when the tree is
+empty (field_tree.esp:639-640, `Class!top == 0`). The message's path,
+`>sys>user>MENDELuser>SYSTEM>tree.field`, is the SYSTEM prefix under
+which tree.obj and tree.key restore (object_lib.esp:340-346). Nothing is
+missing from our tree and no path is wrong.
+
+**The run now** takes phase/2's `loaded_library(normal)` clause: mdl_check
+after_KL1compiler/0 opens TEMP>compiler.msg, which the distribution does
+not have (readme.e: TEMP "no files"; a scratch run with a file placed
+there took open_file/3's first clause instead), so mdl_check open_file/3
+reports it: the system window's second line, `ERR: error '"compiler.msg"'
+not exist` ("error" is message_type/2's catch-all message_string/2,
+mdl_ckutil.esp:197, since `file` has no entry). phase(top) then waits in
+phase_window top_menu/0's read. With the main process waiting, kl0 runs
+the mendel_title process (the order is kl0's scheduling, OURS): sent
+"exit" by esp_control/2, it writes " end" to its screen (title.esp
+show/1), a standard_io_window created with `permission(show)` and now
+under the base. The coordinator raises a covered `show` window before the
+write (TM-225 p11 (3); coordinator.esp held_back/3) and so lifts the base
+whole. **The new stop:**
+
+    simpos: bitmap_display save/7: winfb status 4
+
+save/7 of slot 2, the base's 1,280 x 944 at (0,0), at base 9,128: 75,520
+words, more than save memory's 65,536 (two areas of 4,564 already in
+use). This is the need `../docs/simpos/subsystems/window.md` §7 predicted
+("the base itself hidden or lifted whole"). Two ways on, not taken here:
+save memory moved to the board's SDRAM with the frozen-format change, or
+a lift that saves only the hidden part of the covered window (TM-225 p10
+"all or its hidden part"). Past it, title.esp's `:read(Screen,_)` waits
+for "please return" to be answered anyway. Screen:
+`../docs/simpos/screens/mendels_zone.png` (the live run's the same). The
+21 exchanges and their strings are unchanged; the tape is re-recorded
+live from a copy of PROMPT.pkl.
+
+What was added:
+- **`{}` in a head or `X = {}` is the empty vector** (espc get_value:
+  pmi 30 get_vector_0, a new row of `kl0_opcodes.tsv`, KNOWN-PLAINTEXT:
+  sancho2##sancho1 find_p_role/3 @140 `30 01` for sancho1.esp:60's head
+  `find_p_role(Obj,{},Case)`, and kappaBCM_logical_sequence_read $or$0/2
+  @2f6 `30 01` for BCMLOGSEQ.ESP:541 `Tail_value = {}`; the held KL0
+  microcode's mnemonic table names 030 GVCT0, `asm/pu_sysinit.py`'s pin
+  159/129 -> 160/130). Before it the head and `=` forms were the atom
+  '{}' while the put form was already pmi b0, and MENDELS's
+  mdl_ckutil.esp:150-160 message_type/2 (`NMesgTp = {}`, then a head
+  `message_type({},"")`) recursed until the step limit. `{}` inside a
+  structure is still the atom (OURS, not witnessed).
+- **symbolizer get_ch_string_string/3** (kl0 model): INTERPOLATED order
+  from med_util.esp:211-224 to_string/3, whose clauses write a datum by
+  type (an atom by get_quoted_atom_string/3, a number by
+  get_number_string/3, an object by get_object_string/3); INFERENCE: the
+  string as a term writer would write it, in double quotes, a quote
+  doubled (the quoting OURS; system_io's own to_string passes a string
+  as it is, and its templates quote, so the bare text is the other
+  reading).
+- **the load adapter** above, OURS.
+
+Labels of this step: 1 PRINTED (the manual's load:do/4), 2 KNOWN-
+PLAINTEXT (pmi 30's witnesses), 2 INFERENCE (PIMOS 3.0's loader; the
+string quoting), 1 INTERPOLATED (get_ch_string_string's order), 2 OURS
+(the adapter; `{}` inside a structure). The census is unchanged row by
+row (1,560 rows against 91626d98, `kl0.py census --fep`).
+
+Injections, OBSERVED (`test_mendels.py` run whole for each, the file
+restored by copy and compared with cmp)
+(10; the third was NONE until test_empty_vector gained a one-element
+vector, then caught as shown):
+
+| injection | failed |
+|---|---|
+| espc: `{}` got as the atom (no pmi 30) | test_empty_vector, test_library_restored, test_replay |
+| kl0 get_vector_0 always fails | test_empty_vector, test_replay |
+| kl0 get_vector_0 matches any vector * | test_empty_vector |
+| mendels: LOAD_ADAPTER off | test_adapter_refusal_stops, test_replay |
+| adapter answers loaded_library(abnormal) | test_load_adapter, test_replay |
+| adapter passes an unknown loaded_library string (no refusal) | test_adapter_refusal_stops, test_load_adapter |
+| get_ch_string_string: the bare text | test_ch_string_string, test_replay |
+| get_ch_string_string not modelled | test_ch_string_string, test_replay |
+| esp_reader: `::` not an operator | test_adapter_off, test_reader_package_colon |
+| mendels.py: the phase/2 watch off | test_adapter_off |
+
+(The `::` and watch rows of the earlier steps now fail test_adapter_off,
+not test_replay: the run reaches them only with the adapter off.)
+
+Open: the save memory decision above. Making the stand-ins retry-safe is
+not needed on this path (phase/2 succeeds, call_esp/3's repeat is not
+retried). A scratch compiler.msg placed in TEMP is read by
+standard_input_file and refused ("reader: a clause without its end"):
+after_KL1compiler/0's getl/end_of_input path is not right yet for plain
+text lines (not on the held run's path).
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window
