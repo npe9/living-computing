@@ -1088,6 +1088,26 @@ class Machine:
         text = n if plain or n == '[]' else "'" + n.replace("'", "''") + "'"
         return self.proceed() if self.unify(self.x[1], Str(text)) else self.fail()
 
+    def symbolizer_get_ch_string_string(self):
+        """:get_ch_string_string(#symbolizer, String, ^String2) -- String
+        written as a string datum, for a message (MENDELS 2026-11-28).
+        INTERPOLATED: the selector and the order (the string in, the
+        string out) from MENDELS med_util.esp:211-224 to_string/3, whose
+        clauses write a message's datum by its type: an atom by
+        get_quoted_atom_string/3, a string by this, a number by
+        get_number_string/3, an object by get_object_string/3, any other
+        term by a buffer's putt.  INFERENCE from those neighbours: the
+        string as a term writer would read it back, in double quotes, a
+        quote in it doubled (the quoting OURS, as get_quoted_atom_string/
+        3's; no SIMPOS text gives this selector's meaning, fixpoint_fe.tsv
+        row "meaning not stated")."""
+        a = deref(self.x[0])
+        if not isinstance(a, Str):
+            raise Refusal('unbound argument' if isinstance(a, Var) else 'built-in',
+                          'symbolizer get_ch_string_string/3 on %r' % (a,))
+        text = '"' + a.text.replace('"', '""') + '"'
+        return self.proceed() if self.unify(self.x[1], Str(text)) else self.fail()
+
     def process_suspend(self):
         """:suspend(Process, Reason), refused (step 3g, OURS).  The printed
         body (TM-100 Fig. 3.1, standin/process.esp) is not run: kl0 runs
@@ -2288,6 +2308,14 @@ class Machine:
         self.x[c] = el[1]
         self.nxt(code, off)
 
+    # pmi 30 (MENDELS 2026-11-28): `{}` in a head or `X = {}`, the empty
+    # vector (kl0_opcodes.tsv row 30); no unify instructions follow
+    def op_get_vector_0(self, code, off, a, b, c, v):
+        if b or c:
+            raise Refusal('operand', '%s @%x: pmi 30 %02x %02x %02x: only zero second and third bytes '
+                          'are witnessed' % (code.id, off, a, b, c))
+        self.nxt(code, off) if self.get_struct(a, 'vec', 0) else self.fail()
+
     def op_get_vector_2(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.get_struct(a, 'vec', 2) else self.fail()
 
@@ -3371,6 +3399,7 @@ SIMPOS_MODELS = {
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
     ('simpos##symbolizer', 'class', 'get_atom_string', 3): Machine.symbolizer_get_atom_string,
     ('simpos##symbolizer', 'class', 'get_quoted_atom_string', 3): Machine.symbolizer_get_quoted_atom_string,
+    ('simpos##symbolizer', 'class', 'get_ch_string_string', 3): Machine.symbolizer_get_ch_string_string,
     ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
     ('simpos##process', 'instance', 'exterminate', 1): Machine.process_exterminate,
     ('simpos##world', 'instance', 'root_path', 3): Machine.world_root_path,

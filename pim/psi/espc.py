@@ -1185,11 +1185,27 @@ class ClauseCompiler:
         """Unify register R (get mode) with the non-variable value V.  R is
         free afterwards (a structure's elements are read by the unify
         instructions that follow)."""
+        if tuple(v[:2]) == ('atom', '{}'):
+            # MENDELS (2026-11-28): `{}` in a head, or got against a
+            # register (`X = {}`), is the empty vector, as it is when put
+            # (put_value's pmi b0, below): pmi 30 get_vector_0
+            # (kl0_opcodes.tsv row 30, KNOWN-PLAINTEXT: sancho2##sancho1
+            # find_p_role/3 @140, sancho1.esp:60 head `find_p_role(Obj,{},
+            # Case)`; kappaBCM_logical_sequence_read $or$0/2 @2f6,
+            # BCMLOGSEQ.ESP:541 `Tail_value = {}`).  MENDELS needs it:
+            # mdl_ckutil.esp:150-160 message_type/2 sets `NMesgTp = {}` and
+            # recurses on it, and ends only because atom({}) is false and
+            # its head `message_type({},"")` matches.  `{}` inside a
+            # structure is still the atom '{}' (OURS, not witnessed)
+            v = ('vec0',)
         k = v[0]
         a = self.asm
         h = self.R.holder.get(r)
         if h is None or h[0] == 'val' or (h[0] == 'var' and not self.R.live(r)):
             self.R.drop(r)
+        if k == 'vec0':
+            a.pmi(0x30, r)
+            return
         if k == 'atom':
             if v[1] == '[]':
                 a.pmi(0x26, r)
@@ -1365,8 +1381,9 @@ class ClauseCompiler:
         if (k == 'vec' and not v[1]) or v == ('atom', '{}'):
             # `{}` (which the reader gives as the atom '{}') put in a body
             # is pmi b0, the empty vector (typewin.esp:259, PCAACCA.ESP:93;
-            # kl0_opcodes.tsv row b0, step 3d).  OURS: only this position;
-            # `{}` in a head or inside a structure stays as it was
+            # kl0_opcodes.tsv row b0, step 3d).  In a head or got against a
+            # register it is pmi 30 (get_value, MENDELS 2026-11-28); inside a
+            # structure it stays the atom (OURS)
             r = pick()
             a.pmi(0xb0, r)
             R.set(r, ('val', id(v)))

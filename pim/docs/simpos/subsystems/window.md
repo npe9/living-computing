@@ -1475,6 +1475,22 @@ real need will be the base itself hidden or lifted whole (75,520
 words; e.g. under a full-screen window or the system menu's moves); then
 the size goes to SDRAM with the format change, citing TM-225 p10.
 
+**The need arrived 2026-11-28 (MENDELS, the load answer step;
+`psi/README.md`).** Past phase/2, the mendel_title process writes " end"
+to its title screen, a standard_io_window made with `permission(show)`
+(title.esp create_screen/1, show/1) that now lies under the base. The
+coordinator raises a covered `show` window before the write (TM-225 p11
+③; coordinator.esp uncover/3's held_back/3, then select_window, raise,
+lift_all), lifting the base whole: save/7 of slot
+2, 1,280 x 944 at (0,0), at base 9,128 (two areas of 4,564 words
+already in use), refused as winfb BADSAVE. This is MENDELS's current
+stop. Still undecided, two ways on: (a) save memory on the board's SDRAM
+with the frozen-format change (above); (b) a lift that saves only the
+hidden part of the covered window, the overlap with the window raised
+(TM-225 p10 "all or its hidden part"), which would keep this case at the
+title window's 4,564 words but changes the restack mechanism (lift/lay
+save and restore whole panes today).
+
 ---
 
 ## 8. Coverage
