@@ -28,14 +28,15 @@ restore/1 (the HELD tree.obj and tree.key: example1-3; test_library_
 restored), top_down, mdl_input, buffer, flat_data and flat_mdl,
 method_editor (its title panes, standard_io_windows placed inside the
 base: their inferior form, since 2026-11-27), the rest of create/1, and
-resume/0, which shows the whole zone over the title screen (frame
-pinned, docs/simpos/screens/mendels_zone.png); it stops at the last
-window of mendel_window show_all_window/1, system_window, a pmacs_window
-inside the base (`mendel##mendel_pmacs:not_stood_in/2`: the stand-in
-pmacs_window is a top window only).  Re-recorded live 2026-11-27 from a
-copy of PROMPT.pkl, three times: the 21 exchanges and strings
-as before, the stop and `where` new each time; the live screen equals
-the replay's.
+resume/0, which shows the whole zone over the title screen, its system
+window (a pmacs_window inside the base, since 2026-11-27) with
+field_tree's "file not exist" message (frame pinned, docs/simpos/
+screens/mendels_zone.png); then esp_go/3, whose exec/3 calls the held
+phase/2 on loaded_library(normal([...])), which no clause matches: the
+run stops there (mendels.watch_phase, OURS), before call_esp/3's repeat
+retries the same message.  Re-recorded live 2026-11-27 from a copy of
+PROMPT.pkl, four times: the 21 exchanges and strings as before, the stop
+and `where` new each time; the live screen equals the replay's.
 
 Mixins (the window mixins step) runs the mixins through two other held
 users on the coordinator, with the mouse: icotext's whole held class
@@ -166,6 +167,48 @@ get_position/3) are not injected one by one; MENDELS's run sends only
 activate/1, put_line/2, clear_line/1, get_inside_size/3 and read through
 the base before the stop.
 
+The system window step (pmacs_window as an inferior, 2026-11-27):
+test_sys_shown, test_sys_click and test_sys_refused (class MethodEditor)
+run a mendel_pmacs made with create_system_window/6's options inside the
+held base; test_cut_move moves a mixin window (the cut form's put_back/2).
+Injections, OBSERVED 2026-11-27 (19, made in the working tree by a
+scratch script from a backup, restored by copy and cmp; this whole file
+run on each; all 19 run again on the final file with the same result.
+The two rows marked * were NONE in the first round, before
+test_sys_refused gained the input and font checks that catch them):
+
+| injection | failed |
+|---|---|
+| pmacs_window: no inferior form (the superior kept only) | test_replay, test_sys_click, test_sys_refused, test_sys_shown |
+| inferior form: input not routed to the superior (with_superior_input_buffer ignored) | test_sys_click |
+| pmacs_window input_to: superior by default (every pmacs_window shares) | test_sys_refused * |
+| put_codes: no wrap at the last column | test_replay, test_sys_shown |
+| put_codes: no scroll (back to row 0 past the last row) | test_sys_shown |
+| put_codes: key#lf not a new row (kept in the row) | test_replay, test_sys_shown |
+| kept options: size dropped | test_sys_refused, test_sys_shown |
+| kept options: position dropped | test_replay, test_sys_click, test_sys_shown |
+| kept options: label_flag dropped | test_replay, test_sys_shown |
+| set_font not handed to the form | test_sys_refused * |
+| activate not handed to the form | test_replay, test_sys_click, test_sys_shown |
+| get_superior answers 0 | test_sys_click, test_sys_shown |
+| the text buffer not drawn in the form (no set_pane) | test_replay, test_sys_shown |
+| getl on an inferior not refused (reads the interpreter) | test_sys_refused |
+| read_with_prompt on an inferior not refused | test_sys_refused |
+| set_input_buffer on an inferior not refused | test_sys_refused |
+| mendels.py: the phase/2 watch off | test_replay |
+| mendels.py: the watch fires on any failure inside phase/2 (a clause tried) | test_replay |
+| cut put_back: the part under not drawn back (the method editor step's NONE) | test_cut_move |
+
+The new stop (test_replay): the held phase/2 fails on
+loaded_library(normal([...])), stopped there by mendels.watch_phase
+(OURS) before call_esp/3's repeat would retry the same message over what
+the retry undoes (psi/README.md "The system window step").  The cut
+form's put_back/2 (NONE in the method editor step) is caught by
+test_cut_move.  Weak spots: the forwarding clauses deactivate, hide,
+kill, set_title, set_size, set_position, get_size and get_position of
+the inferior pmacs_window are not injected one by one (MENDELS's run
+sends create, set_font and activate before the stop).
+
 Weak spots: the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
 the unit tests carry them.  getl's line start is caught only by
@@ -209,13 +252,15 @@ STRINGS_IO = [
     ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
     ('<', 56, 1, '>sys>user>MENDELuser>SYSTEM>'),
 ]
-STOP = ('simpos: send mendel##mendel_pmacs:not_stood_in/2 (no primary in the held classes; '
-        'stand-in ancestors simpos##with_superior_input_buffer simpos##pmacs_window)')
+STOP = ('mendels: held mendel##mendel_main phase/2 has no clause for {loaded_library,{normal,'
+        '[{::,mendel,example1},{::,mendel,example2},{::,mendel,example3}]}} '
+        '(call_esp/3 would retry the same message)')
 # the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-27
-# (the live run's screen is the same): MENDELS's whole zone shown by
-# resume/0, committed as docs/simpos/screens/mendels_zone.png
+# (the live run's screen is the same, PNG byte for byte): MENDELS's whole
+# zone shown by resume/0, the system window with it since the system
+# window step, committed as docs/simpos/screens/mendels_zone.png
 ZONE = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_zone.png')
-ZONE_FRAME = ('faa2075799907713f2042a1a794ccd1d4e492dbea1b2919e89baac99bee0bf0c', 145611)
+ZONE_FRAME = ('0479626820faf704a605492c4e861acbd08cea2961a27b10c7716232c045069d', 150737)
 
 
 def load_tape():
@@ -237,13 +282,19 @@ class Run(unittest.TestCase):
         stop, psi, left = mendels.replay(TAPE)
         self.assertEqual('%s: %s' % (stop.cause, stop.detail), STOP)
         self.assertEqual(left, [])
-        self.assertEqual(psi.where(5), ['simpos##pmacs_window @497', 'mendel##mendel_window @910',
-                                        'mendel##mendel_window @5f', 'mendel##mendel_main @16e',
-                                        'mendel##mendel_esp_device @101'])
+        # the watch (mendels.watch_phase) stops at phase/2's failure,
+        # before the unwind: exec/3 (@23b) under esp_go/3 (@155) under
+        # esp_control/2's loaded_library clause, past resume/0
+        self.assertEqual(psi.where(5), ['mendel##mendel_main @4ec', 'mendel##mendel_main @23b',
+                                        'mendel##mendel_main @155', 'mendel##mendel_esp_device @61',
+                                        'mendel##mendel_esp_device @38'])
         # the zone as resume/0 left it: every pane of show_all_window/1
-        # (mendel_win.esp) but the last, system_window, the Pmacs window
-        # inside the base, which stops the run; under it, the title
-        # screen's window (its part only saved, save_memory save_under/6)
+        # (mendel_win.esp), the last the system window, the Pmacs window
+        # inside the base (bottom right, its inferior form), which shows
+        # system_io's one message so far, field_tree restore/2's "file not
+        # exist" error (field_tree.esp:446-447), a line longer than a row;
+        # under the base, the title screen's window (its part only saved,
+        # save_memory save_under/6)
         import windev
         fr = windev.device(psi.m).frame
         self.assertEqual((windev.pbm_sha256(fr), fr.count()), ZONE_FRAME)
@@ -1061,6 +1112,43 @@ local
 %s
 end.
 %s"""
+    # MENDELS's system window step (2026-11-27): a mendel_pmacs (MENDELS's
+    # HELD class: with_superior_input_buffer, pmacs_window) made inside the
+    # HELD base with create_system_window/6's options (mendel_win.esp:771-
+    # 773, but editor(#mendel_editor), whose class needs most of the
+    # method editor, left out: OURS), written before and after it is
+    # shown, more lines than it holds and one longer than a row (putl/2,
+    # flash/1 as system_io.esp putl/2 writes), then clicked and read by
+    # base's read/3
+    SYS = """class tm_sys has
+nature as_program;
+attribute calls := [], base, sys;
+:note(Class, X) :- Class!calls := [X | Class!calls];
+instance
+:goal(P) :-
+        Class = #tm_sys,
+        :create(#base, [size(600, 200), position(100, 100), title("MENDELS base")], Base),
+        Class!base := Base,
+        :create(#mendel_pmacs,
+                [superior(Base),position(300,100),size(280,70),margin_flag(off),
+                 label_flag(off),permission(out),nature([with_shared_window])],_,
+                Window),
+        Class!sys := Window,
+        :putl(Window, "1 the first line"), :flash(Window),
+        :putl(Window, "2 the second line"), :flash(Window),
+        :putl(Window, "3 a line longer than the window is wide"), :flash(Window),
+        :putl(Window, "4 the fourth line"), :flash(Window),
+        :activate(Base),
+        :activate(Window),
+        :putl(Window, "5 written while shown"), :flash(Window),
+        :get_superior(Window, S),
+        (S == Base, !, :note(#tm_sys, superior) ; :note(#tm_sys, no_superior)),
+        :note(#tm_sys, shown),
+        :read(Base, Win, Data),
+        (Win == Window, !, :note(#tm_sys, {sys, Data}) ; :note(#tm_sys, {other, Data}));
+end.
+%s
+%s"""
     TITLE = """class tm_title has
 nature as_program;
 instance
@@ -1085,6 +1173,13 @@ end.
             held = text[text.index('set_window_attribute(Win,'):]
             held = held[:held.index(':set_position(Win,X,Y);') + len(':set_position(Win,X,Y);')]
             src = self.MED % (held, base)
+        elif prog == 'sys':
+            base = self.mendels_text('win_class.esp')
+            pm = base[base.index('class mendel_pmacs has'):]
+            pm = pm[:pm.index('end.') + 4]
+            base = base[base.index('class base has'):]
+            base = base[:base.index('end.') + 4]
+            src = self.SYS % (pm, base)
         else:
             src = self.TITLE % self.mendels_text('title.esp')
         ts, failed = espc.compile_text(src, 'simpos')
@@ -1113,6 +1208,7 @@ end.
     # frames: (sha256 of the PBM, set dots), OBSERVED 2026-11-27; committed
     # as docs/simpos/screens/mendels_inferior_titles.png, mendels_title.png
     MED_FRAME = ('747f94b0d8f2757ce7303fe46d510211b40909051ae46ca0cd95f5cd5fb69026', 109380)
+    SYS_FRAME = ('0a53d1c730d78d5661e484701be6a34a6d87887f68d0f48e50606b5995c6ba79', 109003)
     TITLE_FRAME = ('056bbe3e264fce99a5536cd379436791dd92c99f64c1875ccdc97808bc9f6a68', 158133)
 
     def check_frame(self, m, want, png_name):
@@ -1146,6 +1242,79 @@ end.
         # made, as its source (not its inferior form)
         stop, m = self.run_prog('med', [Menus.left(150, 130)])
         self.assertEqual(Menus.calls(m, 'tm_med'), ['{meth,mouse#l}', 'shown'])
+
+    def test_sys_shown(self):
+        # the system window inside the base at its position and size,
+        # label and margin off, the border on (labeled_sash); the text
+        # buffer drawn in its inferior form, a line longer than a row
+        # going on in the next, the rows scrolled up so the newest line
+        # written (after it was shown) is the last one shown
+        stop, m = self.run_prog('sys')
+        self.assertEqual(stop.cause, 'would suspend')
+        self.assertEqual(Menus.calls(m, 'tm_sys'), ['shown', 'superior'])
+        self.check_frame(m, self.SYS_FRAME, 'mendels_system_window.png')
+
+    def test_sys_click(self):
+        # a left click on the system window: mendel_pmacs is a
+        # with_superior_input_buffer, so the click goes to base's buffer,
+        # and base's read/3 names the pmacs_window the program made (not
+        # its inferior form)
+        stop, m = self.run_prog('sys', [Menus.left(450, 240)])
+        self.assertEqual(Menus.calls(m, 'tm_sys'), ['{sys,mouse#l}', 'shown', 'superior'])
+
+    def test_sys_refused(self):
+        # a plain pmacs_window inside a superior: its own input, its font
+        # handed on; what a Pmacs window inside a superior does not stand in is
+        # refused loudly, not done as a top window would do it: getl/2 and
+        # read_with_prompt/3 (keys from its own interpreter, while its
+        # input goes to the superior), set_input_buffer/2 (the Pmacs
+        # screen); and a top pmacs_window's get_inside_size/3
+        import fep_bridge as FB
+        m = FB.PsiSide().m
+        base = self.mendels_text('win_class.esp')
+        base = base[base.index('class base has'):]
+        base = base[:base.index('end.') + 4]
+        ts, failed = espc.compile_text(base, 'simpos')
+        self.assertEqual(failed, {})
+        for t in ts:
+            m.lib.add(t)
+        A = K.Atom
+
+        def opts(*kv):
+            out = K.NIL
+            for x in reversed(kv):
+                out = K.Cons(K.Vec([A(x[0])] + list(x[1:])), out)
+            return out
+        m.reset()
+        ((_o, b),) = K.call_class_method(m, 'simpos##base', 'create',
+                                         [opts(('size', 400, 200)), K.Var()])
+        m.reset()
+        ((_o, w),) = K.call_class_method(m, 'simpos##pmacs_window', 'create',
+                                         [opts(('superior', b), ('size', 200, 80)), K.Var()])
+        m.reset()
+        ((_o, top),) = K.call_class_method(m, 'simpos##pmacs_window', 'create', [K.NIL, K.Var()])
+        for obj, name, args in ((w, 'getl', [K.Var()]), (w, 'read_with_prompt', [K.NIL, K.Var()]),
+                                (w, 'set_input_buffer', [0]), (top, 'get_inside_size', [K.Var(), K.Var()])):
+            m.reset()
+            with self.assertRaises(K.Refusal) as e:
+                any(True for _ in m.solve_send(obj, name, args + [obj]))
+            self.assertIn('not_stood_in', str(e.exception), name)
+        # a pmacs_window that is not a with_superior_input_buffer keeps its
+        # input (its form's goes to the form's own buffer); a font set is
+        # handed to the form
+        f = K.deref(m.get_slot(w, 'inner'))
+        self.assertEqual(K.resolve(m.get_slot(f, 'input_to')), A('self'))
+        font = K.make_instance(m, 'simpos##font')
+        m.reset()
+        self.assertEqual(len(list(m.solve_send(w, 'set_font', [font, w]))), 1)
+        self.assertIs(K.deref(m.get_slot(f, 'font')), font)
+        # the inside size handed to the form: 200 x 80 less the border (2),
+        # the label strip (the default font's 14 + 4) and the margin (1),
+        # labeled_sash's flags all on when no option turns them off
+        m.reset()
+        iw, ih = K.Var(), K.Var()
+        got = [(K.resolve(iw), K.resolve(ih)) for _ in m.solve_send(w, 'get_inside_size', [iw, ih, w])]
+        self.assertEqual(got, [(194, 56)])
 
     def test_editor_link(self):
         # the small stand-ins MENDELS's start-up sends whose effect its run
@@ -1210,6 +1379,39 @@ end.
         self.assertEqual(len(send(top, 'kill')), 1)
         self.assertEqual(fr.rows[:944], before[:944])
         self.assertEqual(used(), '[[0,0,74]]')
+
+    def test_cut_move(self):
+        # save_memory put_back/2 of the cut form (window_pane.esp moved/3,
+        # the manipulator's MOVE: what was under the pane drawn back at the
+        # old place before the new place's under is saved): the mixin
+        # window moved 40 dots over the top standard_io_window, so the new
+        # place overlaps the old one, then killed: the screen above the
+        # status band is as before the mixin window came
+        import fep_bridge as FB
+        import windev
+        m = FB.PsiSide().m
+        A = K.Atom
+
+        def send(obj, name, *args):
+            m.reset()
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(obj, name, list(args) + [obj])]
+
+        def make(cid, x, y, w, h):
+            m.reset()
+            opts = K.Cons(K.Vec([A('size'), w, h]), K.Cons(K.Vec([A('position'), x, y]), K.NIL))
+            ((_o, win),) = K.call_class_method(m, cid, 'create', [opts, K.Var()])
+            self.assertEqual(len(send(win, 'activate')), 1)
+            return win
+        fr = windev.device(m).frame
+        low = make('simpos##standard_io_window', 300, 300, 20, 4)
+        self.assertEqual(len(send(low, 'write_line', K.Str('under'))), 1)
+        before = list(fr.rows)
+        top = make('simpos##temporary_superior_window', 250, 250, 400, 200)
+        pane = K.deref(m.get_slot(top, 'pane'))
+        self.assertEqual(len(send(pane, 'move_to', 290, 290)), 1)
+        self.assertNotEqual(fr.rows[:944], before[:944])
+        self.assertEqual(len(send(top, 'kill')), 1)
+        self.assertEqual(fr.rows[:944], before[:944])
 
     def test_title_shown(self):
         # the held mendel_title's screen: a standard_io_window, black

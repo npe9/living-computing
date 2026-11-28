@@ -82,7 +82,8 @@ class pmacs_window has
         :new_buffer(#editor_text_buffer, "", Buffer),
         :create(#editor_command_interpreter, Window, Editor, Buffer, I),
         Window!interpreter := I,
-        options(Window, Options);
+        options(Window, Options),
+        inferior_made(Window, Options);
 % INTERPOLATED from: kwic-esp src/inEditor1.esp:151 and mendels
 % comp_win.esp:54-62 `:create(#pmacs_window, Opts, _, W)` (held IFS
 % source; Opts with `nature([with_superior_input_buffer])` and
@@ -119,9 +120,10 @@ attribute views := 1, other := 0, active := upper, click_x := 0, click_y := 0;
 attribute activity := 0;
 
 % MENDELS's method editor (2026-11-27), OURS: the superior(S) create
-% option kept (0: the screen).  A Pmacs window inside a superior is not
-% stood in: open/1 refuses to draw it (as a top window it would be a
-% false screen).
+% option kept (0: the screen).  Since MENDELS's system window step
+% (2026-11-27) a window made with a superior is drawn as an inferior (see
+% "THE INFERIOR FORM" below); open/1 still refuses to draw one as a top
+% window (it would be a false screen).
 attribute superior := 0;
 
 % Window M7, the output permission (as standard_io_window.esp's; `out`
@@ -212,6 +214,9 @@ attribute permission := out;
 % M4 (the held callers that make an editor window, exshow and cal's
 % run/4, both send it before activate/1; the console's commands never
 % do, ptf.md W6).
+% the inferior form (OURS, see "THE INFERIOR FORM"): refused loudly
+:set_input_buffer(Window, _) :- inner(Window, _), !,
+        :not_stood_in(Window, set_input_buffer_of_an_inferior_pmacs_window);
 :set_input_buffer(Window, B) :-
         :set_buffer(Window!interpreter, B),
         Window!visiting := 1,
@@ -269,6 +274,9 @@ attribute permission := out;
 % that sends it (OURS: Pmacs's minibuffer is lost; INFERENCE, Emacs
 % analogy, pmacs.md §4.5).
 % INTERPOLATED (selector HELD, body INFERENCE/OURS): see the note above.
+% the inferior form (OURS, see "THE INFERIOR FORM"): refused loudly
+:read_with_prompt(Window, _, _) :- inner(Window, _), !,
+        :not_stood_in(Window, read_with_prompt_of_an_inferior_pmacs_window);
 :read_with_prompt(Window, Parts, Answer) :-
         :append(#string, Parts, Prompt),
         prompted(Window, Prompt, [], Codes),
@@ -361,6 +369,8 @@ attribute permission := out;
 % INTERPOLATED from: window.md §2.1 kill/1 (TM-125 p16; exshow :35):
 % the window leaves the screen for good (OURS body, as
 % standard_io_window.esp's).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:kill(Window) :- inner(Window, I), !, :kill(I);
 :kill(Window) :- taken_off(Window);
 
 % Step 3f: the window's geometry, title and font, and the display
@@ -388,16 +398,26 @@ attribute x := 0, y := 0, width := 0, height := 0,
           columns := 0, rows := 0, title := "", font := 0;
 
 % INTERPOLATED from: window.md §2.1 set_position/3 (TM-125 p15).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_position(Window, X, Y) :- inner(Window, I), !,
+        Window!x := X, Window!y := Y, :set_position(I, X, Y);
 :set_position(Window, X, Y) :-
         Window!x := X, Window!y := Y;
 % INTERPOLATED from: window.md §2.1 get_position/3 (TM-115 PDF p64,
 % folio 59; cited as p63 before step 3g's re-check).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:get_position(Window, X, Y) :- inner(Window, I), !, :get_position(I, X, Y);
 :get_position(Window, X, Y) :-
         X = Window!x, Y = Window!y;
 % INTERPOLATED from: window.md §2.1 set_size/3 (TM-125 p15).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_size(Window, W, H) :- inner(Window, I), !,
+        Window!width := W, Window!height := H, :set_size(I, W, H);
 :set_size(Window, W, H) :-
         Window!width := W, Window!height := H;
 % INTERPOLATED from: window.md §2.1 get_size/3 (TM-115 p50).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:get_size(Window, W, H) :- inner(Window, I), !, :get_size(I, W, H);
 :get_size(Window, W, H) :-
         W = Window!width, H = Window!height;
 % INTERPOLATED from: window.md §2.1 reshape/5 `(W,X,Y,Wd,Ht)`, "move and
@@ -424,6 +444,8 @@ attribute x := 0, y := 0, width := 0, height := 0,
         C = Window!columns, R = Window!rows;
 % INTERPOLATED from: window.md §2.2 set_title/2 (TM-125 p15).  Window M4:
 % drawn in the label when the window is on the screen.
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_title(Window, T) :- inner(Window, I), !, Window!title := T, :set_title(I, T);
 :set_title(Window, T) :-
         Window!title := T,
         drawn_title(Window);
@@ -434,6 +456,8 @@ attribute x := 0, y := 0, width := 0, height := 0,
         T = Window!title;
 % INTERPOLATED from: window.md §2.2 set_font/2 (TM-112 p16).  Window M4:
 % a window on the screen is drawn again in the new font (OURS).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:set_font(Window, F) :- inner(Window, I), !, Window!font := F, :set_font(I, F);
 :set_font(Window, F) :-
         Window!font := F,
         drawn_again(Window);
@@ -442,17 +466,25 @@ attribute x := 0, y := 0, width := 0, height := 0,
         F = Window!font;
 % INTERPOLATED from: window.md §2.1 activate/1 (TM-125 p16).  Window M4:
 % the window is drawn (OURS, as standard_io_window.esp).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:activate(Window) :- inner(Window, I), !, :activate(I);
 :activate(Window) :- open(Window);
 % INTERPOLATED from: window.md §2.1 deactivate/1 (TM-125 p16).
 % Window M10: off the screen, kept (OURS body; cal_pmacs run/4 sends it
 % after command_interpret/1, and activate/1 draws it again).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:deactivate(Window) :- inner(Window, I), !, :deactivate(I);
 :deactivate(Window) :- taken_off(Window);
 % INTERPOLATED from: window.md §2.1 show/1 (TM-125 p16).  Window M4: the
 % window is drawn and selected (TM-225 p10-11, PROSE: SHOW changes the
 % selected window; as standard_io_window.esp).
 :show(Window) :- Window!interpreter == 0, !;
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:show(Window) :- inner(Window, I), !, :show(I);
 :show(Window) :- open(Window), :select_window(#coordinator, Window);
 % INTERPOLATED from: window.md §2.1 hide/1 (TM-125 p16).
+% the inferior form (OURS, see "THE INFERIOR FORM"): handed to it
+:hide(Window) :- inner(Window, I), !, :hide(I);
 :hide(Window) ;
 % INTERPOLATED from: window.md §2.3 beep/1 (USAGE, 69 uses).
 :beep(Window) ;
@@ -480,6 +512,8 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % of it, and a prompt putl/2 wrote is not: putl/2 ends its line).  OURS:
 % the newline put after it.
 % LABEL: INFERENCE (the newline after it OURS)
+% the inferior form (OURS, see "THE INFERIOR FORM"): refused loudly
+:getl(Window, _) :- inner(Window, _), !, :not_stood_in(Window, getl_of_an_inferior_pmacs_window);
 :getl(Window, Line) :-
         :current_buffer(Window, B),
         :current_position(B, P0),
@@ -511,7 +545,91 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % instance's class name is not read.
 :status_name(Window, "pmacs_window", N) :- N = Window!number;
 
+% THE INFERIOR FORM (2026-11-27, MENDELS's system window; the mechanism
+% OURS, as standard_io_window.esp's, standin/inferior_io_form.esp's
+% head).  MENDELS makes its system window, the window its system_io
+% writes every message to (system_io.esp putl/2, set_window/3 at
+% mendel_win.esp:147, 152), as a pmacs_window inside its base:
+% `:create(#mendel_pmacs, [superior(Base), position(Px,Py), size(W,H),
+% margin_flag(off), label_flag(off), editor(#mendel_editor),
+% permission(out), nature([with_shared_window])], _, Window)`
+% (mendel_win.esp:770-777; garnet_win.esp:494-501 the same for the
+% garnet window), class mendel_pmacs being with_superior_input_buffer and
+% pmacs_window (win_class.esp:18-25); show_all_window/1 activates it with
+% the rest of the zone (mendel_win.esp:789-805).  TM-125 p13-14 Table 1
+% (PRINTED-INTERFACE, window.md §3.2) makes superior(S) an initiation
+% option of every window, the position "to the superior window", the
+% default the screen; p16 activate/1 "scheduled to be displayed on the
+% superior window".  This stand-in's window is a top window (a pane on the
+% coordinator's stack), so a window made with a superior makes, at
+% create/3, its inferior form: an inferior_io_form in S with the kept
+% create options (superior, position, size in dots, the sash flags,
+% permission, title, nature), whose input goes to the superior's buffer
+% as coming from this window when the window is a
+% with_superior_input_buffer (TM-125 p11; the attribute input_to below is
+% that mixin's, first in the inheritance order).  Its text buffer is drawn
+% in the form (editor_text_buffer.esp set_pane/2: the form takes clear/1
+% and put_codes/2, inferior_io_form.esp), and the form is handed the
+% window's geometry (set_size, set_position, get_size, get_position,
+% get_inside_size), life cycle (activate, show, deactivate, hide, kill),
+% title and font.  What would draw it as a top window (open/1) or read
+% keys from its own interpreter (getl/2, read_with_prompt/3) or show the
+% Pmacs screen (set_input_buffer/2) is refused loudly.
+%
+% :get_superior(W, S) -- INTERPOLATED (selector USAGE MENDELS
+% mdl_check.esp:90 `:get_superior(MesgWin, Base)` on the system window,
+% then :assign_window(Base); window.md §2.1 get_superior/2 UNSPECIFIED;
+% body OURS): the superior(S) option, 0 for the screen.
+% LABEL: INFERENCE (the reading of the superior(S) option, as
+% basic_window.esp's)
+:get_superior(Window, S) :- S = Window!superior;
+% :get_inside_size(W, Iw, Ih) -- INTERPOLATED (selector USAGE window.md
+% §2.1, MENDELS med_show.esp:111; body OURS): the inferior form's; a top
+% pmacs_window's is not stood in (refused loudly).
+% LABEL: RECONSTRUCTED-FROM-MANUAL (TM-125 p8 as_inside, Figure 5; handed
+% to the form, OURS)
+:get_inside_size(Window, Iw, Ih) :- inner(Window, I), !, :get_inside_size(I, Iw, Ih);
+:get_inside_size(Window, _, _) :- :not_stood_in(Window, get_inside_size_of_a_top_pmacs_window);
+
+% OURS: the inferior form (0: none, a top window); where the input goes
+% (`self`; with_superior_input_buffer.esp's `superior` comes first in a
+% class that has both natures, as mendel_pmacs).
+attribute inner := 0, input_to := self;
+
 local
+
+inner(W, I) :- I = W!inner, I \== 0;
+
+% THE INFERIOR FORM (OURS, see above): made at create/3 when the options
+% name a superior; the kept options as standard_io_window.esp's
+% inferior_made/2 keeps them, with the superior itself
+inferior_made(W, _) :- W!superior == 0, !;
+inferior_made(W, Os) :-
+        kept(Os, Ks),
+        :create(#inferior_io_form, Ks, I),
+        I!outer := W,
+        routed(W, I),
+        W!inner := I,
+        buffer(W, B), :set_pane(B, I);
+
+routed(W, I) :- W!input_to == superior, !, I!input_to := superior;
+routed(_, _);
+
+kept(Os, []) :- unbound(Os), !;
+kept([], []) :- !;
+kept([O | Os], Ks) :- unbound(O), !, kept(Os, Ks);
+kept([{K, V} | Os], [{K, V} | Ks]) :- kept_key(K), !, kept(Os, Ks);
+kept([{size, Wd, Ht} | Os], [{size, Wd, Ht} | Ks]) :- integer(Wd), integer(Ht), !, kept(Os, Ks);
+kept([{position, X, Y} | Os], [{position, X, Y} | Ks]) :- integer(X), integer(Y), !, kept(Os, Ks);
+kept([_ | Os], Ks) :- kept(Os, Ks);
+
+kept_key(superior);
+kept_key(label_flag);
+kept_key(border_flag);
+kept_key(margin_flag);
+kept_key(permission);
+kept_key(title);
+kept_key(nature);
 
 % The editor's class: the first `{editor, Class}` option (OURS: the
 % option's form is pimos_window's), else standard_editor.  An unbound

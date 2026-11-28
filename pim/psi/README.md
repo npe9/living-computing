@@ -5810,6 +5810,126 @@ apart, no test restacks under a mixin window):
 | cut restore: the part under not drawn back | test_cut_restore |
 | cut put_back: the part under not drawn back | NONE |
 
+(The system window step below adds test_cut_move, which catches this
+injection.)
+
+**The system window step: pmacs_window as an inferior (2026-11-27).**
+show_all_window/1 now finishes: its last window, `system_window`, a
+pmacs_window inside the base (MENDELS's mendel_pmacs: with_superior_input_
+buffer and pmacs_window, win_class.esp:18-25; made by create_system_
+window/6, mendel_win.esp:770-777), is drawn there, and shows system_io's
+one message so far, field_tree restore/2's "file not exist" error
+(`../docs/simpos/screens/mendels_zone.png`, pinned by test_replay; the
+live run's screen is the same, byte for byte). resume/0 returns, and
+esp_go/3 runs exec/3, which calls the held phase/2 on the phase read back,
+`loaded_library(normal([mendel::example1, ...]))`. **The new stop:**
+
+    mendels: held mendel##mendel_main phase/2 has no clause for
+    {loaded_library,{normal,[{::,mendel,example1},...]}} (call_esp/3 would
+    retry the same message)
+
+phase/2 (mendelmain.esp:379-568) has `loaded_library(normal)` and
+`loaded_library(abnormal)` only; `phase(Class,_)` at :569 is not a clause
+but the last body goal of the compiled1 clause above it (:568 ends in a
+comma). The held PIMOS 4.0 load (`pimos src/library/unloader/load.kl1`:57,
+`check_status(normal(_), ...)`) answers `normal(Modules)`, which is what
+the KL1 half passes on (main.kl1:140-144); only MENDELS's own branch for
+a missing mdllibrary.exe answers a bare `normal` (mdl_comp.kl1:43-54).
+INFERENCE: MENDELS was written against a load that answered `normal`
+(the `::` reading of the term is OURS, so this is not settled). When
+phase/2 fails, esp_control/2 fails and call_esp/3's `repeat`
+(esp_device.esp:31-42) retries with Inst!message unchanged: create/1 and
+resume/0 again. OBSERVED before the stop was made: the retry backtracks
+over all that the first pass bound, and the stand-ins keep pure data in
+slots (menu items, text rows), which the ESP manual forbids ("The slot
+can contain only atomic data and inpure data. Pure data has its value
+released by backtracking", program-e.tex:1899; held MENDELS freezes its
+own, esp_device.esp:39-40); every menu of the zone came back with its
+items unbound, a menu draw failed silently, and the run backtracked into
+create_window/1's re-entry clause to refuse at parts_normal_window
+clear/1. That second pass says nothing about MENDELS, so `mendels.py`
+stops where phase/2 fails, before anything is undone (`watch_phase`, OURS;
+`PHASE_WATCH`). The watch fires whenever phase/2 fails as a whole; its
+text says "has no clause for" because the heads were read for this term. The 21 exchanges and their strings are unchanged; the
+tape is re-recorded live from a copy of the prompt checkpoint.
+
+What was added:
+- **pmacs_window as an inferior** (`standin/pmacs_window.esp` "THE
+  INFERIOR FORM"): TM-125 p13-14 Table 1 makes superior(S) an initiation
+  option of every window (the position "to the superior window"), p16
+  activate/1 "scheduled to be displayed on the superior window". A
+  pmacs_window made with superior(S) makes at create/3 its inferior form,
+  an inferior_io_form in S with the kept create options (superior,
+  position, size, the sash flags, permission, title, nature). Its text
+  buffer is drawn in the form (editor_text_buffer set_pane/2), and the
+  form is handed its geometry, life cycle, title and font. get_superior/2
+  answers S (MENDELS mdl_check.esp:90 sends it to the system window).
+  getl/2, read_with_prompt/3 and set_input_buffer/2 on an inferior, and
+  get_inside_size/3 of a top pmacs_window, are refused loudly.
+- **with_superior_input_buffer on a pmacs_window**: pmacs_window gets the
+  attribute `input_to := self`, and with_superior_input_buffer's
+  `superior` comes first in a class with both natures (mendel_pmacs). The
+  form's input then goes to the superior's buffer, named as coming from
+  the pmacs_window, so base's read/3 names the system window.
+- **inferior_io_form put_codes/2**: the pane protocol's write. key#lf
+  starts the next row, a row that reaches the last whole column goes on
+  in the next, and a newline past the last row scrolls the rows up
+  (INFERENCE, window_pane.esp's look; the wrap OURS).
+- **mendels.py watch_phase** (above), OURS.
+
+`test_mendels.py` `MethodEditor` gains a harness for the system window: a
+mendel_pmacs made with create_system_window/6's options inside MENDELS's
+held base (editor(#mendel_editor) left out, OURS). It is written before
+and after it is shown, with more lines than it holds and one longer than
+a row, then clicked (`../docs/simpos/screens/mendels_system_window.png`).
+test_sys_refused covers the refusals, and test_cut_move is the cut
+form's put_back/2 under the manipulator's MOVE.
+
+The census gains 2 inherited rows (pimos_window get_superior/2 success,
+get_inside_size/3 refused); no row changes outcome (row by row against
+59939246): 1,560 rows, 842 / 247 / 454 (895 / 268 / 380 with the
+recipes).
+
+Labels of this step, counted from the files: 3 LABEL lines added, 1
+RECONSTRUCTED-FROM-MANUAL (pmacs_window get_inside_size/3: TM-125 p8
+as_inside) and 2 INFERENCE (pmacs_window get_superior/2, inferior_io_form
+put_codes/2). The forwarding and refusing clauses added to existing
+pmacs_window methods are marked OURS ("the inferior form") at each, and
+the watch is OURS.
+
+Injections, OBSERVED (19; `test_mendels.py` run whole for
+each, the file restored by copy and compared with cmp; the two rows
+marked * were NONE until test_sys_refused gained its input and font
+checks; all 19 were run again on the final file, with this result):
+
+| injection | failed |
+|---|---|
+| pmacs_window: no inferior form (the superior kept only) | test_replay, test_sys_click, test_sys_refused, test_sys_shown |
+| inferior form: input not routed to the superior (with_superior_input_buffer ignored) | test_sys_click |
+| pmacs_window input_to: superior by default (every pmacs_window shares) | test_sys_refused * |
+| put_codes: no wrap at the last column | test_replay, test_sys_shown |
+| put_codes: no scroll (back to row 0 past the last row) | test_sys_shown |
+| put_codes: key#lf not a new row (kept in the row) | test_replay, test_sys_shown |
+| kept options: size dropped | test_sys_refused, test_sys_shown |
+| kept options: position dropped | test_replay, test_sys_click, test_sys_shown |
+| kept options: label_flag dropped | test_replay, test_sys_shown |
+| set_font not handed to the form | test_sys_refused * |
+| activate not handed to the form | test_replay, test_sys_click, test_sys_shown |
+| get_superior answers 0 | test_sys_click, test_sys_shown |
+| the text buffer not drawn in the form (no set_pane) | test_replay, test_sys_shown |
+| getl on an inferior not refused (reads the interpreter) | test_sys_refused |
+| read_with_prompt on an inferior not refused | test_sys_refused |
+| set_input_buffer on an inferior not refused | test_sys_refused |
+| mendels.py: the phase/2 watch off | test_replay |
+| mendels.py: the watch fires on any failure inside phase/2 (a clause tried) | test_replay |
+| cut put_back: the part under not drawn back (the method editor step's NONE) | test_cut_move |
+
+Open: making the stand-ins retry-safe (impure data in slots, as
+program-e.tex:1899 requires) before any honest second pass. A Pmacs
+window inside a superior has no keyboard input of its own and no Pmacs
+screen (mode line, echo line). reshape/5 and set_text_size/3 on an
+inferior pmacs_window set only its own slots (not handed to the form).
+
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 
 `winfb.py` is the Python device layer under the planned SIMPOS window

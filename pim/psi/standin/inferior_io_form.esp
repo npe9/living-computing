@@ -33,6 +33,11 @@
 % window the program made (MENDELS med_win.esp read/3 :319-325 compares
 % it with meth_title and junk_title).
 %
+% MENDELS's system window (2026-11-27): a pmacs_window made with a
+% superior (MENDELS's mendel_pmacs inside its base, mendel_win.esp:770-777)
+% makes one of these too (pmacs_window.esp "THE INFERIOR FORM"), its text
+% buffer drawn here by put_codes/2 and as_output's clear/1.
+%
 % THE NATURE LIST IS OURS: labeled_sash (a standard_io_window has a label
 % by default: the top form draws one; MENDELS turns it off with
 % label_flag(off)), as_output (text: TM-125 p16), as_input (read/2,
@@ -62,7 +67,65 @@ instance
 % LABEL: INFERENCE (from MENDELS med_show.esp's use; the wrap OURS)
 :put_line(W, S) :- :write_line(W, S), next_row(W);
 
+% :put_codes(W, Codes) -- MENDELS's system window (2026-11-27),
+% INTERPOLATED (selector OURS; body INFERENCE and OURS): the selector
+% (the pane protocol editor_text_buffer.esp's redisplay/1 sends,
+% window_pane.esp put_codes/2's): a pmacs_window inside a superior draws
+% its text buffer in its inferior form (pmacs_window.esp "THE INFERIOR
+% FORM"), with as_output's clear/1 and this.  The codes written at the
+% cursor; key#lf (10) goes to column 0 of the next row and key#cr (13) to
+% column 0; a row that reaches the last whole column goes on in the next
+% row; a newline past the last whole row scrolls the rows up one (the
+% first lost) and stays on the last.  INFERENCE, as window_pane.esp's
+% look (that output scrolls: TM-125 p16 scroll/2's "positive = up",
+% window.md §2.3; the wrap OURS), so the system window shows the newest
+% of MENDELS's messages.
+% LABEL: INFERENCE (window_pane.esp's look; the wrap and scroll OURS)
+:put_codes(W, Cs) :- pieces(W, Cs, [], 0);
+
 local
+
+pieces(W, [], Acc, _) :- !, flushed(W, Acc);
+pieces(W, [10 | Cs], Acc, _) :- !, flushed(W, Acc), fed(W), pieces(W, Cs, [], 0);
+pieces(W, [13 | Cs], Acc, _) :- !, flushed(W, Acc), W!col := 0, pieces(W, Cs, [], 0);
+pieces(W, Cs, Acc, N) :- columns(W, K), W!col + N >= K, !,
+        flushed(W, Acc), fed(W), pieces(W, Cs, [], 0);
+pieces(W, [C | Cs], Acc, N) :- pieces(W, Cs, [C | Acc], N + 1);
+
+flushed(_, []) :- !;
+flushed(W, Acc) :- reversed(Acc, [], Cs), string_of(Cs, S), :write_line(W, S);
+
+fed(W) :-
+        :get_inside_size(W, _, Ih),
+        cell_height(W, Ch),
+        (W!row + 2) * Ch =< Ih, !,
+        W!col := 0, W!row := W!row + 1;
+fed(W) :- W!col := 0, rows_up(W!text_rows, Rs), W!text_rows := Rs, :redraw(W);
+
+rows_up([], []);
+rows_up([[R, _] | Rs], Us) :- R == 0, !, rows_up(Rs, Us);
+rows_up([[R, Cs] | Rs], [[R1, Cs] | Us]) :- value(R - 1, R1), rows_up(Rs, Us);
+
+columns(W, K) :- :get_inside_size(W, Iw, _), cell_width(W, Cw), cells(Iw, Cw, K);
+
+cells(N, C, 0) :- N < C, !;
+cells(N, C, K) :- cells(N - C, C, K0), value(K0 + 1, K);
+
+value(V, V);
+
+reversed([], L, L);
+reversed([X | R], L, M) :- reversed(R, [X | L], M);
+
+string_of(Codes, S) :- count(Codes, 0, N), new_string(S, N, 16), fill(Codes, S, 0);
+
+count([], N, N);
+count([_ | R], N0, N) :- count(R, N0 + 1, N);
+
+fill([], _, _);
+fill([C | R], S, I) :- set_string_element(S, I, C), fill(R, S, I + 1);
+
+cell_width(W, Cw) :- W!font == 0, !, :default_font(#bitmap_display, _, Cw, _);
+cell_width(W, Cw) :- F = W!font, Cw = F!width;
 
 next_row(W) :-
         :get_inside_size(W, _, Ih),
