@@ -553,9 +553,9 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % `:create(#mendel_pmacs, [superior(Base), position(Px,Py), size(W,H),
 % margin_flag(off), label_flag(off), editor(#mendel_editor),
 % permission(out), nature([with_shared_window])], _, Window)`
-% (mendel_win.esp:770-778; garnet_win.esp:494-500 the same for the
+% (mendel_win.esp:770-777; garnet_win.esp:494-501 the same for the
 % garnet window), class mendel_pmacs being with_superior_input_buffer and
-% pmacs_window (win_class.esp:18-24); show_all_window/1 activates it with
+% pmacs_window (win_class.esp:18-25); show_all_window/1 activates it with
 % the rest of the zone (mendel_win.esp:789-805).  TM-125 p13-14 Table 1
 % (PRINTED-INTERFACE, window.md §3.2) makes superior(S) an initiation
 % option of every window, the position "to the superior window", the

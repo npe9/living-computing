@@ -173,8 +173,9 @@ run a mendel_pmacs made with create_system_window/6's options inside the
 held base; test_cut_move moves a mixin window (the cut form's put_back/2).
 Injections, OBSERVED 2026-11-27 (19, made in the working tree by a
 scratch script from a backup, restored by copy and cmp; this whole file
-run on each, on the final file but for the two rows marked *, run again
-after test_sys_refused gained the input and font checks that catch them):
+run on each; all 19 run again on the final file with the same result.
+The two rows marked * were NONE in the first round, before
+test_sys_refused gained the input and font checks that catch them):
 
 | injection | failed |
 |---|---|

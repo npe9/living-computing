@@ -34,7 +34,7 @@
 % it with meth_title and junk_title).
 %
 % MENDELS's system window (2026-11-27): a pmacs_window made with a
-% superior (MENDELS's mendel_pmacs inside its base, mendel_win.esp:770-778)
+% superior (MENDELS's mendel_pmacs inside its base, mendel_win.esp:770-777)
 % makes one of these too (pmacs_window.esp "THE INFERIOR FORM"), its text
 % buffer drawn here by put_codes/2 and as_output's clear/1.
 %

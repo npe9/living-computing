@@ -1436,7 +1436,7 @@ superior(S) (TM-125 p13-14 Table 1 makes it an initiation option of
 every window) makes at create/3 its inferior form, an inferior_io_form in
 S with the kept create options, whose input goes to S's buffer as coming
 from the pmacs_window when the class is a with_superior_input_buffer
-(MENDELS's mendel_pmacs, win_class.esp:18-24). Its text buffer is drawn
+(MENDELS's mendel_pmacs, win_class.esp:18-25). Its text buffer is drawn
 in the form (the form takes the pane protocol's clear/1 and put_codes/2:
 the text wraps at the last column and scrolls up past the last row,
 INFERENCE from window_pane's look); geometry, life cycle, title and font

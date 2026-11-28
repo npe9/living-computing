@@ -662,9 +662,9 @@ From the sweep, not from the documentation alone:
      `loaded_library(abnormal)` only (mendelmain.esp:379-568; the
      `phase(Class,_)` at :569 is the last body goal of the clause above
      it, :568 ending in a comma), while the held PIMOS 4.0 `load:do`
-     answers `normal(Modules)` (pimos `src/library/unloader/load.kl1`:56
+     answers `normal(Modules)` (pimos `src/library/unloader/load.kl1`:57
      check_status(normal(_), ...)); only MENDELS's own no-file branch
-     answers a bare `normal` (mdl_comp.kl1:43-55). So phase/2 fails,
+     answers a bare `normal` (mdl_comp.kl1:43-54). So phase/2 fails,
      esp_control/2 fails, and call_esp/3's `repeat` would retry the same
      message: create/1 and resume/0 again, over what the retry has undone
      (OBSERVED before the stop was made: the stand-ins' menu items came

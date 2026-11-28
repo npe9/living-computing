@@ -5816,8 +5816,8 @@ injection.)
 **The system window step: pmacs_window as an inferior (2026-11-27).**
 show_all_window/1 now finishes: its last window, `system_window`, a
 pmacs_window inside the base (MENDELS's mendel_pmacs: with_superior_input_
-buffer and pmacs_window, win_class.esp:18-24; made by create_system_
-window/6, mendel_win.esp:770-778), is drawn there, and shows system_io's
+buffer and pmacs_window, win_class.esp:18-25; made by create_system_
+window/6, mendel_win.esp:770-777), is drawn there, and shows system_io's
 one message so far, field_tree restore/2's "file not exist" error
 (`../docs/simpos/screens/mendels_zone.png`, pinned by test_replay; the
 live run's screen is the same, byte for byte). resume/0 returns, and
@@ -5831,25 +5831,26 @@ esp_go/3 runs exec/3, which calls the held phase/2 on the phase read back,
 phase/2 (mendelmain.esp:379-568) has `loaded_library(normal)` and
 `loaded_library(abnormal)` only; `phase(Class,_)` at :569 is not a clause
 but the last body goal of the compiled1 clause above it (:568 ends in a
-comma). The held PIMOS 4.0 load (`pimos src/library/unloader/load.kl1`:56,
+comma). The held PIMOS 4.0 load (`pimos src/library/unloader/load.kl1`:57,
 `check_status(normal(_), ...)`) answers `normal(Modules)`, which is what
 the KL1 half passes on (main.kl1:140-144); only MENDELS's own branch for
-a missing mdllibrary.exe answers a bare `normal` (mdl_comp.kl1:43-55).
+a missing mdllibrary.exe answers a bare `normal` (mdl_comp.kl1:43-54).
 INFERENCE: MENDELS was written against a load that answered `normal`
 (the `::` reading of the term is OURS, so this is not settled). When
 phase/2 fails, esp_control/2 fails and call_esp/3's `repeat`
-(esp_device.esp:31-43) retries with Inst!message unchanged: create/1 and
+(esp_device.esp:31-42) retries with Inst!message unchanged: create/1 and
 resume/0 again. OBSERVED before the stop was made: the retry backtracks
 over all that the first pass bound, and the stand-ins keep pure data in
 slots (menu items, text rows), which the ESP manual forbids ("The slot
 can contain only atomic data and inpure data. Pure data has its value
 released by backtracking", program-e.tex:1899; held MENDELS freezes its
-own, esp_device.esp:39-42); every menu of the zone came back with its
+own, esp_device.esp:39-40); every menu of the zone came back with its
 items unbound, a menu draw failed silently, and the run backtracked into
 create_window/1's re-entry clause to refuse at parts_normal_window
 clear/1. That second pass says nothing about MENDELS, so `mendels.py`
 stops where phase/2 fails, before anything is undone (`watch_phase`, OURS;
-`PHASE_WATCH`). The 21 exchanges and their strings are unchanged; the
+`PHASE_WATCH`). The watch fires whenever phase/2 fails as a whole; its
+text says "has no clause for" because the heads were read for this term. The 21 exchanges and their strings are unchanged; the
 tape is re-recorded live from a copy of the prompt checkpoint.
 
 What was added:
@@ -5899,7 +5900,7 @@ the watch is OURS.
 Injections, OBSERVED (19; `test_mendels.py` run whole for
 each, the file restored by copy and compared with cmp; the two rows
 marked * were NONE until test_sys_refused gained its input and font
-checks, and were run again after):
+checks; all 19 were run again on the final file, with this result):
 
 | injection | failed |
 |---|---|
@@ -5926,7 +5927,8 @@ checks, and were run again after):
 Open: making the stand-ins retry-safe (impure data in slots, as
 program-e.tex:1899 requires) before any honest second pass. A Pmacs
 window inside a superior has no keyboard input of its own and no Pmacs
-screen (mode line, echo line).
+screen (mode line, echo line). reshape/5 and set_text_size/3 on an
+inferior pmacs_window set only its own slots (not handed to the form).
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

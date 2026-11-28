@@ -322,25 +322,28 @@ class PsiSide(FB.PsiSide):
 
 
 # The held phase/2 failing (OURS watch, 2026-11-27).  mendel_main's exec/3
-# runs `phase(Class, Current_phase)` (mendelmain.esp:262-268) on the phase
+# runs `phase(Class, Current_phase)` (mendelmain.esp:242-248) on the phase
 # get_phase/2 read back; phase/2's clauses (mendelmain.esp:379-568) cover
 # loaded_library(normal) and loaded_library(abnormal) only (`phase(Class,_)`
 # at :569 is the last body goal of the compiled1 clause above it: :568 ends
 # in a comma), and the held PIMOS 4.0 load:do answers normal(Modules)
-# (pimos src/library/unloader/load.kl1:56 check_status(normal(_), ...);
-# MENDELS's own no-file branch, mdl_comp.kl1:43-55, answers the bare
+# (pimos src/library/unloader/load.kl1:57 check_status(normal(_), ...);
+# MENDELS's own no-file branch, mdl_comp.kl1:43-54, answers the bare
 # `normal`), so loaded_library(normal([mendel::example1, ...])) matches no
 # clause.  exec/3, esp_go/3 and esp_control/2 then fail, and call_esp/3's
-# `repeat` (esp_device.esp:31-43) retries with Inst!message unchanged: the
+# `repeat` (esp_device.esp:31-42) retries with Inst!message unchanged: the
 # whole of create/1 and resume/0 runs again (OBSERVED 2026-11-27 before
-# this watch: create_window/1's re-entry clause, mendel_win.esp:102-148).
+# this watch: create_window/1's re-entry clause, mendel_win.esp:110-148).
 # That retry backtracks over everything create/1 and resume/0 bound, and
 # the stand-ins keep pure data in slots (menu items, text rows), which the
 # ESP manual forbids ("The slot can contain only atomic data and inpure
 # data. Pure data has its value released by backtracking", program-e.tex
 # :1899, PRINTED): their items come back unbound (OBSERVED: every menu of
 # the zone) and the second pass is not evidence about MENDELS.  So the run
-# stops where phase/2 fails, before anything is undone.
+# stops where phase/2 fails, before anything is undone.  The watch fires
+# whenever phase/2 fails as a whole; its text says "has no clause for"
+# because that is this run's case (phase/2's heads read, mendelmain.esp:
+# 379-568): a failure in the last clause's body would be worded the same.
 PHASE_WATCH = True
 
 
