@@ -3055,6 +3055,19 @@ typedef struct {
   // before anything else is armed -- the progressive index write
   // included, which p.22 puts after the VFL part.
   Maybe#(Tuple2#(WordAddr, Word64)) tailWrite;
+  // THE BRANCH SUCCEEDED, whatever its target (fidelity_plan.md A7 part
+  // 2, 2026-11-28).  StretchCore used to read "taken" off the address,
+  // next != the fall-through, so a successful branch to the next
+  // instruction counted as no branch at all.  The 7030 does not look at
+  // the address: "All successful branch instructions require the fetch
+  // of new instructions.  The instructions previously buffered into 1Y
+  // and 2Y are invalidated" (Perf. Char. Vol. 1 printed p.3-23 item 6,
+  // PDF 41), and Vol. 2's branch page times exactly that case, "each
+  // instruction called for a branch to the next instructions" (printed
+  // p.104, PDF 111, the CONSEC columns of PDF 112).  True when `next`
+  // was set to a branch target (every arm that sets one below), False
+  // when the branch was suppressed (EXE, AD, IF) or not successful.
+  Bool branched;
 } ExecDone deriving (Bits, Eq, FShow);
 
 // >>> WHAT execute() HANDS BACK IS A SUM, AND IT USED TO BE SPELLED AS
@@ -7679,6 +7692,7 @@ function ActionValue#(ExecDispatch)
     // from the other side.
     HWordAddr fallthrough = pc + ((len == Full) ? 2 : 1);
     HWordAddr next = fallthrough;
+    Bool branched = False;   // ExecDone.branched: set with every branch target below
     Word64 ind = st.readIndicators();
     // THE OP LOCATOR, docs/NEXT.md's recommended tool rather than
     // another probe.  `ind` is committed exactly once per instruction,
@@ -7878,7 +7892,7 @@ function ActionValue#(ExecDispatch)
           else if (!adSupp) begin
             ind = o.ind; doIdxWrite = o.doIdxWrite;
             idxWriteReg = o.idxWriteReg; idxWriteVal = o.idxWriteVal;
-            if (o.taken) next = branchTarget(o, fallthrough);
+            if (o.taken) begin next = branchTarget(o, fallthrough); branched = True; end
           end
         end
       end
@@ -7905,7 +7919,7 @@ function ActionValue#(ExecDispatch)
           ind = setBit(ind, ind_EXE, 1);
         else if (!adSupp) begin
           ind = o.ind;
-          if (o.taken) next = branchTarget(o, fallthrough);
+          if (o.taken) begin next = branchTarget(o, fallthrough); branched = True; end
         end
       end
 
@@ -7961,7 +7975,7 @@ function ActionValue#(ExecDispatch)
               3'b001:         begin st.setIrqEnabled(False); enAfter = False; end // BD
               default:        noAction;
             endcase
-            if (o.taken && !adSupp) next = branchTarget(o, fallthrough);
+            if (o.taken && !adSupp) begin next = branchTarget(o, fallthrough); branched = True; end
           end
         end else begin
           case (bm.code)
@@ -8430,6 +8444,7 @@ function ActionValue#(ExecDispatch)
             if (o.doIdxWrite) vflPending = tagged Valid tuple2(o.idxWriteReg, o.idxWriteVal);
             if (o.taken) begin
               next = branchTarget(o, fallthrough);
+              branched = True;
               // >>> AN INNER BE/BD/BEW CHANGES THE ENABLE STATE HERE
               // TOO, 2026-11-06. <<<  The Reference Manual's
               // interruption-table scheme is "an unconditional STORE
@@ -9088,8 +9103,10 @@ function ActionValue#(ExecDispatch)
           Bool ifSuppress = takeBranch && maskedOn(st, ind_IF)
                             && ifViolates(st, tgt[18:1]);
           if (takeBranch) ind = ifSignal(st, tgt[18:1], ind);
-          if (takeBranch && !ifSuppress)
+          if (takeBranch && !ifSuppress) begin
             next = tgt;
+            branched = True;
+          end
           // NOT gated on noTest, and the omission is the point: clause
           // 1's DS actuation is inside this block, and storeViolates --
           // noTest's own first term -- already stops the write.
@@ -9146,6 +9163,11 @@ function ActionValue#(ExecDispatch)
       // no-op in every other respect too, so the only loss is the
       // alarm it would raise -- and its target is the next instruction,
       // which p.32 class 1 will monitor once class 1 exists.
+      // (Since A7 part 2, 2026-11-28, `branched` below does tell such a
+      // branch from a fall-through, for the instruction unit's timing and
+      // restart.  This test is deliberately left on the address: moving
+      // it would change which programs raise IF, a behaviour change that
+      // has no deck and is not part of a timing step.)
       if (next != fallthrough) begin
         if (ifViolatesAfter(st, next[18:1], enAfter)) ind = setBit(ind, ind_IF, 1);
         // p.32, THE BRANCH-SUPPRESSION CLAUSE: "If the branch address
@@ -9170,6 +9192,7 @@ function ActionValue#(ExecDispatch)
         // left as a silent third of the sentence.
         if (maskedOn(st, ind_IF) && ifViolatesAfter(st, next[18:1], enAfter)) begin
           next = fallthrough;
+          branched = False;
           doIdxWrite = False;
           vflPending = tagged Invalid;
         end
@@ -9184,7 +9207,7 @@ function ActionValue#(ExecDispatch)
       return tagged Complete ExecDone{ next: next, idxWrite: vflPending,
                                        ioStart: ioStart, xmitStart: xmitStart,
                                        xmitTiming: xmitTiming,
-                                       tailWrite: tailWrite };
+                                       tailWrite: tailWrite, branched: branched };
     end else begin
       // Bailed out partway through: the arm that set `needsRead` did
       // so before touching any of these, so returning the function-

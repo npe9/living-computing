@@ -1,0 +1,50 @@
+! branch_time_cb_bxl.strap -- the I-box time of a COUNT AND BRANCH and of
+! a BRANCH ON AN INDEX INDICATOR (docs/fidelity_plan.md A7 part 2,
+! 2026-11-28; bsv/StretchBranchTiming.bsv has every term and its page).
+!
+! Every taken branch here goes to the NEXT instruction, as Vol. 2's branch
+! page timed them ("each instruction called for a branch to the next
+! instructions", printed p.104, PDF 111).  Until A7 part 2 the model read
+! "taken" off the address, so these counted as no branch at all; now
+! ExecDone.branched says the branch succeeded, the Y buffers are refilled
+! (Vol. 1 printed p.3-23 item 6) and the taken time is charged.
+!
+!   4 x CB taken, unindexed     Table 8 4.2 + dec, 16 clocks a copy
+!   2 x CBZ not taken           Table 8 3.6 + dec + dispatch, 15
+!   1 x CB taken, indexed ($X1) PDF 112: 17
+!   1 x CBZ not taken, indexed  PDF 112: 17
+!   2 x BXL taken               PDF 112 FIT: 15
+!   2 x BZXL not taken          PDF 112 FIT: 7
+!   1 x BXL taken, indexed      PDF 112 FIT: 15
+!   1 x BZXL not taken, indexed PDF 112 FIT: 9
+!
+! THE CYCLES PIN (tests/run_tests.sh) is the model's count for the whole
+! deck, a model pin; the injections that move it, and by how much, are
+! recorded at the run.  The data checks: $X2's count went down by eight
+! (every CB counted, taken or not), $X3 is untouched (no branch went to
+! FAIL), and the halt is at DONE.
+
+START   LX, $X2, XW              ! value 8, count 100000
+        LX, $X1, ZEROW           ! the branch-address index, zero
+C1      CB, $X2, C2              ! taken, to the next instruction
+C2      CB, $X2, C3
+C3      CB, $X2, C4
+C4      CB, $X2, C5
+C5      CBZ, $X2, FAIL           ! not taken: the count is not zero
+        CBZ, $X2, FAIL
+        CB, $X2, C8($X1)         ! indexed, taken
+C8      CBZ, $X2, FAIL($X1)      ! indexed, not taken
+        KVI, $X2, 9              ! value 8 < 9: XL on
+        BXL, B2                  ! taken, to the next instruction
+B2      BXL, B3
+B3      BZXL, FAIL               ! not taken: XL is on
+        BZXL, FAIL
+        BXL, B6($X1)             ! indexed, taken
+B6      BZXL, FAIL($X1)          ! indexed, not taken
+DONE    BEW, $
+FAIL    LVI, $X3, 99
+        BEW, $
+        CNOP
+XW      XW, 8, 100000, 0
+ZEROW   DD(BU,64,8), 0
+        END, START

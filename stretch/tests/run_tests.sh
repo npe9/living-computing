@@ -10649,6 +10649,24 @@ run "TRANSMIT TIME, INDEX STORAGE TO CORE (Table 9 XS->EM, 10 clocks a word)" "$
 run "TRANSMIT TIME, CORE TO INDEX STORAGE (Table 9 EM->XS, 14 clocks a word)" "$TESTS_DIR/run_program.sh" "$TESTS_DIR/../decks/transmit_time_to_index.strap" StretchXmitTimeIdxTb \
     "CYCLES=129+-0" "PC=2050" \
     "X2:18=0x11" "X3:19=0x22" "X4:20=0x33" "X5:21=0x44" "X6:22=0x55" "X7:23=0x0"
+# 2026-11-28 (fidelity_plan.md A7 part 2): the I-box time of a COUNT AND
+# BRANCH and of a BRANCH ON AN INDEX INDICATOR -- Table 8's 16 / 14 clocks
+# (Perf. Char. Vol. 1 printed p.3-14, PDF 32), PDF 112's branch-address
+# index and the fitted BXL times -- 8 literal vectors, every (kind,
+# indexed, taken).  Injections and their observed failure sets:
+# bsv/StretchBranchTiming.bsv.
+run "BRANCH TIME: CB AND INDEX-INDICATOR BIND (Table 8; PDF 112; literal)" "$TESTS_DIR/run_branch_timing_test.sh"
+# The same terms end to end, every taken branch to the NEXT instruction
+# as PDF 112 timed them (printed p.104, PDF 111).  CYCLES is a model pin.
+# The data checks: $X2's count down by eight (99992), $X3 untouched, halt
+# at DONE (81).
+# INJECTION, observed 2026-11-28: StretchCore's branchTaken with
+# ExecDone.branched dropped (`False || (o.next != pc ...`, "taken" read off
+# the address as before A7 part 2): 269 -> 243 (-26 = 4 CB x (16 - 15)
+# + 2 BXL x (15 - 7) + 1 indexed BXL x (15 - 9); the indexed CB is 16
+# either way); the data checks still pass.  Reverted by the inverse patch.
+run "BRANCH TIME, A SUCCESSFUL BRANCH TO THE NEXT INSTRUCTION (Table 8; PDF 112)" "$TESTS_DIR/run_program.sh" "$TESTS_DIR/../decks/branch_time_cb_bxl.strap" StretchBranchTimeTb \
+    "X2:addrIndex(2)=0x8061a600000" "X3:addrIndex(3)=0" "PC=81" "CYCLES=269+-0"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block

@@ -1472,7 +1472,8 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   18 of 24.
 - **A7's exit is therefore not met as a whole.** Transmit meets it on
   PDF 106-107, except the two long ext_ext rows recorded above. CB 16/15
-  and BXL/BAL are still to do.
+  and BXL/BAL are still to do. (Part 2, below: CB and BXL meet it; BAL's
+  reason is recorded.)
 - Suite effect, against `b61.log` HALTREPORT_ALL:
   - 56 sections change, and only in `cycles=`. `memreads` is identical
     in every one.
@@ -1493,6 +1494,100 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   - Two non-CYCLES pins moved, with the same revert proof:
     - the STRAP II deck census, 886 → 888 (the two new decks);
     - `check_bss_mcp_go.py` stage 8's typed DTIME, 00:00:01 → 00:00:00.
+- **Branches BUILT 2026-11-28 (A7 part 2).**
+  - Terms, each read on the page image:
+    - Vol. 1 Table 8 (printed p.3-14, PDF 32): CB (Successful) 4.2 µs +
+      dec, CB (Unsuccessful) 3.6 µs + dec; dec = 0.6 µs (printed p.3-18,
+      PDF 36). 16 and 14 clocks. CBR rows 6.0-6.6 + dec; the SIC to EM /
+      SIC to XS columns add 2.4 / 3.0 µs to a taken CB only.
+    - Vol. 2 PDF 112 (printed 105), CONSEC = NONCON on every row: CB
+      4.82 / 4.52, ix 5.12 / 5.12 µs (16.07 / 15.07 / 17.07 / 17.07
+      clocks); BXL 4.52 / 2.26, ix 4.67 / 2.86 (15.07 / 7.53 / 15.57 /
+      9.53); BAL 19.78 / 7.20, ix 20.08 / 7.21 (65.93 / 24.00 / 66.93 /
+      24.03). PDF 111 (printed 104): "Consecutive" means each branch went
+      to the next instruction; the right four columns index the branch
+      address.
+    - Vol. 1 printed p.3-23 item 6 (PDF 41): "All successful branch
+      instructions require the fetch of new instructions" (1Y, 2Y
+      invalidated); item 7: CB and Bind for XF, XVLZ, XVZ, XVGZ, XCZ, XL,
+      XE, XH are "executed entirely within the I-box". p.3-24 (PDF 42): any
+      other conditional branch is guessed unsuccessful, four LA levels,
+      wrong-way recovery. p.3-18 (PDF 36): a successful branch's refill
+      delay "has been taken into account in the timing given".
+    - TR00.722 Fig. 8 (printed p.34, PDF 36) and p.35 (PDF 37): the CB's
+      branch-address fetch starts in its second cycle, so "the new
+      instruction word has arrived and been checked by the time the CB
+      instruction is completely executed". Fig. 10 (printed p.38, PDF
+      40) and p.39 (PDF 41): a Bind on a non-index indicator is a test
+      fetch and the four loads OP, F, ST, BR, five cycles; p.37 (PDF 39):
+      on an index indicator "we would not have to guess".
+    - Vol. 1 Tables 4-9 have no Bind row.
+  - The model, before: "taken" was read off the address (`next !=` the
+    fall-through), so a successful branch to the next instruction (all of
+    PDF 112's generated cells) counted as no branch: no restart, and a
+    guessed BAL was never recovered. CB was 15 either way (Table 8's 14 +
+    the dispatch clock), no branch-address index term, and every branch on
+    indicator a flat 6 cycles ("Blosk fig.10").
+  - Built:
+    - `ExecDone.branched` (StretchExecute): set wherever `next` is set to
+      a branch target, cleared by IF suppression. StretchCore's
+      `branchTaken` = branched or a jump, used by `commitNext` (restart,
+      and pcReg under an interruption, Ref. Manual p.48), both I-box
+      budget sites and the guessed branch's resolution in rl_au_remove.
+      The commit point's IF test stays on the address (a behaviour
+      change, no deck; noted there).
+    - `bsv/StretchBranchTiming.bsv`, `branchBudget`, charged by
+      `iboxBudget` for CB (refill 0) and index-indicator Bind:
+      - CB not taken 14 (Table 8); taken 16 counted FROM the dispatch
+        clock, budget 15 (RECONSTRUCTION of which clock overlaps, from
+        TR00.722 p.35; the 16 is Table 8's and the page's).
+      - branch-address index + 2 not taken (PDF 112's own columns; p.3-18's
+        0.6 µs a indexing is about VFL and is cited as consistent only);
+        taken, max(not taken, taken) (RECONSTRUCTION; it gives the page's
+        +1 taken).
+      - BXL: FIT to PDF 112's four cells, nothing held out. Not taken 6
+        (Table 7's NOP, 1.2 + dec, CHOSEN as the analogy), taken 15 from
+        the dispatch clock (Table 7's B, 3.6 + dec, + the dispatch clock;
+        no source says why this differs from CB's), the same index term
+        and floor. The old 6 cycles were Fig. 10's four-level load, which
+        an index-indicator branch does not make.
+  - Atlas PDF 102-115, own build dir, before → after (within 1 / within
+    3 / median):
+    - PDF 112: 4 / 18 / −2.05 → 20 / 20 / −0.05. CB all 16 cells
+      −0.05; BXL −0.05, −0.52, −0.55, −0.52.
+    - PDF 106, 107, 109 unchanged in every count; every cell moved by
+      0.0009 clock a copy, the nine taken count branches that close
+      GENER's loop (one clock each, 16 → 15 budget + dispatch).
+    - All 156: 74 / 117 / −1.05 → 90 / 119 / −0.73.
+    - `--selftest` all ok; check 4 now reads 16.0000 a successful CB
+      (it was 15.0000, the consecutive-target artifact; atlas_oracle.md
+      item 5 corrected).
+  - Left, recorded and not modelled:
+    - **BAL / BZAL (4 cells, −11 not taken, −50 taken).** No page
+      decomposes the 24 clocks not taken or the 42 a wrong guess adds,
+      and PDF 112 does not spell out its ARITH RESULT IND environment.
+      Part of the old −52 was the consecutive-target artifact (no recovery
+      ever ran); with `branched`, recovery runs and the model gives 16
+      taken, 13 not taken. The guess load (`2 * 6`), the branch level's
+      E-box charge (`2 * 6`) and rl_recover's 12 are unsourced and left.
+    - CBR (16 cells, not generated: the refill word is not described)
+      keeps budgetClocks' Table 8 rows.
+    - A SIC-wrapped CB / Bind keeps the old charge (`Sic` = 2 +
+      iboxCycles); Table 8's SIC columns have no atlas cell.
+    - The NONCON columns (40 cells) are not generated; the page prints
+      them equal to CONSEC.
+    - PDF 109's effective-address columns: effective minus direct is
+      not uniform (LX +0.60 µs; LV +0.45 / +0.60 / +0.60; SX +0.15 / +0.30
+      / +0.61; SV +0.01 / 0 / +0.60; V+, V+C, V+CR, KV, RCZ ≈ +0.60; R
+      +0.01 / +0.01 / +0.61), so a flat index term is not what the page
+      prints. Not changed here; a separate milestone (A8's index fetch).
+  - Checks:
+    - `tests/run_branch_timing_test.sh`: 8 literal vectors, four observed
+      injections (header of `StretchBranchTiming.bsv`).
+    - `decks/branch_time_cb_bxl.strap`: every term end to end, each taken
+      branch to the next instruction; CYCLES 269 pinned. With `branched`
+      dropped it gives 243 (observed; −26, accounted term by term at the
+      run in `run_tests.sh`).
 
 ## Phase 4: the I-box as the pages draw it
 

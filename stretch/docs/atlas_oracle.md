@@ -234,7 +234,8 @@ Check 0 runs first and is static (no simulation).
 3. **Baseline.** Set-up and halt take 109 clocks, against 140,277 for
    the sequence.
 4. **Branch chain.** A successful CB costs 15.0000 clocks a copy at
-   both body lengths. This check was proven discriminating: with the
+   both body lengths (16.0000 since A7 part 2, 2026-11-28: the 15 was a
+   successful branch to the next instruction counted as not taken). This check was proven discriminating: with the
    first generator's bug re-injected, it fails (0.0068 against 152.38
    clocks a copy).
 5. **INTERNL / IMMED. / ACCUM. encoding** (static, 5,896 cases). The
@@ -2481,7 +2482,12 @@ untouched.
    charges the crossover differently for decimal (−7) and binary (+2)
    on PDF 120, and neither matches the page.
 5. **Branches.** The model charges 15 clocks for a CB whether it
-   succeeds or not, and 13-14 for BXL/BAL. The 7030 is 16/15 for CB and
+   succeeds or not, and 13-14 for BXL/BAL. (CORRECTED 2026-11-28, A7
+   part 2: the "15 whether it succeeds or not" was an artifact -- the
+   model read "taken" off the address, and every SUCCESS cell branches to
+   the next instruction, so no successful branch was ever charged.
+   `ExecDone.branched` fixed it; CB and BXL now meet the rule, BAL is
+   recorded, `fidelity_plan.md` A7.) The 7030 is 16/15 for CB and
    about 66 for a successful BAL (PDF 112 prints 19.78 µs). BAL was
    measured in an ARITH RESULT IND environment the page does not spell
    out, so that residual (−52) is the least trustworthy in the table.
