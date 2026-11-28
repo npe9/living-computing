@@ -430,6 +430,11 @@ NFREE = 32
 # The furthest point, pinned: (instructions of pimm.py's run, executed and
 # matched, held microinstructions in them, the index of the first stop).
 # Any change, forward or back, fails until the pin is updated.
+# Owner decision (2026-11-28): this standalone pin stays at 15 of 16, as
+# this harness seeds the scheduler (seed_proceed).  Append's 16th
+# instruction is counted, 16 of 16, in u3_goals.py's append2 program
+# (APPEND16_PINNED), where proceed reads only firmware-written state
+# after the 199-word held boot.
 PINNED = dict(steps=16, matched=15, words=49, stop=15)
 
 

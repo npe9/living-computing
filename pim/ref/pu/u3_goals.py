@@ -286,6 +286,10 @@ the observed point is the first STOP / FAIL line.
   wrbf_low_w         twovar STOP 9 at 3335 (W06 never set)
   jmpf8_cndf3_off    prio STOP at 1d93
   prio_form_off      prio STOP at the builtin (no set-up form)
+  Owner decision (2026-11-28): append's 16th instruction counted, 16 of
+  16, on append2's first goal (APPEND16_PINNED: pick 2 reads only
+  firmware-written state).  reseed_r14: MOVED (0 of 16, FAIL at 8);
+  r13_harness: MOVED (16 of 16, pick residual R13).
 """
 import os
 import sys
@@ -349,6 +353,34 @@ SUSP_FLAGS = {'interrupt': False, 'csbrk': False}
 AFTER_BOOT = []               # injections: rule changes made after the boot
 
 PINNED = dict(steps=41, matched=41, stop=None)
+# Owner decision (2026-11-28): append's 16th instruction counts here, as
+# 16 of 16.  The first append goal (the instructions between pick 1 and
+# pick 2, U2's append([a], [], Z): try_me_else .. proceed, 6644-6657)
+# matches pimm.py whole, its 16th instruction, proceed, included, and
+# that proceed's pick (pick 2) reads no state whose last writer is the
+# harness: only what the held words wrote after the 199-word held boot
+# (the provenance walk, RESIDUAL_PINNED[1] = []).  u2_append's standalone
+# pin stays at 15 of 16: it seeds the scheduler.  Still OURS for this
+# count: the driver clause (driver_cells), the boot entry (2021,
+# reset_PMPF, PMPF_ENTRY), and the parameter cell values b4 (PARAM_B4),
+# b6 (gseb) and b7 (GSESH).  Injections, observed: 'reseed_r14' (R14
+# rewritten by the harness): FAIL at 8, the provenance of pick 1, so the
+# goal never runs (the pin moves: 0 of 16); 'r13_harness' (R13 rewritten,
+# same value): all 16 still match, but pick 2 reads R13 last written by
+# the harness, pick_residual ['R13']: the pin moves on provenance alone.
+APPEND16_PINNED = dict(instructions=16, matched=16, first='try_me_else', last='proceed',
+                       pick=2, pick_residual=[])
+
+
+def append16_got(out):
+    """The first append goal: the instructions after pick 1's proceed up
+    to the proceed that makes pick 2."""
+    ok = out.get('ok_steps', [])
+    goal = [b for _k, b, pk in ok if pk == 1][1:] + [b for _k, b, pk in ok if pk == 2][:1]
+    res = out['residual'][1] if len(out['residual']) > 1 else None
+    return dict(instructions=len(goal), matched=len(goal), first=goal[0] if goal else None,
+                last=goal[-1] if goal else None, pick=2 if len(goal) and goal[-1] == 'proceed'
+                and out['picks'] >= 2 else None, pick_residual=res)
 PICKS_PINNED = 3              # 2 compared with pimm.py + the boot goal's (firmware only)
 BOOT_PINNED = {'2021': 1, '204b': 8, '3380': 132, '209f-20a8': 6, '20e7': 45, '202d-2030': 7}
 # With PMPF set (entry 2003's 2022): the boot takes 20a2, MAR1 := R05 +
@@ -1058,7 +1090,8 @@ def run(verbose=False, entry=None, prog=None):
            'dispatched': 0, 'empty': 0, 'boot_pick': 0, 'residual': [], 'boot': None,
            'boot_residual': None, 'boot_stop': None, 'boot_words': None,
            'prog_residual': set(), 'skipped': [], 'suspends': 0, 'wakes': 0,
-           'susp_residual': [], 'slices': 0}
+           'susp_residual': [], 'slices': 0,
+           'ok_steps': []}
     prov = Prov()
     prov.harness(p)
     FRESH.clear()
@@ -1214,6 +1247,7 @@ def run(verbose=False, entry=None, prog=None):
             print('FAIL %2d %5d %-22s %d words: %s' % (k, pc, name, nw, '; '.join(fails)))
             break
         out['matched'] += 1
+        out['ok_steps'].append((k, SU.base(name), out['picks']))
         print('ok   %2d %5d %-22s %d words%s' % (k, pc, name, nw,
                                                 ('  pick %d%s' % (out['picks'], {
                                                     'empty': ' (empty)', 'boot_pick': ' (the boot goal:'
@@ -2249,6 +2283,15 @@ def main(argv):
                                      out['dispatched'], out['boot_pick'], out['boot_words'],
                                      out['residual'], out['boot_residual'], PINNED, PICKS_PINNED,
                                      BOOT_PINNED, RESIDUAL_PINNED, BOOT_RESIDUAL_PINNED))
+    a16 = append16_got(out)
+    if a16 != APPEND16_PINNED:
+        moved = True
+        print('%s append\'s 16 of 16 moved: %s; pinned %s'
+              % ('MOVED' if inj else 'FAIL', a16, APPEND16_PINNED))
+    else:
+        print('append\'s 16th instruction: %d of %d (the first goal, %s .. %s, pick %d reads'
+              ' only firmware-written state)' % (a16['matched'], a16['instructions'],
+                                                  a16['first'], a16['last'], a16['pick']))
     bad = bool(moved or out['fail'] or out['stop'] or out['boot_stop'])
     print('--- the program suspend (U3 third step)')
     out2, n2 = run('-v' in argv, prog='suspend')

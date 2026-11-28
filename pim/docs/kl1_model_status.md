@@ -133,7 +133,13 @@ length + 1. The PMPF flag `209f` stopped on is found (rassy's
 `cond PMPF`, set / reset by the entry vector's `2022` / `2021`); which
 entry the held system takes is not, so the harness takes the reset
 (OURS) and pins the set as a second run (`ref/pu/README.md`, "U3, second
-step"). *Third step, 2026-11-28:* suspend and resume run on the held
+step"). By owner decision (2026-11-28), append's 16th instruction counts
+there: append2's first goal matches `pimm.py` 16 of 16, and its `proceed`
+picks from state that only the held words wrote after the boot
+(`u3_goals.APPEND16_PINNED`). These parts of that count are still OURS:
+the driver clause, the boot entry choice (`2021`, reset_PMPF), and the
+parameter cells b4, b6 (gseb) and b7. The standalone `u2_append` pin
+stays at 15 of 16, because it seeds the scheduler. *Third step, 2026-11-28:* suspend and resume run on the held
 firmware. In a second program, `driver([], [], X, X, [], Z)`, the first
 `append` goal notes X in its guard (`3a3c`-`3a3f`). It then suspends
 through the held `suspend` (`1c08`-`1c81`: the record and X's hook,

@@ -35,8 +35,17 @@ empty), no mismatch. **U3's second step** (2026-11-27, section "U3, second
 step"): the scheduler state is written by start's own boot words (199
 held words) instead of the `INITIAL` stand-in, 41 of 41 matched, 2 picks
 compared with `pimm.py` and the third the boot goal's (firmware only), no
-harness-written state read at any pick. Append's own run stays at 15 of 16
-(why: "U3"). **U3's third step** (2026-11-28, section "U3, third
+harness-written state read at any pick. **Append's 16th instruction is
+counted here, 16 of 16** (owner decision, 2026-11-28): in append2 the
+first append goal, `try_me_else` .. `proceed`, matches `pimm.py` whole,
+and the proceed's pick (pick 2) reads only state the held words wrote
+after the 199-word held boot (the provenance walk;
+`u3_goals.APPEND16_PINNED`). Still OURS for that count: the driver clause,
+the boot entry choice (`2021`, reset_PMPF), and the parameter cell values
+b4 (sspb), b6 (gseb) and b7 (gsesh). `reseed_r14` fails the pin (FAIL at
+8, provenance), and so does `r13_harness`, on provenance alone (16 of 16
+still match, pick 2 reads R13). The standalone `u2_append` run stays at
+15 of 16, because it seeds the scheduler (why: "U3"). **U3's third step** (2026-11-28, section "U3, third
 step"): suspend and resume on held routines. In a second program a goal
 suspends on an unbound variable, another binds it and wakes it, and it
 runs to its end: 22 of 23 instructions matched with 1 declared skip, and
