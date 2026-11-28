@@ -103,6 +103,7 @@ import StretchVFL::*;
 import StretchALU::*;
 import StretchDecode::*; // decodeHalfWord, for SIC's embedded branch
 import StretchFP::*;     // single-precision floating-point arithmetic
+import StretchXmitTiming::*;  // XmitTiming: a transmit's time, by destination (A7)
 
 // THE OPERAND WORDS ONE INSTRUCTION MAY COLLECT BEFORE IT EXECUTES: THREE,
 // 2026-11-17.  A VFL field may cross a word boundary (two words, printed
@@ -3038,6 +3039,12 @@ typedef struct {
   Maybe#(Tuple2#(Bit#(4), IndexWord)) idxWrite; // progressive indexing's part 2
   Maybe#(IoXfer) ioStart;                      // an RD/W transfer to service
   Maybe#(XmitXfer) xmitStart;                  // a multi-word TRANSMIT
+  // A TRANSMIT THAT MOVED ITS FIRST WORD, and so is charged the transmit
+  // loop's time rather than budgetClocks' (StretchXmitTiming.bsv,
+  // fidelity_plan.md A7, 2026-11-27): the first word's receiving address
+  // and whether the count was immediate.  Invalid for everything else,
+  // SWAP and a refused (DS) first word included.
+  Maybe#(XmitTiming) xmitTiming;
   // A CROSSING VFL FIELD'S SECOND WORD WHEN THAT WORD IS BELOW 32 (a
   // special register or an index register), 2026-11-17.  The first word
   // went through writeWord in the instruction's own clock; a second
@@ -7783,6 +7790,7 @@ function ActionValue#(ExecDispatch)
     // The same shape for a multi-word TRANSMIT: the first word is
     // moved by the arm itself and the rest by StretchCore's rl_xmit.
     Maybe#(XmitXfer) xmitStart = tagged Invalid;
+    Maybe#(XmitTiming) xmitTiming = tagged Invalid;
 
     case (di) matches
 
@@ -8624,6 +8632,12 @@ function ActionValue#(ExecDispatch)
             if (protViolates(st, dstBase)) ind = setBit(ind, ind_DS, 1);
             else begin
               st.writeWord(dstBase, prefetch[0]);
+              // ITS TIME IS THE DESTINATION'S (StretchXmitTiming.bsv,
+              // Table 9), decided here from the address just written:
+              // the transmit may overwrite the very index register its
+              // address was modified by, so it is not recomputed later.
+              xmitTiming = tagged Valid XmitTiming {
+                immediate: (t.immCount == 1), dst: dstBase };
               // THE FIRST WORD IS MOVED HERE AND THE REST BY rl_xmit,
               // one per clock, because this model writes storage once
               // per rule.  p.30: "the sending and receiving addresses
@@ -9169,6 +9183,7 @@ function ActionValue#(ExecDispatch)
       st.setIndicatorBits(ind);
       return tagged Complete ExecDone{ next: next, idxWrite: vflPending,
                                        ioStart: ioStart, xmitStart: xmitStart,
+                                       xmitTiming: xmitTiming,
                                        tailWrite: tailWrite };
     end else begin
       // Bailed out partway through: the arm that set `needsRead` did

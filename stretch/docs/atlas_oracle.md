@@ -2289,7 +2289,12 @@ untouched.
      diagnosed here.
 2. **Transmit: the model charges the source, the 7030 charges the
    destination, and the model has no fixed cost (diagnosed 2026-11-23,
-   the diagnosis half of `fidelity_plan.md` A7).** Measured on master
+   the diagnosis half of `fidelity_plan.md` A7). >>> BUILT 2026-11-27
+   (A7): T 28 of 30 cells within 1 clock (median −0.52), TI 17 of 17
+   (median −0.55); the two left are T 50WD and 100WD EXT→EXT at −2.5 and
+   −4.9, the page's 10.05-clock slope against Table 9's 3.0 µs = 10.
+   `fidelity_plan.md` A7 has the measurement and the page check. The
+   text below is the diagnosis as written. <<<** Measured on master
    that day: T has 30 cells, median −48, down to −152. TI has 28 cells,
    median −29. None of the 58 is within 3 clocks. The earlier text here
    ("a fixed cost of about 30 clocks", "about 14 clocks a word to and

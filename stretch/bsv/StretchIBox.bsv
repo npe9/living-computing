@@ -23,6 +23,7 @@ import StretchDecode::*;
 import StretchExecute::*;   // effAddr18/19/24, baWord
 import StretchMemory::*;    // installed(): the address-invalid bound
 import StretchVFL::*;       // fieldCrosses, effLength
+import StretchXmitTiming::*; // mkXmitPacer: the transmit loop's period
 
 // ---- Instruction classification and the I-box hazard test ----
 function Bool isEboxClass(DecodedInstr d);
@@ -926,6 +927,158 @@ module mkInstrBuffers #(StretchStorage st) (InstrBuffers);
     for (Integer k = 0; k < 2; k = k + 1)
       if (yr[k].valid && yr[k].chk == 0 && yr[k].addr == w) r = tagged Valid yr[k].data;
     return r;
+  endmethod
+endmodule
+
+// ---- The transmit loop: mkXmitBox (fidelity_plan.md A7, 2026-11-27) ----
+//
+// THE WORDS OF A MULTI-WORD TRANSMIT OR SWAP AFTER THE FIRST, moved one
+// at a time, as a box with a request (`start`) and a per-clock `step` the
+// core's off-pipe rule rl_xmit calls while `busy`.  Until 2026-11-27 this
+// was rl_xmit's own body and five registers of StretchCore; it moved here
+// whole, unchanged except for the pacer, when the transmit's time became
+// the destination's (StretchXmitTiming.bsv).  The core keeps the guards
+// (armXmit, busyXfer), so the arms' exclusivity is still proved there.
+//
+// THE SPEC IS Reference Manual printed p.30.  "In forward transmission,
+// the sending and receiving addresses of each successive word transmitted
+// are obtained by incrementing the previous addresses by one."  There is
+// no count to write back and no indicator to fold -- same page: "The
+// count field in the index register is not changed as a result of the
+// operation, and the index result indicators are not affected."  The
+// first word of a TRANSMIT was moved by the Transmit arm in
+// StretchExecute; this drains the rest.  Every word of a SWAP is this
+// box's.
+//
+// PROTECTION IS CHECKED PER WORD.  p.30 says an invalid or protected
+// address is "not detected... until the data transmission actually
+// encounters" it, so a transmit that walks into a protected word must
+// stop THERE, with the words before it moved -- not be refused up front.
+// DS terminates the operation (p.32, "storing in core storage is always
+// suppressed, AND THE OPERATION IS ALWAYS TERMINATED").
+//
+// ADDRESS INVALID IS CHECKED PER WORD TOO, and it is the only thing that
+// bounds a runaway transmit.  p.30, on a direct count field of zero: "A
+// count field of zero is interpreted as 2^18.  Since this many words
+// cannot be transmitted without encountering an invalid address, such a
+// count is never valid.  IT IS NOT DETECTED, HOWEVER, UNTIL THE DATA
+// TRANSMISSION ACTUALLY ENCOUNTERS AN INVALID OR PROTECTED ADDRESS."
+// Without it a 2^18 transmit wraps the whole 18-bit address space and
+// zeroes core -- which is what happened the first time this ran against
+// MCP, whose tape carries no PROSA.  `installed` is StretchMemory's bound
+// (RefMan printed p.21).  Both ends are tested.
+//
+// >>> A TRANSMITTED WORD TAKES THE LOOP'S TIME, BY DESTINATION. <<<  The
+// read of each word is issued at the start of its period and the write is
+// held until the pacer says the period, xmitLoopClocks(dst) -- 10 clocks
+// to core or an internal register, 14 to index storage (Perf. Char. Vol.
+// 1 Table 9, printed p.3-14, PDF 32) -- has run out.  It used to be the
+// READ's time (2 from index storage, 10 or 17 from core).  A SWAP is not
+// paced: Table 9 (cont'd) has its times but no atlas page measures them,
+// and its three phases keep their old clocks.
+interface XmitBox;
+  method Action start(XmitXfer x);   // the words after the arm's first
+  method Bool   busy;                // a transfer is still draining
+  method Action step;                // one clock of it (rl_xmit)
+endinterface
+
+module mkXmitBox #(StretchStorage st) (XmitBox);
+  // The transfer still to drain (StretchTypes.bsv's XmitXfer).
+  Reg#(Maybe#(XmitXfer)) pending <- mkReg(tagged Invalid);
+  // The read-staging flag: the sending word is a memory READ that takes
+  // a clock or more to come back, so the box remembers that it asked.
+  Reg#(Bool) readIssued <- mkReg(False);
+  // SWAP's two extra states.  An exchange needs TWO reads and TWO writes
+  // per word and this model has one of each per clock, so a swapped word
+  // takes three clocks: read the sending word, read the receiving word
+  // and write the sending word's value into it, then write the receiving
+  // word's old value back into the sending word.  BOTH READS HAPPEN
+  // BEFORE EITHER WRITE, which is p.30's "at the same time".
+  Reg#(Bit#(2)) swapPhase <- mkReg(0);
+  Reg#(Word64)  swapHeld  <- mkReg(0);
+  // How many clocks a SWAP costs, counted rather than reasoned about.
+  Reg#(Bit#(32)) swapClocks <- mkReg(0);
+  // The loop's period.
+  XmitPacer pacer <- mkXmitPacer;
+
+  method Action start(XmitXfer x);
+    pending <= tagged Valid x;
+  endmethod
+
+  method Bool busy = isValid(pending);
+
+  method Action step;
+    let x = validValue(pending);
+    // THE NEXT PAIR.  p.30: forward obtains each successive pair "by
+    // incrementing the previous addresses by one", backward "by
+    // decrementing".
+    XmitXfer nextWord = XmitXfer {
+      src: x.backward ? x.src - 1 : x.src + 1,
+      dst: x.backward ? x.dst - 1 : x.dst + 1,
+      remaining: x.remaining - 1, backward: x.backward, swap: x.swap };
+    // ONE WRITE OF swapClocks, AT THE END (two Reg writes bsc cannot
+    // order are refused).
+    Bit#(32) swapClk = swapClocks + (x.swap ? 1 : 0);
+    if (!st.writeReady()) begin
+      // The store queue is full: wait for the memory bus.
+      noAction;
+    end else if (x.swap && swapPhase == 2) begin
+      // PHASE 2: no read.  The receiving word's OLD contents, held since
+      // phase 1, go back into the sending word.  Both ends were checked
+      // in phase 0.
+      st.writeWord(x.src, swapHeld);
+      swapPhase <= 0;
+      if (x.remaining == 1) begin
+        $display("StretchCore: SWAP finished, %0d clocks in rl_xmit",
+                 swapClk);
+        swapClk = 0;
+        pending <= tagged Invalid;
+      end else
+        pending <= tagged Valid nextWord;
+    end else if (!readIssued) begin
+      // PHASE 0 reads the SENDING word, phase 1 the RECEIVING one.  A
+      // transmitted word's period starts with its read.
+      st.readWordReq((x.swap && swapPhase == 1) ? x.dst : x.src);
+      if (!x.swap) pacer.startWord(x.dst);
+      readIssued <= True;
+    end else if (!st.responseReady()) begin
+      noAction;
+    end else if (!x.swap && !pacer.due) begin
+      // The word is back (or coming) but the loop's period has not run
+      // out: Table 9's loop time, not the memory's, sets the rate.
+      noAction;
+    end else begin
+      Word64 v <- st.readWordResp();
+      readIssued <= False;
+      // A SWAP WRITES BOTH ENDS, so BOTH are protection-checked, in phase
+      // 0, before anything has been written for this word.
+      Bool protBad = protViolates(st, x.dst)
+                     || (x.swap && protViolates(st, x.src));
+      if (!installed(x.src) || !installed(x.dst)) begin
+        st.setIndicatorBits(setBit(st.readIndicators(), ind_AD, 1));
+        pending <= tagged Invalid;
+        swapPhase <= 0;
+      end else if (protBad) begin
+        st.setIndicatorBits(setBit(st.readIndicators(), ind_DS, 1));
+        pending <= tagged Invalid;
+        swapPhase <= 0;
+      end else if (x.swap && swapPhase == 0) begin
+        // PHASE 0: the sending word is in hand and NOTHING is written.
+        swapHeld <= v;
+        swapPhase <= 1;
+      end else if (x.swap) begin
+        // PHASE 1: `v` is the RECEIVING word.  Write the sending word's
+        // value into it and keep `v` for phase 2.
+        st.writeWord(x.dst, swapHeld);
+        swapHeld <= v;
+        swapPhase <= 2;
+      end else begin
+        st.writeWord(x.dst, v);
+        pending <= (x.remaining == 1) ? tagged Invalid
+                                      : tagged Valid nextWord;
+      end
+    end
+    swapClocks <= swapClk;
   endmethod
 endmodule
 

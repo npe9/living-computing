@@ -219,7 +219,12 @@ function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
         ? (case (x.code) 3'b100: 3; 3'b001: 8; default: 14; endcase)   // Z / RCZ / R
         : (case (x.code) 3'b110: 3; 3'b011: 9; 3'b001: 11; default: 7; endcase); // NOP / BR / BD (+2 LA drains) / B,BE,BEW
     tagged Sic .x: return 2 + iboxCycles(decodeHalfWord(x.inner), taken); // "SIC to EM" columns: +1.2 us
-    tagged Transmit .*: return 7;    // Blosk fig.9: 2 set-up + 5 per word (one word here)
+    // Blosk fig.9: 2 set-up + 5 per word (one word here).  Since A7
+    // (2026-11-27) only a SWAP and a transmit that moved no word (DS on
+    // its first) are charged this; a T/TI that moved its first word is
+    // charged by destination, StretchXmitTiming.xmitFirstBudget, at
+    // StretchCore's iboxBudget.
+    tagged Transmit .*: return 7;
     tagged Fp .*: return 2;          // preparation; E-box cycles added below
     tagged VflInt .v: return 6 + ((v.a.i1 != 0) ? 1 : 0);   // preparation, two LA levels
     tagged Connective .c: return 6 + ((c.a.i1 != 0) ? 1 : 0);

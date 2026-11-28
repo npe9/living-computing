@@ -2684,9 +2684,14 @@ run "COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP (printed p.45 it
 # StretchCore lveBehindStore, removed) gives 812.  So 15 clocks are the
 # deck's LVEs waiting for the SX/SV store levels ahead of them, and 1 the
 # store levels themselves (not traced per clock).
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 827 -> 858.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 827 again, memreads unchanged.
 run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./run_program.sh ../decks/negative_effective_address.strap StretchNegEaTb \
     "PC=455" \
-    "CYCLES=827+-0" \
+    "CYCLES=858+-0" \
     "RA:768=72623859790382856" "RA2:780=2" "RB:769=55" "RC:770=7" "RK:771=12" \
     "RD:772=2251799813685248" "RE:773=24189255811072" \
     "RF:774=35184372088832" "RG:775=35184372088832" \
@@ -3287,7 +3292,12 @@ run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offs
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 1214 again,
 # every value check unchanged.
-run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=1206+-0 \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 1206 -> 2005.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 1206 again, memreads unchanged.
+run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=2005+-0 \
     "T1_bin_unsigned:1200=0x0000000001234560" "W1_lzc11_aoc37:1201=0x000060000004A000" "I1_BTR_RGZ:1202=0x0000000001000020" \
     "T2_bin_minus:1203=0x00000000000ABCD8" "W2_lzc11_aoc0:1204=0x0000600000000000" "I2_BTR_RLZ_RN:1205=0x0000000001000090" \
     "T3_flags_not_loaded:1206=0x770" "I3_BTR_TF_VF_RGZ:1207=0x0000000015000020" \
@@ -3322,7 +3332,12 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 # CYCLES 1027 -> 1440, 2026-11-26 (fidelity_plan.md A3 (b) step 5): Table 3's
 # B-D DCV s and u/8 terms (printed p.3-9), stepped by mkSAU; sauStepCvtAcc :=
 # False restores 1027.  The deck's header has the source and the cause.
-run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1440+-0 \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 1440 -> 2347.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 1440 again, memreads unchanged.
+run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=2347+-0 \
     "F19_store:2000=0x0070001861422000" \
     "F19_acc_left:2200=0" \
     "F19_acc_right:2201=0x7006652" \
@@ -3361,7 +3376,12 @@ run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_p
 # (CYCLES 360 held), observed failures only:
 #   no decimal compaction (the binary path)  -> L2_FT_zones_dropped only
 #   PF threshold 64 bits instead of 60       -> L3_ind_PF only
-run "decimal LFT: digits, zones, PF, -0, LFTN (printed p.69, G2.3)" ./run_program.sh ../decks/vfl_lft_decimal.strap StretchVflLftDecTb PC=2035 CYCLES=360+-0 \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 360 -> 600.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 360 again, memreads unchanged.
+run "decimal LFT: digits, zones, PF, -0, LFTN (printed p.69, G2.3)" ./run_program.sh ../decks/vfl_lft_decimal.strap StretchVflLftDecTb PC=2035 CYCLES=600+-0 \
     "L1_FT:1200=0x1234560" "L2_FT_zones_dropped:1201=0x1230" "L3_FT_low15:1202=0x2345678901234560" \
     "L4_FT_minus0:1203=0x8" "L5_FT_inverted:1204=0x428" "L1_ind:1205=0x20" "L2_ind:1206=0x20" \
     "L3_ind_PF:1207=0x10000000020" "L4_ind_RZ_RN:1208=0x50" "L5_ind_RLZ_RN:1209=0x90"
@@ -3472,9 +3492,14 @@ run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit widt
 # (BOP,$ hangs if OP comes on; FT_loaded is -123's (16)1238).  CYCLES 224 ->
 # 223 (measured after the batch13 merge): the decimal operand moved from
 # TB+.48 (a crossing field, two reads) to TD (one word).
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 223 -> 254.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 223 again, memreads unchanged.
 run "DECIMAL VFL: the model's refusal is gone; decimal LFT executes (was: refused)" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
     "PC=395" \
-    "CYCLES=223+-0" \
+    "CYCLES=254+-0" \
     "control_head:264=18446744073709490740" \
     "control_tail:265=6231011559443791871" \
     "refused_head:272=18446744073709551615" \
@@ -5085,7 +5110,12 @@ run "Store into an instruction a pending level will store: not prepared until th
 # RE-PINNED 208 -> 204, 2026-11-17, by the FP look-ahead level yielding
 # the bus to a waiting 1Y/2Y fetch (StretchStorage memCtl; the ibox_supply
 # comment above).  With the yield removed it runs 208 again.
-run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=204+-0" \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 204 -> 235.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 204 again, memreads unchanged.
+run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=235+-0" \
     "RES:1153=0x28000000000000"
 
 # LFT IS A "TO MEMORY" OPERATION; ITS $R OPERAND WAITS FOR THE ONE LAAR;
@@ -5102,7 +5132,12 @@ run "FP internal operand: L from \$R waits for the E-box and the store path (pri
 # gated at its load) 846.
 # RE-PINNED 2026-11-18 (merge of batch26 with the VFL INTERNL branch): CYCLES 776 -> 780.  Cause, measured: the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold) -- the deck's "ST(BU,64,8), \$X9" is a VFL store into index storage and the L(U) after it is E-box class; with the redecode arm disabled the merged tree gives 776.
 # RE-PINNED 2026-11-18 (merge of the I-box supply branch): CYCLES 780 -> 786, by the FP look-ahead fetch yielding to a waiting 1Y/2Y fetch (StretchStorage memCtl fpYields); with fpYields forced False, 780; with vflImmIndexedSaving = 0, 786.
-run "FP to memory: LFT takes the LAAR (p.3-21, PDF 41), \$R waits for it (p.3-20), indexed M+ after the index-store hold" ./run_program.sh ../decks/fp_to_memory_laar.strap StretchFpToMemLaarTb ASM=strap2 "PC=2084" "CYCLES=786+-0" \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 786 -> 813.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 786 again, memreads unchanged.
+run "FP to memory: LFT takes the LAAR (p.3-21, PDF 41), \$R waits for it (p.3-20), indexed M+ after the index-store hold" ./run_program.sh ../decks/fp_to_memory_laar.strap StretchFpToMemLaarTb ASM=strap2 "PC=2084" "CYCLES=813+-0" \
     "FT:14=0x0028000000000000"
 
 # A VFL OPERAND IN AN INTERNAL REGISTER WAITS FOR THE E-BOX (2026-11-17,
@@ -5163,7 +5198,12 @@ run "VFL crossing store: STORE WAIT on its second word, an index register" ./run
 # after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
 # landing checked: the counter is the instruction right after the level.
 # Injection numbers above this note were observed at the old pin.
-run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1225+-0" \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 1225 -> 1585.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 1225 again, memreads unchanged.
+run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1585+-0" \
     "P1_PW0:1600=0xA5A5A5A5A5A5A5AF" "P1_PW1:1601=0xF5A5A5A5A5A5A5A5" "I1:1700=0" "D1:1705=0x8000000000000000" \
     "P2_UW0:1505=0xA5A5A5A5A5A5A5A0" "P2_UW1:1506=0x05A5A5A5A5A5A5A5" "I2:1701=0x20000000140" "D2:1706=0" \
     "I3:1702=0" "D3:1707=0x8000000000000000" "I4:1703=0" "D4:1708=0x8000000000000000" "X7_P4:1712=0x01905800000405DD" \
@@ -5181,7 +5221,12 @@ run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole op
 # preparation floor.  MEASURED: old set without the floor 404, new set
 # without it 389, old set with it 392, new set with it 372.
 # RE-PINNED 2026-11-17: CYCLES 372 -> 377.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 372, injection C leaves 377.
-run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=377+-0" \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 377 -> 557.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 377 again, memreads unchanged.
+run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=557+-0" \
     "I1:1700=0x10000000000" "I2:1701=0" "I3:1702=0xBE" \
     "K1:1703=0x10000" "K2:1704=0x40000008000" "K2X:1705=0x01348000013405dc" "K3:1706=0x80000008000"
 # STORES INTO LOCATION 7 (2026-11-17).  printed p.36: the counters are bits
@@ -5201,7 +5246,12 @@ run "VFL crossing into the indicators and the connective counts (printed pp.37, 
 # passes (values in the deck header).
 # CYCLES 276 a model pin.
 # RE-PINNED 2026-11-17: CYCLES 276 -> 292.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 276, injection C leaves 292.
-run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./run_program.sh ../decks/vfl_word7_store.strap StretchVflWord7StoreTb "PC=2029" "CYCLES=292+-0" \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 292 -> 405.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 292 again, memreads unchanged.
+run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./run_program.sh ../decks/vfl_word7_store.strap StretchVflWord7StoreTb "PC=2029" "CYCLES=405+-0" \
     "W1:1700=0x30000010000" "W2:1701=0x7F00000FE000" "W3:1702=0x1500000FE000" "W4:1703=0x10000"
 # A DS-SUPPRESSED VFL STORE RAISES NO DF FOR ITS REFILL (2026-11-17).
 # printed p.22: an exception in the VFL portion suppresses "the entire
@@ -5225,7 +5275,12 @@ run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./
 # after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
 # landing checked: the counter is the instruction right after the level.
 # Injection numbers above this note were observed at the old pin.
-run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1155+-0" \
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 1155 -> 1465.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 1155 again, memreads unchanged.
+run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1465+-0" \
     "I1:1700=0" "I2:1701=0" "I3:1702=0" "I4:1703=0" "I5:1704=0x80000009120" \
     "D1:1705=0x8000000000000000" "D2:1706=0x8000000000000000" "D3:1707=0x8000000000000000" "D4:1708=0x8000000000000000" "D5:1709=0" \
     "X7A:1710=0x0190580000040642" "X6A:1711=0x0190680000040642" "X5A:1712=0x0190480000040642" "X4A:1713=0x0190380000040642" "X3A:1714=0x01348000013405dc"
@@ -10569,6 +10624,31 @@ run "PAU STEPPING (*+ chained; Table 2 add terms, literal; the termination)" "$T
 # progressive indexing = 6 levels (Buchholz printed p.246, PDF 271).
 # Injections and their observed failure sets: bsv/StretchLaParts.bsv.
 run "LOOK-AHEAD LEVELS PER INSTRUCTION (Table A-2 E-box sheet; literal)" "$TESTS_DIR/run_laparts_test.sh"
+# 2026-11-27 (fidelity_plan.md A7): a TRANSMIT's time by DESTINATION --
+# Table 9's loop, 10 clocks to core or an internal register and 14 to
+# index storage (Perf. Char. Vol. 1 printed p.3-14, PDF 32), and the fixed
+# part F, 38 / 32 for T and F - 2 for TI (Vol. 2 PDF 106-107); 12 literal
+# vectors over T and TI into core, $L and index storage and both edges of
+# 16-31, then the pacer clock by clock.  Injections and their observed
+# failure sets: bsv/StretchXmitTiming.bsv.
+run "TRANSMIT TIME BY DESTINATION (Table 9; PDF 106-107; literal)" "$TESTS_DIR/run_xmit_timing_test.sh"
+# The same rule end to end, one deck per direction (fidelity_plan.md A7,
+# 2026-11-27): five words index storage -> core, then core -> index
+# storage, both TI.  CYCLES are model pins.  The transmit's part is F + 5L =
+# 36 + 50 into core and 30 + 70 into index storage.
+# INJECTION, observed 2026-11-27: mkXmitBox's pacer stall disabled
+# (`False && !x.swap && !pacer.due`, i.e. each word at its READ's time as
+# before A7): to_core 167 -> 135 (-32 = 4 words x (10 - 2)), to_index 129 ->
+# 113 (-16 = 4 x (14 - 10)); the data checks still pass.  Reverted by the
+# inverse patch.
+# Absolute path: this block sits after `cd "$BSV_DIR"`.
+run "TRANSMIT TIME, INDEX STORAGE TO CORE (Table 9 XS->EM, 10 clocks a word)" "$TESTS_DIR/run_program.sh" "$TESTS_DIR/../decks/transmit_time_to_core.strap" StretchXmitTimeCoreTb \
+    "CYCLES=167+-0" "PC=2055" \
+    "D0:1536=0x1600000000000" "D1:1537=0x1800000000000" "D2:1538=0x1A00000000000" \
+    "D3:1539=0x1C00000000000" "D4:1540=0x1E00000000000" "FENCE:1541=0xAAAAAAAAAAAAAAAA"
+run "TRANSMIT TIME, CORE TO INDEX STORAGE (Table 9 EM->XS, 14 clocks a word)" "$TESTS_DIR/run_program.sh" "$TESTS_DIR/../decks/transmit_time_to_index.strap" StretchXmitTimeIdxTb \
+    "CYCLES=129+-0" "PC=2050" \
+    "X2:18=0x11" "X3:19=0x22" "X4:20=0x33" "X5:21=0x44" "X6:22=0x55" "X7:23=0x0"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
@@ -12065,17 +12145,27 @@ run "IBOX-4 routine 1256 TEST 2F LVE loads only J's register, ON THE MODEL (I561
 run "IBOX-5 routine 1260 prologue and TESTs 1A/1B (mask register), bit-exact (jb_ax5b PDF pp.8-13, 114)" python3 verify_ax5b_160_test1ab_mask_listing.py
 # Mask bits 0-19 are ones.  Injection M1 (bit 7 not forced to one) ->
 # FAIL SEN 0x616800000000000 (the BIT 07 entry); M2 does not move this run.
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 4107 -> 4747.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 4107 again, memreads unchanged.
 run "IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL (I60 prologue, I601)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1ATb \
     PC=1410 "SEN:712=0" "RET:710=0x60d8800" \
     "X0:addrIndex(0)=0x61c400000000000" "X1:addrIndex(1)=0x100000000000" \
-    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4107+-0
+    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4747+-0
 # Mask bits 48-63 are zeros.  Injection M2 (bit 55 writable) -> FAIL SEN
 # 0x625200000000000 (the entry printed "BIT 54": IBM's k-1 label); M1
 # does not move this run.
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 5426 -> 6386.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 5426 again, memreads unchanged.
 run "IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL (I607)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1BTb \
     ENTRY=I607 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x629600000000000" \
     "X1:addrIndex(1)=0" "X2:addrIndex(2)=0x7fffff0000" \
-    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=5426+-0
+    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=6386+-0
 
 # ---- jb_ax5b routine 1260, TEST 1C (2026-11-19) ----
 # IBM's test that mask bits 20-47 can each be set to one and to zero
@@ -12088,12 +12178,17 @@ run "IBOX-5 routine 1260 TEST 1C (mask bits 20-47), bit-exact (jb_ax5b PDF pp.14
 # Injection M1 (mask bit 30 not settable) -> FAIL SEN 0x640a00000000000
 # (the "MASK BIT 30 TO ONE" entry); M2 (bit 26 not settable) -> FAIL SEN
 # 0x65a000000000000 ("MASK REG BIT 26 TO ONE"), I60DMP all ones.
+# RE-PINNED 2026-11-27 (fidelity_plan.md A7): CYCLES 10326 -> 13268.  Cause,
+# measured: the deck's TRANSMITs are now charged by destination (Perf.
+# Char. Vol. 1 Table 9, printed p.3-14, PDF 32; Vol. 2 PDF 106-107):
+# with that charge reverted in a scratch copy (iboxBudget -> budgetClocks,
+# the pacer stall off) the deck gives 10326 again, memreads unchanged.
 run "IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL (I6011)" ./run_program.sh ../decks/ax5b_160_test1c_mask.strap StretchAx5b160T1CTb \
     PC=1410 "SEN:712=0" "I60DMP:9921=0xffffff8000000000" \
     "MASK:12=0xfffff33000000000" "X0:addrIndex(0)=0xffffff8000000000" \
     "X2:addrIndex(2)=0x20000" "X3:addrIndex(3)=0xa60800000000000" \
     "X4:addrIndex(4)=0x650600000000000" "X5:addrIndex(5)=0xa60000000010000" \
-    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=10326+-0
+    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=13268+-0
 
 # ---- jb_ax5b routine 1260, TEST 2 (2026-11-19) ----
 # IBM's walk of a single one through the interruption address register's

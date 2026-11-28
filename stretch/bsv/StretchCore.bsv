@@ -11,8 +11,8 @@ package StretchCore;
 import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
-import StretchMemory::*;   // installed(): the address-invalid bound,
-                            // which rl_xmit needs per word
+import StretchMemory::*;   // installed(): the address-invalid bound
+                            // (rl_xmit used it; its body is mkXmitBox now)
 import StretchIO::*;
 import ConfigReg::*;
 import StretchDiskSource::*;  // DiskIndex / ArcAddr / arcWords, for the
@@ -28,6 +28,7 @@ import StretchIBox::*;       // mkInstrBuffers, classification, iboxHazard
 import StretchLookAhead::*;  // mkLookAhead
 import StretchLaParts::*;    // laParts: Table A-2's levels of an instruction
 import StretchTiming::*;     // iboxCycles/eboxClocks/budgetClocks
+import StretchXmitTiming::*; // xmitFirstBudget: a transmit's time, by destination
 
 interface StretchCore;
   // step() advances the core exactly one clock: every rule in
@@ -167,31 +168,27 @@ module mkStretchCore(StretchCore);
   // between start and iplStart; `running` was the one that cleared it,
   // and whether this one alone was also needed was not measured.
   Reg#(Maybe#(IoXfer)) ioPending <- mkConfigReg(tagged Invalid);
-  // A MULTI-WORD TRANSMIT still to drain, the memory-to-memory
-  // sibling of ioPending.  Reference Manual printed p.30 and
-  // StretchTypes.bsv's XmitXfer; serviced by rl_xmit below.
-  Reg#(Maybe#(XmitXfer)) xmitPending <- mkReg(tagged Invalid);
-  // rl_xmit's own read-staging flag, the same shape as ioReadIssued:
-  // the sending word is a memory READ that takes a clock to come
-  // back, so the rule has to remember that it already asked.
-  Reg#(Bool) xmitReadIssued <- mkReg(False);
-  // SWAP's two extra states.  An exchange needs TWO reads and TWO
-  // writes per word and this model has one of each per rule, so a
-  // swapped word takes three clocks: read the sending word, read the
-  // receiving word and write the sending word's value into it, then
-  // write the receiving word's old value back into the sending word.
-  // BOTH READS HAPPEN BEFORE EITHER WRITE, which is Reference Manual
-  // printed p.30's "at the same time" and the only thing that makes
-  // an overlapping swap an exchange rather than a propagation.
-  Reg#(Bit#(2)) xmitSwapPhase <- mkReg(0);
-  Reg#(Word64)  xmitSwapHeld  <- mkReg(0);
-  // HOW MANY CLOCKS A SWAP COSTS, counted rather than reasoned
-  // about.  The MCP boot's step count moved by 82 when forward SWAP
-  // was built, and "about five clocks a word times six words" is an
-  // estimate; this is the number.  Whatever is left of the 82 is MCP
-  // running differently afterwards, because Q FIN's index-register
-  // restore now actually happens.
-  Reg#(Bit#(32)) xmitSwapClocks <- mkReg(0);
+  // A MULTI-WORD TRANSMIT (or any SWAP) still to drain, the
+  // memory-to-memory sibling of ioPending: the transmit loop's box
+  // (StretchIBox.bsv mkXmitBox, 2026-11-27, fidelity_plan.md A7), which
+  // holds the transfer, its read-staging flag, SWAP's phases and the
+  // loop's period.  Started by the instruction that set ExecDone's
+  // xmitStart; stepped by rl_xmit below.
+  XmitBox xbox <- mkXmitBox(st);
+
+  // THE I-BOX BUDGET A COMPLETED INSTRUCTION LEAVES, at both places one
+  // completes outside a look-ahead level (rl_prepare's dispatch and
+  // rl_exec_resume's non-LA branch).  A TRANSMIT THAT MOVED ITS FIRST
+  // WORD is charged the transmit loop's time by destination
+  // (StretchXmitTiming.xmitFirstBudget: Table 9's fixed part and the first
+  // word's loop, fidelity_plan.md A7, 2026-11-27); its later words are
+  // paced in mkXmitBox while `ibusy` stands still (the note on `ib`).
+  // Everything else, SWAP included, keeps budgetClocks.
+  function Bit#(16) iboxBudget(DecodedInstr d, Bool tk, ExecDone o) =
+    case (o.xmitTiming) matches
+      tagged Valid .t: return xmitFirstBudget(t);
+      default:         return budgetClocks(d, tk);
+    endcase;
 
   // ---- The interruption mechanism (Ref. Manual p.48) ----
   // Valid while THE ONE instruction at the effective interruption
@@ -562,7 +559,7 @@ module mkStretchCore(StretchCore);
         pendingIdxWrite <= o.idxWrite;
         pendingTailWrite <= o.tailWrite;
         ioPending <= o.ioStart;
-        xmitPending <= o.xmitStart;
+        if (o.xmitStart matches tagged Valid .xs) xbox.start(xs);
         // >>> A SWAP THAT RUNS SAYS SO. <<<  The question "does any
         // program in this corpus execute a SWAP?" stayed open for
         // four commits and was answered with an indicator trail that
@@ -573,7 +570,7 @@ module mkStretchCore(StretchCore);
         if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
           $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
-        ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
+        ibusy <= iboxBudget(di, taken, o);   // completed in the dispatch clock
         return tuple2(True, isHalt(di, o.next, pc));
       end else
         return tuple2(False, False);
@@ -638,9 +635,11 @@ module mkStretchCore(StretchCore);
   // NOT in rl_io, rl_xmit or rl_tail_write, deliberately.  A transfer or
   // a multi-word transmit holds the storage port and is the instruction
   // still in progress (a transmit's per-word time is its own, Blosk
-  // fig.9), so letting its budget run under the drain would shorten T,
-  // which is already ~30 clocks short (atlas_oracle.md "Where the model
-  // is furthest off" item 2).  rl_tail_write is the crossing-store path
+  // fig.9), so letting its budget run under the drain would shorten T.
+  // Since A7 (2026-11-27) this is what makes a transmit's time add up:
+  // its budget (iboxBudget, F + the first word's loop) stands still while
+  // mkXmitBox paces the other words, each at its own loop time (Table 9),
+  // so n words cost F + n loops.  rl_tail_write is the crossing-store path
   // (WB XOVR), left as it was.  rl_recover sets its own.
   Bit#(16) ib = (ibusy != 0) ? ibusy - 1 : 0;   // I-box preparation time, counting down
 
@@ -653,7 +652,7 @@ module mkStretchCore(StretchCore);
   // the two cannot coexist -- a transmit is started by an instruction
   // and an instruction cannot start while a transfer is draining --
   // but the ordering is written down rather than assumed.
-  Bool armXmit     = !armRecover && !isValid(ioPending) && isValid(xmitPending);
+  Bool armXmit     = !armRecover && !isValid(ioPending) && xbox.busy;
   // A CROSSING VFL FIELD'S TAIL WRITE IS THE THIRD THING THAT MAKES
   // THE MACHINE BUSY, 2026-10-24.  StretchStorage's writeWordTail
   // parks the second word of the store for one clock; while it waits,
@@ -665,15 +664,15 @@ module mkStretchCore(StretchCore);
   // IT DOES NOT NEED TO BE IN armXmit.  A transmit and a crossing
   // store cannot overlap: a transfer blocks arming through this same
   // boolean, so no ST executes while one drains, and the clock after a
-  // crossing ST nothing can be armed either -- so xmitPending cannot
-  // become Valid while a tail is pending.  Written down rather than
+  // crossing ST nothing can be armed either -- so the transmit box cannot
+  // become busy while a tail is pending.  Written down rather than
   // assumed, as with rl_io's ordering above.
   //
   // AND A FOURTH, 2026-11-17: a crossing store's second word below 32,
   // which rl_tail_write makes through writeWord (ExecDone.tailWrite).
   // Being in busyXfer is what puts it before rl_idx_write: the VFL part
   // of a progressive operation first, its index after (printed p.22).
-  Bool busyXfer    = isValid(ioPending) || isValid(xmitPending)
+  Bool busyXfer    = isValid(ioPending) || xbox.busy
                      || st.storeTailPending() || isValid(pendingTailWrite);
   // A REPORT IS STILL OWED on some channel: a control word holds a
   // status bit the exchange has not yet promoted (printed p.118).
@@ -710,7 +709,7 @@ module mkStretchCore(StretchCore);
   // `!core.halted()` guard goes false.
 
   Bool armIdx      = !armRecover && !busyXfer && isValid(pendingIdxWrite);
-  Bool armTail     = !armRecover && !isValid(ioPending) && !isValid(xmitPending)
+  Bool armTail     = !armRecover && !isValid(ioPending) && !xbox.busy
                      && isValid(pendingTailWrite);
   Bool resumeReady = ebox.canResume();
   // (armResume itself is defined below yieldToPrepare, which it waits for.)
@@ -1840,126 +1839,14 @@ module mkStretchCore(StretchCore);
   endrule
 
   rule rl_xmit (running && armXmit);
-    // Service one word of an in-flight multi-word TRANSMIT.  This is
-    // rl_io's shape with the device taken out: a storage read, then a
-    // storage write of what came back, one word per clock, because
-    // this model writes storage once per rule.
-    //
-    // THE SPEC IS Reference Manual printed p.30 and the whole of it
-    // fits in this rule.  "In forward transmission, the sending and
-    // receiving addresses of each successive word transmitted are
-    // obtained by incrementing the previous addresses by one."  There
-    // is no count to write back and no indicator to fold -- same
-    // page: "The count field in the index register is not changed as
-    // a result of the operation, and the index result indicators are
-    // not affected."  The first word was moved by the Transmit arm in
-    // StretchExecute; this drains the rest.
-    //
-    // PROTECTION IS CHECKED PER WORD, which is the one place this
-    // rule does more than copy.  p.30 says an invalid or protected
-    // address is "not detected... until the data transmission
-    // actually encounters" it, so a transmit that walks into a
-    // protected word must stop THERE, with the words before it moved
-    // -- not be refused up front.  protViolates is the same test the
-    // single-word arm uses; DS terminates the operation (p.32,
-    // "storing in core storage is always suppressed, AND THE
-    // OPERATION IS ALWAYS TERMINATED").
-    //
-    // ADDRESS INVALID IS CHECKED PER WORD TOO, and it is not optional
-    // -- it is the only thing that bounds a runaway transmit.  p.30,
-    // on a direct count field of zero: "A count field of zero is
-    // interpreted as 2^18.  Since this many words cannot be
-    // transmitted without encountering an invalid address, such a
-    // count is never valid.  IT IS NOT DETECTED, HOWEVER, UNTIL THE
-    // DATA TRANSMISSION ACTUALLY ENCOUNTERS AN INVALID OR PROTECTED
-    // ADDRESS."  So the manual's own answer to "what stops a 2^18
-    // transmit" is this check, and a model without it does not merely
-    // miss an indicator: 2^18 words is the WHOLE 18-bit address
-    // space, so the copy wraps and zeroes every word of core.  That
-    // is exactly what happened the first time this rule ran against
-    // MCP, whose tape carries no PROSA, so the dictionary it reads
-    // the count out of is zeros.
-    //
-    // `installed` is StretchMemory's bound, the same one the Z arm
-    // uses for AD (RefMan printed p.21: "an effective word address...
-    // which does not correspond to a core storage location that is
-    // physically available").  Both ends are tested: a transmit can
-    // run off the top reading as easily as writing.
-    let x = validValue(xmitPending);
-    // THE NEXT PAIR, written once here because three places want it.
-    // p.30: forward obtains each successive pair of addresses "by
-    // incrementing the previous addresses by one", backward "by
-    // decrementing".
-    XmitXfer nextWord = XmitXfer {
-      src: x.backward ? x.src - 1 : x.src + 1,
-      dst: x.backward ? x.dst - 1 : x.dst + 1,
-      remaining: x.remaining - 1, backward: x.backward, swap: x.swap };
-    // ONE WRITE, AT THE END OF THE RULE.  Bluespec refuses two
-    // Reg writes it cannot order ("methods that conflict in
-    // parallel"), so the count is carried in a variable and stored
-    // once below.
-    Bit#(32) swapClk = xmitSwapClocks + (x.swap ? 1 : 0);
-    if (!st.writeReady()) begin
-      // The store queue is full: wait for the memory bus, the same
-      // way rl_io does.
-      noAction;
-    end else if (x.swap && xmitSwapPhase == 2) begin
-      // PHASE 2: no read.  The receiving word's OLD contents, held
-      // since phase 1, go back into the sending word -- the second
-      // half of p.30's exchange.  Both ends were checked in phase 0.
-      st.writeWord(x.src, xmitSwapHeld);
-      xmitSwapPhase <= 0;
-      if (x.remaining == 1) begin
-        $display("StretchCore: SWAP finished, %0d clocks in rl_xmit",
-                 swapClk);
-        swapClk = 0;
-        xmitPending <= tagged Invalid;
-      end else
-        xmitPending <= tagged Valid nextWord;
-    end else if (!xmitReadIssued) begin
-      // PHASE 0 reads the SENDING word, phase 1 the RECEIVING one.
-      st.readWordReq((x.swap && xmitSwapPhase == 1) ? x.dst : x.src);
-      xmitReadIssued <= True;
-    end else if (!st.responseReady()) begin
-      noAction;
-    end else begin
-      Word64 v <- st.readWordResp();
-      xmitReadIssued <= False;
-      // >>> A SWAP WRITES BOTH ENDS, so BOTH are protection-checked,
-      // and both are checked in phase 0 -- before anything has been
-      // written for this word -- so a refused pair leaves the words
-      // before it moved and this one untouched.  p.30 on an invalid
-      // or protected address: it is "not detected... until the data
-      // transmission actually encounters" it.
-      Bool protBad = protViolates(st, x.dst)
-                     || (x.swap && protViolates(st, x.src));
-      if (!installed(x.src) || !installed(x.dst)) begin
-        st.setIndicatorBits(setBit(st.readIndicators(), ind_AD, 1));
-        xmitPending <= tagged Invalid;
-        xmitSwapPhase <= 0;
-      end else if (protBad) begin
-        st.setIndicatorBits(setBit(st.readIndicators(), ind_DS, 1));
-        xmitPending <= tagged Invalid;
-        xmitSwapPhase <= 0;
-      end else if (x.swap && xmitSwapPhase == 0) begin
-        // PHASE 0: the sending word is in hand and NOTHING is written
-        // yet.  p.30's "at the same time" is this: the receiving word
-        // must still be readable when phase 1 asks for it.
-        xmitSwapHeld <= v;
-        xmitSwapPhase <= 1;
-      end else if (x.swap) begin
-        // PHASE 1: `v` is the RECEIVING word.  Write the sending
-        // word's value into it and keep `v` for phase 2.
-        st.writeWord(x.dst, xmitSwapHeld);
-        xmitSwapHeld <= v;
-        xmitSwapPhase <= 2;
-      end else begin
-        st.writeWord(x.dst, v);
-        xmitPending <= (x.remaining == 1) ? tagged Invalid
-                                          : tagged Valid nextWord;
-      end
-    end
-    xmitSwapClocks <= swapClk;
+    // One clock of an in-flight multi-word TRANSMIT or SWAP: the
+    // transmit loop's box does the word (StretchIBox.bsv mkXmitBox,
+    // where the Reference Manual printed p.30 reading, the per-word
+    // protection and address-invalid checks, SWAP's three phases and,
+    // since 2026-11-27, the loop's period by destination now live).
+    // This rule is the off-pipe arm that owns the machine while it
+    // drains; armXmit above proves it exclusive with the others.
+    xbox.step;
     eArm.send;
     haltedReg <= False;
   endrule
@@ -2018,7 +1905,7 @@ module mkStretchCore(StretchCore);
       pendingIdxWrite <= o.idxWrite;
       pendingTailWrite <= o.tailWrite;
       ioPending <= o.ioStart;
-      xmitPending <= o.xmitStart;
+      if (o.xmitStart matches tagged Valid .xs) xbox.start(xs);
       if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
         $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
       if (fromLA) begin
@@ -2096,7 +1983,7 @@ module mkStretchCore(StretchCore);
         Bit#(32) elapsed = clk - startClk;
         // A stepped add's unit time replaces the row's byte term here as
         // well (the note on the other branch); `elapsed` already holds it.
-        Bit#(16) budget = budgetClocks(di, taken) + boxX;
+        Bit#(16) budget = iboxBudget(di, taken, o) + boxX;
         if (sauOwn matches tagged Valid .u)
           budget = budgetClocks(di, taken) - eboxClocks(di) + sauRowWithUnit(di, u);
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
@@ -2155,7 +2042,7 @@ module mkStretchCore(StretchCore);
       pendingIdxWrite <= o.idxWrite;
       pendingTailWrite <= o.tailWrite;
       ioPending <= o.ioStart;
-      xmitPending <= o.xmitStart;
+      if (o.xmitStart matches tagged Valid .xs) xbox.start(xs);
       if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
         $display("StretchCore: SWAP started at half-word %0d, %0d words", h.pc, xs.remaining);
       ebn = eboxClocks(h.di);

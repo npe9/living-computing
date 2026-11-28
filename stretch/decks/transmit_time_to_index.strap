@@ -1,0 +1,27 @@
+! transmit_time_to_index.strap -- a TRANSMIT's time is set by where the
+! words GO (docs/fidelity_plan.md A7, 2026-11-27).
+!
+! FIVE WORDS FROM CORE TO INDEX STORAGE ($2-$6, words 18-22), immediate
+! count.  Perf. Char. Vol. 1 Table 9 (printed p.3-14, PDF 32), T (EM ->
+! XS): loop 4.2 us = 14 clocks a word; Vol. 2 PDF 107 (printed 100)
+! measures EXTERNAL TO I-BOX at 14.06.  The model charged the SOURCE read
+! until A7: about 10 clocks a word from core.  The sibling is
+! transmit_time_to_core.strap, whose header has the argument.
+!
+! THE CYCLES PIN (tests/run_tests.sh) is the model's count for the whole
+! deck, a model pin.  The transmit's part is bsv/StretchXmitTiming.bsv's
+! charge, F + 5 L with F = 30 (TI into index storage) and L = 14.
+! Injections and their observed results are in run_tests.sh at the run.
+
+        SLC, (8)2000.0
+START   TI, 5, SRC, 18.0         ! SRC..SRC+4 to $2-$6
+        BEW, $
+
+        SLC, (8)3000.0
+SRC     DD(BU,64), (16)0000000000000011
+        DD(BU,64), (16)0000000000000022
+        DD(BU,64), (16)0000000000000033
+        DD(BU,64), (16)0000000000000044
+        DD(BU,64), (16)0000000000000055
+
+        END, START
