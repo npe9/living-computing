@@ -47,11 +47,16 @@ screen shows " end" and "please return" and waits in its read
 (title.esp:57).  The stop: every process waits (STOP); screen
 docs/simpos/screens/mendels_title_raised.png.  With the adapter off it
 still stops at phase/2 (mendels.watch_phase, OURS; test_adapter_off).
-Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: 28 exchanges, the
-first 21 as before (PIMOS goes on to mdl_comp wt_message/1's directory
-requests, STRINGS_IO, then aborts the MENDELS job when the runner's FEP
-answers the TEMP directory abnormal, test_tape); the live screen equals
-the replay's.
+Re-recorded live 2026-11-28 (the FEP store step) from a copy of
+PROMPT.pkl: PIMOS's file and directory devices (201-205) are the PSI's,
+answered by the held pimos_file / pimos_directory from the PSI's tree
+(mendels.BRIDGED, row_files; simpos_files.py), so PIMOS's del_file/3 on
+TEMP is answered 1, wt_message/1 writes TEMP>compiler.msg into the PSI's
+tree (COMPILER_MSG, test_replay) and the MENDELS job no longer aborts
+(PIMOS's console ends at the relink, test_tape).  103 exchanges (28
+before, none of them identical now: the first carries mendel.exe's 201);
+FILES_IO, STRINGS_IO; same stop and frame, the live screen equals the
+replay's.  FepStore tests the handlers on scripted packets.
 
 Mixins (the window mixins step) runs the mixins through two other held
 users on the coordinator, with the mouse: icotext's whole held class
@@ -268,6 +273,32 @@ each, on the final file):
 every window below it, so growing the part by the overlaps with the
 whole-lifted panes below added nothing.)
 
+The FEP store step (2026-11-28): FepStore, test_tape's FILES_IO and
+console end, test_replay's compiler.msg.  Injections, OBSERVED 2026-11-28
+(12, made by a scratch script from a backup, restored by copy and cmp;
+this whole file run on each):
+
+| injection | failed |
+|---|---|
+| mendels.BRIDGED back to (601,) | test_routes, test_tape |
+| TEMP not in INSTALLED_DIRS | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_replay |
+| write_next/1 drops the data | test_replay, test_write_then_read |
+| delete_with_wildcard: every file matches | test_delete_and_expunge |
+| expunge/1 a no-op | test_delete_and_expunge, test_replay |
+| kl0 Str: ptfdump.ch's lossy letter for row 0x23 | test_object_bytes |
+| end_of_input/1: terms only | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_object_bytes, test_path_dialog, test_replay, test_write_then_read |
+| getb/3: N one less | the same seven |
+| link_counter/2 answers 2 | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_path_dialog, test_replay, test_write_then_read |
+| make_only/3: a taken name not refused | test_write_over_a_file_refuses |
+| row_files: text not home_bytes (a space added) | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_path_dialog, test_replay, test_row_files |
+| get_string/3: the month after | test_adapter_off, test_adapter_refusal_stops, test_library_restored, test_path_dialog, test_replay, test_write_then_read |
+
+(The Str row and the row_files row were NONE in a first form: the Str
+round trip was then tested only through the live run, and row_files'
+injection, the raw bytes, was equal to home_bytes for the doc route's
+files; a Str round-trip check was added to test_object_bytes and the
+row_files injection changed.)
+
 Weak spots (the load answer step): the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
 the unit tests carry them.  getl's line start is caught only by
@@ -296,35 +327,75 @@ SCREEN = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_path.png
 STRINGS_IO = [
     ('create', 38, 'mendel##mendel_esp_device'), ('close', 38),
     ('create', 39, 'mendel##esp_utility'), ('>', 39, 2, '>sys>user>MENDEL>KL1>'), ('close', 39),
-    ('create', 41, 'mendel##mendel_esp_device'), ('<', 39, 1, 'end'), ('close', 41),
+    ('<', 39, 1, 'end'), ('create', 41, 'mendel##mendel_esp_device'), ('close', 41),
     ('create', 42, 'mendel##mendel_loader'), ('create', 44, 'mendel##mendel_esp_device'),
-    ('>', 42, 0, 'mendel'), ('close', 44),
-    ('create', 46, 'mendel##mendel_esp_device'), ('<', 42, 1, 'end'), ('close', 46),
+    ('>', 42, 0, 'mendel'), ('close', 44), ('<', 42, 1, 'end'),
+    ('create', 46, 'mendel##mendel_esp_device'), ('close', 46),
     ('create', 47, 'mendel##esp_utility'), ('>', 47, 2, '>sys>user>MENDEL>KL1>'), ('close', 47),
-    ('create', 49, 'mendel##mendel_esp_device'), ('<', 47, 1, 'end'), ('close', 49),
+    ('<', 47, 1, 'end'), ('create', 49, 'mendel##mendel_esp_device'), ('close', 49),
     ('create', 50, 'mendel##mendel_esp_device'), ('>', 50, 0, 'start'),
-    ('create', 52, 'mendel##mendel_esp_device'), ('<', 50, 1, 'load_library'), ('close', 52),
+    ('<', 50, 1, 'load_library'), ('create', 52, 'mendel##mendel_esp_device'), ('close', 52),
     ('create', 53, 'mendel##esp_utility'), ('>', 53, 2, '>sys>user>MENDEL>KL1>'), ('close', 53),
-    ('create', 55, 'mendel##mendel_esp_device'), ('<', 53, 1, 'end'), ('close', 55),
+    ('<', 53, 1, 'end'), ('create', 55, 'mendel##mendel_esp_device'), ('close', 55),
     ('create', 56, 'mendel##esp_utility'), ('>', 56, 0, 'system'), ('close', 56),
-    ('create', 62, 'mendel##mendel_esp_device'),
-    ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
     ('<', 56, 1, '>sys>user>MENDELuser>SYSTEM>'),
     # since the title raise step (2026-11-28), OBSERVED live: the run no
     # longer stops on the PSI side, so PIMOS goes on: device 62 closed;
     # esp_device/3's set_MENDEL_directory (package.kl1:15-19, 134-145) and
     # esp_utility directory_name("temp") (esp_util.kl1:30-50) for
     # mdl_comp.kl1 wt_message/1's del_file (172-200), which writes the
-    # loader's messages to TEMP>compiler.msg after load:do; the loader's
-    # stream (42) closed
-    ('close', 62), ('create', 63, 'mendel##esp_utility'),
-    ('>', 63, 2, '>sys>user>MENDEL>KL1>'), ('close', 63),
-    ('create', 65, 'mendel##mendel_esp_device'), ('<', 63, 1, 'end'), ('close', 65),
+    # loader's messages to TEMP>compiler.msg after load:do.  Since the FEP
+    # store step (2026-11-28) the TEMP directory is the PSI's (FILES_IO),
+    # so del_file/3 goes on and wt_message/1 asks for the directory again
+    # (69-73) before its write-open; the loader's stream (42) is no longer
+    # closed (before, the job's abort closed it).  The messages are those
+    # of the run before but for 69-73 and 42's close; their order across
+    # devices follows the exchanges, which the file requests now add to
+    ('create', 62, 'mendel##mendel_esp_device'), ('close', 62), ('create', 63, 'mendel##esp_utility'),
+    ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
+    ('>', 63, 2, '>sys>user>MENDEL>KL1>'), ('close', 63), ('<', 63, 1, 'end'),
+    ('create', 65, 'mendel##mendel_esp_device'), ('close', 65),
     ('create', 66, 'mendel##esp_utility'), ('>', 66, 0, 'temp'), ('close', 66),
-    ('close', 42), ('<', 66, 1, '>sys>user>MENDELuser>TEMP>'),
+    ('<', 66, 1, '>sys>user>MENDELuser>TEMP>'),
+    ('create', 69, 'mendel##mendel_esp_device'), ('close', 69),
+    ('create', 70, 'mendel##esp_utility'), ('>', 70, 2, '>sys>user>MENDEL>KL1>'), ('close', 70),
+    ('<', 70, 1, 'end'), ('create', 72, 'mendel##mendel_esp_device'), ('close', 72),
+    ('create', 73, 'mendel##esp_utility'), ('>', 73, 0, 'temp'), ('close', 73),
+    ('<', 73, 1, '>sys>user>MENDELuser>TEMP>'),
 ]
+# the file and directory devices of the run (mendels.files_io), OBSERVED
+# live 2026-11-28, the FEP store step: every one the PSI's, answered by the
+# held pimfep##pimos_file and pimos_directory from the PSI's tree.  PIMOS
+# reads mendel.exe whole (76,098 bytes, the archive's), mendel.pac each
+# time a package is looked up, mdllibrary.exe (1,632 bytes); the .sav and
+# .SAV probes are 5 (no such file), as fep.py answered them; then
+# del_file/3's 204 on TEMP is 1, its 231 of compiler.msg 5 (no such file:
+# pimos_directory delete/4's `\== []`; PIMOS's `delete(FileNmS,_)` takes
+# it), 235 1, and wt_message/1's 202 writes the loader's 276 bytes
+PAC = [[112, 1], [210, 1], [210, 2], [112, 1], [70], [60, 1]]
+FILES_IO = [
+    (34, 201, '>sys>user>MENDEL>mendel.exe', 1,
+     [[222, 1], [221, 1]] + [[210, 1]] * 10 + [[210, 2], [112, 1], [70], [60, 1]], 76098, 0),
+    (35, 201, '>sys>user>MENDEL>mendel.exe.sav', 5, [], 0, 0),
+    (36, 201, '>sys>user>MENDEL>mendel.exe.SAV', 5, [], 0, 0)] + [
+    (d, 201, '>sys>user>MENDEL>KL1>mendel.pac', 1, PAC, 38, 0) for d in (37, 40, 43, 45, 48, 51, 54)] + [
+    (57, 201, '>sys>user>MENDELuser>SYSTEM>mdllibrary.exe', 1, [[112, 1], [70], [60, 1]], 0, 0),
+    (58, 201, '>sys>user>MENDELuser>SYSTEM>mdllibrary.exe', 1,
+     [[222, 1], [221, 1], [210, 1], [210, 2], [112, 1], [70], [60, 1]], 1632, 0),
+    (59, 201, '>sys>user>MENDEL>KL1>mendel.pac', 1, PAC, 38, 0),
+    (60, 201, '>sys>user>MENDELuser>SYSTEM>mdllibrary.exe.sav', 5, [], 0, 0),
+    (61, 201, '>sys>user>MENDELuser>SYSTEM>mdllibrary.exe.SAV', 5, [], 0, 0),
+    (64, 201, '>sys>user>MENDEL>KL1>mendel.pac', 1, PAC, 38, 0),
+    (67, 204, '>sys>user>MENDELuser>TEMP', 1, [[231, 'compiler.msg', 5], [235, 1], [70], [60, 1]], 0, 0),
+    (68, 201, '>sys>user>MENDEL>KL1>mendel.pac', 1, PAC, 38, 0),
+    (71, 201, '>sys>user>MENDEL>KL1>mendel.pac', 1, PAC, 38, 0),
+    (74, 202, '>sys>user>MENDELuser>TEMP>compiler.msg', 1, [[111, 1], [112, 1], [70], [60, 1]], 0, 276)]
+# what PIMOS wrote there (the loader's messages, mdl_comp.kl1 load_MENDELlibrary
+# /1's STD), read from the PSI's tree after the replay
+COMPILER_MSG = ('Load File : >sys>user>MENDELuser>SYSTEM>mdllibrary.exe.1\n"mendel:: example2" Loaded\n'
+                '"mendel:: example1" Loaded\n"mendel:: example3" Loaded\n')
 STOP = 'would suspend: no process is ready: <simpos##process> is suspended'
-EXCHANGES = 28
+EXCHANGES = 103
 # the stop before the load adapter (2026-11-27), which the run still gives
 # with mendels.LOAD_ADAPTER off (test_adapter_off)
 STOP_NO_ADAPTER = ('mendels: held mendel##mendel_main phase/2 has no clause for {loaded_library,{normal,'
@@ -366,14 +437,19 @@ class Run(unittest.TestCase):
         self.assertEqual(mendels.strings_io(tape), STRINGS_IO)
         self.assertEqual(tape['result']['stop'], STOP)
         self.assertEqual(len(tape['exchanges']), EXCHANGES)
-        # PIMOS's console at the end (OBSERVED): mdl_comp.kl1 del_file/3's
-        # directory request for >sys>user>MENDELuser>TEMP answered
-        # abnormal by the runner's FEP, so its normal(...) pattern fails
-        # and the MENDELS job is aborted
-        self.assertTrue(tape['result']['window'].endswith(
-            'Shell>>  Unification failure occurred !! \n  [ Job#4, Node#0, PE#0 ]\n'
-            '  Term1        : normal([delete("compiler.msg",D),expunge(C)],B,A) \n'
-            '  Term2        : abnormal \nShell>>  Job 4 was aborted . \n'))
+        self.assertEqual(mendels.files_io(tape), FILES_IO)
+        # PIMOS's console at the end (OBSERVED): the relink, and nothing
+        # after it.  Before the FEP store step the runner's FEP answered
+        # del_file/3's 204 abnormal, and the console ended "Unification
+        # failure occurred !! ... Term1 : normal([delete("compiler.msg",D),
+        # expunge(C)],B,A) Term2 : abnormal ... Job 4 was aborted ."
+        w = tape['result']['window']
+        self.assertTrue(w.endswith('Relink Succeeded\nShell>> '), w[-300:])
+        self.assertNotIn('aborted', w)
+        self.assertNotIn('failure', w)
+        # mendel.exe's pathname as the PSI gives it (221: full_pathname/2,
+        # no host prefix; fep.py's home file was PSI::>sys>...)
+        self.assertIn('Load File : >sys>user>MENDEL>mendel.exe.1\n', w)
 
     def test_replay(self):
         # the PSI side, fed the tape: every packet it sends is the live
@@ -453,6 +529,16 @@ class Run(unittest.TestCase):
         self.assertEqual([a for a in saves[-3:]], [[2, 417, 390, 446, 163, 9128],
                                                    [1, 417, 390, 446, 163, 4564],
                                                    [0, 417, 390, 446, 163, 0]])
+        # the FEP store step: PIMOS's compiler.msg is in the PSI's TEMP, the
+        # one file there, with the loader's messages; nothing is left
+        # deleted (235)
+        import simpos_fs
+        d = m.fs_walk(m.get_slot(K.ClassRef('simpos##directory'), 'root'), 'sys>user>MENDELuser>TEMP')
+        files = mendels._entries(m, d)
+        self.assertEqual([n for n, _f in files], ['compiler.msg'])
+        self.assertEqual(simpos_fs.text_of(K.deref(m.get_slot(files[0][1], 'contents')).codes()),
+                         COMPILER_MSG)
+        self.assertEqual(K.deref(m.get_slot(d, 'deleted')), K.NIL)
 
     def test_library_restored(self):
         # object_lib restore/1 (object_lib.esp:29-31, 321-325) read the
@@ -1751,6 +1837,209 @@ def read(text):
     import mendels_simpos
     t, _rest = mendels_simpos.read_one(K, text)
     return t
+
+
+class FepStore(unittest.TestCase):
+    """The FEP store step (2026-11-28): PIMOS's file and directory devices
+    served by the held pimfep##pimos_directory and pimos_file from the
+    PSI's tree (psi/simpos_files.py's models), driven here by PIMOS's own
+    packets (the forms of the MENDELS run's tape, mendels.files_io) on
+    fep_bridge's PSI side, with MENDELS's directories and the empty
+    password the checkpoint's PIMOS sends."""
+
+    USER = None
+    DIRS = ['>sys>user>MENDEL', '>sys>user>MENDELuser', '>sys>user>MENDELuser>TEMP']
+    TEMP = '>sys>user>MENDELuser>TEMP'
+
+    def psi(self):
+        import fep_bridge as FB
+        import simpos_fs as FS
+        saved = FS.EMPTY_DIRS
+        FS.EMPTY_DIRS = list(saved) + self.DIRS
+        try:
+            psi = FB.PsiSide(script=dict(login=[], shell=[]))
+        finally:
+            FS.EMPTY_DIRS = saved
+        m = psi.m
+        m.reset()
+        U = K.ClassRef('simpos##user')
+        for _ in m.solve_send(U, 'register', [K.Str('pmpsi'), K.Str(''), K.Atom('general'), U]):
+            break
+        return psi
+
+    def run_script(self, script, psi=None, peek=None):
+        """SCRIPT: one list of (device, message) per exchange -> (the
+        PSI's answers as [device, flag, status, ...], the PSI side).
+        PEEK(psi, n) is called at the start of exchange n (from 0)."""
+        import struct
+        import fep_bridge as FB
+        psi = psi or self.psi()
+        out, n = [], [0]
+
+        def exchange(raws):
+            out.extend(FB.show(r) for r in raws)
+            if peek:
+                peek(psi, n[0])
+            if n[0] >= len(script):
+                return []
+            s = script[n[0]]
+            n[0] += 1
+            return [struct.pack('>ii', d, 0) + FB.fepm.pack_message(msg) for d, msg in s]
+        stop = psi.run(exchange)
+        self.assertEqual(stop.cause, 'would suspend', stop.detail)
+        return out, psi
+
+    @staticmethod
+    def J(text):
+        import fep_bridge as FB
+        return FB.fepm.jis(text)
+
+    def opener(self, code, path):
+        return [code, b'', self.J('pmpsi'), b'', self.J(path)]
+
+    def entries(self, psi, path):
+        m = psi.m
+        d = m.fs_walk(m.get_slot(K.ClassRef('simpos##directory'), 'root'), path[1:])
+        return d, [name for name, _n in mendels._entries(m, d)]
+
+    def test_write_then_read(self):
+        # mdl_comp.kl1 wt_message/1's packets: 204 on TEMP, 231 of the
+        # name (no such file: 5, which PIMOS's `delete(FileNmS,_)` takes),
+        # 235, 60; 202, 111, 60; then the file read back by 201, 210 (its
+        # Size in characters), 220, 221, 222
+        J = self.J
+        f = self.TEMP + '>compiler.msg'
+        text = 'Load File : x\n"m:: a" Loaded\n'
+        out, psi = self.run_script([
+            [(70, self.opener(204, self.TEMP))], [(70, [231, J('compiler.msg')])], [(70, [235])],
+            [(70, [60])], [(71, self.opener(202, f))], [(71, [111, J(text)])], [(71, [60])],
+            [(72, self.opener(201, f))], [(72, [210, 10])], [(72, [210, 100])], [(72, [220])],
+            [(72, [210, 100])], [(72, [221])], [(72, [222])], [(72, [60])]])
+        self.assertEqual([o[2] for o in out], [1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1])
+        self.assertEqual(out[8][3] + out[9][3], J(text))
+        self.assertEqual(len(out[8][3]), 20)            # 10 characters, 2 bytes each
+        self.assertEqual(out[10][3], 7)                  # end_of_file: yes (fep#yes)
+        self.assertEqual(out[11][3], b'')                # eod, "" (getb/4 @24e)
+        self.assertEqual(out[12][3], J(f + '.1'))
+        # 222: the held make_string/2's fields, each ended by an LF but the
+        # last (RSize, 0), as PIMOS's attributes/6 reads them
+        # (server/fep/file/file_dvcb.kl1:637-672)
+        self.assertEqual(out[13][3], J('pmpsi\npmpsi\n20-May-93\n00:00:00\n20-May-93\n00:00:00\n1\n%d\n0'
+                                       % (2 * len(text))))
+        d, names = self.entries(psi, self.TEMP)
+        self.assertEqual(names, ['compiler.msg'])
+
+    def test_delete_and_expunge(self):
+        # a 231 that matches: {Id, 1}, the file out of the entries and in
+        # the deleted list; 235 empties that list.  Only the names that
+        # match are deleted
+        J = self.J
+        seen = {}
+
+        def peek(psi, n):
+            if n in (6, 7):
+                d, names = self.entries(psi, self.TEMP)
+                seen[n] = (names, [K.deref(e.args[0]).text for e in
+                                   mendels.FB.walk(psi.m.get_slot(d, 'deleted'))])
+        out, psi = self.run_script([
+            [(71, self.opener(202, self.TEMP + '>a.msg'))], [(71, [60])],
+            [(72, self.opener(202, self.TEMP + '>b.kl1'))], [(72, [60])],
+            [(70, self.opener(204, self.TEMP))], [(70, [231, J('*.msg')])], [(70, [235])],
+            [(70, [60])]], peek=peek)
+        self.assertEqual([o[2] for o in out], [1, 1, 1, 1, 1, 1, 1, 1])
+        self.assertEqual(seen, {6: (['b.kl1'], ['a.msg']), 7: (['b.kl1'], [])})
+
+    def test_write_over_a_file_refuses(self):
+        # write_open/4 on a name that is taken: make_only/3 fails, and the
+        # held remove/2's undelete/3 and remove/3 are not stood in, so the
+        # run stops loudly there (not on MENDELS's path: del_file/3 deletes
+        # and expunges the file first)
+        import fep_bridge as FB
+        import struct
+        psi = self.psi()
+        script = [[(71, self.opener(202, self.TEMP + '>a.msg'))], [(71, [60])],
+                  [(72, self.opener(202, self.TEMP + '>a.msg'))]]
+        n = [0]
+
+        def exchange(raws):
+            if n[0] >= len(script):
+                return []
+            s = script[n[0]]
+            n[0] += 1
+            return [struct.pack('>ii', d, 0) + FB.fepm.pack_message(msg) for d, msg in s]
+        stop = psi.run(exchange)
+        self.assertEqual(stop.cause, 'simpos')
+        self.assertIn('not in the stand-in', stop.detail)
+        self.assertIn('remove/3', stop.detail + ' '.join(psi.where()))
+        d, names = self.entries(psi, self.TEMP)
+        self.assertEqual(names, ['a.msg'])
+
+    def test_no_such_directory(self):
+        # 204 on a directory the tree does not have, 201 of a missing file
+        # and 202 into a missing directory: each {Id, 5}
+        out, psi = self.run_script([[(70, self.opener(204, self.TEMP + '>none'))],
+                                    [(71, self.opener(201, self.TEMP + '>none.msg'))],
+                                    [(72, self.opener(202, '>sys>user>none>a.msg'))]])
+        self.assertEqual([o[2] for o in out], [5, 5, 5])
+
+    def test_object_bytes(self):
+        # an object file's bytes are given back as they were placed, every
+        # 16-bit code, those of row 0x23 that have no JIS letter
+        # (0x2321-0x232f, ...) included (kl0 Str: before this step 0x2323
+        # came back 0x2174, and PIMOS refused mendel.exe, "illegal unloaded
+        # file (Checksum Error)", OBSERVED)
+        psi = self.psi()
+        raw = bytes(range(256)) + b'\x23\x23\x23\x3a\x21\x74'
+        mendels.install_row_files(psi.m, [(self.TEMP + '>o.exe', __import__('simpos_fs').codes_of(raw))])
+        out, psi = self.run_script([[(72, self.opener(201, self.TEMP + '>o.exe'))],
+                                    [(72, [210, 4001])], [(72, [210, 4001])]], psi=psi)
+        self.assertEqual([o[2] for o in out], [1, 1, 2])
+        self.assertEqual(out[1][3], raw)
+        # and a string made from such codes reads back the same codes from
+        # its text (kl0 Str._encode's `<xxxx>` token)
+        s = K.Str('')
+        s.set_codes(__import__('simpos_fs').codes_of(raw))
+        self.assertEqual(K.Str(s.text).codes(), s.codes())
+
+    def test_row_files(self):
+        # the doc route's KL1 files in the PSI's tree, each the bytes
+        # fep.py's store gave PIMOS (mendel.exe and mdllibrary.exe byte for
+        # byte, mendel.pac as longrun_ipl.home_bytes makes its text)
+        import ifs_sweep as X
+        files = X.archive(mendels.ARCHIVE)
+        got = {p: c for p, c in mendels.row_files(mendels.row_for('doc'))}
+        self.assertEqual(sorted(got), ['>sys>user>MENDEL>KL1>mendel.pac', '>sys>user>MENDEL>mendel.exe',
+                                       '>sys>user>MENDELuser>SYSTEM>mdllibrary.exe'])
+
+        def raw(codes):
+            return b''.join(c.to_bytes(2, 'big') for c in codes)
+        self.assertEqual(raw(got['>sys>user>MENDEL>mendel.exe']), files['mendels/mendel.exe'])
+        self.assertEqual(raw(got['>sys>user>MENDELuser>SYSTEM>mdllibrary.exe']), files['mendels/mdllibrary.exe'])
+        self.assertEqual(raw(got['>sys>user>MENDEL>KL1>mendel.pac']), self.J('package("mendel") .'))
+
+    def test_routes(self):
+        # the run's FEP: a device PIMOS makes by 201-205 or 601 is the
+        # PSI's (passed whole, nothing answered on the PIM/m side); one
+        # made by another code (310, the timer) is fep.py's
+        import struct
+        import fep_bridge as FB
+        F = type('MendelsFep', (FB.BridgeFep,), dict(BRIDGED=mendels.BRIDGED))
+        dev = F(lambda p: None)
+        for i, code in enumerate((201, 202, 203, 204, 205)):
+            dev.packet(struct.pack('>ii', 80 + i, 0) + FB.fepm.pack_message(self.opener(code, self.TEMP)))
+        dev.packet(struct.pack('>ii', 90, 0) + FB.fepm.pack_message([310, b'', 0, 0]))
+        self.assertEqual([struct.unpack('>i', p[:4])[0] for p in dev.to_psi], [80, 81, 82, 83, 84])
+        self.assertEqual(sorted(dev.bridged), [80, 81, 82, 83, 84])
+        self.assertEqual(dev.timers, {90})
+
+    def test_models_labelled(self):
+        # every kl0 model psi/simpos_files.py installs has its label, and
+        # only those
+        import simpos_files
+        mine = {k for k, f in K.SIMPOS_MODELS.items() if getattr(f, '__module__', '') == 'simpos_files'}
+        self.assertEqual(mine, set(simpos_files.LABELS))
+        for k, v in simpos_files.LABELS.items():
+            self.assertRegex(v, r'^INTERPOLATED \(selector', k)
 
 
 if __name__ == '__main__':

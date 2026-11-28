@@ -33,8 +33,12 @@ pimfep##pimos_string_io_invoker makes an instance of the class it names
 pimfep##as_pimos_string_io_device (esp_device.esp:7-8, loader.esp:7-8,
 esp_util.esp:7-8) and answers io(Code, String) by its :io/4.  The bridge
 (psi/fep_bridge.py's, OURS) carries 601 and every later message to such
-a device; everything else (the files, the shell's window) stays
-ref/pimm/fep.py's, with the sweep runner's services (ifs_sweep.py).
+a device.  Since the FEP store step (2026-11-28) it carries PIMOS's file
+and directory devices (201-205, BRIDGED) too: the held pimos_file and
+pimos_directory answer them from the PSI's tree, one store as on the
+real machine (row_files places the KL1 files there).  The rest (the
+timer, the shell's window, devices opened before the checkpoint) stays
+ref/pimm/fep.py's.
 """
 import json
 import os
@@ -117,10 +121,63 @@ def row_for(route, answers=()):
     return row
 
 
+def row_files(row):
+    """The row's files as the PSI's file tree holds them: [(absolute
+    path, 16-bit codes)].  A file served to an absolute directory goes
+    there (the doc route: install.e "Copied Files", readme.e:18-28, HELD
+    placement); any other in the home directory (longrun_ipl.HOME, the
+    sweep's convention).  The codes are the bytes ref/pimm/fep.py's store
+    gave PIMOS for the same file (ifs_sweep: an object file byte for byte,
+    a text file longrun_ipl.home_bytes of its EUC form), two bytes a code
+    high byte first (simpos_fs.codes_of), so PIMOS reads what it read
+    before the FEP store step (OURS: the archive is a Unix copy, the
+    PSI's own words are not held)"""
+    import re
+    import ifs_sweep as X
+    import longrun_ipl as L
+    out = []
+    for ent in row.get('serve', ()):
+        pat, rename = ent[0], ent[1]
+        files = X.archive(ent[2] if len(ent) > 2 else row['archive'])
+        for n in sorted(n for n in files if re.search(pat, n)):
+            raw = files[n]
+            if rename and rename.startswith('>'):
+                path = rename + os.path.basename(n)
+            elif rename and rename.endswith('/'):
+                raise ValueError('mendels: a served tree (%r) is not placed in the PSI tree' % rename)
+            else:
+                path = L.HOME + '>' + (rename or os.path.basename(n))
+            data = raw if X.is_object(raw) else L.home_bytes(X.jis_to_euc(raw))
+            if len(data) % 2:
+                raise ValueError('mendels: %s has an odd number of bytes' % n)
+            out.append((path, FS.codes_of(data)))
+    return out
+
+
+# The FEP store step (2026-11-28): PIMOS's file and directory devices are
+# the PSI's.  On the real system PIM/m's FEP was the PSI, so PIMOS's
+# files were SIMPOS's (docs/fep_services.md §6: 201-203 are the held
+# pimfep##pimos_file's read_open/10, write_open/10, append_open/10, 204
+# and 205 pimos_directory's directory/10 and make_directory/10).  Until
+# this step the bridge passed only 601 to the PSI and fep.py answered the
+# files from a store of its own (the sweep runner's), which did not have
+# the PSI's directories: mdl_comp.kl1 del_file/3's 204 on
+# >sys>user>MENDELuser>TEMP was answered 5 and PIMOS aborted the MENDELS
+# job.  Now a device PIMOS makes by any of these codes is the PSI's
+# (fep_bridge.BridgeFep.packet's rule, by command code: no path is
+# looked at) and the held handlers answer from the PSI's tree
+# (psi/simpos_fs.py, the files row_files places), through the SIMPOS
+# methods psi/simpos_files.py models.  A device made before the
+# checkpoint (the syslog's 203, pimos.conf ...) stays fep.py's: its
+# creation was answered there (OURS)
+BRIDGED = (FB.fepm.CREATE_STRING_IO, 201, 202, 203, 204, 205)
+
+
 class PimSide:
     """PIMOS from the prompt checkpoint; its Fep made a bridge: a device
-    made by 601 is the PSI's (fep_bridge.BridgeFep.packet), the rest as
-    the sweep runner serves it"""
+    made by 601, and since the FEP store step by 201-205 (a file or a
+    directory), is the PSI's (fep_bridge.BridgeFep.packet); the rest (the
+    timer, the shell's window) as the sweep runner serves it"""
 
     def __init__(self, pkl, row, budget=200_000_000):
         import ifs_sweep as X
@@ -131,11 +188,10 @@ class PimSide:
         m.ahead = False
         m.heap_limit = X.HEAP_LIMIT
         m.gc_paths = None
-        self.served = X.serve(row)
-        X.install_listing()
-        X.install_write_files(m.fep)
+        # the row's files are the PSI's (row_files), not fep.py's
+        self.served = [p for p, _c in row_files(row)]
         dev = m.fep
-        dev.__class__ = type('MendelsFep', (FB.BridgeFep,), dict(BRIDGED=(601,)))
+        dev.__class__ = type('MendelsFep', (FB.BridgeFep,), dict(BRIDGED=BRIDGED))
         dev.bridged, dev.to_psi = set(), []
         dev.open_file = L.kernel_file
         dev.list_dir = L.home_listing
@@ -278,12 +334,34 @@ def install_held_files(m):
         m.set_slot(d, 'entries', K.Cons(K.Vec([K.Str(base), f]), m.get_slot(d, 'entries')))
 
 
+def install_row_files(m, files):
+    """FILES, [(absolute path, codes)] (row_files), entered in the PSI's
+    tree, each in its directory, which must exist (INSTALLED_DIRS)."""
+    root = m.get_slot(K.ClassRef('simpos##directory'), 'root')
+    for path, codes in files:
+        dpath, base = path.rsplit('>', 1)
+        d = root
+        for part in dpath.strip('>').split('>'):
+            d = dict(_entries(m, d))[part]
+        f = K.make_instance(m, 'simpos##binary_file')
+        m.set_slot(f, 'name', K.Str(base))
+        m.set_slot(f, 'version', 1)
+        m.set_slot(f, 'size', 2 * len(codes))
+        m.set_slot(f, 'full_name', K.Str('%s.1' % path))
+        m.set_slot(f, 'directory', d)
+        s = K.Str('')
+        s.set_codes(codes)
+        m.set_slot(f, 'contents', s)
+        m.set_slot(d, 'entries', K.Cons(K.Vec([K.Str(base), f]), m.get_slot(d, 'entries')))
+
+
 class PsiSide(FB.PsiSide):
     """fep_bridge's PSI side (the boot program, the held front end on two
     streams, the coordinator), no login typed, the package `mendel`
-    added to the library"""
+    added to the library; since the FEP store step the route's KL1 files
+    (row_files) in its tree, where PIMOS reads them"""
 
-    def __init__(self, keys=USER_LINES, max_steps=50_000_000):
+    def __init__(self, keys=USER_LINES, max_steps=50_000_000, route='doc'):
         ts, failed = espc.compile_text(FB.BOOT, 'simpos')
         assert not failed
         mts, self.report = compile_package()
@@ -300,6 +378,7 @@ class PsiSide(FB.PsiSide):
         for name, held_font in SUBSTITUTE_FONTS:
             substitute_font(m, name, held_font)
         install_held_files(m)
+        install_row_files(m, row_files(row_for(route)))
         m.reset()
         U = K.ClassRef('simpos##user')
         for _ in m.solve_send(U, 'register', [K.Str(FS.USER), K.Str(CHECKPOINT_PASSWORD),
@@ -445,7 +524,7 @@ def watch_phase(m):
 
 def live(pkl, route='doc', answers=(), record=None):
     pim = PimSide(pkl, row_for(route, answers))
-    psi = PsiSide()
+    psi = PsiSide(route=route)
     tape = []
 
     def exchange(from_psi):
@@ -482,7 +561,7 @@ def replay(path, tape=None, keys=USER_LINES, lenient=False):
     if tape is None:
         with open(path) as f:
             tape = json.load(f)
-    psi = PsiSide(keys=keys)
+    psi = PsiSide(keys=keys, route=tape.get('route', 'doc'))
     left = list(tape['exchanges'])
     psi.diverged = None
     if os.environ.get('MENDELS_TRACE'):
@@ -519,22 +598,64 @@ def strings_io(tape):
     for PIMOS's io (620) to an ESP device, ('<', dev, status, text) for the
     PSI's answer to it; 601 creates as ('create', dev, name) and closes as
     ('close', dev)"""
-    out, ios = [], set()
+    out, ios, made = [], set(), set()
     for e in tape['exchanges']:
         for h in e['to_psi']:
             p = FB.show(bytes.fromhex(h))
             if p[2] == 601:
+                made.add(p[0])
                 out.append(('create', p[0], FB.fepm.unjis(p[6])))
             elif p[2] == 620:
                 ios.add(p[0])
                 out.append(('>', p[0], p[3], FB.fepm.unjis(p[4])))
-            elif p[2] == 60:
+            elif p[2] == 60 and p[0] in made:
+                # since the FEP store step the files' and directories'
+                # devices are the PSI's too: their closes are files_io's
                 out.append(('close', p[0]))
         for h in e['from_psi']:
             p = FB.show(bytes.fromhex(h))
             if p[0] in ios and len(p) > 3:
                 out.append(('<', p[0], p[2], FB.fepm.unjis(p[3]) if isinstance(p[3], bytes) else p[3]))
     return out
+
+
+def files_io(tape):
+    """The file and directory devices of a tape (the FEP store step,
+    2026-11-28: 201-205 are the PSI's), in the order PIMOS made them:
+    (device, code, path, the PSI's status for the creation, [[command,
+    its status] for each later request (231 with its wildcard; 70, the
+    abort, has no reply: docs/fep_services.md 6.7)], bytes read by 210 in
+    all, bytes written by 111 in all).  A device's replies come in the
+    order of its requests."""
+    devs, order = {}, []
+    for e in tape['exchanges']:
+        for h in e['to_psi']:
+            p = FB.show(bytes.fromhex(h))
+            if p[2] in BRIDGED[1:] and p[0] not in devs:
+                d = devs[p[0]] = dict(row=[p[0], p[2], FB.fepm.unjis(p[6]), None, [], 0, 0], wait=[])
+                d['wait'].append(d['row'])
+                order.append(p[0])
+            elif p[0] in devs:
+                d = devs[p[0]]
+                req = [p[2], FB.fepm.unjis(p[3])] if p[2] == 231 else [p[2]]
+                d['row'][4].append(req)
+                if p[2] == 111:
+                    d['row'][6] += len(p[3])
+                if p[2] != 70:
+                    d['wait'].append(req)
+        for h in e['from_psi']:
+            p = FB.show(bytes.fromhex(h))
+            if p[0] not in devs or not devs[p[0]]['wait']:
+                continue
+            d = devs[p[0]]
+            req = d['wait'].pop(0)
+            if req is d['row']:
+                req[3] = p[2]
+                continue
+            req.append(p[2])
+            if req[0] == 210 and len(p) > 3 and isinstance(p[3], bytes):
+                d['row'][5] += len(p[3])
+    return [tuple(devs[k]['row']) for k in order]
 
 
 def png(psi, path):
