@@ -189,32 +189,94 @@
     "0000003e000000000000025900000004000000000000000a00000000000000322370236d2370237323692365236d2365236e23642365236c21742174236d2365236e23642365236c213223652373237021322364236523762369236323652345",
     "00000032000000000000026c00000002ffffffff0000009e00000000236c236f23612364236523642132236c236923622372236123722379214a236e236f2372236d2361236c214a214e236d2365236e23642365236c212721272121236523782361236d2370236c236523312124236d2365236e23642365236c212721272121236523782361236d2370236c236523322124236d2365236e23642365236c212721272121236523782361236d2370236c23652333214f214b214b236e"
    ]
+  },
+  {
+   "from_psi": [
+    "00000038000000000000000100000000",
+    "0000003e000000000000000100000000"
+   ],
+   "to_psi": [
+    "0000003e000000000000003c00000000",
+    "0000003f000000000000025900000004000000000000000a00000000000000262370236d237023732369236c236d2365236e23642365236c217421742365237323702132237523742369236c2369237423792365"
+   ]
+  },
+  {
+   "from_psi": [
+    "0000003e000000000000000100000000",
+    "0000003f000000000000000100000000"
+   ],
+   "to_psi": [
+    "0000003f000000000000026c00000002ffffffff0000002a000000022164237323792373216423752373236523722164234d2345234e23442345234c2164234b234c233121642374"
+   ]
+  },
+  {
+   "from_psi": [
+    "0000003f000000000000000100000001000000062365236e23640000"
+   ],
+   "to_psi": [
+    "0000003f000000000000004600000000",
+    "0000003f000000000000003c00000000",
+    "00000041000000000000025900000004000000000000000a00000000000000322370236d2370237323692365236d2365236e23642365236c21742174236d2365236e23642365236c213223652373237021322364236523762369236323652365"
+   ]
+  },
+  {
+   "from_psi": [
+    "0000003f000000000000000100000000",
+    "00000041000000000000000100000000"
+   ],
+   "to_psi": [
+    "00000041000000000000003c00000000",
+    "00000042000000000000025900000004000000000000000a00000000000000262370236d2370237323692365236d2365236e23642365236c217421742365237323702132237523742369236c2369237423792364"
+   ]
+  },
+  {
+   "from_psi": [
+    "00000041000000000000000100000000",
+    "00000042000000000000000100000000"
+   ],
+   "to_psi": [
+    "00000042000000000000026c00000002ffffffff000000080000000023742365236d2370"
+   ]
+  },
+  {
+   "from_psi": [
+    "00000042000000000000000100000001000000342164237323792373216423752373236523722164234d2345234e23442345234c2375237323652372216423542345234d23502164"
+   ],
+   "to_psi": [
+    "00000042000000000000004600000000",
+    "00000042000000000000003c00000000",
+    "0000002a000000000000003c00000000",
+    "00000032000000000000004600000000"
+   ]
+  },
+  {
+   "from_psi": [
+    "00000042000000000000000100000000",
+    "0000002a000000000000000100000000"
+   ],
+   "to_psi": []
   }
  ],
  "result": {
   "route": "doc",
   "answers": [],
-  "stop": "simpos: bitmap_display save/7: winfb status 4",
+  "stop": "would suspend: no process is ready: <simpos##process> is suspended",
   "where": [
-   "simpos##save_memory @40",
-   "simpos##save_memory @42",
-   "simpos##window_pane @2bb",
-   "simpos##coordinator @7d3",
-   "simpos##coordinator @841",
-   "simpos##coordinator @9a",
-   "simpos##coordinator @b6f",
-   "simpos##coordinator @1eb",
-   "simpos##window_pane @376",
-   "mendel##mendel_title @6d",
-   "mendel##mendel_title:goal/1 @4",
-   "simpos##as_program @73"
+   "simpos##process:suspend/2 + dispatcher @4",
+   "simpos##stream @78",
+   "simpos##stream @54",
+   "pimfep##fep_scsi_output @1a9",
+   "pimfep##fep_scsi_output:goal/1 @4",
+   "simpos##as_program @73",
+   "simpos##as_program @69",
+   "<simpos##process> ends @0"
   ],
-  "window": "Shell>>  The value of task: package is mendel . \nShell>>  The value of task: directory is \">sys>user>MENDEL>KL1\" . \nShell>>  The value of task: home is \">sys>user>MENDEL>KL1\" . \nShell>> Load File : PSI::>sys>user>MENDEL>mendel.exe.1\n\"mendel:: graph\" Loaded\n\"mendel:: net\" Loaded\n\"mendel:: execute_main\" Loaded\n\"mendel:: tableau_main\" Loaded\n\"mendel:: esp_utility\" Loaded\n\"mendel:: mendel_package\" Loaded\n\"mendel:: mdl_compiler\" Loaded\n\"mendel:: decomp\" Loaded\n\"mendel:: mendel\" Loaded\n\"mendel:: fmnet\" Loaded\n\"mendel:: common\" Loaded\n\"mendel:: mlib\" Loaded\n\"mendel:: interface\" Loaded\n\"mendel:: scc\" Loaded\n\"mendel:: prim\" Loaded\n\"mendel:: fmparts\" Loaded\nLoad Succeeded\nShell>> \"mendel:: graph\" Updated\n\"mendel:: net\" Updated\n\"mendel:: execute_main\" Updated\n\"mendel:: tableau_main\" Updated\n\"mendel:: esp_utility\" Updated\n\"mendel:: mendel_package\" Updated\n\"mendel:: mdl_compiler\" Updated\n\"mendel:: decomp\" Updated\n\"mendel:: mendel\" Updated\n\"mendel:: scc\" Updated\n\"mendel:: prim\" Updated\nRelink Succeeded\nShell>> ",
-  "instructions": 7075533,
-  "exchanges": 21,
+  "window": "Shell>>  The value of task: package is mendel . \nShell>>  The value of task: directory is \">sys>user>MENDEL>KL1\" . \nShell>>  The value of task: home is \">sys>user>MENDEL>KL1\" . \nShell>> Load File : PSI::>sys>user>MENDEL>mendel.exe.1\n\"mendel:: graph\" Loaded\n\"mendel:: net\" Loaded\n\"mendel:: execute_main\" Loaded\n\"mendel:: tableau_main\" Loaded\n\"mendel:: esp_utility\" Loaded\n\"mendel:: mendel_package\" Loaded\n\"mendel:: mdl_compiler\" Loaded\n\"mendel:: decomp\" Loaded\n\"mendel:: mendel\" Loaded\n\"mendel:: fmnet\" Loaded\n\"mendel:: common\" Loaded\n\"mendel:: mlib\" Loaded\n\"mendel:: interface\" Loaded\n\"mendel:: scc\" Loaded\n\"mendel:: prim\" Loaded\n\"mendel:: fmparts\" Loaded\nLoad Succeeded\nShell>> \"mendel:: graph\" Updated\n\"mendel:: net\" Updated\n\"mendel:: execute_main\" Updated\n\"mendel:: tableau_main\" Updated\n\"mendel:: esp_utility\" Updated\n\"mendel:: mendel_package\" Updated\n\"mendel:: mdl_compiler\" Updated\n\"mendel:: decomp\" Updated\n\"mendel:: mendel\" Updated\n\"mendel:: scc\" Updated\n\"mendel:: prim\" Updated\nRelink Succeeded\nShell>>  Unification failure occurred !! \n  [ Job#4, Node#0, PE#0 ]\n  Term1        : normal([delete(\"compiler.msg\",D),expunge(C)],B,A) \n  Term2        : abnormal \nShell>>  Job 4 was aborted . \n",
+  "instructions": 7238006,
+  "exchanges": 28,
   "screen": {
-   "sha256": "8bc533270609bf46346276d88c386f5a488821558d5f0f89541df3d3a1999cde",
-   "dots": 151723
+   "sha256": "e78ce6f9e63c1a18c29c027e1d2e64f0bd85896286f618c56486e14b9da2b8ee",
+   "dots": 157381
   }
  }
 }

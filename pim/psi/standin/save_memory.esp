@@ -60,9 +60,10 @@ attribute used := [];
 % the windows on the screen (the coordinator's stack, their panes on the
 % frame and not lifted) and with the status band (the frame's rows 944 to
 % 1,023, status_band.esp: drawn, so kept, OURS).  Area is save/6's when
-% the box is the whole rectangle, else [cut, X, Y, W, H, Inner] (Inner the
-% box's save/6 area, or 0 when nothing lies under it); restore/2 and
-% put_back/2 clear the rectangle and draw Inner back.  Used for the frame
+% the box is the whole rectangle, else [cut, X, Y, W, H, Inner, Box]
+% (Inner the box's save/6 area, or 0 when nothing lies under it; Box the
+% box [X0, Y0, X1, Y1], or none, since the title raise step); restore/2
+% and put_back/2 clear the rectangle and draw Inner back.  Used for the frame
 % of a mixin window (window_pane.esp create_frame/8, basic_window.esp)
 % only: the older panes (window_pane.esp create/7, and lay/1 on every
 % restack) still save the whole rectangle, as the window M7 tests pin
@@ -77,11 +78,48 @@ attribute used := [];
         band(X, Y, X + W, Y + H, Box, Box1),
         under_area(Class, X, Y, W, H, Box1, Area);
 
+% THE TITLE RAISE STEP (MENDELS, 2026-11-28; selectors and bodies OURS):
+% a restack lifts a frame (a pane whose under is the cut form above) only
+% over a part of it, so that only the part of each window that becomes
+% hidden is saved.  TM-225 p10 (PROSE, window.md §4.1): it is a hidden
+% window's image, "all of it or its hidden part", that is kept in a save
+% area.  The part and how it is chosen are OURS (coordinator.esp
+% lift_all_in/2, window_pane.esp lift_in/2 and lay/1).
+%
+% :lift_under(#save_memory, Under, X, Y, W, H) -- a frame lifted over the
+% part (X, Y, W, H): what lies under it there drawn back.  Under must be
+% the cut form and its box lie inside the part (the coordinator's part
+% holds every frame's box: Inner is restored whole, as the device restores
+% a slot whole); the part is cleared and Inner drawn back and freed.  Any
+% other Under is refused loudly (lift_part_refused/2 is no method).
+% INTERPOLATED (selector and body OURS): lift_under; basis above.
+:lift_under(Class, [cut, _, _, _, _, Inner, Box], X, Y, W, H) :-
+        inside(Box, X, Y, X + W, Y + H), !,
+        :fill(#bitmap_display, X, Y, W, H, reset),
+        restored_inner(Class, Inner);
+:lift_under(Class, Under, _, _, _, _) :- :lift_part_refused(Class, Under);
+
+% :save_under_below(#save_memory, Pane, X, Y, W, H, Area) -- a frame laid
+% back after lift_under/6 over the part (X, Y, W, H): its new under, the
+% cut form of save_under/6 over the pane's whole rectangle, its box the
+% bounding box of the part's overlaps with the windows BELOW the pane's
+% window in the coordinator's stack (those on the frame and not lifted)
+% and with the status band.  Outside the part nothing lies under the pane:
+% the part holds the pane's old box and the rectangle of every window
+% the restack moved (coordinator.esp lift_all_in/2).
+% INTERPOLATED (selector and body OURS): save_under_below; basis above.
+:save_under_below(Class, Pane, X, Y, W, H, Area) :-
+        C = #coordinator,
+        below_pane(C!windows, Pane, Below),
+        boxed(Below, X, Y, X + W, Y + H, none, Box),
+        band(X, Y, X + W, Y + H, Box, Box1),
+        under_area(Class, Pane!x, Pane!y, Pane!w, Pane!h, Box1, Area);
+
 % :restore(#save_memory, Area) -- OURS (selector and body): the saved dots
 % drawn back where they were (copy), and the area freed.
 % INTERPOLATED (selector and body OURS): restore; basis above and in the
 % head comment.
-:restore(Class, [cut, X, Y, W, H, Inner]) :- !,
+:restore(Class, [cut, X, Y, W, H, Inner, _]) :- !,
         :fill(#bitmap_display, X, Y, W, H, reset),
         restored_inner(Class, Inner);
 :restore(Class, [Id, Base, Size]) :-
@@ -104,7 +142,7 @@ attribute used := [];
 % use (window_pane.esp move_to/3 draws it back twice).
 % INTERPOLATED (selector and body OURS): put_back; basis above and in the
 % head comment.
-:put_back(Class, [cut, X, Y, W, H, Inner]) :- !,
+:put_back(Class, [cut, X, Y, W, H, Inner, _]) :- !,
         :fill(#bitmap_display, X, Y, W, H, reset),
         put_back_inner(Class, Inner);
 :put_back(Class, [Id, _, _]) :-
@@ -171,6 +209,15 @@ boxed([_ | Ws], X0, Y0, X1, Y1, B0, B) :- boxed(Ws, X0, Y0, X1, Y1, B0, B);
 
 band(X0, Y0, X1, Y1, B0, B) :- met(0, 944, 1280, 1024, X0, Y0, X1, Y1, B0, B);
 
+% the title raise step (OURS): the windows below Pane's window, and a box
+% inside a rectangle (none is inside every rectangle)
+below_pane([], _, []);
+below_pane([Win | Ws], Pane, Ws) :- P = Win!pane, P == Pane, !;
+below_pane([_ | Ws], Pane, B) :- below_pane(Ws, Pane, B);
+
+inside(none, _, _, _, _) :- !;
+inside([L, T, R, D], X0, Y0, X1, Y1) :- X0 =< L, Y0 =< T, R =< X1, D =< Y1;
+
 % the box B0 grown by the overlap of two rectangles, if they overlap
 met(AX0, AY0, AX1, AY1, X0, Y0, X1, Y1, B0, B) :-
         high(AX0, X0, L), high(AY0, Y0, T), lower(AX1, X1, R), lower(AY1, Y1, D),
@@ -186,12 +233,12 @@ high(_, B, B);
 lower(A, B, A) :- A =< B, !;
 lower(_, B, B);
 
-under_area(_, X, Y, W, H, none, [cut, X, Y, W, H, 0]) :- !;
+under_area(_, X, Y, W, H, none, [cut, X, Y, W, H, 0, none]) :- !;
 under_area(Class, X, Y, W, H, [L, T, R, D], Area) :-
         value(X + W, XW), value(Y + H, YH),
         L == X, T == Y, R == XW, D == YH, !,
         :save(Class, X, Y, W, H, Area);
-under_area(Class, X, Y, W, H, [L, T, R, D], [cut, X, Y, W, H, Inner]) :-
+under_area(Class, X, Y, W, H, [L, T, R, D], [cut, X, Y, W, H, Inner, [L, T, R, D]]) :-
         :save(Class, L, T, R - L, D - T, Inner);
 
 restored_inner(_, 0) :- !;

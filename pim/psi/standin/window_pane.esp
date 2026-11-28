@@ -202,6 +202,11 @@ attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
 % the pane is lifted off the screen for a restack, the area holding its
 % own dots (0: on the screen).
 attribute under := 0, image := 0;
+% the title raise step (MENDELS, 2026-11-28), OURS: while a frame is
+% lifted over a part of it only (lift_in/2), [Image, X, Y, W, H], Image the
+% area of its own dots in that part; [] when the restack's part misses it
+% (nothing lifted); 0 otherwise.
+attribute part := 0;
 % window M8's stops, step 3, OURS: a surface pane's area of bitmap memory
 % (save_memory.esp [Id, Base, Size]; 0: the pane is on the frame) and its
 % words a row.
@@ -289,11 +294,39 @@ attribute inverted := no;
 % :lay(Pane) -- a lifted pane put back on top: what is under it saved,
 % its own dots drawn back.
 % INTERPOLATED (selector and body OURS): lay; basis above.
+:lay(Pane) :- Pane!part == [], !, Pane!part := 0;
+:lay(Pane) :- Pane!part = [Image, X, Y, W, H], !,
+        :save_under_below(#save_memory, Pane, X, Y, W, H, Under),
+        Pane!under := Under,
+        :restore(#save_memory, Image),
+        Pane!part := 0;
 :lay(Pane) :-
         :save(#save_memory, Pane!x, Pane!y, Pane!w, Pane!h, Under),
         Pane!under := Under,
         :restore(#save_memory, Pane!image),
         Pane!image := 0;
+
+% :lift_in(Pane, Part) -- the title raise step (MENDELS, 2026-11-28;
+% selector and body OURS): a frame (a pane whose under is save_memory's
+% cut form, create_frame/8) lifted only over its overlap with Part
+% [X0, Y0, X1, Y1], the part the coordinator's restack changes
+% (coordinator.esp lift_all_in/2): its own dots there saved, what is under
+% it there drawn back (save_memory.esp lift_under/6), and the rest of it
+% left on the screen.  lay/1 lays it back over the same part.  TM-225 p10
+% (PROSE, window.md §4.1): a hidden window's image, "all of it or its
+% hidden part", is saved; before this step a restack lifted every frame
+% whole, and MENDELS's 1,280 x 944 base needed 75,520 words of the
+% device's 65,536 (window.md §7, option (b)).
+% INTERPOLATED (selector and body OURS): lift_in; basis above.
+:lift_in(Pane, [X0, Y0, X1, Y1]) :-
+        larger(Pane!x, X0, L), larger(Pane!y, Y0, T),
+        low_end(Pane!x + Pane!w, X1, R), low_end(Pane!y + Pane!h, Y1, D),
+        L < R, T < D, !,
+        :save(#save_memory, L, T, R - L, D - T, Image),
+        :lift_under(#save_memory, Pane!under, L, T, R - L, D - T),
+        Pane!under := 0,
+        Pane!part := [Image, L, T, R - L, D - T];
+:lift_in(Pane, _) :- Pane!part := [];
 
 % :lifted(Pane) -- the pane is off the screen for a restack.
 % INTERPOLATED (selector and body OURS): lifted; basis above.
@@ -1037,6 +1070,9 @@ pieces(Pane, X, X2, Y, Ws, Op) :-
 
 low_end(A, B, A) :- A =< B, !;
 low_end(_, B, B);
+% the title raise step (OURS): the larger of two
+larger(A, B, A) :- A >= B, !;
+larger(_, B, B);
 
 % one row piece from X1 to X2 (inside dots) whose dots are the word W at
 % the tile's columns: the style is W turned left by X1's column in it

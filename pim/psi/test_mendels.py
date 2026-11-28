@@ -39,11 +39,19 @@ answer, the packet MENDELS's no-file branch makes; psi/README.md "The
 load answer step"), so phase/2 succeeds; mdl_check reports the missing
 TEMP>compiler.msg in the system window, phase(top) waits in top_menu,
 and the mendel_title process writes to its permission(show) screen under
-the base, whose raise lifts the base whole: the run stops at save/7's
-winfb BADSAVE (75,520 words; window.md §7).  With the adapter off it
+the base, whose raise lifted the base whole (save/7's winfb BADSAVE,
+75,520 words; window.md §7) until the title raise step (2026-11-28): a
+restack now lifts a frame only over the part it changes (coordinator.esp
+lift_all_in/2, OURS; TM-225 p10), 4,564 words of the base, and the title
+screen shows " end" and "please return" and waits in its read
+(title.esp:57).  The stop: every process waits (STOP); screen
+docs/simpos/screens/mendels_title_raised.png.  With the adapter off it
 still stops at phase/2 (mendels.watch_phase, OURS; test_adapter_off).
-Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: the 21 exchanges
-and strings as before; the live screen equals the replay's.
+Re-recorded live 2026-11-28 from a copy of PROMPT.pkl: 28 exchanges, the
+first 21 as before (PIMOS goes on to mdl_comp wt_message/1's directory
+requests, STRINGS_IO, then aborts the MENDELS job when the runner's FEP
+answers the TEMP directory abnormal, test_tape); the live screen equals
+the replay's.
 
 Mixins (the window mixins step) runs the mixins through two other held
 users on the coordinator, with the mouse: icotext's whole held class
@@ -239,7 +247,28 @@ then run again):
 (The earlier tables' `::` and watch rows named test_replay; the run now
 reaches those only with the adapter off.)
 
-Weak spots: the replay does not reach repeat's retry, freeze/melt's
+The title raise step (2026-11-28): test_frame_part and test_replay.
+Injections, OBSERVED 2026-11-28 (9, made by a scratch script from a
+backup, restored by copy and cmp, git diff clean; this whole file run on
+each, on the final file):
+
+| injection | failed |
+|---|---|
+| frames lifted whole (lifted_in/2 always lift/1) | test_frame_part, test_replay |
+| the part not grown by a frame's box | test_frame_part |
+| lift_in/2: the pane whole as the part | test_frame_part, test_replay |
+| lift_under/6: the whole screen cleared | test_frame_part, test_replay |
+| lift_under/6: Inner not drawn back | test_frame_part, test_replay |
+| save_under_below/7: nothing below | test_frame_part |
+| save_under_below/7: every window, not only those below | test_frame_part, test_replay |
+| lay/1 of a part: the frame's dots not drawn back | test_frame_part |
+| lift_in/2: a missed frame lifted whole | test_frame_part |
+
+(A tenth, whole_below/4, NONE, is removed: a frame's box already holds
+every window below it, so growing the part by the overlaps with the
+whole-lifted panes below added nothing.)
+
+Weak spots (the load answer step): the replay does not reach repeat's retry, freeze/melt's
 copies or putt's compound form (the run's terms are atoms and a list):
 the unit tests carry them.  getl's line start is caught only by
 test_getl (the run's old answers are empty); is_object/2 and the title
@@ -281,8 +310,21 @@ STRINGS_IO = [
     ('create', 62, 'mendel##mendel_esp_device'),
     ('>', 50, 0, 'loaded_library(normal([mendel:: example1,mendel:: example2,mendel:: example3]))'),
     ('<', 56, 1, '>sys>user>MENDELuser>SYSTEM>'),
+    # since the title raise step (2026-11-28), OBSERVED live: the run no
+    # longer stops on the PSI side, so PIMOS goes on: device 62 closed;
+    # esp_device/3's set_MENDEL_directory (package.kl1:15-19, 134-145) and
+    # esp_utility directory_name("temp") (esp_util.kl1:30-50) for
+    # mdl_comp.kl1 wt_message/1's del_file (172-200), which writes the
+    # loader's messages to TEMP>compiler.msg after load:do; the loader's
+    # stream (42) closed
+    ('close', 62), ('create', 63, 'mendel##esp_utility'),
+    ('>', 63, 2, '>sys>user>MENDEL>KL1>'), ('close', 63),
+    ('create', 65, 'mendel##mendel_esp_device'), ('<', 63, 1, 'end'), ('close', 65),
+    ('create', 66, 'mendel##esp_utility'), ('>', 66, 0, 'temp'), ('close', 66),
+    ('close', 42), ('<', 66, 1, '>sys>user>MENDELuser>TEMP>'),
 ]
-STOP = 'simpos: bitmap_display save/7: winfb status 4'
+STOP = 'would suspend: no process is ready: <simpos##process> is suspended'
+EXCHANGES = 28
 # the stop before the load adapter (2026-11-27), which the run still gives
 # with mendels.LOAD_ADAPTER off (test_adapter_off)
 STOP_NO_ADAPTER = ('mendels: held mendel##mendel_main phase/2 has no clause for {loaded_library,{normal,'
@@ -296,12 +338,20 @@ STOP_NO_ADAPTER = ('mendels: held mendel##mendel_main phase/2 has no clause for 
 LOAD_ANSWER_PACKET = ('00000032000000000000026c00000002ffffffff0000002c00000000'
                       '236c236f23612364236523642132236c236923622372236123722379214a'
                       '236e236f2372236d2361236c214b')
-# the replay's last frame (sha256 of the PBM, set dots), OBSERVED 2026-11-28
-# (the live run's screen is the same, PNG byte for byte): MENDELS's whole
-# zone, its system window with two messages, committed as
-# docs/simpos/screens/mendels_zone.png
+# the load answer step's last frame (sha256 8bc53327..., 151,723 dots),
+# OBSERVED 2026-11-28 (the live run's the same, PNG byte for byte):
+# MENDELS's whole zone, its system window with two messages, the title
+# screen under the base, committed as docs/simpos/screens/mendels_zone.png;
+# since the title raise step test_replay checks that the stop's frame
+# differs from it only in the title screen's rectangle and the status band
 ZONE = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_zone.png')
-ZONE_FRAME = ('8bc533270609bf46346276d88c386f5a488821558d5f0f89541df3d3a1999cde', 151723)
+# since the title raise step (2026-11-28): the replay's last frame, the
+# zone with the title screen raised over the base, " end" and "please
+# return" written (OBSERVED; the live run's the same, PNG byte for byte,
+# and the same frame as the whole lift's with save memory enlarged, run
+# on master 7528e34e's stand-ins), docs/simpos/screens/mendels_title_raised.png
+RAISED = os.path.join(HERE, '..', 'docs', 'simpos', 'screens', 'mendels_title_raised.png')
+RAISED_FRAME = ('e78ce6f9e63c1a18c29c027e1d2e64f0bd85896286f618c56486e14b9da2b8ee', 157381)
 
 
 def load_tape():
@@ -315,7 +365,15 @@ class Run(unittest.TestCase):
         tape = load_tape()
         self.assertEqual(mendels.strings_io(tape), STRINGS_IO)
         self.assertEqual(tape['result']['stop'], STOP)
-        self.assertEqual(len(tape['exchanges']), 21)
+        self.assertEqual(len(tape['exchanges']), EXCHANGES)
+        # PIMOS's console at the end (OBSERVED): mdl_comp.kl1 del_file/3's
+        # directory request for >sys>user>MENDELuser>TEMP answered
+        # abnormal by the runner's FEP, so its normal(...) pattern fails
+        # and the MENDELS job is aborted
+        self.assertTrue(tape['result']['window'].endswith(
+            'Shell>>  Unification failure occurred !! \n  [ Job#4, Node#0, PE#0 ]\n'
+            '  Term1        : normal([delete("compiler.msg",D),expunge(C)],B,A) \n'
+            '  Term2        : abnormal \nShell>>  Job 4 was aborted . \n'))
 
     def test_replay(self):
         # the PSI side, fed the tape: every packet it sends is the live
@@ -330,41 +388,71 @@ class Run(unittest.TestCase):
         # mendel_title process, sent "exit", writes " end" to its screen
         # (title.esp show/1), a permission(show) window under the base, so
         # the coordinator raises it (TM-225 p11 (3); coordinator.esp
-        # held_back/3) and lifts the base whole: save/7 of id 2, the base's
-        # 1,280 x 944 at (0,0), at base 9128, which save memory (65,536
-        # words) cannot hold
-        self.assertEqual(psi.where(12), [
-            'simpos##save_memory @40', 'simpos##save_memory @42', 'simpos##window_pane @2bb',
-            'simpos##coordinator @7d3', 'simpos##coordinator @841', 'simpos##coordinator @9a',
-            'simpos##coordinator @b6f', 'simpos##coordinator @1eb', 'simpos##window_pane @376',
-            'mendel##mendel_title @6d', 'mendel##mendel_title:goal/1 @4', 'simpos##as_program @73'])
-        self.assertEqual([K.resolve(psi.m.x[i]) for i in (0, 3, 4, 5)], [2, 1280, 944, 9128])
+        # held_back/3).  Since the title raise step (2026-11-28) the raise
+        # lifts the base only over the title screen's rectangle (446 x 163,
+        # 4,564 words; coordinator.esp lift_all_in/2), not whole (75,520
+        # words, more than save memory's 65,536: the stop before); the
+        # title screen then shows " end", "please return", and waits in
+        # its read (title.esp:57), the run's stop: every process waits, and
+        # PIMOS, given the last answers, sends nothing more
         # the adapter changed one packet, into the no-file branch's
         self.assertEqual([n.hex() for _r, n in psi.adapted], [LOAD_ANSWER_PACKET])
-        # the zone as the stop leaves it: every pane of show_all_window/1
-        # (mendel_win.esp), the last the system window (a Pmacs window
-        # inside the base, bottom right), which shows system_io's two
-        # messages: field_tree restore/2's "file not exist" error
-        # (field_tree.esp:446-447) and mdl_check open_file/3's
-        # (mdl_check.esp:131-134; `error` from message_type/2's catch-all
-        # message_string/2, mdl_ckutil.esp:197; "compiler.msg" by symbolizer
-        # get_ch_string_string/3); under the base, the title screen's
-        # window (its part only saved, save_memory save_under/6)
+        # the stop's frame: the zone (every pane of show_all_window/1,
+        # mendel_win.esp; the system window with system_io's two messages,
+        # field_tree restore/2's "file not exist" (field_tree.esp:446-447)
+        # and mdl_check open_file/3's (mdl_check.esp:131-134)) with the
+        # title screen raised over the base and selected (its name in the
+        # status band)
         import windev
-        fr = windev.device(psi.m).frame
-        self.assertEqual((windev.pbm_sha256(fr), fr.count()), ZONE_FRAME)
-        with open(ZONE, 'rb') as f:
+        import winfb
+        d = windev.device(psi.m)
+        fr = d.frame
+        self.assertEqual((windev.pbm_sha256(fr), fr.count()), RAISED_FRAME)
+        with open(RAISED, 'rb') as f:
             self.assertEqual(windev.png_bytes(fr), f.read())
-        # save memory (OBSERVED): two areas of 4,564 words, the title
-        # screen window's own under-save (its whole rectangle, window_pane
-        # create/7) and the base's cut box, which is that window's
-        # rectangle (save_under/6), not the 75,520 words of the whole
-        # 1,280 x 944 rectangle
-        used, c = [], K.deref(psi.m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))
+        # and it is the load answer step's last frame (ZONE, the zone with
+        # the title screen under the base) but for the title screen's
+        # rectangle and the status band's window name (rows 950-967): the
+        # raise changed nothing else
+        with open(ZONE, 'rb') as f:
+            zone = windev.png_rows(f.read())
+        now = windev.png_rows(windev.png_bytes(fr))
+        title = ((1 << 446) - 1) << (1280 - 417 - 446)
+        changed = [y for y in range(1024) if (zone[y] ^ now[y]) & ~(title if 390 <= y < 553 else 0)]
+        self.assertEqual((changed[0], changed[-1], len(changed)), (950, 967, 18))
+        # the stack: the title screen on top, its under its own 4,564
+        # words; the base under it, its under the cut form with nothing
+        # under it (the title screen has left it)
+        m = psi.m
+        C = K.ClassRef('simpos##coordinator')
+        ws, c = [], K.deref(m.get_slot(C, 'windows'))
+        while isinstance(c, K.Cons):
+            ws.append(K.deref(c.args[0]))
+            c = K.deref(c.args[1])
+        self.assertEqual([w.cid for w in ws], ['simpos##standard_io_window', 'mendel##base'])
+        panes = [K.deref(m.get_slot(w, 'pane')) for w in ws]
+        self.assertEqual([[K.resolve(m.get_slot(p, k)) for k in ('x', 'y', 'w', 'h')] for p in panes],
+                         [[417, 390, 446, 163], [0, 0, 1280, 944]])
+        self.assertEqual([str(K.resolve(m.get_slot(p, 'under'))) for p in panes],
+                         ['[0,0,4564]',
+                          '[cut,0 (a slot constant),0 (a slot constant),1280,944,0,none]'])
+        # save memory at the stop (OBSERVED): one area, the title screen's
+        # under; over the run no save reached past word 13,692 (three areas
+        # of 4,564 at once during the raise: the base's part, the title
+        # screen's image and its under)
+        used, c = [], K.deref(m.get_slot(K.ClassRef('simpos##save_memory'), 'used'))
         while isinstance(c, K.Cons):
             used.append(str(K.resolve(c.args[0])))
             c = K.deref(c.args[1])
-        self.assertEqual(used, ['[0,0,4564]', '[1,4564,4564]'])
+        self.assertEqual(used, ['[0,0,4564]'])
+        saves = [a for op, a in d.log if op >> 4 == winfb.SAVE]
+        self.assertEqual(max(a[5] + (a[3] + 15) // 16 * a[4] for a in saves), 13692)
+        # the raise's three saves, each the title screen's rectangle: the
+        # base's part (slot 2), the title screen's image (slot 1, while
+        # lifted) and its new under (slot 0)
+        self.assertEqual([a for a in saves[-3:]], [[2, 417, 390, 446, 163, 9128],
+                                                   [1, 417, 390, 446, 163, 4564],
+                                                   [0, 417, 390, 446, 163, 0]])
 
     def test_library_restored(self):
         # object_lib restore/1 (object_lib.esp:29-31, 321-325) read the
@@ -399,10 +487,10 @@ class Run(unittest.TestCase):
     def test_live(self):
         result, psi, _pim = mendels.live(os.environ['MENDELS_LIVE'], record=None)
         self.assertEqual(result['stop'], STOP)
-        self.assertEqual(result['exchanges'], 21)
+        self.assertEqual(result['exchanges'], EXCHANGES)
         self.assertEqual([n.hex() for _r, n in psi.adapted], [LOAD_ANSWER_PACKET])
         import windev
-        with open(ZONE, 'rb') as f:
+        with open(RAISED, 'rb') as f:
             self.assertEqual(windev.png_bytes(windev.device(psi.m).frame), f.read())
 
     def test_adapter_off(self):
@@ -1568,6 +1656,87 @@ end.
         self.assertNotEqual(fr.rows[:944], before[:944])
         self.assertEqual(len(send(top, 'kill')), 1)
         self.assertEqual(fr.rows[:944], before[:944])
+
+    # the title raise step (2026-11-28): each step's frame (sha256 prefix,
+    # set dots), the largest save of the step and save memory after it.
+    # The frames are OBSERVED equal to the whole lift's: the same scenario
+    # run on master 7528e34e's stand-ins (every frame lifted whole) gives
+    # the same ten frames, its largest saves 74, 74, 1,521, 0, 5,000,
+    # 5,000, 2,850, 0, 0, 0 words
+    PART_STEPS = [
+        ('low2', '9c1dbe526eb4843b', 245, 74, '[[0,0,74]]'),
+        ('low', '762a1b050c59c74e', 483, 74, '[[0,0,74],[1,74,74]]'),
+        ('top', 'a50ebe4d4fd71848', 8004, 1521, '[[0,0,74],[1,74,74],[2,148,1521]]'),
+        ('far', 'be9817ee65acea38', 10086, 0, '[[0,0,74],[1,74,74],[2,148,1521]]'),
+        ('write', 'be9817ee65acea38', 10086, 1521, '[[0,0,74],[1,74,74],[2,148,1521]]'),
+        ('raise', '2d017d7307e6e224', 9348, 1521, '[[0,0,74],[1,74,74],[3,222,74]]'),
+        ('killtop', '68bb6be6b99ed8f9', 6813, 74, '[[0,0,74],[1,74,74]]'),
+        ('killlow', '0fdad858f4f5668f', 10245, 0, '[[0,0,74]]'),
+        ('killlow2', '2a468fdfcde2c0d2', 10000, 0, '[]'),
+        ('killfar', '4d3b4c7ef03c9c5f', 7920, 0, '[]')]
+
+    def test_frame_part(self):
+        # the title raise step: a restack lifts a frame (a mixin window,
+        # save_memory's cut form) only over the part the restack changes
+        # (coordinator.esp lift_all_in/2, window_pane.esp lift_in/2, lay/1;
+        # TM-225 p10 "all or its hidden part"): two standard_io_windows
+        # under a temporary_superior_window `top` (400 x 200, 5,000 words
+        # whole, its cut box over both 1,521), a second frame `far` above it
+        # that meets neither; the upper window `low` written while covered
+        # (uncover/3) and raised (select_window/2: raise; the part is its
+        # rectangle grown to top's box, which holds low2, below low; far
+        # is missed, nothing lifted), then all four killed; no save is
+        # larger than top's box, and every frame is the whole lift's
+        import fep_bridge as FB
+        import windev
+        import winfb
+        m = FB.PsiSide().m
+        A = K.Atom
+        C = K.ClassRef('simpos##coordinator')
+
+        def send(obj, name, *args):
+            m.reset()
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(obj, name, list(args) + [obj])]
+
+        def make(cid, x, y, w, h):
+            m.reset()
+            opts = K.Cons(K.Vec([A('size'), w, h]), K.Cons(K.Vec([A('position'), x, y]), K.NIL))
+            ((_o, win),) = K.call_class_method(m, cid, 'create', [opts, K.Var()])
+            self.assertEqual(len(send(win, 'activate')), 1)
+            return win
+        d = windev.device(m)
+        got, mark = [], [0]
+
+        def step(name):
+            saves = [a for op, a in d.log[mark[0]:] if op >> 4 == winfb.SAVE]
+            mark[0] = len(d.log)
+            got.append((name, windev.pbm_sha256(d.frame)[:16], d.frame.count(),
+                        max([((a[3] + 15) // 16) * a[4] for a in saves] or [0]),
+                        str(K.resolve(m.get_slot(K.ClassRef('simpos##save_memory'), 'used')))))
+        low2 = make('simpos##standard_io_window', 480, 380, 10, 2)
+        self.assertEqual(len(send(low2, 'write_line', K.Str('two'))), 1)
+        step('low2')
+        low = make('simpos##standard_io_window', 300, 300, 20, 4)
+        self.assertEqual(len(send(low, 'write_line', K.Str('under'))), 1)
+        step('low')
+        top = make('simpos##temporary_superior_window', 250, 250, 400, 200)
+        step('top')
+        far = make('simpos##temporary_superior_window', 760, 520, 300, 150)
+        step('far')
+        self.assertEqual(len(send(low, 'write_line', K.Str('covered'))), 1)
+        step('write')
+        m.reset()
+        self.assertTrue(list(m.solve_send(C, 'select_window', [low, C])))
+        step('raise')
+        self.assertEqual(len(send(top, 'kill')), 1)
+        step('killtop')
+        self.assertEqual(len(send(low, 'kill')), 1)
+        step('killlow')
+        self.assertEqual(len(send(low2, 'kill')), 1)
+        step('killlow2')
+        self.assertEqual(len(send(far, 'kill')), 1)
+        step('killfar')
+        self.assertEqual(got, self.PART_STEPS)
 
     def test_title_shown(self):
         # the held mendel_title's screen: a standard_io_window, black

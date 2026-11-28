@@ -6075,7 +6075,139 @@ not needed on this path (phase/2 succeeds, call_esp/3's repeat is not
 retried). With a scratch compiler.msg placed in TEMP the run was refused
 by standard_input_file ("reader: a clause without its end"); which call
 of after_KL1compiler/0's read loop refused was not traced (not on the
-held run's path).
+held run's path). (Settled by the next step: option (b).)
+
+**The title raise step: a lift saves only the part (2026-11-28).** The
+lead's decision on the save memory question: option (b) of
+`../docs/simpos/subsystems/window.md` §7, a lift that saves only the
+part of each window that becomes hidden (TM-225 p10, PROSE: a hidden
+window's image, "all of it or its hidden part", is kept in a save area),
+as the frames already did when drawn (save_under/6). SAVE_WORDS (65,536),
+winfb's frozen format and bsv/WinFbBox.bsv are unchanged: only winfb's
+existing fill, save and restore are sent.
+
+The mechanism (OURS, every selector and body; labelled in the files):
+- `coordinator.esp` lift_all_in/2: a restack for a pane P (raise, HIDE,
+  kill, output to a covered window: peel/3, uncover/3, lowered/4) changes
+  dots only inside P's rectangle. A FRAME (a pane whose under is save
+  memory's cut form, `[cut, X, Y, W, H, Inner, Box]`, Box new in this
+  step) is lifted only over the PART: P's rectangle grown by every
+  frame's box (the device restores a save area whole), one part for the
+  whole restack (a frame's box holds every window below it), so a pane
+  lifted later sees under the part only what is lifted. Other panes (create/7) are lifted whole, as before.
+- `window_pane.esp` lift_in/2: the frame's own dots in the part saved,
+  what is under it there drawn back (`save_memory.esp` lift_under/6: the
+  part cleared, the box's area restored); `part` holds
+  `[Image, X, Y, W, H]`, or `[]` when the part misses the frame. lay/1
+  of such a frame recomputes its under, the cut form over the windows now
+  below it in the stack (save_under_below/7), and restores the image.
+
+**On MENDELS's path** the title screen (446 x 163 at (417, 390), a
+create/7 pane) lies under the base (a frame, its box the title screen's
+rectangle). The raise saves 4,564 words of the base (slot 2 at 9,128),
+the title screen's image (slot 1) and its new under (slot 0), each 4,564
+words: save memory's high-water mark over the run is 13,692 words (the
+whole lift, OBSERVED with master's stand-ins and save
+memory enlarged, reaches word 160,168). The base's new under is `[cut, 0, 0, 1280, 944, 0,
+none]` (nothing below it now); at the stop save memory holds one area,
+`[0, 0, 4564]`, the title screen's under. The frame is the same as the
+whole lift's, dot for dot (same sha256). Then title.esp show/1 runs on:
+" end", background/2 white, "please return", clear_buffer/1, and its
+`:read` (title.esp:57) waits. **The new stop:**
+
+    would suspend: no process is ready: <simpos##process> is suspended
+
+every process waiting: the title screen's read, the Top Menu's read
+(phase(top)), the FEP; on the PIMOS side the MENDELS job has been
+aborted (below). Screen: `../docs/simpos/screens/mendels_title_raised.png`
+(the live run's the same, PNG byte for byte).
+
+**"please return" is not answered.** No held document scripts it:
+readme.e:33-39 (and readme.j's 起動 section) prescribe only the user
+path; manual.e/manual.j and install.e/install.j say nothing of the
+title screen. A RETURN justified only by the screen's own prompt would
+be ours, so the read is an honest stop.
+
+**PIMOS goes on.** With the PSI side no longer refused, the live run
+gives 7 more exchanges (21 -> 28; the first 21 identical): device 62
+closed; esp_device/3's set_MENDEL_directory (package.kl1:15-19, 134-145)
+and esp_utility directory_name("temp") (esp_util.kl1:30-50, answered
+`>sys>user>MENDELuser>TEMP>`) for mdl_comp.kl1 wt_message/1 (172-200),
+which deletes and writes TEMP>compiler.msg with load:do's messages
+after the load; the loader's device (42) closed. Then del_file/3 asks
+PIMOS's file service for the directory `>sys>user>MENDELuser>TEMP`
+(mdl_comp.kl1:187-197, `directory(RootS, normal(FD_S,_,_))`); the
+runner's FEP (fep.py, the sweep's home files) does not have the PSI's
+directories and answers `abnormal`, the pattern fails, and PIMOS aborts
+the MENDELS job (OBSERVED, PIMOS's console at the end of the tape:
+`Unification failure occurred !! ... Term1 : normal([delete("compiler.msg",D),expunge(C)],B,A)
+Term2 : abnormal`, `Job 4 was aborted .`; test_tape). So the KL1 half
+is dead at the stop, and no compiler.msg is written. On the real system
+PIM's FEP was the PSI, whose file system has that directory (install.e
+Step 1), so this is our harness's gap (OURS: PIMOS's files and SIMPOS's
+are two stores here), the next thing to fix on the PIMOS side. The
+order: the ESP half read TEMP>compiler.msg before the KL1 half began to
+write it. In the held code that is a race (end_pipe/3, main.kl1:162-164,
+waits only for load:do's Result, and wt_message/1 runs beside it), but
+here the order is also the bridge's: PIMOS runs only when the PSI asks
+for an exchange (OURS), so the pinned `ERR: error '"compiler.msg"' not
+exist` of the load answer step may not be what the real system showed
+(open).
+
+**kl0's process order matters for this stop.** The title process runs
+only when the main process waits (kl0's scheduling, OURS). Had it run at
+esp_control/2's `:exit` (esp_device.esp:99-104, before resume/0), its
+screen would have been uncovered: no raise, no lift, " end" and "please
+return" written at once, and resume/0's zone drawn over it, its read
+waiting under the base, unselected.
+
+Tests: test_replay (the stop, the frame, the stack, save memory, the
+raise's three saves), test_frame_part (two standard_io_windows under a
+temporary_superior_window and a second frame beside it: write while
+covered, raise, four kills; each frame pinned and OBSERVED equal to
+master's whole lift, each save at most the frame's 1,521-word box, where
+the whole lift saves 5,000). The census is unchanged row by row (1,560
+rows; only fresh variables' numbers differ, against master's stand-ins).
+
+Injections, OBSERVED (`test_mendels.py` run whole for each, the file
+restored by copy and compared with cmp, `git diff` clean):
+
+| injection | failed |
+|---|---|
+| frames lifted whole (lifted_in/2 always lift/1) | test_frame_part, test_replay |
+| the part not grown by a frame's box | test_frame_part |
+| lift_in/2: the pane whole as the part | test_frame_part, test_replay |
+| lift_under/6: the whole screen cleared | test_frame_part, test_replay |
+| lift_under/6: Inner not drawn back | test_frame_part, test_replay |
+| save_under_below/7: nothing below | test_frame_part |
+| save_under_below/7: every window, not only those below | test_frame_part, test_replay |
+| lay/1 of a part: the frame's dots not drawn back | test_frame_part |
+| lift_in/2: a missed frame lifted whole | test_frame_part |
+
+(A tenth, whole_below/4, a growth of the part by a frame's overlap with
+the whole-lifted panes below it, was NONE and is removed: a frame's box
+already holds every window below it, made over them by save_under/6 and
+remade by save_under_below/7, and a window outside the box could not be
+saved by growing the part anyway, since the frame's under has no record
+of it.)
+
+Past the read (READ, not run): title.esp:58 sends `:hide(Screen)` to a
+top standard_io_window, which the stand-in refuses loudly
+(standard_io_window.esp:384, `not_stood_in(W, hide_of_a_top_window)`),
+before any restack.
+
+Labels of this step: the lift mechanism OURS (lift_all_in/2, lift_in/2,
+lay/1's part clause, lift_under/6, save_under_below/7: 5 selectors or
+predicates, each `INTERPOLATED (selector and body OURS)` with TM-225 p10
+PROSE as its basis); 2 HELD (title.esp's read waiting; PIMOS's abort on
+del_file/3's directory answer, OBSERVED); 2 INFERENCE (the compiler.msg
+race in the held code; that the real FEP served the directory); 1 OURS
+(the FEP's two stores, the cause of the abort).
+
+Open: raising a frame ITSELF (selecting the base, say) still lifts it
+whole (coordinator raised/2), 75,520 words for the base. The RETURN at
+the title screen. PIMOS's directory requests for the PSI's MENDELuser
+tree (the job abort). The compiler.msg order above.
 
 ## The window framebuffer layer (`winfb.py`, 2026-11-25)
 

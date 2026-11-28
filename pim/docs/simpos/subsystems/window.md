@@ -1483,13 +1483,35 @@ coordinator raises a covered `show` window before the write (TM-225 p11
 ③; coordinator.esp uncover/3's held_back/3, then select_window, raise,
 lift_all), lifting the base whole: save/7 of slot
 2, 1,280 x 944 at (0,0), at base 9,128 (two areas of 4,564 words
-already in use), refused as winfb BADSAVE. This is MENDELS's current
-stop. Still undecided, two ways on: (a) save memory on the board's SDRAM
+already in use), refused as winfb BADSAVE. This was MENDELS's stop
+until the title raise step (decided below). Two ways on were open: (a) save memory on the board's SDRAM
 with the frozen-format change (above); (b) a lift that saves only the
 hidden part of the covered window, the overlap with the window raised
 (TM-225 p10 "all or its hidden part"), which would keep this case at the
 title window's 4,564 words but changes the restack mechanism (lift/lay
 save and restore whole panes today).
+
+**Decided 2026-11-28 (the lead): option (b), built (MENDELS, the title
+raise step; `psi/README.md`).** A restack for a pane P (raise, HIDE,
+kill, output to a covered window) changes dots only inside P's
+rectangle, so a frame (a pane whose under is save memory's cut form,
+create_frame/8) is lifted only over the PART: P's rectangle, grown by
+each frame's box (the device restores a save area whole; a frame's box
+holds every window below it), one part for the whole restack (coordinator.esp lift_all_in/2). window_pane.esp lift_in/2 saves
+the frame's own dots in the part and draws back what is under it there
+(save_memory.esp lift_under/6: the part cleared, the box's area drawn
+back); lay/1 recomputes the frame's under as the cut form over the
+windows now below it (save_under_below/7) and draws its dots back. The
+older panes (create/7) are still lifted whole, so their streams are
+unchanged. SAVE_WORDS (65,536), the frozen format and WinFbBox.bsv are
+unchanged. Evidence: the title screen's raise saves 4,564 words of the
+base (the overlap), the run's save memory peaks at 13,692 words, and the
+frames are the same as a whole lift's (the run, and test_mendels
+test_frame_part's eight steps, against master 7528e34e's stand-ins with
+save memory enlarged). Still open: raising a frame ITSELF (selecting the
+base, say) lifts it whole, as before (coordinator raised/2; the base's
+75,520 words). lift_under/6 refuses loudly an under whose box is not
+inside the part (a guard: part_of/3 grows the part by every frame's box).
 
 ---
 

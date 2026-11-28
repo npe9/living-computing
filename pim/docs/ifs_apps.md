@@ -710,6 +710,51 @@ From the sweep, not from the documentation alone:
      lift that saves only the hidden part (TM-225 p10). The PIMOS side is
      unchanged (21 exchanges; tape re-recorded live; live screen =
      replay, `docs/simpos/screens/mendels_zone.png`).
+   - **title raise step (2026-11-28): option (b) taken.** A restack
+     (raise, HIDE, kill, output to a covered window) lifts a frame (a
+     mixin window, whose under is save memory's cut form) only over the
+     part it changes, the moved window's rectangle grown to the frames'
+     boxes (TM-225 p10: a hidden window's image, "all or its hidden part",
+     is saved; the mechanism OURS, `psi/standin/coordinator.esp`
+     lift_all_in/2). The title screen's raise saves 4,564 words of the
+     base, not 75,520; the most save memory holds over the run is 13,692
+     words, 4,564 (the title screen's under) at the stop. The frames are
+     the same as a whole lift's (master's stand-ins with save memory
+     enlarged). SAVE_WORDS, the frozen format and the box are unchanged.
+     The title screen then shows `loading... end` and `please return`
+     and waits in its `:read` (title.esp:57). **Stop:** every process
+     waits (`would suspend: no process is ready`): the title read, the
+     Top Menu's read and the FEP, and PIMOS has aborted the MENDELS job
+     (below); screen
+     `docs/simpos/screens/mendels_title_raised.png` (live = replay). The
+     RETURN is not typed: no held document asks for it (readme.e/.j
+     prescribe only the user path; manual.e/.j and install.e/.j say
+     nothing of the title screen), so the read is an honest stop. With
+     the PSI side no longer stopped, PIMOS goes on for 7 more exchanges
+     (21 -> 28, the first 21 identical): device 62 closed, esp_utility's
+     set_MENDEL_directory and directory_name("temp") (answered
+     `>sys>user>MENDELuser>TEMP>`) for mdl_comp.kl1 wt_message/1, which
+     writes load:do's messages to TEMP>compiler.msg after the load, and
+     the loader's stream closed; then del_file/3 asks PIMOS's file
+     service for the directory `>sys>user>MENDELuser>TEMP`, the runner's
+     FEP (fep.py's home files, not the PSI's file system) answers
+     `abnormal`, and PIMOS aborts the job (OBSERVED on its console:
+     `Unification failure ... normal([delete("compiler.msg",D),...]) /
+     abnormal`, `Job 4 was aborted .`). So the KL1 half is dead at the
+     stop; on the real system PIM's FEP was the PSI, which has that
+     directory (install.e Step 1): our harness's gap, next on the PIMOS
+     side. The ESP half read compiler.msg before the KL1 half began to
+     write it: a race in the held code (end_pipe/3, main.kl1:162-164,
+     waits only on load:do's Result), and here also the bridge's order
+     (PIMOS runs only when the PSI asks for an exchange, OURS), so the
+     earlier `compiler.msg not exist` line may not be the real system's.
+     Past the read (read, not run): title.esp:58's `:hide` of a top
+     standard_io_window is refused by the stand-in
+     (standard_io_window.esp:384).
+     kl0's order matters for this stop: the title process runs only when
+     the main process waits (OURS scheduling); had it run at `:exit`,
+     before resume/0, its screen would have been uncovered, no raise at
+     all, and its read would wait under the base unselected.
    The stand-ins added for it are listed in `psi/README.md` "MENDELS".
 2. **aligndp (No.55) and logisim (No.69).** Each has one ESP file
    (`dna3d.esp`, 503 lines; `simulation.esp`, 1,691) that reaches the
